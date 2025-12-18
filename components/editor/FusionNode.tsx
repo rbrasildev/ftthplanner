@@ -32,19 +32,19 @@ export const FusionNode: React.FC<FusionNodeProps> = ({
 }) => {
     const portA = `${fusion.id}-a`;
     const portB = `${fusion.id}-b`;
-    
+
     const isConnectedA = connections.some(c => c.targetId === portA || c.sourceId === portA);
     const isConnectedB = connections.some(c => c.targetId === portB || c.sourceId === portB);
-    
+
     const isLitA = litPorts.has(portA);
     const isLitB = litPorts.has(portB);
 
     return (
         <div
-            style={{ 
-                transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`, 
+            style={{
+                transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 height: '32px', // Larger hit area to keep controls clickable
-                width: '32px' 
+                width: '32px'
             }}
             className="absolute z-20 flex flex-col items-center justify-center group select-none hover:z-50"
         >

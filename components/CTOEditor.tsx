@@ -97,62 +97,96 @@ type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'win
 
 export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable }) => {
     const { t } = useLanguage();
-    const [localCTO, setLocalCTO] = useState<CTOData>(JSON.parse(JSON.stringify(cto)));
+    const [localCTO, setLocalCTO] = useState<CTOData>(() => {
+        const next = JSON.parse(JSON.stringify(cto)) as CTOData;
+        if (!next.layout) next.layout = {};
+
+        // Position Incoming Cables on the Left if missing
+        incomingCables.forEach((cable, idx) => {
+            if (!next.layout![cable.id]) {
+                next.layout![cable.id] = { x: 42, y: 42 + (idx * 204), rotation: 0 };
+            }
+        });
+
+        // Position Existing Splitters if missing
+        next.splitters.forEach((split, idx) => {
+            if (!next.layout![split.id]) {
+                next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
+            }
+        });
+
+        // Position Existing Fusions if missing
+        next.fusions.forEach((fusion, idx) => {
+            if (!next.layout![fusion.id]) {
+                next.layout![fusion.id] = { x: 582, y: 78 + (idx * 24), rotation: 0 };
+            }
+        });
+
+        return next;
+    });
+
+    // --- View Centering Logic (Pure Math) ---
+    const getInitialViewState = (data: CTOData) => {
+        let minX = Infinity, minY = Infinity, maxY = -Infinity, maxX = -Infinity;
+        const checkPoint = (px: number, py: number) => {
+            if (px < minX) minX = px; if (py < minY) minY = py;
+            if (px > maxX) maxX = px; if (py > maxY) maxY = py;
+        };
+        const ELEMENT_WIDTH = 200;
+        const ELEMENT_HEIGHT = 100;
+        if (data.layout) {
+            Object.values(data.layout).forEach((l: any) => {
+                checkPoint(l.x, l.y);
+                checkPoint(l.x + ELEMENT_WIDTH, l.y + ELEMENT_HEIGHT);
+            });
+        }
+        data.connections.forEach(c => {
+            c.points?.forEach(p => checkPoint(p.x, p.y));
+        });
+
+        if (minX === Infinity) return { x: 0, y: 0, zoom: 1 };
+
+        const contentW = maxX - minX;
+        const contentH = maxY - minY;
+        const viewportW = 1100;
+        const viewportH = 750 - 56;
+
+        return {
+            x: (viewportW / 2) - ((minX + contentW / 2) * 1),
+            y: (viewportH / 2) - ((minY + contentH / 2) * 1),
+            zoom: 1
+        };
+    };
 
     // Viewport State
-    const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
+    const [viewState, setViewState] = useState(() => getInitialViewState(localCTO));
     const [isSnapping, setIsSnapping] = useState(true); // Default to enabled
 
-    // Window Position State (Centered in content area relative to sidebar)
+    // Window Position State
     const [windowPos, setWindowPos] = useState(() => {
         if (typeof window === 'undefined') return { x: 100, y: 50 };
-
-        const SIDEBAR_WIDTH = 256; // w-64
+        const SIDEBAR_WIDTH = 256;
         const MODAL_WIDTH = 1100;
         const MODAL_HEIGHT = 750;
-
-        // Available width is screen minus sidebar
         const availableWidth = window.innerWidth - SIDEBAR_WIDTH;
-
-        // Calculate centered X relative to the entire screen (sidebar is on left)
         let x = SIDEBAR_WIDTH + (availableWidth / 2) - (MODAL_WIDTH / 2);
-
-        // Ensure it doesn't overlap sidebar if screen is too small, 
-        // but prioritize keeping it visible.
         if (x < SIDEBAR_WIDTH + 20) x = SIDEBAR_WIDTH + 20;
-
-        // Center Y
         let y = (window.innerHeight - MODAL_HEIGHT) / 2;
         if (y < 20) y = 20;
-
         return { x, y };
     });
 
-    // VFL Mode UI Toggle (Determines if click triggers VFL or Edit)
     const [isVflToolActive, setIsVflToolActive] = useState(false);
-
-    // OTDR Mode State
     const [isOtdrToolActive, setIsOtdrToolActive] = useState(false);
     const [otdrTargetPort, setOtdrTargetPort] = useState<string | null>(null);
     const [otdrDistance, setOtdrDistance] = useState<string>('');
-
-    // Auto Splice Modal State
     const [isAutoSpliceOpen, setIsAutoSpliceOpen] = useState(false);
     const [autoSourceId, setAutoSourceId] = useState<string>('');
     const [autoTargetId, setAutoTargetId] = useState<string>('');
-
-    // Export State - Now tracks specific type to avoid loading spinner conflict
     const [exportingType, setExportingType] = useState<'png' | 'pdf' | null>(null);
-
-    // Close Confirmation State
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-
-    // Splitter Dropdown State
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
-
-    // GRID_SIZE reduced to 6 for finer alignment.
     const GRID_SIZE = 6;
-
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -165,43 +199,30 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Interaction State
     const [dragState, setDragState] = useState<{
         mode: DragMode;
-        targetId?: string; // Element ID being moved
-
-        // For Creation
-        portId?: string;   // Port ID where connection started
-
-        // For Reconnection
-        connectionId?: string; // The connection being modified
-        fixedPortId?: string; // The port id of the side that stays connected
-        movingSide?: 'source' | 'target'; // Which side are we moving?
-
-        // For Points
-        pointIndex?: number;   // For point dragging
-
+        targetId?: string;
+        portId?: string;
+        connectionId?: string;
+        fixedPortId?: string;
+        movingSide?: 'source' | 'target';
+        pointIndex?: number;
         startX: number;
         startY: number;
-        initialLayout?: ElementLayout; // For element dragging
-        currentMouseX?: number; // For connection line drawing
+        initialLayout?: ElementLayout;
+        currentMouseX?: number;
         currentMouseY?: number;
-
-        // For Window Dragging
         initialWindowPos?: { x: number, y: number };
     } | null>(null);
-
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const diagramContentRef = useRef<HTMLDivElement>(null);
 
-    // Force re-render when view changes to sync SVG lines with DOM transforms
     const [, setForceUpdate] = useState(0);
     useLayoutEffect(() => {
         setForceUpdate(n => n + 1);
     }, [viewState]);
 
-    // --- Calculate Lit Connections Locally (Visuals) ---
     const litConnections = useMemo(() => {
         const lit = new Set<string>();
         localCTO.connections.forEach(conn => {
@@ -211,49 +232,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         });
         return lit;
     }, [litPorts, localCTO.connections]);
-
-
-    // --- Initialization ---
-
-    // Ensure all elements (including cables) have a position in the layout
-    useEffect(() => {
-        setLocalCTO(prev => {
-            const next = { ...prev };
-            let changed = false;
-            if (!next.layout) { next.layout = {}; changed = true; }
-
-            // Position Incoming Cables on the Left
-            incomingCables.forEach((cable, idx) => {
-                if (!next.layout![cable.id]) {
-                    // Use multiples of 6 (GRID_SIZE)
-                    // 42 is div by 6. 204 is div by 6.
-                    next.layout![cable.id] = { x: 42, y: 42 + (idx * 204), rotation: 0 };
-                    changed = true;
-                }
-            });
-
-            // Position Existing Splitters if missing
-            next.splitters.forEach((split, idx) => {
-                if (!next.layout![split.id]) {
-                    next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 }; // 378/6=63, 78/6=13, 120/6=20
-                    changed = true;
-                }
-            });
-
-            // Position Existing Fusions if missing
-            next.fusions.forEach((fusion, idx) => {
-                if (!next.layout![fusion.id]) {
-                    next.layout![fusion.id] = { x: 582, y: 78 + (idx * 24), rotation: 0 }; // 582/6=97, 24/6=4
-                    changed = true;
-                }
-            });
-
-            return changed ? next : prev;
-        });
-    }, [incomingCables.length, localCTO.splitters.length, localCTO.fusions.length]);
-
-
-    // --- Helpers ---
 
     const getLayout = (id: string) => localCTO.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
@@ -271,10 +249,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         if (el && containerRef.current) {
             const rect = el.getBoundingClientRect();
             const containerRect = containerRef.current.getBoundingClientRect();
-            // Calculate center relative to the container div
             const relX = rect.left + rect.width / 2 - containerRect.left;
             const relY = rect.top + rect.height / 2 - containerRect.top;
-            // Adjust for zoom/pan to get canvas coordinates
             return {
                 x: (relX - viewState.x) / viewState.zoom,
                 y: (relY - viewState.y) / viewState.zoom
@@ -284,20 +260,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     };
 
     const getPortColor = (portId: string): string | null => {
-        // Tries to extract color if the port ID is a fiber ID
         if (portId.includes('-fiber-')) {
             try {
                 const parts = portId.split('-fiber-');
                 const fiberIndex = parseInt(parts[1]);
-                if (!isNaN(fiberIndex)) {
-                    return FIBER_COLORS[fiberIndex % FIBER_COLORS.length];
-                }
+                if (!isNaN(fiberIndex)) return FIBER_COLORS[fiberIndex % FIBER_COLORS.length];
             } catch (e) { return null; }
         }
-        // Check if it's a Splitter Port (to return Splitter Body Color - Slate 400)
-        if (portId.includes('spl-')) {
-            return '#94a3b8'; // Matches the aesthetic of the splitter body
-        }
+        if (portId.includes('spl-')) return '#94a3b8';
         return null;
     };
 
@@ -308,14 +278,43 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         }));
     };
 
-    // --- Safe Closing Logic ---
     const handleCloseRequest = () => {
         const hasChanges = JSON.stringify(localCTO) !== JSON.stringify(cto);
-        if (hasChanges) {
-            setShowCloseConfirm(true);
-        } else {
-            onClose();
+        if (hasChanges) setShowCloseConfirm(true);
+        else onClose();
+    };
+
+    // --- View Centering ---
+    const handleCenterView = () => {
+        if (!containerRef.current) return;
+        let minX = Infinity, minY = Infinity, maxY = -Infinity, maxX = -Infinity;
+        const checkPoint = (x: number, y: number) => {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        };
+        const ELEMENT_WIDTH = 200;
+        const ELEMENT_HEIGHT = 100;
+        if (localCTO.layout) {
+            Object.values(localCTO.layout).forEach((l: any) => {
+                checkPoint(l.x, l.y);
+                checkPoint(l.x + ELEMENT_WIDTH, l.y + ELEMENT_HEIGHT);
+            });
         }
+        localCTO.connections.forEach(c => {
+            c.points?.forEach(p => checkPoint(p.x, p.y));
+        });
+        if (minX === Infinity) return;
+        const contentWidth = maxX - minX;
+        const contentHeight = maxY - minY;
+        const rect = containerRef.current.getBoundingClientRect();
+        const viewportWidth = rect.width || 1100;
+        const viewportHeight = (rect.height || 750) - 56;
+        const currentZoom = viewState.zoom;
+        const targetX = (viewportWidth / 2) - ((minX + contentWidth / 2) * currentZoom);
+        const targetY = (viewportHeight / 2) - ((minY + contentHeight / 2) * currentZoom);
+        setViewState(prev => ({ ...prev, x: targetX, y: targetY }));
     };
 
     const handleSaveAndClose = () => {
@@ -414,17 +413,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         const lng = localCTO.coordinates?.lng || cto.coordinates?.lng || 0;
 
         // Yandex Static Maps URL: ll (center), z (zoom), pt (marker: lng,lat,style)
-        // pm2rdm = Red marker, medium size (smaller as requested).
-        // l=sat = Satellite mode as requested
-        // z=16 for context
-        // Requested size 160 height to allow cropping bottom 40px (watermark)
-        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${lng.toFixed(6)},${lat.toFixed(6)}&z=16&l=sat&size=200,160&pt=${lng.toFixed(6)},${lat.toFixed(6)},pm2rdm&lang=pt_BR`;
+        // pm2rdm = Red marker, medium size.
+        // l=sat = Satellite mode
+        // Requesting a larger square image (300x300) to allow aggressive cropping of the watermark at the bottom.
+        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${lng.toFixed(6)},${lat.toFixed(6)}&z=16&l=sat&size=300,300&pt=${lng.toFixed(6)},${lat.toFixed(6)},pm2rdm&lang=pt_BR`;
 
         // Preload Map Image
         const mapBase64 = await preloadImage(mapUrl);
 
         const mapImgHtml = mapBase64
-            ? `<img src="${mapBase64}" style="width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 8px;" alt="Location" />`
+            ? `<div style="width: 100%; height: 100%; overflow: hidden; position: relative; border-radius: 8px;">
+                 <img src="${mapBase64}" style="width: 100%; height: auto; position: absolute; top: 0; left: 0;" alt="Location" />
+               </div>`
             : `<div style="width: 100%; height: 100%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-weight: bold;">MAP UNAVAILABLE</div>`;
 
         // 3. Create Temporary Export Container (Hidden)
@@ -1259,8 +1259,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                 onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('zoom_out')}
                             >
                                 <ZoomOut className="w-5 h-5" />
+                            </button>
+                            <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                            <button
+                                onClick={handleCenterView}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title="Center View"
+                            >
+                                <Move className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
