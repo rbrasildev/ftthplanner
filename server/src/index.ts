@@ -9,7 +9,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+    origin: '*', // For now, we allow all, but we can restrict to frontend URL later
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '50mb' })); // Increased limit for large sync payloads
 
 app.use('/api/auth', authRoutes);
