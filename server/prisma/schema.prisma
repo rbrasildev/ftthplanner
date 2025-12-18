@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  projects     Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  centerLat Float    @map("center_lat")
+  centerLng Float    @map("center_lng")
+  zoom      Int      @default(15)
+  settings  Json?    @default("{\"snapDistance\": 30}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  cables    Cable[]
+  ctos      Cto[]
+  pops      Pop[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+model Cto {
+  id            String          @id @default(uuid())
+  projectId     String          @map("project_id")
+  name          String
+  status        EquipmentStatus @default(PLANNED)
+  lat           Float
+  lng           Float
+  splitters     Json?           @default("[]")
+  fusions       Json?           @default("[]")
+  connections   Json?           @default("[]")
+  inputCableIds String[]        @default([]) @map("input_cable_ids")
+  layout        Json?           @default("{}")
+  clientCount   Int             @default(0) @map("client_count")
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("ctos")
+}
+
+model Pop {
+  id            String          @id @default(uuid())
+  projectId     String          @map("project_id")
+  name          String
+  status        EquipmentStatus @default(PLANNED)
+  lat           Float
+  lng           Float
+  olts          Json?           @default("[]")
+  dios          Json?           @default("[]")
+  fusions       Json?           @default("[]")
+  connections   Json?           @default("[]")
+  inputCableIds String[]        @default([]) @map("input_cable_ids")
+  layout        Json?           @default("{}")
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("pops")
+}
+
+model Cable {
+  id             String  @id @default(uuid())
+  projectId      String  @map("project_id")
+  name           String
+  status         String? @default("DEPLOYED")
+  fiberCount     Int     @map("fiber_count")
+  looseTubeCount Int?    @default(1) @map("loose_tube_count")
+  color          String? @default("#0ea5e9")
+  coordinates    Json
+  fromNodeId     String? @map("from_node_id")
+  toNodeId       String? @map("to_node_id")
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("cables")
+}
+
+enum EquipmentStatus {
+  PLANNED
+  NOT_DEPLOYED
+  DEPLOYED
+  CERTIFIED
+
+  @@map("equipment_status")
+}

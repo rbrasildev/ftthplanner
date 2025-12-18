@@ -1,0 +1,7 @@
+{
+  "name": "FTTH Master Planner",
+  "description": "A professional FTTH network management system allowing map-based topology design, interactive fiber splicing within CTOs, and AI-powered network analysis.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
