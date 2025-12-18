@@ -410,15 +410,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         const exportHeight = Math.max(contentHeight, 600);
 
         // 2. Prepare Map URL
-        const lat = cto.coordinates.lat;
-        const lng = cto.coordinates.lng;
-        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=16&l=map&size=200,120&pt=${lng},${lat},pm2rdm&lang=en_US`;
+        const lat = localCTO.coordinates?.lat || cto.coordinates?.lat || 0;
+        const lng = localCTO.coordinates?.lng || cto.coordinates?.lng || 0;
+
+        // Yandex Static Maps URL: ll (center), z (zoom), pt (marker: lng,lat,style)
+        // pm2rdm = Red marker, medium size (smaller as requested).
+        // l=sat = Satellite mode as requested
+        // z=16 for context
+        // Requested size 160 height to allow cropping bottom 40px (watermark)
+        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${lng.toFixed(6)},${lat.toFixed(6)}&z=16&l=sat&size=200,160&pt=${lng.toFixed(6)},${lat.toFixed(6)},pm2rdm&lang=pt_BR`;
 
         // Preload Map Image
         const mapBase64 = await preloadImage(mapUrl);
 
         const mapImgHtml = mapBase64
-            ? `<img src="${mapBase64}" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 8px;" alt="Location" />`
+            ? `<img src="${mapBase64}" style="width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; border-radius: 8px;" alt="Location" />`
             : `<div style="width: 100%; height: 100%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-weight: bold;">MAP UNAVAILABLE</div>`;
 
         // 3. Create Temporary Export Container (Hidden)
@@ -435,46 +441,77 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         exportContainer.style.overflow = 'hidden';
 
         document.body.appendChild(exportContainer);
+        // FORCE LIGHT MODE: Ensuring standard light-mode colors for common Tailwind classes used in project
+        exportContainer.style.boxSizing = 'border-box';
+        exportContainer.style.colorScheme = 'light';
 
         // 4. Construct Header HTML (Metadata)
         const statusColor = CTO_STATUS_COLORS[cto.status || 'PLANNED'];
 
         exportContainer.innerHTML = `
-        <div style="padding: 24px; border-bottom: 2px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; height: ${headerHeight}px; box-sizing: border-box; flex-shrink: 0;">
-            <div>
-                <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a;">${localCTO.name}</h1>
-                <h2 style="font-size: 14px; font-weight: 600; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase;">${projectName}</h2>
-                <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 12px; color: #475569;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-weight: 700;">Status:</span>
-                        <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 10px;">${cto.status || 'PLANNED'}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-weight: 700;">Lat/Long:</span>
-                        <span>${cto.coordinates.lat.toFixed(6)}, ${cto.coordinates.lng.toFixed(6)}</span>
+        <style>
+            #export-container-wrapper .dark\\:bg-slate-900 { background-color: #ffffff !important; }
+            #export-container-wrapper .dark\\:bg-slate-800 { background-color: #f8fafc !important; }
+            #export-container-wrapper .dark\\:bg-slate-950 { background-color: #ffffff !important; }
+            #export-container-wrapper .dark\\:border-slate-700 { border-color: #e2e8f0 !important; }
+            #export-container-wrapper .dark\\:border-slate-800 { border-color: #cbd5e1 !important; }
+            #export-container-wrapper .dark\\:text-white { color: #0f172a !important; }
+            #export-container-wrapper .dark\\:text-slate-400 { color: #64748b !important; }
+            #export-container-wrapper .dark\\:text-slate-200 { color: #1e293b !important; }
+            #export-container-wrapper .dark\\:text-slate-300 { color: #334155 !important; }
+            #export-container-wrapper .dark\\:text-slate-500 { color: #94a3b8 !important; }
+            #export-container-wrapper .dark\\:fill-slate-800 { fill: #ffffff !important; }
+            #export-container-wrapper .dark\\:fill-slate-900 { fill: #f8fafc !important; }
+            #export-container-wrapper .dark\\:stroke-slate-600 { stroke: #cbd5e1 !important; }
+            #export-container-wrapper .dark\\:stroke-slate-700 { stroke: #e2e8f0 !important; }
+        </style>
+        <div id="export-container-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff;">
+            <!-- Drawing Area (Center) -->
+            <div id="export-diagram-area" style="flex: 1; position: relative; background: #ffffff; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;">
+            </div>
+            
+            <!-- Metadata Header (Metadata Footer Area) -->
+            <div style="padding: 24px; border-top: 2px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center; height: ${headerHeight}px; box-sizing: border-box; flex-shrink: 0;">
+                <div style="box-sizing: border-box;">
+                    <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a; line-height: 1.2;">${localCTO.name}</h1>
+                    <h2 style="font-size: 14px; font-weight: 600; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase;">${projectName}</h2>
+                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 12px; color: #475569;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 700;">Status:</span>
+                            <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 10px;">${cto.status || 'PLANNED'}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 700;">Lat/Long:</span>
+                            <span>${cto.coordinates.lat.toFixed(6)}, ${cto.coordinates.lng.toFixed(6)}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div style="width: 200px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #e2e8f0;">
-                ${mapImgHtml}
+                <div style="width: 200px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #f1f5f9; box-sizing: border-box;">
+                    ${mapImgHtml}
+                </div>
             </div>
         </div>
-        <div id="export-diagram-area" style="flex: 1; position: relative; background: #0f172a; width: 100%; height: 100%; overflow: hidden;"></div>
       `;
 
         // 5. Clone Diagram Content
         const diagramClone = diagramContentRef.current.cloneNode(true) as HTMLDivElement;
 
-        const shiftX = -minX + padding;
-        const shiftY = -minY + padding;
+        const diagramAreaWidth = exportWidth;
+        const diagramAreaHeight = exportHeight - headerHeight;
+        const contentWidthOnly = maxX - minX;
+        const contentHeightOnly = maxY - minY;
+
+        // Centering calculation
+        const shiftX = (diagramAreaWidth - contentWidthOnly) / 2 - minX;
+        const shiftY = (diagramAreaHeight - contentHeightOnly) / 2 - minY;
 
         // Reset transform to just the shift, remove zoom scale
         diagramClone.style.transform = `translate(${shiftX}px, ${shiftY}px) scale(1)`;
         diagramClone.style.transformOrigin = '0 0';
 
         // Ensure clone allows contents to render fully
-        diagramClone.style.width = '100%';
-        diagramClone.style.height = '100%';
+        diagramClone.style.width = '6000px';
+        diagramClone.style.height = '6000px';
 
         const diagramArea = exportContainer.querySelector('#export-diagram-area') as HTMLDivElement;
         diagramArea.appendChild(diagramClone);
@@ -484,7 +521,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             const canvas = await html2canvas(exportContainer, {
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                scale: 2 // Higher resolution for crisp text
+                scale: 3, // Even higher resolution
+                windowWidth: exportWidth, // Stabilize layout
+                windowHeight: exportHeight,
+                logging: false
             });
             document.body.removeChild(exportContainer);
             return canvas;
