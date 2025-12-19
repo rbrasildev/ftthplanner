@@ -53,7 +53,7 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
     return (
         <div
             style={{ transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)` }}
-            className="absolute flex flex-row group z-20 cursor-default items-start"
+            className="absolute flex flex-row group z-20 cursor-default items-stretch"
         >
             {/* 1. THE LABEL BOX (Horizontal style, height tied to content) */}
             <div
@@ -84,7 +84,7 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
 
                 {/* VISUAL BODY */}
                 <div className={`
-                flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden min-w-[160px]
+                flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden min-w-[160px] h-full
                 ${isMirrored ? 'rounded-r-lg border-l-0' : 'rounded-l-lg border-r-0'}
             `}>
                     {/* Header / Grip */}
@@ -95,9 +95,9 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
                         <GripHorizontal className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                     </div>
 
-                    {/* Content Area */}
+                    {/* Content Area - Now grows to match fibers height */}
                     <div
-                        className="p-2.5 flex flex-col justify-center"
+                        className="p-2.5 flex flex-col justify-center flex-1"
                         onMouseEnter={onCableMouseEnter}
                         onMouseLeave={onCableMouseLeave}
                     >
@@ -112,7 +112,7 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
             </div>
 
             {/* 2. THE FIBERS (Positioned relative to the box) */}
-            <div className={`flex flex-col ${isMirrored ? 'order-1 items-end' : 'order-2 items-start'}`}>
+            <div className={`flex flex-col gap-2 ${isMirrored ? 'order-1 items-end' : 'order-2 items-start'}`}>
                 {tubes.map(tube => (
                     <div
                         key={`tube-${tube.tubeIdx}`}
