@@ -756,64 +756,78 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         }));
     };
 
+
+    // RAF throttling for mouse move
+    const rafIdRef = useRef<number | null>(null);
+
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!dragState) return;
 
-        if (dragState.mode === 'window' && dragState.initialWindowPos) {
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            setWindowPos({
-                x: dragState.initialWindowPos.x + dx,
-                y: dragState.initialWindowPos.y + dy
-            });
+        // Cancel previous RAF if still pending
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
         }
-        else if (dragState.mode === 'view') {
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
-            setDragState(prev => ({ ...prev!, startX: e.clientX, startY: e.clientY }));
-        }
-        else if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
-            const dx = (e.clientX - dragState.startX) / viewState.zoom;
-            const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
-            let newX = dragState.initialLayout.x + dx;
-            let newY = dragState.initialLayout.y + dy;
+        // Schedule update for next frame
+        rafIdRef.current = requestAnimationFrame(() => {
+            if (dragState.mode === 'window' && dragState.initialWindowPos) {
+                const dx = e.clientX - dragState.startX;
+                const dy = e.clientY - dragState.startY;
+                setWindowPos({
+                    x: dragState.initialWindowPos.x + dx,
+                    y: dragState.initialWindowPos.y + dy
+                });
+            }
+            else if (dragState.mode === 'view') {
+                const dx = e.clientX - dragState.startX;
+                const dy = e.clientY - dragState.startY;
+                setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
+                setDragState(prev => ({ ...prev!, startX: e.clientX, startY: e.clientY }));
+            }
+            else if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+                const dx = (e.clientX - dragState.startX) / viewState.zoom;
+                const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
-            if (isSnapping) {
-                // Standard Grid Snapping (6px)
-                newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-                newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+                let newX = dragState.initialLayout.x + dx;
+                let newY = dragState.initialLayout.y + dy;
+
+                if (isSnapping) {
+                    // Standard Grid Snapping (6px)
+                    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+                    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+                }
+
+                setLocalCTO(prev => ({
+                    ...prev,
+                    layout: {
+                        ...prev.layout,
+                        [dragState.targetId!]: {
+                            ...dragState.initialLayout!,
+                            x: newX,
+                            y: newY
+                        }
+                    }
+                }));
+            }
+            else if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
+                const { x, y } = screenToCanvas(e.clientX, e.clientY);
+                setDragState(prev => ({ ...prev!, currentMouseX: x, currentMouseY: y }));
+            }
+            else if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
+                const { x, y } = screenToCanvas(e.clientX, e.clientY);
+                setLocalCTO(prev => ({
+                    ...prev,
+                    connections: prev.connections.map(c => {
+                        if (c.id !== dragState.connectionId) return c;
+                        const newPoints = [...(c.points || [])];
+                        newPoints[dragState.pointIndex!] = { x, y };
+                        return { ...c, points: newPoints };
+                    })
+                }));
             }
 
-            setLocalCTO(prev => ({
-                ...prev,
-                layout: {
-                    ...prev.layout,
-                    [dragState.targetId!]: {
-                        ...dragState.initialLayout!,
-                        x: newX,
-                        y: newY
-                    }
-                }
-            }));
-        }
-        else if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
-            const { x, y } = screenToCanvas(e.clientX, e.clientY);
-            setDragState(prev => ({ ...prev!, currentMouseX: x, currentMouseY: y }));
-        }
-        else if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
-            const { x, y } = screenToCanvas(e.clientX, e.clientY);
-            setLocalCTO(prev => ({
-                ...prev,
-                connections: prev.connections.map(c => {
-                    if (c.id !== dragState.connectionId) return c;
-                    const newPoints = [...(c.points || [])];
-                    newPoints[dragState.pointIndex!] = { x, y };
-                    return { ...c, points: newPoints };
-                })
-            }));
-        }
+            rafIdRef.current = null;
+        });
     };
 
     const handleMouseUp = (e: React.MouseEvent) => {
