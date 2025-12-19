@@ -9,9 +9,9 @@ import { Layers } from 'lucide-react';
 // Fix for default Leaflet icon issues in Webpack/Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconRetinaUrl: '/leaflet/images/marker-icon-2x.png',
+  iconUrl: '/leaflet/images/marker-icon.png',
+  shadowUrl: '/leaflet/images/marker-shadow.png',
 });
 
 // --- ICONS HELPERS WITH CACHING ---
@@ -316,6 +316,13 @@ const CablePolyline = React.memo(({
     }
   }, [cable.coordinates, cable.id, ctos, pops, snapDistance, onConnect, onUpdateGeometry]);
 
+  const pathOptions = useMemo(() => ({
+    color,
+    weight: isActive ? 6 : 4,
+    opacity: isLit ? 1 : 0.8,
+    dashArray
+  }), [color, isActive, isLit, dashArray]);
+
   return (
     <>
       {isLit && (
@@ -336,12 +343,7 @@ const CablePolyline = React.memo(({
 
       <Polyline
         positions={positions}
-        pathOptions={{
-          color,
-          weight: isActive ? 6 : 4,
-          opacity: isLit ? 1 : 0.8,
-          dashArray
-        }}
+        pathOptions={pathOptions}
         eventHandlers={{ click: (e) => onClick(e, cable) }}
       />
 
@@ -463,6 +465,17 @@ export const MapView: React.FC<MapViewProps> = ({
   const [activeCableId, setActiveCableId] = useState<string | null>(null);
   const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
 
+  // Visibility States
+  const [showCables, setShowCables] = useState(true);
+  const [showCTOs, setShowCTOs] = useState(true);
+  const [showPOPs, setShowPOPs] = useState(true);
+  const [isLayersOpen, setIsLayersOpen] = useState(false);
+
+  // Filter visible elements using useMemo for performance
+  const visibleCables = useMemo(() => showCables ? cables : [], [showCables, cables]);
+  const visibleCTOs = useMemo(() => showCTOs ? ctos : [], [showCTOs, ctos]);
+  const visiblePOPs = useMemo(() => showPOPs ? pops : [], [showPOPs, pops]);
+
   useEffect(() => {
     if (mode !== 'connect_cable') setActiveCableId(null);
   }, [mode]);
@@ -494,14 +507,50 @@ export const MapView: React.FC<MapViewProps> = ({
 
   return (
     <div className="relative h-full w-full">
-      <div className="absolute top-4 right-4 z-[1000]">
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
+        {/* Map Type Button (Original) */}
         <button
           onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-          className="bg-slate-800 border-2 border-slate-600 rounded-lg p-2 shadow-xl hover:bg-slate-700 transition flex items-center gap-2 text-white text-xs font-bold"
+          className="bg-white border-2 border-slate-300 rounded-lg p-2 shadow-xl hover:bg-slate-50 transition flex items-center gap-2 text-slate-700 text-xs font-bold"
         >
-          <Layers className="w-4 h-4" />
           {mapType === 'street' ? t('map_satellite') : t('map_street')}
         </button>
+
+        {/* Static Visibility Panel */}
+        <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 flex flex-col gap-1 min-w-[140px]">
+          {/* CTOs Toggle */}
+          <button
+            onClick={() => setShowCTOs(!showCTOs)}
+            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+          >
+            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showCTOs ? 'bg-blue-500 border-blue-600 text-white' : 'bg-white border-slate-300'}`}>
+              {showCTOs && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+            </div>
+            <span>{t('layer_ctos')}</span>
+          </button>
+
+          {/* POPs Toggle */}
+          <button
+            onClick={() => setShowPOPs(!showPOPs)}
+            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+          >
+            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showPOPs ? 'bg-indigo-500 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
+              {showPOPs && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+            </div>
+            <span>{t('layer_pops')}</span>
+          </button>
+
+          {/* Cables Toggle */}
+          <button
+            onClick={() => setShowCables(!showCables)}
+            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+          >
+            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showCables ? 'bg-slate-800 border-slate-900 text-white' : 'bg-white border-slate-300'}`}>
+              {showCables && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+            </div>
+            <span>{t('layer_cables')}</span>
+          </button>
+        </div>
       </div>
 
       <MapContainer
@@ -534,7 +583,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
         <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />
 
-        {cables.map(cable => (
+        {visibleCables.map(cable => (
           <CablePolyline
             key={cable.id}
             cable={cable}
@@ -556,7 +605,7 @@ export const MapView: React.FC<MapViewProps> = ({
           <Marker position={[cableStartPoint.lat, cableStartPoint.lng]} icon={startPointIcon} />
         )}
 
-        {ctos.map(cto => (
+        {visibleCTOs.map(cto => (
           <CTOMarker
             key={cto.id}
             cto={cto}
@@ -571,7 +620,7 @@ export const MapView: React.FC<MapViewProps> = ({
           />
         ))}
 
-        {pops.map(pop => (
+        {visiblePOPs.map(pop => (
           <POPMarker
             key={pop.id}
             pop={pop}

@@ -250,6 +250,7 @@ export default function App() {
     const [projects, setProjects] = useState<Project[]>([]);
     // Current Active Project (Full Data)
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
+    const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
     // Global System Settings
     const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
@@ -303,7 +304,11 @@ export default function App() {
     // Load Projects on Auth
     useEffect(() => {
         if (token && user) {
-            projectService.getProjects().then(setProjects).catch(console.error);
+            setIsLoadingProjects(true);
+            projectService.getProjects()
+                .then(setProjects)
+                .catch(console.error)
+                .finally(() => setIsLoadingProjects(false));
         }
     }, [token, user]);
 
@@ -983,7 +988,7 @@ export default function App() {
         return <LoginPage onLogin={handleLogin} onRegisterClick={() => setAuthView('register')} />;
     }
 
-    if (!currentProjectId) return <DashboardPage username={user} projects={projects} onOpenProject={setCurrentProjectId}
+    if (!currentProjectId) return <DashboardPage username={user} projects={projects} isLoading={isLoadingProjects} onOpenProject={setCurrentProjectId}
         onCreateProject={async (name, center) => {
             if (!token) return;
             try {

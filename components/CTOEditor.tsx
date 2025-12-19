@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, FIBER_COLORS, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
@@ -132,29 +132,61 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             if (px < minX) minX = px; if (py < minY) minY = py;
             if (px > maxX) maxX = px; if (py > maxY) maxY = py;
         };
-        const ELEMENT_WIDTH = 200;
-        const ELEMENT_HEIGHT = 100;
+
         if (data.layout) {
-            Object.values(data.layout).forEach((l: any) => {
+            // 1. Check Cabes (168px wide, height based on fibers)
+            incomingCables.forEach(cable => {
+                const l = data.layout![cable.id];
+                if (!l) return;
+                const looseTubeCount = cable.looseTubeCount || 1;
+                const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
+                // Total height = Header (24px) + Tubes (fibers * 24px) + Gaps ((tubes-1) * 12px)
+                const totalHeight = 24 + (cable.fiberCount * 24) + ((looseTubeCount - 1) * 12);
                 checkPoint(l.x, l.y);
-                checkPoint(l.x + ELEMENT_WIDTH, l.y + ELEMENT_HEIGHT);
+                checkPoint(l.x + 168 + 24, l.y + totalHeight); // +24 for fiber terminal area
+            });
+
+            // 2. Check Splitters (Width = portCount * 24, Height = 72)
+            data.splitters.forEach(split => {
+                const l = data.layout![split.id];
+                if (!l) return;
+                const width = split.outputPortIds.length * 24;
+                checkPoint(l.x, l.y);
+                checkPoint(l.x + width, l.y + 72);
+            });
+
+            // 3. Check Fusions (48x24)
+            data.fusions.forEach(fusion => {
+                const l = data.layout![fusion.id];
+                if (!l) return;
+                checkPoint(l.x, l.y);
+                checkPoint(l.x + 48, l.y + 24);
+            });
+
+            // 4. Check Connections
+            data.connections.forEach(c => {
+                c.points?.forEach(p => checkPoint(p.x, p.y));
             });
         }
-        data.connections.forEach(c => {
-            c.points?.forEach(p => checkPoint(p.x, p.y));
-        });
 
-        if (minX === Infinity) return { x: 0, y: 0, zoom: 1 };
+        if (minX === Infinity) return { x: 40, y: 40, zoom: 1 };
 
-        const contentW = maxX - minX;
-        const contentH = maxY - minY;
+        const PADDING = 60;
+        const contentW = maxX - minX + (PADDING * 2);
+        const contentH = maxY - minY + (PADDING * 2);
+
         const viewportW = 1100;
-        const viewportH = 750 - 56;
+        const viewportH = 750 - 56; // Minus header height
+
+        // Calculate best zoom to fit content, but max 1
+        const zoomW = viewportW / contentW;
+        const zoomH = viewportH / contentH;
+        const targetZoom = Math.min(zoomW, zoomH, 1);
 
         return {
-            x: (viewportW / 2) - ((minX + contentW / 2) * 1),
-            y: (viewportH / 2) - ((minY + contentH / 2) * 1),
-            zoom: 1
+            x: (viewportW / 2) - ((minX + (maxX - minX) / 2) * targetZoom),
+            y: (viewportH / 2) - ((minY + (maxY - minY) / 2) * targetZoom),
+            zoom: targetZoom
         };
     };
 
@@ -186,7 +218,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const [exportingType, setExportingType] = useState<'png' | 'pdf' | null>(null);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
-    const GRID_SIZE = 6;
+    const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
+    const GRID_SIZE = 12;
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -244,19 +277,83 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         };
     };
 
+    const portCenterCache = useRef<Record<string, { x: number, y: number }>>({});
+    const containerRectCache = useRef<DOMRect | null>(null);
+
     const getPortCenter = (portId: string): { x: number, y: number } | null => {
+        if (portCenterCache.current[portId]) return portCenterCache.current[portId];
+
         const el = document.getElementById(portId);
         if (el && containerRef.current) {
+            if (!containerRectCache.current) {
+                containerRectCache.current = containerRef.current.getBoundingClientRect();
+            }
             const rect = el.getBoundingClientRect();
-            const containerRect = containerRef.current.getBoundingClientRect();
+            const containerRect = containerRectCache.current;
             const relX = rect.left + rect.width / 2 - containerRect.left;
             const relY = rect.top + rect.height / 2 - containerRect.top;
-            return {
+            const result = {
                 x: (relX - viewState.x) / viewState.zoom,
                 y: (relY - viewState.y) / viewState.zoom
             };
+            portCenterCache.current[portId] = result;
+            return result;
         }
         return null;
+    };
+
+    const handleSmartAlignConnection = (connId: string) => {
+        setLocalCTO(prev => ({
+            ...prev,
+            connections: prev.connections.map(c => {
+                if (c.id !== connId) return c;
+                const p1 = getPortCenter(c.sourceId);
+                const p2 = getPortCenter(c.targetId);
+                if (!p1 || !p2) return c;
+
+                const currentPoints = c.points || [];
+                const cornerA = { x: p2.x, y: p1.y }; // Horizontal then Vertical
+                const cornerB = { x: p1.x, y: p2.y }; // Vertical then Horizontal
+
+                // Snap points to grid for consistency
+                cornerA.x = Math.round(cornerA.x / GRID_SIZE) * GRID_SIZE;
+                cornerA.y = Math.round(cornerA.y / GRID_SIZE) * GRID_SIZE;
+                cornerB.x = Math.round(cornerB.x / GRID_SIZE) * GRID_SIZE;
+                cornerB.y = Math.round(cornerB.y / GRID_SIZE) * GRID_SIZE;
+
+                const isAtA = currentPoints.length === 1 && Math.abs(currentPoints[0].x - cornerA.x) < 2 && Math.abs(currentPoints[0].y - cornerA.y) < 2;
+                const isAtB = currentPoints.length === 1 && Math.abs(currentPoints[0].x - cornerB.x) < 2 && Math.abs(currentPoints[0].y - cornerB.y) < 2;
+
+                if (currentPoints.length === 0) {
+                    return { ...c, points: [cornerA] };
+                } else if (isAtA) {
+                    return { ...c, points: [cornerB] };
+                } else {
+                    return { ...c, points: [] };
+                }
+            })
+        }));
+    };
+
+    const handleSmartAlignCable = (cableId: string) => {
+        setLocalCTO(prev => ({
+            ...prev,
+            connections: prev.connections.map(c => {
+                if (!c.sourceId.startsWith(cableId) && !c.targetId.startsWith(cableId)) return c;
+                const p1 = getPortCenter(c.sourceId);
+                const p2 = getPortCenter(c.targetId);
+                if (!p1 || !p2) return c;
+
+                // For batch align, we use a simple heuristic:
+                // if source is left/right of target, go horizontal first.
+                // if source is above/below target, go vertical first.
+                const dx = Math.abs(p2.x - p1.x);
+                const dy = Math.abs(p2.y - p1.y);
+
+                const point = dx > dy ? { x: p2.x, y: p1.y } : { x: p1.x, y: p2.y };
+                return { ...c, points: [point] };
+            })
+        }));
     };
 
     const getPortColor = (portId: string): string | null => {
@@ -286,35 +383,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
     // --- View Centering ---
     const handleCenterView = () => {
-        if (!containerRef.current) return;
-        let minX = Infinity, minY = Infinity, maxY = -Infinity, maxX = -Infinity;
-        const checkPoint = (x: number, y: number) => {
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
-        };
-        const ELEMENT_WIDTH = 200;
-        const ELEMENT_HEIGHT = 100;
-        if (localCTO.layout) {
-            Object.values(localCTO.layout).forEach((l: any) => {
-                checkPoint(l.x, l.y);
-                checkPoint(l.x + ELEMENT_WIDTH, l.y + ELEMENT_HEIGHT);
-            });
-        }
-        localCTO.connections.forEach(c => {
-            c.points?.forEach(p => checkPoint(p.x, p.y));
-        });
-        if (minX === Infinity) return;
-        const contentWidth = maxX - minX;
-        const contentHeight = maxY - minY;
-        const rect = containerRef.current.getBoundingClientRect();
-        const viewportWidth = rect.width || 1100;
-        const viewportHeight = (rect.height || 750) - 56;
-        const currentZoom = viewState.zoom;
-        const targetX = (viewportWidth / 2) - ((minX + contentWidth / 2) * currentZoom);
-        const targetY = (viewportHeight / 2) - ((minY + contentHeight / 2) * currentZoom);
-        setViewState(prev => ({ ...prev, x: targetX, y: targetY }));
+        setViewState(getInitialViewState(localCTO));
     };
 
     const handleSaveAndClose = () => {
@@ -713,6 +782,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
     const handleConnectionClick = (e: React.MouseEvent, connId: string) => {
         e.stopPropagation();
+        if (isSmartAlignMode) {
+            handleSmartAlignConnection(connId);
+            return;
+        }
+        const conn = localCTO.connections.find(c => c.id === connId);
         if (isVflToolActive || isOtdrToolActive) return;
         const { x, y } = screenToCanvas(e.clientX, e.clientY);
         const clickPt = { x, y };
@@ -763,12 +837,34 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!dragState) return;
 
-        // Cancel previous RAF if still pending
+        // Immediate updates for visual-only drag states (drawing connections)
+        if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
+            let { x, y } = screenToCanvas(e.clientX, e.clientY);
+
+            // OPTIONAL: Snap to straight lines (Orthogonal) when holding Ctrl
+            if (e.ctrlKey) {
+                const originId = dragState.mode === 'connection' ? dragState.portId : dragState.fixedPortId;
+                const originPt = originId ? getPortCenter(originId) : null;
+                if (originPt) {
+                    const dx = Math.abs(x - originPt.x);
+                    const dy = Math.abs(y - originPt.y);
+                    if (dx > dy) {
+                        y = originPt.y; // Snap to horizontal
+                    } else {
+                        x = originPt.x; // Snap to vertical
+                    }
+                }
+            }
+
+            setDragState(prev => prev ? ({ ...prev, currentMouseX: x, currentMouseY: y }) : null);
+            return;
+        }
+
+        // Throttled updates for structural changes (moving elements/view)
         if (rafIdRef.current !== null) {
             cancelAnimationFrame(rafIdRef.current);
         }
 
-        // Schedule update for next frame
         rafIdRef.current = requestAnimationFrame(() => {
             if (dragState.mode === 'window' && dragState.initialWindowPos) {
                 const dx = e.clientX - dragState.startX;
@@ -782,7 +878,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 const dx = e.clientX - dragState.startX;
                 const dy = e.clientY - dragState.startY;
                 setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
-                setDragState(prev => ({ ...prev!, startX: e.clientX, startY: e.clientY }));
+                setDragState(prev => prev ? ({ ...prev, startX: e.clientX, startY: e.clientY }) : null);
             }
             else if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
                 const dx = (e.clientX - dragState.startX) / viewState.zoom;
@@ -792,7 +888,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 let newY = dragState.initialLayout.y + dy;
 
                 if (isSnapping) {
-                    // Standard Grid Snapping (6px)
                     newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
                     newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
                 }
@@ -808,10 +903,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                         }
                     }
                 }));
-            }
-            else if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
-                const { x, y } = screenToCanvas(e.clientX, e.clientY);
-                setDragState(prev => ({ ...prev!, currentMouseX: x, currentMouseY: y }));
             }
             else if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
                 const { x, y } = screenToCanvas(e.clientX, e.clientY);
@@ -1024,8 +1115,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             inputPortId: `${id}-in`,
             outputPortIds: Array.from({ length: count }).map((_, i) => `${id}-out-${i}`)
         };
-
-        const { x, y } = screenToCanvas(e.clientX, e.clientY);
+        const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
+        const x = Math.round(rx / GRID_SIZE) * GRID_SIZE;
+        const y = Math.round(ry / GRID_SIZE) * GRID_SIZE;
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => ({
@@ -1063,7 +1155,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             name: `F-${localCTO.fusions.length + 1}`
         };
 
-        const { x, y } = screenToCanvas(e.clientX, e.clientY);
+        const { x: frx, y: fry } = screenToCanvas(e.clientX, e.clientY);
+        const x = Math.round(frx / GRID_SIZE) * GRID_SIZE;
+        const y = Math.round(fry / GRID_SIZE) * GRID_SIZE;
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => ({
@@ -1108,81 +1202,127 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         setIsOtdrToolActive(false);
     };
 
+    // Clear cache only on viewState change or localCTO change that might affect layout
+    useLayoutEffect(() => {
+        portCenterCache.current = {};
+        containerRectCache.current = null;
+    }, [viewState, localCTO.layout, localCTO.splitters, localCTO.fusions]);
+
     return (
         <div
             className="fixed z-[2000]"
             style={{ left: windowPos.x, top: windowPos.y }}
         >
             <div
-                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden backdrop-blur-sm ${isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : ''}`}
+                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden backdrop-blur-sm ${isVflToolActive || isOtdrToolActive || isSmartAlignMode ? 'cursor-crosshair' : ''}`}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
             >
 
                 {/* Toolbar / Draggable Header */}
                 <div
-                    className="h-14 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50 cursor-move"
+                    className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex flex-col shrink-0 z-50 cursor-move"
                     onMouseDown={handleWindowDragStart}
                 >
-                    <div className="flex items-center gap-4 pointer-events-none min-w-0 flex-1">
-                        <h2 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
-                            <Move className="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
-                            <span className="truncate">{t('splicing_title', { name: cto.name })}</span>
-                        </h2>
-                        <div className="w-[1px] h-6 bg-slate-300 dark:bg-slate-600"></div>
-                        <div className="flex gap-2 pointer-events-auto">
+                    {/* Line 1: Title and Main Actions */}
+                    <div className="h-14 flex items-center justify-between px-6">
+                        <div className="flex items-center gap-4 pointer-events-none min-w-0 flex-1">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
+                                <Box className="w-5 h-5 text-sky-500 dark:text-sky-400 shrink-0" />
+                                <span className="truncate">{t('splicing_title', { name: cto.name })}</span>
+                            </h2>
+                        </div>
+                        <div className="flex gap-2 pointer-events-auto items-center">
+                            <button onClick={handleCloseRequest} title={t('cancel')} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Line 2: All Tools and Exports */}
+                    <div className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
+                        <div className="flex gap-1.5 pointer-events-auto items-center">
+                            {/* Construction */}
                             <div className="relative" ref={splitterDropdownRef}>
                                 <button
                                     onClick={() => setShowSplitterDropdown(!showSplitterDropdown)}
-                                    className={`px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition ${showSplitterDropdown ? 'ring-2 ring-sky-500' : ''}`}
+                                    className={`px-2.5 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition ${showSplitterDropdown ? 'ring-2 ring-sky-500' : ''}`}
+                                    title={t('splitters')}
                                 >
-                                    <Plus className="w-3 h-3" /> {t('splitters')} <ChevronDown className={`w-3 h-3 transition-transform ${showSplitterDropdown ? 'rotate-180' : ''}`} />
+                                    <Plus className="w-3.5 h-3.5" /> {t('splitters')} <ChevronDown className={`w-3 h-3 transition-transform ${showSplitterDropdown ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {showSplitterDropdown && (
                                     <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200">
-                                        <button
-                                            onClick={(e) => { handleAddSplitter(e, '1:2'); setShowSplitterDropdown(false); }}
-                                            className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                                        >
-                                            SPL 1:2
-                                        </button>
-                                        <button
-                                            onClick={(e) => { handleAddSplitter(e, '1:8'); setShowSplitterDropdown(false); }}
-                                            className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                                        >
-                                            SPL 1:8
-                                        </button>
-                                        <button
-                                            onClick={(e) => { handleAddSplitter(e, '1:16'); setShowSplitterDropdown(false); }}
-                                            className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                                        >
-                                            SPL 1:16
-                                        </button>
+                                        <button onClick={(e) => { handleAddSplitter(e, '1:2'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:2</button>
+                                        <button onClick={(e) => { handleAddSplitter(e, '1:8'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:8</button>
+                                        <button onClick={(e) => { handleAddSplitter(e, '1:16'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:16</button>
                                     </div>
                                 )}
                             </div>
 
-                            <button onClick={handleAddFusion} className="px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition">
-                                <Link className="w-3 h-3" /> {t('add_fusion')}
+                            <button onClick={handleAddFusion} title={t('add_fusion')} className="p-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition">
+                                <Link className="w-4 h-4" />
                             </button>
+
+                            <button onClick={() => setIsAutoSpliceOpen(true)} title={t('auto_splice')} className="p-1.5 bg-sky-600 hover:bg-sky-500 rounded text-white flex items-center gap-2 border border-sky-700 transition shadow-sm">
+                                <ArrowRightLeft className="w-4 h-4" />
+                            </button>
+
                             <div className="w-[1px] h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                            <button onClick={() => setIsAutoSpliceOpen(true)} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded text-xs font-bold text-white flex items-center gap-2 border border-sky-700 transition">
-                                <ArrowRightLeft className="w-3 h-3" /> {t('auto_splice')}
+
+                            {/* Testing Tools */}
+                            <button
+                                onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
+                                className={`p-1.5 rounded border transition ${isVflToolActive ? 'bg-red-600 border-red-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                title={t('tool_vfl')}
+                            >
+                                <Flashlight className={`w-4 h-4 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
+                            </button>
+
+                            <button
+                                onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); }}
+                                className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                title="OTDR Trace"
+                            >
+                                <Ruler className="w-4 h-4" />
+                            </button>
+
+                            <button
+                                onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); }}
+                                className={`p-1.5 rounded border transition ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                title={t('smart_align')}
+                            >
+                                <Zap className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
+                            </button>
+
+                            <button
+                                onClick={() => setIsSnapping(!isSnapping)}
+                                className={`p-1.5 rounded border transition ${isSnapping ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                title="Snap to Grid"
+                            >
+                                <Magnet className="w-4 h-4" />
+                            </button>
+
+                            <button
+                                onClick={() => setLocalCTO(prev => ({ ...prev, connections: [] }))}
+                                className="p-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-red-500 rounded hover:bg-red-50 transition"
+                                title={t('reset_connections')}
+                            >
+                                <Scissors className="w-4 h-4" />
                             </button>
                         </div>
-                    </div>
-                    <div className="flex gap-2 pointer-events-auto">
-                        <button onClick={handleExportPNG} disabled={!!exportingType} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-2 text-sm border border-slate-300 dark:border-slate-600 transition">
-                            {exportingType === 'png' ? <span className="animate-spin w-4 h-4 border-2 border-slate-400 dark:border-white/50 border-t-slate-800 dark:border-t-white rounded-full"></span> : <ImageIcon className="w-4 h-4" />}
-                            PNG
-                        </button>
-                        <button onClick={handleExportPDF} disabled={!!exportingType} className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-2 text-sm border border-slate-300 dark:border-slate-600 transition">
-                            {exportingType === 'pdf' ? <span className="animate-spin w-4 h-4 border-2 border-slate-400 dark:border-white/50 border-t-slate-800 dark:border-t-white rounded-full"></span> : <FileDown className="w-4 h-4" />}
-                            PDF
-                        </button>
-                        <button onClick={() => onSave(localCTO)} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded flex items-center gap-2 text-sm transition"><Save className="w-4 h-4" /> {t('save')}</button>
-                        <button onClick={handleCloseRequest} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"><X className="w-5 h-5" /></button>
+
+                        <div className="flex gap-2 pointer-events-auto items-center">
+                            <button onClick={handleExportPNG} disabled={!!exportingType} className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-1.5 text-[11px] border border-slate-300 dark:border-slate-600 transition">
+                                {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <ImageIcon className="w-3.5 h-3.5" />}
+                                PNG
+                            </button>
+                            <button onClick={handleExportPDF} disabled={!!exportingType} className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-1.5 text-[11px] border border-slate-300 dark:border-slate-600 transition">
+                                {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <FileDown className="w-3.5 h-3.5" />}
+                                PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1221,51 +1361,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                     {/* Bottom Right Floating Controls */}
                     <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto">
-                        {/* Tools Panel */}
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
-                            <button
-                                onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className={`p-2 rounded transition ${isVflToolActive ? 'bg-red-100 dark:bg-red-900/50 border-red-500 text-red-600 dark:text-red-400 animate-pulse' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
-                                title={t('tool_vfl')}
-                            >
-                                <Flashlight className={`w-5 h-5 ${isVflToolActive ? 'fill-red-500' : ''}`} />
-                            </button>
-
-                            <button
-                                onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); }}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className={`p-2 rounded transition ${isOtdrToolActive ? 'bg-indigo-100 dark:bg-indigo-900/50 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
-                                title="OTDR Trace"
-                            >
-                                <Ruler className="w-5 h-5" />
-                            </button>
-
-                            <button
-                                onClick={() => setIsSnapping(!isSnapping)}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className={`p-2 rounded transition ${isSnapping ? 'text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 ring-1 ring-sky-500' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}`}
-                                title="Toggle Snap to Grid (Magnet)"
-                            >
-                                <Magnet className="w-5 h-5" />
-                            </button>
-
-                            <button
-                                onClick={() => setLocalCTO(prev => ({ ...prev, connections: [] }))}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition"
-                                title={t('reset_connections')}
-                            >
-                                <Scissors className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Zoom Panel */}
+                        {/* Navigation Panel (Zoom & Center) */}
                         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
                             <button
                                 onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('zoom_in')}
                             >
                                 <ZoomIn className="w-5 h-5" />
                             </button>
@@ -1282,9 +1384,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                 onClick={handleCenterView}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
-                                title="Center View"
+                                title={t('center_view') || "Center View"}
                             >
-                                <Move className="w-5 h-5" />
+                                <Maximize className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
@@ -1405,6 +1507,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     onPortMouseLeave={() => setHoveredPortId(null)}
                                     onCableMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
                                     onCableMouseLeave={() => onHoverCable && onHoverCable(null)}
+                                    onCableClick={(e) => {
+                                        if (isSmartAlignMode) {
+                                            e.stopPropagation();
+                                            handleSmartAlignCable(cable.id);
+                                        }
+                                    }}
                                 />
                             );
                         })}
@@ -1449,6 +1557,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                             );
                         })}
 
+                    </div>
+                </div>
+
+                {/* Footer: Help text and Save Button */}
+                <div className="h-16 bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 italic text-[13px]">
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                        <span>{t('general_help')}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleCloseRequest}
+                            className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-sm transition"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            onClick={() => onSave(localCTO)}
+                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
+                        >
+                            <Save className="w-4 h-4" /> {t('save')}
+                        </button>
                     </div>
                 </div>
 

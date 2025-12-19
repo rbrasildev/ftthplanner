@@ -16,9 +16,10 @@ interface FiberCableNodeProps {
     onPortMouseLeave: () => void;
     onCableMouseEnter?: () => void;
     onCableMouseLeave?: () => void;
+    onCableClick?: (e: React.MouseEvent) => void;
 }
 
-export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
+const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     cable,
     layout,
     connections,
@@ -31,7 +32,8 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
     onPortMouseEnter,
     onPortMouseLeave,
     onCableMouseEnter,
-    onCableMouseLeave
+    onCableMouseLeave,
+    onCableClick
 }) => {
     const looseTubeCount = cable.looseTubeCount || 1;
     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
@@ -84,12 +86,12 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
 
                 {/* VISUAL BODY */}
                 <div className={`
-                flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden min-w-[160px] h-full
+                flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden w-[168px] h-full
                 ${isMirrored ? 'rounded-r-lg border-l-0' : 'rounded-l-lg border-r-0'}
             `}>
-                    {/* Header / Grip */}
+                    {/* Header / Grip - Exact 24px height */}
                     <div
-                        className="h-5 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-grab active:cursor-grabbing shrink-0 z-20 relative"
+                        className="h-6 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-grab active:cursor-grabbing shrink-0 z-20 relative"
                         onMouseDown={onDragStart}
                     >
                         <GripHorizontal className="w-3 h-3 text-slate-400 dark:text-slate-500" />
@@ -100,6 +102,7 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
                         className="p-2.5 flex flex-col justify-center flex-1"
                         onMouseEnter={onCableMouseEnter}
                         onMouseLeave={onCableMouseLeave}
+                        onClick={onCableClick}
                     >
                         <span className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight line-clamp-2 uppercase select-none">
                             {cable.name}
@@ -112,12 +115,12 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
             </div>
 
             {/* 2. THE FIBERS (Positioned relative to the box) */}
-            <div className={`flex flex-col gap-2 ${isMirrored ? 'order-1 items-end' : 'order-2 items-start'}`}>
+            <div className={`flex flex-col ${isMirrored ? 'order-1 items-end' : 'order-2 items-start'} gap-3`}>
                 {tubes.map(tube => (
                     <div
                         key={`tube-${tube.tubeIdx}`}
                         className={`
-                        relative flex flex-col justify-center py-0.5
+                        relative flex flex-col justify-center
                         ${isMirrored ? 'border-r-2 pr-1' : 'border-l-2 pl-1'}
                     `}
                         style={{ borderColor: FIBER_COLORS[tube.tubeIdx % FIBER_COLORS.length] }}
@@ -132,12 +135,12 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
                             return (
                                 <div
                                     key={fiberId}
-                                    className={`relative h-3 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
+                                    className={`relative h-6 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
                                 >
                                     {/* Connecting line */}
                                     <div className={`w-full h-[1px] transition-all ${isMirrored ? 'ml-2' : 'mr-2'} ${isLit ? 'bg-red-500 shadow-[0_0_5px_#ef4444]' : 'bg-slate-400 dark:bg-slate-500 opacity-40'}`}></div>
 
-                                    {/* Port Circle */}
+                                    {/* Port Circle - Center at 12px height and aligned with grid */}
                                     <div
                                         id={fiberId}
                                         onMouseDown={(e) => onPortMouseDown(e, fiberId)}
@@ -146,7 +149,7 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
                                         className={`
                                         w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 cursor-pointer select-none
                                         hover:scale-125 transition-transform z-30
-                                        absolute ${isMirrored ? '-left-2' : '-right-2'} shadow-sm ${textColor} text-[7px] font-bold text-center
+                                        absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold text-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
                                         ${isLit ? 'ring-2 ring-red-500 shadow-[0_0_10px_#ef4444] border-red-500' : ''}
                                     `}
@@ -166,3 +169,5 @@ export const FiberCableNode: React.FC<FiberCableNodeProps> = ({
         </div>
     );
 };
+
+export const FiberCableNode = React.memo(FiberCableNodeComponent);

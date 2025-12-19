@@ -20,3 +20,11 @@ root.render(
     </ThemeProvider>
   </React.StrictMode>
 );
+// Register Service Worker for Map Caching
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/map-sw.js')
+      .then(registration => console.log('Map SW registered'))
+      .catch(err => console.log('Map SW registration failed: ', err));
+  });
+}

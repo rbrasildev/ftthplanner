@@ -203,6 +203,7 @@ const translations = {
     'target_cable': 'Target Cable',
     'perform_splice': 'Fuse All Fibers',
     'splice_success': 'Successfully fused {count} fibers.',
+    'smart_align': 'Smart Align',
 
     // DIO Editor Strings
     'link_cables': 'Link Cables',
@@ -227,7 +228,11 @@ const translations = {
 
     // Map Layers
     'map_street': 'Street',
-    'map_satellite': 'Satellite'
+    'map_satellite': 'Satellite',
+    'map_layers': 'Layers',
+    'layer_cables': 'Cables',
+    'layer_ctos': 'CTOs',
+    'layer_pops': 'POPs'
   },
   pt: {
     // Theme
@@ -422,6 +427,7 @@ const translations = {
     'target_cable': 'Cabo Destino',
     'perform_splice': 'Fusionar Tudo',
     'splice_success': 'Fusionadas {count} fibras com sucesso.',
+    'smart_align': 'Alinhamento Inteligente',
 
     // DIO Editor Strings
     'link_cables': 'Vincular Cabos',
@@ -446,7 +452,11 @@ const translations = {
 
     // Map Layers
     'map_street': 'Mapa Rua',
-    'map_satellite': 'Satélite'
+    'map_satellite': 'Satélite',
+    'map_layers': 'Camadas',
+    'layer_cables': 'Cabos',
+    'layer_ctos': 'CTOs',
+    'layer_pops': 'POPs'
   }
 };
 

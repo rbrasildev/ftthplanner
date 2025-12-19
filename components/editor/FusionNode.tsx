@@ -17,7 +17,7 @@ interface FusionNodeProps {
     onPortMouseLeave: () => void;
 }
 
-export const FusionNode: React.FC<FusionNodeProps> = ({
+const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     fusion,
     layout,
     connections,
@@ -43,15 +43,15 @@ export const FusionNode: React.FC<FusionNodeProps> = ({
         <div
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
-                height: '32px', // Larger hit area to keep controls clickable
-                width: '32px'
+                height: '24px', // Aligned to 2x12
+                width: '48px'   // Aligned to 4x12
             }}
             className="absolute z-20 flex flex-col items-center justify-center group select-none hover:z-50"
         >
-            {/* Header Wrapper / Controls - Moved closer to body to maintain hover */}
+            {/* Header Wrapper / Controls */}
             <div
                 className="
-                    absolute bottom-[24px]
+                    absolute bottom-[20px]
                     w-[80px] flex justify-center
                     pb-1
                     invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150
@@ -90,9 +90,9 @@ export const FusionNode: React.FC<FusionNodeProps> = ({
                 </div>
             </div>
 
-            {/* Body - Slightly Smaller for tighter stacking */}
+            {/* Body */}
             <div
-                className="relative w-full h-3 flex items-center justify-center cursor-grab active:cursor-grabbing mt-2"
+                className="relative w-full h-3 flex items-center justify-center cursor-grab active:cursor-grabbing"
                 onMouseDown={onDragStart}
             >
                 {/* Center Body */}
@@ -101,38 +101,40 @@ export const FusionNode: React.FC<FusionNodeProps> = ({
                     ${isLitA || isLitB ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-400 dark:bg-slate-500'}
                 `} />
 
-                {/* Left Port */}
+                {/* Left Port - Center at 12px */}
                 <div
                     id={portA}
                     onMouseDown={(e) => onPortMouseDown(e, portA)}
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-slate-900 dark:bg-black border border-slate-800 dark:border-slate-700
-                        cursor-pointer select-none transition-all z-30 absolute left-2
+                        w-3 h-3 rounded-full bg-slate-900 dark:bg-black border border-slate-200 dark:border-slate-700
+                        cursor-pointer select-none transition-all z-30 absolute left-[6px]
                         ${hoveredPortId === portA ? 'ring-2 ring-sky-400 scale-125' : ''} 
                         ${isLitA ? 'ring-2 ring-red-500 shadow-[0_0_5px_#ef4444] bg-red-600' : ''}
                     `}
                 >
-                    {!isLitA && isConnectedA && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60" />}
+                    {!isLitA && isConnectedA && <div className="w-1 h-1 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60" />}
                 </div>
 
-                {/* Right Port */}
+                {/* Right Port - Center at 36px */}
                 <div
                     id={portB}
                     onMouseDown={(e) => onPortMouseDown(e, portB)}
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-slate-900 dark:bg-black border border-slate-800 dark:border-slate-700
-                        cursor-pointer select-none transition-all z-30 absolute right-2
+                        w-3 h-3 rounded-full bg-slate-900 dark:bg-black border border-slate-200 dark:border-slate-700
+                        cursor-pointer select-none transition-all z-30 absolute left-[30px]
                         ${hoveredPortId === portB ? 'ring-2 ring-sky-400 scale-125' : ''} 
                         ${isLitB ? 'ring-2 ring-red-500 shadow-[0_0_5px_#ef4444] bg-red-600' : ''}
                     `}
                 >
-                    {!isLitB && isConnectedB && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60" />}
+                    {!isLitB && isConnectedB && <div className="w-1 h-1 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60" />}
                 </div>
             </div>
         </div>
     );
 };
+
+export const FusionNode = React.memo(FusionNodeComponent);
