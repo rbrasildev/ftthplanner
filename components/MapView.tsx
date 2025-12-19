@@ -573,9 +573,10 @@ export const MapView: React.FC<MapViewProps> = ({
           />
         ) : (
           <TileLayer
-            attribution='&copy; Esri'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            maxNativeZoom={19} maxZoom={24}
+            attribution='&copy; Google Maps'
+            url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            maxNativeZoom={20}
+            maxZoom={24}
           />
         )}
 

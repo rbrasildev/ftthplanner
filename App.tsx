@@ -274,7 +274,10 @@ export default function App() {
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'draw_cable' | 'connect_cable' | 'move_node'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' } | null>(null);
-    const [showLabels, setShowLabels] = useState(true);
+    const [showLabels, setShowLabels] = useState(() => {
+        const saved = localStorage.getItem('ftth_show_labels');
+        return saved === 'true'; // Default to false if not present or 'false'
+    });
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [editingCTO, setEditingCTO] = useState<CTOData | null>(null);
@@ -332,6 +335,10 @@ export default function App() {
             setCurrentProject(null);
         }
     }, [currentProjectId, token]);
+
+    useEffect(() => {
+        localStorage.setItem('ftth_show_labels', showLabels.toString());
+    }, [showLabels]);
 
     // Reset map bounds when project changes
     useEffect(() => {

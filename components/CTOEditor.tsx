@@ -126,6 +126,34 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     });
 
     // --- View Centering Logic (Pure Math) ---
+    const getElementBounds = (x: number, y: number, w: number, h: number, rotation: number) => {
+        const rad = (rotation * Math.PI) / 180;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        // The 4 corners relative to element's top-left (0,0)
+        const corners = [
+            { px: 0, py: 0 },
+            { px: w, py: 0 },
+            { px: 0, py: h },
+            { px: w, py: h }
+        ];
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        corners.forEach(p => {
+            // 1. Move point to center-relative
+            const dx = p.px - w / 2;
+            const dy = p.py - h / 2;
+            // 2. Rotate
+            const rx = (dx * Math.cos(rad)) - (dy * Math.sin(rad));
+            const ry = (dx * Math.sin(rad)) + (dy * Math.cos(rad));
+            // 3. Move back to absolute position
+            const fx = cx + rx;
+            const fy = cy + ry;
+            if (fx < minX) minX = fx; if (fy < minY) minY = fy;
+            if (fx > maxX) maxX = fx; if (fy > maxY) maxY = fy;
+        });
+        return { minX, minY, maxX, maxY };
+    };
+
     const getInitialViewState = (data: CTOData) => {
         let minX = Infinity, minY = Infinity, maxY = -Infinity, maxX = -Infinity;
         const checkPoint = (px: number, py: number) => {
@@ -134,44 +162,48 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         };
 
         if (data.layout) {
-            // 1. Check Cabes (168px wide, height based on fibers)
+            // 1. Check Cabes
             incomingCables.forEach(cable => {
                 const l = data.layout![cable.id];
                 if (!l) return;
                 const looseTubeCount = cable.looseTubeCount || 1;
-                const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
-                // Total height = Header (24px) + Tubes (fibers * 24px) + Gaps ((tubes-1) * 12px)
                 const totalHeight = 24 + (cable.fiberCount * 24) + ((looseTubeCount - 1) * 12);
-                checkPoint(l.x, l.y);
-                checkPoint(l.x + 168 + 24, l.y + totalHeight); // +24 for fiber terminal area
+                const b = getElementBounds(l.x, l.y, 168 + 24, totalHeight, l.rotation || 0);
+                if (b.minX < minX) minX = b.minX; if (b.minY < minY) minY = b.minY;
+                if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
-            // 2. Check Splitters (Width = portCount * 24, Height = 72)
+            // 2. Check Splitters
             data.splitters.forEach(split => {
                 const l = data.layout![split.id];
                 if (!l) return;
                 const width = split.outputPortIds.length * 24;
-                checkPoint(l.x, l.y);
-                checkPoint(l.x + width, l.y + 72);
+                const b = getElementBounds(l.x, l.y, width, 72, l.rotation || 0);
+                if (b.minX < minX) minX = b.minX; if (b.minY < minY) minY = b.minY;
+                if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
-            // 3. Check Fusions (48x24)
+            // 3. Check Fusions
             data.fusions.forEach(fusion => {
                 const l = data.layout![fusion.id];
                 if (!l) return;
-                checkPoint(l.x, l.y);
-                checkPoint(l.x + 48, l.y + 24);
+                const b = getElementBounds(l.x, l.y, 48, 24, l.rotation || 0);
+                if (b.minX < minX) minX = b.minX; if (b.minY < minY) minY = b.minY;
+                if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
             // 4. Check Connections
             data.connections.forEach(c => {
-                c.points?.forEach(p => checkPoint(p.x, p.y));
+                c.points?.forEach(p => {
+                    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+                    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+                });
             });
         }
 
         if (minX === Infinity) return { x: 40, y: 40, zoom: 1 };
 
-        const PADDING = 60;
+        const PADDING = 80;
         const contentW = maxX - minX + (PADDING * 2);
         const contentH = maxY - minY + (PADDING * 2);
 
@@ -442,31 +474,49 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         // 1. Calculate Bounds of the Diagram Content
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-        const checkPoint = (x: number, y: number) => {
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
+        const checkBounds = (b: { minX: number, minY: number, maxX: number, maxY: number }) => {
+            if (b.minX < minX) minX = b.minX; if (b.minY < minY) minY = b.minY;
+            if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
         };
 
         if (localCTO.layout) {
-            Object.values(localCTO.layout).forEach((l: any) => {
-                checkPoint(l.x, l.y);
-                // Ensure we capture the right-side of wide elements
-                checkPoint(l.x + 200, l.y + 100);
+            // 1. Check Cabes
+            incomingCables.forEach(cable => {
+                const l = localCTO.layout![cable.id];
+                if (!l) return;
+                const looseTubeCount = cable.looseTubeCount || 1;
+                const totalHeight = 24 + (cable.fiberCount * 24) + ((looseTubeCount - 1) * 12);
+                checkBounds(getElementBounds(l.x, l.y, 168 + 24, totalHeight, l.rotation || 0));
+            });
+
+            // 2. Check Splitters
+            localCTO.splitters.forEach(split => {
+                const l = localCTO.layout![split.id];
+                if (!l) return;
+                const width = split.outputPortIds.length * 24;
+                checkBounds(getElementBounds(l.x, l.y, width, 72, l.rotation || 0));
+            });
+
+            // 3. Check Fusions
+            localCTO.fusions.forEach(fusion => {
+                const l = localCTO.layout![fusion.id];
+                if (!l) return;
+                checkBounds(getElementBounds(l.x, l.y, 48, 24, l.rotation || 0));
+            });
+
+            // 4. Check Connections
+            localCTO.connections.forEach(c => {
+                c.points?.forEach(p => {
+                    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+                    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+                });
             });
         }
-
-        localCTO.connections.forEach(c => {
-            c.points?.forEach(p => {
-                checkPoint(p.x, p.y);
-            });
-        });
 
         // Defaults if empty
         if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
 
-        const padding = 50;
+        const padding = 100;
         const headerHeight = 170;
 
         // Actual Content Dimensions + Padding
@@ -496,11 +546,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                </div>`
             : `<div style="width: 100%; height: 100%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-weight: bold;">MAP UNAVAILABLE</div>`;
 
-        // 3. Create Temporary Export Container (Hidden)
+        // 3. Create Temporary Export Container (Hidden but visible to capture)
         const exportContainer = document.createElement('div');
         exportContainer.style.position = 'fixed';
         exportContainer.style.left = '-10000px';
-        exportContainer.style.top = '-10000px';
+        exportContainer.style.top = '0px';
         exportContainer.style.width = `${exportWidth}px`;
         exportContainer.style.height = `${exportHeight}px`;
         exportContainer.style.backgroundColor = '#ffffff';
@@ -508,38 +558,63 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         exportContainer.style.display = 'flex';
         exportContainer.style.flexDirection = 'column';
         exportContainer.style.overflow = 'hidden';
+        exportContainer.style.zIndex = '-9999';
 
         document.body.appendChild(exportContainer);
-        // FORCE LIGHT MODE: Ensuring standard light-mode colors for common Tailwind classes used in project
-        exportContainer.style.boxSizing = 'border-box';
-        exportContainer.style.colorScheme = 'light';
 
-        // 4. Construct Header HTML (Metadata)
+        // 4. Construct Content HTML with Force Light Mode CSS
         const statusColor = CTO_STATUS_COLORS[cto.status || 'PLANNED'];
 
         exportContainer.innerHTML = `
         <style>
-            #export-container-wrapper .dark\\:bg-slate-900 { background-color: #ffffff !important; }
-            #export-container-wrapper .dark\\:bg-slate-800 { background-color: #f8fafc !important; }
-            #export-container-wrapper .dark\\:bg-slate-950 { background-color: #ffffff !important; }
-            #export-container-wrapper .dark\\:border-slate-700 { border-color: #e2e8f0 !important; }
-            #export-container-wrapper .dark\\:border-slate-800 { border-color: #cbd5e1 !important; }
-            #export-container-wrapper .dark\\:text-white { color: #0f172a !important; }
-            #export-container-wrapper .dark\\:text-slate-400 { color: #64748b !important; }
-            #export-container-wrapper .dark\\:text-slate-200 { color: #1e293b !important; }
-            #export-container-wrapper .dark\\:text-slate-300 { color: #334155 !important; }
-            #export-container-wrapper .dark\\:text-slate-500 { color: #94a3b8 !important; }
-            #export-container-wrapper .dark\\:fill-slate-800 { fill: #ffffff !important; }
-            #export-container-wrapper .dark\\:fill-slate-900 { fill: #f8fafc !important; }
-            #export-container-wrapper .dark\\:stroke-slate-600 { stroke: #cbd5e1 !important; }
-            #export-container-wrapper .dark\\:stroke-slate-700 { stroke: #e2e8f0 !important; }
-        </style>
-        <div id="export-container-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff;">
-            <!-- Drawing Area (Center) -->
-            <div id="export-diagram-area" style="flex: 1; position: relative; background: #ffffff; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;">
-            </div>
+            .export-diagram-layer * { vector-effect: non-scaling-stroke; }
             
-            <!-- Metadata Header (Metadata Footer Area) -->
+            /* Root export container - Ensure white background but allow content to be transparent */
+            #export-container-wrapper { 
+                background-color: #ffffff !important; 
+                color: #0f172a !important; 
+                fill: #0f172a;
+            }
+
+            /* 1. Only force white background on the heavy components cards */
+            #export-container-wrapper .bg-white,
+            #export-container-wrapper .dark\\:bg-slate-900,
+            #export-container-wrapper .dark\\:bg-slate-800,
+            #export-container-wrapper .dark\\:bg-slate-950,
+            #export-container-wrapper .bg-slate-900 { 
+                background-color: #ffffff !important; 
+                border-color: #cbd5e1 !important; /* Slightly darker border for contrast on white paper */
+            }
+
+            /* 2. PROTECT EVERYTHING WITH STYLE ATTR (Fibers, colored lines) */
+            /* We do this by not having broad 'div' or 'span' overrides anymore */
+
+            /* 3. Force dark text ONLY for classes that are typically white on dark */
+            #export-container-wrapper .dark\\:text-white,
+            #export-container-wrapper .text-white {
+                color: #1e293b !important;
+            }
+            
+            /* 4. Restore fiber port visibility (which uses white text on dark backgrounds) */
+            #export-container-wrapper .rounded-full.text-white {
+                color: #ffffff !important; /* Keep white text if it's a port circle */
+            }
+
+            /* 5. Visible Connections */
+            #export-container-wrapper svg path {
+                stroke-opacity: 1 !important;
+            }
+            
+            /* Force visible borders for internal lines (cables tubes etc) */
+            #export-container-wrapper .border-slate-300,
+            #export-container-wrapper .dark\\:border-slate-600 {
+                border-color: #94a3b8 !important;
+            }
+        </style>
+        <div id="export-container-wrapper" class="light" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff;">
+            <div id="export-diagram-area" style="flex: 1; position: relative; background: #ffffff; overflow: visible;">
+                <div id="diagram-centering-wrapper" style="position: absolute; left: 0; top: 0; overflow: visible;"></div>
+            </div>
             <div style="padding: 24px; border-top: 2px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center; height: ${headerHeight}px; box-sizing: border-box; flex-shrink: 0;">
                 <div style="box-sizing: border-box;">
                     <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a; line-height: 1.2;">${localCTO.name}</h1>
@@ -547,7 +622,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                     <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 12px; color: #475569;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="font-weight: 700;">Status:</span>
-                            <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 10px;">${cto.status || 'PLANNED'}</span>
+                            <span style="background: ${statusColor}; color: white !important; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 10px;">${cto.status || 'PLANNED'}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span style="font-weight: 700;">Lat/Long:</span>
@@ -560,7 +635,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 </div>
             </div>
         </div>
-      `;
+        `;
+
+        // Wait for styles and innerHTML to settle
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         // 5. Clone Diagram Content
         const diagramClone = diagramContentRef.current.cloneNode(true) as HTMLDivElement;
@@ -570,32 +648,45 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         const contentWidthOnly = maxX - minX;
         const contentHeightOnly = maxY - minY;
 
-        // Centering calculation
-        const shiftX = (diagramAreaWidth - contentWidthOnly) / 2 - minX;
-        const shiftY = (diagramAreaHeight - contentHeightOnly) / 2 - minY;
+        // NEW Centering Strategic Logic:
+        // 1. Move everything inside diagramClone so the content visual top-left (minX, minY) sits at 0,0
+        // 2. Then move the centering-wrapper by 'padding' pixels, ensuring perfect positive gap.
 
-        // Reset transform to just the shift, remove zoom scale
-        diagramClone.style.transform = `translate(${shiftX}px, ${shiftY}px) scale(1)`;
+        diagramClone.style.transform = `translate(${-minX}px, ${-minY}px)`;
         diagramClone.style.transformOrigin = '0 0';
+        diagramClone.style.position = 'absolute';
+        diagramClone.style.margin = '0';
+        diagramClone.style.padding = '0';
+        diagramClone.style.width = `${maxX - minX + 10}px`; // tight to content
+        diagramClone.style.height = `${maxY - minY + 10}px`;
+        diagramClone.style.overflow = 'visible';
+        diagramClone.classList.add('export-diagram-layer');
 
-        // Ensure clone allows contents to render fully
-        diagramClone.style.width = '6000px';
-        diagramClone.style.height = '6000px';
+        const wrapper = exportContainer.querySelector('#diagram-centering-wrapper') as HTMLDivElement;
+        // Center the wrapper within the diagramArea
+        const centerPaddingX = (diagramAreaWidth - contentWidthOnly) / 2;
+        const centerPaddingY = (diagramAreaHeight - contentHeightOnly) / 2;
+        wrapper.style.left = `${centerPaddingX}px`;
+        wrapper.style.top = `${centerPaddingY}px`;
+        wrapper.appendChild(diagramClone);
 
-        const diagramArea = exportContainer.querySelector('#export-diagram-area') as HTMLDivElement;
-        diagramArea.appendChild(diagramClone);
+        // Final settle delay to ensure all nested components and SVG paths are fully layed out
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // 6. Capture
         try {
             const canvas = await html2canvas(exportContainer, {
                 backgroundColor: '#ffffff',
                 useCORS: true,
-                scale: 3, // Even higher resolution
-                windowWidth: exportWidth, // Stabilize layout
+                scale: 2, // 2x is enough for high quality without memory issues
+                windowWidth: exportWidth,
                 windowHeight: exportHeight,
-                logging: false
+                logging: false,
+                allowTaint: true
             });
-            document.body.removeChild(exportContainer);
+            if (document.body.contains(exportContainer)) {
+                document.body.removeChild(exportContainer);
+            }
             return canvas;
         } catch (error) {
             console.error("Canvas generation failed", error);
