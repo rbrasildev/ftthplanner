@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMa
 import L from 'leaflet';
 import { CTOData, POPData, CableData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS } from '../types';
 import { useLanguage } from '../LanguageContext';
-import { Layers } from 'lucide-react';
+import { Layers, Map as MapIcon, Globe, Box, Server, Zap, Eye, EyeOff } from 'lucide-react';
 
 // Fix for default Leaflet icon issues in Webpack/Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -32,14 +32,17 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
   const icon = L.divIcon({
     className: 'custom-icon',
     html: `
+      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
+        position: relative;
         background-color: ${color};
-        border: 2px solid ${isSelected ? '#000000' : '#ffffff'};
+        border: 2px solid ${isSelected ? '#22c55e' : '#ffffff'};
         border-radius: 50%;
         width: 20px;
         height: 20px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         transition: border-color 0.2s ease;
+        z-index: 10;
       ">
       </div>
       <div style="
@@ -57,8 +60,9 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
         white-space: nowrap;
         pointer-events: none;
         box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        z-index: 20;
       ">${name}</div>
-    `,
+`,
     iconSize: [20, 20],
     iconAnchor: [10, 10]
   });
@@ -68,7 +72,7 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
 };
 
 const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true) => {
-  const cacheKey = `pop-${name}-${isSelected}-${showLabels}`;
+  const cacheKey = `pop - ${name} -${isSelected} -${showLabels} `;
 
   if (iconCache.has(cacheKey)) {
     return iconCache.get(cacheKey)!;
@@ -77,9 +81,11 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
   const icon = L.divIcon({
     className: 'custom-icon',
     html: `
+      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(99, 102, 241, 0.4); border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
+        position: relative;
         background-color: #6366f1; /* Indigo */
-        border: 2px solid ${isSelected ? '#000000' : '#ffffff'};
+        border: 2px solid ${isSelected ? '#bef264' : '#ffffff'};
         border-radius: 4px; /* Square for Building */
         width: 24px;
         height: 24px;
@@ -87,6 +93,7 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 10;
       ">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       </div>
@@ -105,8 +112,9 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
         white-space: nowrap;
         pointer-events: none;
         box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        z-index: 20;
       ">${name}</div>
-    `,
+`,
     iconSize: [24, 24],
     iconAnchor: [12, 12]
   });
@@ -145,30 +153,30 @@ const otdrIcon = L.divIcon({
             font-weight: bold;
             white-space: nowrap;
         ">EVENT</div>
-    </div>
-    <style>
-        @keyframes ping {
-            75%, 100% {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
-    </style>
-  `,
+    </div >
+  <style>
+    @keyframes ping {
+      75 %, 100 % {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+  </style>
+`,
   iconSize: [30, 30],
   iconAnchor: [15, 15]
 });
 
 const handleIcon = L.divIcon({
   className: 'cable-handle',
-  html: `<div style="width: 12px; height: 12px; background: white; border: 2px solid #0ea5e9; border-radius: 50%; cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
+  html: `< div style = "width: 12px; height: 12px; background: white; border: 2px solid #0ea5e9; border-radius: 50%; cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.8);" ></div > `,
   iconSize: [12, 12],
   iconAnchor: [6, 6]
 });
 
 const startPointIcon = L.divIcon({
   className: 'start-point',
-  html: `<div style="width: 10px; height: 10px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
+  html: `< div style = "width: 10px; height: 10px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;" ></div > `,
   iconSize: [10, 10],
   iconAnchor: [5, 5]
 });
@@ -349,7 +357,7 @@ const CablePolyline = React.memo(({
 
       {isActive && mode === 'connect_cable' && cable.coordinates.map((coord, index) => (
         <Marker
-          key={`${cable.id}-pt-${index}`}
+          key={`${cable.id} -pt - ${index} `}
           position={[coord.lat, coord.lng]}
           icon={handleIcon}
           draggable={true}
@@ -439,6 +447,7 @@ interface MapViewProps {
   litCableIds?: Set<string>;
   highlightedCableId?: string | null;
   cableStartPoint?: { lat: number, lng: number } | null;
+  drawingPath?: Coordinates[];
   snapDistance?: number;
   otdrResult?: Coordinates | null;
   viewKey?: string;
@@ -453,13 +462,14 @@ interface MapViewProps {
   onConnectCable?: (cableId: string, nodeId: string, pointIndex: number) => void;
   onUpdateCableGeometry?: (cableId: string, newCoordinates: Coordinates[]) => void;
   onCableClick?: (cableId: string) => void;
+  onToggleLabels?: () => void;
 }
 
 export const MapView: React.FC<MapViewProps> = ({
   ctos, pops, cables, mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
-  highlightedCableId, cableStartPoint, snapDistance = 30, otdrResult, viewKey,
+  highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
   initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
-  onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick
+  onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onToggleLabels
 }) => {
   const { t } = useLanguage();
   const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -507,48 +517,66 @@ export const MapView: React.FC<MapViewProps> = ({
 
   return (
     <div className="relative h-full w-full">
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
-        {/* Map Type Button (Original) */}
-        <button
-          onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-          className="bg-white border-2 border-slate-300 rounded-lg p-2 shadow-xl hover:bg-slate-50 transition flex items-center gap-2 text-slate-700 text-xs font-bold"
-        >
-          {mapType === 'street' ? t('map_satellite') : t('map_street')}
-        </button>
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-3">
+        {/* Map Type Switcher - Segmented Control Style */}
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex gap-1.5">
+          <button
+            onClick={() => setMapType('street')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'street' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+          >
+            <MapIcon className="w-4 h-4" />
+            {t('map_street')}
+          </button>
+          <button
+            onClick={() => setMapType('satellite')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'satellite' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+          >
+            <Globe className="w-4 h-4" />
+            {t('map_satellite')}
+          </button>
+        </div>
 
-        {/* Static Visibility Panel */}
-        <div className="bg-white rounded-lg shadow-xl border border-slate-200 p-2 flex flex-col gap-1 min-w-[140px]">
-          {/* CTOs Toggle */}
+        {/* Compact Layer Visibility Panel */}
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2.5">
+          {/* CTO Toggle */}
           <button
             onClick={() => setShowCTOs(!showCTOs)}
-            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+            title={t('layer_ctos')}
+            className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showCTOs ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 border-blue-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showCTOs ? 'bg-blue-500 border-blue-600 text-white' : 'bg-white border-slate-300'}`}>
-              {showCTOs && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-            </div>
-            <span>{t('layer_ctos')}</span>
+            <Box className="w-5 h-5" />
+            {!showCTOs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
 
-          {/* POPs Toggle */}
+          {/* POP Toggle */}
           <button
             onClick={() => setShowPOPs(!showPOPs)}
-            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+            title={t('layer_pops')}
+            className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showPOPs ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 border-indigo-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showPOPs ? 'bg-indigo-500 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
-              {showPOPs && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-            </div>
-            <span>{t('layer_pops')}</span>
+            <Server className="w-5 h-5" />
+            {!showPOPs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
 
-          {/* Cables Toggle */}
+          {/* Cable Toggle */}
           <button
             onClick={() => setShowCables(!showCables)}
-            className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 transition w-full text-left text-xs font-semibold text-slate-700"
+            title={t('layer_cables')}
+            className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showCables ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30 border-slate-800' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showCables ? 'bg-slate-800 border-slate-900 text-white' : 'bg-white border-slate-300'}`}>
-              {showCables && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-            </div>
-            <span>{t('layer_cables')}</span>
+            <Zap className="w-5 h-5" />
+            {!showCables && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
+          </button>
+
+          <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
+
+          {/* Labels Toggle */}
+          <button
+            onClick={() => onToggleLabels && onToggleLabels()}
+            title={t('show_labels')}
+            className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showLabels ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-emerald-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+          >
+            {showLabels ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -602,8 +630,20 @@ export const MapView: React.FC<MapViewProps> = ({
           />
         ))}
 
-        {mode === 'draw_cable' && cableStartPoint && (
-          <Marker position={[cableStartPoint.lat, cableStartPoint.lng]} icon={startPointIcon} />
+        {mode === 'draw_cable' && drawingPath.length > 0 && (
+          <Polyline
+            positions={drawingPath.map(p => [p.lat, p.lng])}
+            pathOptions={{
+              color: "#0ea5e9",
+              weight: 3,
+              dashArray: "5, 10",
+              opacity: 0.8
+            }}
+          />
+        )}
+
+        {mode === 'draw_cable' && drawingPath.length > 0 && (
+          <Marker position={[drawingPath[0].lat, drawingPath[0].lng]} icon={startPointIcon} />
         )}
 
         {visibleCTOs.map(cto => (

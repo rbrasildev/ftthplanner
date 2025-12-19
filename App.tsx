@@ -290,8 +290,9 @@ export default function App() {
     // State for highlighting cable on map when hovering in editor
     const [highlightedCableId, setHighlightedCableId] = useState<string | null>(null);
 
-    // New Cable Creation State (Unified)
-    const [cableStart, setCableStart] = useState<CableStart | null>(null);
+    // New Cable Creation State (Multipoint)
+    const [drawingPath, setDrawingPath] = useState<Coordinates[]>([]);
+    const [drawingFromId, setDrawingFromId] = useState<string | null>(null);
 
     const [mapBounds, setMapBounds] = useState<L.LatLngBoundsExpression | null>(null);
 
@@ -628,7 +629,6 @@ export default function App() {
 
             showToast(t('toast_imported', { ctos: ctoCount, cables: cableCount }));
             setShowProjectManager(false);
-
         } catch (error) {
             console.error(error);
             showToast(t('import_error'), 'info');
@@ -636,48 +636,29 @@ export default function App() {
     };
 
     // ... (finalizeCableCreation, map interactions, move node logic unchanged) ...
-    const finalizeCableCreation = (start: CableStart, end: CableStart) => {
+    const finalizeCableCreation = (path: Coordinates[], fromId: string | null = null, toId: string | null = null) => {
+        if (path.length < 2) return;
+
         const net = getCurrentNetwork();
-        let startCoords: Coordinates, endCoords: Coordinates;
-        let fromNodeId: string | null = null;
-        let toNodeId: string | null = null;
-
-        if (start.type === 'node') {
-            const node = net.ctos.find(c => c.id === start.id) || net.pops.find(p => p.id === start.id);
-            if (!node) return;
-            startCoords = node.coordinates;
-            fromNodeId = node.id;
-        } else {
-            startCoords = { lat: start.lat, lng: start.lng };
-        }
-
-        if (end.type === 'node') {
-            const node = net.ctos.find(c => c.id === end.id) || net.pops.find(p => p.id === end.id);
-            if (!node) return;
-            endCoords = node.coordinates;
-            toNodeId = node.id;
-        } else {
-            endCoords = { lat: end.lat, lng: end.lng };
-        }
 
         const newCable: CableData = {
             id: `cable-${Date.now()}`,
             name: `CBL-${net.cables.length + 1}`,
             status: 'DEPLOYED',
             fiberCount: 12,
-            fromNodeId,
-            toNodeId,
-            coordinates: [startCoords, endCoords]
+            fromNodeId: fromId,
+            toNodeId: toId,
+            coordinates: path
         };
 
         const updatedCTOs = net.ctos.map(cto => {
-            if (cto.id === toNodeId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
-            if (cto.id === fromNodeId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
+            if (cto.id === toId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
+            if (cto.id === fromId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
             return cto;
         });
         const updatedPOPs = net.pops.map(pop => {
-            if (pop.id === toNodeId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
-            if (pop.id === fromNodeId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
+            if (pop.id === toId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
+            if (pop.id === fromId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
             return pop;
         });
 
@@ -690,7 +671,8 @@ export default function App() {
         }, systemSettings.snapDistance).state);
 
         showToast(t('toast_cable_created'));
-        setCableStart(null);
+        setDrawingPath([]);
+        setDrawingFromId(null);
         setToolMode('view');
     };
 
@@ -720,11 +702,7 @@ export default function App() {
             showToast(t('toast_pop_added'));
             setToolMode('view');
         } else if (toolMode === 'draw_cable') {
-            if (!cableStart) {
-                setCableStart({ type: 'coord', lat, lng });
-            } else {
-                finalizeCableCreation(cableStart, { type: 'coord', lat, lng });
-            }
+            setDrawingPath(prev => [...prev, { lat, lng }]);
         }
     };
 
@@ -735,14 +713,19 @@ export default function App() {
     };
 
     const handleNodeForCable = (nodeId: string) => {
-        if (!cableStart) {
-            setCableStart({ type: 'node', id: nodeId });
+        const net = getCurrentNetwork();
+        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
+        if (!node) return;
+
+        if (drawingPath.length === 0) {
+            setDrawingPath([node.coordinates]);
+            setDrawingFromId(nodeId);
         } else {
-            if (cableStart.type === 'node' && cableStart.id === nodeId) {
-                setCableStart(null);
-                return;
+            // Check if user clicked on another node - if so, finish the cable
+            if (drawingFromId !== nodeId) {
+                const finalPath = [...drawingPath, node.coordinates];
+                finalizeCableCreation(finalPath, drawingFromId, nodeId);
             }
-            finalizeCableCreation(cableStart, { type: 'node', id: nodeId });
         }
     };
 
@@ -818,7 +801,7 @@ export default function App() {
         const coordSegment2 = cable.coordinates.slice(pointIndex);
         coordSegment1[coordSegment1.length - 1] = node.coordinates;
         coordSegment2[0] = node.coordinates;
-        const newCableId = `cable-${Date.now()}-split`;
+        const newCableId = `cable - ${Date.now()} -split`;
 
         const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)` };
         const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2 };
@@ -914,7 +897,7 @@ export default function App() {
                 setEditingCTO(null);
                 setEditingPOP(null);
                 setEditingCable(null);
-                showToast(`${t('otdr_result')}: ${t('otdr_success_cable', { name: cable.name })}`);
+                showToast(`${t('otdr_result')}: ${t('otdr_success_cable', { name: cable.name })} `);
                 return;
             }
 
@@ -1035,105 +1018,203 @@ export default function App() {
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
                 <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in slide-in-from-top-5">
-                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'}`}>
+                    <div className={`px - 4 py - 2 rounded - lg shadow - lg border flex items - center gap - 2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
                         <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
                     </div>
                 </div>
             )}
 
-            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-xl relative transition-colors duration-300">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2"><div className="w-8 h-8 bg-sky-600 rounded flex items-center justify-center"><Network className="text-white w-5 h-5" /></div><h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">{t('app_title')}</h1></div>
-                        <button onClick={() => setCurrentProjectId(null)} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition" title={t('exit_project')}><LogOut className="w-4 h-4" /></button>
-                    </div>
-                    <button onClick={() => setShowProjectManager(true)} className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 rounded-lg text-xs border border-slate-200 dark:border-slate-700 transition-colors">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                            <FolderOpen className="w-3 h-3 text-sky-500 dark:text-sky-400" />
-                            <span className="truncate max-w-[120px] font-medium text-slate-700 dark:text-slate-300">{projects.find(p => p.id === currentProjectId)?.name}</span>
+            <aside className="w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-2xl relative transition-colors duration-300 font-sans">
+
+                {/* 1. Header & Project Info (Compact) */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-sky-600 rounded-lg shadow-lg shadow-sky-600/20 flex items-center justify-center">
+                                <Network className="text-white w-5 h-5" />
+                            </div>
+                            <div>
+                                <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-none">FTTH Master</h1>
+                                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Planner Pro</span>
+                            </div>
                         </div>
-                        {isSaving ? (
-                            <Loader2 className="w-3 h-3 text-sky-500 animate-spin" />
-                        ) : (
-                            <Settings2 className="w-3 h-3 text-slate-400" />
-                        )}
+                        <button onClick={() => setCurrentProjectId(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title={t('exit_project')}>
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Project Selector (Elevated look) */}
+                    <button
+                        onClick={() => setShowProjectManager(true)}
+                        className="group w-full flex items-center justify-between bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-500 border border-slate-200 dark:border-slate-800 p-2 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center group-hover:bg-sky-100 dark:group-hover:bg-sky-900/40 transition-colors">
+                                <FolderOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                            </div>
+                            <div className="flex flex-col items-start overflow-hidden">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projeto Atual</span>
+                                <span className="truncate max-w-[140px] font-semibold text-xs text-slate-700 dark:text-slate-200">{projects.find(p => p.id === currentProjectId)?.name}</span>
+                            </div>
+                        </div>
+                        <Settings2 className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
                     </button>
                 </div>
 
-                {/* VFL Status Indicator in Sidebar */}
-                {vflSource && (
-                    <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-900/50">
-                        <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-xs font-bold uppercase mb-1">
-                            <Flashlight className="w-3 h-3 animate-pulse" /> {t('vfl_active_status')}
-                        </div>
-                        <div className="text-[10px] text-red-400 dark:text-red-300 truncate">
-                            {t('vfl_source_label', { name: vflSource })}
-                        </div>
-                        <button onClick={() => setVflSource(null)} className="mt-2 w-full py-1 bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800 text-red-600 dark:text-white text-[10px] rounded border border-red-300 dark:border-red-700">{t('turn_off')}</button>
+                {/* 2. Deployment Stats (Tech Look) */}
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800/50">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Progresso</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">{deploymentProgress}%</span>
                     </div>
-                )}
-
-                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1"><span className="flex items-center gap-1"><Activity className="w-3 h-3" /> {t('deployment_progress')}</span><span className="text-emerald-500 dark:text-emerald-400">{deploymentProgress}%</span></div>
-                    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${deploymentProgress}%` }}></div></div>
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${deploymentProgress}%` }}></div>
+                    </div>
                 </div>
 
-                <div className="p-4 flex flex-col gap-2 shrink-0 flex-1 overflow-visible">
-
-                    {/* Search Bar */}
-                    <div className="relative mb-2 group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                {/* 3. Search (Fixed, outside scroll) */}
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-950 z-30">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Localizar</label>
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Buscar cabos, caixas..."
+                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
+                            />
+                            {/* Search Dropdown Logic */}
+                            {searchTerm.trim() !== '' && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[3000] max-h-60 overflow-y-auto p-1">
+                                    {searchResults.length > 0 ? (
+                                        searchResults.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => handleSearchResultClick(item)}
+                                                className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center gap-3 group/item"
+                                            >
+                                                <div className={`p-1.5 rounded-md ${item.type === 'POP' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                                                    {item.type === 'POP' ? <Server className="w-3 h-3" /> : <Box className="w-3 h-3" />}
+                                                </div>
+                                                <span className="font-medium text-slate-700 dark:text-slate-200 group-hover/item:text-sky-600 dark:group-hover/item:text-sky-400 transition-colors truncate">{item.name}</span>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-xs text-slate-400 text-center italic">{t('search_no_results')}</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder={t('search_placeholder')}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                        />
-                        {/* Search Results Dropdown */}
-                        {searchTerm.trim() !== '' && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-2xl z-[3000] max-h-60 overflow-y-auto">
-                                {searchResults.length > 0 ? (
-                                    searchResults.map((item, idx) => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => handleSearchResultClick(item)}
-                                            className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 ${idx !== searchResults.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
-                                        >
-                                            {item.type === 'POP' ? <Server className="w-3 h-3 text-indigo-500 dark:text-indigo-400" /> : <Box className="w-3 h-3 text-orange-500 dark:text-orange-400" />}
-                                            <span className="text-slate-700 dark:text-slate-200 font-medium truncate">{item.name}</span>
-                                        </button>
-                                    ))
-                                ) : (
-                                    <div className="px-3 py-3 text-xs text-slate-500 text-center italic">{t('search_no_results')}</div>
-                                )}
-                            </div>
-                        )}
                     </div>
+                </div>
 
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('tools')}</p>
-                    {[
-                        { id: 'view', icon: MousePointer2, label: t('mode_view') },
-                        { id: 'move_node', icon: Move, label: t('mode_move') },
-                        { id: 'add_cto', icon: MapIcon, label: t('mode_add_cto') },
-                        { id: 'add_pop', icon: Server, label: t('mode_add_pop') },
-                        { id: 'draw_cable', icon: Zap, label: t('mode_draw_cable') },
-                        { id: 'connect_cable', icon: Unplug, label: t('mode_connect_cable') }
-                    ].map(tool => (
-                        <button key={tool.id} onClick={() => { setToolMode(tool.id as any); setSelectedId(null); setCableStart(null); setOtdrResult(null); }} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${toolMode === tool.id ? 'bg-sky-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                            <tool.icon className="w-4 h-4" /> {tool.label}
-                        </button>
-                    ))}
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2">{t('settings')}</p>
-                    <div className="flex justify-center gap-2">
-                        <button onClick={() => setShowLabels(!showLabels)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all">{showLabels ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}</button>
-                        <button onClick={() => setShowSettingsModal(true)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all"><Settings className="w-4 h-4" /> </button>
-                        <button onClick={toggleTheme} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all">
-                            {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                        </button>
+                {/* 4. Main Tools Scroll Attributes */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 custom-scrollbar relative z-10">
+
+                    {/* VFL Alert */}
+                    {vflSource && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl relative overflow-hidden group animate-in fade-in zoom-in-95 duration-300">
+                            <div className="absolute top-0 right-0 p-2 opacity-50"><Flashlight className="w-12 h-12 text-red-200 dark:text-red-900/20 rotate-12" /></div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs font-bold uppercase mb-1">
+                                    <span className="flex w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                                    {t('vfl_active_status')}
+                                </div>
+                                <div className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-2 line-clamp-1">{vflSource}</div>
+                                <button onClick={() => setVflSource(null)} className="w-full py-1.5 bg-white dark:bg-red-950/50 hover:bg-red-50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-300 text-[10px] font-bold uppercase tracking-wide rounded-lg border border-red-100 dark:border-red-900/30 shadow-sm transition-colors">
+                                    {t('turn_off')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tools - Groups */}
+                    <div className="space-y-6">
+
+                        {/* Group: Operation */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Operação</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => { setToolMode('view'); setSelectedId(null); }}
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'view' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                >
+                                    <MousePointer2 className="w-5 h-5" />
+                                    <span className="text-[10px] font-bold">Selecionar</span>
+                                </button>
+                                <button
+                                    onClick={() => { setToolMode('move_node'); setSelectedId(null); }}
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'move_node' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                >
+                                    <Move className="w-5 h-5" />
+                                    <span className="text-[10px] font-bold">Mover</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Group: Design */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Design de Rede</label>
+                            <div className="grid grid-cols-1 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => { setToolMode('add_cto'); setSelectedId(null); }}
+                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_cto' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-200 dark:hover:border-slate-700 hover:bg-blue-50/50 dark:hover:bg-slate-800'}`}
+                                    >
+                                        <MapIcon className="w-5 h-5" />
+                                        <span className="text-[10px] font-bold">Nova CTO</span>
+                                    </button>
+                                    <button
+                                        onClick={() => { setToolMode('add_pop'); setSelectedId(null); }}
+                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_pop' ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-slate-700 hover:bg-indigo-50/50 dark:hover:bg-slate-800'}`}
+                                    >
+                                        <Server className="w-5 h-5" />
+                                        <span className="text-[10px] font-bold">Novo POP</span>
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={() => { setToolMode('draw_cable'); setSelectedId(null); }}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'draw_cable' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-amber-200 dark:hover:border-slate-700 hover:bg-amber-50/50 dark:hover:bg-slate-800'}`}
+                                >
+                                    <div className={`p-1.5 rounded-lg ${toolMode === 'draw_cable' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                        <Zap className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-xs font-bold">Desenhar Cabo</span>
+                                        <span className="text-[10px] opacity-70 font-normal">Clique p/ múltiplos pontos</span>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => { setToolMode('connect_cable'); setSelectedId(null); }}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'connect_cable' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-200 dark:hover:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-800'}`}
+                                >
+                                    <div className={`p-1.5 rounded-lg ${toolMode === 'connect_cable' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                        <Unplug className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-xs font-bold">Conectar Cabos</span>
+                                        <span className="text-[10px] opacity-70 font-normal">Vincular pontas soltas</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
+                </div>
+
+                {/* 4. Footer System Bar */}
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between gap-2">
+                    <button onClick={() => setShowSettingsModal(true)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all">
+                        <Settings className="w-4 h-4" /> Config
+                    </button>
+                    <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700"></div>
+                    <button onClick={toggleTheme} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all">
+                        {theme === 'dark' ? <><Moon className="w-4 h-4" /> Dark</> : <><Sun className="w-4 h-4" /> Light</>}
+                    </button>
                 </div>
             </aside>
 
@@ -1148,13 +1229,14 @@ export default function App() {
                     showLabels={showLabels}
                     litCableIds={litNetwork.litCables}
                     highlightedCableId={highlightedCableId}
-                    cableStartPoint={cableStart?.type === 'coord' ? { lat: cableStart.lat, lng: cableStart.lng } : null}
+                    drawingPath={drawingPath}
                     snapDistance={systemSettings.snapDistance}
 
                     viewKey={currentProjectId || undefined}
                     initialCenter={currentProject?.mapState?.center}
                     initialZoom={currentProject?.mapState?.zoom}
                     onMapMoveEnd={handleMapMoveEnd}
+                    onToggleLabels={() => setShowLabels(!showLabels)}
 
                     onAddPoint={handleAddPoint}
                     onNodeClick={handleNodeClick}
@@ -1177,9 +1259,27 @@ export default function App() {
                     {toolMode === 'move_node' && t('tooltip_move')}
                     {toolMode === 'add_cto' && t('tooltip_add_cto')}
                     {toolMode === 'add_pop' && t('tooltip_add_pop')}
-                    {toolMode === 'draw_cable' && (!cableStart ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
-                    {toolMode === 'connect_cable' && t('tooltip_connect')}
+                    {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
                 </div>
+
+                {toolMode === 'draw_cable' && drawingPath.length > 0 && (
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                        <button
+                            onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                        >
+                            <CheckCircle2 className="w-5 h-5" />
+                            {t('finish_cable') || 'Finalizar Cabo'}
+                        </button>
+                        <button
+                            onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                        >
+                            <X className="w-5 h-5" />
+                            {t('cancel') || 'Cancelar'}
+                        </button>
+                    </div>
+                )}
             </main>
 
             {/* Editors */}
