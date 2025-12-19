@@ -7,6 +7,7 @@ import { CableEditor } from './components/CableEditor';
 import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { LoginPage } from './components/LoginPage';
+import { RegisterPage } from './components/RegisterPage';
 import { DashboardPage } from './components/DashboardPage';
 import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOStatus, SystemSettings } from './types';
 import { useLanguage } from './LanguageContext';
@@ -19,6 +20,7 @@ import toGeoJSON from '@mapbox/togeojson';
 import L from 'leaflet';
 import * as projectService from './services/projectService';
 import * as authService from './services/authService';
+import api from './services/api';
 
 const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
@@ -242,6 +244,7 @@ export default function App() {
 
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
     const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_TOKEN));
+    const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
     // Projects List (Summaries)
     const [projects, setProjects] = useState<Project[]>([]);
@@ -959,7 +962,25 @@ export default function App() {
         }
     };
 
-    if (!user) return <LoginPage onLogin={handleLogin} />;
+    const handleRegister = async (username: string, password?: string) => {
+        try {
+            // Re-using the logic from authService if we had a separate register, 
+            // but authService.login already has a silent register.
+            // However, we want to be explicit here.
+            await api.post('/auth/register', { username, password: password || "123456" });
+            showToast(t('registration_success'), 'success');
+            setAuthView('login');
+        } catch (e) {
+            showToast(t('registration_failed'), 'info');
+        }
+    };
+
+    if (!user) {
+        if (authView === 'register') {
+            return <RegisterPage onRegister={handleRegister} onBackToLogin={() => setAuthView('login')} />;
+        }
+        return <LoginPage onLogin={handleLogin} onRegisterClick={() => setAuthView('register')} />;
+    }
 
     if (!currentProjectId) return <DashboardPage username={user} projects={projects} onOpenProject={setCurrentProjectId}
         onCreateProject={async (name, center) => {

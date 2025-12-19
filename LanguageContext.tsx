@@ -16,9 +16,14 @@ const translations = {
     'theme_dark': 'Dark Mode',
 
     // Login & Dashboard
-    'login_title': 'FTTH Planner Login',
-    'username': 'Username',
     'enter_btn': 'Enter System',
+    'register_btn': 'Create Account',
+    'no_account': "Don't have an account?",
+    'already_have_account': 'Already have an account?',
+    'register_title': 'Create FTTH Planner Account',
+    'back_to_login': 'Back to Login',
+    'registration_success': 'Account created! You can now log in.',
+    'registration_failed': 'Registration failed. Username might be taken.',
     'welcome': 'Welcome, {name}',
     'logout': 'Logout',
     'my_projects': 'My Projects',
@@ -37,7 +42,7 @@ const translations = {
     'view_options': 'View Options',
     'toggle_labels': 'Labels',
     'mode_view': 'Selection / Nav',
-    'mode_move': 'Move Elements', 
+    'mode_move': 'Move Elements',
     'mode_otdr': 'OTDR Trace',
     'mode_add_cto': 'Place CTO',
     'mode_add_pop': 'Place POP',
@@ -58,7 +63,7 @@ const translations = {
     'deployment_progress': 'Deployment Progress',
     'search_placeholder': 'Search CTO or POP...',
     'search_no_results': 'No results found',
-    
+
     // Toasts
     'toast_imported': 'Imported {ctos} CTOs and {cables} Cables',
     'toast_cto_added': 'CTO added successfully',
@@ -116,7 +121,7 @@ const translations = {
     'clear_all': 'Clear All',
     'confirm_delete_equip_msg': 'Are you sure you want to delete {name}?',
     'delete_warning_msg': 'Warning: All connections associated with this {type} will be removed permanently.',
-    
+
     // Statuses
     'status_PLANNED': 'Planned',
     'status_NOT_DEPLOYED': 'Not Deployed',
@@ -198,7 +203,7 @@ const translations = {
     'target_cable': 'Target Cable',
     'perform_splice': 'Fuse All Fibers',
     'splice_success': 'Successfully fused {count} fibers.',
-    
+
     // DIO Editor Strings
     'link_cables': 'Link Cables',
     'no_cables_linked': 'No Cables Linked',
@@ -207,7 +212,7 @@ const translations = {
     'connected_to_port': 'Currently connected to Port {port}',
     'select_tray_port_help': 'Select a tray port below to splice this fiber.',
     'green_light_help': 'Green lights indicate active OLT signal flowing to the cable.',
-    
+
     // New Translations for Trays
     'tray': 'Tray',
     'trays': 'Trays',
@@ -230,9 +235,14 @@ const translations = {
     'theme_dark': 'Modo Escuro',
 
     // Login & Dashboard
-    'login_title': 'Login Planejador FTTH',
-    'username': 'Nome de Usuário',
     'enter_btn': 'Entrar no Sistema',
+    'register_btn': 'Criar Conta',
+    'no_account': 'Não tem uma conta?',
+    'already_have_account': 'Já tem uma conta?',
+    'register_title': 'Criar Conta FTTH Planner',
+    'back_to_login': 'Voltar para o Login',
+    'registration_success': 'Conta criada! Agora você pode entrar.',
+    'registration_failed': 'Falha no registro. Usuário já pode existir.',
     'welcome': 'Bem-vindo, {name}',
     'logout': 'Sair',
     'my_projects': 'Meus Projetos',
@@ -412,7 +422,7 @@ const translations = {
     'target_cable': 'Cabo Destino',
     'perform_splice': 'Fusionar Tudo',
     'splice_success': 'Fusionadas {count} fibras com sucesso.',
-    
+
     // DIO Editor Strings
     'link_cables': 'Vincular Cabos',
     'no_cables_linked': 'Nenhum Cabo Vinculado',
@@ -447,7 +457,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const t = (key: string, params?: Record<string, string | number>) => {
     let text = translations[language][key as keyof typeof translations['en']] || key;
-    
+
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         text = text.replace(`{${k}}`, String(v));

@@ -6,6 +6,14 @@ import projectRoutes from './routes/projectRoutes';
 
 dotenv.config();
 
+// Tratamento de erros globais para debug em produção
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

@@ -5,9 +5,10 @@ import { useTheme } from '../ThemeContext';
 
 interface LoginPageProps {
   onLogin: (username: string, password?: string) => void;
+  onRegisterClick: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const [username, setUsername] = useState('');
@@ -76,8 +77,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           </button>
         </form>
 
+        {/* Link to register */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t('no_account')}{' '}
+            <button
+              onClick={onRegisterClick}
+              className="text-sky-600 hover:text-sky-500 font-semibold transition-colors"
+            >
+              {t('register_btn')}
+            </button>
+          </p>
+        </div>
+
         {/* Utilities */}
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-8 flex justify-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-6">
           <button
             onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition"
