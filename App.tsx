@@ -386,6 +386,7 @@ export default function App() {
 
     // Actually, let's use a specific Effect for Syncing changes to backend
     const isInitialLoad = useRef(true);
+    const syncErrorCount = useRef(0);
     useEffect(() => {
         if (!currentProject || !token) return;
         if (isInitialLoad.current) { isInitialLoad.current = false; return; }
@@ -396,13 +397,18 @@ export default function App() {
                 .then(() => {
                     console.log(`[Sync] Project ${currentProject.name} saved.`);
                     setIsSaving(false);
+                    syncErrorCount.current = 0; // Reset error count on success
                 })
                 .catch(e => {
                     console.error("Sync failed", e);
                     setIsSaving(false);
-                    showToast('Erro ao sincronizar com servidor', 'info');
+                    syncErrorCount.current++;
+                    // Only show toast on first 2 errors to avoid spam
+                    if (syncErrorCount.current <= 2) {
+                        showToast('Erro ao sincronizar com servidor', 'info');
+                    }
                 });
-        }, 300);
+        }, 2000); // Increased from 300ms to 2000ms (2 seconds)
         return () => clearTimeout(timer);
     }, [currentProject, token]);
 
@@ -427,7 +433,7 @@ export default function App() {
         if (currentProjectId) {
             const timer = setTimeout(() => {
                 performAutoSnap(systemSettings.snapDistance);
-            }, 500);
+            }, 1500); // Increased from 500ms to 1500ms for better performance
             return () => clearTimeout(timer);
         }
     }, [systemSettings.snapDistance, currentProjectId]);
