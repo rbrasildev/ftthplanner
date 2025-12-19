@@ -439,40 +439,31 @@ export default function App() {
     }, [systemSettings.snapDistance, currentProjectId]);
 
 
-    const mapMoveTimeoutRef = useRef<any>(null);
-
     const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
-        if (currentProjectId && currentProject) {
-            // Clear previous timeout
-            if (mapMoveTimeoutRef.current) {
-                clearTimeout(mapMoveTimeoutRef.current);
-            }
-
-            // Only save map position after 5 seconds of no movement
-            mapMoveTimeoutRef.current = setTimeout(() => {
-                setCurrentProject(prev => {
-                    if (!prev) return null;
-                    return { ...prev, mapState: { center: { lat, lng }, zoom } };
-                });
-            }, 5000); // 5 seconds debounce for map movements
-        }
+        // Map position saving disabled for better performance
+        // The map will reset to project center on reload
     };
 
-    // Search Logic
+    // Search Logic - Optimized
     const searchResults = useMemo(() => {
-        if (!searchTerm.trim()) return [];
-        const term = searchTerm.toLowerCase();
+        const term = searchTerm.trim();
+
+        // Require at least 2 characters to search
+        if (term.length < 2) return [];
+
+        const lowerTerm = term.toLowerCase();
         const net = getCurrentNetwork();
 
         const matchedCtos = net.ctos
-            .filter(c => c.name.toLowerCase().includes(term))
+            .filter(c => c.name.toLowerCase().includes(lowerTerm))
             .map(c => ({ ...c, type: 'CTO' as const }));
 
         const matchedPops = (net.pops || [])
-            .filter(p => p.name.toLowerCase().includes(term))
+            .filter(p => p.name.toLowerCase().includes(lowerTerm))
             .map(p => ({ ...p, type: 'POP' as const }));
 
-        return [...matchedPops, ...matchedCtos];
+        // Limit to 10 results for better performance
+        return [...matchedPops, ...matchedCtos].slice(0, 10);
     }, [searchTerm, projects, currentProjectId]);
 
     const handleSearchResultClick = (item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' }) => {

@@ -212,7 +212,11 @@ const CTOMarker = React.memo(({
       icon={icon}
       draggable={mode === 'move_node'}
       eventHandlers={eventHandlers}
-    />
+    >
+      <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+        <div className="text-xs font-bold">{cto.name}</div>
+      </Tooltip>
+    </Marker>
   );
 });
 
@@ -253,7 +257,11 @@ const POPMarker = React.memo(({
       icon={icon}
       draggable={mode === 'move_node'}
       eventHandlers={eventHandlers}
-    />
+    >
+      <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
+        <div className="text-xs font-bold">{pop.name}</div>
+      </Tooltip>
+    </Marker>
   );
 });
 
@@ -446,7 +454,7 @@ interface MapViewProps {
 }
 
 export const MapView: React.FC<MapViewProps> = ({
-  ctos, pops, cables, mode, selectedId, mapBounds, showLabels = true, litCableIds = new Set(),
+  ctos, pops, cables, mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
   highlightedCableId, cableStartPoint, snapDistance = 30, otdrResult, viewKey,
   initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
   onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick
