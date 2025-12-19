@@ -438,19 +438,23 @@ export default function App() {
         }
     }, [systemSettings.snapDistance, currentProjectId]);
 
+
+    const mapMoveTimeoutRef = useRef<any>(null);
+
     const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
         if (currentProjectId && currentProject) {
-            // Update current project state locally first (for UI consistency if needed, though Maps usually handle own state)
-            // But CRITICALLY, we must trigger the sync mechanism.
-            // updateCurrentNetwork expects a NetworkState updater, but mapState is outside network.
+            // Clear previous timeout
+            if (mapMoveTimeoutRef.current) {
+                clearTimeout(mapMoveTimeoutRef.current);
+            }
 
-            // We need to update the top-level currentProject object to trigger the Sync Effect.
-            setCurrentProject(prev => {
-                if (!prev) return null;
-                return { ...prev, mapState: { center: { lat, lng }, zoom } };
-            });
-
-            // Debounced Sync is triggered by useEffect on [currentProject]
+            // Only save map position after 5 seconds of no movement
+            mapMoveTimeoutRef.current = setTimeout(() => {
+                setCurrentProject(prev => {
+                    if (!prev) return null;
+                    return { ...prev, mapState: { center: { lat, lng }, zoom } };
+                });
+            }, 5000); // 5 seconds debounce for map movements
         }
     };
 

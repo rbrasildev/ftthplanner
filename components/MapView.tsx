@@ -14,13 +14,22 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// --- ICONS HELPERS ---
+// --- ICONS HELPERS WITH CACHING ---
+
+// Icon cache to prevent recreation
+const iconCache = new Map<string, L.DivIcon>();
 
 const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true) => {
+  const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}`;
+
+  if (iconCache.has(cacheKey)) {
+    return iconCache.get(cacheKey)!;
+  }
+
   // @ts-ignore
   const color = CTO_STATUS_COLORS[status] || CTO_STATUS_COLORS['PLANNED'];
 
-  return L.divIcon({
+  const icon = L.divIcon({
     className: 'custom-icon',
     html: `
       <div style="
@@ -53,10 +62,19 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
     iconSize: [20, 20],
     iconAnchor: [10, 10]
   });
+
+  iconCache.set(cacheKey, icon);
+  return icon;
 };
 
 const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true) => {
-  return L.divIcon({
+  const cacheKey = `pop-${name}-${isSelected}-${showLabels}`;
+
+  if (iconCache.has(cacheKey)) {
+    return iconCache.get(cacheKey)!;
+  }
+
+  const icon = L.divIcon({
     className: 'custom-icon',
     html: `
       <div style="
@@ -92,6 +110,9 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
     iconSize: [24, 24],
     iconAnchor: [12, 12]
   });
+
+  iconCache.set(cacheKey, icon);
+  return icon;
 };
 
 const otdrIcon = L.divIcon({
@@ -314,14 +335,7 @@ const CablePolyline = React.memo(({
           dashArray
         }}
         eventHandlers={{ click: (e) => onClick(e, cable) }}
-      >
-        <Tooltip sticky direction="center" className="bg-slate-800 text-white border-none p-2 rounded">
-          {cable.name} ({cable.fiberCount} FO)
-          {isActive && <div className="text-[10px] text-sky-400 font-bold">{t('tooltip_connect')}</div>}
-          {isLit && <div className="text-[10px] text-red-400 font-bold flex items-center gap-1">VFL ACTIVE</div>}
-          {mode === 'otdr' && <div className="text-[10px] text-indigo-400 font-bold">{t('otdr_title')}</div>}
-        </Tooltip>
-      </Polyline>
+      />
 
       {isActive && mode === 'connect_cable' && cable.coordinates.map((coord, index) => (
         <Marker
@@ -486,7 +500,7 @@ export const MapView: React.FC<MapViewProps> = ({
         center={initialCenter ? [initialCenter.lat, initialCenter.lng] : [-23.5505, -46.6333]}
         zoom={initialZoom || 15}
         maxZoom={24}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', backgroundColor: '#e2e8f0' }}
         className="z-0"
         preferCanvas={true} /* KEY PERFORMANCE OPTIMIZATION */
       >
@@ -495,8 +509,10 @@ export const MapView: React.FC<MapViewProps> = ({
 
         {mapType === 'street' ? (
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            maxNativeZoom={19} maxZoom={24}
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            maxNativeZoom={19}
+            maxZoom={24}
           />
         ) : (
           <TileLayer
