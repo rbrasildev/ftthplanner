@@ -9,47 +9,34 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Logger no topo para ver se as requisições chegam (inclusive OPTIONS)
+// Middleware de log ultra-simples no topo
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    console.log(`Origin: ${req.headers.origin}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
     next();
 });
 
-// 2. CORS robusto com origens explícitas
-const allowedOrigins = [
-    'https://ftthplanner-vy2e.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
-];
-
+// CORS mais permissivo possível para teste
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.warn(`CORS blocked for origin: ${origin}`);
-            callback(null, false); // Don't throw error, just don't allow
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 204
 }));
 
-// 3. Garantir que OPTIONS responde imediatamente
-app.options('*', cors());
+// Rota de teste de sanidade
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'live', time: new Date().toISOString() });
+});
 
-app.use(express.json({ limit: '50mb' })); // Increased limit for large sync payloads
+app.use(express.json({ limit: '50mb' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 
 app.get('/', (req, res) => {
-    res.send('FTTH Master Planner API is running');
+    res.send('FTTH Master Planner API is active');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT} (0.0.0.0)`);
 });
