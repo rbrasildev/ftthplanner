@@ -1,10 +1,22 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS } from '../types';
 import { useLanguage } from '../LanguageContext';
-import { Layers, Map as MapIcon, Globe, Box, Server, Zap, Eye, EyeOff } from 'lucide-react';
+import { Layers, Map as MapIcon, Globe, Box, Server, Zap, Eye, EyeOff, Diamond } from 'lucide-react';
+
+
+
+// Debounce utility
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: any;
+  return function (...args: Parameters<T>) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 // Fix for default Leaflet icon issues in Webpack/Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -434,6 +446,37 @@ function getDistanceFromLine(pt: Coordinates, lineStart: Coordinates, lineEnd: C
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+
+
+const BoundsUpdater = ({
+  setBounds,
+  setZoom
+}: {
+  setBounds: (b: L.LatLngBounds) => void,
+  setZoom: (z: number) => void
+}) => {
+  const map = useMap();
+
+  const updateMapState = useMemo(
+    () => debounce(() => {
+      setBounds(map.getBounds());
+      setZoom(map.getZoom());
+    }, 150),
+    [map, setBounds, setZoom]
+  );
+
+  useMapEvents({
+    moveend: () => updateMapState(),
+    zoomend: () => updateMapState()
+  });
+
+  useEffect(() => {
+    updateMapState();
+  }, [map, updateMapState]);
+
+  return null;
+};
+
 // --- MAIN COMPONENT ---
 
 interface MapViewProps {
@@ -475,16 +518,27 @@ export const MapView: React.FC<MapViewProps> = ({
   const [activeCableId, setActiveCableId] = useState<string | null>(null);
   const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
 
+  // Performance optimizations state
+  const [mapBoundsState, setMapBoundsState] = useState<L.LatLngBounds | null>(null);
+  const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
+
   // Visibility States
   const [showCables, setShowCables] = useState(true);
   const [showCTOs, setShowCTOs] = useState(true);
   const [showPOPs, setShowPOPs] = useState(true);
   const [isLayersOpen, setIsLayersOpen] = useState(false);
+  const [enableClustering, setEnableClustering] = useState(true);
+
+
 
   // Filter visible elements using useMemo for performance
   const visibleCables = useMemo(() => showCables ? cables : [], [showCables, cables]);
+
   const visibleCTOs = useMemo(() => showCTOs ? ctos : [], [showCTOs, ctos]);
   const visiblePOPs = useMemo(() => showPOPs ? pops : [], [showPOPs, pops]);
+
+  // Lazy loading labels based on zoom
+  const effectiveShowLabels = showLabels && currentZoom > 16;
 
   useEffect(() => {
     if (mode !== 'connect_cable') setActiveCableId(null);
@@ -578,6 +632,18 @@ export const MapView: React.FC<MapViewProps> = ({
           >
             {showLabels ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
           </button>
+
+          <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
+
+          {/* Clustering Toggle */}
+          <button
+            onClick={() => setEnableClustering(!enableClustering)}
+            title="Toggle Clustering"
+            className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${enableClustering ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+          >
+            <Diamond className="w-5 h-5" />
+            {!enableClustering && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
+          </button>
         </div>
       </div>
 
@@ -611,6 +677,8 @@ export const MapView: React.FC<MapViewProps> = ({
         <MapEvents mode={mode} onMapClick={onAddPoint} onClearSelection={() => setActiveCableId(null)} onMapMoveEnd={onMapMoveEnd} />
 
         <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />
+
+        <BoundsUpdater setBounds={setMapBoundsState} setZoom={setCurrentZoom} />
 
         {visibleCables.map(cable => (
           <CablePolyline
@@ -646,35 +714,76 @@ export const MapView: React.FC<MapViewProps> = ({
           <Marker position={[drawingPath[0].lat, drawingPath[0].lng]} icon={startPointIcon} />
         )}
 
-        {visibleCTOs.map(cto => (
-          <CTOMarker
-            key={cto.id}
-            cto={cto}
-            isSelected={selectedId === cto.id}
-            showLabels={showLabels}
-            mode={mode}
-            onNodeClick={onNodeClick}
-            onMoveNode={onMoveNode || noOp}
-            onCableStart={onCableStart}
-            onCableEnd={onCableEnd}
-            cableStartPoint={cableStartPoint}
-          />
-        ))}
+        {enableClustering ? (
+          <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={50}
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={false}
+          >
+            {visibleCTOs.map(cto => (
+              <CTOMarker
+                key={cto.id}
+                cto={cto}
+                isSelected={selectedId === cto.id}
+                showLabels={effectiveShowLabels}
+                mode={mode}
+                onNodeClick={onNodeClick}
+                onMoveNode={onMoveNode || noOp}
+                onCableStart={onCableStart}
+                onCableEnd={onCableEnd}
+                cableStartPoint={cableStartPoint}
+              />
+            ))}
 
-        {visiblePOPs.map(pop => (
-          <POPMarker
-            key={pop.id}
-            pop={pop}
-            isSelected={selectedId === pop.id}
-            showLabels={showLabels}
-            mode={mode}
-            onNodeClick={onNodeClick}
-            onMoveNode={onMoveNode || noOp}
-            onCableStart={onCableStart}
-            onCableEnd={onCableEnd}
-            cableStartPoint={cableStartPoint}
-          />
-        ))}
+            {visiblePOPs.map(pop => (
+              <POPMarker
+                key={pop.id}
+                pop={pop}
+                isSelected={selectedId === pop.id}
+                showLabels={effectiveShowLabels}
+                mode={mode}
+                onNodeClick={onNodeClick}
+                onMoveNode={onMoveNode || noOp}
+                onCableStart={onCableStart}
+                onCableEnd={onCableEnd}
+                cableStartPoint={cableStartPoint}
+              />
+            ))}
+          </MarkerClusterGroup>
+        ) : (
+          <>
+            {visibleCTOs.map(cto => (
+              <CTOMarker
+                key={cto.id}
+                cto={cto}
+                isSelected={selectedId === cto.id}
+                showLabels={effectiveShowLabels}
+                mode={mode}
+                onNodeClick={onNodeClick}
+                onMoveNode={onMoveNode || noOp}
+                onCableStart={onCableStart}
+                onCableEnd={onCableEnd}
+                cableStartPoint={cableStartPoint}
+              />
+            ))}
+
+            {visiblePOPs.map(pop => (
+              <POPMarker
+                key={pop.id}
+                pop={pop}
+                isSelected={selectedId === pop.id}
+                showLabels={effectiveShowLabels}
+                mode={mode}
+                onNodeClick={onNodeClick}
+                onMoveNode={onMoveNode || noOp}
+                onCableStart={onCableStart}
+                onCableEnd={onCableEnd}
+                cableStartPoint={cableStartPoint}
+              />
+            ))}
+          </>
+        )}
 
         {otdrResult && (
           <Marker position={[otdrResult.lat, otdrResult.lng]} icon={otdrIcon}>
