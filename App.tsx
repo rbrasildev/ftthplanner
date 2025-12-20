@@ -286,6 +286,15 @@ export default function App() {
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+    // Debounce Search Term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     // State for highlighting cable on map when hovering in editor
     const [highlightedCableId, setHighlightedCableId] = useState<string | null>(null);
@@ -459,7 +468,7 @@ export default function App() {
 
     // Search Logic - Optimized
     const searchResults = useMemo(() => {
-        const term = searchTerm.trim();
+        const term = debouncedSearchTerm.trim();
 
         // Require at least 2 characters to search
         if (term.length < 2) return [];
@@ -477,7 +486,7 @@ export default function App() {
 
         // Limit to 10 results for better performance
         return [...matchedPops, ...matchedCtos].slice(0, 10);
-    }, [searchTerm, projects, currentProjectId]);
+    }, [debouncedSearchTerm, projects, currentProjectId]);
 
     const handleSearchResultClick = (item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' }) => {
         setSelectedId(item.id);
@@ -610,12 +619,37 @@ export default function App() {
                 return;
             }
 
-            // WRAPPED WITH AUTO SNAP
-            updateCurrentNetwork(prev => autoSnapNetwork({
-                ...prev,
-                ctos: [...prev.ctos, ...newCTOs],
-                cables: [...prev.cables, ...newCables]
-            }, systemSettings.snapDistance).state);
+            // WRAPPED WITH AUTO SNAP AND DUPLICATE PREVENTION
+            updateCurrentNetwork(prev => {
+                // Prevent Duplicates: Check if items with same name/coordinates already exist
+                const validNewCTOs = newCTOs.filter(n =>
+                    !prev.ctos.some(e => e.name === n.name && Math.abs(e.coordinates.lat - n.coordinates.lat) < 0.00001 && Math.abs(e.coordinates.lng - n.coordinates.lng) < 0.00001)
+                );
+
+                const validNewCables = newCables.filter(n =>
+                    !prev.cables.some(e =>
+                        // Match by name or geometry (approx)
+                        (e.name === n.name) ||
+                        (e.coordinates.length === n.coordinates.length &&
+                            Math.abs(e.coordinates[0].lat - n.coordinates[0].lat) < 0.00001 &&
+                            Math.abs(e.coordinates[0].lng - n.coordinates[0].lng) < 0.00001)
+                    )
+                );
+
+                if (validNewCTOs.length !== newCTOs.length || validNewCables.length !== newCables.length) {
+                    showToast(t('import_duplicates_skipped', { count: (newCTOs.length - validNewCTOs.length) + (newCables.length - validNewCables.length) }), 'info');
+                }
+
+                if (validNewCTOs.length === 0 && validNewCables.length === 0) {
+                    return prev;
+                }
+
+                return autoSnapNetwork({
+                    ...prev,
+                    ctos: [...prev.ctos, ...validNewCTOs],
+                    cables: [...prev.cables, ...validNewCables]
+                }, systemSettings.snapDistance).state;
+            });
 
             if (newCTOs.length > 0) {
                 const bounds = L.latLngBounds(newCTOs.map(c => [c.coordinates.lat, c.coordinates.lng]));
@@ -817,8 +851,8 @@ export default function App() {
 
     const handleSaveCTO = (updatedCTO: CTOData) => {
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
-        setEditingCTO(null);
-        setHighlightedCableId(null);
+        // setEditingCTO(null); // Keep open
+        // setHighlightedCableId(null); // Keep highlight
         showToast(t('toast_cto_splicing_saved'));
     };
     const handleRenameCTO = (id: string, name: string) => updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === id ? { ...c, name } : c) }));

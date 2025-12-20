@@ -125,6 +125,37 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         return next;
     });
 
+    // SYNC LOCAL STATE WHEN PROP UPDATES (e.g. after Save)
+    useEffect(() => {
+        const next = JSON.parse(JSON.stringify(cto)) as CTOData;
+
+        // Preserve layout if missing in new prop (though save should have persisted it)
+        if (!next.layout) next.layout = {};
+
+        // RE-APPLY DEFAULTS to ensure consistency
+        incomingCables.forEach((cable, idx) => {
+            if (!next.layout![cable.id]) {
+                next.layout![cable.id] = { x: 42, y: 42 + (idx * 204), rotation: 0 };
+            }
+        });
+        next.splitters.forEach((split, idx) => {
+            if (!next.layout![split.id]) {
+                next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
+            }
+        });
+        next.fusions.forEach((fusion, idx) => {
+            if (!next.layout![fusion.id]) {
+                next.layout![fusion.id] = { x: 582, y: 78 + (idx * 24), rotation: 0 };
+            }
+        });
+
+        // Only update if actually different to avoid render loops (though JSON stringify is heavy, it's safe here)
+        setLocalCTO(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
+            return prev;
+        });
+    }, [cto]);
+
     // --- View Centering Logic (Pure Math) ---
     const getElementBounds = (x: number, y: number, w: number, h: number, rotation: number) => {
         const rad = (rotation * Math.PI) / 180;
@@ -516,6 +547,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         // Defaults if empty
         if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
 
+        // EXPAND BOUNDS to account for Bezier curves, shadows, and stroke widths that extend beyond the strict coordinate points
+        const SAFETY_MARGIN = 60;
+        minX -= SAFETY_MARGIN;
+        minY -= SAFETY_MARGIN;
+        maxX += SAFETY_MARGIN;
+        maxY += SAFETY_MARGIN;
+
         const padding = 100;
         const headerHeight = 170;
 
@@ -609,6 +647,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             #export-container-wrapper .border-slate-300,
             #export-container-wrapper .dark\\:border-slate-600 {
                 border-color: #94a3b8 !important;
+            }
+
+            /* 6. FIX WHITE FIBER VISIBILITY */
+            /* Add shadow to all connection paths to make white lines stand out on white bg */
+            #export-container-wrapper svg path {
+                filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
+            }
+            
+            /* Specific fix assuming 'white' fiber connections might need more contrast */
+            /* If standard white is #FFFFFF, slightly darken it for print/export visibility */
+            /* Note: This relies on the backend/types actually using #FFFFFF */
+            
+            /* Also ensure text numbers in fibers are centered (handled in component, but good to ensure reset) */
+            #export-container-wrapper .flex.items-center.justify-center {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
         </style>
         <div id="export-container-wrapper" class="light" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff;">
@@ -1163,8 +1218,39 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                         points: []
                     };
 
+                    // CALCULATE ROTATION BASED ON CABLE DIRECTION
+                    let rotation = 0;
+                    const p1 = getPortCenter(hitConnection.sourceId);
+                    const p2 = getPortCenter(hitConnection.targetId);
+
+                    if (p1 && p2) {
+                        const points = [p1, ...(hitConnection.points || []), p2];
+                        for (let i = 0; i < points.length - 1; i++) {
+                            const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
+                            if (dist < 25) {
+                                // Found the segment we hit
+                                const dx = points[i + 1].x - points[i].x;
+                                const dy = points[i + 1].y - points[i].y;
+
+                                if (Math.abs(dx) > Math.abs(dy)) {
+                                    rotation = dx > 0 ? 0 : 180;
+                                } else {
+                                    rotation = dy > 0 ? 90 : 270;
+                                }
+                                break;
+                            }
+                        }
+                    }
+
                     setLocalCTO(prev => ({
                         ...prev,
+                        layout: {
+                            ...prev.layout,
+                            [fusionId]: {
+                                ...prev.layout![fusionId],
+                                rotation: rotation
+                            }
+                        },
                         // RUTHLESS ENFORCEMENT: Remove the cable being split AND any existing connections on THIS fusion's ports.
                         connections: [
                             ...prev.connections.filter(c =>

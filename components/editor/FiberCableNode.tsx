@@ -65,7 +65,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             `}
             >
                 {/* CONTROLS (Floating above) - Bridge added with bottom overlap and removed delay */}
-                <div className="absolute bottom-[calc(100%-5px)] left-0 pb-3 z-50 flex flex-col items-start opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute bottom-[calc(100%-5px)] left-0 pb-8 z-50 flex flex-col items-start opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-500 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-lg whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e); }}
@@ -149,13 +149,13 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         className={`
                                         w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 cursor-pointer select-none
                                         hover:scale-125 transition-transform z-30
-                                        absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold text-center
+                                        absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold
+                                        flex items-center justify-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
                                         ${isLit ? 'ring-2 ring-red-500 shadow-[0_0_10px_#ef4444] border-red-500' : ''}
                                     `}
                                         style={{
-                                            backgroundColor: color,
-                                            lineHeight: '12px'
+                                            backgroundColor: color
                                         }}
                                     >
                                         {i + 1}

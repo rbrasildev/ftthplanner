@@ -134,50 +134,33 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
           </label>
         </div>
 
-        {/* Project List */}
-        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t('your_projects')}</h3>
+        {/* Current Project Info */}
+        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t('current_project')}</h3>
         <div className="space-y-2">
-          {projects.map(project => (
-            <div
-              key={project.id}
-              className={`
-                  flex items-center justify-between p-3 rounded-lg border transition-all
-                  ${project.id === currentProjectId
-                  ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-500 dark:border-sky-600 shadow-md'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'}
-                `}
-            >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className={`w-2 h-2 rounded-full shrink-0 ${project.id === currentProjectId ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                <div className="overflow-hidden">
-                  <h4 className={`text-sm font-bold truncate ${project.id === currentProjectId ? 'text-sky-700 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {project.name}
-                  </h4>
-                  <p className="text-[10px] text-slate-500">
-                    {t('items_count', { ctos: project.network.ctos.length, cables: project.network.cables.length })}
-                  </p>
-                </div>
-              </div>
+          {(() => {
+            const currentProject = projects.find(p => p.id === currentProjectId);
+            if (!currentProject) return null;
 
-              <div className="flex items-center gap-2 shrink-0">
-                {project.id !== currentProjectId && (
-                  <button
-                    onClick={() => onSelectProject(project.id)}
-                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-sky-600 dark:hover:bg-sky-600 text-xs font-bold text-slate-700 dark:text-white hover:text-white rounded transition"
-                  >
-                    {t('load_project')}
-                  </button>
-                )}
-                <button
-                  onClick={() => onDeleteProject(project.id)}
-                  className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
-                  title={t('delete')}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+            return (
+              <div
+                className="flex items-center justify-between p-3 rounded-lg border transition-all bg-sky-50 dark:bg-sky-900/20 border-sky-500 dark:border-sky-600 shadow-md"
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-2 h-2 rounded-full shrink-0 bg-sky-500" />
+                  <div className="overflow-hidden">
+                    <h4 className="text-sm font-bold truncate text-sky-700 dark:text-white">
+                      {currentProject.name}
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      {t('items_count', { ctos: currentProject.network.ctos.length, cables: currentProject.network.cables.length })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* No actions for now, as delete/switch is handled in Dashboard */}
               </div>
-            </div>
-          ))}
+            );
+          })()}
         </div>
 
       </div>

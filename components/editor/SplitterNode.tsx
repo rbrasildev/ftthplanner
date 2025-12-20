@@ -52,8 +52,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 className="
                 absolute -top-10 left-1/2 -translate-x-1/2
                 w-[120px] flex justify-center
-                pb-4
-                opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out delay-75
+                pb-5
+                opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out delay-500 group-hover:delay-0
                 scale-90 group-hover:scale-100 origin-bottom
                 z-50 pointer-events-none group-hover:pointer-events-auto
             "

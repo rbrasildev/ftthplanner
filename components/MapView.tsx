@@ -532,7 +532,32 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
   // Filter visible elements using useMemo for performance
-  const visibleCables = useMemo(() => showCables ? cables : [], [showCables, cables]);
+  const visibleCables = useMemo(() => {
+    if (!showCables) return [];
+
+    // If no bounds yet (initial load), return a safe subset to prevent freeze
+    if (!mapBoundsState) return cables.slice(0, 500);
+
+    const paddedBounds = mapBoundsState.pad(0.2); // 20% buffer
+
+    // Performance: optimization for large datasets (70k+ cables)
+    // Only render cables that intersect with the current viewport
+    return cables.filter(cable => {
+      // Quick check: if cable has no coordinates, skip
+      if (!cable.coordinates || cable.coordinates.length === 0) return false;
+
+      // Optimization: Check if at least one point is visible
+      // This handles most cases. For very long cables passing through but with no points inside, 
+      // strict intersection is harder but this is a good trade-off for speed.
+      // We check start, middle, and end to be safer? 
+      // Checking ALL points is O(N*M), but M is small (points per cable).
+      // For 71k cables, simple loop is fast enough in JS engine.
+      for (const coord of cable.coordinates) {
+        if (paddedBounds.contains(coord)) return true;
+      }
+      return false;
+    });
+  }, [showCables, cables, mapBoundsState]);
 
   const visibleCTOs = useMemo(() => showCTOs ? ctos : [], [showCTOs, ctos]);
   const visiblePOPs = useMemo(() => showPOPs ? pops : [], [showPOPs, pops]);

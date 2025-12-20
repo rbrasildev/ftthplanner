@@ -137,9 +137,17 @@ export const deleteProject = async (req: Request, res: Response) => {
     const userId = (req as AuthRequest).user?.id;
     const { id } = req.params;
     try {
+        // Explicitly delete related resources first to ensure no orphans
+        // This is a safety measure in case DB cascade is not configured
+        await prisma.cable.deleteMany({ where: { projectId: id } });
+        await prisma.cto.deleteMany({ where: { projectId: id } });
+        await prisma.pop.deleteMany({ where: { projectId: id } });
+
+        // Delete the project
         await prisma.project.deleteMany({ where: { id, userId } });
         res.json({ success: true });
     } catch (e) {
+        console.error("Delete project error:", e);
         res.status(500).json({ error: 'Failed' });
     }
 }
