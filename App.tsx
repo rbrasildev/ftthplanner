@@ -9,11 +9,12 @@ import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardPage } from './components/DashboardPage';
+import { SearchBox } from './components/SearchBox';
 import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOStatus, SystemSettings } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
-    Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2
+    Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2, Building2
 } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
@@ -285,16 +286,8 @@ export default function App() {
     const [editingCable, setEditingCable] = useState<CableData | null>(null);
 
     // Search State
-    const [searchTerm, setSearchTerm] = useState('');
+    // searchTerm handled by SearchBox component to avoid re-renders
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-    // Debounce Search Term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
 
     // State for highlighting cable on map when hovering in editor
     const [highlightedCableId, setHighlightedCableId] = useState<string | null>(null);
@@ -496,7 +489,7 @@ export default function App() {
             [item.coordinates.lat - offset, item.coordinates.lng - offset],
             [item.coordinates.lat + offset, item.coordinates.lng + offset]
         ]);
-        setSearchTerm('');
+        // setSearchTerm handled by SearchBox locally
     };
 
     // ... (litNetwork logic unchanged) ...
@@ -851,7 +844,7 @@ export default function App() {
 
     const handleSaveCTO = (updatedCTO: CTOData) => {
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
-        // setEditingCTO(null); // Keep open
+        setEditingCTO(updatedCTO); // Sync state to avoid "unsaved changes" on close
         // setHighlightedCableId(null); // Keep highlight
         showToast(t('toast_cto_splicing_saved'));
     };
@@ -1106,42 +1099,13 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* 3. Search (Fixed, outside scroll) */}
+                {/* 3. Search (Fixed, outside scroll) - Optimized Component */}
                 <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-950 z-30">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Localizar</label>
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Buscar cabos, caixas..."
-                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
-                            />
-                            {/* Search Dropdown Logic */}
-                            {searchTerm.trim() !== '' && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[3000] max-h-60 overflow-y-auto p-1">
-                                    {searchResults.length > 0 ? (
-                                        searchResults.map((item) => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => handleSearchResultClick(item)}
-                                                className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center gap-3 group/item"
-                                            >
-                                                <div className={`p-1.5 rounded-md ${item.type === 'POP' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
-                                                    {item.type === 'POP' ? <Server className="w-3 h-3" /> : <Box className="w-3 h-3" />}
-                                                </div>
-                                                <span className="font-medium text-slate-700 dark:text-slate-200 group-hover/item:text-sky-600 dark:group-hover/item:text-sky-400 transition-colors truncate">{item.name}</span>
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <div className="p-4 text-xs text-slate-400 text-center italic">{t('search_no_results')}</div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <SearchBox
+                        onSearch={setDebouncedSearchTerm}
+                        results={searchResults}
+                        onResultClick={handleSearchResultClick}
+                    />
                 </div>
 
                 {/* 4. Main Tools Scroll Attributes */}
@@ -1197,14 +1161,14 @@ export default function App() {
                                         onClick={() => { setToolMode('add_cto'); setSelectedId(null); }}
                                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_cto' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-200 dark:hover:border-slate-700 hover:bg-blue-50/50 dark:hover:bg-slate-800'}`}
                                     >
-                                        <MapIcon className="w-5 h-5" />
+                                        <Box className="w-5 h-5" />
                                         <span className="text-[10px] font-bold">Nova CTO</span>
                                     </button>
                                     <button
                                         onClick={() => { setToolMode('add_pop'); setSelectedId(null); }}
                                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_pop' ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-slate-700 hover:bg-indigo-50/50 dark:hover:bg-slate-800'}`}
                                     >
-                                        <Server className="w-5 h-5" />
+                                        <Building2 className="w-5 h-5" />
                                         <span className="text-[10px] font-bold">Novo POP</span>
                                     </button>
                                 </div>

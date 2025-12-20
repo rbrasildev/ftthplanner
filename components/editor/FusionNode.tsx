@@ -9,8 +9,8 @@ interface FusionNodeProps {
     connections: FiberConnection[];
     litPorts: Set<string>;
     hoveredPortId: string | null;
-    onDragStart: (e: React.MouseEvent) => void;
-    onRotate: (e: React.MouseEvent) => void;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onRotate: (e: React.MouseEvent, id: string) => void;
     onDelete: (e: React.MouseEvent) => void;
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
@@ -58,7 +58,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     scale-90 group-hover:scale-100 origin-bottom
                     z-50 pointer-events-none group-hover:pointer-events-auto
                 "
-                onMouseDown={onDragStart}
+                onMouseDown={(e) => onDragStart(e, fusion.id)}
             >
                 <div className="
                     bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg
@@ -71,7 +71,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     <div className="h-2 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
 
                     <button
-                        onClick={onRotate}
+                        onClick={(e) => onRotate(e, fusion.id)}
                         onMouseDown={(e) => e.stopPropagation()}
                         className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors cursor-pointer"
                         title="Rotate"
@@ -93,7 +93,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
             {/* Body */}
             <div
                 className="relative w-full h-3 flex items-center justify-center cursor-grab active:cursor-grabbing"
-                onMouseDown={onDragStart}
+                onMouseDown={(e) => onDragStart(e, fusion.id)}
             >
                 {/* Center Body */}
                 <div className={`

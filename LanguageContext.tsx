@@ -101,6 +101,7 @@ const translations = {
     'otdr_success_cable': 'Found inside cable {name}',
     'otdr_trace_msg': 'Trace from selected fiber',
     'otdr_instruction_banner': 'Click a fiber port to measure distance.',
+    'otdr_event_tooltip': 'OTDR Event',
 
     // Common
     'save': 'Save',
@@ -325,6 +326,7 @@ const translations = {
     'otdr_success_cable': 'Encontrado dentro do cabo {name}',
     'otdr_trace_msg': 'Rastrear a partir da fibra selecionada',
     'otdr_instruction_banner': 'Clique em uma porta de fibra para medir a distância.',
+    'otdr_event_tooltip': 'Evento OTDR',
 
     // Common
     'save': 'Salvar',

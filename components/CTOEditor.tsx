@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, FIBER_COLORS, ElementLayout, CTO_STATUS_COLORS } from '../types';
 import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -155,6 +155,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             return prev;
         });
     }, [cto]);
+
+    // SYNC REF for performance-critical handlers
+    const localCTORef = useRef(localCTO);
+    useLayoutEffect(() => {
+        localCTORef.current = localCTO;
+    }, [localCTO]);
 
     // --- View Centering Logic (Pure Math) ---
     const getElementBounds = (x: number, y: number, w: number, h: number, rotation: number) => {
@@ -824,20 +830,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         }
     };
 
-    const handleElementDragStart = (e: React.MouseEvent, id: string) => {
+    const handleElementDragStart = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (isVflToolActive || isOtdrToolActive) return; // Disable dragging in specialized modes
+        if (isVflToolActive || isOtdrToolActive) return;
 
         setDragState({
             mode: 'element',
             targetId: id,
             startX: e.clientX,
             startY: e.clientY,
-            initialLayout: getLayout(id)
+            initialLayout: localCTORef.current.layout?.[id] || { x: 0, y: 0, rotation: 0 }
         });
-    };
+    }, [isVflToolActive, isOtdrToolActive]);
 
-    const handleRotateElement = (e: React.MouseEvent, id: string) => {
+    const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
 
@@ -852,9 +858,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 }
             };
         });
-    };
+    }, [isVflToolActive, isOtdrToolActive]);
 
-    const handleMirrorElement = (e: React.MouseEvent, id: string) => {
+    const handleMirrorElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
 
@@ -865,9 +871,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 [id]: { ...prev.layout![id], mirrored: !prev.layout![id].mirrored }
             }
         }));
-    };
+    }, [isVflToolActive, isOtdrToolActive]);
 
-    const handlePortMouseDown = (e: React.MouseEvent, portId: string) => {
+    const handlePortMouseDown = useCallback((e: React.MouseEvent, portId: string) => {
         e.stopPropagation();
 
         // VFL MODE LOGIC
@@ -885,7 +891,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         const { x, y } = screenToCanvas(e.clientX, e.clientY);
 
         // CHECK IF PORT HAS EXISTING CONNECTION
-        const existingConn = localCTO.connections.find(c => c.sourceId === portId || c.targetId === portId);
+        const existingConn = localCTORef.current.connections.find(c => c.sourceId === portId || c.targetId === portId);
 
         if (existingConn) {
             // RECONNECT MODE
@@ -912,7 +918,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 currentMouseY: y
             });
         }
-    };
+    }, [isVflToolActive, isOtdrToolActive, onToggleVfl, setOtdrTargetPort, viewState]);
+
+    const handlePortMouseLeave = useCallback(() => setHoveredPortId(null), []);
+
+    const handleCableMouseEnter = useCallback((id: string) => onHoverCable && onHoverCable(id), [onHoverCable]);
+    const handleCableMouseLeave = useCallback((id: string) => onHoverCable && onHoverCable(null), [onHoverCable]);
+
+    // Optimize handleCableClick explicitly to avoid re-renders during drag
+    const smartAlignFnRef = useRef(handleSmartAlignCable);
+    useLayoutEffect(() => { smartAlignFnRef.current = handleSmartAlignCable; });
+
+    const handleCableClick = useCallback((e: React.MouseEvent, id: string) => {
+        if (isSmartAlignMode) {
+            e.stopPropagation();
+            smartAlignFnRef.current(id);
+        }
+    }, [isSmartAlignMode]);
 
     const handlePointMouseDown = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
@@ -1676,20 +1698,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
-                                    onDragStart={(e) => handleElementDragStart(e, cable.id)}
-                                    onRotate={(e) => handleRotateElement(e, cable.id)}
-                                    onMirror={(e) => handleMirrorElement(e, cable.id)}
+                                    onDragStart={handleElementDragStart}
+                                    onRotate={handleRotateElement}
+                                    onMirror={handleMirrorElement}
                                     onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={(id) => setHoveredPortId(id)}
-                                    onPortMouseLeave={() => setHoveredPortId(null)}
-                                    onCableMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
-                                    onCableMouseLeave={() => onHoverCable && onHoverCable(null)}
-                                    onCableClick={(e) => {
-                                        if (isSmartAlignMode) {
-                                            e.stopPropagation();
-                                            handleSmartAlignCable(cable.id);
-                                        }
-                                    }}
+                                    onPortMouseEnter={setHoveredPortId}
+                                    onPortMouseLeave={handlePortMouseLeave}
+                                    onCableMouseEnter={handleCableMouseEnter}
+                                    onCableMouseLeave={handleCableMouseLeave}
+                                    onCableClick={handleCableClick}
                                 />
                             );
                         })}
@@ -1704,12 +1721,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
-                                    onDragStart={(e) => handleElementDragStart(e, fusion.id)}
-                                    onRotate={(e) => handleRotateElement(e, fusion.id)}
+                                    onDragStart={handleElementDragStart}
+                                    onRotate={handleRotateElement}
                                     onDelete={(e) => { e.stopPropagation(); handleDeleteFusion(fusion.id); }}
                                     onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={(id) => setHoveredPortId(id)}
-                                    onPortMouseLeave={() => setHoveredPortId(null)}
+                                    onPortMouseEnter={setHoveredPortId}
+                                    onPortMouseLeave={handlePortMouseLeave}
                                 />
                             );
                         })}
@@ -1724,12 +1741,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
-                                    onDragStart={(e) => handleElementDragStart(e, splitter.id)}
-                                    onRotate={(e) => handleRotateElement(e, splitter.id)}
+                                    onDragStart={handleElementDragStart}
+                                    onRotate={handleRotateElement}
                                     onDelete={(e) => { e.stopPropagation(); handleDeleteSplitter(splitter.id); }}
                                     onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={(id) => setHoveredPortId(id)}
-                                    onPortMouseLeave={() => setHoveredPortId(null)}
+                                    onPortMouseEnter={setHoveredPortId}
+                                    onPortMouseLeave={handlePortMouseLeave}
                                 />
                             );
                         })}

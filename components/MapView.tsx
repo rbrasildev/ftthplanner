@@ -139,41 +139,22 @@ const otdrIcon = L.divIcon({
   className: 'otdr-icon',
   html: `
     <div style="position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-        <div style="
+        <div class="animate-ping" style="
             position: absolute;
-            width: 30px; height: 30px;
+            width: 100%; height: 100%;
             border-radius: 50%;
-            background: rgba(220, 38, 38, 0.3);
+            background: rgba(239, 68, 68, 0.6);
             border: 2px solid #ef4444;
-            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
         "></div>
         <div style="
+            position: relative;
             width: 12px; height: 12px;
             background: #ef4444;
             border: 2px solid white;
             border-radius: 50%;
             z-index: 10;
         "></div>
-        <div style="
-            position: absolute;
-            top: -25px;
-            background: #ef4444;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            white-space: nowrap;
-        ">EVENT</div>
-    </div >
-  <style>
-    @keyframes ping {
-      75 %, 100 % {
-        transform: scale(2);
-        opacity: 0;
-      }
-    }
-  </style>
+    </div>
 `,
   iconSize: [30, 30],
   iconAnchor: [15, 15]
@@ -813,7 +794,7 @@ export const MapView: React.FC<MapViewProps> = ({
         {otdrResult && (
           <Marker position={[otdrResult.lat, otdrResult.lng]} icon={otdrIcon}>
             <Tooltip direction="top" permanent offset={[0, -20]} className="font-bold border-0 bg-slate-800 text-white shadow-xl">
-              OTDR Event
+              {t('otdr_event_tooltip')}
             </Tooltip>
           </Marker>
         )}

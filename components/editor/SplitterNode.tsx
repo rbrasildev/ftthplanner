@@ -9,8 +9,8 @@ interface SplitterNodeProps {
     connections: FiberConnection[];
     litPorts: Set<string>;
     hoveredPortId: string | null;
-    onDragStart: (e: React.MouseEvent) => void;
-    onRotate: (e: React.MouseEvent) => void;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onRotate: (e: React.MouseEvent, id: string) => void;
     onDelete: (e: React.MouseEvent) => void;
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
@@ -57,7 +57,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 scale-90 group-hover:scale-100 origin-bottom
                 z-50 pointer-events-none group-hover:pointer-events-auto
             "
-                onMouseDown={onDragStart}
+                onMouseDown={(e) => onDragStart(e, splitter.id)}
             >
                 <div className="
                 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-600 rounded-full 
@@ -69,7 +69,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <span className="text-[7px] font-bold text-slate-800 dark:text-white whitespace-nowrap max-w-[60px] truncate">{splitter.name}</span>
                     <div className="h-2 w-[1px] bg-slate-200 dark:bg-slate-600/50"></div>
 
-                    <button onClick={onRotate} className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors p-0.5 transition"><RotateCw className="w-3 h-3" /></button>
+                    <button onClick={(e) => onRotate(e, splitter.id)} className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors p-0.5 transition"><RotateCw className="w-3 h-3" /></button>
                     <button onClick={onDelete} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200 transition-colors p-0.5 transition"><Trash2 className="w-3 h-3" /></button>
                 </div>
             </div>
@@ -78,7 +78,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
             <div
                 style={{ height: 48, top: 12 }}
                 className="absolute inset-x-0 drop-shadow-xl z-10"
-                onMouseDown={onDragStart}
+                onMouseDown={(e) => onDragStart(e, splitter.id)}
             >
                 <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                     <polygon

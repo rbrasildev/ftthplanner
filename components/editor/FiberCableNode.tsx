@@ -8,15 +8,15 @@ interface FiberCableNodeProps {
     connections: FiberConnection[];
     litPorts: Set<string>;
     hoveredPortId: string | null;
-    onDragStart: (e: React.MouseEvent) => void;
-    onRotate: (e: React.MouseEvent) => void;
-    onMirror: (e: React.MouseEvent) => void;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onRotate: (e: React.MouseEvent, id: string) => void;
+    onMirror: (e: React.MouseEvent, id: string) => void;
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
     onPortMouseLeave: () => void;
-    onCableMouseEnter?: () => void;
-    onCableMouseLeave?: () => void;
-    onCableClick?: (e: React.MouseEvent) => void;
+    onCableMouseEnter?: (id: string) => void;
+    onCableMouseLeave?: (id: string) => void;
+    onCableClick?: (e: React.MouseEvent, id: string) => void;
 }
 
 const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
@@ -64,18 +64,18 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 ${isMirrored ? 'order-2' : 'order-1'}
             `}
             >
-                {/* CONTROLS (Floating above) - Bridge added with bottom overlap and removed delay */}
-                <div className="absolute bottom-[calc(100%-5px)] left-0 pb-8 z-50 flex flex-col items-start opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-500 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
+                {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
+                <div className="absolute bottom-[calc(100%-2px)] left-0 pb-4 z-50 flex flex-col items-start opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-500 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-lg whitespace-nowrap">
                         <button
-                            onClick={(e) => { e.stopPropagation(); onMirror(e); }}
+                            onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
                             className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                             title="Flip"
                         >
                             <ArrowRightLeft className="w-3 h-3" />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); onRotate(e); }}
+                            onClick={(e) => { e.stopPropagation(); onRotate(e, cable.id); }}
                             className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                             title="Rotate"
                         >
@@ -84,25 +84,23 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     </div>
                 </div>
 
-                {/* VISUAL BODY */}
-                <div className={`
-                flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden w-[168px] h-full
-                ${isMirrored ? 'rounded-r-lg border-l-0' : 'rounded-l-lg border-r-0'}
-            `}>
-                    {/* Header / Grip - Exact 24px height */}
-                    <div
-                        className="h-6 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center cursor-grab active:cursor-grabbing shrink-0 z-20 relative"
-                        onMouseDown={onDragStart}
-                    >
-                        <GripHorizontal className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                    </div>
+                {/* VISUAL BODY - Draggable Area Updated */}
+                <div
+                    className={`
+                        flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden w-[168px] h-full
+                        ${isMirrored ? 'border-l-0' : 'border-r-0'}
+                        cursor-grab active:cursor-grabbing
+                    `}
+                    onMouseDown={(e) => onDragStart(e, cable.id)}
+                >
+
 
                     {/* Content Area - Now grows to match fibers height */}
                     <div
                         className="p-2.5 flex flex-col justify-center flex-1"
-                        onMouseEnter={onCableMouseEnter}
-                        onMouseLeave={onCableMouseLeave}
-                        onClick={onCableClick}
+                        onMouseEnter={() => onCableMouseEnter?.(cable.id)}
+                        onMouseLeave={() => onCableMouseLeave?.(cable.id)}
+                        onClick={(e) => onCableClick?.(e, cable.id)}
                     >
                         <span className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight line-clamp-2 uppercase select-none">
                             {cable.name}
