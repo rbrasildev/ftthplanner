@@ -1500,7 +1500,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             style={{ left: windowPos.x, top: windowPos.y }}
         >
             <div
-                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-900 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
             >

@@ -40,11 +40,11 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     return (
         <div
             style={{
-                transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
-                height: '12px', // Aligned to 1x12 for perfect stacking
+                transform: `translate(${layout.x}px, ${layout.y + 6}px) rotate(${layout.rotation}deg)`,
+                height: '12px', // Compact height to prevent click overlaps
                 width: '24px'   // Fits grid
             }}
-            className="absolute z-20 flex flex-col items-center justify-center group select-none hover:z-50 -mt-[6px]"
+            className="absolute z-20 flex flex-col items-center justify-center group select-none hover:z-50"
         >
             {/* Header Wrapper / Controls */}
             <div

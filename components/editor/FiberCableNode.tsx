@@ -52,9 +52,36 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
         };
     });
 
+    // Fix Vertical Alignment on Rotation:
+    // When rotating 90deg, the element rotates around its center.
+    // If the height is not a multiple of 24 (2 * Grid), the visual center (and thus ports) falls off-grid.
+    // We add paddingBottom to force the total height to be a multiple of 24px.
+    const initialHeight = 6 + (looseTubeCount > 0 ? looseTubeCount * fibersPerTube * 12 + (looseTubeCount - 1) * 12 : 0);
+    // Actually simpler: The structure is pt-1.5 (6px) + tubes * (fibers*12) + gaps.
+    // Let's assume standard 1 tube, 12 fibers = 6 + 144 = 150px.
+    // 150 % 24 = 6. We need to add 18px to reach 168.
+    // But wait, "flex items-stretch". We apply min-height or padding to the wrapper?
+    // The wrapper is "items-stretch". The children define height?
+    // No, we can enforce height on the wrapper. But wrapper is "flex-row". Height is max(LabelBox, Fibers).
+    // LabelBox height is "h-full". Fibers height determines it.
+
+    // Let's calculate the natural height of the fibers column:
+    // pt-1.5 (6px) + for each tube: (fibers * 12) + gap-3 (12px) between tubes.
+    const fibersHeight = 6 + tubes.reduce((acc, tube, idx) => {
+        const height = tube.fiberIndices.length * 12;
+        const gap = idx < tubes.length - 1 ? 12 : 0;
+        return acc + height + gap;
+    }, 0);
+
+    const remainder = fibersHeight % 24;
+    const paddingBottom = remainder > 0 ? 24 - remainder : 0;
+
     return (
         <div
-            style={{ transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)` }}
+            style={{
+                transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
+                paddingBottom: `${paddingBottom}px` // invisible padding to align center
+            }}
             className="absolute flex flex-row group z-20 cursor-default items-stretch"
         >
             {/* 1. THE LABEL BOX (Horizontal style, height tied to content) */}
