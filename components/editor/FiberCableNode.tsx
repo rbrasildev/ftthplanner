@@ -9,7 +9,7 @@ interface FiberCableNodeProps {
     litPorts: Set<string>;
     hoveredPortId: string | null;
     onDragStart: (e: React.MouseEvent, id: string) => void;
-    onRotate: (e: React.MouseEvent, id: string) => void;
+    onAction: (e: React.MouseEvent, id: string) => void;
     onMirror: (e: React.MouseEvent, id: string) => void;
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
@@ -26,7 +26,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     litPorts,
     hoveredPortId,
     onDragStart,
-    onRotate,
+    onAction,
     onMirror,
     onPortMouseDown,
     onPortMouseEnter,
@@ -65,8 +65,8 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             `}
             >
                 {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
-                <div className="absolute bottom-[calc(100%-2px)] left-0 pb-4 z-50 flex flex-col items-start opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-500 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
-                    <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-lg whitespace-nowrap">
+                <div className="absolute top-0 right-0 -mt-6 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+                    <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
                             className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
@@ -74,20 +74,14 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         >
                             <ArrowRightLeft className="w-3 h-3" />
                         </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onRotate(e, cable.id); }}
-                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                            title="Rotate"
-                        >
-                            <RotateCw className="w-3 h-3" />
-                        </button>
+
                     </div>
                 </div>
 
                 {/* VISUAL BODY - Draggable Area Updated */}
                 <div
                     className={`
-                        flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden w-[168px] h-full
+                        flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden w-[168px] h-full
                         ${isMirrored ? 'border-l-0' : 'border-r-0'}
                         cursor-grab active:cursor-grabbing
                     `}
@@ -118,7 +112,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     <div
                         key={`tube-${tube.tubeIdx}`}
                         className={`
-                        relative flex flex-col justify-center
+                        relative flex flex-col justify-center pt-1.5
                         ${isMirrored ? 'border-r-2 pr-1' : 'border-l-2 pl-1'}
                     `}
                         style={{ borderColor: FIBER_COLORS[tube.tubeIdx % FIBER_COLORS.length] }}
@@ -133,10 +127,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                             return (
                                 <div
                                     key={fiberId}
-                                    className={`relative h-6 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
+                                    className={`relative h-3 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
                                 >
                                     {/* Connecting line */}
-                                    <div className={`w-full h-[1px] transition-all ${isMirrored ? 'ml-2' : 'mr-2'} ${isLit ? 'bg-red-500 shadow-[0_0_5px_#ef4444]' : 'bg-slate-400 dark:bg-slate-500 opacity-40'}`}></div>
+                                    <div className={`w-full h-[1px] transition-all ${isMirrored ? 'ml-2' : 'mr-2'} ${isLit ? 'bg-red-500' : 'bg-slate-400 dark:bg-slate-500 opacity-40'}`}></div>
 
                                     {/* Port Circle - Center at 12px height and aligned with grid */}
                                     <div
@@ -145,12 +139,12 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         onMouseEnter={() => onPortMouseEnter(fiberId)}
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
-                                        w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 cursor-pointer select-none
+                                        w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-600 cursor-pointer select-none
                                         hover:scale-125 transition-transform z-30
                                         absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold
                                         flex items-center justify-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
-                                        ${isLit ? 'ring-2 ring-red-500 shadow-[0_0_10px_#ef4444] border-red-500' : ''}
+                                        ${isLit ? 'ring-2 ring-red-500 border-red-500' : ''}
                                     `}
                                         style={{
                                             backgroundColor: color

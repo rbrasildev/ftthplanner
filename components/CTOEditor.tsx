@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, FIBER_COLORS, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
@@ -288,6 +288,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
+    const [isRotateMode, setIsRotateMode] = useState(false);
+    const [isDeleteMode, setIsDeleteMode] = useState(false);
     const GRID_SIZE = 12;
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -381,25 +383,57 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 if (!p1 || !p2) return c;
 
                 const currentPoints = c.points || [];
-                const cornerA = { x: p2.x, y: p1.y }; // Horizontal then Vertical
-                const cornerB = { x: p1.x, y: p2.y }; // Vertical then Horizontal
 
-                // Snap points to grid for consistency
-                cornerA.x = Math.round(cornerA.x / GRID_SIZE) * GRID_SIZE;
-                cornerA.y = Math.round(cornerA.y / GRID_SIZE) * GRID_SIZE;
-                cornerB.x = Math.round(cornerB.x / GRID_SIZE) * GRID_SIZE;
-                cornerB.y = Math.round(cornerB.y / GRID_SIZE) * GRID_SIZE;
-
-                const isAtA = currentPoints.length === 1 && Math.abs(currentPoints[0].x - cornerA.x) < 2 && Math.abs(currentPoints[0].y - cornerA.y) < 2;
-                const isAtB = currentPoints.length === 1 && Math.abs(currentPoints[0].x - cornerB.x) < 2 && Math.abs(currentPoints[0].y - cornerB.y) < 2;
-
+                // 1. IF NO POINTS: Use default L-Shape logic (Best guess)
                 if (currentPoints.length === 0) {
-                    return { ...c, points: [cornerA] };
-                } else if (isAtA) {
-                    return { ...c, points: [cornerB] };
-                } else {
-                    return { ...c, points: [] };
+                    const cornerA = { x: p2.x, y: p1.y }; // Horizontal then Vertical
+                    const cornerB = { x: p1.x, y: p2.y }; // Vertical then Horizontal
+
+                    // Simple cost function: choose the one that overlaps less? 
+                    // For now, simple distance heuristic or default to B (Standard)
+                    // Let's stick to previous robust logic:
+
+                    const gA = { x: Math.round(cornerA.x / GRID_SIZE) * GRID_SIZE, y: Math.round(cornerA.y / GRID_SIZE) * GRID_SIZE };
+
+                    return { ...c, points: [gA] };
                 }
+
+                // 2. PRESERVE SHAPE: Orthogonalize existing points
+                // Establish start point for alignment check
+                let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
+
+                const newPoints = currentPoints.map(p => {
+                    // Snap to grid first
+                    let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                    let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+
+                    // Check alignment with previous point
+                    const dx = Math.abs(nx - prevRef.x);
+                    const dy = Math.abs(ny - prevRef.y);
+
+                    // If deviation is small (<= 1.5 grid cells), snap to axis
+                    const THRESHOLD = GRID_SIZE * 1.5;
+
+                    if (dx < THRESHOLD) {
+                        nx = prevRef.x; // Align Vertical
+                    } else if (dy < THRESHOLD) {
+                        ny = prevRef.y; // Align Horizontal
+                    }
+
+                    // Update ref for next segment
+                    prevRef = { x: nx, y: ny };
+                    return { x: nx, y: ny };
+                });
+
+                // 3. CLEANUP: Remove duplicates or points that are collinear and redundant?
+                // Minimal cleanup: just remove sequential duplicates to avoid glitches
+                const uniquePoints = newPoints.filter((p, i) => {
+                    if (i === 0) return true;
+                    const prevP = newPoints[i - 1];
+                    return !(p.x === prevP.x && p.y === prevP.y);
+                });
+
+                return { ...c, points: uniquePoints };
             })
         }));
     };
@@ -843,22 +877,55 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         });
     }, [isVflToolActive, isOtdrToolActive]);
 
-    const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
+    const handleDeleteSplitter = useCallback((id: string) => {
+        setLocalCTO(prev => {
+            const s = prev.splitters.find(x => x.id === id);
+            if (!s) return prev;
+            const portIds = [s.inputPortId, ...s.outputPortIds];
+            return {
+                ...prev,
+                splitters: prev.splitters.filter(x => x.id !== id),
+                connections: prev.connections.filter(c => !portIds.includes(c.sourceId) && !portIds.includes(c.targetId))
+            };
+        });
+    }, []);
+
+    const handleDeleteFusion = useCallback((id: string) => {
+        setLocalCTO(prev => {
+            const portIds = [`${id}-a`, `${id}-b`];
+            return {
+                ...prev,
+                fusions: prev.fusions.filter(f => f.id !== id),
+                connections: prev.connections.filter(c => !portIds.includes(c.sourceId) && !portIds.includes(c.targetId))
+            };
+        });
+    }, []);
+
+    const handleElementAction = useCallback((e: React.MouseEvent, id: string, type: 'splitter' | 'fusion' | 'cable') => {
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
 
-        setLocalCTO(prev => {
-            const currentRot = prev.layout?.[id]?.rotation || 0;
-            const newRot = (currentRot + 90) % 360;
-            return {
-                ...prev,
-                layout: {
-                    ...prev.layout,
-                    [id]: { ...prev.layout![id], rotation: newRot }
-                }
-            };
-        });
-    }, [isVflToolActive, isOtdrToolActive]);
+        if (isRotateMode) {
+            setLocalCTO(prev => {
+                const currentRot = prev.layout?.[id]?.rotation || 0;
+                const newRot = (currentRot + 90) % 360;
+                return {
+                    ...prev,
+                    layout: {
+                        ...prev.layout,
+                        [id]: { ...prev.layout![id], rotation: newRot }
+                    }
+                };
+            });
+        } else if (isDeleteMode) {
+            if (type === 'splitter') {
+                handleDeleteSplitter(id);
+            } else if (type === 'fusion') {
+                handleDeleteFusion(id);
+            }
+            // Cable deletion not requested, but safe to ignore or add later
+        }
+    }, [isVflToolActive, isOtdrToolActive, isRotateMode, isDeleteMode, handleDeleteSplitter, handleDeleteFusion]);
 
     const handleMirrorElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -933,8 +1000,42 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         if (isSmartAlignMode) {
             e.stopPropagation();
             smartAlignFnRef.current(id);
+            return;
         }
-    }, [isSmartAlignMode]);
+
+        if (isRotateMode) {
+            e.stopPropagation();
+            setLocalCTO(prev => {
+                const currentRot = prev.layout?.[id]?.rotation || 0;
+                const newRot = (currentRot + 90) % 360;
+                return {
+                    ...prev,
+                    layout: {
+                        ...prev.layout,
+                        [id]: { ...prev.layout![id], rotation: newRot }
+                    }
+                };
+            });
+            return;
+        }
+    }, [isSmartAlignMode, isRotateMode]);
+
+    const handleGenericElementClick = useCallback((e: React.MouseEvent, id: string) => {
+        if (isRotateMode) {
+            e.stopPropagation();
+            setLocalCTO(prev => {
+                const currentRot = prev.layout?.[id]?.rotation || 0;
+                const newRot = (currentRot + 90) % 360;
+                return {
+                    ...prev,
+                    layout: {
+                        ...prev.layout,
+                        [id]: { ...prev.layout![id], rotation: newRot }
+                    }
+                };
+            });
+        }
+    }, [isRotateMode]);
 
     const handlePointMouseDown = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
@@ -1009,7 +1110,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
             let { x, y } = screenToCanvas(e.clientX, e.clientY);
 
+            // GRID SNAPPING (User Request)
+            // Always snap to grid by default
+            x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+            y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+
             // OPTIONAL: Snap to straight lines (Orthogonal) when holding Ctrl
+            // This now works nicely ON TOP of grid snapping
             if (e.ctrlKey) {
                 const originId = dragState.mode === 'connection' ? dragState.portId : dragState.fixedPortId;
                 const originPt = originId ? getPortCenter(originId) : null;
@@ -1334,18 +1441,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         });
     };
 
-    const handleDeleteSplitter = (id: string) => {
-        setLocalCTO(prev => {
-            const s = prev.splitters.find(x => x.id === id);
-            if (!s) return prev;
-            const portIds = [s.inputPortId, ...s.outputPortIds];
-            return {
-                ...prev,
-                splitters: prev.splitters.filter(x => x.id !== id),
-                connections: prev.connections.filter(c => !portIds.includes(c.sourceId) && !portIds.includes(c.targetId))
-            };
-        });
-    };
+
 
     const handleAddFusion = (e: React.MouseEvent) => {
         const id = `fus-${Date.now()}`;
@@ -1374,16 +1470,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         });
     };
 
-    const handleDeleteFusion = (id: string) => {
-        setLocalCTO(prev => {
-            const portIds = [`${id}-a`, `${id}-b`];
-            return {
-                ...prev,
-                fusions: prev.fusions.filter(f => f.id !== id),
-                connections: prev.connections.filter(c => !portIds.includes(c.sourceId) && !portIds.includes(c.targetId))
-            };
-        });
-    };
+
 
     const handleWheel = (e: React.WheelEvent) => {
         const scale = e.deltaY > 0 ? 0.9 : 1.1;
@@ -1413,7 +1500,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             style={{ left: windowPos.x, top: windowPos.y }}
         >
             <div
-                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden backdrop-blur-sm ${isVflToolActive || isOtdrToolActive || isSmartAlignMode ? 'cursor-crosshair' : ''}`}
+                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-900 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
             >
@@ -1441,75 +1528,99 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                     {/* Line 2: All Tools and Exports */}
                     <div className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
                         <div className="flex gap-1.5 pointer-events-auto items-center">
-                            {/* Construction */}
-                            <div className="relative" ref={splitterDropdownRef}>
-                                <button
-                                    onClick={() => setShowSplitterDropdown(!showSplitterDropdown)}
-                                    className={`px-2.5 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition ${showSplitterDropdown ? 'ring-2 ring-sky-500' : ''}`}
-                                    title={t('splitters')}
-                                >
-                                    <Plus className="w-3.5 h-3.5" /> {t('splitters')} <ChevronDown className={`w-3 h-3 transition-transform ${showSplitterDropdown ? 'rotate-180' : ''}`} />
-                                </button>
 
-                                {showSplitterDropdown && (
-                                    <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200">
-                                        <button onClick={(e) => { handleAddSplitter(e, '1:2'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:2</button>
-                                        <button onClick={(e) => { handleAddSplitter(e, '1:8'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:8</button>
-                                        <button onClick={(e) => { handleAddSplitter(e, '1:16'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:16</button>
-                                    </div>
-                                )}
+                            {/* GROUP 1: EDIT MODES */}
+                            <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
+                                <button
+                                    onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); }}
+                                    className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title={t('rotate_mode') || "Rotate Mode"}
+                                >
+                                    <RotateCw className={`w-4 h-4 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
+                                </button>
+                                <button
+                                    onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); }}
+                                    className={`p-1.5 rounded border transition ${isDeleteMode ? 'bg-red-500 border-red-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title="Delete Mode"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
 
-                            <button onClick={handleAddFusion} title={t('add_fusion')} className="p-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition">
-                                <Link className="w-4 h-4" />
-                            </button>
+                            {/* GROUP 2: CREATION */}
+                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                                <div className="relative" ref={splitterDropdownRef}>
+                                    <button
+                                        onClick={() => setShowSplitterDropdown(!showSplitterDropdown)}
+                                        className={`px-2.5 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition ${showSplitterDropdown ? 'ring-2 ring-sky-500' : ''}`}
+                                        title={t('splitters')}
+                                    >
+                                        <Triangle className="w-4 h-4" /> <ChevronDown className={`w-3 h-3 transition-transform ${showSplitterDropdown ? 'rotate-180' : ''}`} />
+                                    </button>
 
-                            <button onClick={() => setIsAutoSpliceOpen(true)} title={t('auto_splice')} className="p-1.5 bg-sky-600 hover:bg-sky-500 rounded text-white flex items-center gap-2 border border-sky-700 transition shadow-sm">
-                                <ArrowRightLeft className="w-4 h-4" />
-                            </button>
+                                    {showSplitterDropdown && (
+                                        <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200">
+                                            <button onClick={(e) => { handleAddSplitter(e, '1:2'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:2</button>
+                                            <button onClick={(e) => { handleAddSplitter(e, '1:8'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:8</button>
+                                            <button onClick={(e) => { handleAddSplitter(e, '1:16'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:16</button>
+                                        </div>
+                                    )}
+                                </div>
+                                <button onClick={handleAddFusion} title={t('add_fusion')} className="p-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition">
+                                    <Share2 className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                            <div className="w-[1px] h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                            {/* GROUP 3: CONNECTIONS */}
+                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                                <button onClick={() => setIsAutoSpliceOpen(true)} title={t('auto_splice')} className="p-1.5 bg-sky-600 hover:bg-sky-500 rounded text-white flex items-center gap-2 border border-sky-700 transition shadow-sm">
+                                    <ArrowRightLeft className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+                                    className={`p-1.5 rounded border transition ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title={t('smart_align')}
+                                >
+                                    <AlignCenter className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
+                                </button>
+                                <button
+                                    onClick={() => setLocalCTO(prev => ({ ...prev, connections: [] }))}
+                                    className="p-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-red-500 rounded hover:bg-red-50 transition"
+                                    title={t('reset_connections')}
+                                >
+                                    <Eraser className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                            {/* Testing Tools */}
-                            <button
-                                onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
-                                className={`p-1.5 rounded border transition ${isVflToolActive ? 'bg-red-600 border-red-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                title={t('tool_vfl')}
-                            >
-                                <Flashlight className={`w-4 h-4 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
-                            </button>
+                            {/* GROUP 4: ANALYSIS */}
+                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                                <button
+                                    onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+                                    className={`p-1.5 rounded border transition ${isVflToolActive ? 'bg-red-600 border-red-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title={t('tool_vfl')}
+                                >
+                                    <Flashlight className={`w-4 h-4 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
+                                </button>
+                                <button
+                                    onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+                                    className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title="OTDR Trace"
+                                >
+                                    <Ruler className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); }}
-                                className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                title="OTDR Trace"
-                            >
-                                <Ruler className="w-4 h-4" />
-                            </button>
+                            {/* GROUP 5: VIEW */}
+                            <div className="flex items-center gap-1.5 pl-2">
+                                <button
+                                    onClick={() => setIsSnapping(!isSnapping)}
+                                    className={`p-1.5 rounded border transition ${isSnapping ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    title="Snap to Grid"
+                                >
+                                    <Magnet className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); }}
-                                className={`p-1.5 rounded border transition ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                title={t('smart_align')}
-                            >
-                                <Zap className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
-                            </button>
-
-                            <button
-                                onClick={() => setIsSnapping(!isSnapping)}
-                                className={`p-1.5 rounded border transition ${isSnapping ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                title="Snap to Grid"
-                            >
-                                <Magnet className="w-4 h-4" />
-                            </button>
-
-                            <button
-                                onClick={() => setLocalCTO(prev => ({ ...prev, connections: [] }))}
-                                className="p-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-red-500 rounded hover:bg-red-50 transition"
-                                title={t('reset_connections')}
-                            >
-                                <Scissors className="w-4 h-4" />
-                            </button>
                         </div>
 
                         <div className="flex gap-2 pointer-events-auto items-center">
@@ -1551,7 +1662,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                     {/* Grid Pattern - Adapts to Theme */}
                     <div
-                        className="absolute inset-0 pointer-events-none bg-[radial-gradient(#64748b_1px,transparent_1px)] dark:bg-[radial-gradient(#475569_1px,transparent_1px)] opacity-30 dark:opacity-20"
+                        className="absolute inset-0 pointer-events-none bg-[radial-gradient(#64748b_1px,transparent_1px)] dark:bg-[radial-gradient(#475569_1px,transparent_1px)] opacity-30"
                         style={{
                             backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
@@ -1699,7 +1810,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
                                     onDragStart={handleElementDragStart}
-                                    onRotate={handleRotateElement}
+                                    onAction={(e) => handleElementAction(e, cable.id, 'cable')}
                                     onMirror={handleMirrorElement}
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
@@ -1721,9 +1832,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
+
                                     onDragStart={handleElementDragStart}
-                                    onRotate={handleRotateElement}
-                                    onDelete={(e) => { e.stopPropagation(); handleDeleteFusion(fusion.id); }}
+                                    onAction={(e) => handleElementAction(e, fusion.id, 'fusion')}
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
@@ -1741,9 +1852,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
+
                                     onDragStart={handleElementDragStart}
-                                    onRotate={handleRotateElement}
-                                    onDelete={(e) => { e.stopPropagation(); handleDeleteSplitter(splitter.id); }}
+                                    onAction={(e) => handleElementAction(e, splitter.id, 'splitter')}
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
