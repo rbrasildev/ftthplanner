@@ -97,6 +97,9 @@ export interface POPData {
   connections: FiberConnection[]; // Internal Patch Cords
   inputCableIds: string[];
   layout?: Record<string, ElementLayout>;
+  // Customization
+  color?: string; // Hex color for the marker
+  size?: number; // Size/radius of the marker (default 24)
 }
 
 export interface CTOData {
@@ -108,10 +111,10 @@ export interface CTOData {
   fusions: FusionPoint[];
   connections: FiberConnection[];
   // Simulating physical structure
-  inputCableIds: string[]; 
+  inputCableIds: string[];
   clientCount: number;
   // Visual layout storage (ID -> Position)
-  layout?: Record<string, ElementLayout>; 
+  layout?: Record<string, ElementLayout>;
 }
 
 export interface CableData {

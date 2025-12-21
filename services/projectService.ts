@@ -23,6 +23,17 @@ export const createProject = async (name: string, center: Coordinates) => {
     return res.data;
 };
 
+
+
+export const updateProject = async (id: string, name: string, center: Coordinates) => {
+    const res = await api.put<Project>(`/projects/${id}`, {
+        name,
+        centerLat: center.lat,
+        centerLng: center.lng
+    });
+    return res.data;
+};
+
 export const deleteProject = async (id: string) => {
     await api.delete(`/projects/${id}`);
 };

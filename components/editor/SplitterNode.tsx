@@ -56,7 +56,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 width: size,
                 height: size
             }}
-            className="absolute z-20 group select-none"
+            className="absolute z-20 group select-none pointer-events-none"
         >
             {/* Inner Container for centering content */}
             <div className="absolute" style={{ left: offsetX, top: offsetY, width, height }}>
@@ -80,15 +80,15 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 {/* Triangle Body - Spans from Y=12 to Y=60 */}
                 <div
                     style={{ height: 48, top: 12 }}
-                    className="absolute inset-x-0 z-10"
-                    onMouseDown={(e) => onDragStart(e, splitter.id)}
-                    onClick={(e) => onAction(e, splitter.id)}
+                    className="absolute inset-x-0 z-10 pointer-events-none"
                 >
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
                             points={`50,0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
-                            className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-300 dark:stroke-slate-600'}`}
+                            className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-300 dark:stroke-slate-600'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
+                            onMouseDown={(e) => onDragStart(e, splitter.id)}
+                            onClick={(e) => onAction(e, splitter.id)}
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ paddingLeft: `${shiftPx}px` }}>
@@ -105,7 +105,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         onMouseDown={(e) => onPortMouseDown(e, splitter.inputPortId)}
                         onMouseEnter={() => onPortMouseEnter(splitter.inputPortId)}
                         onMouseLeave={onPortMouseLeave}
-                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer 
+                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
@@ -138,7 +138,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 onMouseEnter={() => onPortMouseEnter(pid)}
                                 onMouseLeave={onPortMouseLeave}
                                 className={`
-                                w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer 
+                                w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
                                 text-[6.5px] font-bold select-none shadow-sm flex items-center justify-center
                                 ${hoveredPortId === pid ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}

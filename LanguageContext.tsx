@@ -453,7 +453,7 @@ const translations = {
     'rack_view': 'Visão do Rack',
 
     // Map Layers
-    'map_street': 'Mapa Rua',
+    'map_street': 'Map rua',
     'map_satellite': 'Satélite',
     'map_layers': 'Camadas',
     'layer_cables': 'Cabos',

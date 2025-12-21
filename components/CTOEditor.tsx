@@ -266,14 +266,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     // Window Position State
     const [windowPos, setWindowPos] = useState(() => {
         if (typeof window === 'undefined') return { x: 100, y: 50 };
-        const SIDEBAR_WIDTH = 256;
         const MODAL_WIDTH = 1100;
         const MODAL_HEIGHT = 750;
-        const availableWidth = window.innerWidth - SIDEBAR_WIDTH;
-        let x = SIDEBAR_WIDTH + (availableWidth / 2) - (MODAL_WIDTH / 2);
-        if (x < SIDEBAR_WIDTH + 20) x = SIDEBAR_WIDTH + 20;
+
+        let x = (window.innerWidth - MODAL_WIDTH) / 2;
         let y = (window.innerHeight - MODAL_HEIGHT) / 2;
+
+        // Safety bounds to prevent checking out of screen
+        if (x < 20) x = 20;
         if (y < 20) y = 20;
+
         return { x, y };
     });
 
@@ -664,6 +666,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 border-color: #cbd5e1 !important; /* Slightly darker border for contrast on white paper */
             }
 
+            /* Fix Splitter Black Fill in Export */
+            #export-container-wrapper .dark\\:fill-slate-900 {
+                fill: #ffffff !important;
+                stroke: #64748b !important; /* Slate-500 for visibility */
+            }
+
             /* 2. PROTECT EVERYTHING WITH STYLE ATTR (Fibers, colored lines) */
             /* We do this by not having broad 'div' or 'span' overrides anymore */
 
@@ -696,7 +704,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             }
             
             /* Specific fix assuming 'white' fiber connections might need more contrast */
-            /* If standard white is #FFFFFF, slightly darken it for print/export visibility */
+            /* Force white paths to become dark gray in export so they are visible on white paper */
+            #export-container-wrapper svg path[stroke="#ffffff"],
+            #export-container-wrapper svg path[stroke="#fff"],
+            #export-container-wrapper svg path[stroke="white"],
+            #export-container-wrapper svg path[stroke="rgb(255, 255, 255)"],
+            #export-container-wrapper svg path[stroke="rgba(255, 255, 255, 1)"] {
+                stroke: #64748b !important; /* Slate-500 */
+                filter: none !important; /* Remove shadow to keep it clean */
+            }
+
             /* Note: This relies on the backend/types actually using #FFFFFF */
             
             /* Also ensure text numbers in fibers are centered (handled in component, but good to ensure reset) */
@@ -725,7 +742,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                         </div>
                     </div>
                 </div>
-                <div style="width: 200px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #f1f5f9; box-sizing: border-box;">
+                <div style="width: 300px; height: 180px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #f1f5f9; box-sizing: border-box;">
                     ${mapImgHtml}
                 </div>
             </div>

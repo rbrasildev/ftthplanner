@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { LogIn } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 
 interface LoginPageProps {
     onLogin: (username: string, password: string) => void;
     onRegisterClick: () => void;
+    error?: string | null;
+    isLoading?: boolean;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
@@ -16,66 +18,118 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200 dark:border-slate-700">
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-500 rounded-full mb-4">
-                        <LogIn className="w-8 h-8 text-white" />
+        <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-0 relative overflow-hidden bg-slate-50 dark:bg-slate-950">
+
+            {/* 1. Page Background (Blurred Map) - HIDDEN ON MOBILE */}
+            <div
+                className="hidden lg:block absolute inset-0 z-0 bg-cover bg-center"
+                style={{ backgroundImage: 'url("/login-bg.png")' }}
+            >
+                <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
+            </div>
+
+            {/* 2. Main Container */}
+            <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-slate-900 lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">
+
+                {/* Left Side - Form */}
+                <div className="w-full lg:w-5/12 p-0 sm:p-12 xl:p-16 flex flex-col justify-center bg-transparent dark:bg-transparent lg:bg-white lg:dark:bg-slate-900">
+
+                    <div className="max-w-sm mx-auto w-full space-y-8">
+                        <div className="text-center space-y-2">
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">FTTH Master</h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                                Entre com suas credenciais
+                            </p>
+                        </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-600 dark:text-red-300 text-sm text-center animate-in fade-in slide-in-from-top-2 font-medium">
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
+                            <div className="space-y-5 lg:space-y-4">
+                                <div className="space-y-1">
+                                    <label className="sr-only">Usuário</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            placeholder="Usuário"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="sr-only">Senha</label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            placeholder="Senha"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full text-white bg-sky-600 hover:bg-sky-500 focus:ring-4 focus:outline-none focus:ring-sky-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-sky-600/20 active:scale-[0.98]"
+                            >
+                                {isLoading ? 'Entrando...' : 'Entrar'}
+                            </button>
+
+                            <div className="text-center pt-2">
+                                <button type="button" onClick={onRegisterClick} className="text-sky-600 dark:text-sky-400 hover:underline text-sm font-semibold transition-colors">
+                                    Criar nova conta
+                                </button>
+                            </div>
+
+                        </form>
                     </div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                        FTTH Master Planner
-                    </h1>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                        Faça login para continuar
-                    </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                            Usuário
-                        </label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white transition-colors"
-                            placeholder="Digite seu usuário"
-                            required
-                        />
+                {/* Right Side - Feature Image Display (Hidden on Mobile) */}
+                <div className="hidden lg:flex w-7/12 bg-slate-50 dark:bg-slate-950 relative items-center justify-center p-12 overflow-hidden">
+
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+
+                    {/* Feature Image Card */}
+                    <div className="relative w-full max-w-2xl z-10">
+                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+                            <img
+                                src="/login-feature.png"
+                                alt="Feature Preview"
+                                className="w-full h-auto rounded-xl shadow-inner border border-slate-200/50 dark:border-slate-800/50"
+                            />
+                        </div>
+
+                        {/* Floating Feature Label */}
+                        <div className="absolute -bottom-8 -right-8 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-slate-700 flex items-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
+                            <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/30">
+                                <KeyRound className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Destaque</div>
+                                <div className="text-sm font-bold text-slate-800 dark:text-white">Editor de Fusão</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                            Senha
-                        </label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-white transition-colors"
-                            placeholder="Digite sua senha"
-                            required
-                        />
-                    </div>
+                </div>
 
-                    <button
-                        type="submit"
-                        className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors shadow-lg shadow-sky-900/20"
-                    >
-                        Entrar
-                    </button>
-
-                    <div className="text-center mt-4">
-                        <button
-                            type="button"
-                            onClick={onRegisterClick}
-                            className="text-sm text-sky-600 dark:text-sky-400 hover:underline"
-                        >
-                            Criar nova conta
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     );

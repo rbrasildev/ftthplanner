@@ -92,13 +92,14 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   // Center initial position
   useEffect(() => {
     if (panelRef.current) {
-      // Initial positioning logic if needed, or rely on CSSState default
-      const initialX = window.innerWidth - 450;
-      const initialY = 100;
+      const width = 400; // Matches w-[400px]
+      const height = panelRef.current.offsetHeight || 500;
+      const initialX = (window.innerWidth - width) / 2;
+      const initialY = Math.max(50, (window.innerHeight - height) / 2);
       panelRef.current.style.left = `${initialX}px`;
       panelRef.current.style.top = `${initialY}px`;
     }
-  }, []); // Run once on mount
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {

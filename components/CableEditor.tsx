@@ -83,8 +83,10 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
 
   React.useEffect(() => {
     if (panelRef.current) {
-      const initialX = window.innerWidth - 470;
-      const initialY = 100;
+      const width = 420; // Matches w-[420px]
+      const height = panelRef.current.offsetHeight || 600;
+      const initialX = (window.innerWidth - width) / 2;
+      const initialY = Math.max(50, (window.innerHeight - height) / 2);
       panelRef.current.style.left = `${initialX}px`;
       panelRef.current.style.top = `${initialY}px`;
     }

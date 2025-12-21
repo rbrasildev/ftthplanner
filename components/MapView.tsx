@@ -5,7 +5,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS } from '../types';
 import { useLanguage } from '../LanguageContext';
-import { Layers, Map as MapIcon, Globe, Box, Server, Zap, Eye, EyeOff, Diamond } from 'lucide-react';
+import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond } from 'lucide-react';
 
 
 
@@ -83,39 +83,42 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
   return icon;
 };
 
-const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true) => {
-  const cacheKey = `pop - ${name} -${isSelected} -${showLabels} `;
+const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', size: number = 24) => {
+  const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${size}`;
 
   if (iconCache.has(cacheKey)) {
     return iconCache.get(cacheKey)!;
   }
 
+  const iconRadius = size / 2;
+  const labelOffset = size - 2;
+
   const icon = L.divIcon({
     className: 'custom-icon',
     html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(99, 102, 241, 0.4); border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
+      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${size * 2}px; height: ${size * 2}px; background: ${color}66; border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
-        background-color: #6366f1; /* Indigo */
+        background-color: ${color};
         border: 2px solid ${isSelected ? '#bef264' : '#ffffff'};
         border-radius: 4px; /* Square for Building */
-        width: 24px;
-        height: 24px;
+        width: ${size}px;
+        height: ${size}px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 10;
       ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="${size * 0.6}" height="${size * 0.6}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
       </div>
       <div style="
         display: ${showLabels ? 'block' : 'none'};
         position: absolute;
-        top: 26px;
+        top: ${size + 2}px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(79, 70, 229, 0.9);
+        background: ${color}E6;
         color: white;
         padding: 2px 6px;
         border-radius: 4px;
@@ -127,8 +130,8 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
         z-index: 20;
       ">${name}</div>
 `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2]
   });
 
   iconCache.set(cacheKey, icon);
@@ -162,14 +165,14 @@ const otdrIcon = L.divIcon({
 
 const handleIcon = L.divIcon({
   className: 'cable-handle',
-  html: `< div style = "width: 12px; height: 12px; background: white; border: 2px solid #0ea5e9; border-radius: 50%; cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.8);" ></div > `,
+  html: `<div style="width: 12px; height: 12px; background: white; border: 2px solid #0ea5e9; border-radius: 50%; cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
   iconSize: [12, 12],
   iconAnchor: [6, 6]
 });
 
 const startPointIcon = L.divIcon({
   className: 'start-point',
-  html: `< div style = "width: 10px; height: 10px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;" ></div > `,
+  html: `<div style="width: 10px; height: 10px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
   iconSize: [10, 10],
   iconAnchor: [5, 5]
 });
@@ -232,8 +235,8 @@ const POPMarker = React.memo(({
   cableStartPoint: any
 }) => {
   const icon = useMemo(() =>
-    createPOPIcon(pop.name, isSelected, showLabels),
-    [pop.name, isSelected, showLabels]);
+    createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size),
+    [pop.name, isSelected, showLabels, pop.color, pop.size]);
 
   const eventHandlers = useMemo(() => ({
     click: (e: any) => {
@@ -281,13 +284,13 @@ const CablePolyline = React.memo(({
 
   const color = useMemo(() => {
     if (isLit) return '#ef4444';
-    if (isActive) return '#0f172a';
+    if (isActive) return '#facc15'; // Yellow for Active/Editing
     if (cable.status === 'NOT_DEPLOYED') return CABLE_STATUS_COLORS['NOT_DEPLOYED'];
     return cable.color || CABLE_STATUS_COLORS['DEPLOYED'];
   }, [isLit, isActive, cable.status, cable.color]);
 
   const dashArray = useMemo(() => {
-    if (isActive) return '10, 10';
+    // if (isActive) return '10, 10'; // Removed dash for active to match solid purple request
     if (cable.status === 'NOT_DEPLOYED') return '5, 5';
     return undefined;
   }, [isActive, cable.status]);
@@ -317,6 +320,15 @@ const CablePolyline = React.memo(({
     }
   }, [cable.coordinates, cable.id, ctos, pops, snapDistance, onConnect, onUpdateGeometry]);
 
+  const handleRemovePoint = useCallback((e: any, index: number) => {
+    L.DomEvent.stopPropagation(e);
+    L.DomEvent.preventDefault(e); // Prevent context menu
+    if (!onUpdateGeometry || cable.coordinates.length <= 2) return;
+    const newCoords = [...cable.coordinates];
+    newCoords.splice(index, 1);
+    onUpdateGeometry(cable.id, newCoords);
+  }, [cable.coordinates, cable.id, onUpdateGeometry]);
+
   const pathOptions = useMemo(() => ({
     color,
     weight: isActive ? 6 : 4,
@@ -342,6 +354,15 @@ const CablePolyline = React.memo(({
         />
       )}
 
+      {/* Active Cable Glow (Yellow) */}
+      {isActive && !isLit && (
+        <Polyline
+          positions={positions}
+          pathOptions={{ color: '#facc15', weight: 12, opacity: 0.4 }}
+          interactive={false}
+        />
+      )}
+
       <Polyline
         positions={positions}
         pathOptions={pathOptions}
@@ -350,12 +371,18 @@ const CablePolyline = React.memo(({
 
       {isActive && mode === 'connect_cable' && cable.coordinates.map((coord, index) => (
         <Marker
-          key={`${cable.id} -pt - ${index} `}
+          key={`${cable.id}-pt-${index}`}
           position={[coord.lat, coord.lng]}
           icon={handleIcon}
           draggable={true}
-          eventHandlers={{ dragend: (e) => handleDragEnd(e, index) }}
-        />
+          eventHandlers={{
+            dragend: (e) => handleDragEnd(e, index),
+            click: (e) => handleRemovePoint(e, index), // Changed to click for easier removal (or maybe right click?)
+            contextmenu: (e) => handleRemovePoint(e, index)
+          }}
+          title={t('right_click_delete_point') || "Clique direito para remover"}
+        >
+        </Marker>
       ))}
     </>
   );
@@ -614,7 +641,7 @@ export const MapView: React.FC<MapViewProps> = ({
             title={t('layer_pops')}
             className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showPOPs ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 border-indigo-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <Server className="w-5 h-5" />
+            <Building2 className="w-5 h-5" />
             {!showPOPs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
 
@@ -624,7 +651,7 @@ export const MapView: React.FC<MapViewProps> = ({
             title={t('layer_cables')}
             className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showCables ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30 border-slate-800' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <Zap className="w-5 h-5" />
+            <Share2 className="w-5 h-5" />
             {!showCables && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
 
@@ -636,7 +663,8 @@ export const MapView: React.FC<MapViewProps> = ({
             title={t('show_labels')}
             className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showLabels ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-emerald-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            {showLabels ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            <Tag className="w-5 h-5" />
+            {!showLabels && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
 
           <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
@@ -647,7 +675,7 @@ export const MapView: React.FC<MapViewProps> = ({
             title="Toggle Clustering"
             className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${enableClustering ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
           >
-            <Diamond className="w-5 h-5" />
+            <Layers className="w-5 h-5" />
             {!enableClustering && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
           </button>
         </div>

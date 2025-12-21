@@ -66,6 +66,8 @@ model Pop {
   connections   Json?           @default("[]")
   inputCableIds String[]        @default([]) @map("input_cable_ids")
   layout        Json?           @default("{}")
+  color         String?         @default("#6366f1")
+  size          Int?            @default(24)
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("pops")

@@ -102,7 +102,9 @@ export const getProject = async (req: Request, res: Response) => {
                 fusions: p.fusions || [],
                 connections: p.connections || [],
                 inputCableIds: p.inputCableIds,
-                layout: p.layout || {}
+                layout: p.layout || {},
+                color: p.color,
+                size: p.size
             })),
             cables: project.cables.map((c: any) => ({
                 id: c.id,
@@ -132,6 +134,38 @@ export const getProject = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch project' });
     }
 }
+
+export const updateProject = async (req: Request, res: Response) => {
+    const userId = (req as AuthRequest).user?.id;
+    const { id } = req.params;
+    const { name, centerLat, centerLng } = req.body;
+
+    if (!userId) return res.status(401).send();
+
+    try {
+        const project = await prisma.project.update({
+            where: { id, userId },
+            data: {
+                name,
+                centerLat,
+                centerLng
+            }
+        });
+
+        res.json({
+            id: project.id,
+            name: project.name,
+            createdAt: project.createdAt.getTime(),
+            updatedAt: project.updatedAt.getTime(),
+            network: { ctos: [], pops: [], cables: [] },
+            mapState: { center: { lat: project.centerLat, lng: project.centerLng }, zoom: project.zoom },
+            settings: project.settings
+        });
+    } catch (error) {
+        console.error("Update project error:", error);
+        res.status(500).json({ error: 'Failed to update project' });
+    }
+};
 
 export const deleteProject = async (req: Request, res: Response) => {
     const userId = (req as AuthRequest).user?.id;
@@ -220,7 +254,9 @@ export const syncProject = async (req: Request, res: Response) => {
                         fusions: p.fusions || [],
                         connections: p.connections || [],
                         inputCableIds: p.inputCableIds || [],
-                        layout: p.layout || {}
+                        layout: p.layout || {},
+                        color: p.color,
+                        size: p.size
                     }))
                 });
             }

@@ -66,15 +66,18 @@ function getDistanceToSegment(p: Coordinates, a: Coordinates, b: Coordinates) {
     const dx = x - xx;
     const dy = y - yy;
 
-    // Approximate conversion to meters (very rough, but sufficient for short snap distances)
-    // 1 degree lat ~ 111km. 
     const distDeg = Math.sqrt(dx * dx + dy * dy);
     const distMeters = distDeg * 111320;
+
+    // Fix: Use Epsilon for endpoint check
+    const EPSILON = 0.0000001;
+    const isAtStart = Math.abs(xx - x1) < EPSILON && Math.abs(yy - y1) < EPSILON;
+    const isAtEnd = Math.abs(xx - x2) < EPSILON && Math.abs(yy - y2) < EPSILON;
 
     return {
         dist: distMeters,
         point: { lat: xx, lng: yy },
-        isEndpoint: (xx === x1 && yy === y1) || (xx === x2 && yy === y2)
+        isEndpoint: isAtStart || isAtEnd
     };
 }
 
@@ -155,10 +158,22 @@ const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: Netw
 
         let bestSplit = null; // { node, segmentIndex, point }
 
+        // Start/End coordinates to check for duplicates
+        const cStart = cable.coordinates[0];
+        const cEnd = cable.coordinates[cable.coordinates.length - 1];
+
         // Check this cable against all nodes
         for (const node of nodes) {
             // If already connected to this node, skip (prevent infinite splitting of ends)
             if (cable.fromNodeId === node.id || cable.toNodeId === node.id) continue;
+
+            // Fix: Prevent splitting if node is extremely close to start/end (Micro-cables / Duplicates)
+            // If Step 1 didn't snap (due to being 2nd closest), we shouldn't split a 1cm cable here.
+            const distToStart = L.latLng(node.coordinates.lat, node.coordinates.lng).distanceTo(L.latLng(cStart.lat, cStart.lng));
+            const distToEnd = L.latLng(node.coordinates.lat, node.coordinates.lng).distanceTo(L.latLng(cEnd.lat, cEnd.lng));
+
+            // 0.5 meters buffer zone to prevent ambiguity/micro-segments
+            if (distToStart < 0.5 || distToEnd < 0.5) continue;
 
             // Check every segment of the cable
             for (let i = 0; i < cable.coordinates.length - 1; i++) {
@@ -168,6 +183,9 @@ const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: Netw
                 const result = getDistanceToSegment(node.coordinates, p1, p2);
 
                 if (result.dist <= snapDistance) {
+                    // Ignore if it's the endpoint (redundant with start/end check but good for safety)
+                    if (result.isEndpoint) continue;
+
                     // Found a candidate. Is it the best one for this cable?
                     if (!bestSplit || result.dist < bestSplit.dist) {
                         bestSplit = { node, segmentIndex: i, point: result.point, dist: result.dist };
@@ -975,13 +993,25 @@ export default function App() {
     };
 
 
+    const [loginError, setLoginError] = useState<string | null>(null);
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+
     const handleLogin = async (username: string, password?: string) => {
+        setIsLoggingIn(true);
+        setLoginError(null);
         try {
             const data = await authService.login(username, password);
             setUser(data.user.username);
             setToken(data.token);
-        } catch (e) {
-            showToast('Login failed', 'info');
+        } catch (e: any) {
+            console.error("Login error:", e);
+            if (e.response && e.response.status === 401) {
+                setLoginError("Usuário ou senha incorretos.");
+            } else {
+                setLoginError("Erro ao conectar ao servidor. Tente novamente.");
+            }
+        } finally {
+            setIsLoggingIn(false);
         }
     };
 
@@ -998,11 +1028,12 @@ export default function App() {
         }
     };
 
+
     if (!user) {
         if (authView === 'register') {
             return <RegisterPage onRegister={handleRegister} onBackToLogin={() => setAuthView('login')} />;
         }
-        return <LoginPage onLogin={handleLogin} onRegisterClick={() => setAuthView('register')} />;
+        return <LoginPage onLogin={handleLogin} onRegisterClick={() => setAuthView('register')} error={loginError} isLoading={isLoggingIn} />;
     }
 
     if (!currentProjectId) return <DashboardPage username={user} projects={projects} isLoading={isLoadingProjects} onOpenProject={setCurrentProjectId}
@@ -1026,6 +1057,15 @@ export default function App() {
                 showToast('Failed to delete project', 'info');
             }
         }}
+        onUpdateProject={async (id, name, center) => {
+            try {
+                const updated = await projectService.updateProject(id, name, center);
+                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
+                showToast(t('project_updated') || 'Projeto atualizado!', 'success');
+            } catch (e) {
+                showToast('Failed to update project', 'info');
+            }
+        }}
         onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
     />;
 
@@ -1045,7 +1085,7 @@ export default function App() {
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
                 <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in slide-in-from-top-5">
-                    <div className={`px - 4 py - 2 rounded - lg shadow - lg border flex items - center gap - 2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
+                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
                         <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
                     </div>
                 </div>
@@ -1278,6 +1318,18 @@ export default function App() {
                         </button>
                     </div>
                 )}
+
+                {toolMode === 'connect_cable' && (
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                        <button
+                            onClick={() => { setToolMode('view'); showToast(t('changes_saved') || 'Alterações Salvas!'); }}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 animate-in slide-in-from-bottom-5 fade-in duration-300"
+                        >
+                            <CheckCircle2 className="w-5 h-5" />
+                            {t('save_changes') || 'Salvar Alterações'}
+                        </button>
+                    </div>
+                )}
             </main>
 
             {/* Editors */}
@@ -1326,6 +1378,7 @@ export default function App() {
                     pop={getCurrentNetwork().pops?.find(p => p.id === selectedId)!}
                     onRename={handleRenamePOP}
                     onUpdateStatus={handleUpdatePOPStatus}
+                    onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
                     onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
                     onDelete={handleDeletePOP}
                     onClose={() => setSelectedId(null)}

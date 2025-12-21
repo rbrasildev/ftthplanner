@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { POPData, CTOStatus, CTO_STATUS_COLORS } from '../types';
-import { Settings2, Trash2, Activity, MapPin, Server, Type, X, AlertTriangle } from 'lucide-react';
+import { Settings2, Trash2, Activity, MapPin, Building2, Type, X, AlertTriangle, Palette, Scaling } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface POPDetailsPanelProps {
   pop: POPData;
   onRename: (id: string, newName: string) => void;
   onUpdateStatus: (status: CTOStatus) => void;
+  onUpdate: (id: string, updates: Partial<POPData>) => void; // Generic update handler
   onOpenRack: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   pop,
   onRename,
   onUpdateStatus,
+  onUpdate,
   onOpenRack,
   onDelete,
   onClose
@@ -66,8 +68,10 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   // Set initial position
   useEffect(() => {
     if (panelRef.current) {
-      const initialX = window.innerWidth - 450;
-      const initialY = 100;
+      const width = 400; // Matches w-[400px]
+      const height = panelRef.current.offsetHeight || 600;
+      const initialX = (window.innerWidth - width) / 2;
+      const initialY = Math.max(50, (window.innerHeight - height) / 2);
       panelRef.current.style.left = `${initialX}px`;
       panelRef.current.style.top = `${initialY}px`;
     }
@@ -126,7 +130,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Server className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+          <Building2 className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
           {t('edit_pop')}
         </h2>
         <div className="flex items-center gap-3">
@@ -176,6 +180,44 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
             <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
             <option value="CERTIFIED">{t('status_CERTIFIED')}</option>
           </select>
+        </div>
+
+        {/* Visual Customization */}
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
+            <Palette className="w-3 h-3" /> Visualização
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Color Picker */}
+            <div>
+              <label className="text-[10px] text-slate-400 mb-1 block">Cor do Ícone</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="color"
+                  value={pop.color || '#6366f1'}
+                  onChange={(e) => onUpdate(pop.id, { color: e.target.value })}
+                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                  title="Escolher Cor"
+                />
+                <span className="text-xs font-mono text-slate-500">{pop.color || '#6366f1'}</span>
+              </div>
+            </div>
+
+            {/* Size Slider */}
+            <div>
+              <label className="text-[10px] text-slate-400 mb-1 block flex items-center gap-1"><Scaling className="w-3 h-3" /> Tamanho ({pop.size || 24}px)</label>
+              <input
+                type="range"
+                min="16"
+                max="64"
+                step="4"
+                value={pop.size || 24}
+                onChange={(e) => onUpdate(pop.id, { size: parseInt(e.target.value) })}
+                className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Info Grid */}

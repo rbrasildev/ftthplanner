@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Network, Globe, Moon, Sun, ArrowLeft } from 'lucide-react';
-import { useLanguage } from '../LanguageContext';
-import { useTheme } from '../ThemeContext';
+import { KeyRound, ArrowLeft } from 'lucide-react';
 
 interface RegisterPageProps {
     onRegister: (username: string, password?: string) => void;
@@ -9,112 +7,158 @@ interface RegisterPageProps {
 }
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin }) => {
-    const { t, language, setLanguage } = useLanguage();
-    const { theme, toggleTheme } = useTheme();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username.trim()) {
-            onRegister(username, password);
+        if (!username.trim() || !password.trim()) {
+            setError('Por favor, preencha todos os campos.');
+            return;
         }
+        if (password !== confirmPassword) {
+            setError('As senhas não coincidem.');
+            return;
+        }
+        setError(null);
+        onRegister(username, password);
     };
 
     return (
-        <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 items-center justify-center relative overflow-hidden transition-colors duration-300">
-            {/* Background decoration */}
-            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_#0ea5e9_0%,_transparent_50%)]" />
+        <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-0 relative overflow-hidden bg-slate-50 dark:bg-slate-950">
+
+            {/* 1. Page Background (Blurred Map) - HIDDEN ON MOBILE */}
+            <div
+                className="hidden lg:block absolute inset-0 z-0 bg-cover bg-center"
+                style={{ backgroundImage: 'url("/login-bg.png")' }}
+            >
+                <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
             </div>
 
-            <div className="relative z-10 w-full max-w-md p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-300 transition-colors">
+            {/* 2. Main Container */}
+            <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-slate-900 lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">
 
-                {/* Back button */}
-                <button
-                    onClick={onBackToLogin}
-                    className="absolute top-6 left-6 p-2 text-slate-400 hover:text-sky-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
-                    title={t('back_to_login')}
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
+                {/* Left Side - Form */}
+                <div className="w-full lg:w-5/12 p-0 sm:p-12 xl:p-16 flex flex-col justify-center bg-transparent dark:bg-transparent lg:bg-white lg:dark:bg-slate-900">
 
-                {/* Header */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-900/50 mb-4">
-                        <Network className="text-white w-10 h-10" />
+                    <div className="max-w-sm mx-auto w-full space-y-8">
+                        <div className="text-center space-y-2 relative">
+                            {/* Back Button for Mobile within flow or desktop */}
+                            <button
+                                onClick={onBackToLogin}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 lg:-left-12 lg:top-1 p-2 text-slate-400 hover:text-sky-500 transition-colors"
+                                title="Voltar para Login"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Criar Conta</h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                                Junte-se ao FTTH Master Planner
+                            </p>
+                        </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-600 dark:text-red-300 text-sm text-center animate-in fade-in slide-in-from-top-2 font-medium">
+                                {error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
+                            <div className="space-y-5 lg:space-y-4">
+                                <div className="space-y-1">
+                                    <label className="sr-only">Nome de Usuário</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            placeholder="Nome de Usuário"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="sr-only">Senha</label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            placeholder="Senha"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="sr-only">Confirmar Senha</label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            placeholder="Confirmar Senha"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full text-white bg-sky-600 hover:bg-sky-500 focus:ring-4 focus:outline-none focus:ring-sky-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]"
+                            >
+                                Registrar Conta
+                            </button>
+
+                            <div className="text-center pt-2">
+                                <button type="button" onClick={onBackToLogin} className="text-sky-600 dark:text-sky-400 hover:underline text-sm font-semibold transition-colors">
+                                    Já tem uma conta? Entrar
+                                </button>
+                            </div>
+
+                        </form>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t('register_title')}</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">FTTH Master Planner</p>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">
-                            {t('username')}
-                        </label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
-                            placeholder="e.g. Admin"
-                            autoFocus
-                        />
+                {/* Right Side - Feature Image Display (Hidden on Mobile) */}
+                <div className="hidden lg:flex w-7/12 bg-slate-50 dark:bg-slate-950 relative items-center justify-center p-12 overflow-hidden">
+
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+
+                    {/* Feature Image Card */}
+                    <div className="relative w-full max-w-2xl z-10">
+                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+                            <img
+                                src="/login-feature.png"
+                                alt="Feature Preview"
+                                className="w-full h-auto rounded-xl shadow-inner border border-slate-200/50 dark:border-slate-800/50"
+                            />
+                        </div>
+
+                        {/* Floating Feature Label */}
+                        <div className="absolute -bottom-8 -right-8 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-slate-700 flex items-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
+                            <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-sky-500/30">
+                                <KeyRound className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Destaque</div>
+                                <div className="text-sm font-bold text-slate-800 dark:text-white">Editor de Fusão</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 ml-1">
-                            {t('password')}
-                        </label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
-                            placeholder="******"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={!username.trim()}
-                        className="w-full py-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm transition-all shadow-lg shadow-sky-900/20 hover:shadow-sky-500/20 active:scale-95"
-                    >
-                        {t('register_btn')}
-                    </button>
-                </form>
-
-                {/* Link to login */}
-                <div className="mt-6 text-center">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t('already_have_account')}{' '}
-                        <button
-                            onClick={onBackToLogin}
-                            className="text-sky-600 hover:text-sky-500 font-semibold transition-colors"
-                        >
-                            {t('enter_btn')}
-                        </button>
-                    </p>
-                </div>
-
-                {/* Utilities */}
-                <div className="mt-8 flex justify-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-6">
-                    <button
-                        onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition"
-                    >
-                        <Globe className="w-3 h-3" />
-                        {language === 'en' ? 'English' : 'Português'}
-                    </button>
-                    <button
-                        onClick={toggleTheme}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition"
-                    >
-                        {theme === 'dark' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                        {theme === 'dark' ? t('theme_dark') : t('theme_light')}
-                    </button>
                 </div>
 
             </div>
