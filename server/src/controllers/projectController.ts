@@ -59,6 +59,7 @@ export const createProject = async (req: Request, res: Response) => {
             settings: project.settings || { snapDistance: 30 }
         });
     } catch (error) {
+        console.error("Create project error:", error);
         res.status(500).json({ error: 'Failed to create project' });
     }
 };
