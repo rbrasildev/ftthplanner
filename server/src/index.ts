@@ -45,6 +45,12 @@ app.get('/', (req, res) => {
     res.send('FTTH Master Planner API is active');
 });
 
-app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (0.0.0.0)`);
-});
+// Exporta o app para uso no Vercel (serverless)
+export default app;
+
+// Inicia o servidor apenas se não estiver rodando como module (localmente)
+if (require.main === module) {
+    app.listen(Number(PORT), '0.0.0.0', () => {
+        console.log(`Server running on port ${PORT} (0.0.0.0)`);
+    });
+}
