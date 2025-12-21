@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 export const getProjects = async (req: Request, res: Response) => {
     const userId = (req as AuthRequest).user?.id;
     try {
+        console.log('[getProjects] Request from userId:', userId);
         const projects = await prisma.project.findMany({
             where: { userId },
             orderBy: { updatedAt: 'desc' },
@@ -16,6 +17,7 @@ export const getProjects = async (req: Request, res: Response) => {
                 pops: true
             }
         });
+        console.log('[getProjects] Found projects count:', projects.length);
 
         res.json(projects.map((p: any) => ({
             id: p.id,
@@ -26,7 +28,9 @@ export const getProjects = async (req: Request, res: Response) => {
                 ctos: p.ctos,
                 pops: p.pops,
                 cables: p.cables
-            }
+            },
+            mapState: { center: { lat: p.centerLat, lng: p.centerLng }, zoom: p.zoom },
+            settings: p.settings
         })));
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch projects' });
@@ -48,6 +52,7 @@ export const createProject = async (req: Request, res: Response) => {
                 centerLng
             }
         });
+        console.log('[createProject] Created project:', project.id, project.name);
         res.json({
             id: project.id,
             name: project.name,
