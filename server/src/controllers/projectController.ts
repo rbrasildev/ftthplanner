@@ -29,6 +29,7 @@ export const getProjects = async (req: Request, res: Response) => {
             }
         })));
     } catch (error) {
+        console.error("Get projects error:", error);
         res.status(500).json({ error: 'Failed to fetch projects' });
     }
 };
