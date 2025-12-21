@@ -146,7 +146,12 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     >
                         {tube.fiberIndices.map(i => {
                             const fiberId = `${cable.id}-fiber-${i}`;
-                            const color = FIBER_COLORS[i % FIBER_COLORS.length];
+                            // FIXED per User Request:
+                            // Colors MUST reset at the beginning of each loose tube (as per specified count).
+                            // e.g. Tube 1 (1-6): Green..Violet. Tube 2 (7-12): Green..Violet.
+                            // Numbering remains global (1..N).
+                            const positionInTube = i % fibersPerTube;
+                            const color = FIBER_COLORS[positionInTube % 12];
                             const isLit = litPorts.has(fiberId);
                             const isLightColor = [1, 2, 3, 8, 10, 11, 12].includes((i % 12) + 1);
                             const textColor = isLightColor ? 'text-black' : 'text-white';
@@ -157,7 +162,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                     className={`relative h-3 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
                                 >
                                     {/* Connecting line */}
-                                    <div className={`w-full h-[1px] transition-all ${isMirrored ? 'ml-2' : 'mr-2'} ${isLit ? 'bg-red-500' : 'bg-slate-400 dark:bg-slate-500 opacity-40'}`}></div>
+                                    <div
+                                        style={{ backgroundColor: isLit ? '#ef4444' : color, opacity: 1 }}
+                                        className={`w-full h-[1px] ${isMirrored ? 'ml-2' : 'mr-2'}`}
+                                    ></div>
 
                                     {/* Port Circle - Center at 12px height and aligned with grid */}
                                     <div

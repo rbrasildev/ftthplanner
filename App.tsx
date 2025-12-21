@@ -209,7 +209,8 @@ const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: Netw
                 ...cable,
                 coordinates: coordsA,
                 toNodeId: node.id, // Connect end of A to Node
-                name: `${cable.name} (A)`
+                name: `${cable.name} (A)`,
+                looseTubeCount: cable.looseTubeCount // Pass loose tube count
             };
 
             const cableB: CableData = {
@@ -218,7 +219,8 @@ const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: Netw
                 fromNodeId: node.id, // Connect start of B to Node
                 toNodeId: cable.toNodeId,
                 coordinates: coordsB,
-                name: `${cable.name.replace(' (A)', '')} (B)`
+                name: `${cable.name.replace(' (A)', '')} (B)`,
+                looseTubeCount: cable.looseTubeCount // Pass loose tube count
             };
 
             finalCables.push(cableA, cableB);
@@ -848,8 +850,8 @@ export default function App() {
         coordSegment2[0] = node.coordinates;
         const newCableId = `cable - ${Date.now()} -split`;
 
-        const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)` };
-        const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2 };
+        const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)`, looseTubeCount: cable.looseTubeCount };
+        const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
 
         updateCurrentNetwork(prev => ({
             ...prev,

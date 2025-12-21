@@ -464,9 +464,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const getPortColor = (portId: string): string | null => {
         if (portId.includes('-fiber-')) {
             try {
+                // Find cable to check loose tube settings
+                const activeCable = incomingCables.find(c => portId.startsWith(c.id));
                 const parts = portId.split('-fiber-');
                 const fiberIndex = parseInt(parts[1]);
-                if (!isNaN(fiberIndex)) return FIBER_COLORS[fiberIndex % FIBER_COLORS.length];
+
+                if (!isNaN(fiberIndex)) {
+                    if (activeCable) {
+                        const looseTubeCount = activeCable.looseTubeCount || 1;
+                        const fibersPerTube = Math.ceil(activeCable.fiberCount / looseTubeCount);
+                        const pos = fiberIndex % fibersPerTube;
+                        return FIBER_COLORS[pos % 12];
+                    }
+                    // Fallback if cable not found (shouldn't happen)
+                    return FIBER_COLORS[fiberIndex % FIBER_COLORS.length];
+                }
             } catch (e) { return null; }
         }
         if (portId.includes('spl-')) return '#94a3b8';
@@ -508,6 +520,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             const count = Math.min(sourceCable.fiberCount, targetCable.fiberCount);
             const newConnections: FiberConnection[] = [];
 
+            const srcTubes = sourceCable.looseTubeCount || 1;
+            const srcFPT = Math.ceil(sourceCable.fiberCount / srcTubes);
+
             for (let i = 0; i < count; i++) {
                 const sourceFiberId = `${sourceCable.id}-fiber-${i}`;
                 const targetFiberId = `${targetCable.id}-fiber-${i}`;
@@ -518,7 +533,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                 if (isSourceOccupied || isTargetOccupied) continue;
 
-                const color = FIBER_COLORS[i % FIBER_COLORS.length];
+                // FIXED: Use reset color logic for auto-splice connections
+                const pos = i % srcFPT;
+                const color = FIBER_COLORS[pos % 12];
 
                 newConnections.push({
                     id: `conn-pass-${Date.now()}-${i}`,
