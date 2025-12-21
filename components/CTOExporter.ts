@@ -330,25 +330,27 @@ const renderFooter = (x: number, y: number, width: number, data: FooterData): st
     content += `<text x="${c2x + 5}" y="${y + rowH * 2 + 16}" font-family="Arial" font-size="9" fill="#64748b">Poste</text>`;
     content += `<text x="${c2x + 5}" y="${y + rowH * 2 + 29}" font-family="Arial" font-weight="bold" font-size="11" fill="#0f172a">${data.pole || '-'}</text>`;
 
-    // OBS ROW (Spanning Col 1 + Col 2)
+    // OBS ROW (Spanning FULL WIDTH)
     const obsY = y + mainHeight + 5;
-    const obsW = col1W + col2W + 5;
+    const obsW = width; // Full width
     content += `<rect x="${x}" y="${obsY}" width="${obsW}" height="${obsHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
     content += `<text x="${x + 5}" y="${obsY + 14}" font-family="Arial" font-size="9" fill="#64748b">Observação</text>`;
     content += `<text x="${x + 5}" y="${obsY + 29}" font-family="Arial" font-weight="bold" font-size="10" fill="#0f172a">${data.obs || ''}</text>`;
 
 
     // COL 3: MAP
+    // Map now occupies the Top Section (mainHeight) only
     const c3x = c2x + col2W + 5;
     const mapW = width - (col1W + col2W + 10);
+    const mapH = mainHeight; // Reduced height
 
     if (data.mapImage) {
-        content += `<image x="${c3x}" y="${y}" width="${mapW}" height="${height}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
+        content += `<image x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
         // Border
-        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${height}" fill="none" stroke="#cbd5e1" stroke-width="1" />`;
+        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="none" stroke="#cbd5e1" stroke-width="1" />`;
     } else {
-        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${height}" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />`;
-        content += `<text x="${c3x + mapW / 2}" y="${y + height / 2}" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748b">MAPA</text>`;
+        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />`;
+        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748b">MAPA</text>`;
     }
 
     return content;
