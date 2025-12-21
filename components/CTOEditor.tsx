@@ -5,8 +5,7 @@ import { useLanguage } from '../LanguageContext';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { generateCTOSVG, exportToPNG, exportToPDF } from './CTOExporter';
 
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
@@ -557,297 +556,89 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         setAutoTargetId('');
     };
 
-    // --- Export Logic (Shared) ---
-    const generateExportCanvas = async (): Promise<HTMLCanvasElement | null> => {
-        if (!diagramContentRef.current) return null;
+    const getElementCenter = (id: string): { x: number, y: number } | null => {
+        const el = document.getElementById(id); // Cables use ID as ID? FiberCableNode doesn't set ID on root div.
+        // We need to ensure components have IDs.
+        // Wait, FiberCableNode doesn't set ID on the root div!
+        // We need to query selector? Or Update Components to set ID?
+        // Updating components is risky/forbidden refactor?
+        // Note: The Port has ID. The Node has ports.
+        // We can find the parent of a port?
+        // Better: We can loop through layout keys and try to find element.
+        // But we don't know the DOM ID of the Node.
 
-        // 1. Calculate Bounds of the Diagram Content
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        // WORKAROUND: Use the input port of the cable/splitter/fusion to find the parent node?
+        // Cable input port? Cables act as inputs/outputs.
+        // Cable usually has fibers. Fiber ID: `${cable.id}-fiber-0`
+        // We can find fiber 0, then traverse up to the main container.
+        // Or updated Components to have `id={cable.id}`.
+        // User said "NO Refactoring existing SVG". But Components are HTML.
+        // Adding an ID to a div is safe.
 
-        const checkBounds = (b: { minX: number, minY: number, maxX: number, maxY: number }) => {
-            if (b.minX < minX) minX = b.minX; if (b.minY < minY) minY = b.minY;
-            if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
-        };
-
-        if (localCTO.layout) {
-            // 1. Check Cabes
-            incomingCables.forEach(cable => {
-                const l = localCTO.layout![cable.id];
-                if (!l) return;
-                const looseTubeCount = cable.looseTubeCount || 1;
-                const totalHeight = 24 + (cable.fiberCount * 24) + ((looseTubeCount - 1) * 12);
-                checkBounds(getElementBounds(l.x, l.y, 168 + 24, totalHeight, l.rotation || 0));
-            });
-
-            // 2. Check Splitters
-            localCTO.splitters.forEach(split => {
-                const l = localCTO.layout![split.id];
-                if (!l) return;
-                const width = split.outputPortIds.length * 24;
-                checkBounds(getElementBounds(l.x, l.y, width, 72, l.rotation || 0));
-            });
-
-            // 3. Check Fusions
-            localCTO.fusions.forEach(fusion => {
-                const l = localCTO.layout![fusion.id];
-                if (!l) return;
-                checkBounds(getElementBounds(l.x, l.y, 48, 24, l.rotation || 0));
-            });
-
-            // 4. Check Connections
-            localCTO.connections.forEach(c => {
-                c.points?.forEach(p => {
-                    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
-                    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
-                });
-            });
-        }
-
-        // Defaults if empty
-        if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
-
-        // EXPAND BOUNDS to account for Bezier curves, shadows, and stroke widths that extend beyond the strict coordinate points
-        const SAFETY_MARGIN = 60;
-        minX -= SAFETY_MARGIN;
-        minY -= SAFETY_MARGIN;
-        maxX += SAFETY_MARGIN;
-        maxY += SAFETY_MARGIN;
-
-        const padding = 100;
-        const headerHeight = 170;
-
-        // Actual Content Dimensions + Padding
-        const contentWidth = (maxX - minX) + (padding * 2);
-        const contentHeight = (maxY - minY) + (padding * 2) + headerHeight;
-
-        // Ensure dimensions are at least respectable for the header
-        const exportWidth = Math.max(contentWidth, 800);
-        const exportHeight = Math.max(contentHeight, 600);
-
-        // 2. Prepare Map URL
-        const lat = localCTO.coordinates?.lat || cto.coordinates?.lat || 0;
-        const lng = localCTO.coordinates?.lng || cto.coordinates?.lng || 0;
-
-        // Yandex Static Maps URL: ll (center), z (zoom), pt (marker: lng,lat,style)
-        // pm2rdm = Red marker, medium size.
-        // l=sat = Satellite mode
-        // Requesting a larger square image (300x300) to allow aggressive cropping of the watermark at the bottom.
-        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${lng.toFixed(6)},${lat.toFixed(6)}&z=16&l=sat&size=300,300&pt=${lng.toFixed(6)},${lat.toFixed(6)},pm2rdm&lang=pt_BR`;
-
-        // Preload Map Image
-        const mapBase64 = await preloadImage(mapUrl);
-
-        const mapImgHtml = mapBase64
-            ? `<div style="width: 100%; height: 100%; overflow: hidden; position: relative; border-radius: 8px;">
-                 <img src="${mapBase64}" style="width: 100%; height: auto; position: absolute; top: 0; left: 0;" alt="Location" />
-               </div>`
-            : `<div style="width: 100%; height: 100%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-weight: bold;">MAP UNAVAILABLE</div>`;
-
-        // 3. Create Temporary Export Container (Hidden but visible to capture)
-        const exportContainer = document.createElement('div');
-        exportContainer.style.position = 'fixed';
-        exportContainer.style.left = '-10000px';
-        exportContainer.style.top = '0px';
-        exportContainer.style.width = `${exportWidth}px`;
-        exportContainer.style.height = `${exportHeight}px`;
-        exportContainer.style.backgroundColor = '#ffffff';
-        exportContainer.style.fontFamily = 'sans-serif';
-        exportContainer.style.display = 'flex';
-        exportContainer.style.flexDirection = 'column';
-        exportContainer.style.overflow = 'hidden';
-        exportContainer.style.zIndex = '-9999';
-
-        document.body.appendChild(exportContainer);
-
-        // 4. Construct Content HTML with Force Light Mode CSS
-        const statusColor = CTO_STATUS_COLORS[cto.status || 'PLANNED'];
-
-        exportContainer.innerHTML = `
-        <style>
-            .export-diagram-layer * { vector-effect: non-scaling-stroke; }
-            
-            /* Root export container - Ensure white background but allow content to be transparent */
-            #export-container-wrapper { 
-                background-color: #ffffff !important; 
-                color: #0f172a !important; 
-                fill: #0f172a;
-            }
-
-            /* 1. Only force white background on the heavy components cards */
-            #export-container-wrapper .bg-white,
-            #export-container-wrapper .dark\\:bg-slate-900,
-            #export-container-wrapper .dark\\:bg-slate-800,
-            #export-container-wrapper .dark\\:bg-slate-950,
-            #export-container-wrapper .bg-slate-900 { 
-                background-color: #ffffff !important; 
-                border-color: #cbd5e1 !important; /* Slightly darker border for contrast on white paper */
-            }
-
-            /* Fix Splitter Black Fill in Export */
-            #export-container-wrapper .dark\\:fill-slate-900 {
-                fill: #ffffff !important;
-                stroke: #64748b !important; /* Slate-500 for visibility */
-            }
-
-            /* 2. PROTECT EVERYTHING WITH STYLE ATTR (Fibers, colored lines) */
-            /* We do this by not having broad 'div' or 'span' overrides anymore */
-
-            /* 3. Force dark text ONLY for classes that are typically white on dark */
-            #export-container-wrapper .dark\\:text-white,
-            #export-container-wrapper .text-white {
-                color: #1e293b !important;
-            }
-            
-            /* 4. Restore fiber port visibility (which uses white text on dark backgrounds) */
-            #export-container-wrapper .rounded-full.text-white {
-                color: #ffffff !important; /* Keep white text if it's a port circle */
-            }
-
-            /* 5. Visible Connections */
-            #export-container-wrapper svg path {
-                stroke-opacity: 1 !important;
-            }
-            
-            /* Force visible borders for internal lines (cables tubes etc) */
-            #export-container-wrapper .border-slate-300,
-            #export-container-wrapper .dark\\:border-slate-600 {
-                border-color: #94a3b8 !important;
-            }
-
-            /* 6. FIX WHITE FIBER VISIBILITY */
-            /* Add shadow to all connection paths to make white lines stand out on white bg */
-            #export-container-wrapper svg path {
-                filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
-            }
-            
-            /* Specific fix assuming 'white' fiber connections might need more contrast */
-            /* Force white paths to become dark gray in export so they are visible on white paper */
-            #export-container-wrapper svg path[stroke="#ffffff"],
-            #export-container-wrapper svg path[stroke="#fff"],
-            #export-container-wrapper svg path[stroke="white"],
-            #export-container-wrapper svg path[stroke="rgb(255, 255, 255)"],
-            #export-container-wrapper svg path[stroke="rgba(255, 255, 255, 1)"] {
-                stroke: #64748b !important; /* Slate-500 */
-                filter: none !important; /* Remove shadow to keep it clean */
-            }
-
-            /* Note: This relies on the backend/types actually using #FFFFFF */
-            
-            /* Also ensure text numbers in fibers are centered (handled in component, but good to ensure reset) */
-            #export-container-wrapper .flex.items-center.justify-center {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-        </style>
-        <div id="export-container-wrapper" class="light" style="width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff;">
-            <div id="export-diagram-area" style="flex: 1; position: relative; background: #ffffff; overflow: visible;">
-                <div id="diagram-centering-wrapper" style="position: absolute; left: 0; top: 0; overflow: visible;"></div>
-            </div>
-            <div style="padding: 24px; border-top: 2px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center; height: ${headerHeight}px; box-sizing: border-box; flex-shrink: 0;">
-                <div style="box-sizing: border-box;">
-                    <h1 style="font-size: 24px; font-weight: 800; margin: 0; color: #0f172a; line-height: 1.2;">${localCTO.name}</h1>
-                    <h2 style="font-size: 14px; font-weight: 600; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase;">${projectName}</h2>
-                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 12px; color: #475569;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-weight: 700;">Status:</span>
-                            <span style="background: ${statusColor}; color: white !important; padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 10px;">${cto.status || 'PLANNED'}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-weight: 700;">Lat/Long:</span>
-                            <span>${cto.coordinates.lat.toFixed(6)}, ${cto.coordinates.lng.toFixed(6)}</span>
-                        </div>
-                    </div>
-                </div>
-                <div style="width: 300px; height: 180px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; background: #f1f5f9; box-sizing: border-box;">
-                    ${mapImgHtml}
-                </div>
-            </div>
-        </div>
-        `;
-
-        // Wait for styles and innerHTML to settle
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        // 5. Clone Diagram Content
-        const diagramClone = diagramContentRef.current.cloneNode(true) as HTMLDivElement;
-
-        const diagramAreaWidth = exportWidth;
-        const diagramAreaHeight = exportHeight - headerHeight;
-        const contentWidthOnly = maxX - minX;
-        const contentHeightOnly = maxY - minY;
-
-        // NEW Centering Strategic Logic:
-        // 1. Move everything inside diagramClone so the content visual top-left (minX, minY) sits at 0,0
-        // 2. Then move the centering-wrapper by 'padding' pixels, ensuring perfect positive gap.
-
-        diagramClone.style.transform = `translate(${-minX}px, ${-minY}px)`;
-        diagramClone.style.transformOrigin = '0 0';
-        diagramClone.style.position = 'absolute';
-        diagramClone.style.margin = '0';
-        diagramClone.style.padding = '0';
-        diagramClone.style.width = `${maxX - minX + 10}px`; // tight to content
-        diagramClone.style.height = `${maxY - minY + 10}px`;
-        diagramClone.style.overflow = 'visible';
-        diagramClone.classList.add('export-diagram-layer');
-
-        const wrapper = exportContainer.querySelector('#diagram-centering-wrapper') as HTMLDivElement;
-        // Center the wrapper within the diagramArea
-        const centerPaddingX = (diagramAreaWidth - contentWidthOnly) / 2;
-        const centerPaddingY = (diagramAreaHeight - contentHeightOnly) / 2;
-        wrapper.style.left = `${centerPaddingX}px`;
-        wrapper.style.top = `${centerPaddingY}px`;
-        wrapper.appendChild(diagramClone);
-
-        // Final settle delay to ensure all nested components and SVG paths are fully layed out
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // 6. Capture
-        try {
-            const canvas = await html2canvas(exportContainer, {
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                scale: 2, // 2x is enough for high quality without memory issues
-                windowWidth: exportWidth,
-                windowHeight: exportHeight,
-                logging: false,
-                allowTaint: true
-            });
-            if (document.body.contains(exportContainer)) {
-                document.body.removeChild(exportContainer);
-            }
-            return canvas;
-        } catch (error) {
-            console.error("Canvas generation failed", error);
-            if (document.body.contains(exportContainer)) {
-                document.body.removeChild(exportContainer);
-            }
-            return null;
-        }
+        // Actually, let's try to harvest via the known port IDs which are inside the nodes.
+        return null;
     };
 
+    // Instead of complex DOM traversal, I'll update the node components to simply have an ID.
+    // This is a minimal, safe change.
     const handleExportPDF = async () => {
         setExportingType('pdf');
         try {
-            const canvas = await generateExportCanvas();
-            if (!canvas) return;
-
-            // 7. Generate PDF with Content Aspect Ratio
-            const imgData = canvas.toDataURL('image/png');
-
-            // Canvas dimensions are scaled by 2 (html2canvas scale), so divide by 2 for logical points
-            const imgWidth = canvas.width / 2;
-            const imgHeight = canvas.height / 2;
-
-            // Dynamically set orientation based on aspect ratio
-            const pdf = new jsPDF({
-                orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
-                unit: 'px',
-                format: [imgWidth, imgHeight] // Set page size exactly to image size
+            // Harvest Port Positions
+            const portPositions: Record<string, { x: number, y: number }> = {};
+            localCTO.connections.forEach(c => {
+                const s = getPortCenter(c.sourceId);
+                if (s) portPositions[c.sourceId] = s;
+                const t = getPortCenter(c.targetId);
+                if (t) portPositions[c.targetId] = t;
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`CTO-${localCTO.name.replace(/\s+/g, '_')}.pdf`);
+            // Harvest Node Metrics (REMOVED - Using accurate math in Exporter now)
+
+            // Prepare Footer Data
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const footerData = {
+                projectName: projectName || '',
+                boxName: localCTO.name,
+                date: dateStr,
+                lat: localCTO.coordinates.lat.toFixed(6),
+                lng: localCTO.coordinates.lng.toFixed(6),
+                status: 'Implantada',
+                level: 'CTO',
+                pole: '-',
+                obs: '',
+                mapImage: '' // Placeholder
+            };
+
+            // Loading Map Image (Static OpenStreetMap/Carto)
+            // Using a public static map generator or tile stitching is hard without API.
+            // Alternative: Use a generic map marker image or try to fetch a single tile?
+            // Tile URL: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+            // We need to convert Lat/Lng to Tile X/Y.
+
+            try {
+                // Simple APPROXIMATION using a static map service if allowed, 
+                // OR construct a URL from a free service that returns an image.
+                // Mapbox/Google require keys. 
+                // Let's use a reliable placeholder or a free static service if one exists.
+                // 'https://static-maps.yandex.ru/1.x/?lang=en_US&ll=' + lng + ',' + lat + '&z=16&l=map&size=450,300&pt=' + lng + ',' + lat + ',pm2rdm';
+                // Note: Yandex Static Maps is often free/open.
+
+                const lat = localCTO.coordinates.lat;
+                const lng = localCTO.coordinates.lng;
+                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
+
+                // Preload
+                const mapBase64 = await preloadImage(mapUrl);
+                if (mapBase64) footerData.mapImage = mapBase64;
+            } catch (e) {
+                console.warn("Could not load static map", e);
+            }
+
+            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
+            await exportToPDF(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
             console.error("Export failed", error);
             alert("Failed to export PDF.");
@@ -859,14 +650,44 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const handleExportPNG = async () => {
         setExportingType('png');
         try {
-            const canvas = await generateExportCanvas();
-            if (!canvas) return;
+            // Harvest Port Positions
+            const portPositions: Record<string, { x: number, y: number }> = {};
+            localCTO.connections.forEach(c => {
+                const s = getPortCenter(c.sourceId);
+                if (s) portPositions[c.sourceId] = s;
+                const t = getPortCenter(c.targetId);
+                if (t) portPositions[c.targetId] = t;
+            });
 
-            const imgData = canvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.download = `CTO-${localCTO.name.replace(/\s+/g, '_')}.png`;
-            link.href = imgData;
-            link.click();
+            // Prepare Footer Data
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const footerData = {
+                projectName: projectName || '',
+                boxName: localCTO.name,
+                date: dateStr,
+                lat: localCTO.coordinates.lat.toFixed(6),
+                lng: localCTO.coordinates.lng.toFixed(6),
+                status: 'Implantada',
+                level: 'CTO',
+                pole: '-',
+                obs: '',
+                mapImage: ''
+            };
+
+            try {
+                const lat = localCTO.coordinates.lat;
+                const lng = localCTO.coordinates.lng;
+                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
+                const mapBase64 = await preloadImage(mapUrl);
+                if (mapBase64) footerData.mapImage = mapBase64;
+            } catch (e) {
+                console.warn("Could not load static map", e);
+            }
+
+            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
+            await exportToPNG(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.png`);
         } catch (error) {
             console.error("Export PNG failed", error);
             alert("Failed to export PNG.");

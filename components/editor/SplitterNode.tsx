@@ -51,6 +51,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
 
     return (
         <div
+            id={splitter.id}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 width: size,

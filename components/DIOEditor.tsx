@@ -89,6 +89,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
         if (currentCables.includes(cableId)) {
             newCables = currentCables.filter(c => c !== cableId);
         } else {
+            // Check if assigned to other DIO in the POP
+            const assignedToOther = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cableId));
+            if (assignedToOther) return;
+
             newCables = [...currentCables, cableId];
         }
 

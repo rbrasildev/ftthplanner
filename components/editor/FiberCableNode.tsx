@@ -78,6 +78,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
 
     return (
         <div
+            id={cable.id}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 paddingBottom: `${paddingBottom}px` // invisible padding to align center

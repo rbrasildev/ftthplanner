@@ -83,6 +83,9 @@ function getDistanceToSegment(p: Coordinates, a: Coordinates, b: Coordinates) {
 
 // --- AUTO SNAP LOGIC ---
 const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: NetworkState, snappedCount: number } => {
+    // AUTO-SNAP DISABLED GLOBAL
+    return { state: net, snappedCount: 0 };
+
     const nodes = [...net.ctos, ...(net.pops || [])];
     let snappedCount = 0;
     let hasChanges = false;
@@ -465,12 +468,14 @@ export default function App() {
     // --- TRIGGER AUTO SNAP WHEN SETTINGS CHANGE AUTOMATICALLY ---
     // Using a timeout to debounce slightly if the user is typing fast, but ensuring it runs.
     useEffect(() => {
+        /* AUTO-SNAP EFFECT DISABLED
         if (currentProjectId) {
             const timer = setTimeout(() => {
                 performAutoSnap(systemSettings.snapDistance);
             }, 1500); // Increased from 500ms to 1500ms for better performance
             return () => clearTimeout(timer);
         }
+        */
     }, [systemSettings.snapDistance, currentProjectId]);
 
 
@@ -710,12 +715,21 @@ export default function App() {
         });
 
         // WRAPPED WITH AUTO SNAP (Checks if ends are near other nodes if not explicitly connected)
-        updateCurrentNetwork(prev => autoSnapNetwork({
+        // DISABLED per User Request (Manual mode only)
+        // updateCurrentNetwork(prev => autoSnapNetwork({
+        //     ...prev,
+        //     cables: [...prev.cables, newCable],
+        //     ctos: updatedCTOs,
+        //     pops: updatedPOPs
+        // }, systemSettings.snapDistance).state);
+
+        // MANUAL MODE: Just add the cable
+        updateCurrentNetwork(prev => ({
             ...prev,
             cables: [...prev.cables, newCable],
             ctos: updatedCTOs,
             pops: updatedPOPs
-        }, systemSettings.snapDistance).state);
+        }));
 
         showToast(t('toast_cable_created'));
         setDrawingPath([]);
@@ -733,7 +747,9 @@ export default function App() {
                 splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
             };
             // WRAPPED WITH AUTO SNAP - Snaps nearby cable ends to this new CTO
-            updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, ctos: [...prev.ctos, newCTO] }, systemSettings.snapDistance).state);
+            // DISABLED per User Request (Manual mode only)
+            // updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, ctos: [...prev.ctos, newCTO] }, systemSettings.snapDistance).state);
+            updateCurrentNetwork(prev => ({ ...prev, ctos: [...prev.ctos, newCTO] }));
             showToast(t('toast_cto_added'));
             setToolMode('view');
         } else if (toolMode === 'add_pop') {
@@ -745,7 +761,9 @@ export default function App() {
                 olts: [], dios: [], fusions: [], connections: [], inputCableIds: []
             };
             // WRAPPED WITH AUTO SNAP
-            updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, pops: [...(prev.pops || []), newPOP] }, systemSettings.snapDistance).state);
+            // DISABLED per User Request (Manual mode only)
+            // updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, pops: [...(prev.pops || []), newPOP] }, systemSettings.snapDistance).state);
+            updateCurrentNetwork(prev => ({ ...prev, pops: [...(prev.pops || []), newPOP] }));
             showToast(t('toast_pop_added'));
             setToolMode('view');
         } else if (toolMode === 'draw_cable') {
@@ -800,7 +818,9 @@ export default function App() {
             });
 
             // WRAPPED WITH AUTO SNAP - Checks if the new position snaps to any loose cables
-            return autoSnapNetwork({ ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables }, systemSettings.snapDistance).state;
+            // DISABLED per User Request (Manual mode only)
+            // return autoSnapNetwork({ ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables }, systemSettings.snapDistance).state;
+            return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables };
         });
     };
 
@@ -837,8 +857,8 @@ export default function App() {
                     coordinates: newCoords,
                     [pointIndex === 0 ? 'fromNodeId' : 'toNodeId']: node.id
                 } : c),
-                ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: [...(c.inputCableIds || []), cable.id] } : c),
-                pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: [...(p.inputCableIds || []), cable.id] } : p)
+                ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cable.id) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
+                pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cable.id) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
             }));
             showToast(t(pointIndex === 0 ? 'toast_cable_connected_start' : 'toast_cable_connected_end', { name: node.name }));
             return;
@@ -856,8 +876,8 @@ export default function App() {
         updateCurrentNetwork(prev => ({
             ...prev,
             cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
-            ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: [...(c.inputCableIds || []), cableId] } : c),
-            pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: [...(p.inputCableIds || []), cableId] } : p)
+            ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
+            pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
         }));
         showToast(t('toast_cable_split', { name: node.name }));
     };
@@ -1345,6 +1365,7 @@ export default function App() {
                     onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
                     onSave={handleSavePOP}
                     onHoverCable={(id) => setHighlightedCableId(id)}
+                    onEditCable={(cable) => setEditingCable(cable)}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
                 />
             )}
