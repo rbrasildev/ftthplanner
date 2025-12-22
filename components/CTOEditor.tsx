@@ -628,7 +628,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                 const lat = localCTO.coordinates.lat;
                 const lng = localCTO.coordinates.lng;
-                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
+                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=17&l=sat&size=650,450&pt=${lng},${lat},pm2rdm`;
 
                 // Preload
                 const mapBase64 = await preloadImage(mapUrl);

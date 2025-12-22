@@ -1365,7 +1365,6 @@ export default function App() {
                     onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
                     onSave={handleSavePOP}
                     onHoverCable={(id) => setHighlightedCableId(id)}
-                    onEditCable={(cable) => setEditingCable(cable)}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
                 />
             )}

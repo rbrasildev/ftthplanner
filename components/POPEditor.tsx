@@ -1,8 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, FIBER_COLORS, ElementLayout } from '../types';
-import { X, Save, Scissors, ZoomIn, ZoomOut, GripHorizontal, Server, Router, Magnet, AlignJustify, Settings2, Trash2, Cable as CableIcon, Plug, Link2, Link2Off, Check, Pencil, AlertTriangle, Move, Box, Maximize } from 'lucide-react';
-
+import { X, Save, Scissors, ZoomIn, ZoomOut, GripHorizontal, Server, Router, Magnet, AlignJustify, Settings2, Trash2, Cable as CableIcon, Plug, Link2, Link2Off, Check, Pencil, AlertTriangle, Move, Box } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
 
@@ -21,15 +20,12 @@ interface POPEditorProps {
     onOtdrTrace: (portId: string, distance: number) => void;
 
     // Hover Highlight
-    // Hover Highlight
     onHoverCable?: (cableId: string | null) => void;
-    onEditCable: (cable: CableData) => void;
 }
 
+type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio' | 'window';
-
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable }) => {
     const { t } = useLanguage();
     const [localPOP, setLocalPOP] = useState<POPData>(JSON.parse(JSON.stringify(pop)));
 
@@ -70,43 +66,14 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     const GRID_SIZE = 20;
     const EQUIPMENT_WIDTH = 340; // Standard visual width for OLT/DIO
 
-    // Window Position State (Matches CTOEditor)
-    const [windowPos, setWindowPos] = useState(() => {
-        if (typeof window === 'undefined') return { x: 100, y: 50 };
-        // Approximate size of the POPEditor (95vw/95vh is dynamic, but we can start centered)
-        // Since we are switching from 95vw/95vh to fixed size or dynamic, we should stick to a good default.
-        // CTOEditor uses 1100x750. POPEditor used 95vw/95vh. 
-        // Let's keep it somewhat large but start centered.
-
-        let x = 50;
-        let y = 50;
-
-        // Simple default center logic if we assume a size. 
-        // We will switch to fixed size to make it consistently draggable, or keep it resizable?
-        // CTOEditor is fixed 1100px width.
-        // Attempting to match that behavior for consistency.
-
-        const MODAL_WIDTH = 1200;
-        const MODAL_HEIGHT = 800;
-
-        x = (window.innerWidth - MODAL_WIDTH) / 2;
-        y = (window.innerHeight - MODAL_HEIGHT) / 2;
-
-        if (x < 20) x = 20;
-        if (y < 20) y = 20;
-
-        return { x, y };
-    });
-
     // Interaction State
     const [dragState, setDragState] = useState<{
-        mode: DragMode | 'window';
+        mode: DragMode;
         targetId?: string;
         startX: number;
         startY: number;
         initialLayout?: ElementLayout; // For elements
-        initialPos?: { x: number, y: number }; // For modals or window
-        initialWindowPos?: { x: number, y: number };
+        initialPos?: { x: number, y: number }; // For modals
     } | null>(null);
 
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
@@ -392,29 +359,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         });
     };
 
-    const handleWindowDragStart = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('button')) return;
-        e.preventDefault();
-        setDragState({
-            mode: 'window',
-            startX: e.clientX,
-            startY: e.clientY,
-            initialWindowPos: windowPos
-        });
-    };
-
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!dragState) return;
 
-        if (dragState.mode === 'window' && dragState.initialWindowPos) {
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            setWindowPos({
-                x: dragState.initialWindowPos.x + dx,
-                y: dragState.initialWindowPos.y + dy
-            });
-        }
-        else if (dragState.mode === 'view') {
+        if (dragState.mode === 'view') {
             const dx = e.clientX - dragState.startX;
             const dy = e.clientY - dragState.startY;
             setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
@@ -450,12 +398,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleMouseUp = () => {
         setDragState(null);
-    };
-
-    const handleWheel = (e: React.WheelEvent) => {
-        const scale = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(0.1, viewState.zoom * scale), 4);
-        setViewState(prev => ({ ...prev, zoom: newZoom }));
     };
 
     // --- Equipment Management ---
@@ -604,57 +546,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         setEditingDIO(null);
     };
 
-    // --- View Controls ---
-    const handleCenterView = () => {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        let hasElements = false;
-
-        // Incoming Cables
-        uniqueIncomingCables.forEach(c => {
-            const l = getLayout(c.id);
-            minX = Math.min(minX, l.x);
-            minY = Math.min(minY, l.y);
-            maxX = Math.max(maxX, l.x + 120);
-            maxY = Math.max(maxY, l.y + 100);
-            hasElements = true;
-        });
-
-        // Equipment
-        [...localPOP.olts, ...localPOP.dios].forEach(item => {
-            const l = getLayout(item.id);
-            minX = Math.min(minX, l.x);
-            minY = Math.min(minY, l.y);
-            maxX = Math.max(maxX, l.x + EQUIPMENT_WIDTH);
-            maxY = Math.max(maxY, l.y + 200);
-            hasElements = true;
-        });
-
-        if (!hasElements) {
-            setViewState({ x: 0, y: 0, zoom: 1 });
-            return;
-        }
-
-        const containerW = containerRef.current?.clientWidth || 1200;
-        const containerH = containerRef.current?.clientHeight || 800;
-        const PADDING = 100;
-
-        const contentW = maxX - minX + (PADDING * 2);
-        const contentH = maxY - minY + (PADDING * 2);
-
-        const zoomX = containerW / contentW;
-        const zoomY = containerH / contentH;
-        let newZoom = Math.min(zoomX, zoomY, 1.2);
-        newZoom = Math.max(newZoom, 0.2);
-
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-
-        const newX = (containerW / 2) - (centerX * newZoom);
-        const newY = (containerH / 2) - (centerY * newZoom);
-
-        setViewState({ x: newX, y: newY, zoom: newZoom });
-    };
-
     const confirmDeleteEquipment = () => {
         if (!itemToDelete) return;
 
@@ -683,19 +574,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     return (
-        <div
-            className="fixed z-[2000] shadow-2xl rounded-xl"
-            style={{ left: windowPos.x, top: windowPos.y }}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-        >
-            <div className="w-[1200px] h-[800px] bg-slate-900 rounded-xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+        <div className="fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center backdrop-blur-sm">
+            <div className="w-[95vw] h-[95vh] bg-slate-900 rounded-xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
 
                 {/* Toolbar */}
-                <div
-                    className="h-14 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-6 shrink-0 z-50 cursor-move"
-                    onMouseDown={handleWindowDragStart}
-                >
+                <div className="h-14 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-6 shrink-0 z-50">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
                         <h2 className="font-bold text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
                             <Box className="w-5 h-5 text-indigo-400 shrink-0" />
@@ -712,7 +595,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             </button>
                         </div>
                     </div>
-                    <div className="flex gap-2 pointer-events-auto">
+                    <div className="flex gap-2">
                         <button onClick={organizeRackLayout} className={`px-3 py-1.5 rounded flex items-center gap-2 text-xs font-bold transition ${isRackMode ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                             <AlignJustify className="w-3 h-3" /> {t('rack_view')}
                         </button>
@@ -720,6 +603,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                         <button onClick={() => setIsSnapping(!isSnapping)} className={`p-2 rounded transition ${isSnapping ? 'text-sky-400 bg-sky-900/30 ring-1 ring-sky-500' : 'text-slate-400 hover:bg-slate-700'}`}>
                             <Magnet className="w-4 h-4" />
                         </button>
+                        <button onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))} className="p-2 text-slate-400 hover:bg-slate-700 rounded"><ZoomIn className="w-4 h-4" /></button>
+                        <button onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))} className="p-2 text-slate-400 hover:bg-slate-700 rounded"><ZoomOut className="w-4 h-4" /></button>
 
                         <button onClick={() => setShowClearConfirm(true)} className="p-2 text-red-400 hover:bg-red-900/20 rounded"><Scissors className="w-4 h-4" /></button>
                         <div className="w-[1px] h-6 bg-slate-600 mx-2"></div>
@@ -733,7 +618,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     ref={containerRef}
                     className="flex-1 bg-slate-950 relative overflow-hidden cursor-crosshair"
                     onMouseDown={handleMouseDown}
-                    onWheel={handleWheel}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
                 >
                     {/* Grid */}
                     <div
@@ -744,37 +630,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
                         }}
                     />
-
-                    {/* Bottom Right Floating Controls */}
-                    <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto">
-                        <div className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
-                            <button
-                                onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-400 hover:bg-slate-700 hover:text-white transition rounded-md flex items-center justify-center"
-                                title={t('zoom_in')}
-                            >
-                                <ZoomIn className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-400 hover:bg-slate-700 hover:text-white transition rounded-md flex items-center justify-center"
-                                title={t('zoom_out')}
-                            >
-                                <ZoomOut className="w-5 h-5" />
-                            </button>
-                            <div className="h-[1px] bg-slate-700 mx-1"></div>
-                            <button
-                                onClick={handleCenterView}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-400 hover:bg-slate-700 hover:text-white transition rounded-md flex items-center justify-center"
-                                title={t('center_view') || "Center View"}
-                            >
-                                <Maximize className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
 
                     <div
                         style={{
@@ -864,18 +719,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         className="h-6 bg-slate-800 border-b border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
                                         onMouseDown={(e) => handleElementDragStart(e, cable.id)}
                                     >
-                                        <span className="text-[10px] font-bold text-slate-200 truncate flex-1">{cable.name}</span>
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onEditCable(cable); }}
-                                                className="text-slate-400 hover:text-sky-400"
-                                            >
-                                                <Pencil className="w-3 h-3" />
-                                            </button>
-                                            <GripHorizontal className="w-3 h-3 text-slate-600" />
-                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-200 truncate">{cable.name}</span>
+                                        <GripHorizontal className="w-3 h-3 text-slate-600" />
                                     </div>
-                                    <div className="p-2 text-[10px] text-slate-500 text-center" onDoubleClick={(e) => { e.stopPropagation(); onEditCable(cable); }}>
+                                    <div className="p-2 text-[10px] text-slate-500 text-center">
                                         Backbone Cable<br />(Splice inside DIO)
                                     </div>
                                 </div>

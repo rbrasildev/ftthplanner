@@ -273,7 +273,7 @@ export interface FooterData {
 
 const renderFooter = (x: number, y: number, width: number, data: FooterData): string => {
     let content = '';
-    const height = 180;
+    const height = 360; // Doubled from 180
     const padding = 10;
 
     // Background
@@ -291,25 +291,25 @@ const renderFooter = (x: number, y: number, width: number, data: FooterData): st
     const col2W = width * 0.30;
     const col3W = width * 0.35; // Map
 
-    const obsHeight = 45; // Bottom row height
+    const obsHeight = 90; // Doubled from 45
     const mainHeight = height - obsHeight - 5; // Top area height
     const rowH = (mainHeight - 10) / 3; // 3 rows in Top Area
 
     // COL 1 FRAMES (Project, Box, GPS)
     // Frame 1: Project
     content += `<rect x="${x}" y="${y}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 5}" y="${y + 15}" font-family="Arial" font-size="10" fill="#64748b">Projeto</text>`;
-    content += `<text x="${x + 5}" y="${y + 35}" font-family="Arial" font-weight="bold" font-size="12" fill="#0f172a">${data.projectName || 'PROJETO SEM NOME'}</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH * 0.35}" font-family="Arial" font-size="18" fill="#64748b">Projeto</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="24" fill="#0f172a">${data.projectName || 'PROJETO SEM NOME'}</text>`;
 
     // Frame 2: Box
     content += `<rect x="${x}" y="${y + rowH + 5}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 5}" y="${y + rowH + 20}" font-family="Arial" font-size="10" fill="#64748b">Caixa <tspan fill="#94a3b8">atualizada em ${data.date}</tspan></text>`;
-    content += `<text x="${x + 5}" y="${y + rowH + 40}" font-family="Arial" font-weight="bold" font-size="14" fill="#0f172a">${data.boxName}</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH + 20 + rowH * 0.1}" font-family="Arial" font-size="18" fill="#64748b">Caixa <tspan fill="#94a3b8" font-size="14">(${data.date})</tspan></text>`;
+    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="28" fill="#0f172a">${data.boxName}</text>`;
 
     // Frame 3: Coordinates
     content += `<rect x="${x}" y="${y + (rowH * 2) + 10}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 5}" y="${y + (rowH * 2) + 25}" font-family="Arial" font-size="10" fill="#64748b">Lat/Lng</text>`;
-    content += `<text x="${x + 5}" y="${y + (rowH * 2) + 45}" font-family="Arial" font-weight="bold" font-size="12" fill="#0f172a">${data.lat}, ${data.lng}</text>`;
+    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.35}" font-family="Arial" font-size="18" fill="#64748b">Lat/Lng</text>`;
+    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.lat}, ${data.lng}</text>`;
 
 
     // COL 2 FRAMES (Status, Level, Pole) - MOVED OBS TO BOTTOM
@@ -317,25 +317,25 @@ const renderFooter = (x: number, y: number, width: number, data: FooterData): st
 
     // Status
     content += `<rect x="${c2x}" y="${y}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 5}" y="${y + 12}" font-family="Arial" font-size="9" fill="#64748b">Status</text>`;
-    content += `<text x="${c2x + 5}" y="${y + 25}" font-family="Arial" font-weight="bold" font-size="11" fill="#0f172a">${data.status}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Status</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.status}</text>`;
 
     // Level
     content += `<rect x="${c2x}" y="${y + rowH + 5}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 5}" y="${y + rowH + 14}" font-family="Arial" font-size="9" fill="#64748b">Nível</text>`;
-    content += `<text x="${c2x + 5}" y="${y + rowH + 27}" font-family="Arial" font-weight="bold" font-size="11" fill="#0f172a">${data.level}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Nível</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.level}</text>`;
 
     // Pole
     content += `<rect x="${c2x}" y="${y + rowH * 2 + 10}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 5}" y="${y + rowH * 2 + 16}" font-family="Arial" font-size="9" fill="#64748b">Poste</text>`;
-    content += `<text x="${c2x + 5}" y="${y + rowH * 2 + 29}" font-family="Arial" font-weight="bold" font-size="11" fill="#0f172a">${data.pole || '-'}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Poste</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.pole || '-'}</text>`;
 
     // OBS ROW (Spanning FULL WIDTH)
     const obsY = y + mainHeight + 5;
     const obsW = width; // Full width
     content += `<rect x="${x}" y="${obsY}" width="${obsW}" height="${obsHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 5}" y="${obsY + 14}" font-family="Arial" font-size="9" fill="#64748b">Observação</text>`;
-    content += `<text x="${x + 5}" y="${obsY + 29}" font-family="Arial" font-weight="bold" font-size="10" fill="#0f172a">${data.obs || ''}</text>`;
+    content += `<text x="${x + 10}" y="${obsY + 25}" font-family="Arial" font-size="18" fill="#64748b">Observação</text>`;
+    content += `<text x="${x + 10}" y="${obsY + 60}" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.obs || ''}</text>`;
 
 
     // COL 3: MAP
@@ -350,7 +350,7 @@ const renderFooter = (x: number, y: number, width: number, data: FooterData): st
         content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="none" stroke="#cbd5e1" stroke-width="1" />`;
     } else {
         content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />`;
-        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748b">MAPA</text>`;
+        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" text-anchor="middle" font-family="Arial" font-size="24" fill="#64748b">MAPA</text>`;
     }
 
     return content;
@@ -407,10 +407,35 @@ export const generateCTOSVG = (
     if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
 
     const PADDING = 50;
-    const FOOTER_HEIGHT = footerData ? 200 : 0;
-    minX -= PADDING; minY -= PADDING; maxX += PADDING; maxY += PADDING;
-    const width = maxX - minX;
-    const height = (maxY - minY) + FOOTER_HEIGHT;
+    const FOOTER_HEIGHT = footerData ? 360 : 0; // consistent with renderFooter height
+
+    // Initial Bounds with Padding
+    minX -= PADDING;
+    minY -= PADDING;
+    maxX += PADDING;
+    maxY += PADDING;
+
+    let width = maxX - minX;
+    const contentHeight = maxY - minY;
+    const totalHeight = contentHeight + FOOTER_HEIGHT;
+
+    // FORCE LANDSCAPE ASPECT RATIO for Footer Expansion
+    // If aspect ratio < 1.4, widen the viewbox
+    const targetRatio = 1.4;
+    const currentRatio = width / totalHeight;
+
+    if (currentRatio < targetRatio) {
+        const targetWidth = totalHeight * targetRatio;
+        const diff = targetWidth - width;
+        minX -= diff / 2;
+        maxX += diff / 2;
+        width = targetWidth;
+    }
+
+    // Recalculate Width is handled by minX/maxX updates, but explicit var:
+    // width = maxX - minX; // (Matches targetWidth)
+
+    const height = totalHeight;
 
     // 2. RENDER CONNECTIONS (Bottom Layer)
     // We need Port Positions to draw lines if points are partial.
