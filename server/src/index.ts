@@ -38,6 +38,15 @@ app.get('/api/health', (req, res) => {
 
 app.use(express.json({ limit: '50mb' }));
 
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
+        console.error('Bad JSON received:', err.message);
+        console.error('Raw Body Content:', (err as any).body); // Log the actual bad content
+        return res.status(400).json({ error: 'Invalid JSON request', details: err.message });
+    }
+    next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 

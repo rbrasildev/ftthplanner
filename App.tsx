@@ -896,6 +896,7 @@ export default function App() {
         showToast(t('toast_cto_deleted'));
     };
     const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); };
+    const handleUpdateCable = (c: CableData) => updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) }));
     const handleDeleteCable = (id: string) => { setEditingCable(null); updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) })); showToast(t('toast_cable_deleted')); };
 
     // ... (OTDR Trace Logic Unchanged) ...
@@ -1378,6 +1379,7 @@ export default function App() {
                     onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
                     onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
                     onSave={handleSaveCTO}
+                    onEditCable={setEditingCable}
                     onHoverCable={(id) => setHighlightedCableId(id)}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
                 />

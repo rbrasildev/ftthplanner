@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, FIBER_COLORS, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
@@ -79,6 +79,7 @@ interface CTOEditorProps {
     incomingCables: CableData[];
     onClose: () => void;
     onSave: (updatedCTO: CTOData) => void;
+    onEditCable: (cable: CableData) => void;
 
     // VFL Props
     litPorts: Set<string>;
@@ -94,7 +95,7 @@ interface CTOEditorProps {
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
 
-export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable }) => {
+export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incomingCables, onClose, onSave, onEditCable, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable }) => {
     const { t } = useLanguage();
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
@@ -320,6 +321,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         initialWindowPos?: { x: number, y: number };
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+
+    // Cable Editing State - REMOVED (Handled Globally)
+
+    // Derived state for layout calculation
     const containerRef = useRef<HTMLDivElement>(null);
     const diagramContentRef = useRef<HTMLDivElement>(null);
 
@@ -857,7 +862,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             smartAlignFnRef.current(id);
             return;
         }
-
         if (isRotateMode) {
             e.stopPropagation();
             setLocalCTO(prev => {
@@ -875,22 +879,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         }
     }, [isSmartAlignMode, isRotateMode]);
 
-    const handleGenericElementClick = useCallback((e: React.MouseEvent, id: string) => {
-        if (isRotateMode) {
-            e.stopPropagation();
-            setLocalCTO(prev => {
-                const currentRot = prev.layout?.[id]?.rotation || 0;
-                const newRot = (currentRot + 90) % 360;
-                return {
-                    ...prev,
-                    layout: {
-                        ...prev.layout,
-                        [id]: { ...prev.layout![id], rotation: newRot }
-                    }
-                };
-            });
-        }
-    }, [isRotateMode]);
+    const handleCableEditClick = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        const cable = incomingCables.find(c => c.id === id);
+        if (cable) onEditCable(cable);
+    }, [incomingCables, onEditCable]);
+
+    const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setLocalCTO(prev => {
+            const currentRot = prev.layout?.[id]?.rotation || 0;
+            const newRot = (currentRot + 90) % 360;
+            return {
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    [id]: { ...prev.layout![id], rotation: newRot }
+                }
+            };
+        });
+    }, []);
 
     const handlePointMouseDown = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
@@ -1665,7 +1673,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     litPorts={litPorts}
                                     hoveredPortId={hoveredPortId}
                                     onDragStart={handleElementDragStart}
-                                    onAction={(e) => handleElementAction(e, cable.id, 'cable')}
+                                    onRotate={handleRotateElement}
                                     onMirror={handleMirrorElement}
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
@@ -1673,6 +1681,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     onCableMouseEnter={handleCableMouseEnter}
                                     onCableMouseLeave={handleCableMouseLeave}
                                     onCableClick={handleCableClick}
+                                    onEdit={handleCableEditClick}
                                 />
                             );
                         })}
@@ -1870,6 +1879,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                         </div>
                     </div>
                 )}
+
+
 
             </div>
         </div>

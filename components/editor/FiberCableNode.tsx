@@ -1,6 +1,6 @@
 import React from 'react';
 import { CableData, FIBER_COLORS, ElementLayout, FiberConnection } from '../../types';
-import { RotateCw, GripHorizontal, ArrowRightLeft } from 'lucide-react';
+import { RotateCw, GripHorizontal, ArrowRightLeft, Pencil } from 'lucide-react';
 
 interface FiberCableNodeProps {
     cable: CableData;
@@ -9,8 +9,9 @@ interface FiberCableNodeProps {
     litPorts: Set<string>;
     hoveredPortId: string | null;
     onDragStart: (e: React.MouseEvent, id: string) => void;
-    onAction: (e: React.MouseEvent, id: string) => void;
+    onRotate: (e: React.MouseEvent, id: string) => void;
     onMirror: (e: React.MouseEvent, id: string) => void;
+    onEdit?: (e: React.MouseEvent, id: string) => void;
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
     onPortMouseLeave: () => void;
@@ -26,8 +27,9 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     litPorts,
     hoveredPortId,
     onDragStart,
-    onAction,
+    onRotate,
     onMirror,
+    onEdit,
     onPortMouseDown,
     onPortMouseEnter,
     onPortMouseLeave,
@@ -56,15 +58,6 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     // When rotating 90deg, the element rotates around its center.
     // If the height is not a multiple of 24 (2 * Grid), the visual center (and thus ports) falls off-grid.
     // We add paddingBottom to force the total height to be a multiple of 24px.
-    const initialHeight = 6 + (looseTubeCount > 0 ? looseTubeCount * fibersPerTube * 12 + (looseTubeCount - 1) * 12 : 0);
-    // Actually simpler: The structure is pt-1.5 (6px) + tubes * (fibers*12) + gaps.
-    // Let's assume standard 1 tube, 12 fibers = 6 + 144 = 150px.
-    // 150 % 24 = 6. We need to add 18px to reach 168.
-    // But wait, "flex items-stretch". We apply min-height or padding to the wrapper?
-    // The wrapper is "items-stretch". The children define height?
-    // No, we can enforce height on the wrapper. But wrapper is "flex-row". Height is max(LabelBox, Fibers).
-    // LabelBox height is "h-full". Fibers height determines it.
-
     // Let's calculate the natural height of the fibers column:
     // pt-1.5 (6px) + for each tube: (fibers * 12) + gap-3 (12px) between tubes.
     const fibersHeight = 6 + tubes.reduce((acc, tube, idx) => {
@@ -95,6 +88,15 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
                 <div className="absolute top-0 right-0 -mt-6 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
+                        {onEdit && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onEdit(e, cable.id); }}
+                                className="text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                                title="Edit Cable"
+                            >
+                                <Pencil className="w-3 h-3" />
+                            </button>
+                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
                             className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
@@ -102,7 +104,13 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         >
                             <ArrowRightLeft className="w-3 h-3" />
                         </button>
-
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRotate(e, cable.id); }}
+                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                            title="Rotate"
+                        >
+                            <RotateCw className="w-3 h-3" />
+                        </button>
                     </div>
                 </div>
 

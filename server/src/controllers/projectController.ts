@@ -29,6 +29,7 @@ export const getProjects = async (req: Request, res: Response) => {
             }
         })));
     } catch (error) {
+        console.error("Get Projects Error:", error);
         res.status(500).json({ error: 'Failed to fetch projects' });
     }
 };
@@ -58,6 +59,7 @@ export const createProject = async (req: Request, res: Response) => {
             settings: project.settings || { snapDistance: 30 }
         });
     } catch (error) {
+        console.error("Create Project Error:", error);
         res.status(500).json({ error: 'Failed to create project' });
     }
 };
