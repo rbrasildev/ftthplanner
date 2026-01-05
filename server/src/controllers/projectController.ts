@@ -5,10 +5,12 @@ import { AuthRequest } from '../middleware/auth';
 const prisma = new PrismaClient();
 
 export const getProjects = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
+    if (!user || !user.companyId) return res.status(401).send();
+
     try {
         const projects = await prisma.project.findMany({
-            where: { userId },
+            where: { companyId: user.companyId },
             orderBy: { updatedAt: 'desc' },
             include: {
                 ctos: true,
@@ -35,15 +37,37 @@ export const getProjects = async (req: Request, res: Response) => {
 };
 
 export const createProject = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
     const { name, centerLat, centerLng } = req.body;
 
-    if (!userId) return res.status(401).send();
+    if (!user || !user.companyId) return res.status(401).send();
 
     try {
+        // Check Plan Limits
+        const company = await prisma.company.findUnique({
+            where: { id: user.companyId },
+            include: {
+                plan: true,
+                _count: { select: { projects: true } }
+            }
+        });
+
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        if (company.plan && company.plan.limits) {
+            const limits = company.plan.limits as any;
+            if (limits.maxProjects && company._count.projects >= limits.maxProjects) {
+                return res.status(403).json({
+                    error: 'Project limit reached for your plan',
+                    details: `Max projects: ${limits.maxProjects}`
+                });
+            }
+        }
+
         const project = await prisma.project.create({
             data: {
-                userId,
+                userId: user.id,
+                companyId: user.companyId,
                 name,
                 centerLat,
                 centerLng
@@ -65,12 +89,14 @@ export const createProject = async (req: Request, res: Response) => {
 };
 
 export const getProject = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
     const { id } = req.params;
+
+    if (!user || !user.companyId) return res.status(401).send();
 
     try {
         const project = await prisma.project.findFirst({
-            where: { id, userId },
+            where: { id, companyId: user.companyId },
             include: {
                 ctos: true,
                 pops: true,
@@ -138,15 +164,15 @@ export const getProject = async (req: Request, res: Response) => {
 }
 
 export const updateProject = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
     const { id } = req.params;
     const { name, centerLat, centerLng } = req.body;
 
-    if (!userId) return res.status(401).send();
+    if (!user || !user.companyId) return res.status(401).send();
 
     try {
         const project = await prisma.project.update({
-            where: { id, userId },
+            where: { id, companyId: user.companyId } as any, // Prisma quirk with composite unique or implicit
             data: {
                 name,
                 centerLat,
@@ -170,17 +196,24 @@ export const updateProject = async (req: Request, res: Response) => {
 };
 
 export const deleteProject = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
     const { id } = req.params;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
     try {
+        // Verify ownership/tenancy first to avoid unauthorized delete of resources
+        const project = await prisma.project.findFirst({ where: { id, companyId: user.companyId } });
+        if (!project) return res.status(404).json({ error: 'Project not found' });
+
         // Explicitly delete related resources first to ensure no orphans
         // This is a safety measure in case DB cascade is not configured
-        await prisma.cable.deleteMany({ where: { projectId: id } });
-        await prisma.cto.deleteMany({ where: { projectId: id } });
-        await prisma.pop.deleteMany({ where: { projectId: id } });
+        await prisma.cable.deleteMany({ where: { projectId: id, companyId: user.companyId } });
+        await prisma.cto.deleteMany({ where: { projectId: id, companyId: user.companyId } });
+        await prisma.pop.deleteMany({ where: { projectId: id, companyId: user.companyId } });
 
         // Delete the project
-        await prisma.project.deleteMany({ where: { id, userId } });
+        await prisma.project.delete({ where: { id } }); // We already verified checks above
         res.json({ success: true });
     } catch (e) {
         console.error("Delete project error:", e);
@@ -189,21 +222,202 @@ export const deleteProject = async (req: Request, res: Response) => {
 }
 
 export const syncProject = async (req: Request, res: Response) => {
-    const userId = (req as AuthRequest).user?.id;
+    const user = (req as AuthRequest).user;
     const { id } = req.params;
     const { network, mapState, settings } = req.body;
 
     if (!network) return res.status(400).json({ error: 'No network data provided' });
+    if (!user || !user.companyId) return res.status(401).send();
+
+    // --- PAYLOAD DEDUPLICATION ---
+    // Ensure the incoming arrays don't have internal duplicates (same ID twice in the list)
+    if (network.ctos) {
+        const seen = new Set();
+        network.ctos = network.ctos.filter((c: any) => {
+            const duplicate = seen.has(c.id);
+            seen.add(c.id);
+            return !duplicate;
+        });
+    }
+    if (network.pops) {
+        const seen = new Set();
+        network.pops = network.pops.filter((p: any) => {
+            const duplicate = seen.has(p.id);
+            seen.add(p.id);
+            return !duplicate;
+        });
+    }
+    if (network.cables) {
+        const seen = new Set();
+        network.cables = network.cables.filter((c: any) => {
+            const duplicate = seen.has(c.id);
+            seen.add(c.id);
+            return !duplicate;
+        });
+    }
 
     try {
-        console.log(`[Sync] Project ${id} | User ${userId}`);
+        console.log(`[Sync] Project ${id} | User ${user.username} | Company ${user.companyId}`);
 
-        // Verify ownership
-        const project = await prisma.project.findFirst({ where: { id, userId } });
+        const CHUNK_SIZE = 1000;
+
+        // Check limits before transaction
+        const company = await prisma.company.findUnique({
+            where: { id: user.companyId },
+            include: { plan: true }
+        });
+
+        if (company?.plan?.limits) {
+            const limits = company.plan.limits as any;
+
+            // Calculate DELTA (Net New Items) logic for Soft Lock
+            // a) New Items in this Payload
+            const payloadCTOCount = network.ctos ? network.ctos.length : 0;
+            const payloadPOPCount = network.pops ? network.pops.length : 0;
+
+            // b) Items currently in this Project (that will be replaced)
+            const currentProjectCTOs = await prisma.cto.count({ where: { projectId: id } });
+            const currentProjectPOPs = await prisma.pop.count({ where: { projectId: id } });
+
+            // c) Delta = (Payload - CurrentProject). If > 0, we are adding items.
+            const deltaCTO = payloadCTOCount - currentProjectCTOs;
+            const deltaPOP = payloadPOPCount - currentProjectPOPs;
+
+            // d) Global Items (All Projects)
+            const totalGlobalCTOs = await prisma.cto.count({ where: { companyId: user.companyId } });
+            const totalGlobalPOPs = await prisma.pop.count({ where: { companyId: user.companyId } });
+
+            // e) Check Limit: If Delta > 0 AND (Global + Delta) > Limit
+            // Note: 'totalGlobal' includes 'currentProject'. 
+            // So FutureTotal = (Global - CurrentProject) + Payload
+            //                = Global + (Payload - CurrentProject)
+            //                = Global + Delta.
+
+            console.log(`[Sync Check] Comp: ${company.name}, Plan: ${company.plan?.name}`);
+            console.log(`[Sync Check] Global CTOs: ${totalGlobalCTOs}, Proj: ${currentProjectCTOs}, Pay: ${payloadCTOCount}, Delta: ${deltaCTO}`);
+
+            if (deltaCTO > 0 && limits.maxCTOs && (totalGlobalCTOs + deltaCTO) > limits.maxCTOs) {
+                console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${limits.maxCTOs}`);
+                return res.status(403).json({ error: `CTO Limit Exceeded. Max: ${limits.maxCTOs}. You have: ${totalGlobalCTOs}. Attempting to add: ${deltaCTO}.` });
+            }
+
+            if (deltaPOP > 0 && limits.maxPOPs && (totalGlobalPOPs + deltaPOP) > limits.maxPOPs) {
+                console.error(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${limits.maxPOPs}`);
+                return res.status(403).json({ error: `POP Limit Exceeded (${limits.maxPOPs})` });
+            }
+        }
+
+        const project = await prisma.project.findFirst({ where: { id, companyId: user.companyId } });
         if (!project) return res.status(404).json({ error: 'Project not found' });
 
+        // --- ID COLLISION HANDLING (CHUNKED) ---
+        // Collect all IDs from payload
+        const payloadIds = new Set<string>();
+        if (network.ctos) network.ctos.forEach((c: any) => payloadIds.add(c.id));
+        if (network.pops) network.pops.forEach((p: any) => payloadIds.add(p.id));
+        if (network.cables) network.cables.forEach((c: any) => payloadIds.add(c.id));
+
+        const allIds = Array.from(payloadIds);
+        const CHECK_CHUNK = 2000;
+        const collidingIds = new Set<string>();
+
+        // We must check collisions in chunks to avoid parameter limit errors
+        for (let i = 0; i < allIds.length; i += CHECK_CHUNK) {
+            const batch = allIds.slice(i, i + CHECK_CHUNK);
+
+            // Fetch everything that matches IDs, we will filter in memory
+            const [cRows, pRows, cabRows] = await Promise.all([
+                prisma.cto.findMany({
+                    where: { id: { in: batch } },
+                    select: { id: true, projectId: true, companyId: true }
+                }),
+                prisma.pop.findMany({
+                    where: { id: { in: batch } },
+                    select: { id: true, projectId: true, companyId: true }
+                }),
+                prisma.cable.findMany({
+                    where: { id: { in: batch } },
+                    select: { id: true, projectId: true, companyId: true }
+                })
+            ]);
+
+            // Helper to check if row is "Mine" (will be deleted safely)
+            // If it is NOT mine, it is a collision
+            const isMine = (row: any) => row.projectId === id && row.companyId === user.companyId;
+
+            cRows.forEach(row => {
+                if (!isMine(row)) collidingIds.add(row.id);
+            });
+            pRows.forEach(row => {
+                if (!isMine(row)) collidingIds.add(row.id);
+            });
+            cabRows.forEach(row => {
+                if (!isMine(row)) collidingIds.add(row.id);
+            });
+        }
+
+        // Remap Logic if collisions exist
+        const idMap = new Map<string, string>(); // oldId -> newId
+        if (collidingIds.size > 0) {
+            console.log(`[Sync] Found ${collidingIds.size} ID collisions. Remapping...`);
+
+            // Generate new IDs
+            collidingIds.forEach(oldId => {
+                // simple UUID-like generator or actual UUID
+                const newId = `remap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            });
+
+            // Helper to remap a string ID
+            const remap = (oid: string) => idMap.has(oid) ? idMap.get(oid)! : oid;
+
+            // RECURSIVE REMAP IN PAYLOAD
+            // 1. CTOs
+            if (network.ctos) {
+                network.ctos.forEach((c: any) => {
+                    if (idMap.has(c.id)) c.id = idMap.get(c.id);
+                    // layout keys
+                    if (c.layout) {
+                        const newLayout: any = {};
+                        Object.keys(c.layout).forEach(k => newLayout[remap(k)] = c.layout[k]);
+                        c.layout = newLayout;
+                    }
+                    // inputCableIds
+                    if (c.inputCableIds) c.inputCableIds = c.inputCableIds.map(remap);
+                    // connections? If connections store IDs. 
+                    if (c.connections) c.connections.forEach((conn: any) => {
+                        conn.sourceId = remap(conn.sourceId);
+                        conn.targetId = remap(conn.targetId);
+                    });
+                    // splitters ports? Usually IDs are internal.
+                    if (c.splitters) c.splitters.forEach((s: any) => {
+                        s.inputPortId = remap(s.inputPortId);
+                        s.outputPortIds = s.outputPortIds.map(remap);
+                    });
+                });
+            }
+            // 2. POPs
+            if (network.pops) {
+                network.pops.forEach((p: any) => {
+                    if (idMap.has(p.id)) p.id = idMap.get(p.id);
+                    if (p.inputCableIds) p.inputCableIds = p.inputCableIds.map(remap);
+                    if (p.connections) p.connections.forEach((conn: any) => {
+                        conn.sourceId = remap(conn.sourceId);
+                        conn.targetId = remap(conn.targetId);
+                    });
+                });
+            }
+            // 3. Cables
+            if (network.cables) {
+                network.cables.forEach((c: any) => {
+                    if (idMap.has(c.id)) c.id = idMap.get(c.id);
+                    if (c.fromNodeId) c.fromNodeId = remap(c.fromNodeId);
+                    if (c.toNodeId) c.toNodeId = remap(c.toNodeId);
+                });
+            }
+        }
+
         await prisma.$transaction(async (tx: any) => {
-            // 1. Update Map State
+            // 0. Update Map State (unchanged)
             if (mapState || settings) {
                 await tx.project.update({
                     where: { id },
@@ -218,77 +432,95 @@ export const syncProject = async (req: Request, res: Response) => {
                 });
             }
 
-            // 2. Sync CTOs
-            // Delete all current CTOs for this project and batch insert new ones
-            await tx.cto.deleteMany({ where: { projectId: id } });
-            if (network.ctos && network.ctos.length > 0) {
-                await tx.cto.createMany({
-                    data: network.ctos.map((c: any) => ({
-                        id: c.id,
-                        projectId: id,
-                        name: c.name,
-                        status: c.status,
-                        lat: c.coordinates.lat,
-                        lng: c.coordinates.lng,
-                        splitters: c.splitters || [],
-                        fusions: c.fusions || [],
-                        connections: c.connections || [],
-                        inputCableIds: c.inputCableIds || [],
-                        layout: c.layout || {},
-                        clientCount: c.clientCount || 0
-                    }))
-                });
-            }
-
-            // 3. Sync POPs
-            await tx.pop.deleteMany({ where: { projectId: id } });
-            if (network.pops && network.pops.length > 0) {
-                await tx.pop.createMany({
-                    data: network.pops.map((p: any) => ({
-                        id: p.id,
-                        projectId: id,
-                        name: p.name,
-                        status: p.status,
-                        lat: p.coordinates.lat,
-                        lng: p.coordinates.lng,
-                        olts: p.olts || [],
-                        dios: p.dios || [],
-                        fusions: p.fusions || [],
-                        connections: p.connections || [],
-                        inputCableIds: p.inputCableIds || [],
-                        layout: p.layout || {},
-                        color: p.color,
-                        size: p.size
-                    }))
-                });
-            }
-
-            // 4. Sync Cables
+            // 1. CLEANUP PHASE - Delete everything for this project first
+            // We delete in reverse dependency order: Cables -> POPs -> CTOs
+            // We also relax the check to delete ANYTHING with this projectId, ensuring no ghost records remain.
             await tx.cable.deleteMany({ where: { projectId: id } });
+            await tx.pop.deleteMany({ where: { projectId: id } });
+            await tx.cto.deleteMany({ where: { projectId: id } });
+
+            // 2. INSERT PHASE - CTOs
+            if (network.ctos && network.ctos.length > 0) {
+                const uniqueCTOs = Array.from(new Map(network.ctos.map((c: any) => [c.id, c])).values());
+                for (let i = 0; i < uniqueCTOs.length; i += CHUNK_SIZE) {
+                    const chunk = uniqueCTOs.slice(i, i + CHUNK_SIZE);
+                    await tx.cto.createMany({
+                        data: chunk.map((c: any) => ({
+                            id: c.id,
+                            projectId: id,
+                            companyId: user.companyId,
+                            name: c.name,
+                            status: c.status,
+                            lat: c.coordinates.lat,
+                            lng: c.coordinates.lng,
+                            splitters: c.splitters || [],
+                            fusions: c.fusions || [],
+                            connections: c.connections || [],
+                            inputCableIds: c.inputCableIds || [],
+                            layout: c.layout || {},
+                            clientCount: c.clientCount || 0
+                        }))
+                    });
+                }
+            }
+
+            // 3. INSERT PHASE - POPs
+            if (network.pops && network.pops.length > 0) {
+                const uniquePOPs = Array.from(new Map(network.pops.map((p: any) => [p.id, p])).values());
+                for (let i = 0; i < uniquePOPs.length; i += CHUNK_SIZE) {
+                    const chunk = uniquePOPs.slice(i, i + CHUNK_SIZE);
+                    await tx.pop.createMany({
+                        data: chunk.map((p: any) => ({
+                            id: p.id,
+                            projectId: id,
+                            companyId: user.companyId,
+                            name: p.name,
+                            status: p.status,
+                            lat: p.coordinates.lat,
+                            lng: p.coordinates.lng,
+                            olts: p.olts || [],
+                            dios: p.dios || [],
+                            fusions: p.fusions || [],
+                            connections: p.connections || [],
+                            inputCableIds: p.inputCableIds || [],
+                            layout: p.layout || {},
+                            color: p.color,
+                            size: p.size
+                        }))
+                    });
+                }
+            }
+
+            // 4. INSERT PHASE - Cables
             if (network.cables && network.cables.length > 0) {
-                await tx.cable.createMany({
-                    data: network.cables.map((c: any) => ({
-                        id: c.id,
-                        projectId: id,
-                        name: c.name,
-                        status: c.status,
-                        fiberCount: c.fiberCount,
-                        looseTubeCount: c.looseTubeCount || 1,
-                        color: c.color,
-                        coordinates: c.coordinates,
-                        fromNodeId: c.fromNodeId,
-                        toNodeId: c.toNodeId
-                    }))
-                });
+                const uniqueCables = Array.from(new Map(network.cables.map((c: any) => [c.id, c])).values());
+                for (let i = 0; i < uniqueCables.length; i += CHUNK_SIZE) {
+                    const chunk = uniqueCables.slice(i, i + CHUNK_SIZE);
+                    await tx.cable.createMany({
+                        data: chunk.map((c: any) => ({
+                            id: c.id,
+                            projectId: id,
+                            companyId: user.companyId,
+                            name: c.name,
+                            status: c.status,
+                            fiberCount: c.fiberCount,
+                            looseTubeCount: c.looseTubeCount || 1,
+                            color: c.color,
+                            coordinates: c.coordinates,
+                            fromNodeId: c.fromNodeId,
+                            toNodeId: c.toNodeId
+                        }))
+                    });
+                }
             }
         }, {
-            timeout: 30000 // 30 seconds
+            timeout: 300000 // 5 minutes
         });
 
         res.json({ success: true, timestamp: Date.now() });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Sync Error:", error);
-        res.status(500).json({ error: 'Sync failed' });
+        res.status(500).json({ error: 'Sync failed', details: error.message || 'Unknown error' });
     }
 };

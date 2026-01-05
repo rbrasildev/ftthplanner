@@ -14,6 +14,7 @@ export enum CableType {
   FEEDER = 'FEEDER' // Backbone
 }
 
+export type UserRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'SUPER_ADMIN';
 export type CTOStatus = 'PLANNED' | 'NOT_DEPLOYED' | 'DEPLOYED' | 'CERTIFIED';
 export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 
@@ -115,6 +116,12 @@ export interface CTOData {
   clientCount: number;
   // Visual layout storage (ID -> Position)
   layout?: Record<string, ElementLayout>;
+  // Persisted View State
+  viewState?: {
+    x: number;
+    y: number;
+    zoom: number;
+  };
 }
 
 export interface CableData {
@@ -124,6 +131,7 @@ export interface CableData {
   fiberCount: number;
   looseTubeCount?: number; // Quantity of loose tubes
   color?: string; // Hex color for map visualization (Used when Deployed)
+  colorStandard?: 'ABNT' | 'EIA598'; // Standard for fiber colors (Default: ABNT)
   coordinates: Coordinates[]; // Polyline points
   fromNodeId?: string | null; // Optional/Null for free-floating cables
   toNodeId?: string | null;   // Optional/Null for free-floating cables
@@ -158,17 +166,41 @@ export interface Project {
 
 // Fiber color code standard (Brazilian/International standard variation)
 // 1-Verde, 2-Amarelo, 3-Branco, 4-Azul, 5-Vermelho, 6-Violeta, 7-Marrom, 8-Rosa, 9-Preto, 10-Cinza, 11-Laranja, 12-Aqua
-export const FIBER_COLORS = [
-  '#22c55e', // 1 - Green
-  '#eab308', // 2 - Yellow
-  '#ffffff', // 3 - White
-  '#3b82f6', // 4 - Blue
-  '#ef4444', // 5 - Red
-  '#a855f7', // 6 - Violet
-  '#78350f', // 7 - Brown (Marrom) - Corrected
-  '#ec4899', // 8 - Pink
-  '#000000', // 9 - Black (Preto) - Corrected
-  '#9ca3af', // 10 - Gray (Cinza) - Corrected
-  '#f97316', // 11 - Orange (Laranja) - Corrected
-  '#22d3ee', // 12 - Aqua (Light Blue)
+// Fiber color code standard (Brazilian/International)
+export const ABNT_COLORS = [
+  '#22c55e', // 1 - Green (Verde)
+  '#eab308', // 2 - Yellow (Amarelo)
+  '#ffffff', // 3 - White (Branco)
+  '#3b82f6', // 4 - Blue (Azul)
+  '#ef4444', // 5 - Red (Vermelho)
+  '#a855f7', // 6 - Violet (Violeta)
+  '#78350f', // 7 - Brown (Marrom)
+  '#ec4899', // 8 - Pink (Rosa)
+  '#000000', // 9 - Black (Preto)
+  '#9ca3af', // 10 - Gray (Cinza)
+  '#f97316', // 11 - Orange (Laranja)
+  '#22d3ee', // 12 - Aqua (Turquoise)
 ];
+
+export const EIA_COLORS = [
+  '#3b82f6', // 1 - Blue
+  '#f97316', // 2 - Orange
+  '#22c55e', // 3 - Green
+  '#78350f', // 4 - Brown
+  '#9ca3af', // 5 - Slate
+  '#ffffff', // 6 - White
+  '#ef4444', // 7 - Red
+  '#000000', // 8 - Black
+  '#eab308', // 9 - Yellow
+  '#a855f7', // 10 - Violet
+  '#ec4899', // 11 - Rose
+  '#22d3ee', // 12 - Aqua
+];
+
+// Default to ABNT to maintain existing behavior for now
+export const FIBER_COLORS = ABNT_COLORS;
+
+export const getFiberColor = (index: number, standard: 'ABNT' | 'EIA598' = 'ABNT') => {
+  const palette = standard === 'EIA598' ? EIA_COLORS : ABNT_COLORS;
+  return palette[index % palette.length];
+};

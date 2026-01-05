@@ -30,7 +30,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [theme]);
 
   const toggleTheme = () => {
+    const root = window.document.documentElement;
+    root.classList.add('transitioning');
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setTimeout(() => {
+      root.classList.remove('transitioning');
+    }, 300); // Match CSS duration
   };
 
   return (

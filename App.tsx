@@ -6,15 +6,18 @@ import { ProjectManager } from './components/ProjectManager';
 import { CableEditor } from './components/CableEditor';
 import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
+import { SaasAdminPage } from './components/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
+import { LandingPage } from './components/LandingPage';
 import { DashboardPage } from './components/DashboardPage';
 import { SearchBox } from './components/SearchBox';
 import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOStatus, SystemSettings } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
-    Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2, Building2
+    Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2, Building2, Globe,
+    Upload
 } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
@@ -22,6 +25,7 @@ import L from 'leaflet';
 import * as projectService from './services/projectService';
 import * as authService from './services/authService';
 import api from './services/api';
+import { UpgradePlanModal } from './components/UpgradePlanModal';
 
 const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
@@ -262,13 +266,37 @@ const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: Netw
     };
 };
 
+const parseJwt = (token: string) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+};
+
 export default function App() {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
 
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
     const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_TOKEN));
-    const [authView, setAuthView] = useState<'login' | 'register'>('login');
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (token) {
+            const decoded = parseJwt(token);
+            if (decoded?.role) setUserRole(decoded.role);
+        } else {
+            setUserRole(null);
+        }
+    }, [token]);
+
+    const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
 
     // Projects List (Summaries)
     const [projects, setProjects] = useState<Project[]>([]);
@@ -287,6 +315,9 @@ export default function App() {
         } else {
             localStorage.removeItem('ftth_current_project_id');
         }
+        // Safety: Reset tool mode and clear backup when switching projects
+        setToolMode('view');
+        previousNetworkState.current = null;
     }, [currentProjectId]);
     const prevProjectIdRef = useRef<string>('');
 
@@ -295,6 +326,16 @@ export default function App() {
     const [settingsSaved, setSettingsSaved] = useState(false);
     const settingsTimeoutRef = useRef<any>(null);
     const syncTimeoutRef = useRef<any>(null); // For debounce sync
+
+    // Backup for Cancel functionality
+    const previousNetworkState = useRef<NetworkState | null>(null);
+
+    // Upgrade Modal State
+    // Upgrade Modal State
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
+    const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
+    const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'draw_cable' | 'connect_cable' | 'move_node'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' } | null>(null);
@@ -441,12 +482,30 @@ export default function App() {
                     console.error("Sync failed", e);
                     setIsSaving(false);
                     syncErrorCount.current++;
+
                     // Only show toast on first 2 errors to avoid spam
-                    if (syncErrorCount.current <= 2) {
-                        showToast('Erro ao sincronizar com servidor', 'info');
+                    if (syncErrorCount.current <= 5) {
+                        if (e.response && e.response.status === 403) {
+                            const errorMsg = e.response.data?.error || 'Acesso negado';
+
+                            // Check for limit words
+                            if (errorMsg.includes('Limit') || errorMsg.includes('Limite')) {
+                                setUpgradeModalDetails(errorMsg);
+                                setShowUpgradeModal(true);
+                            } else {
+                                showToast(`Erro de sincronização: ${errorMsg}`, 'info');
+                            }
+                        } else {
+                            const detail = e.response?.data?.details || e.message;
+                            showToast(`Erro ao sincronizar: ${detail}`, 'info');
+                            // Alert explicitly for 500s so user can screenshot
+                            if (!e.response || e.response.status === 500) {
+                                console.error('SYNC CRITICAL FAILURE:', e.response?.data);
+                            }
+                        }
                     }
                 });
-        }, 2000); // Increased from 300ms to 2000ms (2 seconds)
+        }, 3000); // 3 seconds debounce for safety with large data
         return () => clearTimeout(timer);
     }, [currentProject, token]);
 
@@ -608,17 +667,34 @@ export default function App() {
                 if (!feature.geometry) return;
 
                 if (feature.geometry.type === 'Point') {
-                    const [lng, lat] = feature.geometry.coordinates;
+                    if (!Array.isArray(feature.geometry.coordinates) || feature.geometry.coordinates.length < 2) return;
+                    const valLng = Number(feature.geometry.coordinates[0]);
+                    const valLat = Number(feature.geometry.coordinates[1]);
+                    if (isNaN(valLng) || isNaN(valLat)) return;
+
                     newCTOs.push({
                         id: `cto-imp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                         name: feature.properties.name || `CTO ${ctoCount + 1}`,
                         status: 'PLANNED',
-                        coordinates: { lat, lng },
+                        coordinates: { lat: valLat, lng: valLng },
                         splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
                     });
                     ctoCount++;
                 } else if (feature.geometry.type === 'LineString') {
-                    const coords = feature.geometry.coordinates.map((c: number[]) => ({ lat: c[1], lng: c[0] }));
+                    if (!Array.isArray(feature.geometry.coordinates)) return;
+
+                    const coords = feature.geometry.coordinates
+                        .map((c: any) => {
+                            if (!Array.isArray(c) || c.length < 2) return null;
+                            const lat = Number(c[1]);
+                            const lng = Number(c[0]);
+                            if (isNaN(lat) || isNaN(lng)) return null;
+                            return { lat, lng };
+                        })
+                        .filter((c: any) => c !== null);
+
+                    if (coords.length < 2) return; // Ignore single-point lines or empty lines
+
                     newCables.push({
                         id: `cable-imp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                         name: feature.properties.name || `Cable ${cableCount + 1}`,
@@ -1019,6 +1095,8 @@ export default function App() {
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+    // --- UPGRADE MODAL STATE REMOVED (Duplicate) ---
+
     const handleLogin = async (username: string, password?: string) => {
         setIsLoggingIn(true);
         setLoginError(null);
@@ -1026,6 +1104,15 @@ export default function App() {
             const data = await authService.login(username, password);
             setUser(data.user.username);
             setToken(data.token);
+            // Fetch Plan Name
+            if (data.user.company?.plan?.name) {
+                setUserPlan(data.user.company.plan.name);
+            }
+            if (data.user.company?.subscriptionExpiresAt) {
+                setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
+            } else {
+                setSubscriptionExpiresAt(null);
+            }
         } catch (e: any) {
             console.error("Login error:", e);
             if (e.response && e.response.status === 401) {
@@ -1038,12 +1125,12 @@ export default function App() {
         }
     };
 
-    const handleRegister = async (username: string, password?: string) => {
+    const handleRegister = async (username: string, password?: string, companyName?: string) => {
         try {
             // Re-using the logic from authService if we had a separate register, 
             // but authService.login already has a silent register.
             // However, we want to be explicit here.
-            await api.post('/auth/register', { username, password: password || "123456" });
+            await api.post('/auth/register', { username, password: password || "123456", companyName });
             showToast(t('registration_success'), 'success');
             setAuthView('login');
         } catch (e) {
@@ -1053,49 +1140,96 @@ export default function App() {
 
 
     if (!user) {
-        if (authView === 'register') {
-            return <RegisterPage onRegister={handleRegister} onBackToLogin={() => setAuthView('login')} />;
+        if (authView === 'landing') {
+            return <LandingPage onLoginClick={() => setAuthView('login')} onRegisterClick={() => setAuthView('register')} />;
         }
-        return <LoginPage onLogin={handleLogin} onRegisterClick={() => setAuthView('register')} error={loginError} isLoading={isLoggingIn} />;
+        if (authView === 'register') {
+            return (
+                <RegisterPage
+                    onRegister={handleRegister}
+                    onBackToLogin={() => setAuthView('login')}
+                    onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
+                />
+            );
+        }
+        return (
+            <LoginPage
+                onLogin={handleLogin}
+                onRegisterClick={() => setAuthView('register')}
+                error={loginError}
+                isLoading={isLoggingIn}
+                onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
+            />
+        );
     }
 
-    if (!currentProjectId) return <DashboardPage username={user} projects={projects} isLoading={isLoadingProjects} onOpenProject={setCurrentProjectId}
-        onCreateProject={async (name, center) => {
-            if (!token) return;
-            try {
-                const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
-                setProjects(prev => [newProject, ...prev]);
-                setCurrentProjectId(newProject.id);
-                showToast(t('toast_project_created'), 'success');
-            } catch (e) {
-                showToast('Failed to create project', 'info');
-            }
-        }}
-        onDeleteProject={async (id) => {
-            try {
-                await projectService.deleteProject(id);
-                setProjects(prev => prev.filter(p => p.id !== id));
-                showToast(t('toast_project_deleted'));
-            } catch (e) {
-                showToast('Failed to delete project', 'info');
-            }
-        }}
-        onUpdateProject={async (id, name, center) => {
-            try {
-                const updated = await projectService.updateProject(id, name, center);
-                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
-                showToast(t('project_updated') || 'Projeto atualizado!', 'success');
-            } catch (e) {
-                showToast('Failed to update project', 'info');
-            }
-        }}
-        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
-    />;
+    if (userRole === 'SUPER_ADMIN') {
+        return <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />;
+    }
+
+    if (!currentProjectId) {
+        return (
+            <>
+                <UpgradePlanModal
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    limitDetails={upgradeModalDetails}
+                    currentPlanName={userPlan}
+                />
+
+                <DashboardPage
+                    username={user}
+                    userRole={userRole || undefined}
+                    userPlan={userPlan}
+                    subscriptionExpiresAt={subscriptionExpiresAt}
+                    projects={projects}
+                    isLoading={isLoadingProjects}
+                    onOpenProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
+                    onCreateProject={async (name, center) => {
+                        if (!token) return;
+                        try {
+                            const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
+                            setProjects(prev => [newProject, ...prev]);
+                            setCurrentProjectId(newProject.id);
+                            showToast(t('toast_project_created'), 'success');
+                        } catch (e: any) {
+                            if (e.response && e.response.status === 403) {
+                                // Limit Reached!
+                                setUpgradeModalDetails(e.response.data?.details || "Você atingiu o limite de projetos do seu plano.");
+                                setShowUpgradeModal(true);
+                            } else {
+                                showToast('Failed to create project', 'info');
+                            }
+                        }
+                    }}
+                    onDeleteProject={async (id) => {
+                        try {
+                            await projectService.deleteProject(id);
+                            setProjects(prev => prev.filter(p => p.id !== id));
+                            showToast(t('toast_project_deleted'));
+                        } catch (e) {
+                            showToast('Failed to delete project', 'info');
+                        }
+                    }}
+                    onUpdateProject={async (id, name, center) => {
+                        try {
+                            const updated = await projectService.updateProject(id, name, center);
+                            setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
+                            showToast(t('project_updated') || 'Projeto atualizado!', 'success');
+                        } catch (e) {
+                            showToast('Failed to update project', 'info');
+                        }
+                    }}
+                    onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                />
+            </>
+        );
+    }
 
     // Loading State for specific project
     if (currentProjectId && !currentProject) {
         return (
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-900 text-white gap-4">
+            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white gap-4">
                 <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
                 <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
             </div>
@@ -1107,12 +1241,19 @@ export default function App() {
     return (
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in slide-in-from-top-5">
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-5">
                     <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
                         <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
                     </div>
                 </div>
             )}
+
+            {/* Upgrade Modal */}
+            <UpgradePlanModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                limitDetails={upgradeModalDetails}
+            />
 
             <aside className="w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-2xl relative transition-colors duration-300 font-sans">
 
@@ -1128,8 +1269,8 @@ export default function App() {
                                 <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Planner Pro</span>
                             </div>
                         </div>
-                        <button onClick={() => setCurrentProjectId(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title={t('exit_project')}>
-                            <LogOut className="w-4 h-4" />
+                        <button onClick={() => { setCurrentProjectId(null); setShowProjectManager(false); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title={t('exit_project')}>
+                            <Settings2 className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
                         </button>
                     </div>
 
@@ -1147,7 +1288,7 @@ export default function App() {
                                 <span className="truncate max-w-[140px] font-semibold text-xs text-slate-700 dark:text-slate-200">{projects.find(p => p.id === currentProjectId)?.name}</span>
                             </div>
                         </div>
-                        <Settings2 className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
+                        <Upload className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
                     </button>
                 </div>
 
@@ -1195,29 +1336,30 @@ export default function App() {
                     <div className="space-y-6">
 
                         {/* Group: Operation */}
+                        {/* Group: Operation */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Operação</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('sidebar_operation')}</label>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => { setToolMode('view'); setSelectedId(null); }}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'view' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                                 >
                                     <MousePointer2 className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold">Selecionar</span>
+                                    <span className="text-[10px] font-bold">{t('sidebar_select')}</span>
                                 </button>
                                 <button
                                     onClick={() => { setToolMode('move_node'); setSelectedId(null); }}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'move_node' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                                 >
                                     <Move className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold">Mover</span>
+                                    <span className="text-[10px] font-bold">{t('sidebar_move')}</span>
                                 </button>
                             </div>
                         </div>
 
                         {/* Group: Design */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Design de Rede</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('sidebar_design')}</label>
                             <div className="grid grid-cols-1 gap-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
@@ -1225,14 +1367,14 @@ export default function App() {
                                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_cto' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-200 dark:hover:border-slate-700 hover:bg-blue-50/50 dark:hover:bg-slate-800'}`}
                                     >
                                         <Box className="w-5 h-5" />
-                                        <span className="text-[10px] font-bold">Nova CTO</span>
+                                        <span className="text-[10px] font-bold">{t('sidebar_add_cto')}</span>
                                     </button>
                                     <button
                                         onClick={() => { setToolMode('add_pop'); setSelectedId(null); }}
                                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_pop' ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-slate-700 hover:bg-indigo-50/50 dark:hover:bg-slate-800'}`}
                                     >
                                         <Building2 className="w-5 h-5" />
-                                        <span className="text-[10px] font-bold">Novo POP</span>
+                                        <span className="text-[10px] font-bold">{t('sidebar_add_pop')}</span>
                                     </button>
                                 </div>
 
@@ -1244,21 +1386,25 @@ export default function App() {
                                         <Zap className="w-4 h-4" />
                                     </div>
                                     <div className="flex flex-col items-start">
-                                        <span className="text-xs font-bold">Desenhar Cabo</span>
-                                        <span className="text-[10px] opacity-70 font-normal">Clique p/ múltiplos pontos</span>
+                                        <span className="text-xs font-bold">{t('sidebar_draw_cable')}</span>
+                                        <span className="text-[10px] opacity-70 font-normal">{t('sidebar_draw_cable_desc')}</span>
                                     </div>
                                 </button>
 
                                 <button
-                                    onClick={() => { setToolMode('connect_cable'); setSelectedId(null); }}
+                                    onClick={() => {
+                                        previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                                        setToolMode('connect_cable');
+                                        setSelectedId(null);
+                                    }}
                                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'connect_cable' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-200 dark:hover:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-800'}`}
                                 >
                                     <div className={`p-1.5 rounded-lg ${toolMode === 'connect_cable' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
                                         <Unplug className="w-4 h-4" />
                                     </div>
                                     <div className="flex flex-col items-start">
-                                        <span className="text-xs font-bold">Conectar Cabos</span>
-                                        <span className="text-[10px] opacity-70 font-normal">Vincular pontas soltas</span>
+                                        <span className="text-xs font-bold">{t('sidebar_connect_cable') || 'Conectar/Editar Cabos'}</span>
+                                        <span className="text-[10px] opacity-70 font-normal">{t('sidebar_connect_cable_desc') || 'Ajustar conexões e geometria'}</span>
                                     </div>
                                 </button>
                             </div>
@@ -1268,13 +1414,33 @@ export default function App() {
                 </div>
 
                 {/* 4. Footer System Bar */}
-                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between gap-2">
-                    <button onClick={() => setShowSettingsModal(true)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all">
-                        <Settings className="w-4 h-4" /> Config
+                {/* 4. Footer System Bar */}
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 grid grid-cols-3 gap-2">
+                    <button
+                        onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
+                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs transition-colors"
+                        title={language === 'en' ? 'Mudar para Português' : 'Switch to English'}
+                    >
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>{language.toUpperCase()}</span>
                     </button>
-                    <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700"></div>
-                    <button onClick={toggleTheme} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm transition-all">
-                        {theme === 'dark' ? <><Moon className="w-4 h-4" /> Dark</> : <><Sun className="w-4 h-4" /> Light</>}
+                    <button
+                        onClick={toggleTheme}
+                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs transition-colors"
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    >
+                        {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                    </button>
+                    <button
+                        onClick={() => {
+                            setUser(null);
+                            setToken(null);
+                            setCurrentProjectId(null);
+                        }}
+                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-bold text-xs transition-colors"
+                        title={t('logout')}
+                    >
+                        <LogOut className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </aside>
@@ -1315,7 +1481,7 @@ export default function App() {
                     otdrResult={otdrResult}
                 />
 
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[1000] pointer-events-none">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
                     {toolMode === 'view' && t('tooltip_view')}
                     {toolMode === 'move_node' && t('tooltip_move')}
                     {toolMode === 'add_cto' && t('tooltip_add_cto')}
@@ -1345,11 +1511,39 @@ export default function App() {
                 {toolMode === 'connect_cable' && (
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
                         <button
-                            onClick={() => { setToolMode('view'); showToast(t('changes_saved') || 'Alterações Salvas!'); }}
+                            onClick={() => {
+                                setToolMode('view');
+                                previousNetworkState.current = null; // Clear backup
+                                showToast(t('changes_saved') || 'Alterações Salvas!');
+                            }}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 animate-in slide-in-from-bottom-5 fade-in duration-300"
                         >
                             <CheckCircle2 className="w-5 h-5" />
                             {t('save_changes') || 'Salvar Alterações'}
+                        </button>
+                        <button
+                            onClick={() => {
+                                try {
+                                    if (previousNetworkState.current) {
+                                        // Validate state before restoring
+                                        const stateToRestore = previousNetworkState.current;
+                                        if (stateToRestore.ctos && stateToRestore.cables) {
+                                            updateCurrentNetwork(() => stateToRestore);
+                                        } else {
+                                            console.warn("Invalid previous state, skipping restore");
+                                        }
+                                        previousNetworkState.current = null;
+                                    }
+                                } catch (e) {
+                                    console.error("Error restoring state:", e);
+                                    showToast(t('error_restoring_state') || "Erro ao restaurar estado", 'info');
+                                }
+                                setToolMode('view');
+                            }}
+                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 animate-in slide-in-from-bottom-5 fade-in duration-300 delay-75"
+                        >
+                            <X className="w-5 h-5" />
+                            {t('cancel') || 'Cancelar'}
                         </button>
                     </div>
                 )}
@@ -1373,7 +1567,13 @@ export default function App() {
                 <CTOEditor
                     cto={editingCTO}
                     projectName={currentProject?.name || ''}
-                    incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingCTO.id || c.toNodeId === editingCTO.id || editingCTO.inputCableIds?.includes(c.id))}
+                    incomingCables={getCurrentNetwork().cables.filter(c =>
+                        c.fromNodeId === editingCTO.id ||
+                        c.toNodeId === editingCTO.id ||
+                        editingCTO.inputCableIds?.includes(c.id) ||
+                        // Robustness: Include cables visually connected (same coordinates)
+                        c.coordinates.some(p => Math.abs(p.lat - editingCTO.coordinates.lat) < 0.0000001 && Math.abs(p.lng - editingCTO.coordinates.lng) < 0.0000001)
+                    )}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
                     onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
@@ -1382,6 +1582,14 @@ export default function App() {
                     onEditCable={setEditingCable}
                     onHoverCable={(id) => setHighlightedCableId(id)}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
+
+                    // Auth / Protection Props
+                    userPlan={userPlan}
+                    subscriptionExpiresAt={subscriptionExpiresAt}
+                    onShowUpgrade={() => {
+                        setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
+                        setShowUpgradeModal(true);
+                    }}
                 />
             )}
 
@@ -1427,6 +1635,14 @@ export default function App() {
                     onClose={() => setShowProjectManager(false)}
                 />
             )}
+
+            {/* --- UPGRADE MODAL --- */}
+            <UpgradePlanModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                currentPlanName={userPlan}
+                limitDetails={upgradeModalDetails}
+            />
 
             {/* --- SYSTEM SETTINGS MODAL --- */}
             {showSettingsModal && (

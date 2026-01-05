@@ -12,9 +12,45 @@ model User {
   username     String    @unique
   passwordHash String    @map("password_hash")
   createdAt    DateTime  @default(now()) @map("created_at")
+  companyId    String?   @map("company_id")
+  role         UserRole  @default(OWNER)
+  active       Boolean   @default(true)
   projects     Project[]
+  company      Company?  @relation(fields: [companyId], references: [id])
+  auditLogs    AuditLog[]
 
+  @@index([companyId])
   @@map("users")
+}
+
+
+model Company {
+  id                    String    @id @default(uuid())
+  name                  String
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+  planId                String?   @map("plan_id")
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  status                String    @default("ACTIVE")
+  cables                Cable[]
+  plan                  Plan?     @relation(fields: [planId], references: [id])
+  ctos                  Cto[]
+  pops                  Pop[]
+  projects              Project[]
+  users                 User[]
+
+  @@map("companies")
+}
+
+model Plan {
+  id        String    @id @default(uuid())
+  name      String
+  price     Float     @default(0.0)
+  limits    Json      @default("{}")
+  createdAt DateTime  @default(now()) @map("created_at")
+  companies Company[]
+
+  @@map("plans")
 }
 
 model Project {
@@ -27,11 +63,14 @@ model Project {
   settings  Json?    @default("{\"snapDistance\": 30}")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId String?  @map("company_id")
   cables    Cable[]
   ctos      Cto[]
   pops      Pop[]
+  company   Company? @relation(fields: [companyId], references: [id])
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
   @@map("projects")
 }
 
@@ -48,8 +87,12 @@ model Cto {
   inputCableIds String[]        @default([]) @map("input_cable_ids")
   layout        Json?           @default("{}")
   clientCount   Int             @default(0) @map("client_count")
+  companyId     String?         @map("company_id")
+  company       Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
+  @@index([lat, lng])
   @@map("ctos")
 }
 
@@ -68,24 +111,31 @@ model Pop {
   layout        Json?           @default("{}")
   color         String?         @default("#6366f1")
   size          Int?            @default(24)
+  companyId     String?         @map("company_id")
+  company       Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
+  @@index([lat, lng])
   @@map("pops")
 }
 
 model Cable {
-  id             String  @id @default(uuid())
-  projectId      String  @map("project_id")
+  id             String   @id @default(uuid())
+  projectId      String   @map("project_id")
   name           String
-  status         String? @default("DEPLOYED")
-  fiberCount     Int     @map("fiber_count")
-  looseTubeCount Int?    @default(1) @map("loose_tube_count")
-  color          String? @default("#0ea5e9")
+  status         String?  @default("DEPLOYED")
+  fiberCount     Int      @map("fiber_count")
+  looseTubeCount Int?     @default(1) @map("loose_tube_count")
+  color          String?  @default("#0ea5e9")
   coordinates    Json
-  fromNodeId     String? @map("from_node_id")
-  toNodeId       String? @map("to_node_id")
-  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromNodeId     String?  @map("from_node_id")
+  toNodeId       String?  @map("to_node_id")
+  companyId      String?  @map("company_id")
+  company        Company? @relation(fields: [companyId], references: [id])
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([companyId])
   @@map("cables")
 }
 
@@ -97,3 +147,31 @@ enum EquipmentStatus {
 
   @@map("equipment_status")
 }
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  SUPER_ADMIN
+
+  @@map("user_roles")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String   @default("SYSTEM")
+  entityId  String   @map("entity_id") @default("")
+  details   Json?    @default("{}")
+  userId    String?  @map("user_id")
+  companyId String?  @map("company_id")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+

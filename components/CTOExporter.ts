@@ -1,5 +1,5 @@
 
-import { CTOData, CableData, FiberConnection, FIBER_COLORS, Splitter, FusionPoint } from '../types';
+import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint } from '../types';
 import jsPDF from 'jspdf';
 
 // --- CONSTANTS ---
@@ -20,7 +20,7 @@ const getPortColor = (portId: string, cables: CableData[]): string => {
                 const fibersPerTube = Math.ceil(activeCable.fiberCount / looseTubeCount);
                 // Reset color cycle per tube
                 const pos = fiberIndex % fibersPerTube;
-                return FIBER_COLORS[pos % 12];
+                return getFiberColor(pos, activeCable.colorStandard);
             }
         } catch (e) { return '#94a3b8'; }
     }
@@ -110,7 +110,7 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     // Yes, the border belongs to the tube wrapper. It is interrupted by the gap.
 
     for (let t = 0; t < looseTubeCount; t++) {
-        const tubeColor = FIBER_COLORS[t % FIBER_COLORS.length];
+        const tubeColor = getFiberColor(t, cable.colorStandard);
         const startFiber = t * fibersPerTube;
         const count = Math.min(fibersPerTube, cable.fiberCount - startFiber);
         const tubeHeight = count * 12;
@@ -155,7 +155,7 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             const globalIndex = startFiber + f;
             const fiberId = `${cable.id}-fiber-${globalIndex}`;
             const posInTube = f;
-            const color = FIBER_COLORS[posInTube % 12];
+            const color = getFiberColor(posInTube, cable.colorStandard);
             const isLit = litPorts.has(fiberId);
 
             // User Request: White fiber (03) is invisible on white paper.
@@ -271,86 +271,100 @@ export interface FooterData {
     mapImage?: string; // Data URL
 }
 
+const breakText = (text: string, maxChars: number): string[] => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = words[0] || '';
+
+    for (let i = 1; i < words.length; i++) {
+        if (currentLine.length + 1 + words[i].length <= maxChars) {
+            currentLine += ' ' + words[i];
+        } else {
+            lines.push(currentLine);
+            currentLine = words[i];
+        }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+};
+
 const renderFooter = (x: number, y: number, width: number, data: FooterData): string => {
     let content = '';
-    const height = 360; // Doubled from 180
-    const padding = 10;
+    const height = 360;
 
     // Background
     content += `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="white" stroke="none" />`;
 
-    // Grids
-    // Left Col (35%), Center Col (30%), Map (35%)
-    // But we want "Obs" to span Left+Center at the bottom.
-    // Structure:
-    // Top Area (Height - ObsRow): Col 1 (Project, Box, GPS) | Col 2 (Status, Level, Pole)
-    // Bottom Area (ObsRow): Obs Spanning Col 1 + Col 2
-    // Map: Spans Height (Col 3)
-
+    // Layout Constants
     const col1W = width * 0.35;
     const col2W = width * 0.30;
-    const col3W = width * 0.35; // Map
+    // Map takes the rest, usually 35%
+    const mapW = width - (col1W + col2W + 10);
 
-    const obsHeight = 90; // Doubled from 45
-    const mainHeight = height - obsHeight - 5; // Top area height
-    const rowH = (mainHeight - 10) / 3; // 3 rows in Top Area
+    const obsHeight = 110; // More space for OBS
+    const topSectionHeight = height - obsHeight - 10;
+    const rowH = (topSectionHeight - 10) / 3;
 
-    // COL 1 FRAMES (Project, Box, GPS)
-    // Frame 1: Project
+    // --- COLUMN 1 ---
+    // Project
     content += `<rect x="${x}" y="${y}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + rowH * 0.35}" font-family="Arial" font-size="18" fill="#64748b">Projeto</text>`;
-    content += `<text x="${x + 10}" y="${y + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="24" fill="#0f172a">${data.projectName || 'PROJETO SEM NOME'}</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">PROJETO</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.projectName || 'SEM NOME'}</text>`;
 
-    // Frame 2: Box
+    // Box
     content += `<rect x="${x}" y="${y + rowH + 5}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + rowH + 20 + rowH * 0.1}" font-family="Arial" font-size="18" fill="#64748b">Caixa <tspan fill="#94a3b8" font-size="14">(${data.date})</tspan></text>`;
-    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="28" fill="#0f172a">${data.boxName}</text>`;
+    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">CAIXA <tspan fill="#94a3b8" font-size="12">(${data.date})</tspan></text>`;
+    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="24" fill="#0f172a">${data.boxName}</text>`;
 
-    // Frame 3: Coordinates
+    // Coords
     content += `<rect x="${x}" y="${y + (rowH * 2) + 10}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.35}" font-family="Arial" font-size="18" fill="#64748b">Lat/Lng</text>`;
-    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.lat}, ${data.lng}</text>`;
+    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">LAT/LNG</text>`;
+    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="18" fill="#0f172a">${data.lat}, ${data.lng}</text>`;
 
-
-    // COL 2 FRAMES (Status, Level, Pole) - MOVED OBS TO BOTTOM
+    // --- COLUMN 2 ---
     const c2x = x + col1W + 5;
 
     // Status
     content += `<rect x="${c2x}" y="${y}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Status</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.status}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">STATUS</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.status}</text>`;
 
     // Level
     content += `<rect x="${c2x}" y="${y + rowH + 5}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Nível</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.level}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">NÍVEL</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.level}</text>`;
 
     // Pole
     content += `<rect x="${c2x}" y="${y + rowH * 2 + 10}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.35}" font-family="Arial" font-size="16" fill="#64748b">Poste</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.75}" font-family="Arial" font-weight="bold" font-size="22" fill="#0f172a">${data.pole || '-'}</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">POSTE</text>`;
+    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.pole || '-'}</text>`;
 
-    // OBS ROW (Spanning FULL WIDTH)
-    const obsY = y + mainHeight + 5;
-    const obsW = width; // Full width
-    content += `<rect x="${x}" y="${obsY}" width="${obsW}" height="${obsHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${obsY + 25}" font-family="Arial" font-size="18" fill="#64748b">Observação</text>`;
-    content += `<text x="${x + 10}" y="${obsY + 60}" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.obs || ''}</text>`;
+    // --- OBS ROW ---
+    const obsY = y + topSectionHeight + 5;
+    content += `<rect x="${x}" y="${obsY}" width="${width}" height="${obsHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
+    content += `<text x="${x + 10}" y="${obsY + 20}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">OBSERVAÇÃO</text>`;
 
+    // Obs Text Wrapping
+    const maxChars = Math.floor(width / 12); // approx 12px per char? Arial 18 is wide. say 15px.
+    const obsLines = breakText(data.obs || '', maxChars);
 
-    // COL 3: MAP
-    // Map now occupies the Top Section (mainHeight) only
+    let lineY = obsY + 50;
+    obsLines.slice(0, 3).forEach(line => { // Max 3 lines
+        content += `<text x="${x + 10}" y="${lineY}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="18" fill="#0f172a">${line}</text>`;
+        lineY += 24;
+    });
+
+    // --- COLUMN 3: MAP ---
     const c3x = c2x + col2W + 5;
-    const mapW = width - (col1W + col2W + 10);
-    const mapH = mainHeight; // Reduced height
+    const mapH = topSectionHeight;
 
     if (data.mapImage) {
+        // Use slice for CSS/SVG rendering (cover)
         content += `<image x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
-        // Border
         content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="none" stroke="#cbd5e1" stroke-width="1" />`;
     } else {
         content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />`;
-        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" text-anchor="middle" font-family="Arial" font-size="24" fill="#64748b">MAPA</text>`;
+        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="24" fill="#64748b">MAPA</text>`;
     }
 
     return content;
@@ -750,65 +764,78 @@ export const exportToPNG = async (svgString: string, filename: string) => {
 };
 
 export const exportToPDF = async (svgString: string, filename: string) => {
-    // Basic implementation using jsPDF + SVG-to-Canvas approach OR pure vector calculation
-    // Since "Connected lines" are critical, and html2canvas failed.
-    // SVG -> Canvas -> PDF (High Res Image in PDF) is the safest "looks like screen" legacy approach.
-    // BUT User request: "PDF deve ser gerado em modo VETORIAL (não rasterizado)."
-    // So we CANNOT use the image method for the lines.
-
-    // We must manually map the SVG commands to jsPDF commands.
-    // Luckily our SVG is simple: <g transform>, <rect>, <circle>, <line>, <path>, <text>.
-
     // 1. Parse SVG
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, "image/svg+xml");
     const svg = doc.documentElement;
 
-    // Robust ViewBox Parsing: DOM + Regex Fallback
+    // Robust ViewBox Parsing
+    // Robust ViewBox Parsing
     let viewBoxAttrs = svg.getAttribute('viewBox') || svg.getAttribute('viewbox');
     if (!viewBoxAttrs) {
         const match = svgString.match(/viewBox=["']([^"']+)["']/i);
         if (match) viewBoxAttrs = match[1];
     }
     const viewBox = viewBoxAttrs?.split(/[\s,]+/).map(Number) || [0, 0, 800, 600];
-    const contentWidth = viewBox[2];
-    const contentHeight = viewBox[3];
+
+    // Safety check for NaN or Zero in content dimensions
+    const contentWidth = (isNaN(viewBox[2]) || viewBox[2] <= 0) ? 800 : viewBox[2];
+    const contentHeight = (isNaN(viewBox[3]) || viewBox[3] <= 0) ? 600 : viewBox[3];
 
     // Force Landscape Page
-    // If content is tall, we increase page width to match landscape ratio (e.g. 4:3 or just width > height)
     let pdfWidth = contentWidth;
     let pdfHeight = contentHeight;
 
     if (pdfHeight > pdfWidth) {
-        // Enforce Width >= Height * 1.3 (Standard roughly)
         pdfWidth = pdfHeight * 1.3;
     } else {
-        // Even if wide, ensure it's slightly landscape
         pdfWidth = Math.max(pdfWidth, pdfHeight * 1.3);
     }
 
-    // Centering Offset
-    const pdfOffsetX = (pdfWidth - contentWidth) / 2;
-    const pdfOffsetY = (pdfHeight - contentHeight) / 2; // Usually 0 if we expanded width only, but just in case.
+    // Safety check for NaN or Zero in PDF dimensions
+    if (isNaN(pdfWidth) || pdfWidth <= 0) pdfWidth = 1122;
+    if (isNaN(pdfHeight) || pdfHeight <= 0) pdfHeight = 793;
 
-    // Explicitly define page size. 
-    // If width > height, it is landscape.
-    // We pass orientation 'l' (landscape) and the format as [width, height].
-    // Note: jsPDF can be finicky. The safest way for custom size is [width, height] and orientation 'p' (weirdly) or just omit orientation if passing specific size?
-    // Let's try explicit width/height and 'landscape'. 
-    // IF the user says it is still portrait, it means [pdfWidth, pdfHeight] is being treated as [h, w] or similar.
+    const pdfOffsetX = (pdfWidth - contentWidth) / 2;
+    const pdfOffsetY = (pdfHeight - contentHeight) / 2;
 
     const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
         format: [pdfWidth, pdfHeight]
     });
-    // Apply White Background to whole page
-    pdf.setFillColor('#ffffff');
-    pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+    try {
+        pdf.setFillColor('#ffffff');
+        pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+    } catch (e) {
+        console.error('PDF Init Error', e);
+    }
+
+    // --- Preload Images for Aspect Ratio Calculations ---
+    const imageCache: Record<string, HTMLImageElement> = {};
+    const images = Array.from(svg.querySelectorAll('image'));
+
+    await Promise.all(images.map(img => {
+        const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+        if (!href) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+            const tempImg = new Image();
+            tempImg.crossOrigin = 'Anonymous'; // Enable CORS
+            tempImg.src = href;
+            tempImg.onload = () => {
+                imageCache[href] = tempImg;
+                resolve();
+            };
+            tempImg.onerror = () => {
+                console.warn('Failed to load image for PDF export:', href);
+                resolve(); // Ignore errors
+            };
+        });
+    }));
 
     // --- Matrix Helpers ---
-    type Matrix = [number, number, number, number, number, number]; // a, b, c, d, e, f
+    type Matrix = [number, number, number, number, number, number];
     const identity: Matrix = [1, 0, 0, 1, 0, 0];
 
     const multiply = (m1: Matrix, m2: Matrix): Matrix => {
@@ -834,277 +861,237 @@ export const exportToPDF = async (svgString: string, filename: string) => {
         const rad = (angleDeg * Math.PI) / 180;
         const cos = Math.cos(rad);
         const sin = Math.sin(rad);
-        // Translate to origin, rotate, translate back
-        // M = T(cx, cy) * R * T(-cx, -cy)
-        // Combined: 
-        // [cos, sin, -sin, cos, -cx*cos + cy*sin + cx, -cx*sin - cy*cos + cy]
-        // SIMPLER: Use multiply chain.
         const t1 = createTranslate(-cx, -cy);
         const r: Matrix = [cos, sin, -sin, cos, 0, 0];
         const t2 = createTranslate(cx, cy);
         return multiply(t2, multiply(r, t1));
     };
 
-    // --- Traversal with Matrix ---
+    // --- Traversal ---
     const traverse = (node: Element, currentMatrix: Matrix) => {
-        const tagName = node.tagName.toLowerCase();
+        try {
+            const tagName = node.tagName.toLowerCase();
 
-        // Parse Transforms to update Matrix
-        let localMatrix: Matrix = [...identity];
-        const transAttr = node.getAttribute('transform');
-        if (transAttr) {
-            // Regex for all transforms. We iterate matches.
-            // Support translate(x [y]) and rotate(a [cx cy])
-            const regExp = /(translate|rotate)\s*\(([^)]+)\)/g;
-            let match;
-            while ((match = regExp.exec(transAttr)) !== null) {
-                const type = match[1];
-                const args = match[2].trim().split(/[\s,]+/).map(parseFloat);
-
-                if (type === 'translate') {
-                    const tx = args[0] || 0;
-                    const ty = args[1] || 0;
-                    localMatrix = multiply(localMatrix, createTranslate(tx, ty));
-                } else if (type === 'rotate') {
-                    const angle = args[0] || 0;
-                    const cx = args[1] || 0;
-                    const cy = args[2] || 0;
-                    localMatrix = multiply(localMatrix, createRotate(angle, cx, cy));
-                }
-            }
-        }
-
-        // Combine: Parent * Local
-        const finalMatrix = multiply(currentMatrix, localMatrix);
-
-        // Styling
-        const getAttr = (name: string) => node.getAttribute(name);
-        const num = (name: string, def = 0) => parseFloat(node.getAttribute(name) || String(def));
-        const color = (name: string, def = '#000') => node.getAttribute(name)        // Apply styling
-        const fill = color('fill', 'none');
-        // Default stroke to black if missing? Or strict?
-        // User says splitter missing border.
-        // Splitter likely has `stroke` attribute or implied hierarchy.
-        // Check if explicit 'none' was passed.
-        // If attribute missing, let's default to 'black' IF fill is white/light?
-        // Or specific fix: If no stroke attribute, default to #000 (standard SVG default is none, but browser/user expects border).
-        const strokeAttr = node.getAttribute('stroke');
-        const strokeVal = strokeAttr || '#000000'; // Default to black if unspecified logic?
-        // Wait, lines need stroke. Rects might need stroke.
-        // If I default to black, invisible text boxes might get borders.
-        // Better: Check if it is a Splitter Box.
-        // Splitter boxes in generateCTOSVG have `stroke="#000"` usually?
-        // If it has explicitly stroke="black", my code works.
-        // Maybe it uses `stroke="#000"`.
-        // If user says "missing border", maybe the regex/parser for attribute failed?
-        // color() uses `getAttribute`.
-        // Let's assume strictness failed.
-        // Let's Force styling if it looks like a main container.
-
-        // REVERT to defaulting stroke to black if not 'none'.
-        // This is safe because typically we set stroke="none" explicitly if we don't want it.
-
-        const strokeWidth = num('stroke-width', 1);
-
-        // Determine Draw Mode strictly
-        let drawMode = '';
-        const hasFill = fill !== 'none' && fill !== 'transparent';
-        const hasStroke = strokeVal !== 'none' && strokeVal !== 'transparent';
-        if (hasFill && hasStroke) drawMode = 'FD';
-        else if (hasFill) drawMode = 'F';
-        else if (hasStroke) drawMode = 'S';
-
-        if (drawMode) {
-            if (hasStroke) {
-                pdf.setDrawColor(strokeVal);
-                pdf.setLineWidth(strokeWidth); // Note: Scale might affect line width? Ignoring for simple lines usually fine.
-            }
-            if (hasFill) pdf.setFillColor(fill);
-        }
-
-        // Render
-        if (tagName === 'g' || tagName === 'svg') {
-            Array.from(node.children).forEach(child => traverse(child, finalMatrix));
-        } else if (tagName === 'rect') {
-            const x = num('x');
-            const y = num('y');
-            const w = num('width');
-            const h = num('height');
-
-            if (!isNaN(x) && drawMode) {
-                // Transform 4 corners
-                const p1 = applyToPoint(finalMatrix, x, y);
-                const p2 = applyToPoint(finalMatrix, x + w, y);
-                const p3 = applyToPoint(finalMatrix, x + w, y + h);
-                const p4 = applyToPoint(finalMatrix, x, y + h);
-
-                // Draw Polygon
-                // jsPDF lines: array of vector coordinates.
-                // But better to use 'lines' method which takes arrays relative to start?
-                // Or just use 'triangle' / custom path?
-                // pdf.line doesn't fill.
-                // pdf.lines takes offset.
-                // Simplest: Construct Path command manually.
-
-                // M p1.x p1.y L p2.x p2.y L p3.x p3.y L p4.x p4.y Z
-                // We can use pdf.path? (jsPDF v2.5.1 has .path? It has .lines)
-                // Let's use `pdf.lines`.
-                // args: lines: [[x1, y1], [x2, y2] ...], x, y, scale, style, closed
-                // vectors are relative to (x,y).
-                // So: (x,y) = p1.
-                // line 1: to p2 (dx = p2.x - p1.x).
-
-                const lines = [
-                    [p2.x - p1.x, p2.y - p1.y],
-                    [p3.x - p2.x, p3.y - p2.y],
-                    [p4.x - p3.x, p4.y - p3.y],
-                    [p1.x - p4.x, p1.y - p4.y] // Close back to p1 (redundant if closed=true?)
-                ];
-
-                pdf.lines(lines, p1.x, p1.y, [1, 1], drawMode, true);
-            }
-        } else if (tagName === 'circle') {
-            const cx = num('cx');
-            const cy = num('cy');
-            const r = num('r');
-            if (!isNaN(cx) && drawMode) {
-                // Transform Center
-                const p = applyToPoint(finalMatrix, cx, cy);
-                // Scale Radius? Assuming uniform scale or just use R. 
-                // Matrix scale: sqrt(a^2 + b^2).
-                const scale = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
-                pdf.circle(p.x, p.y, r * scale, drawMode);
-            }
-        } else if (tagName === 'line') {
-            const x1 = num('x1');
-            const y1 = num('y1');
-            const x2 = num('x2');
-            const y2 = num('y2');
-            if (hasStroke) {
-                const p1 = applyToPoint(finalMatrix, x1, y1);
-                const p2 = applyToPoint(finalMatrix, x2, y2);
-                pdf.line(p1.x, p1.y, p2.x, p2.y);
-            }
-        } else if (tagName === 'text') {
-            const x = num('x');
-            const y = num('y');
-            const text = node.textContent || '';
-            const fontSize = num('font-size', 10);
-            const anchor = getAttr('text-anchor');
-
-            if (hasFill) {
-                // Calculate Scale for Font Size?
-                const scale = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
-                pdf.setFontSize(fontSize * scale);
-
-                // Calculate Rotation Angle from Matrix
-                // tan(theta) = b / a
-                const angleRad = Math.atan2(finalMatrix[1], finalMatrix[0]);
-                const angleDeg = (angleRad * 180) / Math.PI;
-
-                // PDF text alignment quirks:
-                // PDF 'center' aligns horizontally around (x,y).
-                // PDF baseline is bottom. SVG y is baseline? No, SVG y is baseline usually.
-                // However, SVG 'dominant-baseline="middle"' centers vertically.
-                // Our editor uses dominant-baseline="middle" for port numbers?
-                // If so, we need to shift Y down by ~1/3 fontSize to center it visually in PDF (since PDF draws at baseline).
-                // For regular text (labels), strictly check attributes if possible, or assume generic fix.
-                // Port numbers usually have text-anchor="middle".
-
-                let yOffset = 0;
-                const baseline = getAttr('dominant-baseline');
-
-                // Fine-tuning text vertical alignment
-                // User says it's not centered.
-                // SVG 'middle' means center of M-height.
-                // PDF draws at baseline.
-                // Distance from baseline to center is roughly 0.35-0.4em for Arial/Helvetica.
-                // Previous attempt was 0.35. Maybe need more?
-                // Let's try 0.35 + slight nudge if specific context?
-                // Or just try 0.4.
-                // Let's stick to 0.35 but apply it consistently.
-
-                let localY = y;
-                if (baseline === 'middle' || baseline === 'central') {
-                    // Approximate centering offset for 'middle' baseline
-                    // 0.4 em is a solid approximation for standard fonts in jsPDF to center visually.
-                    // Previous 0.35 was "almost" centered.
-                    localY += (fontSize * 0.4);
-                }
-
-                const pAdjusted = applyToPoint(finalMatrix, x, localY);
-
-                pdf.text(text, pAdjusted.x, pAdjusted.y, {
-                    align: anchor === 'middle' ? 'center' : 'left',
-                    angle: -angleDeg // Negate angle: SVG (CW) -> jsPDF (CCW)
-                });
-            }
-        } else if (tagName === 'path') {
-            const d = getAttr('d');
-            if (d && hasStroke) {
-                // Parse simple paths (M L)
-                const parts = d.trim().split(/[\s,]+/); // Improved split
-                let ops: { op: string, args: number[] }[] = [];
-                for (let i = 0; i < parts.length; i++) {
-                    const token = parts[i];
-                    if (token === 'M' || token === 'L') {
-                        ops.push({ op: token, args: [parseFloat(parts[++i]), parseFloat(parts[++i])] });
-                    }
-                }
-
-                // Draw line segments
-                for (let i = 1; i < ops.length; i++) {
-                    const prev = ops[i - 1];
-                    const curr = ops[i];
-                    if (prev.args.length === 2 && curr.args.length === 2) {
-                        const p1 = applyToPoint(finalMatrix, prev.args[0], prev.args[1]);
-                        const p2 = applyToPoint(finalMatrix, curr.args[0], curr.args[1]);
-                        pdf.line(p1.x, p1.y, p2.x, p2.y);
+            let localMatrix: Matrix = [...identity];
+            const transAttr = node.getAttribute('transform');
+            if (transAttr) {
+                const regExp = /(translate|rotate)\s*\(([^)]+)\)/g;
+                let match;
+                while ((match = regExp.exec(transAttr)) !== null) {
+                    const type = match[1];
+                    const args = match[2].trim().split(/[\s,]+/).map(parseFloat);
+                    if (type === 'translate') {
+                        localMatrix = multiply(localMatrix, createTranslate(args[0] || 0, args[1] || 0));
+                    } else if (type === 'rotate') {
+                        localMatrix = multiply(localMatrix, createRotate(args[0] || 0, args[1] || 0, args[2] || 0));
                     }
                 }
             }
-        } else if (tagName === 'polygon' || tagName === 'polyline') {
-            const pointsAttr = getAttr('points') || '';
-            const pointsRaw = pointsAttr.trim().split(/[\s,]+/);
-            if (pointsRaw.length >= 2 && drawMode) {
-                // Parse points [x1, y1, x2, y2, ...]
-                const points: { x: number, y: number }[] = [];
-                for (let i = 0; i < pointsRaw.length; i += 2) {
-                    const px = parseFloat(pointsRaw[i]);
-                    const py = parseFloat(pointsRaw[i + 1]);
-                    if (!isNaN(px) && !isNaN(py)) {
-                        points.push(applyToPoint(finalMatrix, px, py));
+            const finalMatrix = multiply(currentMatrix, localMatrix);
+
+            const getAttr = (name: string) => node.getAttribute(name);
+            const num = (name: string, def = 0) => {
+                const val = parseFloat(node.getAttribute(name) || String(def));
+                return isNaN(val) ? def : val;
+            };
+            const color = (name: string, def = '#000') => node.getAttribute(name);
+
+            const fill = color('fill', 'none');
+            const strokeAttr = node.getAttribute('stroke');
+            const strokeVal = strokeAttr || '#000000';
+            const strokeWidth = num('stroke-width', 1);
+
+            let drawMode = '';
+            const hasFill = fill !== 'none' && fill !== 'transparent';
+            const hasStroke = strokeVal !== 'none' && strokeVal !== 'transparent';
+            if (hasFill && hasStroke) drawMode = 'FD';
+            else if (hasFill) drawMode = 'F';
+            else if (hasStroke) drawMode = 'S';
+
+            if (drawMode) {
+                if (hasStroke) {
+                    pdf.setDrawColor(strokeVal);
+                    pdf.setLineWidth(strokeWidth);
+                }
+                if (hasFill) pdf.setFillColor(fill);
+            }
+
+            if (tagName === 'g' || tagName === 'svg') {
+                Array.from(node.children).forEach(child => traverse(child, finalMatrix));
+            } else if (tagName === 'rect') {
+                const x = num('x');
+                const y = num('y');
+                const w = num('width');
+                const h = num('height');
+                if (!isNaN(x) && drawMode) {
+                    const p1 = applyToPoint(finalMatrix, x, y);
+                    const p2 = applyToPoint(finalMatrix, x + w, y);
+                    const p3 = applyToPoint(finalMatrix, x + w, y + h);
+                    const p4 = applyToPoint(finalMatrix, x, y + h);
+
+                    const lines = [
+                        [p2.x - p1.x, p2.y - p1.y],
+                        [p3.x - p2.x, p3.y - p2.y],
+                        [p4.x - p3.x, p4.y - p3.y],
+                        [p1.x - p4.x, p1.y - p4.y]
+                    ];
+                    pdf.lines(lines, p1.x, p1.y, [1, 1], drawMode, true);
+                }
+            } else if (tagName === 'circle') {
+                const cx = num('cx');
+                const cy = num('cy');
+                const r = num('r');
+                if (!isNaN(cx) && drawMode) {
+                    const p = applyToPoint(finalMatrix, cx, cy);
+                    const scale = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
+                    pdf.circle(p.x, p.y, r * scale, drawMode);
+                }
+            } else if (tagName === 'line') {
+                if (hasStroke) {
+                    const p1 = applyToPoint(finalMatrix, num('x1'), num('y1'));
+                    const p2 = applyToPoint(finalMatrix, num('x2'), num('y2'));
+                    pdf.line(p1.x, p1.y, p2.x, p2.y);
+                }
+            } else if (tagName === 'text') {
+                const x = num('x');
+                const y = num('y');
+                const text = node.textContent || '';
+                const fontSize = num('font-size', 10);
+                const anchor = getAttr('text-anchor');
+                if (hasFill && text.trim()) {
+                    const scale = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
+                    pdf.setFontSize(fontSize * scale);
+                    const angleRad = Math.atan2(finalMatrix[1], finalMatrix[0]);
+                    const angleDeg = (angleRad * 180) / Math.PI;
+
+                    let localY = y;
+                    const baseline = getAttr('dominant-baseline');
+                    if (baseline === 'middle' || baseline === 'central') {
+                        localY += (fontSize * 0.4);
+                    }
+                    const pAdjusted = applyToPoint(finalMatrix, x, localY);
+                    pdf.text(text, pAdjusted.x, pAdjusted.y, {
+                        align: anchor === 'middle' ? 'center' : 'left',
+                        angle: -angleDeg,
+                        baseline: 'bottom'
+                    });
+                }
+            } else if (tagName === 'path') {
+                const d = getAttr('d');
+                if (d && hasStroke) {
+                    const parts = d.trim().split(/[\s,]+/);
+                    let ops: { op: string, args: number[] }[] = [];
+                    for (let i = 0; i < parts.length; i++) {
+                        const token = parts[i];
+                        if (token === 'M' || token === 'L') {
+                            ops.push({ op: token, args: [parseFloat(parts[++i]), parseFloat(parts[++i])] });
+                        }
+                    }
+                    for (let i = 1; i < ops.length; i++) {
+                        const prev = ops[i - 1];
+                        const curr = ops[i];
+                        if (prev.args.length === 2 && curr.args.length === 2 &&
+                            !isNaN(prev.args[0]) && !isNaN(prev.args[1]) &&
+                            !isNaN(curr.args[0]) && !isNaN(curr.args[1])) {
+                            const p1 = applyToPoint(finalMatrix, prev.args[0], prev.args[1]);
+                            const p2 = applyToPoint(finalMatrix, curr.args[0], curr.args[1]);
+                            pdf.line(p1.x, p1.y, p2.x, p2.y);
+                        }
                     }
                 }
-
-                if (points.length >= 2) {
-                    const pdfLines: number[][] = [];
-                    const start = points[0];
-
-                    for (let i = 1; i < points.length; i++) {
-                        pdfLines.push([points[i].x - points[i - 1].x, points[i].y - points[i - 1].y]);
+            } else if (tagName === 'polygon' || tagName === 'polyline') {
+                const pointsAttr = getAttr('points') || '';
+                const pointsRaw = pointsAttr.trim().split(/[\s,]+/);
+                if (pointsRaw.length >= 2 && drawMode) {
+                    const points: { x: number, y: number }[] = [];
+                    for (let i = 0; i < pointsRaw.length; i += 2) {
+                        const px = parseFloat(pointsRaw[i]);
+                        const py = parseFloat(pointsRaw[i + 1]);
+                        if (!isNaN(px) && !isNaN(py)) {
+                            points.push(applyToPoint(finalMatrix, px, py));
+                        }
                     }
-                    const isClosed = tagName === 'polygon';
-                    pdf.lines(pdfLines, start.x, start.y, [1, 1], drawMode, isClosed);
+                    if (points.length >= 2) {
+                        const pdfLines: number[][] = [];
+                        const start = points[0];
+                        for (let i = 1; i < points.length; i++) {
+                            pdfLines.push([points[i].x - points[i - 1].x, points[i].y - points[i - 1].y]);
+                        }
+                        const isClosed = tagName === 'polygon';
+                        pdf.lines(pdfLines, start.x, start.y, [1, 1], drawMode, isClosed);
+                    }
+                }
+            } else if (tagName === 'image') {
+                const x = num('x');
+                const y = num('y');
+                const w = num('width');
+                const h = num('height');
+                const href = getAttr('href') || getAttr('xlink:href');
+
+                if (href && !isNaN(x)) {
+                    const p = applyToPoint(finalMatrix, x, y);
+                    const scaleM = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
+                    const targetW = (w > 0 ? w : 100) * scaleM;
+                    const targetH = (h > 0 ? h : 100) * scaleM;
+
+                    // Try to use cache first
+                    if (imageCache[href]) {
+                        const srcImg = imageCache[href];
+                        const sRatio = srcImg.width / srcImg.height;
+                        const tRatio = targetW / targetH;
+
+                        // Avoid division by zero
+                        if (srcImg.height > 0 && srcImg.width > 0) {
+                            let drawW, drawH, dx, dy;
+                            if (sRatio > tRatio) {
+                                drawH = targetH;
+                                drawW = srcImg.width * (targetH / srcImg.height);
+                                dx = p.x - (drawW - targetW) / 2;
+                                dy = p.y;
+                            } else {
+                                drawW = targetW;
+                                drawH = srcImg.height * (targetW / srcImg.width);
+                                dx = p.x;
+                                dy = p.y - (drawH - targetH) / 2;
+                            }
+
+                            pdf.saveGraphicsState();
+                            pdf.rect(p.x, p.y, targetW, targetH, 'clip');
+                            try {
+                                pdf.addImage(srcImg, 'PNG', dx, dy, drawW, drawH);
+                            } catch (e) {
+                                console.warn('PDF AddImage HTMLImageElement failed', e);
+                                try {
+                                    pdf.addImage(srcImg.src, 'PNG', dx, dy, drawW, drawH);
+                                } catch (e2) {
+                                    try {
+                                        pdf.addImage(href, 'PNG', p.x, p.y, targetW, targetH);
+                                    } catch (e3) { }
+                                }
+                            }
+                            pdf.restoreGraphicsState();
+                        }
+                    } else {
+                        // Fallback if cache missing
+                        try {
+                            pdf.addImage(href, 'PNG', p.x, p.y, targetW, targetH);
+                        } catch (e) {
+                            console.error('PDF AddImage Direct failed', e);
+                        }
+                    }
                 }
             }
-        } else if (tagName === 'image') {
-            const x = num('x');
-            const y = num('y');
-            const w = num('width');
-            const h = num('height');
-            const href = getAttr('href') || getAttr('xlink:href');
-            if (href && !isNaN(x)) {
-                const p = applyToPoint(finalMatrix, x, y);
-                pdf.addImage(href, 'PNG', p.x, p.y, w, h);
-            }
+        } catch (tagErr) {
+            console.error(`Error processing tag ${node.tagName}`, tagErr);
         }
     };
 
-    // Initial Matrix: Offset Translation
     const initialMatrix = createTranslate(-viewBox[0] + pdfOffsetX, -viewBox[1] + pdfOffsetY);
-
     traverse(svg, initialMatrix);
-
-    pdf.save(filename);
+    try {
+        pdf.save(filename);
+    } catch (e) {
+        console.error('Error saving PDF:', e);
+        alert('Failed to save PDF. Please check console for details.');
+    }
 };

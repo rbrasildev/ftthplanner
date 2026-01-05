@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
-import { POPData, CableData, FiberConnection, FIBER_COLORS, DIO } from '../types';
+import { POPData, CableData, FiberConnection, getFiberColor, DIO } from '../types';
 import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
@@ -505,7 +505,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                             </div>
                                             <div className="p-2 space-y-2">
                                                 {Array.from({ length: looseTubeCount }).map((_, tubeIdx) => {
-                                                    const tubeColor = FIBER_COLORS[tubeIdx % FIBER_COLORS.length];
+                                                    const tubeColor = getFiberColor(tubeIdx, cable.colorStandard);
                                                     // Added 3 (White) and 10 (Gray) to black text indices
                                                     const isLight = [1, 2, 3, 8, 10, 11, 12].includes((tubeIdx % 12) + 1);
 
@@ -526,7 +526,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                                     const fiberIndex = startFiberIndex + fOffset;
 
                                                                     const fiberId = `${cable.id}-fiber-${fiberIndex}`;
-                                                                    const color = FIBER_COLORS[fOffset % FIBER_COLORS.length]; // Fiber colors cycle 1-12 relative to TUBE
+                                                                    const color = getFiberColor(fOffset, cable.colorStandard); // Fiber colors cycle 1-12 relative to TUBE
 
                                                                     const fusion = currentConnections.find(c => c.sourceId === fiberId || c.targetId === fiberId);
                                                                     const isConnected = !!fusion;
@@ -724,9 +724,22 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                         className="w-4 h-4 rounded-full border border-white/50"
                                         style={{
                                             backgroundColor: (() => {
+                                                if (!configuringFiberId) return '#ccc';
+                                                // Find cable
+                                                const cable = incomingCables.find(c => configuringFiberId.startsWith(c.id));
                                                 const parts = configuringFiberId.split('-fiber-');
                                                 const idx = parseInt(parts[1]);
-                                                return FIBER_COLORS[idx % FIBER_COLORS.length] || '#ccc';
+
+                                                if (cable) {
+                                                    // Need position in tube or absolute?
+                                                    // Usually visual header matches fiber color.
+                                                    // The simple cycle is:
+                                                    const looseTubeCount = cable.looseTubeCount || 1;
+                                                    const fpt = Math.ceil(cable.fiberCount / looseTubeCount);
+                                                    const pos = idx % fpt;
+                                                    return getFiberColor(pos, cable.colorStandard);
+                                                }
+                                                return getFiberColor(idx, 'ABNT');
                                             })()
                                         }}
                                     />

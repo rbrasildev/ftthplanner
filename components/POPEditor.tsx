@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { POPData, CableData, FiberConnection, OLT, DIO, FIBER_COLORS, ElementLayout } from '../types';
+import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
 import { X, Save, Scissors, ZoomIn, ZoomOut, GripHorizontal, Server, Router, Magnet, AlignJustify, Settings2, Trash2, Cable as CableIcon, Plug, Link2, Link2Off, Check, Pencil, AlertTriangle, Move, Box } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
@@ -246,7 +246,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         const slotMatch = configuringOltPortId.match(/-s(\d+)-/);
         if (slotMatch) {
             const slotIndex = parseInt(slotMatch[1]) - 1;
-            slotColor = FIBER_COLORS[slotIndex % FIBER_COLORS.length];
+            slotColor = getFiberColor(slotIndex, 'ABNT');
         }
 
         let cleanedConnections = localPOP.connections.filter(c =>
@@ -765,7 +765,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                                     <div className="p-3 bg-slate-900 space-y-2">
                                         {Array.from({ length: slots }).map((_, sIdx) => {
-                                            const slotColor = FIBER_COLORS[sIdx % FIBER_COLORS.length];
+                                            const slotColor = getFiberColor(sIdx, 'ABNT');
                                             return (
                                                 <div key={sIdx} className="flex items-center gap-2 bg-slate-950 p-1.5 rounded border border-slate-800">
                                                     <div className="w-6 text-[9px] font-mono text-center font-bold" style={{ color: slotColor }}>S{sIdx + 1}</div>

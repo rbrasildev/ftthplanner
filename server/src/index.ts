@@ -3,6 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import projectRoutes from './routes/projectRoutes';
+import adminRoutes from './routes/adminRoutes';
+import saasRoutes from './routes/saasRoutes';
+import auditRoutes from './routes/auditRoutes';
 
 dotenv.config();
 
@@ -23,6 +26,7 @@ app.use((req, res, next) => {
     next();
 });
 
+
 // CORS mais permissivo possível para teste
 app.use(cors({
     origin: '*',
@@ -36,7 +40,7 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'live', time: new Date().toISOString() });
 });
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
@@ -49,10 +53,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/saas', saasRoutes);
+app.use('/api/audit', auditRoutes);
 
 app.get('/', (req, res) => {
     res.send('FTTH Master Planner API is active');
 });
+
 
 app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`Server running on port ${PORT} (0.0.0.0)`);

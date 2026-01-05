@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { KeyRound, ArrowLeft } from 'lucide-react';
 
 interface RegisterPageProps {
-    onRegister: (username: string, password?: string) => void;
+    onRegister: (username: string, password?: string, companyName?: string) => void;
     onBackToLogin: () => void;
+    onBackToLanding: () => void;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [companyName, setCompanyName] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username.trim() || !password.trim()) {
+        if (!username.trim() || !password.trim() || !companyName.trim()) {
             setError('Por favor, preencha todos os campos.');
             return;
         }
@@ -23,7 +25,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
             return;
         }
         setError(null);
-        onRegister(username, password);
+        onRegister(username, password, companyName);
     };
 
     return (
@@ -36,6 +38,15 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
             >
                 <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
             </div>
+
+            {/* Back Button */}
+            <button
+                onClick={onBackToLanding}
+                className="absolute top-8 left-8 z-20 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-bold text-sm">Back to Home</span>
+            </button>
 
             {/* 2. Main Container */}
             <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-slate-900 lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">
@@ -69,6 +80,22 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
 
                         <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
                             <div className="space-y-5 lg:space-y-4">
+
+                                <div className="space-y-1">
+                                    <label className="sr-only">Nome da Empresa</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={companyName}
+                                            onChange={(e) => setCompanyName(e.target.value)}
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            placeholder="Nome da Empresa (Provedor)"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-1">
                                     <label className="sr-only">Nome de Usuário</label>
                                     <div className="relative">
@@ -76,10 +103,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder="Nome de Usuário"
                                             required
-                                            autoFocus
                                         />
                                     </div>
                                 </div>
@@ -91,7 +117,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder="Senha"
                                             required
                                         />
@@ -105,7 +131,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                             type="password"
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#0f172a] dark:[&:-webkit-autofill]:-webkit-text-fill-color-white lg:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] lg:dark:[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#020617]"
+                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder="Confirmar Senha"
                                             required
                                         />

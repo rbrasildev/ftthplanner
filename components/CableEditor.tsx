@@ -14,16 +14,20 @@ interface CableEditorProps {
 
 const FIBER_COUNTS = [1, 2, 4, 6, 12, 24, 36, 48, 72, 96, 144, 288];
 
-// Palette for Map Visualization (distinct from fiber colors)
+// Palette for Map Visualization (based on Standard Fiber Colors 1-12)
 const CABLE_MAP_COLORS = [
-  '#0ea5e9', // Default Blue
-  '#ef4444', // Red
-  '#f59e0b', // Orange
-  '#10b981', // Emerald
-  '#8b5cf6', // Violet
-  '#ec4899', // Pink
-  '#64748b', // Slate
-  '#000000', // Black
+  '#0ea5e9', // 1. Blue
+  '#f97316', // 2. Orange
+  '#10b981', // 3. Green
+  '#a97142', // 4. Brown (approx)
+  '#64748b', // 5. Slate (Grey)
+  '#ffffff', // 6. White
+  '#ef4444', // 7. Red
+  '#000000', // 8. Black
+  '#eab308', // 9. Yellow
+  '#8b5cf6', // 10. Violet
+  '#ec4899', // 11. Pink
+  '#06b6d4', // 12. Aqua
 ];
 
 export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave, onDelete }) => {
@@ -211,6 +215,43 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           </div>
         </div>
 
+        {/* Color Standard Selection */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
+            {t('fiber_color_standard') || "Padrão de Cores"}
+          </label>
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 mt-4">{t('color_standard')}</h3>
+            <div className="bg-slate-900 rounded-lg p-1 flex gap-1 border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, colorStandard: 'ABNT' })}
+                className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'ABNT' || !formData.colorStandard ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                <span className="font-bold">{t('standard_abnt')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, colorStandard: 'EIA598' })}
+                className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'EIA598' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                <span className="font-bold">{t('standard_eia')}</span>
+              </button>
+            </div>
+          </div>
+          {/* Small Preview of first 12 fibers */}
+          <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+            {(formData.colorStandard === 'EIA598' ?
+              ['#3b82f6', '#f97316', '#22c55e', '#78350f', '#9ca3af', '#ffffff', '#ef4444', '#000000', '#eab308', '#a855f7', '#ec4899', '#22d3ee']
+              :
+              ['#22c55e', '#eab308', '#ffffff', '#3b82f6', '#ef4444', '#a855f7', '#78350f', '#ec4899', '#000000', '#9ca3af', '#f97316', '#22d3ee']
+            ).map((c, i) => (
+              <div key={i} title={`Fibra ${i + 1}`} className="w-3 h-3 rounded-full border border-slate-200 dark:border-slate-700 shrink-0" style={{ backgroundColor: c }} />
+            ))}
+            <span className="text-[9px] text-slate-400 ml-1">...</span>
+          </div>
+        </div>
+
         {/* Length Display */}
         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
@@ -235,7 +276,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 key={color}
                 type="button"
                 onClick={() => setFormData({ ...formData, color })}
-                className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color === color ? 'border-white dark:border-slate-100 scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`}
+                className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm ${formData.color === color ? 'border-white dark:border-slate-100 scale-110 shadow-lg ring-2 ring-sky-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : 'border-slate-200 dark:border-slate-700 hover:scale-105'}`}
                 style={{ backgroundColor: color }}
               />
             ))}

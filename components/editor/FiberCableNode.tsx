@@ -1,5 +1,5 @@
 import React from 'react';
-import { CableData, FIBER_COLORS, ElementLayout, FiberConnection } from '../../types';
+import { CableData, getFiberColor, ElementLayout, FiberConnection } from '../../types';
 import { RotateCw, GripHorizontal, ArrowRightLeft, Pencil } from 'lucide-react';
 
 interface FiberCableNodeProps {
@@ -86,7 +86,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             `}
             >
                 {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
-                <div className="absolute top-0 right-0 -mt-6 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         {onEdit && (
                             <button
@@ -151,7 +151,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         relative flex flex-col justify-center pt-1.5
                         ${isMirrored ? 'border-r-2 pr-1' : 'border-l-2 pl-1'}
                     `}
-                        style={{ borderColor: FIBER_COLORS[tube.tubeIdx % FIBER_COLORS.length] }}
+                        style={{ borderColor: getFiberColor(tube.tubeIdx, cable.colorStandard) }}
                     >
                         {tube.fiberIndices.map(i => {
                             const fiberId = `${cable.id}-fiber-${i}`;
@@ -160,9 +160,9 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                             // e.g. Tube 1 (1-6): Green..Violet. Tube 2 (7-12): Green..Violet.
                             // Numbering remains global (1..N).
                             const positionInTube = i % fibersPerTube;
-                            const color = FIBER_COLORS[positionInTube % 12];
+                            const color = getFiberColor(positionInTube, cable.colorStandard);
                             const isLit = litPorts.has(fiberId);
-                            const isLightColor = [1, 2, 3, 8, 10, 11, 12].includes((i % 12) + 1);
+                            const isLightColor = ['#ffffff', '#eab308', '#22d3ee', '#ec4899', '#f97316'].includes(color); // Approximate check for black text
                             const textColor = isLightColor ? 'text-black' : 'text-white';
 
                             return (

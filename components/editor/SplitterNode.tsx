@@ -85,7 +85,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 >
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
-                            points={`50,0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
+                            points={`${50 + skewPercent},0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
                             className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-300 dark:stroke-slate-600'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
@@ -100,6 +100,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 {/* Input Port (Y=12) */}
                 <div
                     className="absolute top-0 left-0 w-full h-6 flex items-center justify-center z-30"
+                    style={{ left: `${shiftPx}px` }}
                 >
                     <div
                         id={splitter.inputPortId}

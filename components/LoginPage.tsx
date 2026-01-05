@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, ArrowLeft } from 'lucide-react';
 
 interface LoginPageProps {
     onLogin: (username: string, password: string) => void;
     onRegisterClick: () => void;
     error?: string | null;
     isLoading?: boolean;
+    onBackToLanding: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading, onBackToLanding }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
@@ -27,6 +28,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
             >
                 <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
             </div>
+
+            {/* Back Button */}
+            <button
+                onClick={onBackToLanding}
+                className="absolute top-8 left-8 z-20 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-bold text-sm">Back to Home</span>
+            </button>
 
             {/* 2. Main Container */}
             <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-slate-900 lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">

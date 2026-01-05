@@ -1,6 +1,18 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
-import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, FIBER_COLORS, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil } from 'lucide-react';
+import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS } from '../types';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil, Loader2 } from 'lucide-react';
+// ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
+// No, replace_file_content is single block. I have to do multiple edits or one large edit.
+// Let's do imports first, then function body.
+// Wait, I can use multi_replace_file_content.
+// But first let me check line numbers again from view_file.
+
+// Line 2: imports.
+// Line 534: FIBER_COLORS usage.
+// Line 601: FIBER_COLORS usage (likely).
+
+// I will use multi_replace_file_content.
+
 import { useLanguage } from '../LanguageContext';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
@@ -91,11 +103,20 @@ interface CTOEditorProps {
 
     // Hover Highlight
     onHoverCable?: (cableId: string | null) => void;
+
+    // Plan Props for Gatekeeping
+    userPlan?: string;
+    subscriptionExpiresAt?: string | null;
+    onShowUpgrade?: () => void;
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
 
-export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incomingCables, onClose, onSave, onEditCable, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable }) => {
+export const CTOEditor: React.FC<CTOEditorProps> = ({
+    cto, projectName, incomingCables, onClose, onSave, onEditCable,
+    litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable,
+    userPlan, subscriptionExpiresAt, onShowUpgrade
+}) => {
     const { t } = useLanguage();
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
@@ -247,10 +268,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         const viewportW = 1100;
         const viewportH = 750 - 56; // Minus header height
 
-        // Calculate best zoom to fit content, but max 1
+        // Calculate best zoom to fit content, but max 1 and min 0.2 to avoid "deformed" tiny view
         const zoomW = viewportW / contentW;
         const zoomH = viewportH / contentH;
-        const targetZoom = Math.min(zoomW, zoomH, 1);
+        const targetZoom = Math.max(0.2, Math.min(zoomW, zoomH, 1));
 
         return {
             x: (viewportW / 2) - ((minX + (maxX - minX) / 2) * targetZoom),
@@ -260,7 +281,37 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     };
 
     // Viewport State
-    const [viewState, setViewState] = useState(() => getInitialViewState(localCTO));
+    const [viewState, setViewState] = useState(() => {
+        if (localCTO.viewState &&
+            !isNaN(localCTO.viewState.x) &&
+            !isNaN(localCTO.viewState.y) &&
+            !isNaN(localCTO.viewState.zoom)) {
+            return localCTO.viewState;
+        }
+        return getInitialViewState(localCTO);
+    });
+
+    // Track if we have used the initial persisted state so we don't overwrite it with auto-calc
+    // unless it was missing.
+    const viewInitializedRef = useRef(!!localCTO.viewState);
+
+    // Initial View Center on Data Load (Only if no persisted state existed)
+    useEffect(() => {
+        if (!viewInitializedRef.current) {
+            const hasContent = incomingCables.length > 0 || localCTO.splitters.length > 0 || localCTO.fusions.length > 0;
+            if (hasContent) {
+                setViewState(getInitialViewState(localCTO));
+                viewInitializedRef.current = true;
+            }
+        }
+    }, [localCTO.splitters.length, localCTO.fusions.length, incomingCables.length]); // Dep check optimized
+
+    // Update localCTO viewState when view changes (debounced or just reference for save)
+    useEffect(() => {
+        localCTORef.current.viewState = viewState;
+        // visual update not needed for this, just ref sync for save
+    }, [viewState]);
+
     const [isSnapping, setIsSnapping] = useState(true); // Default to enabled
 
     // Window Position State
@@ -292,7 +343,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
     const [isRotateMode, setIsRotateMode] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
-    const GRID_SIZE = 12;
+    const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -319,8 +370,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         currentMouseX?: number;
         currentMouseY?: number;
         initialWindowPos?: { x: number, y: number };
+        // Optimization: Cache initial connection points for delta calculation
+        initialConnectionPoints?: { x: number, y: number }[];
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+
+    // OPTIMIZATION: Refs for Direct DOM Manipulation
+    const connectionRefs = useRef<Record<string, SVGPathElement | null>>({});
+    const connectionPointRefs = useRef<Record<string, SVGCircleElement | null>>({});
+    const dragLineRef = useRef<SVGPathElement | null>(null);
+
 
     // Cable Editing State - REMOVED (Handled Globally)
 
@@ -332,6 +391,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     useLayoutEffect(() => {
         setForceUpdate(n => n + 1);
     }, [viewState]);
+
+    // FIX: Force re-calculation after mount to ensure getBoundingClientRect is correct
+    // The Modal animation (zoom-in) causes initial rects to be invalid.
+    // FIX: Force re-calculation after mount and use opacity transition to mask initial glitch
+    const [isContentReady, setIsContentReady] = useState(false);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            portCenterCache.current = {};
+            containerRectCache.current = null;
+            setForceUpdate(n => n + 1);
+            setIsContentReady(true);
+        }, 350); // Wait for animate-in duration
+        return () => clearTimeout(timer);
+    }, []);
 
     const litConnections = useMemo(() => {
         const lit = new Set<string>();
@@ -478,14 +551,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                         const looseTubeCount = activeCable.looseTubeCount || 1;
                         const fibersPerTube = Math.ceil(activeCable.fiberCount / looseTubeCount);
                         const pos = fiberIndex % fibersPerTube;
-                        return FIBER_COLORS[pos % 12];
+                        return getFiberColor(pos, activeCable.colorStandard);
                     }
-                    // Fallback if cable not found (shouldn't happen)
-                    return FIBER_COLORS[fiberIndex % FIBER_COLORS.length];
+                    // Fallback if cable not found
+                    return getFiberColor(fiberIndex, 'ABNT');
                 }
             } catch (e) { return null; }
         }
-        if (portId.includes('spl-')) return '#94a3b8';
+        if (portId.includes('spl-')) return '#0f172a'; // Black/Dark for splitter pigtails
         return null;
     };
 
@@ -497,7 +570,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     };
 
     const handleCloseRequest = () => {
-        const hasChanges = JSON.stringify(localCTO) !== JSON.stringify(cto);
+        // Exclude viewState from dirty check
+        const stripViewState = (data: CTOData) => {
+            const { viewState, ...rest } = data;
+            return rest;
+        };
+        const hasChanges = JSON.stringify(stripViewState(localCTO)) !== JSON.stringify(stripViewState(cto));
         if (hasChanges) setShowCloseConfirm(true);
         else onClose();
     };
@@ -508,7 +586,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     };
 
     const handleSaveAndClose = () => {
-        onSave(localCTO);
+        const finalCTO = { ...localCTO, viewState: viewState };
+        onSave(finalCTO);
         onClose();
     };
 
@@ -539,7 +618,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                 // FIXED: Use reset color logic for auto-splice connections
                 const pos = i % srcFPT;
-                const color = FIBER_COLORS[pos % 12];
+                const color = getFiberColor(pos, sourceCable.colorStandard);
 
                 newConnections.push({
                     id: `conn-pass-${Date.now()}-${i}`,
@@ -587,6 +666,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     // Instead of complex DOM traversal, I'll update the node components to simply have an ID.
     // This is a minimal, safe change.
     const handleExportPDF = async () => {
+        // --- GATEKEEPING: Block Export for Trial or Free Users ---
+        // Trial Users have an expiration date. Free Users have 'Plano Grátis'.
+        // Only Paid Permanent Users (or maybe we allow Trial but Block? User said "Implement Block")
+        // User Request: "se ele importar o projeto... em 15 dias ele vai usar sem pagar". -> BLOCK TRIAL.
+
+        const isTrial = !!subscriptionExpiresAt;
+        const isFree = userPlan === 'Plano Grátis';
+
+        if (isTrial || isFree) {
+            // Trigger Upgrade Modal if passed, or just Alert
+            if (onShowUpgrade) {
+                onShowUpgrade();
+                // Optional: Show specific toast explaining why
+                // alert("Recurso disponível apenas para assinantes. (Trial não exporta)");
+            } else {
+                alert("Exportação disponível apenas para planos pagos.");
+            }
+            return;
+        }
+
         setExportingType('pdf');
         try {
             // Harvest Port Positions
@@ -624,7 +723,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             // We need to convert Lat/Lng to Tile X/Y.
 
             try {
-                // Simple APPROXIMATION using a static map service if allowed, 
+                // Simple APPROXIMATION using a static map service if allowed,
                 // OR construct a URL from a free service that returns an image.
                 // Mapbox/Google require keys. 
                 // Let's use a reliable placeholder or a free static service if one exists.
@@ -653,6 +752,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     };
 
     const handleExportPNG = async () => {
+        // --- GATEKEEPING ---
+        const isTrial = !!subscriptionExpiresAt;
+        const isFree = userPlan === 'Plano Grátis';
+
+        if (isTrial || isFree) {
+            if (onShowUpgrade) onShowUpgrade();
+            else alert("Exportação disponível apenas para planos pagos.");
+            return;
+        }
+
         setExportingType('png');
         try {
             // Harvest Port Positions
@@ -726,16 +835,58 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
     const handleElementDragStart = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (isVflToolActive || isOtdrToolActive) return;
+        if (isVflToolActive || isOtdrToolActive || isDeleteMode || isRotateMode) return;
+
+        // HYBRID INITIAL POS: Use DOM if available to prevent "jumps"
+        let initialX = 0;
+        let initialY = 0;
+        let initialRot = 0;
+        const domEl = document.getElementById(id);
+
+        if (domEl) {
+            // Read current visual transform
+            const style = window.getComputedStyle(domEl);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            initialX = matrix.m41;
+            initialY = matrix.m42;
+            // FUSION CORRECTION: FusionNode renders visually at Y+6. 
+            // If we read Y from DOM, it includes the +6.
+            // But our State expects the "layout Y" (without offset).
+            // So we subtract 6 if it's a fusion TO normalize back to state logic.
+            if (id.startsWith('fus-')) {
+                initialY -= 6;
+            }
+
+            // Extract rotation from matrix to prevent reset to 0
+            // matrix(a, b, c, d, tx, ty)
+            // Rotation = atan2(b, a)
+            const angle = Math.round(Math.atan2(matrix.m12, matrix.m11) * (180 / Math.PI));
+            initialRot = angle;
+        } else {
+            // Fallback to state
+            const l = getLayout(id);
+            initialX = l.x;
+            initialY = l.y;
+            initialRot = l.rotation || 0;
+        }
+
+        // Check for mirrored state from storage (DOM doesn't help here easily)
+        const storedLayout = localCTORef.current.layout?.[id];
+        const isMirrored = storedLayout?.mirrored || false;
 
         setDragState({
             mode: 'element',
             targetId: id,
             startX: e.clientX,
             startY: e.clientY,
-            initialLayout: localCTORef.current.layout?.[id] || { x: 0, y: 0, rotation: 0 }
+            initialLayout: {
+                x: initialX,
+                y: initialY,
+                rotation: initialRot,
+                mirrored: isMirrored
+            }
         });
-    }, [isVflToolActive, isOtdrToolActive]);
+    }, [isVflToolActive, isOtdrToolActive, isDeleteMode, isRotateMode]);
 
     const handleDeleteSplitter = useCallback((id: string) => {
         setLocalCTO(prev => {
@@ -966,100 +1117,212 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
     // RAF throttling for mouse move
     const rafIdRef = useRef<number | null>(null);
 
+    // OPTIMIZED: Direct DOM Manipulation for smooth 60FPS dragging
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!dragState) return;
 
-        // Immediate updates for visual-only drag states (drawing connections)
+        // 1. WINDOW DRAG (Standard React State is fine, usually low frequency)
+        if (dragState.mode === 'window' && dragState.initialWindowPos) {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            setWindowPos({
+                x: dragState.initialWindowPos.x + dx,
+                y: dragState.initialWindowPos.y + dy
+            });
+            return;
+        }
+
+        // 2. VIEW PAN (Direct DOM on Container)
+        if (dragState.mode === 'view') {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+
+            // Update React State immediately for view (it affects all calculations)
+            // View panning is less heavy than re-rendering 500 connections individually
+            // But we could optimize this too if needed. 
+            // For now, let's stick to state for View, as it triggers 'screenToCanvas' recalcs which we need.
+            setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
+            setDragState(prev => prev ? ({ ...prev, startX: e.clientX, startY: e.clientY }) : null);
+            return;
+        }
+
+        // 3. ELEMENT DRAG (Direct DOM)
+        if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+
+            let newX = dragState.initialLayout.x + dx;
+            let newY = dragState.initialLayout.y + dy;
+
+            if (isSnapping) {
+                newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+                newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+            }
+
+            // A. Move the Element Itself
+            const el = document.getElementById(dragState.targetId);
+            if (el) {
+                const rot = dragState.initialLayout.rotation || 0;
+                // FUSION OFFSET FIX: FusionNode renders with `top: layout.y + 6`. 
+                // We must match this offset during direct DOM drag to avoid "jumping"
+                const isFusion = dragState.targetId.startsWith('fus-');
+                const visualY = isFusion ? newY + 6 : newY;
+
+                el.style.transform = `translate(${newX}px, ${visualY}px) rotate(${rot}deg)`;
+            }
+
+            // B. Move Connected Cables (Visual Only)
+            // We need to find connections attached to this element.
+            // This requires some heavy lifting to find ports.
+            // STRATEGY: We know the delta (dx, dy). We can shift the endpoints of linked connections.
+            // B. Move Connected Cables (Visual Only)
+            // Use REF to avoid stale closures during rapid updates
+            const deltaX = newX - (localCTORef.current.layout?.[dragState.targetId!]?.x || dragState.initialLayout.x);
+            const deltaY = newY - (localCTORef.current.layout?.[dragState.targetId!]?.y || dragState.initialLayout.y);
+
+            localCTORef.current.connections.forEach(conn => {
+                const sourceIsOnEl = conn.sourceId.startsWith(dragState.targetId!) || (getPortCenter(conn.sourceId) !== null);
+                // ^ Simple check doesn't work well because IDs vary.
+                // Better: Check if getPortCenter for the source is inside the element's box?
+                // Or stick to known naming conventions: `${element.id}-...`
+
+                const targetIsEl = conn.targetId.startsWith(dragState.targetId!);
+                const sourceIsEl = conn.sourceId.startsWith(dragState.targetId!);
+
+                // If neither end is on this element, skip
+                if (!targetIsEl && !sourceIsEl) return;
+
+                const pathEl = connectionRefs.current[conn.id];
+                if (!pathEl) return;
+
+                // Get current visible points (cached or re-calculated)
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+                if (!p1 || !p2) return;
+
+                // Apply Delta to the side that is moving
+                const start = sourceIsEl ? { x: p1.x + deltaX, y: p1.y + deltaY } : p1;
+                const end = targetIsEl ? { x: p2.x + deltaX, y: p2.y + deltaY } : p2;
+
+                let d = `M ${start.x} ${start.y} `;
+                if (conn.points) {
+                    conn.points.forEach(p => d += `L ${p.x} ${p.y} `);
+                }
+                d += `L ${end.x} ${end.y}`;
+
+                pathEl.setAttribute('d', d);
+            });
+
+            return;
+        }
+
+        // 4. CONNECTION POINT DRAG (Direct DOM)
+        if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
+            const { x, y } = screenToCanvas(e.clientX, e.clientY);
+
+            const pathEl = connectionRefs.current[dragState.connectionId];
+            if (pathEl) {
+                const conn = localCTO.connections.find(c => c.id === dragState.connectionId);
+                if (conn) {
+                    const p1 = getPortCenter(conn.sourceId);
+                    const p2 = getPortCenter(conn.targetId);
+                    if (p1 && p2) {
+                        let d = `M ${p1.x} ${p1.y} `;
+                        conn.points?.forEach((p, i) => {
+                            if (i === dragState.pointIndex) {
+                                d += `L ${x} ${y} `;
+                            } else {
+                                d += `L ${p.x} ${p.y} `;
+                            }
+                        });
+                        d += `L ${p2.x} ${p2.y}`;
+                        pathEl.setAttribute('d', d);
+                    }
+                }
+            }
+
+            // Also move the handle circle itself
+            const dotEl = connectionPointRefs.current[`${dragState.connectionId}-${dragState.pointIndex}`];
+            if (dotEl) {
+                dotEl.setAttribute('cx', String(x));
+                dotEl.setAttribute('cy', String(y));
+            }
+
+            return;
+        }
+
+        // 5. NEW CONNECTION / RECONNECT (Visual Feedback Line)
         if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
             let { x, y } = screenToCanvas(e.clientX, e.clientY);
-
-            // GRID SNAPPING (User Request)
-            // Always snap to grid by default
+            // Grid Snapping logic...
             x = Math.round(x / GRID_SIZE) * GRID_SIZE;
             y = Math.round(y / GRID_SIZE) * GRID_SIZE;
 
-            // OPTIONAL: Snap to straight lines (Orthogonal) when holding Ctrl
-            // This now works nicely ON TOP of grid snapping
             if (e.ctrlKey) {
                 const originId = dragState.mode === 'connection' ? dragState.portId : dragState.fixedPortId;
                 const originPt = originId ? getPortCenter(originId) : null;
                 if (originPt) {
-                    const dx = Math.abs(x - originPt.x);
-                    const dy = Math.abs(y - originPt.y);
-                    if (dx > dy) {
-                        y = originPt.y; // Snap to horizontal
-                    } else {
-                        x = originPt.x; // Snap to vertical
-                    }
+                    if (Math.abs(x - originPt.x) > Math.abs(y - originPt.y)) y = originPt.y;
+                    else x = originPt.x;
                 }
             }
 
+            if (dragLineRef.current) {
+                const originId = dragState.mode === 'connection' ? dragState.portId : dragState.fixedPortId;
+                const start = originId ? getPortCenter(originId) : { x: 0, y: 0 };
+                if (start) {
+                    dragLineRef.current.setAttribute('d', `M ${start.x} ${start.y} L ${x} ${y}`);
+                    dragLineRef.current.style.display = 'block';
+                }
+            }
+            // Store current mouse for drop logic
             setDragState(prev => prev ? ({ ...prev, currentMouseX: x, currentMouseY: y }) : null);
-            return;
         }
-
-        // Throttled updates for structural changes (moving elements/view)
-        if (rafIdRef.current !== null) {
-            cancelAnimationFrame(rafIdRef.current);
-        }
-
-        rafIdRef.current = requestAnimationFrame(() => {
-            if (dragState.mode === 'window' && dragState.initialWindowPos) {
-                const dx = e.clientX - dragState.startX;
-                const dy = e.clientY - dragState.startY;
-                setWindowPos({
-                    x: dragState.initialWindowPos.x + dx,
-                    y: dragState.initialWindowPos.y + dy
-                });
-            }
-            else if (dragState.mode === 'view') {
-                const dx = e.clientX - dragState.startX;
-                const dy = e.clientY - dragState.startY;
-                setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
-                setDragState(prev => prev ? ({ ...prev, startX: e.clientX, startY: e.clientY }) : null);
-            }
-            else if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
-                const dx = (e.clientX - dragState.startX) / viewState.zoom;
-                const dy = (e.clientY - dragState.startY) / viewState.zoom;
-
-                let newX = dragState.initialLayout.x + dx;
-                let newY = dragState.initialLayout.y + dy;
-
-                if (isSnapping) {
-                    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-                    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
-                }
-
-                setLocalCTO(prev => ({
-                    ...prev,
-                    layout: {
-                        ...prev.layout,
-                        [dragState.targetId!]: {
-                            ...dragState.initialLayout!,
-                            x: newX,
-                            y: newY
-                        }
-                    }
-                }));
-            }
-            else if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
-                const { x, y } = screenToCanvas(e.clientX, e.clientY);
-                setLocalCTO(prev => ({
-                    ...prev,
-                    connections: prev.connections.map(c => {
-                        if (c.id !== dragState.connectionId) return c;
-                        const newPoints = [...(c.points || [])];
-                        newPoints[dragState.pointIndex!] = { x, y };
-                        return { ...c, points: newPoints };
-                    })
-                }));
-            }
-
-            rafIdRef.current = null;
-        });
     };
 
+
+
     const handleMouseUp = (e: React.MouseEvent) => {
+        // COMMIT DRAG CHANGES TO STATE
+        if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+            let newX = dragState.initialLayout.x + dx;
+            let newY = dragState.initialLayout.y + dy;
+
+            if (isSnapping) {
+                newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+                newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+            }
+
+            setLocalCTO(prev => ({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    [dragState.targetId!]: {
+                        ...dragState.initialLayout!,
+                        x: newX,
+                        y: newY
+                    }
+                }
+            }));
+        } else if (dragState?.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
+            const { x, y } = screenToCanvas(e.clientX, e.clientY);
+            setLocalCTO(prev => ({
+                ...prev,
+                connections: prev.connections.map(c => {
+                    if (c.id !== dragState.connectionId) return c;
+                    const newPoints = [...(c.points || [])];
+                    newPoints[dragState.pointIndex!] = { x, y };
+                    return { ...c, points: newPoints };
+                })
+            }));
+        }
+
+        if (dragLineRef.current) {
+            dragLineRef.current.style.display = 'none';
+        }
+
         // Handling New Connection Creation
         if (dragState?.mode === 'connection' && hoveredPortId && dragState.portId) {
             const source = dragState.portId;
@@ -1175,22 +1438,77 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                     newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
                 }
 
-                const fusionCenter = { x: newX + 16, y: newY + 6 };
+                const fusionCenter = { x: newX + 12, y: newY + 12 }; // Centered (24x12 element)
 
-                const hitConnection = localCTO.connections.find(conn => {
-                    if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return false;
+                // FIND CLOSEST CONNECTION (PRECISION UPDATE)
+                let closestConnection: FiberConnection | null = null;
+                let minDistance = 5; // Tighter tolerance (was 10, user requested stricter snap)
+
+                localCTO.connections.forEach(conn => {
+                    if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return;
+
                     const p1 = getPortCenter(conn.sourceId);
                     const p2 = getPortCenter(conn.targetId);
-                    if (!p1 || !p2) return false;
+                    if (!p1 || !p2) return;
+
                     const points = [p1, ...(conn.points || []), p2];
                     for (let i = 0; i < points.length - 1; i++) {
                         const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
-                        if (dist < 25) return true;
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closestConnection = conn;
+                        }
                     }
-                    return false;
                 });
 
-                if (hitConnection) {
+                if (closestConnection) {
+                    const hitConnection = closestConnection as FiberConnection; // TypeScript safety
+
+                    // SNAP TO FIBER LOGIC
+                    // We want to align the fusion perfectly on the fiber.
+                    // Calculate the projection of fusion center onto the line segment.
+                    // Fusion is 24x12. Visual Center is relative to layout: x+12, y+12.
+                    // FusionNode render offset is +6 Y. So center is layout.y + 6 + 6 = layout.y + 12.
+
+                    // 1. Get Fiber Segment
+                    const p1 = getPortCenter(hitConnection.sourceId);
+                    const p2 = getPortCenter(hitConnection.targetId);
+
+                    // Re-calculate projection for accurate snapping
+                    if (p1 && p2) {
+                        const points = [p1, ...(hitConnection.points || []), p2];
+                        for (let i = 0; i < points.length - 1; i++) {
+                            const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
+                            if (dist < minDistance + 1) { // +1 for float tolerance, reusing minDistance found earlier
+                                // Found the segment. Project fusionCenter onto it.
+                                // Code from getDistanceFromSegment adaptation:
+                                const A = fusionCenter.x - points[i].x;
+                                const B = fusionCenter.y - points[i].y;
+                                const C = points[i + 1].x - points[i].x;
+                                const D = points[i + 1].y - points[i].y;
+                                const dot = A * C + B * D;
+                                const len_sq = C * C + D * D;
+                                let param = -1;
+                                if (len_sq !== 0) param = dot / len_sq;
+
+                                let snapX, snapY;
+                                if (param < 0) { snapX = points[i].x; snapY = points[i].y; }
+                                else if (param > 1) { snapX = points[i + 1].x; snapY = points[i + 1].y; }
+                                else {
+                                    snapX = points[i].x + param * C;
+                                    snapY = points[i].y + param * D;
+                                }
+
+                                // Apply Snap
+                                // Fusion Layout X = SnapX - 12 (Center X offset)
+                                // Fusion Layout Y = SnapY - 12 (Center Y offset: 6 offset + 6 half-height)
+                                newX = snapX - 12;
+                                newY = snapY - 12;
+                                break;
+                            }
+                        }
+                    }
+
                     const portA = `${fusionId}-a`;
                     const portB = `${fusionId}-b`;
 
@@ -1212,25 +1530,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                     // CALCULATE ROTATION BASED ON CABLE DIRECTION
                     let rotation = 0;
-                    const p1 = getPortCenter(hitConnection.sourceId);
-                    const p2 = getPortCenter(hitConnection.targetId);
-
-                    if (p1 && p2) {
+                    if (p1 && p2) { // Re-use logic to find rotation
                         const points = [p1, ...(hitConnection.points || []), p2];
                         for (let i = 0; i < points.length - 1; i++) {
-                            const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
-                            if (dist < 25) {
-                                // Found the segment we hit
-                                const dx = points[i + 1].x - points[i].x;
-                                const dy = points[i + 1].y - points[i].y;
-
-                                if (Math.abs(dx) > Math.abs(dy)) {
-                                    rotation = dx > 0 ? 0 : 180;
-                                } else {
-                                    rotation = dy > 0 ? 90 : 270;
-                                }
-                                break;
-                            }
+                            // Simplified check since we snapped already or are close
+                            // Just check angle of the segment we are replacing
+                            const dx = points[i + 1].x - points[i].x;
+                            const dy = points[i + 1].y - points[i].y;
+                            if (Math.abs(dx) > Math.abs(dy)) rotation = dx > 0 ? 0 : 180;
+                            else rotation = dy > 0 ? 90 : 270;
+                            // Heuristic: If we are close to this segment, use its rotation
+                            if (getDistanceFromSegment(fusionCenter, points[i], points[i + 1]) < 20) break;
                         }
                     }
 
@@ -1240,7 +1550,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                             ...prev.layout,
                             [fusionId]: {
                                 ...prev.layout![fusionId],
-                                rotation: rotation
+                                rotation: rotation,
+                                x: newX,
+                                y: newY
                             }
                         },
                         // RUTHLESS ENFORCEMENT: Remove the cable being split AND any existing connections on THIS fusion's ports.
@@ -1261,6 +1573,30 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
         setDragState(null);
     };
 
+    // Initialize local state from prop
+    useEffect(() => {
+        // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
+        const migratedConnections = cto.connections.map(c => {
+            if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
+                return { ...c, color: '#0f172a' };
+            }
+            return c;
+        });
+
+        // Ensure we initialize viewState if saved, or calc default
+        let vs = cto.viewState;
+        if (!vs) {
+            vs = getInitialViewState({ ...cto, connections: migratedConnections });
+        }
+
+        setLocalCTO({
+            ...cto,
+            connections: migratedConnections,
+            viewState: vs
+        });
+        setViewState(vs);
+    }, [cto]);
+
     const removePoint = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
         if (isVflToolActive) return;
@@ -1272,6 +1608,67 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                 return { ...c, points: newPoints };
             })
         }));
+    };
+
+    const handlePathMouseDown = (e: React.MouseEvent, connId: string) => {
+        e.stopPropagation(); // prevent window drag
+        e.preventDefault();  // prevent text selection
+
+        if (isVflToolActive || isOtdrToolActive || isSmartAlignMode) return;
+
+        const { x, y } = screenToCanvas(e.clientX, e.clientY);
+        const clickPt = { x, y };
+
+        // 1. Calculate New State
+        let newConnections = [...localCTORef.current.connections];
+        let insertedPointIndex = -1;
+
+        newConnections = newConnections.map(c => {
+            if (c.id !== connId) return c;
+
+            const sourcePos = getPortCenter(c.sourceId);
+            const targetPos = getPortCenter(c.targetId);
+            if (!sourcePos || !targetPos) return c;
+
+            const currentPoints = c.points || [];
+            // Strategy: Find closest segment
+            const fullPath = [sourcePos, ...currentPoints, targetPos];
+            let minDistance = Infinity;
+            let insertIndex = 0;
+
+            for (let i = 0; i < fullPath.length - 1; i++) {
+                const pStart = fullPath[i];
+                const pEnd = fullPath[i + 1];
+                const dist = getDistanceFromSegment(clickPt, pStart, pEnd);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    insertIndex = i;
+                }
+            }
+
+            const newPoints = [...currentPoints];
+            newPoints.splice(insertIndex, 0, clickPt);
+            insertedPointIndex = insertIndex;
+            return { ...c, points: newPoints };
+        });
+
+        // 2. Optimistic Update (Manual Ref Patch)
+        // This makes `handleMouseMove` see the point INSTANTLY before React renders
+        localCTORef.current.connections = newConnections;
+
+        // 3. Trigger React Update
+        setLocalCTO(prev => ({ ...prev, connections: newConnections }));
+
+        // 4. Start Dragging Immediately
+        if (insertedPointIndex !== -1) {
+            setDragState({
+                mode: 'point',
+                connectionId: connId,
+                pointIndex: insertedPointIndex,
+                startX: e.clientX,
+                startY: e.clientY
+            });
+        }
     };
 
     const handleAddSplitter = (e: React.MouseEvent, type: '1:8' | '1:16' | '1:2') => {
@@ -1362,8 +1759,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
             className="fixed z-[2000]"
             style={{ left: windowPos.x, top: windowPos.y }}
         >
+            {dragState && (
+                <style>{`
+                    body, body * { cursor: grabbing !important; }
+                `}</style>
+            )}
             <div
-                className={`w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
             >
@@ -1436,7 +1838,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
                             {/* GROUP 3: CONNECTIONS */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <button onClick={() => setIsAutoSpliceOpen(true)} title={t('auto_splice')} className="p-1.5 bg-sky-600 hover:bg-sky-500 rounded text-white flex items-center gap-2 border border-sky-700 transition shadow-sm">
+                                <button
+                                    onClick={() => setIsAutoSpliceOpen(true)}
+                                    title={t('auto_splice')}
+                                    className={`p-1.5 rounded border transition ${isAutoSpliceOpen ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                >
                                     <ArrowRightLeft className="w-4 h-4" />
                                 </button>
                                 <button
@@ -1447,7 +1853,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                     <AlignCenter className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
                                 </button>
                                 <button
-                                    onClick={() => setLocalCTO(prev => ({ ...prev, connections: [] }))}
+                                    onClick={() => {
+                                        if (window.confirm(t('clear_connections_confirm'))) {
+                                            setLocalCTO(prev => ({ ...prev, connections: [] }));
+                                        }
+                                    }}
                                     className="p-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-red-500 rounded hover:bg-red-50 transition"
                                     title={t('reset_connections')}
                                 >
@@ -1507,6 +1917,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                 >
+                    {/* LOADING OVERLAY - Masks initial layout calculation */}
+                    {!isContentReady && (
+                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-bl-xl">
+                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin mb-3" />
+                            <p className="text-slate-600 dark:text-slate-400 font-medium text-sm animate-pulse">{t('loading_diagram') || 'Carregando diagrama...'}</p>
+                        </div>
+                    )}
                     {/* VFL Info Banner */}
                     {isVflToolActive && (
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 dark:bg-red-900/90 text-white px-4 py-2 rounded-full border border-red-400 dark:border-red-500 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none">
@@ -1584,7 +2001,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                 if (!p1 || !p2) return null;
 
                                 const isLit = litConnections.has(conn.id);
-                                const finalColor = isLit ? '#ef4444' : conn.color;
+
+                                // THEME AWARE SPLITTER COLOR:
+                                // If it matches the default 'Black' or legacy 'Gray' splitter color, use CSS classes instead of inline stroke.
+                                const isSplitterConn = conn.sourceId.includes('spl-') || conn.targetId.includes('spl-');
+                                const isDefaultSplitterColor = conn.color === '#0f172a' || conn.color === '#94a3b8';
+                                const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
+
+                                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
                                 const finalWidth = isLit ? 4 : 3;
 
                                 let d = `M ${p1.x} ${p1.y} `;
@@ -1598,19 +2022,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                 return (
                                     <g key={conn.id} className="pointer-events-auto group">
                                         <path
+                                            ref={el => { connectionRefs.current[conn.id] = el; }}
                                             d={d}
+
                                             stroke={finalColor}
                                             strokeWidth={finalWidth}
                                             fill="none"
                                             strokeLinejoin="round"
                                             strokeLinecap="round"
                                             style={{ filter: isLit ? 'drop-shadow(0 0 4px #ef4444)' : 'none' }}
-                                            className="hover:stroke-width-4 cursor-pointer transition-all"
+                                            className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
                                             onClick={(e) => {
-                                                if (dragState?.mode !== 'point') {
-                                                    handleConnectionClick(e as any, conn.id);
-                                                }
+                                                if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
                                             }}
+                                            onMouseDown={(e) => handlePathMouseDown(e, conn.id)}
                                             onContextMenu={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
@@ -1623,7 +2048,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                             return (
                                                 <circle
                                                     key={idx}
+                                                    ref={el => { connectionPointRefs.current[`${conn.id}-${idx}`] = el; }}
                                                     cx={pt.x}
+
                                                     cy={pt.y}
                                                     r={5}
                                                     fill="#fff"
@@ -1639,27 +2066,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                                 );
                             })}
 
-                            {dragState?.mode === 'connection' && dragState.currentMouseX && (
-                                <path
-                                    d={`M ${(getPortCenter(dragState.portId!)?.x || 0)} ${(getPortCenter(dragState.portId!)?.y || 0)} L ${dragState.currentMouseX} ${dragState.currentMouseY}`}
-                                    stroke="#facc15"
-                                    strokeWidth={2}
-                                    strokeDasharray="5,5"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                />
-                            )}
+                            <path
+                                ref={dragLineRef}
+                                stroke="#facc15"
+                                strokeWidth={2}
+                                strokeDasharray="5,5"
+                                fill="none"
+                                strokeLinecap="round"
+                                style={{ display: 'none' }}
+                            />
 
-                            {dragState?.mode === 'reconnect' && dragState.currentMouseX && dragState.fixedPortId && (
-                                <path
-                                    d={`M ${(getPortCenter(dragState.fixedPortId!)?.x || 0)} ${(getPortCenter(dragState.fixedPortId!)?.y || 0)} L ${dragState.currentMouseX} ${dragState.currentMouseY}`}
-                                    stroke="#facc15"
-                                    strokeWidth={3}
-                                    strokeDasharray="5,5"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                />
-                            )}
+
                         </svg>
 
                         {incomingCables.map(cable => {
@@ -1738,15 +2155,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleCloseRequest}
-                            className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-sm transition"
-                        >
-                            {t('cancel')}
-                        </button>
-                        <button
-                            onClick={() => onSave(localCTO)}
                             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <Save className="w-4 h-4" /> {t('save')}
+                            <Save className="w-4 h-4" /> {t('save_or_done') || 'Concluir'}
                         </button>
                     </div>
                 </div>
@@ -1883,6 +2294,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({ cto, projectName, incoming
 
 
             </div>
-        </div>
+        </div >
     );
 };

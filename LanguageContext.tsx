@@ -64,6 +64,18 @@ const translations = {
     'search_placeholder': 'Search CTO or POP...',
     'search_no_results': 'No results found',
 
+    // New Sidebar Keys
+    'sidebar_operation': 'Operation',
+    'sidebar_select': 'Select',
+    'sidebar_move': 'Move',
+    'sidebar_design': 'Network Design',
+    'sidebar_add_cto': 'New CTO',
+    'sidebar_add_pop': 'New POP',
+    'sidebar_draw_cable': 'Draw Cable',
+    'sidebar_draw_cable_desc': 'Click for multiple points',
+    'sidebar_connect_cable': 'Connect/Edit Cables',
+    'sidebar_connect_cable_desc': 'Adjust connections & geometry',
+
     // Toasts
     'toast_imported': 'Imported {ctos} CTOs and {cables} Cables',
     'toast_cto_added': 'CTO added successfully',
@@ -118,10 +130,12 @@ const translations = {
     'unsaved_changes_msg': 'You have unsaved changes. Do you want to save them before closing?',
     'discard': 'Discard',
     'save_and_close': 'Save & Close',
+    'save_or_done': 'Save / Done',
     'clear_connections_confirm': 'Are you sure you want to clear ALL connections? This cannot be undone.',
     'clear_all': 'Clear All',
     'confirm_delete_equip_msg': 'Are you sure you want to delete {name}?',
     'delete_warning_msg': 'Warning: All connections associated with this {type} will be removed permanently.',
+    'changes_saved': 'Changes saved successfully',
 
     // Statuses
     'status_PLANNED': 'Planned',
@@ -157,6 +171,9 @@ const translations = {
     'disabled': 'Disabled',
     'save_changes': 'Save Changes',
     'confirm_delete_cable_msg': 'Confirm deletion of {name}? This will remove associated fusion splices.',
+    'color_standard': 'Color Standard',
+    'standard_abnt': 'ABNT (Brazil)',
+    'standard_eia': 'EIA-598-A (Intl)',
 
     // Project Manager / Create Modal
     'project_manager': 'Project Manager',
@@ -181,7 +198,7 @@ const translations = {
     'snap_distance_help': 'Maximum distance for a cable to automatically snap to a box (CTO/POP) when dragging.',
 
     // CTO Internal Editor
-    'splicing_title': 'Splicing: {name}',
+    'splicing_title': '{name}',
     'dio_splicing_title': 'DIO Splicing: {name}',
     'splicing_help': 'Mouse Wheel to Zoom. Drag Background to Pan. Double-click points to remove.',
     'add_splitter': 'Splitter',
@@ -230,15 +247,228 @@ const translations = {
     // Map Layers
     'map_street': 'Street',
     'map_satellite': 'Satellite',
-    'map_layers': 'Layers',
-    'layer_cables': 'Cables',
     'layer_ctos': 'CTOs',
-    'layer_pops': 'POPs'
+    'layer_pops': 'POPs',
+
+    // Users Module
+    'users': 'Users',
+    'users_manage_desc': 'Manage team members and their roles.',
+    'add_user': 'Add User',
+    'username': 'Username',
+    'role': 'Role',
+    'created_at': 'Created At',
+    'actions': 'Actions',
+    'no_users_found': 'No users found.',
+    'role_member': 'Member',
+    'role_admin': 'Admin',
+    'role_owner': 'Owner',
+    'password': 'Password',
+    'edit_user': 'Edit User',
+    'update': 'Update',
+    'confirm_delete_user_msg': 'Are you sure you want to delete user {username}?',
+    'create': 'Create',
+
+    // User Management Errors
+    'error_username_taken': 'Username is already taken.',
+    'error_password_length': 'Password must be at least 6 characters long.',
+    'error_cannot_delete_self': 'You cannot delete your own account.',
+    'error_generic': 'An unexpected error occurred.',
+    'error_create_user': 'Failed to create user.',
+    'error_delete_user': 'Failed to delete user.',
+
+    // --- LANDING PAGE ---
+    'landing_features': 'Features',
+    'landing_performance': 'Performance',
+    'landing_how_it_works': 'How it Works',
+    'landing_login': 'Log in',
+    'landing_get_started': 'Get Started',
+    'landing_hero_badge': 'New Generation Platform',
+    'landing_hero_title_1': 'The Ultimate',
+    'landing_hero_title_2': 'FTTH Network',
+    'landing_hero_title_3': 'Management Platform',
+    'landing_hero_desc': 'Design, document, and manage your fiber network with high-performance interactive maps. Built for ISPs who demand precision and scalability.',
+    'landing_start_trial': 'Start Free Trial',
+    'landing_live_demo': 'See Live Demo',
+    'landing_map_engine': 'Map Engine',
+    'landing_leaflet': 'Leaflet Powered',
+
+    'landing_problem_title': 'Stop Managing Networks with',
+    'landing_problem_highlight': 'Spreadsheets',
+    'landing_problem_desc': 'Traditional methods like Google Earth + Excel are prone to errors, lack real-time updates, and become unmanageable as your network grows. You need a system that understands fiber optics, signal loss, and topology.',
+    'landing_problem_1': 'No visibility into available ports',
+    'landing_problem_2': 'Manual documentation is always outdated',
+    'landing_problem_3': 'Hard to track signal loss and fusion points',
+    'landing_problem_4': 'Team collaboration is a nightmare',
+    'landing_error_connection': 'Error: Connection limit exceeded',
+
+    'landing_features_title': 'Everything You Need to Scale',
+    'landing_features_desc': 'From planning to deployment, our tool covers every aspect of your ISP operation.',
+    'landing_feat_maps': 'Interactive Maps',
+    'landing_feat_maps_desc': 'Visualize your entire network on high-performance maps. Zoom, pan, and edit with precision.',
+    'landing_feat_cable': 'Cable & Fusion Management',
+    'landing_feat_cable_desc': 'Track every fiber strand, fusion splice, and splitter connection. Auto-calculate signal loss.',
+    'landing_feat_team': 'Multi-Tenant & Teams',
+    'landing_feat_team_desc': 'Manage multiple projects and assign role-based access control to your engineering team.',
+    'landing_feat_snap': 'Auto-Snap & Design Tools',
+    'landing_feat_snap_desc': 'Smart drawing tools that snap to existing infrastructure, speeding up your design process by 50%.',
+    'landing_feat_bom': 'Inventory & Reports',
+    'landing_feat_bom_desc': 'Generate BOM (Bill of Materials) automatically. Know exactly how much cable you need.',
+    'landing_feat_import': 'Import/Export',
+    'landing_feat_import_desc': 'Seamlessly import KMZ/KML files from Google Earth and export your projects for field teams.',
+
+    'landing_perf_badge': 'Ultra Performance',
+    'landing_perf_title': 'Built for Millions of Elements',
+    'landing_perf_desc': "Don't let lag slow you down. Our engine is optimized for browsing massive networks with zero latency. Handle city-wide deployments with thousands of CTOs and POPs seamlessly.",
+    'landing_stat_elements': 'Elements rendered',
+    'landing_stat_scroll': 'Smooth scroll',
+    'landing_stat_search': 'Search time',
+    'landing_stat_uptime': 'Uptime',
+    'landing_graph_engine': 'Rendering Engine',
+    'landing_graph_active': 'Active',
+    'landing_graph_load': 'System Load: 5%',
+
+    'landing_sec_title': 'Enterprise-Grade Security',
+    'landing_sec_desc': 'Your network data is your most valuable asset. We treat it with the protection it deserves.',
+    'landing_sec_1': 'End-to-End Encryption',
+    'landing_sec_2': 'Daily Backups',
+    'landing_sec_3': 'Role-Based Access',
+    'landing_sec_4': 'Audit Logs',
+    'landing_sec_5': '99.9% SLA',
+
+    'landing_steps_title': 'Start in 3 Simple Steps',
+    'landing_step_1_title': 'Create Workspace',
+    'landing_step_1_desc': 'Sign up and create your first project area in seconds.',
+    'landing_step_2_title': 'Design or Import',
+    'landing_step_2_desc': 'Draw your network or import existing KMZ files instantly.',
+    'landing_step_3_title': 'Manage & Scale',
+    'landing_step_3_desc': 'Invite your team and start managing operations.',
+
+    'landing_cta_title': 'Ready to modernize your ISP?',
+    'landing_cta_desc': 'Join hundreds of network engineers who trust FTTH Master for their daily operations.',
+    'landing_cta_btn': 'Get Started for Free',
+
+    'landing_footer_desc': 'The professional standard for FTTH network design and management.',
+    'landing_footer_product': 'Product',
+    'landing_footer_company': 'Company',
+    'landing_footer_legal': 'Legal',
+    'landing_footer_rights': '© 2024 FTTH Master. All rights reserved.',
+
+    // Pricing
+    'pricing_title': 'Simple, Transparent Pricing',
+    'pricing_desc': 'Choose the perfect plan for your ISP growth stage. No hidden fees.',
+    'plan_free': 'Free',
+    'plan_basic': 'Basic',
+    'plan_inter': 'Intermediate',
+    'plan_unlimited': 'Unlimited',
+    'price_free': 'Free',
+    'month': '/month',
+    'feature_projects': '{count} Projects',
+    'feature_users': '{count} Users',
+    'feature_ctos': '{count} CTOs',
+    'feature_pops': '{count} POPs',
+    'feature_unlimited': 'Unlimited',
+    'plan_cta': 'Get Started',
+    'most_popular': 'Most Popular',
   },
   pt: {
     // Theme
     'theme_light': 'Modo Claro',
     'theme_dark': 'Modo Escuro',
+
+    // --- LANDING PAGE ---
+    'landing_features': 'Recursos',
+    'landing_performance': 'Performance',
+    'landing_pricing': 'Planos',
+    'landing_how_it_works': 'Como Funciona',
+    'landing_login': 'Entrar',
+    'landing_get_started': 'Começar',
+    'landing_hero_badge': 'Nova Geração',
+    'landing_hero_title_1': 'A Plataforma Definitiva',
+    'landing_hero_title_2': 'de Rede FTTH',
+    'landing_hero_title_3': 'Gestão e Projetos',
+    'landing_hero_desc': 'Projete, documente e gerencie sua rede de fibra com mapas interativos de alta performance. Feito para provedores que exigem precisão e escala.',
+    'landing_start_trial': 'Teste Grátis',
+    'landing_live_demo': 'Ver Demo',
+    'landing_map_engine': 'Motor de Mapa',
+    'landing_leaflet': 'Tecnologia Leaflet',
+
+    'landing_problem_title': 'Pare de Gerenciar Redes com',
+    'landing_problem_highlight': 'Planilhas',
+    'landing_problem_desc': 'Métodos tradicionais como Google Earth + Excel são propensos a erros, não atualizam em tempo real e ficam incontroláveis quando a rede cresce. Você precisa de um sistema que entenda fibra óptica, perda de sinal e topologia.',
+    'landing_problem_1': 'Sem visibilidade de portas livres',
+    'landing_problem_2': 'Documentação manual sempre desatualizada',
+    'landing_problem_3': 'Difícil rastrear perda de sinal e fusões',
+    'landing_problem_4': 'Colaboração em equipe é um pesadelo',
+    'landing_error_connection': 'Erro: Limite de conexões excedido',
+
+    'landing_features_title': 'Tudo Que Você Precisa para Escalar',
+    'landing_features_desc': 'Do planejamento à implantação, nossa ferramenta cobre cada aspecto da sua operação ISP.',
+    'landing_feat_maps': 'Mapas Interativos',
+    'landing_feat_maps_desc': 'Visualize toda sua rede em mapas de alta performance. Zoom, pan e edições com precisão.',
+    'landing_feat_cable': 'Gestão de Cabos e Fusões',
+    'landing_feat_cable_desc': 'Rastreie cada fibra, fusão e conexão de splitter. Cálculo automático de perda de sinal.',
+    'landing_feat_team': 'Multi-Tenant e Equipes',
+    'landing_feat_team_desc': 'Gerencie múltiplos projetos e atribua controle de acesso baseado em cargos para seu time de engenharia.',
+    'landing_feat_snap': 'Ferramentas de Design Inteligente',
+    'landing_feat_snap_desc': 'Ferramentas de desenho que "grudam" na infraestrutura existente, acelerando seu processo de design em 50%.',
+    'landing_feat_bom': 'Inventário e Relatórios',
+    'landing_feat_bom_desc': 'Gere BOM (Lista de Materiais) automaticamente. Saiba exatamente quanto de cabo você precisa.',
+    'landing_feat_import': 'Importação/Exportação',
+    'landing_feat_import_desc': 'Importe arquivos KMZ/KML do Google Earth sem problemas e exporte projetos para equipes de campo.',
+
+    'landing_perf_badge': 'Ultra Performance',
+    'landing_perf_title': 'Feito para Milhões de Elementos',
+    'landing_perf_desc': "Não deixe o lag te atrasar. Nosso motor é otimizado para navegar em redes massivas com zero latência. Lide com implantações em cidades inteiras com milhares de CTOs e POPs sem problemas.",
+    'landing_stat_elements': 'Elementos renderizados',
+    'landing_stat_scroll': 'Rolagem suave',
+    'landing_stat_search': 'Tempo de busca',
+    'landing_stat_uptime': 'Disponibilidade',
+    'landing_graph_engine': 'Motor de Renderização',
+    'landing_graph_active': 'Ativo',
+    'landing_graph_load': 'Carga do Sistema: 5%',
+
+    'landing_sec_title': 'Segurança de Nível Empresarial',
+    'landing_sec_desc': 'Seus dados de rede são seu ativo mais valioso. Nós tratamos com a proteção que merecem.',
+    'landing_sec_1': 'Criptografia Ponta-a-Ponta',
+    'landing_sec_2': 'Backups Diários',
+    'landing_sec_3': 'Controle de Acesso por Cargo',
+    'landing_sec_4': 'Logs de Auditoria',
+    'landing_sec_5': 'SLA de 99.9%',
+
+    'landing_steps_title': 'Comece em 3 Passos Simples',
+    'landing_step_1_title': 'Crie seu Workspace',
+    'landing_step_1_desc': 'Cadastre-se e crie sua primeira área de projeto em segundos.',
+    'landing_step_2_title': 'Desenhe ou Importe',
+    'landing_step_2_desc': 'Desenhe sua rede do zero ou importe arquivos KMZ existentes instantaneamente.',
+    'landing_step_3_title': 'Gerencie e Escale',
+    'landing_step_3_desc': 'Convide seu time e comece a gerenciar as operações.',
+
+    'landing_cta_title': 'Pronto para modernizar seu ISP?',
+    'landing_cta_desc': 'Junte-se a centenas de engenheiros de rede que confiam no FTTH Master para suas operações diárias.',
+    'landing_cta_btn': 'Começar Grátis',
+
+    'landing_footer_desc': 'O padrão profissional para design e gestão de redes FTTH.',
+    'landing_footer_product': 'Produto',
+    'landing_footer_company': 'Empresa',
+    'landing_footer_legal': 'Legal',
+    'landing_footer_rights': '© 2024 FTTH Master. Todos os direitos reservados.',
+
+    // Pricing
+    'pricing_title': 'Planos Simples e Transparentes',
+    'pricing_desc': 'Escolha o plano ideal para o estágio de crescimento do seu provedor.',
+    'plan_free': 'Grátis',
+    'plan_basic': 'Básico',
+    'plan_inter': 'Intermediário',
+    'plan_unlimited': 'Ilimitado',
+    'price_free': 'Grátis',
+    'month': '/mês',
+    'feature_projects': '{count} Projetos',
+    'feature_users': '{count} Usuários',
+    'feature_ctos': '{count} CTOs',
+    'feature_pops': '{count} POPs',
+    'feature_unlimited': 'Ilimitado',
+    'plan_cta': 'Começar Agora',
+    'most_popular': 'Mais Popular',
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
@@ -288,6 +518,18 @@ const translations = {
     'deployment_progress': 'Progresso de Implantação',
     'search_placeholder': 'Buscar CTO ou POP...',
     'search_no_results': 'Nenhum resultado',
+
+    // New Sidebar Keys
+    'sidebar_operation': 'Operação',
+    'sidebar_select': 'Selecionar',
+    'sidebar_move': 'Mover',
+    'sidebar_design': 'Design de Rede',
+    'sidebar_add_cto': 'Nova CTO',
+    'sidebar_add_pop': 'Novo POP',
+    'sidebar_draw_cable': 'Desenhar Cabo',
+    'sidebar_draw_cable_desc': 'Clique p/ múltiplos pontos',
+    'sidebar_connect_cable': 'Conectar/Editar Cabos',
+    'sidebar_connect_cable_desc': 'Ajustar conexões e geometria',
 
     // Toasts
     'toast_imported': 'Importado {ctos} CTOs e {cables} Cabos',
@@ -343,7 +585,9 @@ const translations = {
     'unsaved_changes_msg': 'Você tem alterações não salvas. Deseja salvá-las antes de sair?',
     'discard': 'Descartar',
     'save_and_close': 'Salvar e Sair',
+    'save_or_done': 'Salvar / Concluir',
     'clear_connections_confirm': 'Tem certeza que deseja limpar TODAS as conexões? Isso não pode ser desfeito.',
+    'changes_saved': 'Alterações salvas com sucesso',
     'clear_all': 'Limpar Tudo',
     'confirm_delete_equip_msg': 'Tem certeza que deseja deletar {name}?',
     'delete_warning_msg': 'Aviso: Todas as conexões associadas a este {type} serão removidas permanentemente.',
@@ -382,6 +626,9 @@ const translations = {
     'disabled': 'Desativado',
     'save_changes': 'Salvar Alterações',
     'confirm_delete_cable_msg': 'Confirmar deleção de {name}? Isso removerá as fusões associadas.',
+    'color_standard': 'Padrão de Cores',
+    'standard_abnt': 'ABNT (Brasil)',
+    'standard_eia': 'EIA-598-A (Intl)',
 
     // Project Manager / Create Modal
     'project_manager': 'Gerenciador de Projetos',
@@ -406,7 +653,7 @@ const translations = {
     'snap_distance_help': 'Distância máxima para um cabo "grudar" automaticamente em uma caixa (CTO/POP) ao arrastar.',
 
     // CTO Internal Editor
-    'splicing_title': 'Fusão: {name}',
+    'splicing_title': '{name}',
     'dio_splicing_title': 'Fusão DIO: {name}',
     'splicing_help': 'Role para Zoom. Arraste fundo para mover. Duplo-clique remove pontos.',
     'add_splitter': 'Splitter',
@@ -452,6 +699,32 @@ const translations = {
     'dio_ports': 'Portas',
     'rack_view': 'Visão do Rack',
 
+    // Users Module
+    'users': 'Usuários',
+    'users_manage_desc': 'Gerencie membros da equipe e seus cargos.',
+    'add_user': 'Adicionar Usuário',
+    'username': 'Usuário',
+    'role': 'Cargo',
+    'created_at': 'Criado em',
+    'actions': 'Ações',
+    'no_users_found': 'Nenhum usuário encontrado.',
+    'role_member': 'Membro',
+    'role_admin': 'Admin',
+    'role_owner': 'Dono',
+    'password': 'Senha',
+    'edit_user': 'Editar Usuário',
+    'update': 'Atualizar',
+    'confirm_delete_user_msg': 'Tem certeza que deseja deletar o usuário {username}?',
+    'create': 'Criar',
+
+    // User Management Errors
+    'error_username_taken': 'Este nome de usuário já está em uso.',
+    'error_password_length': 'A senha deve ter pelo menos 6 caracteres.',
+    'error_cannot_delete_self': 'Você não pode deletar sua própria conta.',
+    'error_generic': 'Ocorreu um erro inesperado.',
+    'error_create_user': 'Falha ao criar usuário.',
+    'error_delete_user': 'Falha ao deletar usuário.',
+
     // Map Layers
     'map_street': 'Map rua',
     'map_satellite': 'Satélite',
@@ -465,7 +738,17 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('pt'); // Default to PT based on request
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ftth_language');
+      return (saved as Language) || 'pt';
+    }
+    return 'pt';
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('ftth_language', language);
+  }, [language]);
 
   const t = (key: string, params?: Record<string, string | number>) => {
     let text = translations[language][key as keyof typeof translations['en']] || key;
