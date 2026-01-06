@@ -6,6 +6,7 @@ import projectRoutes from './routes/projectRoutes';
 import adminRoutes from './routes/adminRoutes';
 import saasRoutes from './routes/saasRoutes';
 import auditRoutes from './routes/auditRoutes';
+import catalogRoutes from './routes/catalogRoutes';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/catalog', catalogRoutes);
 
 app.get('/', (req, res) => {
     res.send('FTTH Master Planner API is active');

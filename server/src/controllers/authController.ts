@@ -140,3 +140,58 @@ export const login = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+// Get Current User Profile (Refresh State)
+export const getMe = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) return res.sendStatus(401);
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                company: {
+                    include: { plan: true }
+                }
+            }
+        });
+
+        if (!user) return res.sendStatus(404);
+
+        // --- REPEAT EXPIRATION CHECK LOGIC ---
+        if (user.company) {
+            if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
+                if (user.company.plan?.name !== 'Plano Grátis') {
+                    console.log(`[getMe] Subscription/Trial for ${user.company.name} expired. Downgrading to Free.`);
+                    const freePlan = await getPlanByName('Plano Grátis');
+                    if (freePlan) {
+                        await prisma.company.update({
+                            where: { id: user.company.id },
+                            data: {
+                                planId: freePlan.id,
+                                subscriptionExpiresAt: null
+                            }
+                        });
+                        user.company.plan = freePlan;
+                        user.company.planId = freePlan.id;
+                        user.company.subscriptionExpiresAt = null;
+                    }
+                }
+            }
+        }
+        // -------------------------------------
+
+        res.json({
+            user: {
+                id: user.id,
+                username: user.username,
+                companyId: user.companyId,
+                role: user.role,
+                company: user.company
+            }
+        });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+};

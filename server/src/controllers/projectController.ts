@@ -118,7 +118,11 @@ export const getProject = async (req: Request, res: Response) => {
                 connections: c.connections || [],
                 inputCableIds: c.inputCableIds,
                 layout: c.layout || {},
-                clientCount: c.clientCount
+                clientCount: c.clientCount,
+                catalogId: c.catalogId,
+                type: c.type,
+                color: c.color,
+                reserveLoopLength: c.reserveLoopLength
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id,
@@ -143,7 +147,8 @@ export const getProject = async (req: Request, res: Response) => {
                 color: c.color,
                 coordinates: c.coordinates, // Json
                 fromNodeId: c.fromNodeId,
-                toNodeId: c.toNodeId
+                toNodeId: c.toNodeId,
+                catalogId: c.catalogId
             }))
         };
 
@@ -259,6 +264,16 @@ export const syncProject = async (req: Request, res: Response) => {
     try {
         console.log(`[Sync] Project ${id} | User ${user.username} | Company ${user.companyId}`);
 
+        if (network.ctos && network.ctos.length > 0) {
+            const sampleCTO = network.ctos[0];
+            console.log(`[Sync Debug] Sample CTO: ${sampleCTO.name} (${sampleCTO.id})`);
+            console.log(`[Sync Debug] Fusions: ${sampleCTO.fusions?.length}, Layout Keys: ${Object.keys(sampleCTO.layout || {}).length}`);
+            if (sampleCTO.fusions?.length > 0) {
+                console.log(`[Sync Debug] First Fusion ID: ${sampleCTO.fusions[0].id}`);
+                console.log(`[Sync Debug] Layout Entry:`, sampleCTO.layout?.[sampleCTO.fusions[0].id]);
+            }
+        }
+
         const CHUNK_SIZE = 1000;
 
         // Check limits before transaction
@@ -293,17 +308,21 @@ export const syncProject = async (req: Request, res: Response) => {
             //                = Global + (Payload - CurrentProject)
             //                = Global + Delta.
 
+            const maxCTOs = Number(limits.maxCTOs || 0);
+            const maxPOPs = Number(limits.maxPOPs || 0);
+
             console.log(`[Sync Check] Comp: ${company.name}, Plan: ${company.plan?.name}`);
             console.log(`[Sync Check] Global CTOs: ${totalGlobalCTOs}, Proj: ${currentProjectCTOs}, Pay: ${payloadCTOCount}, Delta: ${deltaCTO}`);
+            console.log(`[Sync Check] Limits: MaxCTOs ${maxCTOs}, MaxPOPs ${maxPOPs}`);
 
-            if (deltaCTO > 0 && limits.maxCTOs && (totalGlobalCTOs + deltaCTO) > limits.maxCTOs) {
-                console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${limits.maxCTOs}`);
-                return res.status(403).json({ error: `CTO Limit Exceeded. Max: ${limits.maxCTOs}. You have: ${totalGlobalCTOs}. Attempting to add: ${deltaCTO}.` });
+            if (deltaCTO > 0 && maxCTOs > 0 && (totalGlobalCTOs + deltaCTO) > maxCTOs) {
+                console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${maxCTOs}`);
+                return res.status(403).json({ error: `CTO Limit Exceeded. Max: ${maxCTOs}. You have: ${totalGlobalCTOs}. Attempting to add: ${deltaCTO}.` });
             }
 
-            if (deltaPOP > 0 && limits.maxPOPs && (totalGlobalPOPs + deltaPOP) > limits.maxPOPs) {
-                console.error(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${limits.maxPOPs}`);
-                return res.status(403).json({ error: `POP Limit Exceeded (${limits.maxPOPs})` });
+            if (deltaPOP > 0 && maxPOPs > 0 && (totalGlobalPOPs + deltaPOP) > maxPOPs) {
+                console.error(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${maxPOPs}`);
+                return res.status(403).json({ error: `POP Limit Exceeded (${maxPOPs})` });
             }
         }
 
@@ -458,7 +477,11 @@ export const syncProject = async (req: Request, res: Response) => {
                             connections: c.connections || [],
                             inputCableIds: c.inputCableIds || [],
                             layout: c.layout || {},
-                            clientCount: c.clientCount || 0
+                            clientCount: c.clientCount || 0,
+                            catalogId: c.catalogId,
+                            type: c.type,
+                            color: c.color,
+                            reserveLoopLength: c.reserveLoopLength
                         }))
                     });
                 }
@@ -508,7 +531,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             coordinates: c.coordinates,
                             fromNodeId: c.fromNodeId,
-                            toNodeId: c.toNodeId
+                            toNodeId: c.toNodeId,
+                            catalogId: c.catalogId
                         }))
                     });
                 }

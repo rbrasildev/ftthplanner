@@ -86,9 +86,13 @@ model Cto {
   connections   Json?           @default("[]")
   inputCableIds String[]        @default([]) @map("input_cable_ids")
   layout        Json?           @default("{}")
-  clientCount   Int             @default(0) @map("client_count")
-  companyId     String?         @map("company_id")
-  company       Company?        @relation(fields: [companyId], references: [id])
+  clientCount       Int             @default(0) @map("client_count")
+  catalogId         String?         @map("catalog_id")
+  type              String?         @default("CTO")
+  color             String?
+  reserveLoopLength Float?          @map("reserve_loop_length")
+  companyId         String?         @map("company_id")
+  company           Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
@@ -131,6 +135,7 @@ model Cable {
   coordinates    Json
   fromNodeId     String?  @map("from_node_id")
   toNodeId       String?  @map("to_node_id")
+  catalogId      String?  @map("catalog_id")
   companyId      String?  @map("company_id")
   company        Company? @relation(fields: [companyId], references: [id])
   project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -175,3 +180,57 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+
+model CatalogSplitter {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // PLC, FBT
+  mode        String   // Balanced, Unbalanced
+  inputs      Int      @default(1)
+  outputs     Int
+  attenuation Json?    @default("{}") // Store attenuation details
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("catalog_splitters")
+}
+
+model CatalogCable {
+  id             String   @id @default(uuid())
+  name           String   // Código
+  brand          String?  // Marca
+  model          String?  // Modelo
+  defaultLevel   String?  // Nível Padrão (DISTRIBUICAO, TRONCO, etc)
+  fiberCount     Int      // Número total de fibras
+  looseTubeCount Int      // Número de looses
+  fibersPerTube  Int      // Fibras por loose
+  attenuation    Float?   // Atenuação por Km (dB)
+  fiberProfile   String?  // Perfil de fibra (ABNT)
+  description    String?  // Descrição
+  
+  // Visual Specs
+  deployedSpec   Json?    @default("{\"color\": \"#10b981\", \"width\": 3}") // Cor/Espessura Implantado
+  plannedSpec    Json?    @default("{\"color\": \"#86efac\", \"width\": 3}") // Cor/Espessura Não Implantado
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("catalog_cables")
+}
+
+model CatalogBox {
+  id                String   @id @default(uuid())
+  name              String   // Nome
+  brand             String?  // Marca
+  model             String?  // Modelo
+  type              String   // CTO, CEO
+  reserveLoopLength Float?   // Reserva Técnica (m)
+  color             String?  @default("#64748b") // Visual Color
+  description       String?
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("catalog_boxes")
+}
