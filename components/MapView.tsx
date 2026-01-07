@@ -734,6 +734,8 @@ interface MapViewProps {
     onToggleLabels?: () => void;
 }
 
+const noOp = () => { };
+
 export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
@@ -835,9 +837,26 @@ export const MapView: React.FC<MapViewProps> = ({
     const d3Cables = useMemo(() => visibleCables.filter(c => c.id !== activeCableId), [visibleCables, activeCableId]);
 
 
-    const visibleCTOs = useMemo(() => showCTOs ? ctos : [], [showCTOs, ctos]);
-    const visiblePOPs = useMemo(() => showPOPs ? pops : [], [showPOPs, pops]);
-    const visiblePoles = useMemo(() => showPoles ? poles : [], [showPoles, poles]);
+    const visibleCTOs = useMemo(() => {
+        if (!showCTOs) return [];
+        if (!mapBoundsState) return ctos.slice(0, 100); // Initial load safety
+        const paddedBounds = mapBoundsState.pad(0.5); // 50% buffer for smoother panning
+        return ctos.filter(c => paddedBounds.contains(c.coordinates));
+    }, [showCTOs, ctos, mapBoundsState]);
+
+    const visiblePOPs = useMemo(() => {
+        if (!showPOPs) return [];
+        if (!mapBoundsState) return pops;
+        const paddedBounds = mapBoundsState.pad(0.5);
+        return pops.filter(p => paddedBounds.contains(p.coordinates));
+    }, [showPOPs, pops, mapBoundsState]);
+
+    const visiblePoles = useMemo(() => {
+        if (!showPoles) return [];
+        if (!mapBoundsState) return poles.slice(0, 100);
+        const paddedBounds = mapBoundsState.pad(0.5);
+        return poles.filter(p => paddedBounds.contains(p.coordinates));
+    }, [showPoles, poles, mapBoundsState]);
 
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
@@ -881,7 +900,7 @@ export const MapView: React.FC<MapViewProps> = ({
         }
     }, [mode, onUpdateCableGeometry]);
 
-    const noOp = () => { };
+
 
     return (
         <div className="relative h-full w-full">
@@ -1080,7 +1099,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 {enableClustering ? (
                     <MarkerClusterGroup
                         chunkedLoading
-                        maxClusterRadius={50}
+                        maxClusterRadius={30} // Reduced from 50 to 30 to group less aggressively (items must be closer)
+                        disableClusteringAtZoom={16} // Disable clustering sooner (at zoom 16+) to show individual items
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                     >

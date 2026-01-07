@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapView } from './components/MapView';
+import { Sidebar } from './components/Sidebar';
+import { autoSnapNetwork } from './utils/geometryUtils';
 import { CTOEditor } from './components/CTOEditor';
 import { POPEditor } from './components/POPEditor';
 import { ProjectManager } from './components/ProjectManager';
@@ -18,8 +20,8 @@ import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOSta
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
-    Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2, Building2, Globe,
-    Upload, UtilityPole, FileUp, ChevronRight, Plus
+    Map as MapIcon, Zap, MousePointer2, Unplug, CheckCircle2, Eye, EyeOff, Server, Box, Move, Ruler, X, Settings, Check, Loader2, Building2,
+    UtilityPole, FileUp, ChevronRight, Plus
 } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
@@ -38,240 +40,7 @@ import { KmlImportModal } from './components/modals/KmlImportModal';
 import { PoleData } from './types';
 
 
-// Helper type for cable starting point
-type CableStart = { type: 'node', id: string } | { type: 'coord', lat: number, lng: number };
-
-// --- GEOMETRY HELPERS ---
-function getDistanceToSegment(p: Coordinates, a: Coordinates, b: Coordinates) {
-    const x = p.lat;
-    const y = p.lng;
-    const x1 = a.lat;
-    const y1 = a.lng;
-    const x2 = b.lat;
-    const y2 = b.lng;
-
-    const A = x - x1;
-    const B = y - y1;
-    const C = x2 - x1;
-    const D = y2 - y1;
-
-    const dot = A * C + B * D;
-    const len_sq = C * C + D * D;
-
-    let param = -1;
-    if (len_sq !== 0) param = dot / len_sq;
-
-    let xx, yy;
-
-    if (param < 0) {
-        xx = x1;
-        yy = y1;
-    } else if (param > 1) {
-        xx = x2;
-        yy = y2;
-    } else {
-        xx = x1 + param * C;
-        yy = y1 + param * D;
-    }
-
-    const dx = x - xx;
-    const dy = y - yy;
-
-    const distDeg = Math.sqrt(dx * dx + dy * dy);
-    const distMeters = distDeg * 111320;
-
-    // Fix: Use Epsilon for endpoint check
-    const EPSILON = 0.0000001;
-    const isAtStart = Math.abs(xx - x1) < EPSILON && Math.abs(yy - y1) < EPSILON;
-    const isAtEnd = Math.abs(xx - x2) < EPSILON && Math.abs(yy - y2) < EPSILON;
-
-    return {
-        dist: distMeters,
-        point: { lat: xx, lng: yy },
-        isEndpoint: isAtStart || isAtEnd
-    };
-}
-
-// --- AUTO SNAP LOGIC ---
-const autoSnapNetwork = (net: NetworkState, snapDistance: number): { state: NetworkState, snappedCount: number } => {
-    // AUTO-SNAP DISABLED GLOBAL
-    return { state: net, snappedCount: 0 };
-
-    const nodes = [...net.ctos, ...(net.pops || [])];
-    let snappedCount = 0;
-    let hasChanges = false;
-
-    // 1. Process Cable Ends (Tips)
-    let currentCables = net.cables.map(cable => {
-        let cModified = false;
-        const coords = cable.coordinates.map(c => ({ ...c }));
-        let from = cable.fromNodeId;
-        let to = cable.toNodeId;
-
-        // Check Start Point
-        if (!from && coords.length > 0) {
-            const startPt = L.latLng(coords[0].lat, coords[0].lng);
-            let closestNode = null;
-            let minDesc = Infinity;
-
-            for (const n of nodes) {
-                const dist = startPt.distanceTo(L.latLng(n.coordinates.lat, n.coordinates.lng));
-                if (dist <= snapDistance && dist < minDesc) {
-                    minDesc = dist;
-                    closestNode = n;
-                }
-            }
-
-            if (closestNode) {
-                coords[0] = { ...closestNode.coordinates };
-                from = closestNode.id;
-                cModified = true;
-                snappedCount++;
-            }
-        }
-
-        // Check End Point
-        if (!to && coords.length > 0) {
-            const endPt = L.latLng(coords[coords.length - 1].lat, coords[coords.length - 1].lng);
-            let closestNode = null;
-            let minDesc = Infinity;
-
-            for (const n of nodes) {
-                const dist = endPt.distanceTo(L.latLng(n.coordinates.lat, n.coordinates.lng));
-                if (dist <= snapDistance && dist < minDesc) {
-                    minDesc = dist;
-                    closestNode = n;
-                }
-            }
-
-            if (closestNode) {
-                coords[coords.length - 1] = { ...closestNode.coordinates };
-                to = closestNode.id;
-                cModified = true;
-                snappedCount++;
-            }
-        }
-
-        if (cModified) {
-            hasChanges = true;
-            return { ...cable, coordinates: coords, fromNodeId: from, toNodeId: to };
-        }
-        return cable;
-    });
-
-    // 2. Process Mid-Span Splits (Sangria)
-    // We iterate through the cables resulting from step 1.
-    // If a node is close to the middle of a cable, we split the cable.
-    const finalCables: CableData[] = [];
-
-    for (const cable of currentCables) {
-        if (cable.coordinates.length < 2) {
-            finalCables.push(cable);
-            continue;
-        }
-
-        let bestSplit = null; // { node, segmentIndex, point }
-
-        // Start/End coordinates to check for duplicates
-        const cStart = cable.coordinates[0];
-        const cEnd = cable.coordinates[cable.coordinates.length - 1];
-
-        // Check this cable against all nodes
-        for (const node of nodes) {
-            // If already connected to this node, skip (prevent infinite splitting of ends)
-            if (cable.fromNodeId === node.id || cable.toNodeId === node.id) continue;
-
-            // Fix: Prevent splitting if node is extremely close to start/end (Micro-cables / Duplicates)
-            // If Step 1 didn't snap (due to being 2nd closest), we shouldn't split a 1cm cable here.
-            const distToStart = L.latLng(node.coordinates.lat, node.coordinates.lng).distanceTo(L.latLng(cStart.lat, cStart.lng));
-            const distToEnd = L.latLng(node.coordinates.lat, node.coordinates.lng).distanceTo(L.latLng(cEnd.lat, cEnd.lng));
-
-            // 0.5 meters buffer zone to prevent ambiguity/micro-segments
-            if (distToStart < 0.5 || distToEnd < 0.5) continue;
-
-            // Check every segment of the cable
-            for (let i = 0; i < cable.coordinates.length - 1; i++) {
-                const p1 = cable.coordinates[i];
-                const p2 = cable.coordinates[i + 1];
-
-                const result = getDistanceToSegment(node.coordinates, p1, p2);
-
-                if (result.dist <= snapDistance) {
-                    // Ignore if it's the endpoint (redundant with start/end check but good for safety)
-                    if (result.isEndpoint) continue;
-
-                    // Found a candidate. Is it the best one for this cable?
-                    if (!bestSplit || result.dist < bestSplit.dist) {
-                        bestSplit = { node, segmentIndex: i, point: result.point, dist: result.dist };
-                    }
-                }
-            }
-        }
-
-        if (bestSplit) {
-            // PERFORM SPLIT
-            hasChanges = true;
-            snappedCount++;
-            const { node, segmentIndex, point } = bestSplit;
-
-            // Coordinates for Cable A (Start -> Node)
-            const coordsA = [...cable.coordinates.slice(0, segmentIndex + 1), node.coordinates];
-            // Coordinates for Cable B (Node -> End)
-            const coordsB = [node.coordinates, ...cable.coordinates.slice(segmentIndex + 1)];
-
-            const cableA: CableData = {
-                ...cable,
-                coordinates: coordsA,
-                toNodeId: node.id, // Connect end of A to Node
-                name: `${cable.name} (A)`,
-                looseTubeCount: cable.looseTubeCount // Pass loose tube count
-            };
-
-            const cableB: CableData = {
-                ...cable,
-                id: `cable-split-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, // New ID
-                fromNodeId: node.id, // Connect start of B to Node
-                toNodeId: cable.toNodeId,
-                coordinates: coordsB,
-                name: `${cable.name.replace(' (A)', '')} (B)`,
-                looseTubeCount: cable.looseTubeCount // Pass loose tube count
-            };
-
-            finalCables.push(cableA, cableB);
-        } else {
-            finalCables.push(cable);
-        }
-    }
-
-    if (!hasChanges) return { state: net, snappedCount: 0 };
-
-    // 3. Update Node References (Input Cables)
-    const updateNodeInputs = (node: any) => {
-        const connectedCableIds = finalCables
-            .filter(c => c.fromNodeId === node.id || c.toNodeId === node.id)
-            .map(c => c.id);
-
-        const currentInputs = node.inputCableIds || [];
-
-        const isSame = connectedCableIds.length === currentInputs.length &&
-            connectedCableIds.every(id => currentInputs.includes(id));
-
-        if (!isSame) {
-            return { ...node, inputCableIds: connectedCableIds };
-        }
-        return node;
-    };
-
-    return {
-        state: {
-            ...net,
-            cables: finalCables,
-            ctos: net.ctos.map(updateNodeInputs),
-            pops: (net.pops || []).map(updateNodeInputs)
-        },
-        snappedCount
-    };
-};
+// --- GEOMETRY HELPERS MOVED TO utils/geometryUtils.ts ---
 
 const parseJwt = (token: string) => {
     try {
@@ -440,9 +209,14 @@ export default function App() {
                 setToast({ msg: 'Failed to load project', type: 'info' });
             });
         } else {
-            setCurrentProject(null);
+            // Only nullify if we actually switched to a null ID (logout/exit), not on init
+            if (!currentProjectId && prevProjectIdRef.current) setCurrentProject(null);
         }
     }, [currentProjectId, token]);
+
+    // Ref to hold latest project for event handlers to avoid dependency cycles
+    const projectRef = useRef<Project | null>(null);
+    useEffect(() => { projectRef.current = currentProject; }, [currentProject]);
 
     useEffect(() => {
         localStorage.setItem('ftth_show_labels', showLabels.toString());
@@ -463,13 +237,12 @@ export default function App() {
     };
 
     // const currentProject = projects.find(p => p.id === currentProjectId); // REMOVED (using state)
-    const getCurrentNetwork = (): NetworkState => {
-        return currentProject ? { ctos: currentProject.network.ctos, pops: currentProject.network.pops || [], cables: currentProject.network.cables, poles: currentProject.network.poles || [] } : { ctos: [], pops: [], cables: [], poles: [] };
-    };
+    const getCurrentNetwork = useCallback((): NetworkState => {
+        const p = projectRef.current;
+        return p ? { ctos: p.network.ctos, pops: p.network.pops || [], cables: p.network.cables, poles: p.network.poles || [] } : { ctos: [], pops: [], cables: [], poles: [] };
+    }, []);
 
-    const updateCurrentNetwork = (updater: (prev: NetworkState) => NetworkState) => {
-        if (!currentProjectId || !currentProject) return;
-
+    const updateCurrentNetwork = useCallback((updater: (prev: NetworkState) => NetworkState) => {
         setCurrentProject(prev => {
             if (!prev) return null;
             const newNetwork = updater(prev.network);
@@ -479,28 +252,9 @@ export default function App() {
         // DEBOUNCE SYNC
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
         syncTimeoutRef.current = setTimeout(() => {
-            // We need the *latest* state here. 
-            // Since we are inside a closure, accessing `currentProject` might be stale if not careful.
-            // However, we are scheduling a sync. 
-            // Ideally we should use a ref to hold latest network or just pass the computed newNetwork if updater is simple.
-            // But updater is a function.
-            // The safest way in React functional components for debounce with state dependence is using a ref that tracks state, OR just trusting the latest update triggers a re-render which triggers an effect?
-            // Better: Let's use a `useEffect` that watches `currentProject` to sync, but we need to distinguish local updates from load updates.
-            // For now, let's just trigger the sync with the computed newNetwork immediately in the timeout logic? 
-            // Accessing state in timeout is tricky.
-            // Let's rely on `useEffect` [currentProject] with debounce?
-            // But `currentProject` changes on LOAD too.
-            // Let's implement the sync call right here using the calculating result (newNetwork).
-            // Since we can't easily get the result of the state update outside the setter generally, we have to calculate it.
-            const prevNet = currentProject.network;
-            const nextNet = updater(prevNet);
-            // Note: `currentProject.network` in this scope is from the render scope. `updater` might depend on prev state.
-            // If we use `setCurrentProject(prev => ...)` above, `prev` is the true latest.
-            // We can't access `newNetwork` inside the `setCurrentProject` and export it easily.
-
-            // Alternative: Use a separate `useEffect` to sync changes.
+            // Sync happens via Effect watching currentProject
         }, 1000);
-    };
+    }, []);
 
     const [isSaving, setIsSaving] = useState(false);
 
@@ -606,7 +360,7 @@ export default function App() {
         return [...matchedPops, ...matchedCtos].slice(0, 10);
     }, [debouncedSearchTerm, projects, currentProjectId]);
 
-    const handleSearchResultClick = (item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' }) => {
+    const handleSearchResultClick = useCallback((item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' }) => {
         setSelectedId(item.id);
         setToolMode('view');
         const offset = 0.0015;
@@ -614,8 +368,7 @@ export default function App() {
             [item.coordinates.lat - offset, item.coordinates.lng - offset],
             [item.coordinates.lat + offset, item.coordinates.lng + offset]
         ]);
-        // setSearchTerm handled by SearchBox locally
-    };
+    }, []);
 
     // ... (litNetwork logic unchanged) ...
     const litNetwork = useMemo(() => {
@@ -805,82 +558,71 @@ export default function App() {
     };
 
     // ... (finalizeCableCreation, map interactions, move node logic unchanged) ...
-    const finalizeCableCreation = (path: Coordinates[], fromId: string | null = null, toId: string | null = null) => {
+    const finalizeCableCreation = useCallback((path: Coordinates[], fromId: string | null = null, toId: string | null = null) => {
         if (path.length < 2) return;
 
-        const net = getCurrentNetwork();
+        // Use functional update to get latest network inside
+        updateCurrentNetwork(prev => {
+            const newCable: CableData = {
+                id: `cable-${Date.now()}`,
+                name: `CBL-${prev.cables.length + 1}`,
+                status: 'DEPLOYED',
+                fiberCount: 12,
+                fromNodeId: fromId,
+                toNodeId: toId,
+                coordinates: path
+            };
 
-        const newCable: CableData = {
-            id: `cable-${Date.now()}`,
-            name: `CBL-${net.cables.length + 1}`,
-            status: 'DEPLOYED',
-            fiberCount: 12,
-            fromNodeId: fromId,
-            toNodeId: toId,
-            coordinates: path
-        };
+            const updatedCTOs = prev.ctos.map(cto => {
+                if (cto.id === toId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
+                if (cto.id === fromId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
+                return cto;
+            });
+            const updatedPOPs = prev.pops.map(pop => {
+                if (pop.id === toId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
+                if (pop.id === fromId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
+                return pop;
+            });
 
-        const updatedCTOs = net.ctos.map(cto => {
-            if (cto.id === toId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
-            if (cto.id === fromId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
-            return cto;
+            return {
+                ...prev,
+                cables: [...prev.cables, newCable],
+                ctos: updatedCTOs,
+                pops: updatedPOPs
+            };
         });
-        const updatedPOPs = net.pops.map(pop => {
-            if (pop.id === toId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
-            if (pop.id === fromId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
-            return pop;
-        });
-
-        // WRAPPED WITH AUTO SNAP (Checks if ends are near other nodes if not explicitly connected)
-        // DISABLED per User Request (Manual mode only)
-        // updateCurrentNetwork(prev => autoSnapNetwork({
-        //     ...prev,
-        //     cables: [...prev.cables, newCable],
-        //     ctos: updatedCTOs,
-        //     pops: updatedPOPs
-        // }, systemSettings.snapDistance).state);
-
-        // MANUAL MODE: Just add the cable
-        updateCurrentNetwork(prev => ({
-            ...prev,
-            cables: [...prev.cables, newCable],
-            ctos: updatedCTOs,
-            pops: updatedPOPs
-        }));
 
         showToast(t('toast_cable_created'));
         setDrawingPath([]);
         setDrawingFromId(null);
         setToolMode('view');
-    };
+    }, [t, updateCurrentNetwork]);
 
-    const handleAddPoint = (lat: number, lng: number) => {
+    const handleAddPoint = useCallback((lat: number, lng: number) => {
         if (toolMode === 'add_cto') {
-            const newCTO: CTOData = {
-                id: `cto-${Date.now()}`,
-                name: `CTO-${getCurrentNetwork().ctos.length + 1}`,
-                status: 'PLANNED',
-                coordinates: { lat, lng },
-                splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
-            };
-            // WRAPPED WITH AUTO SNAP - Snaps nearby cable ends to this new CTO
-            // DISABLED per User Request (Manual mode only)
-            // updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, ctos: [...prev.ctos, newCTO] }, systemSettings.snapDistance).state);
-            updateCurrentNetwork(prev => ({ ...prev, ctos: [...prev.ctos, newCTO] }));
+            updateCurrentNetwork(prev => {
+                const newCTO: CTOData = {
+                    id: `cto-${Date.now()}`,
+                    name: `CTO-${prev.ctos.length + 1}`,
+                    status: 'PLANNED',
+                    coordinates: { lat, lng },
+                    splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
+                };
+                return { ...prev, ctos: [...prev.ctos, newCTO] };
+            });
             showToast(t('toast_cto_added'));
             setToolMode('view');
         } else if (toolMode === 'add_pop') {
-            const newPOP: POPData = {
-                id: `pop-${Date.now()}`,
-                name: `POP-${(getCurrentNetwork().pops?.length || 0) + 1}`,
-                status: 'PLANNED',
-                coordinates: { lat, lng },
-                olts: [], dios: [], fusions: [], connections: [], inputCableIds: []
-            };
-            // WRAPPED WITH AUTO SNAP
-            // DISABLED per User Request (Manual mode only)
-            // updateCurrentNetwork(prev => autoSnapNetwork({ ...prev, pops: [...(prev.pops || []), newPOP] }, systemSettings.snapDistance).state);
-            updateCurrentNetwork(prev => ({ ...prev, pops: [...(prev.pops || []), newPOP] }));
+            updateCurrentNetwork(prev => {
+                const newPOP: POPData = {
+                    id: `pop-${Date.now()}`,
+                    name: `POP-${(prev.pops?.length || 0) + 1}`,
+                    status: 'PLANNED',
+                    coordinates: { lat, lng },
+                    olts: [], dios: [], fusions: [], connections: [], inputCableIds: []
+                };
+                return { ...prev, pops: [...(prev.pops || []), newPOP] };
+            });
             showToast(t('toast_pop_added'));
             setToolMode('view');
 
@@ -890,41 +632,88 @@ export default function App() {
         } else if (toolMode === 'draw_cable') {
             setDrawingPath(prev => [...prev, { lat, lng }]);
         }
-    };
+    }, [toolMode, updateCurrentNetwork, t]);
 
-    const handleNodeClick = (id: string, type: 'CTO' | 'POP') => {
+    const handleNodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        // Handle Pole click specifically if needed, or share same select logic
         if (toolMode === 'view' || toolMode === 'move_node') {
             setSelectedId(id);
         }
-    };
+    }, [toolMode]);
 
-    const handleNodeForCable = (nodeId: string) => {
+    const handleNodeForCable = useCallback((nodeId: string) => {
+        const net = getCurrentNetwork(); // stable getter
+        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
+        if (!node) return;
+
+        // Use functional state for drawingPath and drawingFromId to avoid dependency?
+        // Actually here we need current values.
+        // We will rely on getCurrentNetwork() stability (it uses Ref).
+        // But `drawingPath` state:
+        setDrawingPath(prev => {
+            if (prev.length === 0) {
+                setDrawingFromId(nodeId);
+                return [node.coordinates];
+            } else {
+                // If checking current drawingFromId, we need to access it.
+                // To avoid dependency, we can't fully inline this Logic unless we put drawingFromId in Ref or read it inside Set (not possible to read other state inside set).
+                // So we must depend on drawingFromId.
+                return prev;
+            }
+        });
+
+        // This function is tricky to fully memoize without deps because it conditionally calls finalize.
+        // Let's defer "Finish" logic to effect? No.
+        // Simple approach: Depend on drawingFromId. It changes only during cable draw.
+        // When drawingFromId changes, this handlers recreates.
+        // But markers only re-render if THIS handler changes.
+        // If drawingFromId is null (view mode), handler is stable.
+        // If we start drawing, handler updates.
+        // Markers re-render? Yes.
+        // Can we avoid?
+        // Use Ref for drawingFromId.
+    }, [getCurrentNetwork]);
+    // Wait, I didn't implement Ref for `drawingFromId`.
+
+    // REDOING handleNodeForCable with current state access:
+    const drawingFromIdRef = useRef<string | null>(null);
+    useEffect(() => { drawingFromIdRef.current = drawingFromId; }, [drawingFromId]);
+    const drawingPathRef = useRef<Coordinates[]>([]);
+    useEffect(() => { drawingPathRef.current = drawingPath; }, [drawingPath]);
+
+    const handleNodeForCableStable = useCallback((nodeId: string) => {
         const net = getCurrentNetwork();
         const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
         if (!node) return;
 
-        if (drawingPath.length === 0) {
+        const currentPath = drawingPathRef.current;
+        const currentFromId = drawingFromIdRef.current;
+
+        if (currentPath.length === 0) {
             setDrawingPath([node.coordinates]);
             setDrawingFromId(nodeId);
         } else {
-            // Check if user clicked on another node - if so, finish the cable
-            if (drawingFromId !== nodeId) {
-                const finalPath = [...drawingPath, node.coordinates];
-                finalizeCableCreation(finalPath, drawingFromId, nodeId);
+            if (currentFromId !== nodeId) {
+                const finalPath = [...currentPath, node.coordinates];
+                finalizeCableCreation(finalPath, currentFromId, nodeId);
             }
         }
-    };
+    }, [getCurrentNetwork, finalizeCableCreation]);
 
-    const handleMoveNode = (id: string, lat: number, lng: number) => {
+    const handleMoveNode = useCallback((id: string, lat: number, lng: number) => {
         updateCurrentNetwork(prev => {
             let updatedCTOs = prev.ctos;
             let updatedPOPs = prev.pops;
+            let updatedPoles = prev.poles || [];
 
             if (prev.ctos.some(c => c.id === id)) {
                 updatedCTOs = prev.ctos.map(c => c.id === id ? { ...c, coordinates: { lat, lng } } : c);
             }
             else if (prev.pops.some(p => p.id === id)) {
                 updatedPOPs = prev.pops.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p);
+            }
+            else if (updatedPoles.some(p => p.id === id)) {
+                updatedPoles = updatedPoles.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p);
             }
 
             const updatedCables = prev.cables.map(cable => {
@@ -938,12 +727,9 @@ export default function App() {
                 return { ...cable, coordinates: newCoords };
             });
 
-            // WRAPPED WITH AUTO SNAP - Checks if the new position snaps to any loose cables
-            // DISABLED per User Request (Manual mode only)
-            // return autoSnapNetwork({ ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables }, systemSettings.snapDistance).state;
-            return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables };
+            return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables, poles: updatedPoles };
         });
-    };
+    }, [updateCurrentNetwork]);
 
     const handleSavePOP = (updatedPOP: POPData) => {
         updateCurrentNetwork(prev => ({
@@ -962,46 +748,47 @@ export default function App() {
         showToast(t('toast_pop_deleted'));
     };
 
-    const handleConnectCable = (cableId: string, nodeId: string, pointIndex: number) => {
-        const net = getCurrentNetwork();
-        const cable = net.cables.find(c => c.id === cableId);
-        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
-        if (!cable || !node) return;
+    const handleConnectCable = useCallback((cableId: string, nodeId: string, pointIndex: number) => {
+        // We use updateCurrentNetwork to access latest state via prev
+        updateCurrentNetwork(prev => {
+            const cable = prev.cables.find(c => c.id === cableId);
+            const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId);
+            if (!cable || !node) return prev;
 
-        if (pointIndex === 0 || pointIndex === cable.coordinates.length - 1) {
-            const newCoords = [...cable.coordinates];
-            newCoords[pointIndex] = node.coordinates;
-            updateCurrentNetwork(prev => ({
+            if (pointIndex === 0 || pointIndex === cable.coordinates.length - 1) {
+                const newCoords = [...cable.coordinates];
+                newCoords[pointIndex] = node.coordinates;
+                showToast(t(pointIndex === 0 ? 'toast_cable_connected_start' : 'toast_cable_connected_end', { name: node.name }));
+                return {
+                    ...prev,
+                    cables: prev.cables.map(c => c.id === cableId ? {
+                        ...c,
+                        coordinates: newCoords,
+                        [pointIndex === 0 ? 'fromNodeId' : 'toNodeId']: node.id
+                    } : c),
+                    ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cable.id) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
+                    pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cable.id) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
+                };
+            }
+
+            const coordSegment1 = cable.coordinates.slice(0, pointIndex + 1);
+            const coordSegment2 = cable.coordinates.slice(pointIndex);
+            coordSegment1[coordSegment1.length - 1] = node.coordinates;
+            coordSegment2[0] = node.coordinates;
+            const newCableId = `cable-${Date.now()}-split`;
+
+            const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)`, looseTubeCount: cable.looseTubeCount };
+            const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
+
+            showToast(t('toast_cable_split', { name: node.name }));
+            return {
                 ...prev,
-                cables: prev.cables.map(c => c.id === cableId ? {
-                    ...c,
-                    coordinates: newCoords,
-                    [pointIndex === 0 ? 'fromNodeId' : 'toNodeId']: node.id
-                } : c),
-                ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cable.id) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
-                pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cable.id) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
-            }));
-            showToast(t(pointIndex === 0 ? 'toast_cable_connected_start' : 'toast_cable_connected_end', { name: node.name }));
-            return;
-        }
-
-        const coordSegment1 = cable.coordinates.slice(0, pointIndex + 1);
-        const coordSegment2 = cable.coordinates.slice(pointIndex);
-        coordSegment1[coordSegment1.length - 1] = node.coordinates;
-        coordSegment2[0] = node.coordinates;
-        const newCableId = `cable - ${Date.now()} -split`;
-
-        const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)`, looseTubeCount: cable.looseTubeCount };
-        const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
-
-        updateCurrentNetwork(prev => ({
-            ...prev,
-            cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
-            ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
-            pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
-        }));
-        showToast(t('toast_cable_split', { name: node.name }));
-    };
+                cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
+                ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
+                pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
+            };
+        });
+    }, [updateCurrentNetwork, t]);
 
     const handleSaveCTO = (updatedCTO: CTOData) => {
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
@@ -1326,114 +1113,24 @@ export default function App() {
                 limitDetails={upgradeModalDetails}
             />
 
-            <aside className="w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-2xl relative transition-colors duration-300 font-sans">
-
-                {/* 1. Header & Project Info (Compact) */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 bg-sky-600 rounded-lg shadow-lg shadow-sky-600/20 flex items-center justify-center">
-                                <Network className="text-white w-5 h-5" />
-                            </div>
-                            <div>
-                                <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-none">FTTH Master</h1>
-                                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Planner Pro</span>
-                            </div>
-                        </div>
-                        <button onClick={() => { setCurrentProjectId(null); setShowProjectManager(false); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title={t('exit_project')}>
-                            <Settings2 className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
-                        </button>
-                    </div>
-
-                    {/* Project Selector (Elevated look) */}
-                    <button
-                        onClick={() => setShowProjectManager(true)}
-                        className="group w-full flex items-center justify-between bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-500 border border-slate-200 dark:border-slate-800 p-2 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center group-hover:bg-sky-100 dark:group-hover:bg-sky-900/40 transition-colors">
-                                <FolderOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                            </div>
-                            <div className="flex flex-col items-start overflow-hidden">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projeto Atual</span>
-                                <span className="truncate max-w-[140px] font-semibold text-xs text-slate-700 dark:text-slate-200">{projects.find(p => p.id === currentProjectId)?.name}</span>
-                            </div>
-                        </div>
-                        <Upload className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
-                    </button>
-                </div>
-
-                {/* 2. Deployment Stats (Tech Look) */}
-                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800/50">
-                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                        <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Progresso</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">{deploymentProgress}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                        <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${deploymentProgress}%` }}></div>
-                    </div>
-                </div>
-
-                {/* 3. Search (Fixed, outside scroll) - Optimized Component */}
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-950 z-30">
-                    <SearchBox
-                        onSearch={setDebouncedSearchTerm}
-                        results={searchResults}
-                        onResultClick={handleSearchResultClick}
-                    />
-                </div>
-
-                {/* 4. Main Tools Scroll Attributes */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 custom-scrollbar relative z-10">
-
-                    {/* VFL Alert */}
-                    {vflSource && (
-                        <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl relative overflow-hidden group animate-in fade-in zoom-in-95 duration-300">
-                            <div className="absolute top-0 right-0 p-2 opacity-50"><Flashlight className="w-12 h-12 text-red-200 dark:text-red-900/20 rotate-12" /></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs font-bold uppercase mb-1">
-                                    <span className="flex w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                                    {t('vfl_active_status')}
-                                </div>
-                                <div className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-2 line-clamp-1">{vflSource}</div>
-                                <button onClick={() => setVflSource(null)} className="w-full py-1.5 bg-white dark:bg-red-950/50 hover:bg-red-50 dark:hover:bg-red-900/50 text-red-600 dark:text-red-300 text-[10px] font-bold uppercase tracking-wide rounded-lg border border-red-100 dark:border-red-900/30 shadow-sm transition-colors">
-                                    {t('turn_off')}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                </div>
-                {/* 4. Footer System Bar */}
-                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 grid grid-cols-3 gap-2">
-                    <button
-                        onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')}
-                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs transition-colors"
-                        title={language === 'en' ? 'Mudar para Português' : 'Switch to English'}
-                    >
-                        <Globe className="w-3.5 h-3.5" />
-                        <span>{language.toUpperCase()}</span>
-                    </button>
-                    <button
-                        onClick={toggleTheme}
-                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-xs transition-colors"
-                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    >
-                        {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                    </button>
-                    <button
-                        onClick={() => {
-                            setUser(null);
-                            setToken(null);
-                            setCurrentProjectId(null);
-                        }}
-                        className="h-9 flex items-center justify-center gap-2 rounded-lg border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-bold text-xs transition-colors"
-                        title={t('logout')}
-                    >
-                        <LogOut className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            </aside>
+            <Sidebar
+                user={user}
+                projects={projects}
+                currentProjectId={currentProjectId}
+                deploymentProgress={deploymentProgress}
+                vflSource={vflSource}
+                setVflSource={setVflSource}
+                searchResults={searchResults}
+                onSearch={setDebouncedSearchTerm}
+                onResultClick={handleSearchResultClick}
+                onLogout={() => {
+                    setUser(null);
+                    setToken(null);
+                    setCurrentProjectId(null);
+                }}
+                setCurrentProjectId={setCurrentProjectId}
+                setShowProjectManager={setShowProjectManager}
+            />
 
             <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
                 {/* Map Toolbar (Floating) */}
@@ -1478,8 +1175,8 @@ export default function App() {
                     onAddPoint={handleAddPoint}
                     onNodeClick={handleNodeClick}
                     onMoveNode={handleMoveNode}
-                    onCableStart={handleNodeForCable}
-                    onCableEnd={handleNodeForCable}
+                    onCableStart={handleNodeForCableStable}
+                    onCableEnd={handleNodeForCableStable}
                     onConnectCable={handleConnectCable}
                     onUpdateCableGeometry={(id, coords) => updateCurrentNetwork(p => autoSnapNetwork({ ...p, cables: p.cables.map(c => c.id === id ? { ...c, coordinates: coords } : c) }, systemSettings.snapDistance).state)}
                     onCableClick={(id) => {
