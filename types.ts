@@ -46,7 +46,7 @@ export interface FiberConnection {
 export interface Splitter {
   id: string;
   name: string;
-  type: '1:8' | '1:16' | '1:2';
+  type: string;
   inputPortId: string;
   outputPortIds: string[];
 }
@@ -91,6 +91,7 @@ export interface POPData {
   id: string;
   name: string;
   status: CTOStatus; // Reusing status type for simplicity
+  catalogId?: string; // Reference to CatalogBox (if applicable) or CatalogPop?
   coordinates: Coordinates;
   olts: OLT[];
   dios: DIO[];
@@ -107,6 +108,10 @@ export interface CTOData {
   id: string;
   name: string;
   status: CTOStatus; // New Status Field
+  type?: 'CTO' | 'CEO'; // Sub-type
+  color?: string; // Visual Color
+  reserveLoopLength?: number; // Technical Reserve
+  catalogId?: string; // Reference to CatalogBox
   coordinates: Coordinates;
   splitters: Splitter[];
   fusions: FusionPoint[];
@@ -135,12 +140,34 @@ export interface CableData {
   coordinates: Coordinates[]; // Polyline points
   fromNodeId?: string | null; // Optional/Null for free-floating cables
   toNodeId?: string | null;   // Optional/Null for free-floating cables
+  catalogId?: string; // Reference to CatalogCable
+}
+
+
+export type PoleStatus = 'PLANNED' | 'ANALYSING' | 'LICENSED';
+
+export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
+  'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
+  'ANALYSING': '#eab308', // Yellow (Em análise)
+  'LICENSED': '#22c55e', // Green (Licenciado)
+};
+
+export interface PoleData {
+  id: string;
+  name: string;
+  status: PoleStatus;
+  coordinates: Coordinates;
+  catalogId?: string; // Reference to CatalogPole
+  type?: string;
+  height?: number;
 }
 
 export interface NetworkState {
+  // Added POPs
   ctos: CTOData[];
-  pops: POPData[]; // Added POPs
+  pops: POPData[];
   cables: CableData[];
+  poles: PoleData[]; // Added Poles
 }
 
 export interface ProjectSettings {

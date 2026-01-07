@@ -229,3 +229,56 @@ export const deleteBox = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to delete box" });
     }
 };
+
+// --- POLES ---
+
+export const getPoles = async (req: Request, res: Response) => {
+    try {
+        const poles = await prisma.catalogPole.findMany({
+            orderBy: { name: 'asc' }
+        });
+        res.json(poles);
+    } catch (error) {
+        console.error("Get Poles Error:", error);
+        res.status(500).json({ error: 'Failed to fetch poles' });
+    }
+};
+
+export const createPole = async (req: Request, res: Response) => {
+    try {
+        const { name, type, height, strength, shape, description } = req.body;
+        const pole = await prisma.catalogPole.create({
+            data: { name, type, height: Number(height), strength: Number(strength), shape, description }
+        });
+        res.json(pole);
+    } catch (error) {
+        console.error("Create Pole Error:", error);
+        res.status(500).json({ error: 'Failed to create pole' });
+    }
+};
+
+export const updatePole = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const { name, type, height, strength, shape, description } = req.body;
+        const pole = await prisma.catalogPole.update({
+            where: { id },
+            data: { name, type, height: Number(height), strength: Number(strength), shape, description }
+        });
+        res.json(pole);
+    } catch (error) {
+        console.error("Update Pole Error:", error);
+        res.status(500).json({ error: 'Failed to update pole' });
+    }
+};
+
+export const deletePole = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await prisma.catalogPole.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Delete Pole Error:", error);
+        res.status(500).json({ error: 'Failed to delete pole' });
+    }
+};

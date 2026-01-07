@@ -6,6 +6,8 @@ import { ProjectManager } from './components/ProjectManager';
 import { CableEditor } from './components/CableEditor';
 import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
+import { PoleDetailsPanel } from './components/PoleDetailsPanel';
+import { MapToolbar } from './components/MapToolbar';
 import { SaasAdminPage } from './components/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
@@ -17,18 +19,23 @@ import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
     Network, Settings2, Map as MapIcon, Zap, MousePointer2, FolderOpen, Unplug, CheckCircle2, LogOut, Activity, Eye, EyeOff, Server, Flashlight, Search, Box, Move, Ruler, X, Settings, Moon, Sun, Check, Loader2, Building2, Globe,
-    Upload
+    Upload, UtilityPole, FileUp, ChevronRight, Plus
 } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
 import L from 'leaflet';
 import * as projectService from './services/projectService';
 import * as authService from './services/authService';
+import * as catalogService from './services/catalogService';
 import api from './services/api';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
 
 const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
+import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
+import { KmlImportModal } from './components/modals/KmlImportModal';
+
+import { PoleData } from './types';
 
 
 // Helper type for cable starting point
@@ -331,14 +338,20 @@ export default function App() {
     const previousNetworkState = useRef<NetworkState | null>(null);
 
     // Upgrade Modal State
-    // Upgrade Modal State
+
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'draw_cable' | 'connect_cable' | 'move_node'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' } | null>(null);
+
+    // Pole Modal State
+    const [isPoleModalOpen, setIsPoleModalOpen] = useState(false);
+    const [isKmlImportOpen, setIsKmlImportOpen] = useState(false);
+
+    const [pendingPoleLocation, setPendingPoleLocation] = useState<Coordinates | null>(null);
     const [showLabels, setShowLabels] = useState(() => {
         const saved = localStorage.getItem('ftth_show_labels');
         return saved === 'true'; // Default to false if not present or 'false'
@@ -348,6 +361,7 @@ export default function App() {
     const [editingCTO, setEditingCTO] = useState<CTOData | null>(null);
     const [editingPOP, setEditingPOP] = useState<POPData | null>(null);
     const [editingCable, setEditingCable] = useState<CableData | null>(null);
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null); // For dropdowns
 
     // Search State
     // searchTerm handled by SearchBox component to avoid re-renders
@@ -379,6 +393,33 @@ export default function App() {
                 .then(setProjects)
                 .catch(console.error)
                 .finally(() => setIsLoadingProjects(false));
+
+            // Hydrate User Session (Plan & Subscription)
+            authService.getMe().then((data: any) => {
+                if (data.user) {
+                    // Check if user matches (sanity check)
+                    if (data.user.username !== user) {
+                        // Token belongs to different user? Update user state.
+                        setUser(data.user.username);
+                    }
+
+                    if (data.user.company?.plan?.name) {
+                        setUserPlan(data.user.company.plan.name);
+                    }
+                    if (data.user.company?.subscriptionExpiresAt) {
+                        setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
+                    } else {
+                        setSubscriptionExpiresAt(null);
+                    }
+                }
+            }).catch(err => {
+                console.error("Failed to hydrate session", err);
+                if (err.response && err.response.status === 401) {
+                    // Token invalid/expired - Logout
+                    setToken(null);
+                    setUser(null);
+                }
+            });
         }
     }, [token, user]);
 
@@ -423,7 +464,7 @@ export default function App() {
 
     // const currentProject = projects.find(p => p.id === currentProjectId); // REMOVED (using state)
     const getCurrentNetwork = (): NetworkState => {
-        return currentProject ? { ctos: currentProject.network.ctos, pops: currentProject.network.pops || [], cables: currentProject.network.cables } : { ctos: [], pops: [], cables: [] };
+        return currentProject ? { ctos: currentProject.network.ctos, pops: currentProject.network.pops || [], cables: currentProject.network.cables, poles: currentProject.network.poles || [] } : { ctos: [], pops: [], cables: [], poles: [] };
     };
 
     const updateCurrentNetwork = (updater: (prev: NetworkState) => NetworkState) => {
@@ -842,6 +883,10 @@ export default function App() {
             updateCurrentNetwork(prev => ({ ...prev, pops: [...(prev.pops || []), newPOP] }));
             showToast(t('toast_pop_added'));
             setToolMode('view');
+
+        } else if (toolMode === 'add_pole') {
+            setPendingPoleLocation({ lat, lng });
+            setIsPoleModalOpen(true);
         } else if (toolMode === 'draw_cable') {
             setDrawingPath(prev => [...prev, { lat, lng }]);
         }
@@ -1059,6 +1104,32 @@ export default function App() {
             if (!nextNode) {
                 showToast(t('otdr_next_node_error'), "info");
                 return;
+            }
+
+            // --- CTO Slack Logic ---
+            // If traversing a CTO (not POP), consider 13m slack.
+            // We subtract this from the remaining distance before continuing.
+            // If slack consumes remaining distance, the event is INSIDE this CTO.
+            if ('splitters' in nextNode) { // Check if it's a CTO (POPs don't have splitters property in this type, or use type check)
+                // Or safer: check if it is NOT a POP (Assuming IDs or type props)
+                // Based on usage: CTOData has splitters, POPData doesn't (or defined differently).
+                // net.ctos contains CTOData.
+                const isCTO = net.ctos.some(c => c.id === nextNode.id);
+
+                if (isCTO) {
+                    const slack = 13;
+                    if (remainingDist <= slack) {
+                        // Event is within the slack of this CTO
+                        showToast(`${t('otdr_result')}: ${t('otdr_inside_cto', { name: nextNode.name })} (${remainingDist.toFixed(1)}m into slack)`, 'info');
+                        const end = nextNode.coordinates;
+                        setOtdrResult(end);
+                        setMapBounds([[end.lat, end.lng], [end.lat, end.lng]]);
+                        setEditingCTO(null);
+                        setEditingPOP(null);
+                        return;
+                    }
+                    remainingDist -= slack;
+                }
             }
 
             const connection = nextNode.connections.find(c => c.sourceId === currentPortId || c.targetId === currentPortId);
@@ -1332,88 +1403,7 @@ export default function App() {
                         </div>
                     )}
 
-                    {/* Tools - Groups */}
-                    <div className="space-y-6">
-
-                        {/* Group: Operation */}
-                        {/* Group: Operation */}
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('sidebar_operation')}</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    onClick={() => { setToolMode('view'); setSelectedId(null); }}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'view' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                >
-                                    <MousePointer2 className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold">{t('sidebar_select')}</span>
-                                </button>
-                                <button
-                                    onClick={() => { setToolMode('move_node'); setSelectedId(null); }}
-                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'move_node' ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                >
-                                    <Move className="w-5 h-5" />
-                                    <span className="text-[10px] font-bold">{t('sidebar_move')}</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Group: Design */}
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{t('sidebar_design')}</label>
-                            <div className="grid grid-cols-1 gap-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => { setToolMode('add_cto'); setSelectedId(null); }}
-                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_cto' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-200 dark:hover:border-slate-700 hover:bg-blue-50/50 dark:hover:bg-slate-800'}`}
-                                    >
-                                        <Box className="w-5 h-5" />
-                                        <span className="text-[10px] font-bold">{t('sidebar_add_cto')}</span>
-                                    </button>
-                                    <button
-                                        onClick={() => { setToolMode('add_pop'); setSelectedId(null); }}
-                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'add_pop' ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-slate-700 hover:bg-indigo-50/50 dark:hover:bg-slate-800'}`}
-                                    >
-                                        <Building2 className="w-5 h-5" />
-                                        <span className="text-[10px] font-bold">{t('sidebar_add_pop')}</span>
-                                    </button>
-                                </div>
-
-                                <button
-                                    onClick={() => { setToolMode('draw_cable'); setSelectedId(null); }}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'draw_cable' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-amber-200 dark:hover:border-slate-700 hover:bg-amber-50/50 dark:hover:bg-slate-800'}`}
-                                >
-                                    <div className={`p-1.5 rounded-lg ${toolMode === 'draw_cable' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                                        <Zap className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-xs font-bold">{t('sidebar_draw_cable')}</span>
-                                        <span className="text-[10px] opacity-70 font-normal">{t('sidebar_draw_cable_desc')}</span>
-                                    </div>
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
-                                        setToolMode('connect_cable');
-                                        setSelectedId(null);
-                                    }}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${toolMode === 'connect_cable' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-200 dark:hover:border-slate-700 hover:bg-emerald-50/50 dark:hover:bg-slate-800'}`}
-                                >
-                                    <div className={`p-1.5 rounded-lg ${toolMode === 'connect_cable' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                                        <Unplug className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-xs font-bold">{t('sidebar_connect_cable') || 'Conectar/Editar Cabos'}</span>
-                                        <span className="text-[10px] opacity-70 font-normal">{t('sidebar_connect_cable_desc') || 'Ajustar conexões e geometria'}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-
-                    </div>
                 </div>
-
-                {/* 4. Footer System Bar */}
                 {/* 4. Footer System Bar */}
                 <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 grid grid-cols-3 gap-2">
                     <button
@@ -1446,9 +1436,29 @@ export default function App() {
             </aside>
 
             <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                {/* Map Toolbar (Floating) */}
+                <div className="absolute top-4 left-0 right-0 z-[1000] pointer-events-none">
+                    {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
+                    <div className="pointer-events-auto w-fit mx-auto">
+                        <MapToolbar
+                            toolMode={toolMode}
+                            setToolMode={setToolMode}
+                            activeMenuId={activeMenuId}
+                            setActiveMenuId={setActiveMenuId}
+                            onImportKml={() => setIsKmlImportOpen(true)}
+                            onConnectClick={() => {
+                                previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                                setToolMode('connect_cable');
+                                setSelectedId(null);
+                            }}
+                        />
+                    </div>
+                </div>
+
                 <MapView
                     ctos={getCurrentNetwork().ctos}
                     pops={getCurrentNetwork().pops || []}
+                    poles={getCurrentNetwork().poles || []}
                     cables={getCurrentNetwork().cables}
                     mode={toolMode}
                     selectedId={selectedId}
@@ -1481,11 +1491,12 @@ export default function App() {
                     otdrResult={otdrResult}
                 />
 
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
+                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
                     {toolMode === 'view' && t('tooltip_view')}
                     {toolMode === 'move_node' && t('tooltip_move')}
                     {toolMode === 'add_cto' && t('tooltip_add_cto')}
                     {toolMode === 'add_pop' && t('tooltip_add_pop')}
+                    {toolMode === 'add_pole' && (t('tooltip_add_pole') || 'Clique no mapa para adicionar um poste')}
                     {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
                 </div>
 
@@ -1560,6 +1571,7 @@ export default function App() {
                     onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
                     onSave={handleSavePOP}
                     onHoverCable={(id) => setHighlightedCableId(id)}
+                    onEditCable={setEditingCable}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
                 />
             )}
@@ -1593,12 +1605,52 @@ export default function App() {
                 />
             )}
 
+            {/* KML Import Modal */}
+            <KmlImportModal
+                isOpen={isKmlImportOpen}
+                onClose={() => setIsKmlImportOpen(false)}
+                onImport={async (points, poleTypeId) => {
+                    if (!currentProjectId) return;
+
+                    const catalogItem = await catalogService.getPoles().then(items => items.find(i => i.id === poleTypeId));
+                    const baseName = catalogItem ? catalogItem.name : 'Poste';
+
+                    let startingIndex = (getCurrentNetwork().poles || []).length + 1;
+
+                    const newPoles: PoleData[] = points.map((pt, idx) => ({
+                        id: crypto.randomUUID(),
+                        name: `${baseName} ${startingIndex + idx}`,
+                        coordinates: pt,
+                        type: baseName, // Or specific type name
+                        status: 'PLANNED',
+                        catalogId: poleTypeId
+                    }));
+
+                    updateCurrentNetwork(prev => ({
+                        ...prev,
+                        poles: [...(prev.poles || []), ...newPoles]
+                    }));
+
+                    showToast(`${newPoles.length} postes importados com sucesso!`, 'success');
+
+                    if (newPoles.length > 0) {
+                        setMapBounds([[newPoles[0].coordinates.lat, newPoles[0].coordinates.lng], [newPoles[0].coordinates.lat, newPoles[0].coordinates.lng]]);
+                    }
+                }}
+            />
+
             {/* Detail Panels (Mini-Editors/Actions) */}
             {selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (
                 <CTODetailsPanel
                     cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
                     onRename={handleRenameCTO}
                     onUpdateStatus={handleUpdateCTOStatus}
+                    onUpdate={(updates) => {
+                        updateCurrentNetwork(prev => ({
+                            ...prev,
+                            ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, ...updates } : c)
+                        }));
+                    }}
                     onOpenSplicing={() => { setEditingCTO(getCurrentNetwork().ctos.find(c => c.id === selectedId)!); setSelectedId(null); }}
                     onDelete={handleDeleteCTO}
                     onClose={() => setSelectedId(null)}
@@ -1613,6 +1665,21 @@ export default function App() {
                     onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
                     onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
                     onDelete={handleDeletePOP}
+                    onClose={() => setSelectedId(null)}
+                />
+            )}
+
+            {selectedId && toolMode === 'view' && getCurrentNetwork().poles?.find(p => p.id === selectedId) && (
+                <PoleDetailsPanel
+                    pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
+                    onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
+                    onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
+                    onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                    onDelete={(id) => {
+                        updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.filter(p => p.id !== id) }));
+                        setSelectedId(null);
+                        showToast('Poste removido', 'success');
+                    }}
                     onClose={() => setSelectedId(null)}
                 />
             )}
@@ -1642,6 +1709,29 @@ export default function App() {
                 onClose={() => setShowUpgradeModal(false)}
                 currentPlanName={userPlan}
                 limitDetails={upgradeModalDetails}
+            />
+
+            <PoleSelectionModal
+                isOpen={isPoleModalOpen}
+                onClose={() => setIsPoleModalOpen(false)}
+                onSelect={(catalogItem) => {
+                    if (pendingPoleLocation) {
+                        const newPole: PoleData = {
+                            id: `pole-${Date.now()}`,
+                            name: catalogItem.name,
+                            status: 'PLANNED', // Default
+                            coordinates: pendingPoleLocation,
+                            catalogId: catalogItem.id,
+                            type: catalogItem.type,
+                            height: catalogItem.height
+                        };
+                        updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
+                        showToast(t('toast_pole_added') || 'Poste adicionado com sucesso');
+                        setIsPoleModalOpen(false);
+                        setPendingPoleLocation(null);
+                        setToolMode('view');
+                    }
+                }}
             />
 
             {/* --- SYSTEM SETTINGS MODAL --- */}

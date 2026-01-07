@@ -15,7 +15,8 @@ export const getProjects = async (req: Request, res: Response) => {
             include: {
                 ctos: true,
                 cables: true,
-                pops: true
+                pops: true,
+                poles: true
             }
         });
 
@@ -27,7 +28,8 @@ export const getProjects = async (req: Request, res: Response) => {
             network: {
                 ctos: p.ctos,
                 pops: p.pops,
-                cables: p.cables
+                cables: p.cables,
+                poles: p.poles || []
             }
         })));
     } catch (error) {
@@ -78,7 +80,7 @@ export const createProject = async (req: Request, res: Response) => {
             name: project.name,
             createdAt: project.createdAt.getTime(),
             updatedAt: project.updatedAt.getTime(),
-            network: { ctos: [], pops: [], cables: [] },
+            network: { ctos: [], pops: [], cables: [], poles: [] },
             mapState: { center: { lat: project.centerLat, lng: project.centerLng }, zoom: project.zoom },
             settings: project.settings || { snapDistance: 30 }
         });
@@ -100,7 +102,8 @@ export const getProject = async (req: Request, res: Response) => {
             include: {
                 ctos: true,
                 pops: true,
-                cables: true
+                cables: true,
+                poles: true
             }
         });
 
@@ -149,6 +152,13 @@ export const getProject = async (req: Request, res: Response) => {
                 fromNodeId: c.fromNodeId,
                 toNodeId: c.toNodeId,
                 catalogId: c.catalogId
+            })),
+            poles: project.poles.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                status: p.status,
+                coordinates: { lat: p.lat, lng: p.lng },
+                catalogId: p.catalogId
             }))
         };
 
@@ -216,6 +226,7 @@ export const deleteProject = async (req: Request, res: Response) => {
         await prisma.cable.deleteMany({ where: { projectId: id, companyId: user.companyId } });
         await prisma.cto.deleteMany({ where: { projectId: id, companyId: user.companyId } });
         await prisma.pop.deleteMany({ where: { projectId: id, companyId: user.companyId } });
+        await prisma.pole.deleteMany({ where: { projectId: id, companyId: user.companyId } });
 
         // Delete the project
         await prisma.project.delete({ where: { id } }); // We already verified checks above
@@ -335,6 +346,7 @@ export const syncProject = async (req: Request, res: Response) => {
         if (network.ctos) network.ctos.forEach((c: any) => payloadIds.add(c.id));
         if (network.pops) network.pops.forEach((p: any) => payloadIds.add(p.id));
         if (network.cables) network.cables.forEach((c: any) => payloadIds.add(c.id));
+        if (network.poles) network.poles.forEach((p: any) => payloadIds.add(p.id));
 
         const allIds = Array.from(payloadIds);
         const CHECK_CHUNK = 2000;
@@ -345,7 +357,7 @@ export const syncProject = async (req: Request, res: Response) => {
             const batch = allIds.slice(i, i + CHECK_CHUNK);
 
             // Fetch everything that matches IDs, we will filter in memory
-            const [cRows, pRows, cabRows] = await Promise.all([
+            const [cRows, pRows, cabRows, poleRows] = await Promise.all([
                 prisma.cto.findMany({
                     where: { id: { in: batch } },
                     select: { id: true, projectId: true, companyId: true }
@@ -355,6 +367,10 @@ export const syncProject = async (req: Request, res: Response) => {
                     select: { id: true, projectId: true, companyId: true }
                 }),
                 prisma.cable.findMany({
+                    where: { id: { in: batch } },
+                    select: { id: true, projectId: true, companyId: true }
+                }),
+                prisma.pole.findMany({
                     where: { id: { in: batch } },
                     select: { id: true, projectId: true, companyId: true }
                 })
@@ -371,6 +387,9 @@ export const syncProject = async (req: Request, res: Response) => {
                 if (!isMine(row)) collidingIds.add(row.id);
             });
             cabRows.forEach(row => {
+                if (!isMine(row)) collidingIds.add(row.id);
+            });
+            poleRows.forEach(row => {
                 if (!isMine(row)) collidingIds.add(row.id);
             });
         }
@@ -433,6 +452,12 @@ export const syncProject = async (req: Request, res: Response) => {
                     if (c.toNodeId) c.toNodeId = remap(c.toNodeId);
                 });
             }
+            // 4. Poles
+            if (network.poles) {
+                network.poles.forEach((p: any) => {
+                    if (idMap.has(p.id)) p.id = idMap.get(p.id);
+                });
+            }
         }
 
         await prisma.$transaction(async (tx: any) => {
@@ -456,7 +481,9 @@ export const syncProject = async (req: Request, res: Response) => {
             // We also relax the check to delete ANYTHING with this projectId, ensuring no ghost records remain.
             await tx.cable.deleteMany({ where: { projectId: id } });
             await tx.pop.deleteMany({ where: { projectId: id } });
+            await tx.pop.deleteMany({ where: { projectId: id } });
             await tx.cto.deleteMany({ where: { projectId: id } });
+            await tx.pole.deleteMany({ where: { projectId: id } });
 
             // 2. INSERT PHASE - CTOs
             if (network.ctos && network.ctos.length > 0) {
@@ -533,6 +560,26 @@ export const syncProject = async (req: Request, res: Response) => {
                             fromNodeId: c.fromNodeId,
                             toNodeId: c.toNodeId,
                             catalogId: c.catalogId
+                        }))
+                    });
+                }
+            }
+
+            // 5. INSERT PHASE - Poles
+            if (network.poles && network.poles.length > 0) {
+                const uniquePoles = Array.from(new Map(network.poles.map((p: any) => [p.id, p])).values());
+                for (let i = 0; i < uniquePoles.length; i += CHUNK_SIZE) {
+                    const chunk = uniquePoles.slice(i, i + CHUNK_SIZE);
+                    await tx.pole.createMany({
+                        data: chunk.map((p: any) => ({
+                            id: p.id,
+                            projectId: id,
+                            companyId: user.companyId,
+                            name: p.name,
+                            status: p.status,
+                            lat: p.coordinates.lat,
+                            lng: p.coordinates.lng,
+                            catalogId: p.catalogId
                         }))
                     });
                 }

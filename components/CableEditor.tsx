@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CableData, CableStatus } from '../types';
-import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers } from 'lucide-react';
+import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen } from 'lucide-react';
 import L from 'leaflet';
 import { useLanguage } from '../LanguageContext';
+import { getCables, CableCatalogItem } from '../services/catalogService';
 
 interface CableEditorProps {
   cable: CableData;
@@ -38,7 +39,36 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
     looseTubeCount: cable.looseTubeCount || 1 // Default to 1 loose tube if undefined
   });
 
+  const [catalogCables, setCatalogCables] = useState<CableCatalogItem[]>([]);
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(cable.catalogId || '');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    // Load catalog cables
+    getCables().then(data => setCatalogCables(data)).catch(err => console.error(err));
+  }, []);
+
+  const handleCatalogSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const catalogId = e.target.value;
+    setSelectedCatalogId(catalogId);
+
+    const selected = catalogCables.find(c => c.id === catalogId);
+    if (selected) {
+      // Map catalog properties to cable data
+      setFormData(prev => ({
+        ...prev,
+        catalogId: catalogId, // Persist the catalog reference
+        name: selected.name,
+        fiberCount: selected.fiberCount,
+        looseTubeCount: selected.looseTubeCount,
+        color: selected.deployedSpec?.color || prev.color,
+        colorStandard: (selected.fiberProfile === 'EIA' ? 'EIA598' : 'ABNT') as any
+      }));
+    } else {
+      // If cleared/reset (though option value="" usually handles this if we add logic)
+      setFormData(prev => ({ ...prev, catalogId: undefined }));
+    }
+  };
 
   // Calculate length in meters based on coordinates using Leaflet's distanceTo
   const calculatedLength = useMemo(() => {
@@ -160,6 +190,23 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
       {/* Form */}
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
+        {/* Catalog Selection */}
+        <div className="bg-sky-50 dark:bg-sky-900/10 p-3 rounded-lg border border-sky-100 dark:border-sky-800/30">
+          <label className="block text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase mb-1 flex items-center gap-1">
+            <BookOpen className="w-3 h-3" /> Usar Modelo do Catálogo
+          </label>
+          <select
+            value={selectedCatalogId}
+            onChange={handleCatalogSelect}
+            className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
+          >
+            <option value="">-- Selecione um Modelo --</option>
+            {catalogCables.map(c => (
+              <option key={c.id} value={c.id}>{c.name} ({c.fiberCount}FO)</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('cable_name')}</label>
           <input
@@ -168,36 +215,48 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
             placeholder="e.g. Backbone Route A"
-            autoFocus
           />
         </div>
 
+        {/* Fiber Count - Text Only if Catalog Selected */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('fiber_count')}</label>
-            <select
-              value={formData.fiberCount}
-              onChange={(e) => setFormData({ ...formData, fiberCount: Number(e.target.value) })}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-            >
-              {FIBER_COUNTS.map(count => (
-                <option key={count} value={count}>{count} FO</option>
-              ))}
-            </select>
+            {selectedCatalogId ? (
+              <div className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
+                {formData.fiberCount} FO
+              </div>
+            ) : (
+              <select
+                value={formData.fiberCount}
+                onChange={(e) => setFormData({ ...formData, fiberCount: Number(e.target.value) })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
+              >
+                {FIBER_COUNTS.map(count => (
+                  <option key={count} value={count}>{count} FO</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
               <Layers className="w-3 h-3" /> {t('loose_tubes')}
             </label>
-            <input
-              type="number"
-              min="1"
-              max="24"
-              value={formData.looseTubeCount}
-              onChange={(e) => setFormData({ ...formData, looseTubeCount: Math.max(1, parseInt(e.target.value) || 1) })}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-            />
+            {selectedCatalogId ? (
+              <div className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
+                {formData.looseTubeCount}
+              </div>
+            ) : (
+              <input
+                type="number"
+                min="1"
+                max="24"
+                value={formData.looseTubeCount}
+                onChange={(e) => setFormData({ ...formData, looseTubeCount: Math.max(1, parseInt(e.target.value) || 1) })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
+              />
+            )}
           </div>
 
           <div>
@@ -215,30 +274,38 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           </div>
         </div>
 
-        {/* Color Standard Selection */}
+        {/* Color Standard Selection - Hidden completely if catalog selected, just show text label? No, show text label of what it is. */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
             {t('fiber_color_standard') || "Padrão de Cores"}
           </label>
-          <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 mt-4">{t('color_standard')}</h3>
-            <div className="bg-slate-900 rounded-lg p-1 flex gap-1 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, colorStandard: 'ABNT' })}
-                className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'ABNT' || !formData.colorStandard ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-              >
-                <span className="font-bold">{t('standard_abnt')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, colorStandard: 'EIA598' })}
-                className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'EIA598' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-              >
-                <span className="font-bold">{t('standard_eia')}</span>
-              </button>
+          {selectedCatalogId ? (
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+              <span>{formData.colorStandard === 'EIA598' ? 'EIA-598-A (Intl)' : 'ABNT (Brasil)'}</span>
+              <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">Definido no Catálogo</span>
             </div>
-          </div>
+          ) : (
+            <div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 mt-4">{t('color_standard')}</h3>
+              <div className="bg-slate-900 rounded-lg p-1 flex gap-1 border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, colorStandard: 'ABNT' })}
+                  className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'ABNT' || !formData.colorStandard ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                  <span className="font-bold">{t('standard_abnt')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, colorStandard: 'EIA598' })}
+                  className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'EIA598' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                  <span className="font-bold">{t('standard_eia')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Small Preview of first 12 fibers */}
           <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
             {(formData.colorStandard === 'EIA598' ?
@@ -265,23 +332,40 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           </div>
         </div>
 
-        {/* Color Picker - Only enabled if DEPLOYED */}
-        <div className={`transition-opacity ${formData.status === 'NOT_DEPLOYED' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-            <Palette className="w-3 h-3" /> {t('map_color')} {formData.status === 'NOT_DEPLOYED' && `(${t('disabled')})`}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {CABLE_MAP_COLORS.map(color => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setFormData({ ...formData, color })}
-                className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm ${formData.color === color ? 'border-white dark:border-slate-100 scale-110 shadow-lg ring-2 ring-sky-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : 'border-slate-200 dark:border-slate-700 hover:scale-105'}`}
-                style={{ backgroundColor: color }}
+        {/* Color Picker - Only enabled if DEPLOYED and NOT using catalog */}
+        {selectedCatalogId ? (
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+              <Palette className="w-3 h-3" /> {t('map_color')}
+            </label>
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div
+                className="w-12 h-6 rounded-md shadow-sm border border-slate-200 dark:border-slate-600"
+                style={{ backgroundColor: formData.color }}
               />
-            ))}
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Cor definida pelo status <strong>{formData.status === 'DEPLOYED' ? 'Implantado' : 'Não Implantado'}</strong> do catálogo.
+              </span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={`transition-opacity ${formData.status === 'NOT_DEPLOYED' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+              <Palette className="w-3 h-3" /> {t('map_color')} {formData.status === 'NOT_DEPLOYED' && `(${t('disabled')})`}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CABLE_MAP_COLORS.map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color })}
+                  className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm ${formData.color === color ? 'border-white dark:border-slate-100 scale-110 shadow-lg ring-2 ring-sky-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : 'border-slate-200 dark:border-slate-700 hover:scale-105'}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="pt-4">
           {showDeleteConfirm ? (

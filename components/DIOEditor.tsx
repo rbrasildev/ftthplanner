@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { POPData, CableData, FiberConnection, getFiberColor, DIO } from '../types';
-import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler } from 'lucide-react';
+import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler, ArrowRight, Settings2, Split } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface DIOEditorProps {
@@ -21,7 +21,7 @@ interface DIOEditorProps {
     onOtdrTrace: (portId: string, distance: number) => void;
 }
 
-type DragMode = 'view' | 'connection' | 'reconnect';
+type DragMode = 'view' | 'connection' | 'reconnect' | 'cablePanel' | 'trayPanel';
 
 export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, onClose, onSave, onUpdateDio, litPorts, vflSource, onToggleVfl, onOtdrTrace }) => {
     const { t } = useLanguage();
@@ -33,6 +33,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const containerRef = useRef<HTMLDivElement>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+
+    // Draggable Panels State
+    const [cablePanelOffset, setCablePanelOffset] = useState({ x: 0, y: 0 });
+    const [trayPanelOffset, setTrayPanelOffset] = useState({ x: 0, y: 0 });
 
     // State for internal "Link Cables" modal
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -62,6 +66,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
         startY: number;
         currentMouseX?: number;
         currentMouseY?: number;
+        initialPanelOffset?: { x: number, y: number }; // For panel dragging
     } | null>(null);
 
     // Force re-render for SVG lines
@@ -217,6 +222,26 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
         setConfiguringFiberId(null);
     };
 
+    // --- Mouse Wheel Zoom ---
+    const handleWheel = (e: React.WheelEvent) => {
+        e.stopPropagation();
+        const zoomSensitivity = 0.001;
+        const delta = -e.deltaY * zoomSensitivity;
+        const newZoom = Math.min(Math.max(0.1, viewState.zoom + delta), 5);
+        setViewState(prev => ({ ...prev, zoom: newZoom }));
+    };
+
+    // --- Panel Dragging Helpers ---
+    const handlePanelDragStart = (e: React.MouseEvent, mode: 'cablePanel' | 'trayPanel') => {
+        e.stopPropagation();
+        setDragState({
+            mode,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialPanelOffset: mode === 'cablePanel' ? cablePanelOffset : trayPanelOffset
+        });
+    };
+
     // --- Drag Handlers (Legacy/Manual Adjustment) ---
     const handleMouseDown = (e: React.MouseEvent) => {
         if (e.button === 0) {
@@ -277,6 +302,17 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
             const dy = e.clientY - dragState.startY;
             setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
             setDragState(prev => ({ ...prev!, startX: e.clientX, startY: e.clientY }));
+        }
+        else if (dragState.mode === 'cablePanel' || dragState.mode === 'trayPanel') {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            const initial = dragState.initialPanelOffset || { x: 0, y: 0 };
+
+            if (dragState.mode === 'cablePanel') {
+                setCablePanelOffset({ x: initial.x + dx, y: initial.y + dy });
+            } else {
+                setTrayPanelOffset({ x: initial.x + dx, y: initial.y + dy });
+            }
         }
         else if (dragState.mode === 'connection' || dragState.mode === 'reconnect') {
             const { x, y } = screenToCanvas(e.clientX, e.clientY);
@@ -340,48 +376,77 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     const totalTrays = Math.ceil(dio.portIds.length / PORTS_PER_TRAY);
 
     return (
-        <div className={`fixed inset-0 z-[2200] bg-black/90 flex items-center justify-center backdrop-blur-sm ${isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : ''}`}>
-            <div className="w-[95vw] h-[95vh] bg-slate-900 rounded-xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+        <div className={`fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md ${isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : ''}`}>
+            <div className="w-[95vw] h-[95vh] bg-slate-950/80 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden relative overflow-hidden backdrop-blur-xl">
 
                 {/* Toolbar */}
-                <div className="h-14 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-6 shrink-0 z-50">
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                        <h2 className="font-bold text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
-                            <CableIcon className="w-5 h-5 text-yellow-400 shrink-0" />
-                            <span className="truncate">{t('splicing_title', { name: dio.name })}</span>
-                        </h2>
+                <div className="h-16 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 shadow-md">
+                    <div className="flex items-center gap-6 min-w-0 flex-1">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                                <Split className="w-6 h-6 text-orange-500" />
+                            </div>
+                            <div>
+                                <h2 className="font-bold text-white text-lg leading-none mb-1">{dio.name}</h2>
+                                <p className="text-xs text-slate-400 font-medium">{t('manage_splicing')}</p>
+                            </div>
+                        </div>
+
+                        {onUpdateDio && (
+                            <div className="h-8 w-[1px] bg-white/10 mx-2" />
+                        )}
+
                         {onUpdateDio && (
                             <button
                                 onClick={() => setIsLinkModalOpen(true)}
-                                className="px-2 py-1 bg-slate-700 hover:bg-sky-600 rounded text-xs font-medium text-white flex items-center gap-2 border border-slate-600 transition-colors ml-4 shrink-0"
+                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-sky-600/20 hover:border-sky-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center gap-2 border border-white/10 transition-all"
                             >
-                                <Link2 className="w-3 h-3" /> {t('link_cables')}
+                                <Link2 className="w-3.5 h-3.5" />
+                                {t('link_cables')}
+                                <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-400">{relevantCables.length}</span>
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-2">
-                        {/* VFL BUTTON */}
+
+                    <div className="flex items-center gap-3">
+                        {/* Tools Group */}
+                        <div className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-white/5">
+                            <button
+                                onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all ${isVflToolActive ? 'bg-red-500/20 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                title={t('tool_vfl')}
+                            >
+                                <Flashlight className={`w-3.5 h-3.5 ${isVflToolActive ? 'fill-current' : ''}`} /> VFL
+                            </button>
+                            <div className="w-[1px] h-4 bg-white/10 mx-1"></div>
+                            <button
+                                onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); }}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all ${isOtdrToolActive ? 'bg-indigo-500/20 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                title="OTDR"
+                            >
+                                <Ruler className="w-3.5 h-3.5" /> OTDR
+                            </button>
+                        </div>
+
+                        {/* View Controls */}
+                        <div className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-white/5 mx-2">
+                            <button onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))} className="p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"><ZoomIn className="w-4 h-4" /></button>
+                            <button onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))} className="p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"><ZoomOut className="w-4 h-4" /></button>
+                        </div>
+
+                        {/* Actions */}
                         <button
-                            onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
-                            className={`px-3 py-1.5 rounded flex items-center gap-2 text-xs font-bold border transition ${isVflToolActive ? 'bg-red-900/50 border-red-500 text-red-400 animate-pulse' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
-                            title={t('tool_vfl')}
+                            onClick={() => onSave(currentConnections)}
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 flex items-center gap-2 text-sm transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <Flashlight className={`w-3 h-3 ${isVflToolActive ? 'fill-red-400' : ''}`} /> {t('tool_vfl')}
+                            <Save className="w-4 h-4" /> {t('save')}
                         </button>
-                        {/* OTDR BUTTON */}
                         <button
-                            onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); }}
-                            className={`px-3 py-1.5 rounded flex items-center gap-2 text-xs font-bold border transition ${isOtdrToolActive ? 'bg-indigo-900/50 border-indigo-500 text-indigo-400' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'}`}
-                            title="OTDR"
+                            onClick={onClose}
+                            className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                         >
-                            <Ruler className="w-3 h-3" /> OTDR
+                            <X className="w-5 h-5" />
                         </button>
-                        <div className="w-[1px] h-6 bg-slate-600 mx-2"></div>
-                        <button onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))} className="p-2 text-slate-400 hover:bg-slate-700 rounded"><ZoomIn className="w-4 h-4" /></button>
-                        <button onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))} className="p-2 text-slate-400 hover:bg-slate-700 rounded"><ZoomOut className="w-4 h-4" /></button>
-                        <div className="w-[1px] h-6 bg-slate-600 mx-2"></div>
-                        <button onClick={() => onSave(currentConnections)} className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded flex items-center gap-2 text-sm"><Save className="w-4 h-4" /> {t('save')}</button>
-                        <button onClick={onClose} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded"><X className="w-5 h-5" /></button>
                     </div>
                 </div>
 
@@ -393,29 +458,33 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
+                    onWheel={handleWheel}
                 >
                     {/* VFL Info Banner */}
                     {isVflToolActive && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-900/90 text-white px-4 py-2 rounded-full border border-red-500 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none">
-                            <Flashlight className="w-4 h-4 animate-pulse" />
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/10 backdrop-blur-md text-red-200 px-6 py-2.5 rounded-full border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300">
+                            <div className="relative">
+                                <Flashlight className="w-4 h-4 text-red-500 relative z-10" />
+                                <div className="absolute inset-0 bg-red-500 blur-sm opacity-50 animate-pulse"></div>
+                            </div>
                             {t('vfl_active_msg')}
                         </div>
                     )}
 
                     {/* OTDR Info Banner */}
                     {isOtdrToolActive && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-indigo-900/90 text-white px-4 py-2 rounded-full border border-indigo-500 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none">
-                            <Ruler className="w-4 h-4" />
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-indigo-500/10 backdrop-blur-md text-indigo-200 px-6 py-2.5 rounded-full border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300">
+                            <Ruler className="w-4 h-4 text-indigo-400" />
                             {t('otdr_instruction_banner')}
                         </div>
                     )}
 
                     {/* Background Grid */}
                     <div
-                        className="absolute inset-0 pointer-events-none opacity-20"
+                        className="absolute inset-0 pointer-events-none opacity-[0.07]"
                         style={{
-                            backgroundImage: `radial-gradient(#475569 1px, transparent 1px)`,
-                            backgroundSize: `${20 * viewState.zoom}px ${20 * viewState.zoom}px`,
+                            backgroundImage: `radial-gradient(#ffffff 1px, transparent 1px)`,
+                            backgroundSize: `${30 * viewState.zoom}px ${30 * viewState.zoom}px`,
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
                         }}
                     />
@@ -425,11 +494,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.zoom})`,
                             transformOrigin: '0 0',
                             width: '100%',
-                            height: '100%'
+                            height: '100%' // Ensure full height coverage
                         }}
                     >
                         {/* SVG Connections Layer */}
-                        <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
+                        <svg className="absolute top-[-5000px] left-[-5000px] w-[10000px] h-[10000px] pointer-events-none overflow-visible z-10">
                             {currentConnections.map(conn => {
                                 // Only visualize connections involving FIBERS in this view
                                 const isDioConn = (conn.sourceId.startsWith(dio.id) || conn.targetId.startsWith(dio.id));
@@ -445,21 +514,40 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                 const activeSignal = isPortActive(conn.sourceId.startsWith(dio.id) ? conn.sourceId : conn.targetId);
                                 const isLit = litConnections.has(conn.id);
 
-                                const lineColor = isLit ? '#ef4444' : (activeSignal ? '#22c55e' : '#64748b');
+                                const lineColor = isLit ? '#ef4444' : (activeSignal ? '#10b981' : '#64748b');
                                 const lineWidth = isLit ? 4 : (activeSignal ? 3 : 2);
 
                                 const distX = Math.abs(p2.x - p1.x);
-                                const controlOffset = Math.max(distX * 0.5, 50);
+                                const controlOffset = Math.max(distX * 0.5, 80);
 
                                 return (
-                                    <g key={conn.id} className="pointer-events-auto">
+                                    <g key={conn.id} className="pointer-events-auto group">
+                                        {/* Shadow/Glow for active lines */}
+                                        {(isLit || activeSignal) && (
+                                            <path
+                                                d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
+                                                stroke={lineColor}
+                                                strokeWidth={lineWidth * 3}
+                                                fill="none"
+                                                opacity={0.3}
+                                                className="blur-[4px]"
+                                            />
+                                        )}
                                         <path
                                             d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
                                             stroke={lineColor}
                                             strokeWidth={lineWidth}
                                             fill="none"
-                                            style={{ filter: isLit ? 'drop-shadow(0 0 4px #ef4444)' : 'none' }}
-                                            className="transition-colors duration-300"
+                                            strokeLinecap="round"
+                                            className="transition-all duration-300"
+                                        />
+                                        {/* Hover hitbox */}
+                                        <path
+                                            d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
+                                            stroke="transparent"
+                                            strokeWidth={15}
+                                            fill="none"
+                                            className="cursor-pointer"
                                         />
                                         <circle cx={p1.x} cy={p1.y} r={3} fill={lineColor} />
                                         <circle cx={p2.x} cy={p2.y} r={3} fill={lineColor} />
@@ -468,26 +556,45 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             })}
 
                             {(dragState?.mode === 'connection' || dragState?.mode === 'reconnect') && dragState.currentMouseX && (
-                                <path
-                                    d={`M ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.x || 0)} ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.y || 0)} 
-                                    L ${dragState.currentMouseX} ${dragState.currentMouseY}`}
-                                    stroke="#facc15"
-                                    strokeWidth={2}
-                                    strokeDasharray="4,4"
-                                    fill="none"
-                                />
+                                <g>
+                                    <path
+                                        d={`M ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.x || 0)} ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.y || 0)} 
+                                        L ${dragState.currentMouseX} ${dragState.currentMouseY}`}
+                                        stroke="#facc15"
+                                        strokeWidth={2}
+                                        strokeDasharray="6,4"
+                                        fill="none"
+                                        className="animate-pulse"
+                                    />
+                                    <circle cx={dragState.currentMouseX} cy={dragState.currentMouseY} r={4} fill="#facc15" />
+                                </g>
                             )}
                         </svg>
 
                         {/* --- LEFT SIDE: Incoming Cables (Filtered by Assignment) --- */}
-                        <div className="absolute top-20 left-20 flex flex-col gap-10">
+                        <div
+                            className="absolute top-20 left-20 flex flex-col gap-10 pb-40"
+                            style={{ transform: `translate(${cablePanelOffset.x}px, ${cablePanelOffset.y}px)` }}
+                        >
+                            <div
+                                className="absolute -top-8 left-0 right-0 h-8 flex items-center justify-center cursor-move opacity-0 hover:opacity-100 transition-opacity"
+                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel')}
+                            >
+                                <div className="w-12 h-1 bg-white/20 rounded-full" />
+                            </div>
+
                             {relevantCables.length === 0 ? (
-                                <div className="w-64 bg-slate-900 border border-slate-700 rounded-lg p-6 flex flex-col items-center text-center shadow-xl">
-                                    <AlertCircle className="w-10 h-10 text-slate-600 mb-3" />
-                                    <h3 className="text-white font-bold mb-1">{t('no_cables_linked')}</h3>
-                                    <p className="text-xs text-slate-400 mb-4">{t('link_cables_help')}</p>
+                                <div className="w-[300px] h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center group">
+                                    <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                        <Unplug className="w-8 h-8 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                                    </div>
+                                    <h3 className="text-white font-bold text-lg mb-2">{t('no_cables_linked')}</h3>
+                                    <p className="text-sm text-slate-500 mb-6">{t('link_cables_help')}</p>
                                     {onUpdateDio && (
-                                        <button onClick={() => setIsLinkModalOpen(true)} className="px-3 py-1.5 bg-sky-600 text-white rounded text-xs font-bold hover:bg-sky-500 transition">
+                                        <button
+                                            onClick={() => setIsLinkModalOpen(true)}
+                                            className="px-6 py-2 bg-sky-600/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/50 rounded-full text-sm font-bold hover:scale-105 transition-all w-full"
+                                        >
                                             {t('link_cables')}
                                         </button>
                                     )}
@@ -498,12 +605,22 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
 
                                     return (
-                                        <div key={cable.id} className="bg-slate-900 border border-slate-700 rounded-lg shadow-xl w-48 z-20 flex flex-col">
-                                            <div className="h-6 bg-slate-800 border-b border-slate-700 px-2 flex items-center justify-between rounded-t-lg">
-                                                <span className="text-[10px] font-bold text-slate-200 truncate">{cable.name}</span>
-                                                <GripHorizontal className="w-3 h-3 text-slate-600" />
+                                        <div key={cable.id} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl w-[220px] z-20 flex flex-col overflow-hidden ring-1 ring-black/50">
+                                            {/* Cable Header */}
+                                            <div
+                                                className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-3 px-4 flex items-center justify-between cursor-move"
+                                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel')}
+                                            >
+                                                <div className="min-w-0">
+                                                    <span className="text-xs font-bold text-slate-400 block uppercase tracking-wider mb-0.5">{t('cable')}</span>
+                                                    <span className="text-sm font-bold text-white truncate block" title={cable.name}>{cable.name}</span>
+                                                </div>
+                                                <div className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-white/5 rounded">
+                                                    <GripHorizontal className="w-4 h-4 text-slate-600" />
+                                                </div>
                                             </div>
-                                            <div className="p-2 space-y-2">
+
+                                            <div className="p-3 space-y-3">
                                                 {Array.from({ length: looseTubeCount }).map((_, tubeIdx) => {
                                                     const tubeColor = getFiberColor(tubeIdx, cable.colorStandard);
                                                     // Added 3 (White) and 10 (Gray) to black text indices
@@ -514,14 +631,15 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                     const tubeFibersCount = Math.max(0, endFiberIndex - startFiberIndex);
 
                                                     return (
-                                                        <div key={tubeIdx} className="rounded border bg-slate-950/30 overflow-hidden" style={{ borderColor: tubeColor }}>
+                                                        <div key={tubeIdx} className="rounded-xl border border-white/5 bg-slate-950/50 overflow-hidden shadow-inner">
                                                             <div
-                                                                className={`px-2 py-0.5 text-[9px] font-bold uppercase flex justify-between items-center ${isLight ? 'text-slate-900' : 'text-white'}`}
+                                                                className={`px-3 py-1.5 text-[10px] font-bold uppercase flex justify-between items-center ${isLight ? 'text-slate-900' : 'text-white'}`}
                                                                 style={{ backgroundColor: tubeColor }}
                                                             >
-                                                                <span>{t('tube')} {tubeIdx + 1}</span>
+                                                                <span className="opacity-90">{t('tube')} {tubeIdx + 1}</span>
+                                                                <span className="opacity-60 text-[9px]">{tubeFibersCount}F</span>
                                                             </div>
-                                                            <div className="p-1 space-y-1">
+                                                            <div className="p-1.5 space-y-1">
                                                                 {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
                                                                     const fiberIndex = startFiberIndex + fOffset;
 
@@ -539,11 +657,12 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                                     }
 
                                                                     return (
-                                                                        <div key={fiberId} className="flex items-center justify-between group relative">
-                                                                            <div className="text-[9px] text-slate-500 w-4 select-none">{fiberIndex + 1}</div>
-                                                                            <div className="w-full h-[1px] bg-slate-700 mx-2 relative opacity-20">
-                                                                                {isLit && <div className="absolute inset-0 bg-red-500 shadow-[0_0_5px_#ef4444] opacity-100"></div>}
-                                                                                {!isLit && activeOltInfo && <div className="absolute inset-0 bg-green-500 shadow-[0_0_5px_#22c55e] opacity-100"></div>}
+                                                                        <div key={fiberId} className="flex items-center justify-between group relative pl-1 pr-0.5">
+                                                                            <div className="text-[10px] font-mono text-slate-500 w-5 select-none">{fiberIndex + 1}</div>
+                                                                            <div className="flex-1 h-[1px] bg-slate-800 mx-2 relative">
+                                                                                {/* Active line indicator */}
+                                                                                {isLit && <div className="absolute inset-0 bg-red-500 shadow-[0_0_8px_#ef4444] opacity-100 h-[2px]"></div>}
+                                                                                {!isLit && activeOltInfo && <div className="absolute inset-0 bg-emerald-500 shadow-[0_0_8px_#10b981] opacity-100 h-[2px]"></div>}
                                                                             </div>
 
                                                                             {/* Fiber Node Interaction */}
@@ -553,28 +672,31 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                                                 onMouseEnter={() => setHoveredPortId(fiberId)}
                                                                                 onMouseLeave={() => setHoveredPortId(null)}
                                                                                 className={`
-                                                                               w-5 h-5 rounded-full cursor-pointer 
-                                                                               flex items-center justify-center transition-all relative z-10
+                                                                               w-6 h-6 rounded-full cursor-pointer 
+                                                                               flex items-center justify-center transition-all relative z-10 duration-200
                                                                                ${isConnected
-                                                                                        ? 'border-0 scale-100 shadow-md'
-                                                                                        : 'border-2 bg-slate-900 scale-90 hover:scale-110'
+                                                                                        ? 'border-0 scale-100 shadow-lg'
+                                                                                        : 'border-2 bg-slate-900 border-slate-700 hover:border-white scale-90 hover:scale-110'
                                                                                     }
-                                                                               ${hoveredPortId === fiberId ? 'ring-2 ring-white' : ''}
-                                                                               ${isLit ? 'ring-2 ring-red-500 border-red-500 shadow-[0_0_10px_#ef4444]' : ''}
+                                                                               ${hoveredPortId === fiberId ? 'ring-2 ring-white scale-110 z-20' : ''}
+                                                                               ${isLit ? 'ring-2 ring-red-500 border-red-500 shadow-[0_0_15px_#ef4444]' : ''}
                                                                            `}
                                                                                 style={{
-                                                                                    backgroundColor: isConnected ? color : 'transparent',
-                                                                                    borderColor: color
+                                                                                    backgroundColor: isConnected ? color : (hoveredPortId === fiberId ? color : 'transparent'),
+                                                                                    borderColor: isConnected ? 'transparent' : (hoveredPortId === fiberId ? color : color),
+                                                                                    opacity: isConnected ? 1 : 0.8
                                                                                 }}
-                                                                                title={isConnected ? 'Connected (Click to change)' : 'Click to Connect'}
+                                                                                title={isConnected ? t('click_to_manage') : t('click_to_connect')}
                                                                             >
-                                                                                {isConnected && <Link2 className="w-3 h-3 text-black/70 font-bold" />}
+                                                                                {isConnected && <Check className="w-3.5 h-3.5 text-black/60 font-black" />}
                                                                             </div>
 
                                                                             {activeOltInfo && !isLit && hoveredPortId === fiberId && (
-                                                                                <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-green-900 text-green-100 text-[10px] px-2 py-1 rounded border border-green-700 whitespace-nowrap z-50 pointer-events-none">
-                                                                                    <div className="font-bold flex items-center gap-1"><Zap className="w-3 h-3" /> Signal Active</div>
-                                                                                    <div>{activeOltInfo}</div>
+                                                                                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur text-white p-2 rounded-lg border border-emerald-500/50 shadow-2xl shadow-black/50 whitespace-nowrap z-[100] animate-in slide-in-from-left-2 zoom-in-95 duration-200">
+                                                                                    <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider mb-1">
+                                                                                        <Zap className="w-3 h-3" /> Signal Active
+                                                                                    </div>
+                                                                                    <div className="text-xs font-medium">{activeOltInfo}</div>
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -592,32 +714,40 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         </div>
 
                         {/* --- RIGHT SIDE: DIO Back View --- */}
-                        <div className="absolute top-20 right-40 bg-slate-800 border-2 border-slate-600 rounded-lg shadow-2xl z-20 w-80 flex flex-col max-h-[80vh]">
-                            <div className="h-8 bg-slate-700 border-b border-slate-600 px-3 flex items-center justify-between shrink-0">
-                                <span className="text-xs font-bold text-white flex items-center gap-2">
-                                    <CableIcon className="w-4 h-4" /> {dio.name}
-                                </span>
-                                <span className="text-[10px] text-slate-400">{totalTrays} {t('trays', { count: totalTrays })}</span>
+                        <div
+                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[340px] flex flex-col max-h-[85vh] ring-1 ring-black/50 overflow-hidden"
+                            style={{ transform: `translate(${trayPanelOffset.x}px, ${trayPanelOffset.y}px)` }}
+                        >
+                            <div
+                                className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-4 px-5 flex items-center justify-between shrink-0 cursor-move"
+                                onMouseDown={(e) => handlePanelDragStart(e, 'trayPanel')}
+                            >
+                                <div>
+                                    <h3 className="font-bold text-white text-base leading-tight flex items-center gap-2">
+                                        <Layers className="w-4 h-4 text-sky-400" />
+                                        {t('splice_trays')}
+                                    </h3>
+                                    <div className="text-xs text-slate-400 mt-0.5">{totalTrays} {t('trays', { count: totalTrays })} • {dio.portIds.length} {t('dio_ports')}</div>
+                                </div>
                             </div>
 
-                            <div className="p-3 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+                            <div className="p-4 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
                                 {Array.from({ length: totalTrays }).map((_, trayIndex) => {
                                     const startIdx = trayIndex * PORTS_PER_TRAY;
                                     const trayPorts = dio.portIds.slice(startIdx, startIdx + PORTS_PER_TRAY);
                                     const trayId = `tray-${trayIndex}`;
 
                                     return (
-                                        <div key={trayId} className="bg-slate-900/50 border border-slate-700 rounded-lg p-2.5 shadow-sm">
-                                            <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-800">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                                                    <Layers className="w-3 h-3 text-sky-600" />
-                                                    {t('tray')} {trayIndex + 1}
+                                        <div key={trayId} className="bg-slate-950/50 border border-white/5 rounded-xl p-3 shadow-inner">
+                                            <div className="flex items-center justify-between mb-3 px-1">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                    Tray {trayIndex + 1}
                                                 </span>
-                                                <span className="text-[9px] text-slate-600 font-mono">
+                                                <span className="text-[9px] text-slate-600 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-white/5">
                                                     {startIdx + 1}-{Math.min(startIdx + PORTS_PER_TRAY, dio.portIds.length)}
                                                 </span>
                                             </div>
-                                            <div className="grid grid-cols-6 gap-y-3 gap-x-2">
+                                            <div className="grid grid-cols-6 gap-y-4 gap-x-2">
                                                 {trayPorts.map((pid, idx) => {
                                                     const absoluteIndex = startIdx + idx;
                                                     const connectedOltInfo = getConnectedOltInfo(pid);
@@ -630,37 +760,46 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                         return partner.includes('fiber');
                                                     });
 
-                                                    let bgColor = 'bg-slate-900';
-                                                    let borderColor = 'border-slate-700';
+                                                    let bgClass = 'bg-slate-900 hover:bg-slate-800';
+                                                    let borderClass = 'border-slate-700/50 hover:border-slate-500';
+                                                    let icon = null;
 
                                                     if (isLit) {
-                                                        bgColor = 'bg-red-500';
-                                                        borderColor = 'border-red-400';
+                                                        bgClass = 'bg-red-500/20';
+                                                        borderClass = 'border-red-500 animate-pulse';
                                                     } else if (isActive) {
-                                                        bgColor = 'bg-green-500';
-                                                        borderColor = 'border-green-400';
+                                                        bgClass = 'bg-emerald-500/20';
+                                                        borderClass = 'border-emerald-500';
                                                     } else if (isFiberConnected) {
-                                                        bgColor = 'bg-slate-700';
-                                                        borderColor = 'border-slate-500';
+                                                        bgClass = 'bg-sky-500/10';
+                                                        borderClass = 'border-sky-500/50';
                                                     }
 
                                                     return (
-                                                        <div key={pid} className="flex flex-col items-center gap-1 group relative">
+                                                        <div key={pid} className="flex flex-col items-center gap-1.5 group relative">
                                                             <div
                                                                 id={pid}
                                                                 onMouseDown={(e) => handlePortMouseDown(e, pid)}
                                                                 onMouseEnter={() => setHoveredPortId(pid)}
                                                                 onMouseLeave={() => setHoveredPortId(null)}
                                                                 className={`
-                                                                w-4 h-4 rounded-full border-2 cursor-pointer flex items-center justify-center transition-all relative z-10
-                                                                ${bgColor} ${borderColor}
-                                                                ${isLit ? 'shadow-[0_0_8px_#ef4444]' : (isActive ? 'shadow-[0_0_8px_#22c55e]' : '')}
-                                                                ${hoveredPortId === pid ? 'scale-125 ring-1 ring-white border-white' : ''}
+                                                                w-6 h-6 rounded-full border-2 cursor-pointer flex items-center justify-center transition-all relative z-10
+                                                                ${bgClass} ${borderClass}
+                                                                ${isLit ? 'shadow-[0_0_10px_#ef4444]' : (isActive ? 'shadow-[0_0_10px_#10b981]' : '')}
+                                                                ${hoveredPortId === pid ? 'scale-125 ring-2 ring-white border-white z-20 shadow-lg' : ''}
                                                             `}
                                                             >
-                                                                {isActive && !isLit && <div className="w-1 h-1 bg-white rounded-full animate-pulse" />}
+                                                                {isLit ? (
+                                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                                                                ) : isActive ? (
+                                                                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_5px_#34d399]" />
+                                                                ) : isFiberConnected ? (
+                                                                    <div className="w-1.5 h-1.5 bg-sky-400 rounded-full opacity-50" />
+                                                                ) : (
+                                                                    <div className="w-1 h-1 bg-slate-700 rounded-full group-hover:bg-slate-500" />
+                                                                )}
                                                             </div>
-                                                            <span className={`text-[8px] font-mono leading-none select-none ${isLit ? 'text-red-400 font-bold' : (isActive ? 'text-green-400 font-bold' : 'text-slate-500')}`}>
+                                                            <span className={`text-[9px] font-mono leading-none select-none ${isLit ? 'text-red-400 font-bold' : (isActive ? 'text-emerald-400 font-bold' : 'text-slate-500')}`}>
                                                                 {absoluteIndex + 1}
                                                             </span>
                                                         </div>
@@ -673,9 +812,19 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             </div>
                         </div>
 
-                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-slate-800/80 px-4 py-2 rounded-full text-xs text-slate-300 pointer-events-none flex items-center gap-2 border border-slate-700">
-                            <Zap className="w-3 h-3 text-green-400" />
-                            <span>{t('green_light_help')}</span>
+                        {/* Legend / Helper */}
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-none">
+                            <div className="bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full border border-white/10 shadow-lg flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]"></div>
+                                    <span className="text-[10px] uppercase font-bold text-slate-300">{t('legend_active_signal')}</span>
+                                </div>
+                                <div className="w-[1px] h-3 bg-white/10"></div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444] animate-pulse"></div>
+                                    <span className="text-[10px] uppercase font-bold text-slate-300">{t('legend_vfl_source')}</span>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
@@ -684,30 +833,37 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                 {/* OTDR INPUT MODAL */}
                 {otdrTargetPort && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setOtdrTargetPort(null)}>
-                        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                                    <Ruler className="w-5 h-5 text-white" />
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-[350px] shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center border border-indigo-500/30">
+                                    <Ruler className="w-6 h-6 text-indigo-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-lg">{t('otdr_title')}</h3>
-                                    <p className="text-xs text-slate-400">{t('otdr_trace_msg')}</p>
+                                    <h3 className="text-white font-bold text-lg leading-tight">{t('otdr_title')}</h3>
+                                    <p className="text-xs text-slate-400 mt-1">{t('otdr_trace_msg')}</p>
                                 </div>
                             </div>
 
-                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t('otdr_distance_lbl')}</label>
-                            <input
-                                type="number"
-                                value={otdrDistance}
-                                onChange={(e) => setOtdrDistance(e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white font-mono focus:border-indigo-500 focus:outline-none mb-4"
-                                placeholder="e.g. 1250"
-                                autoFocus
-                            />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">{t('otdr_distance_lbl')} (m)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={otdrDistance}
+                                            onChange={(e) => setOtdrDistance(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none transition-all"
+                                            placeholder="0.00"
+                                            autoFocus
+                                        />
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">{t('unit_meters')}</div>
+                                    </div>
+                                </div>
 
-                            <div className="flex gap-2">
-                                <button onClick={() => setOtdrTargetPort(null)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">{t('cancel')}</button>
-                                <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg">{t('otdr_locate')}</button>
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={() => setOtdrTargetPort(null)} className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-bold transition-colors">{t('cancel')}</button>
+                                    <button onClick={handleOtdrSubmit} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-900/20 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px]">{t('otdr_locate')}</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -716,40 +872,33 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                 {/* --- SELECT DIO PORT MODAL (Click-to-Connect) --- */}
                 {configuringFiberId && (
                     <div className="absolute inset-0 z-[2300] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setConfiguringFiberId(null)}>
-                        <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-[500px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
                             {/* Modal Header */}
-                            <div className="h-12 bg-slate-700 px-4 flex items-center justify-between border-b border-slate-600">
-                                <div className="flex items-center gap-2">
+                            <div className="h-16 bg-gradient-to-r from-slate-900 to-slate-800 px-6 flex items-center justify-between border-b border-white/5">
+                                <div className="flex items-center gap-3">
                                     <div
-                                        className="w-4 h-4 rounded-full border border-white/50"
+                                        className="w-8 h-8 rounded-full border-4 border-slate-800 shadow-lg"
                                         style={{
                                             backgroundColor: (() => {
                                                 if (!configuringFiberId) return '#ccc';
-                                                // Find cable
                                                 const cable = incomingCables.find(c => configuringFiberId.startsWith(c.id));
                                                 const parts = configuringFiberId.split('-fiber-');
                                                 const idx = parseInt(parts[1]);
-
-                                                if (cable) {
-                                                    // Need position in tube or absolute?
-                                                    // Usually visual header matches fiber color.
-                                                    // The simple cycle is:
-                                                    const looseTubeCount = cable.looseTubeCount || 1;
-                                                    const fpt = Math.ceil(cable.fiberCount / looseTubeCount);
-                                                    const pos = idx % fpt;
-                                                    return getFiberColor(pos, cable.colorStandard);
-                                                }
+                                                if (cable) return getFiberColor(idx % 12, cable.colorStandard);
                                                 return getFiberColor(idx, 'ABNT');
                                             })()
                                         }}
                                     />
-                                    <h3 className="text-sm font-bold text-white">{t('connect_fiber_tray')}</h3>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('connect_fiber_tray')}</h3>
+                                        <p className="text-white text-base font-bold">{t('select_target_port_dio', { name: dio.name })}</p>
+                                    </div>
                                 </div>
-                                <button onClick={() => setConfiguringFiberId(null)}><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
+                                <button onClick={() => setConfiguringFiberId(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
                             </div>
 
                             {/* Modal Content - Trays Grid */}
-                            <div className="p-4 flex-1 overflow-y-auto max-h-[60vh] space-y-4 bg-slate-900">
+                            <div className="p-6 flex-1 overflow-y-auto max-h-[60vh] space-y-6 bg-slate-950/80 custom-scrollbar">
                                 {/* Connection Status of current fiber */}
                                 {(() => {
                                     const existingConn = currentConnections.find(c => c.sourceId === configuringFiberId || c.targetId === configuringFiberId);
@@ -758,33 +907,44 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                         const match = portId.match(/-p-(\d+)$/);
                                         const portNum = match ? parseInt(match[1]) + 1 : '?';
                                         return (
-                                            <div className="flex items-center justify-between bg-slate-800 p-3 rounded border border-slate-700 mb-4">
-                                                <div className="text-xs text-slate-300">
-                                                    {t('connected_to_port', { port: portNum })}
+                                            <div className="flex items-center justify-between bg-slate-900/80 p-4 rounded-xl border border-white/5 mb-2 relative overflow-hidden group">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                                        <Link2 className="w-4 h-4 text-emerald-500" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-emerald-400 font-bold uppercase tracking-wider">{t('currently_connected')}</div>
+                                                        <div className="text-white font-medium">{t('connected_to_port', { port: portNum })}</div>
+                                                    </div>
                                                 </div>
                                                 <button
                                                     onClick={handleDisconnectFiber}
-                                                    className="px-3 py-1.5 bg-red-900/40 text-red-400 border border-red-900 rounded text-xs hover:bg-red-900 hover:text-white transition flex items-center gap-2"
+                                                    className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all flex items-center gap-2"
                                                 >
-                                                    <Unplug className="w-3 h-3" /> {t('disconnect')}
+                                                    <Unplug className="w-3.5 h-3.5" /> {t('disconnect')}
                                                 </button>
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div className="text-xs text-slate-500 mb-2 italic text-center">{t('select_tray_port_help')}</div>
+                                        <div className="flex items-center justify-center gap-2 text-sm text-slate-500 py-2 italic bg-slate-900/50 rounded-lg border border-white/5 border-dashed">
+                                            <ArrowRight className="w-4 h-4 animate-pulse" />
+                                            {t('select_tray_port_help')}
+                                        </div>
                                     );
                                 })()}
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-4">
                                     {Array.from({ length: totalTrays }).map((_, trayIndex) => {
                                         const startIdx = trayIndex * PORTS_PER_TRAY;
                                         const trayPorts = dio.portIds.slice(startIdx, startIdx + PORTS_PER_TRAY);
 
                                         return (
-                                            <div key={trayIndex} className="bg-slate-800/50 border border-slate-700 rounded p-2">
-                                                <div className="text-[10px] font-bold text-slate-500 uppercase mb-2 border-b border-slate-700/50 pb-1">
-                                                    {t('tray')} {trayIndex + 1}
+                                            <div key={trayIndex} className="bg-slate-900 border border-white/5 rounded-xl p-3 shadow-sm hover:border-white/10 transition-colors">
+                                                <div className="text-[10px] font-bold text-slate-500 uppercase mb-3 flex items-center justify-between px-1">
+                                                    <span>{t('tray')} {trayIndex + 1}</span>
+                                                    <Layers className="w-3 h-3 opacity-50" />
                                                 </div>
                                                 <div className="grid grid-cols-6 gap-2">
                                                     {trayPorts.map((pid, idx) => {
@@ -798,31 +958,36 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                             const partner = c.sourceId === pid ? c.targetId : c.sourceId;
                                                             return partner.includes('fiber');
                                                         });
-                                                        const hasOltPatch = existingConns.some(c => {
+
+                                                        // Patch cord check (occupied by OLT?)
+                                                        const occupiedByOLT = existingConns.some(c => {
                                                             const partner = c.sourceId === pid ? c.targetId : c.sourceId;
                                                             return partner.includes('olt');
                                                         });
 
+                                                        let btnClass = 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white hover:border-slate-500';
+                                                        if (isOccupiedByMe) {
+                                                            btnClass = 'bg-emerald-600 border-emerald-500 text-white shadow-[0_0_10px_#10b981] ring-1 ring-emerald-400';
+                                                        } else if (occupiedByOtherFiber) {
+                                                            btnClass = 'bg-slate-800/50 border-slate-800 text-slate-700 cursor-not-allowed opacity-50';
+                                                        } else if (occupiedByOLT) {
+                                                            // Can connect (it's a patch cord), but maybe show visual indicator?
+                                                            btnClass = 'bg-slate-800 border-slate-600 text-slate-300 ring-1 ring-sky-500/50';
+                                                        }
+
                                                         return (
                                                             <button
                                                                 key={pid}
+                                                                onClick={() => !occupiedByOtherFiber && handleSelectDioPort(pid)}
                                                                 disabled={occupiedByOtherFiber}
-                                                                onClick={() => handleSelectDioPort(pid)}
                                                                 className={`
-                                                                 aspect-square rounded border text-[9px] font-mono font-bold transition-all flex flex-col items-center justify-center relative select-none
-                                                                 ${isOccupiedByMe
-                                                                        ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-900/50 scale-110 ring-2 ring-emerald-400/30'
-                                                                        : occupiedByOtherFiber
-                                                                            ? 'bg-slate-900 border-slate-800 text-slate-700 cursor-not-allowed opacity-50'
-                                                                            : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-sky-600 hover:text-white hover:border-sky-400 hover:scale-105'
-                                                                    }
-                                                             `}
+                                                                aspect-square rounded-lg border flex items-center justify-center text-xs font-mono font-bold transition-all relative
+                                                                ${btnClass}
+                                                            `}
+                                                                title={occupiedByOtherFiber ? t('port_occupied_splice') : (occupiedByOLT ? t('port_has_patch_cord') : t('port_available'))}
                                                             >
                                                                 {absoluteIndex + 1}
-                                                                {isOccupiedByMe && <Check className="w-3 h-3 mt-0.5" />}
-                                                                {hasOltPatch && !isOccupiedByMe && !occupiedByOtherFiber && (
-                                                                    <Router className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" />
-                                                                )}
+                                                                {occupiedByOLT && <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-sky-500 rounded-full" />}
                                                             </button>
                                                         );
                                                     })}
@@ -836,41 +1001,47 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                     </div>
                 )}
 
-                {/* --- LINK CABLES MODAL (Internal) --- */}
+                {/* --- ADD NEW CABLE MODAL --- */}
                 {isLinkModalOpen && (
-                    <div className="absolute inset-0 z-[2300] flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-auto" onClick={() => setIsLinkModalOpen(false)}>
-                        <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-80 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="h-10 bg-slate-700 px-4 flex items-center justify-between border-b border-slate-600">
-                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <Link2 className="w-4 h-4 text-sky-400" />
+                    <div className="absolute inset-0 z-[2400] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsLinkModalOpen(false)}>
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="h-14 bg-gradient-to-r from-slate-900 to-slate-800 px-5 flex items-center justify-between border-b border-white/5">
+                                <h3 className="text-white font-bold flex items-center gap-2">
+                                    <Link2 className="w-5 h-5 text-sky-400" />
                                     {t('link_cables')}
                                 </h3>
-                                <button onClick={() => setIsLinkModalOpen(false)}><X className="w-4 h-4 text-slate-400 hover:text-white" /></button>
+                                <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
                             </div>
-                            <div className="p-4 space-y-2">
-                                <p className="text-xs text-slate-400 mb-2">{t('link_cables_help')}</p>
-                                {incomingCables.length === 0 && <div className="text-center text-xs text-slate-500 py-4">No cables available in this POP.</div>}
+                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-slate-950/50">
+                                {incomingCables.length === 0 && (
+                                    <div className="text-center p-8 text-slate-500">
+                                        <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                        <p>{t('no_cables_available')}</p>
+                                    </div>
+                                )}
                                 {incomingCables.map(cable => {
                                     const isLinked = dio.inputCableIds?.includes(cable.id);
-                                    const assignedToOther = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cable.id));
+                                    const assignedToWho = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cable.id));
 
                                     return (
                                         <button
                                             key={cable.id}
-                                            disabled={!!assignedToOther}
                                             onClick={() => handleToggleCableLink(cable.id)}
-                                            className={`
-                                             w-full flex items-center justify-between p-2 rounded border text-xs font-medium transition-all
-                                             ${isLinked ? 'bg-sky-900/40 border-sky-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}
-                                             ${assignedToOther ? 'opacity-50 cursor-not-allowed bg-slate-950' : ''}
-                                         `}
+                                            disabled={!!assignedToWho}
+                                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group
+                                        ${isLinked
+                                                    ? 'bg-sky-500/10 border-sky-500/50 text-white shadow-[0_0_10px_rgba(14,165,233,0.1)]'
+                                                    : (assignedToWho ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-500')}
+                                    `}
                                         >
-                                            <span className="flex items-center gap-2">
-                                                <CableIcon className="w-3 h-3" />
-                                                {cable.name}
-                                            </span>
-                                            {isLinked && <Check className="w-3 h-3 text-sky-400" />}
-                                            {assignedToOther && <span className="text-[9px] text-red-400">Linked to {assignedToOther.name}</span>}
+                                            <div>
+                                                <div className="font-bold text-sm mb-0.5 flex items-center gap-2">
+                                                    {cable.name}
+                                                    {assignedToWho && <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-500">{t('linked_to_dio', { name: assignedToWho.name })}</span>}
+                                                </div>
+                                                <div className="text-[10px] opacity-60 font-mono">{cable.fiberCount} Fibers</div>
+                                            </div>
+                                            {isLinked && <Check className="w-4 h-4 text-sky-400" />}
                                         </button>
                                     );
                                 })}
@@ -878,8 +1049,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         </div>
                     </div>
                 )}
-
             </div>
-        </div >
+        </div>
     );
 };

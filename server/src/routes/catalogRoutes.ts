@@ -14,9 +14,15 @@ router.put('/cables/:id', catalogController.updateCable);
 router.delete('/cables/:id', catalogController.deleteCable);
 
 
+
 router.get('/boxes', catalogController.getBoxes);
 router.post('/boxes', catalogController.createBox);
 router.put('/boxes/:id', catalogController.updateBox);
 router.delete('/boxes/:id', catalogController.deleteBox);
+
+router.get('/poles', catalogController.getPoles);
+router.post('/poles', catalogController.createPole);
+router.put('/poles/:id', catalogController.updatePole);
+router.delete('/poles/:id', catalogController.deletePole);
 
 export default router;

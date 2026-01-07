@@ -41,7 +41,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
         <div
             id={fusion.id}
             style={{
-                transform: `translate(${layout.x}px, ${layout.y + 6}px) rotate(${layout.rotation}deg)`,
+                transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 height: '12px', // Compact height to prevent click overlaps
                 width: '24px'   // Fits grid
             }}

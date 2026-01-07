@@ -38,6 +38,7 @@ model Company {
   pops                  Pop[]
   projects              Project[]
   users                 User[]
+  poles                 Pole[]
 
   @@map("companies")
 }
@@ -67,6 +68,7 @@ model Project {
   cables    Cable[]
   ctos      Cto[]
   pops      Pop[]
+  poles     Pole[]
   company   Company? @relation(fields: [companyId], references: [id])
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -149,6 +151,8 @@ enum EquipmentStatus {
   NOT_DEPLOYED
   DEPLOYED
   CERTIFIED
+  ANALYSING
+  LICENSED
 
   @@map("equipment_status")
 }
@@ -233,4 +237,39 @@ model CatalogBox {
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("catalog_boxes")
+}
+
+model CatalogPole {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // Concreto, Madeira, Metal, etc.
+  height      Float    // em metros
+  strength    Float    // em daN (Resistência)
+  shape       String   // Circular, Duplo T, Quadrado, etc.
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  instances   Pole[]
+
+  @@map("catalog_poles")
+}
+
+model Pole {
+  id            String          @id @default(uuid())
+  projectId     String          @map("project_id")
+  name          String
+  status        EquipmentStatus @default(PLANNED)
+  lat           Float
+  lng           Float
+  catalogId     String?         @map("catalog_id")
+  companyId     String?         @map("company_id")
+  
+  // Relations
+  company       Company?        @relation(fields: [companyId], references: [id])
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  catalog       CatalogPole?    @relation(fields: [catalogId], references: [id]) 
+
+  @@index([companyId])
+  @@index([lat, lng])
+  @@map("poles")
 }

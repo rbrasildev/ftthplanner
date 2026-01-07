@@ -18,6 +18,8 @@ import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
 import { generateCTOSVG, exportToPNG, exportToPDF } from './CTOExporter';
+import * as catalogService from '../services/catalogService';
+import { SplitterCatalogItem, BoxCatalogItem, getBoxes } from '../services/catalogService';
 
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
@@ -139,7 +141,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // Position Existing Fusions if missing
         next.fusions.forEach((fusion, idx) => {
             if (!next.layout![fusion.id]) {
-                next.layout![fusion.id] = { x: 582, y: 78 + (idx * 24), rotation: 0 };
+                next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
             }
         });
 
@@ -166,7 +168,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         });
         next.fusions.forEach((fusion, idx) => {
             if (!next.layout![fusion.id]) {
-                next.layout![fusion.id] = { x: 582, y: 78 + (idx * 24), rotation: 0 };
+                next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
             }
         });
 
@@ -343,8 +345,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
     const [isRotateMode, setIsRotateMode] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
+
     const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
+
+    // --- CATALOG INTEGRATION ---
+    const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
+    const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
+
+    useEffect(() => {
+        catalogService.getSplitters().then(data => {
+            setAvailableSplitters(data);
+        }).catch(err => console.error("Failed to load splitter catalog", err));
+
+        getBoxes().then(data => {
+            setAvailableBoxes(data);
+        }).catch(err => console.error("Failed to load box catalog", err));
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -587,6 +604,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleSaveAndClose = () => {
         const finalCTO = { ...localCTO, viewState: viewState };
+
+        // SAFEGUARD: Ensure all fusions have a layout entry before saving
+        // This prevents "reset to defaults" on next load if valid positions were somehow missing
+        if (!finalCTO.layout) finalCTO.layout = {};
+        finalCTO.fusions.forEach((f, idx) => {
+            if (!finalCTO.layout![f.id]) {
+                finalCTO.layout![f.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
+            }
+        });
+
         onSave(finalCTO);
         onClose();
     };
@@ -823,6 +850,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
+        // If we are already dragging something (like a new sticky element), don't start panning!
+        if (dragState) return;
+
         // If clicking background, start pan
         if (e.button === 0) { // Left click
             setDragState({
@@ -835,7 +865,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleElementDragStart = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (isVflToolActive || isOtdrToolActive || isDeleteMode || isRotateMode) return;
+        if (isVflToolActive || isOtdrToolActive || isDeleteMode || isRotateMode || isSmartAlignMode) return;
 
         // HYBRID INITIAL POS: Use DOM if available to prevent "jumps"
         let initialX = 0;
@@ -849,13 +879,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const matrix = new WebKitCSSMatrix(style.transform);
             initialX = matrix.m41;
             initialY = matrix.m42;
-            // FUSION CORRECTION: FusionNode renders visually at Y+6. 
-            // If we read Y from DOM, it includes the +6.
-            // But our State expects the "layout Y" (without offset).
-            // So we subtract 6 if it's a fusion TO normalize back to state logic.
-            if (id.startsWith('fus-')) {
-                initialY -= 6;
-            }
+            initialX = matrix.m41;
+            initialY = matrix.m42;
 
             // Extract rotation from matrix to prevent reset to 0
             // matrix(a, b, c, d, tx, ty)
@@ -886,7 +911,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 mirrored: isMirrored
             }
         });
-    }, [isVflToolActive, isOtdrToolActive, isDeleteMode, isRotateMode]);
+    }, [isVflToolActive, isOtdrToolActive, isDeleteMode, isRotateMode, isSmartAlignMode]);
 
     const handleDeleteSplitter = useCallback((id: string) => {
         setLocalCTO(prev => {
@@ -918,13 +943,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         if (isRotateMode) {
             setLocalCTO(prev => {
-                const currentRot = prev.layout?.[id]?.rotation || 0;
+                const existingLayout = prev.layout?.[id];
+                if (!existingLayout) return prev; // Safety check
+
+                const currentRot = existingLayout.rotation || 0;
                 const newRot = (currentRot + 90) % 360;
                 return {
                     ...prev,
                     layout: {
                         ...prev.layout,
-                        [id]: { ...prev.layout![id], rotation: newRot }
+                        [id]: { ...existingLayout, rotation: newRot }
                     }
                 };
             });
@@ -1039,7 +1067,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         setLocalCTO(prev => {
-            const currentRot = prev.layout?.[id]?.rotation || 0;
+            const existingLayout = prev.layout?.[id];
+            if (!existingLayout) return prev;
+
+            const currentRot = existingLayout.rotation || 0;
             const newRot = (currentRot + 90) % 360;
             return {
                 ...prev,
@@ -1163,10 +1194,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const el = document.getElementById(dragState.targetId);
             if (el) {
                 const rot = dragState.initialLayout.rotation || 0;
-                // FUSION OFFSET FIX: FusionNode renders with `top: layout.y + 6`. 
-                // We must match this offset during direct DOM drag to avoid "jumping"
-                const isFusion = dragState.targetId.startsWith('fus-');
-                const visualY = isFusion ? newY + 6 : newY;
+                // FUSION OFFSET FIX REMOVED: Now 1-to-1
+                const visualY = newY;
 
                 el.style.transform = `translate(${newX}px, ${visualY}px) rotate(${rot}deg)`;
             }
@@ -1287,6 +1316,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
+
             let newX = dragState.initialLayout.x + dx;
             let newY = dragState.initialLayout.y + dy;
 
@@ -1411,8 +1441,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         };
                     });
                 }
-            }
-            else if (!hoveredPortId) {
+            } else if (!hoveredPortId) {
+                // Disconnect (delete connection) if dropped in empty space
                 removeConnection(dragState.connectionId);
             }
         }
@@ -1468,7 +1498,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     // We want to align the fusion perfectly on the fiber.
                     // Calculate the projection of fusion center onto the line segment.
                     // Fusion is 24x12. Visual Center is relative to layout: x+12, y+12.
-                    // FusionNode render offset is +6 Y. So center is layout.y + 6 + 6 = layout.y + 12.
+                    // FusionNode render offset is NOW 0. So center is layout.y + 6.
 
                     // 1. Get Fiber Segment
                     const p1 = getPortCenter(hitConnection.sourceId);
@@ -1501,9 +1531,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                                 // Apply Snap
                                 // Fusion Layout X = SnapX - 12 (Center X offset)
-                                // Fusion Layout Y = SnapY - 12 (Center Y offset: 6 offset + 6 half-height)
+                                // Fusion Layout Y = SnapY - 6 (Center Y offset: 6 half-height, No render offset)
                                 newX = snapX - 12;
-                                newY = snapY - 12;
+                                newY = snapY - 6;
                                 break;
                             }
                         }
@@ -1572,6 +1602,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         setDragState(null);
     };
+
+    // --- GLOBAL EVENT LISTENERS FOR DRAG ---
+    useEffect(() => {
+        if (dragState) {
+            const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
+            const onUp = (e: MouseEvent) => handleMouseUp(e as unknown as React.MouseEvent);
+
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+
+            return () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+        }
+    }, [dragState, handleMouseMove, handleMouseUp]);
 
     // Initialize local state from prop
     useEffect(() => {
@@ -1671,16 +1717,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     };
 
-    const handleAddSplitter = (e: React.MouseEvent, type: '1:8' | '1:16' | '1:2') => {
+    const handleAddSplitter = (e: React.MouseEvent, catalogItem: SplitterCatalogItem) => {
         const id = `spl-${Date.now()}`;
-        const count = parseInt(type.split(':')[1]);
+        const count = catalogItem.outputs;
+
+        const outputIds: string[] = [];
+        for (let i = 0; i < count; i++) {
+            outputIds.push(`${id}-out-${i}`);
+        }
+
         const newSplitter: Splitter = {
             id,
-            name: ` ${localCTO.splitters.length + 1}`,
-            type,
+            name: `${localCTO.splitters.length + 1}`,
+            type: catalogItem.name,
             inputPortId: `${id}-in`,
-            outputPortIds: Array.from({ length: count }).map((_, i) => `${id}-out-${i}`)
+            outputPortIds: outputIds
         };
+
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
         const x = Math.round(rx / GRID_SIZE) * GRID_SIZE;
         const y = Math.round(ry / GRID_SIZE) * GRID_SIZE;
@@ -1692,6 +1745,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             layout: { ...prev.layout, [id]: initialLayout }
         }));
 
+        // START DRAGGING IMMEDIATELY (UX REQUEST: Sticky Drag)
         setDragState({
             mode: 'element',
             targetId: id,
@@ -1704,15 +1758,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
     const handleAddFusion = (e: React.MouseEvent) => {
-        const id = `fus-${Date.now()}`;
+        e.stopPropagation();
+        const id = `fus-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         const newFusion: FusionPoint = {
             id,
             name: `F-${localCTO.fusions.length + 1}`
         };
 
-        const { x: frx, y: fry } = screenToCanvas(e.clientX, e.clientY);
-        const x = Math.round(frx / GRID_SIZE) * GRID_SIZE;
-        const y = Math.round(fry / GRID_SIZE) * GRID_SIZE;
+        const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
+        const x = Math.round(rx / GRID_SIZE) * GRID_SIZE;
+        const y = Math.round(ry / GRID_SIZE) * GRID_SIZE;
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => ({
@@ -1721,6 +1776,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             layout: { ...prev.layout, [id]: initialLayout }
         }));
 
+        // START DRAGGING IMMEDIATELY (UX REQUEST: Sticky Drag)
         setDragState({
             mode: 'element',
             targetId: id,
@@ -1729,6 +1785,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             initialLayout: initialLayout
         });
     };
+
 
 
 
@@ -1762,12 +1819,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             {dragState && (
                 <style>{`
                     body, body * { cursor: grabbing !important; }
+                    ${dragState.targetId ? `[id="${dragState.targetId}"] { pointer-events: none !important; }` : ''}
                 `}</style>
             )}
             <div
                 className={`cto-editor-container w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -1824,10 +1880,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     </button>
 
                                     {showSplitterDropdown && (
-                                        <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200">
-                                            <button onClick={(e) => { handleAddSplitter(e, '1:2'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:2</button>
-                                            <button onClick={(e) => { handleAddSplitter(e, '1:8'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:8</button>
-                                            <button onClick={(e) => { handleAddSplitter(e, '1:16'); setShowSplitterDropdown(false); }} className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">SPL 1:16</button>
+                                        <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200 max-h-60 overflow-y-auto">
+                                            {availableSplitters.length === 0 ? (
+                                                <div className="px-4 py-2 text-xs text-slate-500 italic">No templates</div>
+                                            ) : (
+                                                availableSplitters.map(item => (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
+                                                        className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition border-b last:border-0 border-slate-100 dark:border-slate-700"
+                                                    >
+                                                        {item.name}
+                                                    </button>
+                                                ))
+                                            )}
                                         </div>
                                     )}
                                 </div>

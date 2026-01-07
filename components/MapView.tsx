@@ -3,9 +3,9 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { CTOData, POPData, CableData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS } from '../types';
+import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
 import { useLanguage } from '../LanguageContext';
-import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond } from 'lucide-react';
+import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond, UtilityPole } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 
 
@@ -32,15 +32,16 @@ L.Icon.Default.mergeOptions({
 // Icon cache to prevent recreation
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true) => {
-    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}`;
+const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string) => {
+    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
     }
 
+    // Prioritize custom catalog color if available, otherwise fallback to status color
     // @ts-ignore
-    const color = CTO_STATUS_COLORS[status] || CTO_STATUS_COLORS['PLANNED'];
+    const color = customColor || CTO_STATUS_COLORS[status] || CTO_STATUS_COLORS['PLANNED'];
 
     const icon = L.divIcon({
         className: 'custom-icon',
@@ -139,6 +140,58 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
     return icon;
 };
 
+
+const createPoleIcon = (name: string, isSelected: boolean, status: PoleStatus | undefined, showLabels: boolean = true) => {
+    const cacheKey = `pole-${name}-${isSelected}-${status}-${showLabels}`;
+    if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
+
+    const size = 16;
+    const color = status ? (POLE_STATUS_COLORS[status] || '#78716c') : '#78716c';
+
+    const icon = L.divIcon({
+        className: 'custom-icon',
+        html: `
+      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${size * 2}px; height: ${size * 2}px; background: ${color}66; border-radius: 50%; animation: pulse-gray 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
+      <div style="
+        position: relative;
+        background-color: ${color};
+        border: 2px solid ${isSelected ? '#fbbf24' : '#ffffff'};
+        border-radius: 50%;
+        width: ${size}px;
+        height: ${size}px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      ">
+        <div style="width: 4px; height: 4px; background: white; border-radius: 50%;"></div>
+      </div>
+      <div style="
+        display: ${showLabels ? 'block' : 'none'};
+        position: absolute;
+        top: ${size + 2}px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #4b5563;
+        color: white;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-size: 9px;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        z-index: 20;
+      ">${name}</div>
+`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+
+    iconCache.set(cacheKey, icon);
+    return icon;
+};
+
 const otdrIcon = L.divIcon({
     className: 'otdr-icon',
     html: `
@@ -195,8 +248,8 @@ const CTOMarker = React.memo(({
     onDragEnd: () => void
 }) => {
     const icon = useMemo(() =>
-        createCTOIcon(cto.name, isSelected, cto.status, showLabels),
-        [cto.name, isSelected, cto.status, showLabels]);
+        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color),
+        [cto.name, isSelected, cto.status, showLabels, cto.color]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -289,6 +342,76 @@ const POPMarker = React.memo(({
         </Marker>
     );
 });
+
+const PoleMarker = React.memo(({
+    pole, isSelected, showLabels, mode, onNodeClick, onMoveNode,
+    onDragStart, onDrag, onDragEnd
+}: {
+    pole: PoleData, isSelected: boolean, showLabels: boolean, mode: string,
+    onNodeClick: (id: string, type: 'Pole') => void,
+    onMoveNode: (id: string, lat: number, lng: number) => void,
+    onDragStart: (id: string) => void,
+    onDrag: (lat: number, lng: number) => void,
+    onDragEnd: () => void
+}) => {
+    const icon = useMemo(() =>
+        createPoleIcon(pole.name, isSelected, pole.status, showLabels),
+        [pole.name, isSelected, pole.status, showLabels]);
+
+    const eventHandlers = useMemo(() => ({
+        click: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            if (mode === 'view' || mode === 'move_node') {
+                onNodeClick(pole.id, 'Pole');
+            }
+        },
+        dragstart: () => onDragStart(pole.id),
+        drag: (e: any) => {
+            const pos = e.target.getLatLng();
+            onDrag(pos.lat, pos.lng);
+        },
+        dragend: (e: any) => {
+            onDragEnd();
+            const marker = e.target;
+            const position = marker.getLatLng();
+            onMoveNode(pole.id, position.lat, position.lng);
+        }
+    }), [mode, pole.id, isSelected, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd]);
+
+    return (
+        <Marker
+            position={[pole.coordinates.lat, pole.coordinates.lng]}
+            icon={icon}
+            draggable={mode === 'move_node'}
+            eventHandlers={eventHandlers}
+        >
+            <Tooltip direction="top" offset={[0, -8]} opacity={0.9}>
+                <div className="text-[10px] font-bold">{pole.name}</div>
+                {pole.type && <div className="text-[9px] opacity-80">{pole.type}</div>}
+            </Tooltip>
+        </Marker>
+    );
+});
+
+
+interface CablePolylineProps {
+    cable: CableData;
+    isLit: boolean;
+    isActive: boolean;
+    isHighlighted: boolean;
+    mode: string;
+    t: (key: string) => string;
+    onClick: (e: any, cable: CableData) => void;
+    onUpdateGeometry?: (id: string, coords: Coordinates[]) => void;
+    onConnect?: (cableId: string, nodeId: string, index: number) => void;
+    snapDistance?: number;
+    ctos?: CTOData[];
+    pops?: POPData[];
+    onPointDragStart: (cableId: string, index: number) => void;
+    onDrag: (lat: number, lng: number) => void;
+    onDragEnd: () => void;
+    handlePane?: string;
+}
 
 const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
     cable, isLit, isActive, isHighlighted, mode, t, onClick, onUpdateGeometry, onConnect,
@@ -492,7 +615,7 @@ const MapEvents: React.FC<{
 }> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd }) => {
     useMapEvents({
         click(e) {
-            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'draw_cable') {
+            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
                 onClearSelection();
@@ -584,8 +707,9 @@ const BoundsUpdater = ({
 interface MapViewProps {
     ctos: CTOData[];
     pops: POPData[];
+    poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr';
+    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -600,7 +724,7 @@ interface MapViewProps {
     initialZoom?: number;
     onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void;
     onAddPoint: (lat: number, lng: number) => void;
-    onNodeClick: (id: string, type: 'CTO' | 'POP') => void;
+    onNodeClick: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNode?: (id: string, lat: number, lng: number) => void;
     onCableStart: (nodeId: string) => void;
     onCableEnd: (nodeId: string) => void;
@@ -611,7 +735,7 @@ interface MapViewProps {
 }
 
 export const MapView: React.FC<MapViewProps> = ({
-    ctos, pops, cables, mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
+    ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onToggleLabels
@@ -628,6 +752,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const [showCables, setShowCables] = useState(true);
     const [showCTOs, setShowCTOs] = useState(true);
     const [showPOPs, setShowPOPs] = useState(true);
+    const [showPoles, setShowPoles] = useState(true);
     const [isLayersOpen, setIsLayersOpen] = useState(false);
     const [enableClustering, setEnableClustering] = useState(true);
 
@@ -712,6 +837,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const visibleCTOs = useMemo(() => showCTOs ? ctos : [], [showCTOs, ctos]);
     const visiblePOPs = useMemo(() => showPOPs ? pops : [], [showPOPs, pops]);
+    const visiblePoles = useMemo(() => showPoles ? poles : [], [showPoles, poles]);
 
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
@@ -799,6 +925,17 @@ export const MapView: React.FC<MapViewProps> = ({
                         <Building2 className="w-5 h-5" />
                         {!showPOPs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
                     </button>
+
+                    {/* Pole Toggle */}
+                    <button
+                        onClick={() => setShowPoles(!showPoles)}
+                        title={t('layer_poles') || 'Postes'}
+                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showPoles ? 'bg-stone-500 text-white shadow-lg shadow-stone-500/30 border-stone-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+                    >
+                        <UtilityPole className="w-5 h-5" />
+                        {!showPoles && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
+                    </button>
+
 
                     {/* Cable Toggle */}
                     <button
@@ -982,6 +1119,20 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragEnd={handleDragEnd}
                             />
                         ))}
+                        {visiblePoles.map(pole => (
+                            <PoleMarker
+                                key={pole.id}
+                                pole={pole}
+                                isSelected={selectedId === pole.id}
+                                showLabels={effectiveShowLabels}
+                                mode={mode}
+                                onNodeClick={onNodeClick}
+                                onMoveNode={onMoveNode || noOp}
+                                onDragStart={handleNodeDragStart}
+                                onDrag={handleDrag}
+                                onDragEnd={handleDragEnd}
+                            />
+                        ))}
                     </MarkerClusterGroup>
                 ) : (
                     <>
@@ -1015,6 +1166,20 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
                                 cableStartPoint={cableStartPoint}
+                                onDragStart={handleNodeDragStart}
+                                onDrag={handleDrag}
+                                onDragEnd={handleDragEnd}
+                            />
+                        ))}
+                        {visiblePoles.map(pole => (
+                            <PoleMarker
+                                key={pole.id}
+                                pole={pole}
+                                isSelected={selectedId === pole.id}
+                                showLabels={effectiveShowLabels}
+                                mode={mode}
+                                onNodeClick={onNodeClick}
+                                onMoveNode={onMoveNode || noOp}
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}

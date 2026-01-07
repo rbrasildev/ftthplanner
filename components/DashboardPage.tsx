@@ -3,7 +3,11 @@ import { Project, Coordinates } from '../types';
 import * as adminService from '../services/adminService';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun } from 'lucide-react';
+import { PoleRegistration } from './registrations/PoleRegistration';
+import { SplitterRegistration } from './registrations/SplitterRegistration';
+import CableRegistration from './registrations/CableRegistration';
+import BoxRegistration from './registrations/BoxRegistration';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import L from 'leaflet';
 import { searchLocation } from '../services/nominatimService';
@@ -70,7 +74,7 @@ const LocationPickerMap = ({
   );
 };
 
-type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup';
+type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
@@ -88,6 +92,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const [currentView, setCurrentView] = useState<DashboardView>('projects');
+
+  // State for expanded menus
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -254,13 +261,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
   };
 
-  const menuItems: { id: DashboardView, label: string, icon: React.FC<any> }[] = [
+  interface MenuItem {
+    id: DashboardView;
+    label: string;
+    icon: React.FC<any>;
+    subItems?: MenuItem[];
+  }
+
+  const menuItems: MenuItem[] = [
     { id: 'projects', label: t('my_projects') || 'Projetos', icon: FolderOpen },
-    { id: 'registrations', label: t('registrations') || 'Cadastros', icon: Database },
+    {
+      id: 'registrations',
+      label: t('registrations') || 'Cadastros',
+      icon: ClipboardList,
+      subItems: [
+        { id: 'reg_poste', label: t('reg_poste') || 'Poste', icon: UtilityPole },
+        { id: 'reg_caixa', label: t('reg_caixa') || 'Caixa', icon: Box },
+        { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable },
+        { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork },
+        { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap }
+      ]
+    },
     { id: 'users', label: t('users') || 'Usuários', icon: Users },
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
-    { id: 'backup', label: 'Backup', icon: Save },
+    { id: 'backup', label: t('backup') || 'Backup', icon: Save },
   ];
+
+  // Need to import GitFork or use a fallback. Let's use Component inside map to solve icon imports if needed.
+  // Actually, I need to check imports. Activity, Box, Unplug, Zap are imported. GitFork is NOT imported.
+  // Let's use 'Share2' or 'Network' for Splitter if GitFork is not available, or add it to imports.
+  // Viewing imports... Component has `Network` ... `Share2` isn't there. `Split` isn't there. 
+  // Let's replace GitFork with `Network` or `Share` if available. `Network` is imported. `Zap` is imported.
 
   // Editing State
   const [isEditing, setIsEditing] = useState(false);
@@ -294,6 +325,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
   };
 
+  // Helper to check if a menu is active (including children)
+  const isMenuActive = (item: MenuItem) => {
+    if (currentView === item.id) return true;
+    if (item.subItems) {
+      return item.subItems.some(sub => sub.id === currentView);
+    }
+    return false;
+  };
+
+  const handleMenuClick = (item: MenuItem) => {
+    if (item.subItems) {
+      // Toggle expansion
+      setExpandedMenu(prev => prev === item.id ? null : item.id);
+    } else {
+      setCurrentView(item.id);
+    }
+  };
+
+  // Auto-expand menu if current view is a child
+  useEffect(() => {
+    menuItems.forEach(item => {
+      if (item.subItems && item.subItems.some(sub => sub.id === currentView)) {
+        setExpandedMenu(item.id);
+      }
+    });
+  }, [currentView]);
+
   return (
     <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300 overflow-hidden">
 
@@ -311,20 +369,49 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
           {menuItems.map(item => {
-            const isActive = currentView === item.id;
+            const isActive = isMenuActive(item);
+            const isExpanded = expandedMenu === item.id;
+            const hasSubItems = !!item.subItems;
+
             return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentView(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all group ${isActive
-                  ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400 shadow-sm ring-1 ring-sky-200 dark:ring-sky-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-              >
-                <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
-                <span className="flex-1 text-left">{item.label}</span>
-                {isActive && <ChevronRight className="w-4 h-4 text-sky-500/50" />}
-              </button>
+              <div key={item.id} className="space-y-1">
+                <button
+                  onClick={() => handleMenuClick(item)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all group ${isActive && !hasSubItems
+                    ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400 shadow-sm ring-1 ring-sky-200 dark:ring-sky-800'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <item.icon className={`w-5 h-5 transition-colors ${isActive && !hasSubItems ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {hasSubItems && (
+                    <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                  )}
+                </button>
+
+                {/* Submenu */}
+                {hasSubItems && isExpanded && (
+                  <div className="pl-4 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                    {item.subItems!.map(sub => {
+                      const isSubActive = currentView === sub.id;
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => setCurrentView(sub.id)}
+                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-all group ${isSubActive
+                            ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400'
+                            : 'text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                        >
+                          <sub.icon className={`w-4 h-4 ${isSubActive ? 'text-sky-500' : 'text-slate-400'}`} />
+                          {/* <span className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-700 group-hover:bg-slate-400'}`}></span> */}
+                          <span className="">{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -392,7 +479,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   {t('my_projects')}
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                  Manage and organize your FTTH networks.
+                  {t('manage_networks_desc')}
                 </p>
               </div>
 
@@ -401,7 +488,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t('search_generic')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors shadow-sm"
@@ -488,7 +575,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">{deployedCables}/{totalCables}</span>
-                          <span className="text-slate-500 dark:text-slate-600">Cables</span>
+                          <span className="text-slate-500 dark:text-slate-600">{t('cables')}</span>
                         </div>
                       </div>
 
@@ -516,10 +603,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
 
         {/* Placeholders for other views */}
-        {currentView !== 'projects' && currentView !== 'users' && (
+        {currentView !== 'projects' && currentView !== 'users' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-              {currentView === 'registrations' && <Database className="w-10 h-10 text-slate-400" />}
+              {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
               {currentView === 'settings' && <Settings className="w-10 h-10 text-slate-400" />}
               {currentView === 'backup' && <Save className="w-10 h-10 text-slate-400" />}
             </div>
@@ -527,7 +614,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               {menuItems.find(m => m.id === currentView)?.label}
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              This module is currently under development.
+              {t('module_under_development')}
+            </p>
+          </div>
+        )}
+
+        {/* --- SPLITTER REGISTRATION --- */}
+        {currentView === 'reg_splitter' && (
+          <SplitterRegistration />
+        )}
+
+        {/* --- CABLE REGISTRATION --- */}
+        {currentView === 'reg_cabo' && (
+          <CableRegistration />
+        )}
+
+        {/* --- BOX REGISTRATION --- */}
+        {currentView === 'reg_caixa' && (
+          <BoxRegistration />
+        )}
+
+        {/* --- POLE REGISTRATION --- */}
+        {currentView === 'reg_poste' && (
+          <PoleRegistration />
+        )}
+
+        {/* --- REGISTRATION PLACEHOLDERS --- */}
+        {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste'].includes(currentView) && (
+          <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+              {currentView === 'reg_poste' && <UtilityPole className="w-10 h-10 text-slate-400" />}
+              {currentView === 'reg_caixa' && <Box className="w-10 h-10 text-slate-400" />}
+              {currentView === 'reg_cabo' && <Cable className="w-10 h-10 text-slate-400" />}
+
+              {currentView === 'reg_fusao' && <Zap className="w-10 h-10 text-slate-400" />}
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+              {t('registration_title', { name: t(currentView as any) || currentView.replace('reg_', '') })}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              {t('registration_placeholder_desc', { name: t(currentView as any) || currentView.replace('reg_', '') })}
             </p>
           </div>
         )}
