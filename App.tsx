@@ -117,7 +117,7 @@ export default function App() {
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target'>('view');
-    const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' } | null>(null);
+    const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
     const [isPoleModalOpen, setIsPoleModalOpen] = useState(false);
@@ -236,7 +236,7 @@ export default function App() {
         }
     }, [currentProjectId]);
 
-    const showToast = (msg: string, type: 'success' | 'info' = 'success') => {
+    const showToast = (msg: string, type: 'success' | 'info' | 'error' = 'success') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3000);
     };
@@ -1254,7 +1254,7 @@ export default function App() {
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
                 <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-5">
-                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
+                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : toast.type === 'error' ? 'bg-red-100 dark:bg-red-900/90 border-red-500 text-red-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
                         <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
                     </div>
                 </div>

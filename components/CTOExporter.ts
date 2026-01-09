@@ -196,7 +196,7 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Polygon Points (Absolute within Size x Size)
     // Original: width/2,12 shiftPx,60 width+shiftPx,60
     // Adjusted:
-    const p1 = `${offsetX + (width / 2)},${offsetY + 12}`;
+    const p1 = `${offsetX + (width / 2) + shiftPx},${offsetY + 12}`; // Added shiftPx to align with Input Port
     const p2 = `${offsetX + shiftPx},${offsetY + 60}`;
     const p3 = `${offsetX + width + shiftPx},${offsetY + 60}`;
     const polygonPoints = `${p1} ${p2} ${p3}`;
@@ -204,13 +204,13 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Label Position
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 40
+        y: offsetY + 36 // Corrected to match Editor center (12 + 48/2)
     };
 
     const inputPort = {
         id: splitter.inputPortId,
-        x: offsetX + (width / 2),
-        y: offsetY + 12
+        x: offsetX + (width / 2) + shiftPx, // Added shiftPx to match Editor X alignment (Skew)
+        y: offsetY + 12 // Matches Editor Flex Center (12px)
     };
 
     const outputPorts = splitter.outputPortIds.map((pid, idx) => ({
@@ -321,7 +321,9 @@ const ENG = {
         headerH: 80,
         footerH: 140, // Expanded for Legend + Tech Data
         margin: 40,
-        minWidth: 1000 // Landscape A4ish ratio
+        minWidth: 1191, // A3 Landscape
+        width: 1191,
+        height: 842
     }
 };
 
@@ -495,30 +497,37 @@ export const generateCTOSVG = (
     const diaW = maxX - minX;
     const diaH = maxY - minY;
 
-    // 2. SETUP PAGE LAYOUT (Engineering Standard)
-    // Header (Top) -> Diagram (Middle) -> Footer (Bottom)
+    // 2. SETUP PAGE LAYOUT (A3 Landscape Engineering Standard)
+    const PAGE_W = 1191;
+    const PAGE_H = 842;
+    const MARGIN = ENG.sizes.margin;
+    const HEADER_H = ENG.sizes.headerH;
+    const FOOTER_H = footerData ? ENG.sizes.footerH : 0;
 
-    // Page Width: Max of Diagram+Margins OR Min Standard Width (1100px)
-    const PAGE_W = Math.max(diaW + (ENG.sizes.margin * 2), ENG.sizes.minWidth);
+    // Available Content Area
+    const AVAIL_W = PAGE_W - (MARGIN * 2);
+    const AVAIL_H = PAGE_H - HEADER_H - FOOTER_H - (MARGIN * 2);
 
-    // Diagram Section Height
-    // Ensure diagram has breathing room and is strictly separated
-    const DIAGRAM_SECTION_H = diaH + (ENG.sizes.margin * 2);
+    // 3. SCALE CALCULATION
+    // Fit diagram into available area with 95% fill factor
+    let scale = Math.min(AVAIL_W / diaW, AVAIL_H / diaH) * 0.95;
 
-    // Total Page Height
-    const PAGE_H = ENG.sizes.headerH + DIAGRAM_SECTION_H + (footerData ? ENG.sizes.footerH : 0);
+    // Safety clamps
+    if (diaW === 0 || diaH === 0) scale = 1;
+    if (scale > 5) scale = 5; // Prevent absurd zoom on single point
 
-    // 3. CENTERING OFFSETS
-    // X Center: PAGE_W / 2
-    // Diagram Center X: minX + diaW/2
-    // Shift X goes from (minX) to (DesiredLeft)
-    // DesiredLeft = (PAGE_W - diaW) / 2
-    // ShiftX = DesiredLeft - minX
+    // 4. CENTERING LOGIC
+    const diaCenterX = minX + diaW / 2;
+    const diaCenterY = minY + diaH / 2;
 
-    const shiftX = (PAGE_W - diaW) / 2 - minX;
-    const shiftY = ENG.sizes.headerH + ENG.sizes.margin - minY; // Align top of diagram to margin
+    const pageCenterX = PAGE_W / 2;
+    // Align content center to the middle of the available vertical space
+    const pageContentCenterY = HEADER_H + MARGIN + (AVAIL_H / 2);
 
-    // 4. RENDER FRAME (Header & Footer)
+    // Construct Transform: Move PageCenter, Scale, Move Back DiagramCenter
+    const finalTransform = `translate(${pageCenterX}, ${pageContentCenterY}) scale(${scale}) translate(${-diaCenterX}, ${-diaCenterY})`;
+
+    // 5. RENDER FRAME (Header & Footer)
     if (footerData) {
         svgContent += renderEngineeringHeader(0, 0, PAGE_W, footerData);
         svgContent += renderEngineeringFooter(0, PAGE_H - ENG.sizes.footerH, PAGE_W, footerData);
@@ -645,9 +654,10 @@ export const generateCTOSVG = (
     });
 
     // Wrap Diagram in Translation Group
-    svgContent += `<g transform="translate(${shiftX}, ${shiftY})">${diagramContent}</g>`;
+    // Wrap Diagram in Translation/Scale Group
+    svgContent += `<g transform="${finalTransform}">${diagramContent}</g>`;
 
-    // Final SVG
+    // Final SVG with fixed A3 ViewBox
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE_W} ${PAGE_H}" width="${PAGE_W}" height="${PAGE_H}" preserveAspectRatio="xMidYMid meet">${svgContent}</svg>`;
 };
 
