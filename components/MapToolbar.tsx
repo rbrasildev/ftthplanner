@@ -59,7 +59,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                     <ToolButton
                         mode="add_pole"
                         icon={UtilityPole}
-                        label={t('pole') || 'Poste'}
+                        label={t('sidebar_pole')}
                         onClick={() => setActiveMenuId(activeMenuId === 'pole_menu' ? null : 'pole_menu')}
                     />
 

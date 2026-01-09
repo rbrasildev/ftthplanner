@@ -1,6 +1,7 @@
 import React from 'react';
 import { CableData, getFiberColor, ElementLayout, FiberConnection } from '../../types';
 import { RotateCw, GripHorizontal, ArrowRightLeft, Pencil } from 'lucide-react';
+import { useLanguage } from '../../LanguageContext';
 
 interface FiberCableNodeProps {
     cable: CableData;
@@ -18,6 +19,7 @@ interface FiberCableNodeProps {
     onCableMouseEnter?: (id: string) => void;
     onCableMouseLeave?: (id: string) => void;
     onCableClick?: (e: React.MouseEvent, id: string) => void;
+    onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
 const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
@@ -35,8 +37,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     onPortMouseLeave,
     onCableMouseEnter,
     onCableMouseLeave,
-    onCableClick
+    onCableClick,
+    onContextMenu
 }) => {
+    const { t } = useLanguage();
     const looseTubeCount = cable.looseTubeCount || 1;
     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
 
@@ -72,6 +76,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     return (
         <div
             id={cable.id}
+            onContextMenu={(e) => onContextMenu?.(e, cable.id)}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 paddingBottom: `${paddingBottom}px` // invisible padding to align center
@@ -88,28 +93,19 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
                 <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
-                        {onEdit && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onEdit(e, cable.id); }}
-                                className="text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                                title="Edit Cable"
-                            >
-                                <Pencil className="w-3 h-3" />
-                            </button>
-                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
-                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                            title="Flip"
+                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                            title={t('action_flip')}
                         >
-                            <ArrowRightLeft className="w-3 h-3" />
+                            <ArrowRightLeft className="w-4 h-4" />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onRotate(e, cable.id); }}
-                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                            title="Rotate"
+                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                            title={t('action_rotate')}
                         >
-                            <RotateCw className="w-3 h-3" />
+                            <RotateCw className="w-4 h-4" />
                         </button>
                     </div>
                 </div>

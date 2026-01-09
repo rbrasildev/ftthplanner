@@ -116,7 +116,7 @@ export default function App() {
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' } | null>(null);
 
     // Pole Modal State
@@ -124,6 +124,7 @@ export default function App() {
     const [isKmlImportOpen, setIsKmlImportOpen] = useState(false);
 
     const [pendingPoleLocation, setPendingPoleLocation] = useState<Coordinates | null>(null);
+    const [pendingConnectionCableId, setPendingConnectionCableId] = useState<string | null>(null);
     const [showLabels, setShowLabels] = useState(() => {
         const saved = localStorage.getItem('ftth_show_labels');
         return saved === 'true'; // Default to false if not present or 'false'
@@ -645,6 +646,35 @@ export default function App() {
         }
     }, [toolMode, updateCurrentNetwork, t]);
 
+    const handleSelectNextNode = useCallback((cableId: string) => {
+        const net = getCurrentNetwork();
+        const cable = net.cables.find(c => c.id === cableId);
+        if (!cable || !editingCTO) return;
+
+        let targetId: string | undefined;
+
+        if (cable.fromNodeId === editingCTO.id) targetId = cable.toNodeId;
+        else if (cable.toNodeId === editingCTO.id) targetId = cable.fromNodeId;
+
+        if (!targetId) {
+            showToast(t('error_cable_endpoint_missing') || "Cabo solto na outra ponta", 'info');
+            return;
+        }
+
+        const targetCTO = net.ctos.find(c => c.id === targetId);
+        const targetPOP = net.pops.find(p => p.id === targetId);
+
+        if (targetCTO) {
+            setEditingCTO(targetCTO);
+        } else if (targetPOP) {
+            setEditingCTO(null);
+            setEditingPOP(targetPOP);
+        } else {
+            showToast(t('error_target_not_found') || "Destino não encontrado", 'error');
+        }
+
+    }, [getCurrentNetwork, t, editingCTO]);
+
     const handleNodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
         // Handle Pole click specifically if needed, or share same select logic
         if (toolMode === 'view' || toolMode === 'move_node') {
@@ -766,6 +796,13 @@ export default function App() {
             const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId);
             if (!cable || !node) return prev;
 
+            // --- VALIDATION: PREVENT DUPLICATE CONNECTION OF SAME CABLE ---
+            const isCTO = prev.ctos.some(c => c.id === nodeId);
+            if (isCTO && (node.inputCableIds || []).includes(cableId)) {
+                showToast(t('error_cto_duplicate_cable') || "Este cabo já está conectado a esta CTO.", 'info');
+                return prev;
+            }
+
             if (pointIndex === 0 || pointIndex === cable.coordinates.length - 1) {
                 const newCoords = [...cable.coordinates];
                 newCoords[pointIndex] = node.coordinates;
@@ -817,6 +854,95 @@ export default function App() {
     const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); };
     const handleUpdateCable = (c: CableData) => updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) }));
     const handleDeleteCable = (id: string) => { setEditingCable(null); updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) })); showToast(t('toast_cable_deleted')); };
+
+    const handleUpdateCableGeometry = (id: string, coords: Coordinates[]) => {
+        updateCurrentNetwork(prev => {
+            let cable = prev.cables.find(c => c.id === id);
+            if (!cable) return prev;
+
+            let updatedCable = { ...cable, coordinates: coords };
+            let updatedCTOs = prev.ctos;
+            let updatedPOPs = prev.pops;
+
+            const DISCONNECT_THRESHOLD = 0.000001; // Approx 10cm
+
+            // Check Start Disconnection
+            if (updatedCable.fromNodeId) {
+                const node = prev.ctos.find(c => c.id === updatedCable.fromNodeId) || prev.pops.find(p => p.id === updatedCable.fromNodeId);
+                if (node) {
+                    const start = coords[0];
+                    const dist = Math.sqrt(Math.pow(start.lat - node.coordinates.lat, 2) + Math.pow(start.lng - node.coordinates.lng, 2));
+                    if (dist > DISCONNECT_THRESHOLD) {
+                        updatedCable.fromNodeId = undefined;
+                        // Remove from Input IDs
+                        if (prev.ctos.some(c => c.id === node.id)) {
+                            updatedCTOs = updatedCTOs.map(c => c.id === node.id ? { ...c, inputCableIds: c.inputCableIds?.filter(cid => cid !== id) } : c);
+                        } else {
+                            updatedPOPs = updatedPOPs.map(p => p.id === node.id ? { ...p, inputCableIds: p.inputCableIds?.filter(cid => cid !== id) } : p);
+                        }
+                        showToast(t('toast_cable_disconnected') || "Cabo desconectado");
+                    }
+                }
+            }
+
+            // Check End Disconnection
+            if (updatedCable.toNodeId) {
+                const node = prev.ctos.find(c => c.id === updatedCable.toNodeId) || prev.pops.find(p => p.id === updatedCable.toNodeId);
+                if (node) {
+                    const end = coords[coords.length - 1];
+                    const dist = Math.sqrt(Math.pow(end.lat - node.coordinates.lat, 2) + Math.pow(end.lng - node.coordinates.lng, 2));
+                    if (dist > DISCONNECT_THRESHOLD) {
+                        updatedCable.toNodeId = undefined;
+                        // Remove from Input IDs
+                        if (prev.ctos.some(c => c.id === node.id)) {
+                            updatedCTOs = updatedCTOs.map(c => c.id === node.id ? { ...c, inputCableIds: c.inputCableIds?.filter(cid => cid !== id) } : c);
+                        } else {
+                            updatedPOPs = updatedPOPs.map(p => p.id === node.id ? { ...p, inputCableIds: p.inputCableIds?.filter(cid => cid !== id) } : p);
+                        }
+                        showToast(t('toast_cable_disconnected') || "Cabo desconectado");
+                    }
+                }
+            }
+
+            // Apply AutoSnap (disabled but kept for consistency) and return
+            const tempState = { ...prev, cables: prev.cables.map(c => c.id === id ? updatedCable : c), ctos: updatedCTOs, pops: updatedPOPs };
+            return autoSnapNetwork(tempState, systemSettings.snapDistance).state;
+        });
+    };
+
+    const handleDisconnectCableFromBox = (cableId: string) => {
+        if (!editingCTO) return;
+        const nodeId = editingCTO.id;
+        updateCurrentNetwork(prev => {
+            const cable = prev.cables.find(c => c.id === cableId);
+            if (!cable) return prev;
+
+            // Disconnect cable from this node specifically
+            const newFrom = cable.fromNodeId === nodeId ? undefined : cable.fromNodeId;
+            const newTo = cable.toNodeId === nodeId ? undefined : cable.toNodeId;
+
+            // Update CTO input list
+            const updatedCTOs = prev.ctos.map(c => c.id === nodeId ? {
+                ...c,
+                inputCableIds: c.inputCableIds?.filter(cid => cid !== cableId)
+            } : c);
+
+            // Update POP input list (just in case, though editingCTO implies CTO)
+            const updatedPOPs = prev.pops.map(p => p.id === nodeId ? {
+                ...p,
+                inputCableIds: p.inputCableIds?.filter(cid => cid !== cableId)
+            } : p);
+
+            showToast(t('toast_cable_disconnected') || "Cabo desconectado");
+
+            return {
+                ...prev,
+                cables: prev.cables.map(c => c.id === cableId ? { ...c, fromNodeId: newFrom, toNodeId: newTo } : c),
+                ctos: updatedCTOs,
+                pops: updatedPOPs
+            };
+        });
+    };
 
     // ... (OTDR Trace Logic Unchanged) ...
     const traceOpticalPath = (startNodeId: string, startPortId: string, targetDistance: number) => {
@@ -1206,7 +1332,7 @@ export default function App() {
                     onCableStart={handleNodeForCableStable}
                     onCableEnd={handleNodeForCableStable}
                     onConnectCable={handleConnectCable}
-                    onUpdateCableGeometry={(id, coords) => updateCurrentNetwork(p => autoSnapNetwork({ ...p, cables: p.cables.map(c => c.id === id ? { ...c, coordinates: coords } : c) }, systemSettings.snapDistance).state)}
+                    onUpdateCableGeometry={handleUpdateCableGeometry}
                     onCableClick={(id) => {
                         if (toolMode === 'view') {
                             setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
@@ -1223,6 +1349,7 @@ export default function App() {
                     {toolMode === 'add_pop' && t('tooltip_add_pop')}
                     {toolMode === 'add_pole' && (t('tooltip_add_pole') || 'Clique no mapa para adicionar um poste')}
                     {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
+                    {toolMode === 'pick_connection_target' && (t('toast_select_next_box') || 'Selecione a próxima caixa no mapa')}
                 </div>
 
                 {toolMode === 'draw_cable' && drawingPath.length > 0 && (
@@ -1307,9 +1434,7 @@ export default function App() {
                     incomingCables={getCurrentNetwork().cables.filter(c =>
                         c.fromNodeId === editingCTO.id ||
                         c.toNodeId === editingCTO.id ||
-                        editingCTO.inputCableIds?.includes(c.id) ||
-                        // Robustness: Include cables visually connected (same coordinates)
-                        c.coordinates.some(p => Math.abs(p.lat - editingCTO.coordinates.lat) < 0.0000001 && Math.abs(p.lng - editingCTO.coordinates.lng) < 0.0000001)
+                        editingCTO.inputCableIds?.includes(c.id)
                     )}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
@@ -1318,6 +1443,8 @@ export default function App() {
                     onSave={handleSaveCTO}
                     onEditCable={setEditingCable}
                     onHoverCable={(id) => setHighlightedCableId(id)}
+                    onDisconnectCable={handleDisconnectCableFromBox}
+                    onSelectNextNode={handleSelectNextNode}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
 
                     // Auth / Protection Props
