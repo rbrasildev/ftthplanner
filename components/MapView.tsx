@@ -754,7 +754,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const [showCables, setShowCables] = useState(true);
     const [showCTOs, setShowCTOs] = useState(true);
     const [showPOPs, setShowPOPs] = useState(true);
-    const [showPoles, setShowPoles] = useState(true);
+    const [showPoles, setShowPoles] = useState(false);
     const [isLayersOpen, setIsLayersOpen] = useState(false);
     const [enableClustering, setEnableClustering] = useState(true);
 

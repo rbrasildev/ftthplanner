@@ -151,6 +151,11 @@ export const createFusion = async (data: Omit<FusionCatalogItem, 'id' | 'updated
     return response.data;
 };
 
+export const updateFusion = async (id: string, data: Partial<FusionCatalogItem>): Promise<FusionCatalogItem> => {
+    const response = await axios.put(`${API_URL}/fusions/${id}`, data);
+    return response.data;
+};
+
 export const deleteFusion = async (id: string): Promise<void> => {
     await axios.delete(`${API_URL}/fusions/${id}`);
 };

@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
-import { getFusions, createFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
-import { Plus, Trash2, Zap, Search, Loader2 } from 'lucide-react';
+import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
+import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save } from 'lucide-react';
 
 export const FusionRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -11,9 +11,12 @@ export const FusionRegistration: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Form State
-    const [isCreating, setIsCreating] = useState(false);
-    const [newName, setNewName] = useState('');
-    const [newAttenuation, setNewAttenuation] = useState('0.01');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<FusionCatalogItem | null>(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        attenuation: '0.01'
+    });
 
     useEffect(() => {
         loadFusions();
@@ -31,22 +34,44 @@ export const FusionRegistration: React.FC = () => {
         }
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleOpenModal = (item?: FusionCatalogItem) => {
+        if (item) {
+            setEditingItem(item);
+            setFormData({
+                name: item.name,
+                attenuation: String(item.attenuation)
+            });
+        } else {
+            setEditingItem(null);
+            setFormData({
+                name: '',
+                attenuation: '0.01'
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newName) return;
+        if (!formData.name) return;
 
         try {
-            const created = await createFusion({
-                name: newName,
-                attenuation: parseFloat(newAttenuation) || 0
-            });
-            setFusions(prev => [...prev, created]);
-            setNewName('');
-            setNewAttenuation('0.01');
-            setIsCreating(false);
+            const payload = {
+                name: formData.name,
+                attenuation: parseFloat(formData.attenuation) || 0
+            };
+
+            if (editingItem) {
+                const updated = await updateFusion(editingItem.id, payload);
+                setFusions(prev => prev.map(f => f.id === updated.id ? updated : f));
+            } else {
+                const created = await createFusion(payload);
+                setFusions(prev => [...prev, created]);
+            }
+            setIsModalOpen(false);
         } catch (error) {
-            console.error("Failed to create fusion", error);
-            alert("Erro ao criar fusão");
+            console.error("Failed to save fusion", error);
+            alert("Erro ao salvar fusão");
         }
     };
 
@@ -75,61 +100,16 @@ export const FusionRegistration: React.FC = () => {
                         {t('reg_fusao') || "Tipos de Fusão"}
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        Gerencie os tipos de fusão disponíveis para os projetos.
+                        {t('fusion_catalog_desc')}
                     </p>
                 </div>
                 <button
-                    onClick={() => setIsCreating(true)}
+                    onClick={() => handleOpenModal()}
                     className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-sky-500/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || "Adicionar Novo"}
                 </button>
             </div>
-
-            {/* Create Form */}
-            {isCreating && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-lg animate-in slide-in-from-top-2">
-                    <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-slate-100">{t('new_fusion') || "Nova Fusão"}</h3>
-                    <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('name') || "Nome"}</label>
-                            <input
-                                type="text"
-                                value={newName}
-                                onChange={e => setNewName(e.target.value)}
-                                placeholder="Ex: Fusão Padrão"
-                                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                autoFocus
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('attenuation_db') || "Atenuação (dB)"}</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={newAttenuation}
-                                onChange={e => setNewAttenuation(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setIsCreating(false)}
-                                className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                type="submit"
-                                className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold shadow-lg shadow-sky-500/20 transition"
-                            >
-                                {t('save')}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
 
             {/* List */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -177,13 +157,22 @@ export const FusionRegistration: React.FC = () => {
                                         {fusion.attenuation} dB
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleDelete(fusion.id)}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                            title={t('delete')}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(fusion)}
+                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                title={t('edit')}
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(fusion.id)}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                title={t('delete')}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -191,6 +180,63 @@ export const FusionRegistration: React.FC = () => {
                     </table>
                 )}
             </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                                {editingItem ? (t('edit_fusion') || "Editar Fusão") : (t('new_fusion') || "Nova Fusão")}
+                            </h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('name') || "Nome"}</label>
+                                <input
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="Ex: Fusão Padrão"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"
+                                    autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_db') || "Atenuação (dB)"}</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.attenuation}
+                                    onChange={e => setFormData({ ...formData, attenuation: e.target.value })}
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"
+                                />
+                            </div>
+
+                            <div className="pt-2 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {t('save')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

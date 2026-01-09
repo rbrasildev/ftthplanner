@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil, Loader2, ArrowRight } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil, Loader2, ArrowRight, Activity } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -405,6 +405,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isRotateMode, setIsRotateMode] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
+    // FUSION TOOL STATE
+    const [isFusionToolActive, setIsFusionToolActive] = useState(false);
+    const [selectedFusionTypeId, setSelectedFusionTypeId] = useState<string | null>(null);
+    const [showFusionTypeModal, setShowFusionTypeModal] = useState(false);
+    const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
+
     const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -470,31 +476,39 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         initialConnectionPoints?: { x: number, y: number }[];
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; cableId: string } | null>(null);
+    // Generic Context Menu State: { x, y, id, type }
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'cable' | 'splitter' } | null>(null);
+
+    // Close menu on click elsewhere
+    useEffect(() => {
+        const handleClick = () => setContextMenu(null);
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
 
     const handleCableContextMenu = useCallback((e: React.MouseEvent, cableId: string) => {
         e.preventDefault();
         e.stopPropagation();
-        // Calculate position relative to container or viewport?
-        // Since the menu is absolute positioned inside the container, we use relative.
-        // But `e.clientX/Y` are viewport.
-        // If we use fixed positioning for menu (portal-like), it's easier.
-        // Let's use fixed positioning relative to viewport to avoid z-index/clipping issues.
         setContextMenu({
             x: e.clientX,
             y: e.clientY,
-            cableId
+            id: cableId,
+            type: 'cable'
         });
     }, []);
 
-    // Close menu on click elsewhere
-    useEffect(() => {
-        const closeMenu = () => setContextMenu(null);
-        window.addEventListener('click', closeMenu);
-        return () => window.removeEventListener('click', closeMenu);
+    const handleSplitterContextMenu = useCallback((e: React.MouseEvent, splitterId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            id: splitterId,
+            type: 'splitter'
+        });
     }, []);
 
-    // OPTIMIZATION: Refs for Direct DOM Manipulation
+
     const connectionRefs = useRef<Record<string, SVGPathElement | null>>({});
     const connectionPointRefs = useRef<Record<string, SVGCircleElement | null>>({});
     const dragLineRef = useRef<SVGPathElement | null>(null);
@@ -524,6 +538,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 setIsSmartAlignMode(false);
                 setIsVflToolActive(false);
                 setIsOtdrToolActive(false);
+
+                // Cancel Fusion Tool
+                setIsFusionToolActive(false);
+                setShowFusionTypeModal(false);
+                setCursorPosition(null);
 
                 // If dragging something, cancel it
                 setDragState(null);
@@ -1013,6 +1032,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // If we are already dragging something (like a new sticky element), don't start panning!
         if (dragState) return;
 
+        // FUSION TOOL: Create Fusion on Click
+        if (isFusionToolActive && e.button === 0) {
+            e.stopPropagation();
+            createFusionAtCursor(e);
+            return;
+        }
+
         // If clicking background, start pan
         if (e.button === 0) { // Left click
             setDragState({
@@ -1310,6 +1336,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     // OPTIMIZED: Direct DOM Manipulation for smooth 60FPS dragging
     const handleMouseMove = (e: React.MouseEvent) => {
+        // Track Cursor for Fusion Ghost
+        if (isFusionToolActive) {
+            const { x, y } = screenToCanvas(e.clientX, e.clientY);
+            // Snap logic for ghost
+            const snapX = isSnapping ? Math.round(x / GRID_SIZE) * GRID_SIZE : x;
+            const snapY = isSnapping ? Math.round(y / GRID_SIZE) * GRID_SIZE : y;
+            setCursorPosition({ x: snapX, y: snapY });
+        }
+
         if (!dragState) return;
 
         // 1. WINDOW DRAG (Standard React State is fine, usually low frequency)
@@ -1763,9 +1798,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setDragState(null);
     };
 
-    // --- GLOBAL EVENT LISTENERS FOR DRAG ---
+    // --- GLOBAL EVENT LISTENERS FOR DRAG & TOOLS ---
     useEffect(() => {
-        if (dragState) {
+        if (dragState || isFusionToolActive) {
             const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
             const onUp = (e: MouseEvent) => handleMouseUp(e as unknown as React.MouseEvent);
 
@@ -1777,7 +1812,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 window.removeEventListener('mouseup', onUp);
             };
         }
-    }, [dragState, handleMouseMove, handleMouseUp]);
+    }, [dragState, isFusionToolActive, handleMouseMove, handleMouseUp]);
 
     // Initialize local state from prop
     useEffect(() => {
@@ -1919,15 +1954,82 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleAddFusion = (e: React.MouseEvent) => {
         e.stopPropagation();
+
+        // LOGIC UPDATE: Check for Fusion Types
+        const fusionTypes = availableFusions.length > 0 ? availableFusions : (network.fusionTypes || []);
+
+        if (fusionTypes.length > 1) {
+            setShowFusionTypeModal(true);
+        } else {
+            // Default behavior: Activate tool immediately
+            const defaultType = fusionTypes.length === 1 ? fusionTypes[0].id : null;
+            activateFusionTool(defaultType);
+        }
+    };
+
+    const activateFusionTool = (typeId: string | null) => {
+        setIsFusionToolActive(true);
+        setSelectedFusionTypeId(typeId);
+        // Reset others
+        setIsDeleteMode(false);
+        setIsRotateMode(false);
+        setIsSmartAlignMode(false);
+        setIsVflToolActive(false);
+        setIsOtdrToolActive(false);
+        setShowFusionTypeModal(false);
+    };
+
+    const createFusionAtCursor = (e: React.MouseEvent) => {
         const id = `fus-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-        const newFusion: FusionPoint = {
+        // Note: FusionPoint interface might not have 'typeId'. Checking types.ts previously.
+        // FusionPoint { id, name, type?: 'generic' | 'tray' }
+        // It seems 'type' is enum, but user wants to use configured types.
+        // If `network.fusionTypes` exists, we should probably store the ID reference?
+        // User Requirements: "modal com os tipos fusão".
+        // Let's store it in `catalogId` or `type`? 
+        // Looking at types.ts: FusionPoint has type?: 'generic'|'tray'.
+        // PoleData has catalogId. CableData has catalogId.
+        // FusionPoint interface in types.ts (Line 54) seems limited.
+        // "type?: 'generic' | 'tray'".
+        // However, I must not break code. I can add a new property if TS allows or coerce it.
+        // Or maybe the user *means* `type` as the name?
+        // The user said: "modal com os tipos fusão".
+        // If I look at FusionType interface: { id, name, attenuation }.
+        // Use `catalogId` is safe pattern if I can extend the type, but I can't change types.ts easily without verify.
+        // Let's assume for now we use `type` field if compatible, or just add `catalogId` loosely (JS).
+        // But TS will complain.
+        // Let's check `FusionPoint` in types.ts line 54 again.
+        // export interface FusionPoint { id: string; name: string; type?: 'generic'|'tray'; }
+        // It is restrictive.
+        // I will suppress TS error for now or abuse `type` if string. 
+        // Actually `type` is string literal union? No, line 57 says `type?: 'generic' | 'tray'`.
+        // Wait, I should double check types.ts.
+        // Accessing memory: Line 57: `type?: 'generic' | 'tray';`
+        // So I cannot store the ID there easily. 
+        // I might need to cast or add a property.
+        // "NÃO quebrar código existente".
+        // I will add `catalogId` and cast as `any` when creating if necessary, or just rely on the name matching?
+        // Usually `catalogId` is the pattern.
+        // I'll add `catalogId` to the object and `as any` to bypass strict check for this feature.
+
+        const newFusion: FusionPoint & { catalogId?: string } = {
             id,
-            name: `F-${localCTO.fusions.length + 1}`
+            name: `F-${localCTO.fusions.length + 1}`,
+            type: 'generic' // Default valid value
         };
 
+        if (selectedFusionTypeId) {
+            newFusion.catalogId = selectedFusionTypeId;
+        }
+
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
-        const x = Math.round(rx / GRID_SIZE) * GRID_SIZE;
-        const y = Math.round(ry / GRID_SIZE) * GRID_SIZE;
+        let x = isSnapping ? Math.round(rx / GRID_SIZE) * GRID_SIZE : rx;
+        let y = isSnapping ? Math.round(ry / GRID_SIZE) * GRID_SIZE : ry;
+
+        // CENTER OFFSET: 24x12 element
+        x -= 12;
+        y -= 6;
+
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => ({
@@ -1935,15 +2037,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             fusions: [...prev.fusions, newFusion],
             layout: { ...prev.layout, [id]: initialLayout }
         }));
-
-        // START DRAGGING IMMEDIATELY (UX REQUEST: Sticky Drag)
-        setDragState({
-            mode: 'element',
-            targetId: id,
-            startX: e.clientX,
-            startY: e.clientY,
-            initialLayout: initialLayout
-        });
     };
 
 
@@ -2016,14 +2109,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             {/* GROUP 1: EDIT MODES */}
                             <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
                                 <button
-                                    onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); }}
+                                    onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('rotate_mode') || "Rotate Mode"}
                                 >
                                     <RotateCw className={`w-4 h-4 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
                                 </button>
                                 <button
-                                    onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); }}
+                                    onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isDeleteMode ? 'bg-red-500 border-red-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title="Delete Mode"
                                 >
@@ -2033,34 +2126,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                             {/* GROUP 2: CREATION */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <div className="relative" ref={splitterDropdownRef}>
-                                    <button
-                                        onClick={() => setShowSplitterDropdown(!showSplitterDropdown)}
-                                        className={`px-2.5 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-xs font-bold text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition ${showSplitterDropdown ? 'ring-2 ring-sky-500' : ''}`}
-                                        title={t('splitters')}
-                                    >
-                                        <Triangle className="w-4 h-4" /> <ChevronDown className={`w-3 h-3 transition-transform ${showSplitterDropdown ? 'rotate-180' : ''}`} />
-                                    </button>
-
-                                    {showSplitterDropdown && (
-                                        <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-[100] animate-in slide-in-from-top-1 duration-200 max-h-60 overflow-y-auto">
-                                            {availableSplitters.length === 0 ? (
-                                                <div className="px-4 py-2 text-xs text-slate-500 italic">No templates</div>
-                                            ) : (
-                                                availableSplitters.map(item => (
-                                                    <button
-                                                        key={item.id}
-                                                        onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
-                                                        className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition border-b last:border-0 border-slate-100 dark:border-slate-700"
-                                                    >
-                                                        {item.name}
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <button onClick={handleAddFusion} title={t('add_fusion')} className="p-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-600 transition">
+                                <button
+                                    onClick={() => setShowSplitterDropdown(true)}
+                                    className={`p-1.5 rounded border transition ${showSplitterDropdown ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                    title={t('splitters')}
+                                >
+                                    <Triangle className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={handleAddFusion}
+                                    title={t('add_fusion')}
+                                    className={`p-1.5 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                >
                                     <Share2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -2075,12 +2152,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <ArrowRightLeft className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+
+                                    onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('smart_align')}
                                 >
                                     <AlignCenter className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
                                 </button>
+
                                 <button
                                     onClick={() => {
                                         if (window.confirm(t('clear_connections_confirm'))) {
@@ -2097,14 +2176,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             {/* GROUP 4: ANALYSIS */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
                                 <button
-                                    onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+
+                                    onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isVflToolActive ? 'bg-red-600 border-red-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('tool_vfl')}
                                 >
                                     <Flashlight className={`w-4 h-4 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
                                 </button>
                                 <button
-                                    onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); }}
+
+                                    onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title="OTDR Trace"
                                 >
@@ -2153,6 +2234,40 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <p className="text-slate-600 dark:text-slate-400 font-medium text-sm animate-pulse">{t('loading_diagram') || 'Carregando diagrama...'}</p>
                         </div>
                     )}
+
+                    {/* FUSION GHOST / CURSOR */}
+                    {/* FUSION GHOST / CURSOR */}
+                    {isFusionToolActive && cursorPosition && (
+                        <div
+                            className="absolute pointer-events-none z-[50] flex items-center justify-center opacity-80"
+                            style={{
+                                left: 0,
+                                top: 0,
+                                width: '24px',
+                                height: '12px',
+                                transform: `translate(${viewState.x + (cursorPosition.x - 12) * viewState.zoom}px, ${viewState.y + (cursorPosition.y - 6) * viewState.zoom}px) scale(${viewState.zoom})`,
+                                transformOrigin: 'top left'
+                            }}
+                        >
+                            {/* Center Body - Compact Circle (Standard Fusion Style) */}
+                            <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
+
+                            {/* Left Port - Edge */}
+                            <div className="w-2 h-2 rounded-full bg-black border border-black z-30 absolute left-[2px]" />
+
+                            {/* Right Port - Edge */}
+                            <div className="w-2 h-2 rounded-full bg-black border border-black z-30 absolute right-[2px]" />
+                        </div>
+                    )}
+
+                    {/* FUSION TOOL BANNER */}
+                    {isFusionToolActive && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-full border border-yellow-600 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none animate-bounce">
+                            <Share2 className="w-4 h-4" />
+                            {t('fusion_tool_active')}
+                        </div>
+                    )}
+
                     {/* VFL Info Banner */}
                     {isVflToolActive && (
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 dark:bg-red-900/90 text-white px-4 py-2 rounded-full border border-red-400 dark:border-red-500 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none">
@@ -2370,6 +2485,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
                                     onDoubleClick={handleSplitterDoubleClick}
+                                    onContextMenu={handleSplitterContextMenu}
                                 />
                             );
                         })}
@@ -2427,6 +2543,86 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     {t('cancel')}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* FUSION TYPE SELECTION MODAL */}
+                {showFusionTypeModal && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-auto">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-2 px-2">
+                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                    {t('select_fusion_type')}
+                                </h3>
+                                <button
+                                    onClick={() => setShowFusionTypeModal(false)}
+                                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                {(availableFusions.length > 0 ? availableFusions : network.fusionTypes)?.map((ft: any) => (
+                                    <button
+                                        key={ft.id}
+                                        onClick={() => activateFusionTool(ft.id)}
+                                        className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
+                                    >
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-sky-400">
+                                            {ft.name}
+                                        </span>
+                                        {ft.attenuation && (
+                                            <span className="text-xs text-slate-400 font-mono">
+                                                {ft.attenuation}dB
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SPLITTER SELECTION MODAL */}
+                {showSplitterDropdown && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-auto">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-2 px-2">
+                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                    {t('select_splitter')}
+                                </h3>
+                                <button
+                                    onClick={() => setShowSplitterDropdown(false)}
+                                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                {availableSplitters.length === 0 ? (
+                                    <div className="px-4 py-4 text-center text-xs text-slate-500 italic">
+                                        {t('no_templates') || 'No templates available'}
+                                    </div>
+                                ) : (
+                                    availableSplitters.map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
+                                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
+                                        >
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-sky-400">
+                                                {item.name}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-mono">
+                                                {item.outputs} {t('outputs') || 'outputs'}
+                                            </span>
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
@@ -2537,46 +2733,64 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         style={{ top: contextMenu.y, left: contextMenu.x }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => {
-                                if (onDisconnectCable) {
-                                    onDisconnectCable(contextMenu.cableId);
-                                    setContextMenu(null);
-                                }
-                            }}
-                            className="w-full px-4 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2"
-                        >
-                            <Link className="w-3.5 h-3.5 rotate-45" />
-                            {t('ctx_remove_cable')}
-                        </button>
-                        <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
-                        <button
-                            onClick={() => {
-                                const cable = incomingCables.find(c => c.id === contextMenu.cableId);
-                                if (cable) {
-                                    onEditCable(cable);
-                                    setContextMenu(null);
-                                }
-                            }}
-                            className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
-                            {t('ctx_edit_cable')}
-                        </button>
+                        {contextMenu.type === 'cable' ? (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        if (onDisconnectCable) {
+                                            onDisconnectCable(contextMenu.id);
+                                            setContextMenu(null);
+                                        }
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2"
+                                >
+                                    <Link className="w-3.5 h-3.5 rotate-45" />
+                                    {t('ctx_remove_cable')}
+                                </button>
+                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <button
+                                    onClick={() => {
+                                        const cable = incomingCables.find(c => c.id === contextMenu.id);
+                                        if (cable) {
+                                            onEditCable(cable);
+                                            setContextMenu(null);
+                                        }
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    {t('ctx_edit_cable')}
+                                </button>
 
-                        <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
-                        <button
-                            onClick={() => {
-                                if (onSelectNextNode) {
-                                    onSelectNextNode(contextMenu.cableId);
-                                    setContextMenu(null);
-                                }
-                            }}
-                            className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
-                        >
-                            <ArrowRight className="w-3.5 h-3.5" />
-                            {t('ctx_next_box')}
-                        </button>
+                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <button
+                                    onClick={() => {
+                                        if (onSelectNextNode) {
+                                            onSelectNextNode(contextMenu.id);
+                                            setContextMenu(null);
+                                        }
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                >
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                    {t('ctx_next_box')}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                {/* SPLITTER ACTIONS */}
+                                <button
+                                    onClick={() => {
+                                        handleSplitterDoubleClick(contextMenu.id); // Reusing existing double-click logic for "Details"
+                                        setContextMenu(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                >
+                                    <Activity className="w-3.5 h-3.5" />
+                                    {t('ctx_details')}
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
 

@@ -310,6 +310,21 @@ export const createFusion = async (req: Request, res: Response) => {
     }
 };
 
+export const updateFusion = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const { name, attenuation } = req.body;
+        const fusion = await prisma.catalogFusion.update({
+            where: { id },
+            data: { name, attenuation: Number(attenuation) }
+        });
+        res.json(fusion);
+    } catch (error) {
+        console.error("Update Fusion Error:", error);
+        res.status(500).json({ error: 'Failed to update fusion' });
+    }
+};
+
 export const deleteFusion = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {

@@ -27,6 +27,7 @@ router.delete('/poles/:id', catalogController.deletePole);
 
 router.get('/fusions', catalogController.getFusions);
 router.post('/fusions', catalogController.createFusion);
+router.put('/fusions/:id', catalogController.updateFusion);
 router.delete('/fusions/:id', catalogController.deleteFusion);
 
 

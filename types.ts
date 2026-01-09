@@ -147,7 +147,7 @@ export interface CableData {
 export type PoleStatus = 'PLANNED' | 'ANALYSING' | 'LICENSED';
 
 export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
-  'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
+  'PLANNED': '#1b1b1bff', // Black (Em projeto)
   'ANALYSING': '#eab308', // Yellow (Em análise)
   'LICENSED': '#22c55e', // Green (Licenciado)
 };

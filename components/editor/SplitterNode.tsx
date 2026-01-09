@@ -15,6 +15,7 @@ interface SplitterNodeProps {
     onPortMouseEnter: (portId: string) => void;
     onPortMouseLeave: () => void;
     onDoubleClick?: (id: string) => void;
+    onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -28,7 +29,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     onPortMouseDown,
     onPortMouseEnter,
     onPortMouseLeave,
-    onDoubleClick
+    onDoubleClick,
+    onContextMenu
 }) => {
     const portCount = splitter.outputPortIds.length;
     // Dimensions aligned to 12px grid
@@ -78,7 +80,12 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     onClick={(e) => onAction(e, splitter.id)}
                     onDoubleClick={(e) => {
                         e.stopPropagation();
-                        if (onDoubleClick) onDoubleClick(splitter.id);
+                        // if (onDoubleClick) onDoubleClick(splitter.id); // Disabled Double Click for Details
+                    }}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onContextMenu) onContextMenu(e, splitter.id);
                     }}
                 >
                     {/* Trash Removed - using Global Delete Tool */}
@@ -98,7 +105,12 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             onClick={(e) => onAction(e, splitter.id)}
                             onDoubleClick={(e) => {
                                 e.stopPropagation();
-                                if (onDoubleClick) onDoubleClick(splitter.id);
+                                // if (onDoubleClick) onDoubleClick(splitter.id); // Disabled Double Click for Details
+                            }}
+                            onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (onContextMenu) onContextMenu(e, splitter.id);
                             }}
                         />
                     </svg>
@@ -119,7 +131,12 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         onMouseLeave={onPortMouseLeave}
                         onDoubleClick={(e) => {
                             e.stopPropagation();
-                            if (onDoubleClick) onDoubleClick(splitter.id);
+                            // if (onDoubleClick) onDoubleClick(splitter.id);
+                        }}
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (onContextMenu) onContextMenu(e, splitter.id);
                         }}
                         className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
@@ -155,7 +172,12 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 onMouseLeave={onPortMouseLeave}
                                 onDoubleClick={(e) => {
                                     e.stopPropagation();
-                                    if (onDoubleClick) onDoubleClick(splitter.id);
+                                    // if (onDoubleClick) onDoubleClick(splitter.id);
+                                }}
+                                onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (onContextMenu) onContextMenu(e, splitter.id);
                                 }}
                                 className={`
                                 w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
