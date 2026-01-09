@@ -43,9 +43,8 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
 
     // Calculate Geometry (Matching FiberCableNode.tsx)
     // Base Height is calculated from fibers
-    // HTML: Wrapper has `paddingBottom` to force total height to mod 24.
-    // pt-1.5 (6px) + tubes * (count*12) + gaps (12px)
-    const fibersHeight = 6 + (looseTubeCount * fibersPerTube * 12) + ((looseTubeCount - 1) * 12);
+    // pt-1.5 (6px) per tube + tubes * (count*12) + gaps (12px)
+    const fibersHeight = (looseTubeCount * (6 + fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
 
     // Grid alignment padding (from FiberCableNode.tsx)
     const remainder = fibersHeight % 24;
@@ -91,64 +90,31 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     // Standard: Border is Left (at 0 relative to wrapper). Padding Left 4. Content at 6.
     // Mirrored: Content at 0. Padding Right 4. Border Right (at 20).
 
-    let currentY = 6;
+    let currentY = 0;
 
     // Tube Vertical Line (The Border)
-    // Standard: x = fibersOffsetX.
-    // Mirrored: x = fibersOffsetX + 20 (FiberWidth 16 + Padding 4).
-    // Wait, Border is 2px wide.
-    // Standard: x=168. (draws line 168..168? No stroke-width=2 centers on line).
-    // Let's assume stroke-width=2 draws from x-1 to x+1.
-    // So for Standard, center at 169? (168 + 1).
-    // For Mirrored, center at 21? (20 + 1).
     const borderX = isMirrored ? fibersOffsetX + 21 : fibersOffsetX + 1;
-
-    // Using a path or line for the border scaling with height
-    // Actually, distinct tubes have space between them. The border is on the `div` wrapper of the tube.
-    // The tube wrapper has `pt-1.5`. And `gap-3` (12px) between tube wrappers.
-    // So the border breaks?
-    // FiberCableNode line 140: `tubes.map(tube => <div ... border-l-2 ...>)`
-    // Yes, the border belongs to the tube wrapper. It is interrupted by the gap.
 
     for (let t = 0; t < looseTubeCount; t++) {
         const tubeColor = getFiberColor(t, cable.colorStandard);
         const startFiber = t * fibersPerTube;
         const count = Math.min(fibersPerTube, cable.fiberCount - startFiber);
-        const tubeHeight = count * 12;
 
-        content += `<line x1="${borderX}" y1="${currentY}" x2="${borderX}" y2="${currentY + tubeHeight}" stroke="${tubeColor}" stroke-width="2" />`;
+        // HEIGHTS
+        const padding = 6; // pt-1.5
+        const fibersH = count * 12; // h-3 * count
+        const tubeBlockHeight = padding + fibersH; // total visual height of this tube structure
 
-        // Fibers
-        // Standard (Left to Right): Border(2) -> Pad(4) -> [Fiber 16].
-        //   Fiber Line starts from Border? Or from Content start?
-        //   HTML: `<div ... w-4 flex justify-end> <div class="w-full h-[1px] mr-2">`
-        //   Typical line: "w-full" (16px).
-        //   "mr-2" (8px). Line is 16px wide? No.
-        //   Wrapper w-4 (16px).
-        //   Inner line `w-full`. `mr-2` pushes it?
-        //   Flex item. `w-full` usually means 100% of parent.
-        //   `mr-2` puts margin on right.
-        //   If parent is 16px. Content is 16px?
-        //   Let's simplify:
-        //   It looks like a line sticking out of the box.
-        //   Let's assume the line goes from Border to Port.
-        //   Gap is 4px (padding).
-        //   Content is 16px.
-        //   Port is at edge.
+        // Draw Border (Entire Tube Height: Padding + Fibers)
+        // From relative 0 to relative height
+        content += `<line x1="${borderX}" y1="${currentY}" x2="${borderX}" y2="${currentY + tubeBlockHeight}" stroke="${tubeColor}" stroke-width="2" />`;
 
-        // Start X for Fiber Line:
-        // Standard: 168 (Border) + 2 (Border Width) + margin?
-        // Let's just draw from Border X to Port X.
-        // Port X:
-        //   Standard: 168(Box) + 2(Border) + 4(Pad) + 16(Width) = 190.
-        //   Port circle is at -7px right (-right-[7px]).
-        //   So right side of circle is at 190 + 7 = 197.
-        //   Center of circle (w=2.5 -> 10px in Tailwind? No w-2.5 is 10px).
-        //   So Center = 197 - 5 = 192.
+        // Draw Fibers
+        // Fibers start after padding (6px)
+        // Center of first fiber is at +6px from its start.
+        // So first fiber Y = currentY + 6(pad) + 6(center) = currentY + 12
 
-        // Let's settle on:
-        // Port Center Standard: 190 + 2 = 192.
-        // Port Center Mirrored: 0 - 2 = -2.
+        const fibersStartY = currentY + padding;
 
         const portCX = isMirrored ? -2 : 192;
 
@@ -159,24 +125,20 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             const color = getFiberColor(posInTube, cable.colorStandard);
             const isLit = litPorts.has(fiberId);
 
-            // User Request: White fiber (03) is invisible on white paper.
-            // Force it to a visible gray if not lit.
             const isWhite = color.toLowerCase() === '#ffffff' || color.toLowerCase() === 'white' || color.toLowerCase() === '#fff';
             const strokeColor = isLit ? '#ef4444' : (isWhite ? '#94a3b8' : color);
 
-            const lineY = currentY + (f * 12) + 6;
+            const lineY = fibersStartY + (f * 12) + 6;
 
-            // Line from Border to Port
             content += `<line x1="${borderX}" y1="${lineY}" x2="${portCX}" y2="${lineY}" stroke="${strokeColor}" stroke-width="1" />`;
-
-            // User Request: Cable Port Border to be Black.
             content += `<circle cx="${portCX}" cy="${lineY}" r="5" fill="${color}" stroke="${isLit ? '#ef4444' : '#000000'}" stroke-width="1" />`;
 
             const isLight = [1, 2, 3, 8, 10, 11, 12].includes((posInTube % 12) + 1);
-            // Standardize centering: Remove +2 manual offset, use dominant-baseline="middle"
             content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${isLight ? 'black' : 'white'}">${globalIndex + 1}</text>`;
         }
-        currentY += tubeHeight + 12;
+
+        // Advance Y (Tube Height + Gap 12px)
+        currentY += tubeBlockHeight + 12;
     }
 
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${cx}, ${cy})">${content}</g>`;
@@ -204,7 +166,7 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Label Position
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 36 // Corrected to match Editor center (12 + 48/2)
+        y: offsetY + 20 // Adjusted further up (closer to input) to ensure clearance from output ports
     };
 
     const inputPort = {
@@ -474,8 +436,19 @@ export const generateCTOSVG = (
         incomingCables.forEach(c => {
             const l = cto.layout![c.id];
             if (l) {
-                // Expanded BBox for cable size safety
-                checkPt(l.x, l.y); checkPt(l.x + 190, l.y + 200);
+                // Calculate Real BBox Height
+                const looseTubeCount = c.looseTubeCount || 1;
+                const fibersPerTube = Math.ceil(c.fiberCount / looseTubeCount);
+                // Same formula as renderCable
+                const fibersHeight = (looseTubeCount * (6 + fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
+
+                // Add paddingBottom logic (mod 24) matching Editor/Render
+                const remainder = fibersHeight % 24;
+                const paddingBottom = remainder > 0 ? 24 - remainder : 0;
+                const totalHeight = fibersHeight + paddingBottom;
+
+                checkPt(l.x, l.y);
+                checkPt(l.x + 190, l.y + totalHeight);
             }
         });
         cto.splitters.forEach(s => {
@@ -816,6 +789,8 @@ export const exportToPDF = async (svgString: string, filename: string) => {
         return multiply(t2, multiply(r, t1));
     };
 
+    const createScale = (sx: number, sy?: number): Matrix => [sx, 0, 0, sy ?? sx, 0, 0];
+
     // --- Traversal ---
     const traverse = (node: Element, currentMatrix: Matrix) => {
         try {
@@ -824,7 +799,8 @@ export const exportToPDF = async (svgString: string, filename: string) => {
             let localMatrix: Matrix = [...identity];
             const transAttr = node.getAttribute('transform');
             if (transAttr) {
-                const regExp = /(translate|rotate)\s*\(([^)]+)\)/g;
+                // ADDED: support for scale
+                const regExp = /(translate|rotate|scale)\s*\(([^)]+)\)/g;
                 let match;
                 while ((match = regExp.exec(transAttr)) !== null) {
                     const type = match[1];
@@ -833,6 +809,8 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                         localMatrix = multiply(localMatrix, createTranslate(args[0] || 0, args[1] || 0));
                     } else if (type === 'rotate') {
                         localMatrix = multiply(localMatrix, createRotate(args[0] || 0, args[1] || 0, args[2] || 0));
+                    } else if (type === 'scale') {
+                        localMatrix = multiply(localMatrix, createScale(args[0] || 1, args[1]));
                     }
                 }
             }
@@ -925,8 +903,14 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                         localY += (fontSize * offsetFactor);
                     }
                     const pAdjusted = applyToPoint(finalMatrix, x, localY);
+
+                    // Map SVG text-anchor to jsPDF align
+                    let pdfAlignOpt: 'left' | 'center' | 'right' = 'left';
+                    if (anchor === 'middle') pdfAlignOpt = 'center';
+                    if (anchor === 'end') pdfAlignOpt = 'right';
+
                     pdf.text(text, pAdjusted.x, pAdjusted.y, {
-                        align: anchor === 'middle' ? 'center' : 'left',
+                        align: pdfAlignOpt,
                         angle: -angleDeg,
                         baseline: 'bottom'
                     });

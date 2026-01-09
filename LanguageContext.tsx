@@ -473,6 +473,26 @@ const translations = {
     'feature_unlimited': 'Unlimited',
     'plan_cta': 'Get Started',
     'most_popular': 'Most Popular',
+
+    // Backup
+    'backup_title': 'Backup Manager',
+    'backup_desc': 'Manage your system backups. Daily backups are performed automatically at 02:00 AM.',
+    'create_backup': 'Create Backup',
+    'backup_filename': 'Filename',
+    'backup_date': 'Date',
+    'backup_size': 'Size',
+    'download': 'Download',
+    'confirm_delete_backup': 'Are you sure you want to delete this backup?',
+    'backup_success': 'Backup created successfully',
+    'backup_created_at': 'Created At',
+    'backup_manual': 'Manual',
+
+    'backup_auto': 'Automatic',
+    'no_backups': 'No backups found.',
+    'restore': 'Restore',
+    'upload_restore': 'Upload & Restore',
+    'restore_confirm': 'WARNING: This will delete ALL current network data (CTOs, Cables, POPs, Projects) and replace it with the backup. This cannot be undone. Are you sure?',
+    'restore_success': 'System restored successfully. Reloading...',
   },
   pt: {
     // Theme
@@ -803,7 +823,7 @@ const translations = {
     'connections': 'Conexões',
     'spliced': 'Fusões',
     'patched': 'Manobras',
-    'select_fusion_type': 'Selecione o Tipo de Fusão',
+
     'fusion_tool_active': 'Modo Fusão: Clique para adicionar fusão',
     'splitters': 'Splitters',
     'equipment': 'Equipamentos',
@@ -972,7 +992,27 @@ const translations = {
     'map_layers': 'Camadas',
     'layer_cables': 'Cabos',
     'layer_ctos': 'CTOs',
-    'layer_pops': 'POPs'
+    'layer_pops': 'POPs',
+
+    // Backup
+    'backup_title': 'Gerenciador de Backup',
+    'backup_desc': 'Gerencie os backups do sistema. Backups diários são executados automaticamente às 02:00 AM.',
+    'create_backup': 'Criar Backup',
+    'backup_filename': 'Nome do Arquivo',
+    'backup_date': 'Data',
+    'backup_size': 'Tamanho',
+    'download': 'Baixar',
+    'confirm_delete_backup': 'Tem certeza que deseja deletar este backup?',
+    'backup_success': 'Backup criado com sucesso',
+    'backup_created_at': 'Criado em',
+    'backup_manual': 'Manual',
+
+    'backup_auto': 'Automático',
+    'no_backups': 'Nenhum backup encontrado.',
+    'restore': 'Restaurar',
+    'upload_restore': 'Enviar & Restaurar',
+    'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
+    'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
   }
 };
 

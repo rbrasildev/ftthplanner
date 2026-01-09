@@ -12,6 +12,7 @@ import BoxRegistration from './registrations/BoxRegistration';
 import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
+import { BackupManager } from './BackupManager';
 import L from 'leaflet';
 import { searchLocation } from '../services/nominatimService';
 
@@ -607,7 +608,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
 
         {/* Placeholders for other views */}
-        {currentView !== 'projects' && currentView !== 'users' && !currentView.startsWith('reg_') && (
+        {currentView !== 'projects' && currentView !== 'users' && currentView !== 'backup' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
@@ -621,6 +622,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               {t('module_under_development')}
             </p>
           </div>
+        )}
+
+        {/* --- BACKUP MANAGER --- */}
+        {currentView === 'backup' && (
+          <BackupManager />
         )}
 
         {/* --- SPLITTER REGISTRATION --- */}

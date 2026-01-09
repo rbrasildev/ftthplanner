@@ -59,6 +59,15 @@ app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/catalog', catalogRoutes);
 
+// Import Backup Service and Routes
+import backupRoutes from './routes/backupRoutes';
+import { BackupService } from './services/BackupService';
+
+app.use('/api/backups', backupRoutes);
+
+// Initialize Scheduler
+BackupService.initScheduledBackups();
+
 app.get('/', (req, res) => {
     res.send('FTTH Master Planner API is active');
 });
