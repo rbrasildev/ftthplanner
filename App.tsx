@@ -36,8 +36,9 @@ const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
 import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
 import { KmlImportModal } from './components/modals/KmlImportModal';
+import { FusionModule } from './components/FusionModule';
 
-import { PoleData } from './types';
+import { PoleData, FusionType } from './types';
 
 
 // --- GEOMETRY HELPERS MOVED TO utils/geometryUtils.ts ---
@@ -78,6 +79,8 @@ export default function App() {
     const [projects, setProjects] = useState<Project[]>([]);
     // Current Active Project (Full Data)
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
+
+
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
     // Global System Settings
@@ -147,6 +150,7 @@ export default function App() {
 
     // --- Global VFL State ---
     const [vflSource, setVflSource] = useState<string | null>(null);
+    const [showFusionModule, setShowFusionModule] = useState(false); // FUSION MODULE STATE
 
     // --- OTDR State ---
     const [otdrResult, setOtdrResult] = useState<Coordinates | null>(null);
@@ -239,8 +243,15 @@ export default function App() {
     // const currentProject = projects.find(p => p.id === currentProjectId); // REMOVED (using state)
     const getCurrentNetwork = useCallback((): NetworkState => {
         const p = projectRef.current;
-        return p ? { ctos: p.network.ctos, pops: p.network.pops || [], cables: p.network.cables, poles: p.network.poles || [] } : { ctos: [], pops: [], cables: [], poles: [] };
+        return p ? { ctos: p.network.ctos, pops: p.network.pops || [], cables: p.network.cables, poles: p.network.poles || [], fusionTypes: p.network.fusionTypes || [] } : { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
     }, []);
+
+    const totalFusionsCount = useMemo(() => {
+        const net = getCurrentNetwork();
+        const ctoFusions = net.ctos.reduce((acc, c) => acc + (c.fusions?.length || 0), 0);
+        const popFusions = net.pops.reduce((acc, p) => acc + (p.fusions?.length || 0), 0);
+        return ctoFusions + popFusions;
+    }, [currentProject]); // Re-calc when project changes
 
     const updateCurrentNetwork = useCallback((updater: (prev: NetworkState) => NetworkState) => {
         setCurrentProject(prev => {
@@ -996,6 +1007,23 @@ export default function App() {
         }
     };
 
+    const handleAddFusionType = (name: string, attenuation: number) => {
+        const newType: FusionType = { id: `ft-${Date.now()}`, name, attenuation };
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            fusionTypes: [...(prev.fusionTypes || []), newType]
+        }));
+        showToast(t('toast_fusion_type_added') || 'Tipo de fusão adicionado');
+    };
+
+    const handleDeleteFusionType = (id: string) => {
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            fusionTypes: (prev.fusionTypes || []).filter(ft => ft.id !== id)
+        }));
+        showToast(t('toast_fusion_type_deleted') || 'Tipo de fusão removido');
+    };
+
 
     if (!user) {
         if (authView === 'landing') {
@@ -1299,6 +1327,7 @@ export default function App() {
                         setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
                         setShowUpgradeModal(true);
                     }}
+                    network={getCurrentNetwork()}
                 />
             )}
 

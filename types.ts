@@ -162,12 +162,19 @@ export interface PoleData {
   height?: number;
 }
 
+export interface FusionType {
+  id: string;
+  name: string;
+  attenuation: number;
+}
+
 export interface NetworkState {
   // Added POPs
   ctos: CTOData[];
   pops: POPData[];
   cables: CableData[];
   poles: PoleData[]; // Added Poles
+  fusionTypes?: FusionType[]; // Modules de Fusão
 }
 
 export interface ProjectSettings {

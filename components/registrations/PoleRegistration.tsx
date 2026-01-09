@@ -85,94 +85,98 @@ export const PoleRegistration: React.FC = () => {
     );
 
     return (
-        <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
             {/* Header */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Zap className="w-6 h-6 text-yellow-500" />
+                        <Zap className="w-7 h-7 text-sky-500" />
                         {t('pole_catalog') || 'Cadastro de Postes'}
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        {t('pole_catalog_desc')}
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                        {t('pole_catalog_desc') || 'Gerencie os tipos de postes disponíveis.'}
                     </p>
                 </div>
                 <button
                     onClick={() => openModal()}
-                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-medium flex items-center gap-2 transition shadow-lg shadow-sky-900/20"
+                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-sky-500/20"
                 >
-                    <Plus className="w-4 h-4" />
-                    {t('add_new') || 'Adicionar Novo'}
+                    <Plus className="w-4 h-4" /> {t('add_new') || 'Adicionar Novo'}
                 </button>
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-hidden flex flex-col p-6">
-                <div className="mb-4 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder={t('search_placeholder_box') || 'Buscar...'}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-sky-500 transition-colors"
-                    />
+            {/* List Container */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                {/* Search Bar */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="relative max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder={t('search_placeholder_box') || 'Buscar...'}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                        />
+                    </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-40">
-                            <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
-                        </div>
-                    ) : (
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium uppercase text-xs">
-                                <tr>
-                                    <th className="px-4 py-3">{t('name')}</th>
-                                    <th className="px-4 py-3">{t('splitter_type')}</th>
-                                    <th className="px-4 py-3">{t('pole_height')}</th>
-                                    <th className="px-4 py-3">{t('pole_strength')}</th>
-                                    <th className="px-4 py-3">{t('pole_shape')}</th>
-                                    <th className="px-4 py-3 text-right">{t('actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                {filteredPoles.map(pole => (
-                                    <tr key={pole.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
-                                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{pole.name}</td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pole.type}</td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pole.height} m</td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pole.strength} daN</td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{pole.shape}</td>
-                                        <td className="px-4 py-3 text-right flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {loading ? (
+                    <div className="flex justify-center p-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+                    </div>
+                ) : filteredPoles.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                        {t('no_results') || 'Nenhum poste encontrado'}
+                    </div>
+                ) : (
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                            <tr>
+                                <th className="px-6 py-4">{t('name')}</th>
+                                <th className="px-6 py-4">{t('splitter_type')}</th>
+                                <th className="px-6 py-4">{t('pole_height')}</th>
+                                <th className="px-6 py-4">{t('pole_strength')}</th>
+                                <th className="px-6 py-4">{t('pole_shape')}</th>
+                                <th className="px-6 py-4 text-right">{t('actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredPoles.map(pole => (
+                                <tr key={pole.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                                            {pole.name}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.type}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.height} m</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.strength} daN</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.shape}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => openModal(pole)}
-                                                className="p-1 text-slate-400 hover:text-sky-500 transition-colors"
+                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(pole.id)}
-                                                className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                 title={t('delete')}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {filteredPoles.length === 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                                            {t('no_results') || 'Nenhum poste encontrado'}
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Modal */}
@@ -196,7 +200,7 @@ export const PoleRegistration: React.FC = () => {
                                     required
                                     value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     placeholder="Ex: Poste Concreto 10m 600daN"
                                 />
                             </div>
@@ -207,7 +211,7 @@ export const PoleRegistration: React.FC = () => {
                                     <select
                                         value={formData.type || 'Concreto'}
                                         onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     >
                                         <option value="Concreto">Concreto</option>
                                         <option value="Madeira">Madeira</option>
@@ -220,7 +224,7 @@ export const PoleRegistration: React.FC = () => {
                                     <select
                                         value={formData.shape || 'Circular'}
                                         onChange={e => setFormData({ ...formData, shape: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     >
                                         <option value="Circular">Circular</option>
                                         <option value="Duplo T">Duplo T</option>
@@ -238,7 +242,7 @@ export const PoleRegistration: React.FC = () => {
                                         required
                                         value={formData.height || ''}
                                         onChange={e => setFormData({ ...formData, height: Number(e.target.value) })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     />
                                 </div>
                                 <div>
@@ -249,7 +253,7 @@ export const PoleRegistration: React.FC = () => {
                                         required
                                         value={formData.strength || ''}
                                         onChange={e => setFormData({ ...formData, strength: Number(e.target.value) })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     />
                                 </div>
                             </div>
@@ -260,7 +264,7 @@ export const PoleRegistration: React.FC = () => {
                                     rows={3}
                                     value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none resize-none"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none resize-none dark:text-white"
                                     placeholder="Detalhes adicionais..."
                                 />
                             </div>
@@ -276,7 +280,7 @@ export const PoleRegistration: React.FC = () => {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-900/20"
+                                    className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20"
                                 >
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     {t('save')}

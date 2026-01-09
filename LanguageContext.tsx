@@ -112,6 +112,20 @@ const translations = {
     'splitter_mode_balanced': 'Balanced',
     'splitter_mode_unbalanced': 'Unbalanced',
 
+    // OLT Catalog
+    'reg_olt': 'OLT',
+    'olt_catalog_desc': 'Manage your OLT models and output power.',
+    'search_olts': 'Search OLTs...',
+    'no_olts_found': 'No OLTs found.',
+    'olt_name': 'Model Name',
+    'output_power': 'Output Power (dBm)',
+    'olt_slots': 'Slots',
+    'ports_per_slot': 'Ports/Slot',
+    'edit_olt': 'Edit OLT',
+    'new_olt': 'New OLT',
+    'add_olt': 'Add OLT',
+    'error_saving_olt': 'Error saving OLT',
+
     // Toasts
     'toast_imported': 'Imported {ctos} CTOs and {cables} Cables',
     'toast_cto_added': 'CTO added successfully',
@@ -315,7 +329,6 @@ const translations = {
 
     // POP Editor
     'pop_editor_title': 'POP Management: {name}',
-    'add_olt': 'Add OLT',
     'add_dio': 'Add DIO',
     'olt_ports': 'PON Ports',
     'dio_ports': 'Ports',
@@ -647,6 +660,20 @@ const translations = {
     'splitter_mode_balanced': 'Balanceado',
     'splitter_mode_unbalanced': 'Desbalanceado',
 
+    // OLT Catalog
+    'reg_olt': 'OLT',
+    'olt_catalog_desc': 'Gerencie seus modelos de OLT e potência de saída.',
+    'search_olts': 'Buscar OLTs...',
+    'no_olts_found': 'Nenhuma OLT encontrada.',
+    'olt_name': 'Modelo',
+    'output_power': 'Potência de Saída (dBm)',
+    'olt_slots': 'Slots',
+    'ports_per_slot': 'Portas/Slot',
+    'edit_olt': 'Editar OLT',
+    'new_olt': 'Nova OLT',
+    'add_olt': 'Adicionar OLT',
+    'error_saving_olt': 'Erro ao salvar OLT',
+
     // Toasts
     'toast_imported': 'Importado {ctos} CTOs e {cables} Cabos',
     'toast_cto_added': 'CTO adicionada com sucesso',
@@ -686,6 +713,20 @@ const translations = {
     'otdr_trace_msg': 'Rastrear a partir da fibra selecionada',
     'otdr_instruction_banner': 'Clique em uma porta de fibra para medir a distância.',
     'otdr_event_tooltip': 'Evento OTDR',
+
+    // Splitter Power Modal
+    'optical_budget': 'Orçamento Óptico',
+    'optical_path_for': 'Caminho óptico para',
+    'no_signal': 'Sem Sinal (Desconectado)',
+    'status_ok': 'OK (Ideal)',
+    'status_marginal': 'Marginal (Alerta)',
+    'status_fail': 'Falha (Crítico)',
+
+    'type_CABLE': 'Cabo',
+    'type_SPLITTER': 'Splitter',
+    'type_FUSION': 'Fusão',
+    'type_CONNECTOR': 'Conector / DIO',
+    'type_OLT': 'OLT',
 
     // Common
     'save': 'Salvar',
@@ -857,14 +898,12 @@ const translations = {
     'shape_circular': 'Circular',
     'shape_duplot': 'Duplo T',
     'shape_square': 'Quadrado',
-    'edit_pole': 'Editar Poste',
     'new_pole': 'Novo Poste',
     'error_save': 'Falha ao salvar',
 
 
     // POP Editor
     'pop_editor_title': 'Gerenciamento POP: {name}',
-    'add_olt': 'Add OLT',
     'add_dio': 'Add DIO',
     'olt_ports': 'Portas PON',
     'dio_ports': 'Portas',

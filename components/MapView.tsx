@@ -593,10 +593,10 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
                                 onDrag(pos.lat, pos.lng);
                             },
                             dragend: (e) => handleDragEnd(e, index),
-                            click: (e) => handleRemovePoint(e, index), // Changed to click for easier removal (or maybe right click?)
+                            dblclick: (e) => handleRemovePoint(e, index), // Changed to dblclick to prevent accidental removal on drag release
                             contextmenu: (e) => handleRemovePoint(e, index)
                         }}
-                        title={t('right_click_delete_point') || "Clique direito para remover"}
+                        title={t('right_click_delete_point') || "Duplo clique para remover"}
                     >
                     </Marker >
                 ))

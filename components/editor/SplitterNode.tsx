@@ -14,6 +14,7 @@ interface SplitterNodeProps {
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
     onPortMouseLeave: () => void;
+    onDoubleClick?: (id: string) => void;
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -26,7 +27,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     onAction,
     onPortMouseDown,
     onPortMouseEnter,
-    onPortMouseLeave
+    onPortMouseLeave,
+    onDoubleClick
 }) => {
     const portCount = splitter.outputPortIds.length;
     // Dimensions aligned to 12px grid
@@ -74,6 +76,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 "
                     onMouseDown={(e) => onDragStart(e, splitter.id)}
                     onClick={(e) => onAction(e, splitter.id)}
+                    onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        if (onDoubleClick) onDoubleClick(splitter.id);
+                    }}
                 >
                     {/* Trash Removed - using Global Delete Tool */}
                 </div>
@@ -90,6 +96,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
+                            onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                if (onDoubleClick) onDoubleClick(splitter.id);
+                            }}
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ paddingLeft: `${shiftPx}px` }}>
@@ -107,6 +117,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         onMouseDown={(e) => onPortMouseDown(e, splitter.inputPortId)}
                         onMouseEnter={() => onPortMouseEnter(splitter.inputPortId)}
                         onMouseLeave={onPortMouseLeave}
+                        onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            if (onDoubleClick) onDoubleClick(splitter.id);
+                        }}
                         className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
@@ -139,6 +153,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 onMouseDown={(e) => onPortMouseDown(e, pid)}
                                 onMouseEnter={() => onPortMouseEnter(pid)}
                                 onMouseLeave={onPortMouseLeave}
+                                onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDoubleClick) onDoubleClick(splitter.id);
+                                }}
                                 className={`
                                 w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]

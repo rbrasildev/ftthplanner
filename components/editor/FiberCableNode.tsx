@@ -178,14 +178,15 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
 
                                     {/* Port Circle - Center at 12px height and aligned with grid */}
                                     <div
+
                                         id={fiberId}
                                         onMouseDown={(e) => onPortMouseDown(e, fiberId)}
                                         onMouseEnter={() => onPortMouseEnter(fiberId)}
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
-                                        w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-600 cursor-pointer select-none
+                                        w-2.5 h-2.5 rounded-full border border-black dark:border-white cursor-pointer select-none
                                         hover:scale-125 transition-transform z-30
-                                        absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold
+                                        absolute ${isMirrored ? '-left-[7px]' : '-right-[7px]'} shadow-sm ${textColor} text-[7px] font-bold leading-none pb-[0.5px]
                                         flex items-center justify-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
                                         ${isLit ? 'ring-2 ring-red-500 border-red-500' : ''}
@@ -202,7 +203,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     </div>
                 ))}
             </div>
-        </div>
+        </div >
     );
 };
 

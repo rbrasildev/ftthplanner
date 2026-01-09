@@ -5,6 +5,23 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project } from '../types';
 
+// interface SidebarProps {
+//     user: string | null;
+//     projects: Project[];
+//     currentProjectId: string | null;
+//     deploymentProgress: number;
+//     vflSource: string | null;
+//     setVflSource: (source: string | null) => void;
+//     searchResults: any[];
+//     onSearch: (term: string) => void;
+//     onResultClick: (item: any) => void;
+//     onLogout: () => void;
+//     setCurrentProjectId: (id: string | null) => void;
+//     setShowProjectManager: (show: boolean) => void;
+// }
+
+// Keeping it clean:
+
 interface SidebarProps {
     user: string | null;
     projects: Project[];
@@ -95,7 +112,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* 4. Main Tools Scroll Attributes */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 custom-scrollbar relative z-10">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 custom-scrollbar relative z-10">
+
+                {/* Fusion Module Button Removed */}
 
                 {/* VFL Alert */}
                 {vflSource && (

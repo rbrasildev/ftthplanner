@@ -126,7 +126,63 @@ export const updatePole = async (id: string, data: Partial<PoleCatalogItem>): Pr
     return response.data;
 };
 
+
 export const deletePole = async (id: string): Promise<void> => {
     await axios.delete(`${API_URL}/poles/${id}`);
+};
+
+
+// --- FUSIONS ---
+
+export interface FusionCatalogItem {
+    id: string;
+    name: string;
+    attenuation: number;
+    updatedAt?: string;
+}
+
+export const getFusions = async (): Promise<FusionCatalogItem[]> => {
+    const response = await axios.get(`${API_URL}/fusions`);
+    return response.data;
+};
+
+export const createFusion = async (data: Omit<FusionCatalogItem, 'id' | 'updatedAt'>): Promise<FusionCatalogItem> => {
+    const response = await axios.post(`${API_URL}/fusions`, data);
+    return response.data;
+};
+
+export const deleteFusion = async (id: string): Promise<void> => {
+    await axios.delete(`${API_URL}/fusions/${id}`);
+};
+
+// --- OLTS ---
+
+export interface OLTCatalogItem {
+    id: string;
+    name: string;
+    outputPower: number; // dBm
+    slots?: number;
+    portsPerSlot?: number;
+    description?: string;
+    updatedAt?: string;
+}
+
+export const getOLTs = async (): Promise<OLTCatalogItem[]> => {
+    const response = await axios.get(`${API_URL}/olts`);
+    return response.data;
+};
+
+export const createOLT = async (data: Omit<OLTCatalogItem, 'id' | 'updatedAt'>): Promise<OLTCatalogItem> => {
+    const response = await axios.post(`${API_URL}/olts`, data);
+    return response.data;
+};
+
+export const updateOLT = async (id: string, data: Partial<OLTCatalogItem>): Promise<OLTCatalogItem> => {
+    const response = await axios.put(`${API_URL}/olts/${id}`, data);
+    return response.data;
+};
+
+export const deleteOLT = async (id: string): Promise<void> => {
+    await axios.delete(`${API_URL}/olts/${id}`);
 };
 

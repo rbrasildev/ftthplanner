@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Move, X, Server, Box, Layers, PlayCircle, Settings2 } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
+import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
 
 interface AddEquipmentModalsProps {
     showAddOLT: boolean;
@@ -10,7 +11,7 @@ interface AddEquipmentModalsProps {
     onCloseOLT: () => void;
     onCloseDIO: () => void;
     // onDragStart removed - handled internally
-    newOLTConfig: { slots: number; portsPerSlot: number };
+    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string };
     setNewOLTConfig: (config: any) => void;
     newDIOConfig: { ports: number };
     setNewDIOConfig: (config: any) => void;
@@ -102,6 +103,17 @@ const DraggableModal: React.FC<{
     );
 };
 
+// --- Custom Hook for OLTs ---
+const useCatalogOLTs = (show: boolean) => {
+    const [olts, setOlts] = useState<OLTCatalogItem[]>([]);
+    useEffect(() => {
+        if (show && olts.length === 0) {
+            getOLTs().then(setOlts).catch(console.error);
+        }
+    }, [show]);
+    return olts;
+};
+
 export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
     showAddOLT,
     showAddDIO,
@@ -117,6 +129,23 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
     onAddDIO
 }) => {
     const { t } = useLanguage();
+    const catalogOLTs = useCatalogOLTs(showAddOLT);
+
+    const handleOltPresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'custom') {
+            setNewOLTConfig({ ...newOLTConfig, modelName: undefined });
+        } else {
+            const selected = catalogOLTs.find(o => o.id === val);
+            if (selected) {
+                setNewOLTConfig({
+                    slots: selected.slots || 1,
+                    portsPerSlot: selected.portsPerSlot || 16,
+                    modelName: selected.name
+                });
+            }
+        }
+    };
 
     if (!showAddOLT && !showAddDIO) return null;
 
@@ -131,6 +160,27 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     headerColor="bg-gradient-to-r from-indigo-600 to-indigo-800"
                 >
                     <div className="space-y-4">
+                        {/* Catalog Selection */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
+                                <Server className="w-3.5 h-3.5" /> {t('model') || "Model"}
+                            </label>
+                            <select
+                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                                onChange={handleOltPresetChange}
+                                defaultValue="custom"
+                            >
+                                <option value="custom">Custom Configuration</option>
+                                {catalogOLTs.length > 0 && <optgroup label="Catalog">
+                                    {catalogOLTs.map(olt => (
+                                        <option key={olt.id} value={olt.id}>
+                                            {olt.name} ({olt.slots || 1}x{olt.portsPerSlot || 16})
+                                        </option>
+                                    ))}
+                                </optgroup>}
+                            </select>
+                        </div>
+
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
                                 <Layers className="w-3.5 h-3.5" /> {t('chassis_config') || "Chassis Configuration"}

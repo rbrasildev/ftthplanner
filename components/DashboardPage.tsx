@@ -4,11 +4,14 @@ import * as adminService from '../services/adminService';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { PoleRegistration } from './registrations/PoleRegistration';
+import { FusionRegistration } from './registrations/FusionRegistration';
 import { SplitterRegistration } from './registrations/SplitterRegistration';
 import CableRegistration from './registrations/CableRegistration';
 import BoxRegistration from './registrations/BoxRegistration';
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList } from 'lucide-react';
+
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
+import { OLTRegistration } from './registrations/OLTRegistration';
 import L from 'leaflet';
 import { searchLocation } from '../services/nominatimService';
 
@@ -74,7 +77,7 @@ const LocationPickerMap = ({
   );
 };
 
-type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter';
+type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
@@ -279,6 +282,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         { id: 'reg_caixa', label: t('reg_caixa') || 'Caixa', icon: Box },
         { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable },
         { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork },
+        { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server },
         { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap }
       ]
     },
@@ -639,8 +643,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <PoleRegistration />
         )}
 
+        {/* --- FUSION REGISTRATION --- */}
+        {currentView === 'reg_fusao' && (
+          <FusionRegistration />
+        )}
+
+        {/* --- OLT REGISTRATION --- */}
+        {currentView === 'reg_olt' && (
+          <OLTRegistration />
+        )}
+
         {/* --- REGISTRATION PLACEHOLDERS --- */}
-        {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste'].includes(currentView) && (
+        {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste', 'reg_fusao', 'reg_olt'].includes(currentView) && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
               {currentView === 'reg_poste' && <UtilityPole className="w-10 h-10 text-slate-400" />}

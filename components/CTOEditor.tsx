@@ -18,8 +18,21 @@ import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
 import { generateCTOSVG, exportToPNG, exportToPDF } from './CTOExporter';
-import * as catalogService from '../services/catalogService';
-import { SplitterCatalogItem, BoxCatalogItem, getBoxes } from '../services/catalogService';
+import {
+    SplitterCatalogItem,
+    BoxCatalogItem,
+    FusionCatalogItem,
+    CableCatalogItem,
+    getSplitters,
+    getBoxes,
+    getCables,
+    getFusions,
+    getOLTs,
+    OLTCatalogItem
+} from '../services/catalogService';
+import { OpticalPowerModal } from './modals/OpticalPowerModal';
+import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
+import { NetworkState } from '../types';
 
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
@@ -110,6 +123,7 @@ interface CTOEditorProps {
     userPlan?: string;
     subscriptionExpiresAt?: string | null;
     onShowUpgrade?: () => void;
+    network: NetworkState;
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
@@ -117,7 +131,7 @@ type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'win
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
     litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable,
-    userPlan, subscriptionExpiresAt, onShowUpgrade
+    userPlan, subscriptionExpiresAt, onShowUpgrade, network
 }) => {
     const { t } = useLanguage();
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
@@ -138,7 +152,50 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         });
 
-        // Position Existing Fusions if missing
+        // --- FIX PERSISTENCE BUG: RECONCILE ORPHAN LAYOUTS ---
+        // When saving, backend replaces Temp IDs with UUIDs, but Layout keys might remain as Temp IDs.
+        // We must map these orphans to the new IDs to restore position.
+
+        // 1. Reconcile Fusions
+        const fusionLayoutKeys = Object.keys(next.layout).filter(k => k.includes('fusion-'));
+        const fusionsWithoutLayout = next.fusions.filter(f => !next.layout![f.id]);
+
+        // Find orphan keys (layout entries that don't match any current fusion ID)
+        const orphanFusionKeys = fusionLayoutKeys.filter(k => !next.fusions.some(f => f.id === k));
+
+        if (fusionsWithoutLayout.length > 0 && orphanFusionKeys.length > 0) {
+            // Simple Heuristic: If counts match (or even if not), try to map sequentially?
+            // Better: If we have orphans, assign them to missing fusions. 
+            // Since we can't be 100% sure of mapping, we map by index if counts are small, or just take first available.
+            // Given the bug description (single fusion jumping), 1:1 mapping is the most common case.
+
+            fusionsWithoutLayout.forEach((fusion, idx) => {
+                if (idx < orphanFusionKeys.length) {
+                    const orphanKey = orphanFusionKeys[idx];
+                    next.layout![fusion.id] = next.layout![orphanKey];
+                    delete next.layout![orphanKey]; // Remove orphan
+                    console.log(`[Layout Repair] Restored fusion position: ${orphanKey} -> ${fusion.id}`);
+                }
+            });
+        }
+
+        // 2. Reconcile Splitters (Same logic)
+        const splitterLayoutKeys = Object.keys(next.layout).filter(k => k.includes('splitter-'));
+        const splittersWithoutLayout = next.splitters.filter(s => !next.layout![s.id]);
+        const orphanSplitterKeys = splitterLayoutKeys.filter(k => !next.splitters.some(s => s.id === k));
+
+        if (splittersWithoutLayout.length > 0 && orphanSplitterKeys.length > 0) {
+            splittersWithoutLayout.forEach((split, idx) => {
+                if (idx < orphanSplitterKeys.length) {
+                    const orphanKey = orphanSplitterKeys[idx];
+                    next.layout![split.id] = next.layout![orphanKey];
+                    delete next.layout![orphanKey];
+                    console.log(`[Layout Repair] Restored splitter position: ${orphanKey} -> ${split.id}`);
+                }
+            });
+        }
+
+        // Position Existing Fusions if missing (Fallback)
         next.fusions.forEach((fusion, idx) => {
             if (!next.layout![fusion.id]) {
                 next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
@@ -277,7 +334,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         return {
             x: (viewportW / 2) - ((minX + (maxX - minX) / 2) * targetZoom),
-            y: (viewportH / 2) - ((minY + (maxY - minY) / 2) * targetZoom),
+            y: (viewportH / 2) - ((minY + (maxY - minY) / 2) / 2) * targetZoom,
             zoom: targetZoom
         };
     };
@@ -350,17 +407,37 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
 
     // --- CATALOG INTEGRATION ---
+    const [availableCables, setAvailableCables] = useState<CableCatalogItem[]>([]);
+    const [availableFusions, setAvailableFusions] = useState<FusionCatalogItem[]>([]);
+    const [availableOLTs, setAvailableOLTs] = useState<OLTCatalogItem[]>([]);
     const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
     const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
 
-    useEffect(() => {
-        catalogService.getSplitters().then(data => {
-            setAvailableSplitters(data);
-        }).catch(err => console.error("Failed to load splitter catalog", err));
+    // Optical Power Calculation State
+    const [isOpticalModalOpen, setIsOpticalModalOpen] = useState(false);
+    const [opticalResult, setOpticalResult] = useState<OpticalPathResult | null>(null);
+    const [selectedSplitterName, setSelectedSplitterName] = useState('');
 
-        getBoxes().then(data => {
-            setAvailableBoxes(data);
-        }).catch(err => console.error("Failed to load box catalog", err));
+    useEffect(() => {
+        const loadCatalogs = async () => {
+            try {
+                const [splitters, fusions, cables, boxes, olts] = await Promise.all([
+                    getSplitters(),
+                    getFusions(),
+                    getCables(),
+                    getBoxes(),
+                    getOLTs()
+                ]);
+                setAvailableSplitters(splitters);
+                setAvailableFusions(fusions);
+                setAvailableCables(cables);
+                setAvailableBoxes(boxes);
+                setAvailableOLTs(olts);
+            } catch (err) {
+                console.error("Failed to load catalogs", err);
+            }
+        };
+        loadCatalogs();
     }, []);
 
     useEffect(() => {
@@ -412,6 +489,33 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // FIX: Force re-calculation after mount to ensure getBoundingClientRect is correct
     // The Modal animation (zoom-in) causes initial rects to be invalid.
     // FIX: Force re-calculation after mount and use opacity transition to mask initial glitch
+    // --- ESCAPE KEY HANDLER ---
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                // Cancel all active tools
+                setIsRotateMode(false);
+                setIsDeleteMode(false);
+                setIsSmartAlignMode(false);
+                setIsVflToolActive(false);
+                setIsOtdrToolActive(false);
+
+                // If dragging something, cancel it
+                setDragState(null);
+
+                // Close dropdowns
+                setShowSplitterDropdown(false);
+
+                // Clear selections if needed (Optional: user asked to "forget selection")
+                // setSelectedSplitterName(''); 
+                // However, "selection" usually refers to the active Tool.
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const [isContentReady, setIsContentReady] = useState(false);
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -836,6 +940,37 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setExportingType(null);
         }
     };
+
+    // --- OPTICAL POWER CALCULATION HANDLER ---
+    const handleSplitterDoubleClick = (splitterId: string) => {
+        console.log("Double click detected on splitter:", splitterId);
+        const splitter = localCTO.splitters.find(s => s.id === splitterId);
+        if (!splitter) {
+            console.error("Splitter not found in localCTO:", splitterId);
+            return;
+        }
+
+        try {
+            // Catalogs Dictionary
+            const catalogs = {
+                splitters: availableSplitters,
+                fusions: availableFusions,
+                cables: availableCables,
+                olts: availableOLTs
+            };
+
+            console.log("Tracing path for:", splitter.name);
+            const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
+            console.log("Trace result:", result);
+            setOpticalResult(result);
+            setSelectedSplitterName(splitter.name);
+            setIsOpticalModalOpen(true);
+        } catch (error) {
+            console.error("Error calculating optical path:", error);
+            alert(`Erro: ${(error as Error).message}`);
+        }
+    };
+
 
     // --- Event Handlers ---
 
@@ -1508,8 +1643,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     if (p1 && p2) {
                         const points = [p1, ...(hitConnection.points || []), p2];
                         for (let i = 0; i < points.length - 1; i++) {
-                            const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
-                            if (dist < minDistance + 1) { // +1 for float tolerance, reusing minDistance found earlier
+                            // +1 for float tolerance, reusing minDistance found earlier
+                            if (getDistanceFromSegment(fusionCenter, points[i], points[i + 1]) < minDistance + 1) {
                                 // Found the segment. Project fusionCenter onto it.
                                 // Code from getDistanceFromSegment adaptation:
                                 const A = fusionCenter.x - points[i].x;
@@ -1805,10 +1940,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setIsOtdrToolActive(false);
     };
 
-    // Clear cache only on viewState change or localCTO change that might affect layout
+    // Clear cache AND force update on layout change to ensure connections sync with new DOM transforms
     useLayoutEffect(() => {
         portCenterCache.current = {};
         containerRectCache.current = null;
+        // Force re-render specifically when layout changes (rotation/mirror) so getPortCenter reads updated DOM
+        // This fixes the "delay" or "stale line" issue when rotating elements.
+        setForceUpdate(n => n + 1);
     }, [viewState, localCTO.layout, localCTO.splitters, localCTO.fusions]);
 
     return (
@@ -2205,6 +2343,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
+                                    onDoubleClick={handleSplitterDoubleClick}
                                 />
                             );
                         })}
@@ -2356,6 +2495,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     </div>
                 )}
+
+                {/* OPTICAL POWER MODAL */}
+                <OpticalPowerModal
+                    isOpen={isOpticalModalOpen}
+                    onClose={() => setIsOpticalModalOpen(false)}
+                    result={opticalResult}
+                    splitterName={selectedSplitterName}
+                />
 
 
 

@@ -80,8 +80,9 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             <rect x="0" y="0" width="168" height="${totalHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />
             <!-- Centering Fix: Use Center Y for First Line, Offset Second Line Down -->
             <!-- Adding dominant-baseline to ensure PDF alignment logic kicks in -->
-            <text x="84" y="${totalHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;">${cable.name}</text>
-            <text x="84" y="${totalHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;">${cable.fiberCount} FIBRAS</text>
+            <!-- ADDED data-pdf-align="correction" to fix vertical offset in PDF export (User Request: Match PNG) -->
+            <text x="84" y="${totalHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="correction">${cable.name}</text>
+            <text x="84" y="${totalHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="correction">${cable.fiberCount} FIBRAS</text>
         </g>
     `;
 
@@ -181,7 +182,9 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${cx}, ${cy})">${content}</g>`;
 };
 
-const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+// --- GEOMETRY HELPERS (Single Source of Truth) ---
+
+const getSplitterGeometry = (splitter: Splitter) => {
     const portCount = splitter.outputPortIds.length;
     const width = portCount * 12;
     const height = 72;
@@ -189,71 +192,88 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     const offsetX = (size - width) / 2;
     const offsetY = (size - height) / 2;
     const shiftPx = 6;
-    // const skewPercent = (shiftPx / width) * 100; // Unused
+
+    // Polygon Points (Absolute within Size x Size)
+    // Original: width/2,12 shiftPx,60 width+shiftPx,60
+    // Adjusted:
+    const p1 = `${offsetX + (width / 2)},${offsetY + 12}`;
+    const p2 = `${offsetX + shiftPx},${offsetY + 60}`;
+    const p3 = `${offsetX + width + shiftPx},${offsetY + 60}`;
+    const polygonPoints = `${p1} ${p2} ${p3}`;
+
+    // Label Position
+    const labelPos = {
+        x: offsetX + (width / 2) + shiftPx,
+        y: offsetY + 40
+    };
+
+    const inputPort = {
+        id: splitter.inputPortId,
+        x: offsetX + (width / 2),
+        y: offsetY + 12
+    };
+
+    const outputPorts = splitter.outputPortIds.map((pid, idx) => ({
+        id: pid,
+        x: offsetX + (idx * 12) + 12, // (idx*12)+12 matches Center X
+        y: offsetY + 58 // Verified Y=58 matches HTML
+    }));
+
+    return { size, width, height, offsetX, offsetY, inputPort, outputPorts, polygonPoints, labelPos };
+};
+
+const getFusionGeometry = (fusion: FusionPoint) => {
+    // 24x12 Size centered at 12,6
+    return {
+        cx: 12, cy: 6,
+        leftPort: { x: 6, y: 6 }, // Corrected to 6px
+        rightPort: { x: 18, y: 6 } // Corrected to 18px
+    };
+};
+
+const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+    const geo = getSplitterGeometry(splitter);
 
     let content = '';
 
-    // Translate to Inner Container
-    content += `<g transform="translate(${offsetX}, ${offsetY})">`;
+    // No Inner Translate Group - Use Absolute Geometry directly
 
-    // Triangle Body
-    // Note: The HTML uses a 0-100 scale SVG. We can compute pixels directly.
-    // User Request: Borders visible (Black).
+    // Triangle
     const strokeColor = '#000000';
     const isLitIn = litPorts.has(splitter.inputPortId);
-    content += `<polygon points="${width / 2},12 ${shiftPx},60 ${width + shiftPx},60" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1.5" />`;
+    content += `<polygon points="${geo.polygonPoints}" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1.5" />`;
 
-    // Label - Add dominant-baseline
-    content += `<text x="${width / 2 + shiftPx}" y="${40}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b">${splitter.type}</text>`;
+    // Label
+    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b">${splitter.type}</text>`;
 
     // Input Port
-    const inX = width / 2;
-    const inY = 12; // Top of triangle
-    content += `<circle cx="${inX}" cy="${inY}" r="5" fill="white" stroke="${strokeColor}" stroke-width="1" />`;
-    // Remove +2 offset, add dominant-baseline="middle"
-    content += `<text x="${inX}" y="${inY}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">1</text>`;
+    content += `<circle cx="${geo.inputPort.x}" cy="${geo.inputPort.y}" r="5" fill="white" stroke="${strokeColor}" stroke-width="1" />`;
+    content += `<text x="${geo.inputPort.x}" y="${geo.inputPort.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">1</text>`;
 
     // Output Ports
-    // LeftPos in DOM = (idx*12) + 6 - 5. Container Left = 6. Abs Left = (idx*12)+7. Center = (idx*12)+12.
-    // Exporter was using (i*12)+6. Missing 6px (shiftPx).
-    for (let i = 0; i < portCount; i++) {
-        const px = (i * 12) + 12; // Adjusted X (+6px from previous)
-        const py = 60; // Exact center of bottom line (Y=60)
-        const pid = splitter.outputPortIds[i];
-        const isLit = litPorts.has(pid);
+    geo.outputPorts.forEach((port, idx) => {
+        const isLit = litPorts.has(port.id);
+        content += `<circle cx="${port.x}" cy="${port.y}" r="5" fill="white" stroke="${isLit ? '#ef4444' : strokeColor}" stroke-width="1" />`;
+        content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">${idx + 1}</text>`;
+    });
 
-        content += `<circle cx="${px}" cy="${py}" r="5" fill="white" stroke="${isLit ? '#ef4444' : strokeColor}" stroke-width="1" />`;
-        // Remove +2 offset, add dominant-baseline="middle"
-        content += `<text x="${px}" y="${py}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">${i + 1}</text>`;
-    }
-
-    content += `</g>`; // End Inner
-
-    // Center of rotation for Splitter is size/2, size/2
-    const cx = size / 2;
-    const cy = size / 2;
-
-    // Revert Shift Down 4px - Pure Math now
+    const cx = geo.size / 2;
+    const cy = geo.size / 2;
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${cx}, ${cy})">${content}</g>`;
 };
 
 const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+    const geo = getFusionGeometry(fusion);
     const isLitA = litPorts.has(`${fusion.id}-a`);
     const isLitB = litPorts.has(`${fusion.id}-b`);
     const isLit = isLitA || isLitB;
 
     let content = '';
-    // Center Body
-    content += `<circle cx="12" cy="6" r="5" fill="${isLit ? '#ef4444' : '#94a3b8'}" stroke="black" stroke-width="1" />`;
+    content += `<circle cx="${geo.cx}" cy="${geo.cy}" r="5" fill="${isLit ? '#ef4444' : '#94a3b8'}" stroke="black" stroke-width="1" />`;
+    content += `<circle cx="${geo.leftPort.x}" cy="${geo.leftPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
+    content += `<circle cx="${geo.rightPort.x}" cy="${geo.rightPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
 
-    // Ports (Visual only, no interaction needed for export)
-    // Left Port
-    content += `<circle cx="2" cy="6" r="4" fill="black" stroke="black" stroke-width="1" />`;
-    // Right Port
-    content += `<circle cx="22" cy="6" r="4" fill="black" stroke="black" stroke-width="1" />`;
-
-    // Fusion is 24x12. Center 12,6.
-    return `<g transform="translate(${x}, ${y + 6}) rotate(${rotation}, 12, 6)">${content}</g>`;
+    return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${geo.cx}, ${geo.cy})">${content}</g>`;
 };
 
 // --- MAIN EXPORT FUNCTION ---
@@ -288,84 +308,143 @@ const breakText = (text: string, maxChars: number): string[] => {
     return lines;
 };
 
-const renderFooter = (x: number, y: number, width: number, data: FooterData): string => {
+// --- ENGINEERING STYLE CONSTANTS ---
+const ENG = {
+    fontFamily: 'Arial, Roboto, Helvetica, sans-serif',
+    colors: {
+        border: '#94a3b8', // Slate 400
+        textMain: '#0f172a', // Slate 900
+        textLabel: '#64748b', // Slate 500
+        headerBg: '#f8fafc', // Slate 50
+    },
+    sizes: {
+        headerH: 80,
+        footerH: 140, // Expanded for Legend + Tech Data
+        margin: 40,
+        minWidth: 1000 // Landscape A4ish ratio
+    }
+};
+
+const ABNT_COLORS = [
+    { name: 'Verde', color: '#009933' },
+    { name: 'Amarelo', color: '#FFCC00' },
+    { name: 'Branco', color: '#94a3b8' }, // Visible gray for print
+    { name: 'Azul', color: '#0033CC' },
+    { name: 'Vermelho', color: '#CC0000' },
+    { name: 'Violeta', color: '#993399' },
+    { name: 'Marrom', color: '#663300' },
+    { name: 'Rosa', color: '#FF99CC' },
+    { name: 'Preto', color: '#000000' },
+    { name: 'Cinza', color: '#999999' },
+    { name: 'Laranja', color: '#FF6600' },
+    { name: 'Aqua', color: '#00CCFF' }
+];
+
+// --- RENDER HELPERS ---
+
+const renderText = (x: number, y: number, text: string, size: number, weight: 'normal' | 'bold' = 'normal', color: string = ENG.colors.textMain, anchor: 'start' | 'middle' | 'end' = 'start') => {
+    // Manual baseline adjustment for PDF compatibility
+    // y is baseline.
+    return `<text x="${x}" y="${y}" font-family="${ENG.fontFamily}" font-weight="${weight}" font-size="${size}" fill="${color}" text-anchor="${anchor}">${text}</text>`;
+};
+
+const renderBox = (x: number, y: number, w: number, h: number, bg: string = 'none', border: string = 'none') => {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${bg}" stroke="${border}" stroke-width="1" />`;
+};
+
+// --- COMPONENT: HEADER (Top Strip) ---
+const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterData) => {
     let content = '';
-    const height = 360;
+    const h = ENG.sizes.headerH;
 
     // Background
-    content += `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="white" stroke="none" />`;
+    content += renderBox(x, y, w, h, ENG.colors.headerBg, ENG.colors.border);
 
-    // Layout Constants
-    const col1W = width * 0.35;
-    const col2W = width * 0.30;
-    // Map takes the rest, usually 35%
-    const mapW = width - (col1W + col2W + 10);
+    // 1. System Logo / Name (Left)
+    content += renderText(x + 20, y + 30, 'FTTH PLANNER', 18, 'bold', '#0f172a');
+    content += renderText(x + 20, y + 50, 'PROJETO TÉCNICO EXECUTIVO', 10, 'normal', ENG.colors.textLabel);
 
-    const obsHeight = 110; // More space for OBS
-    const topSectionHeight = height - obsHeight - 10;
-    const rowH = (topSectionHeight - 10) / 3;
+    // 2. Project Info (Center-Left)
+    const col2X = x + 250;
+    content += renderText(col2X, y + 25, 'PROJETO', 9, 'normal', ENG.colors.textLabel);
+    content += renderText(col2X, y + 45, (data.projectName || 'SEM NOME').toUpperCase(), 14, 'bold', '#0f172a');
 
-    // --- COLUMN 1 ---
-    // Project
-    content += `<rect x="${x}" y="${y}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">PROJETO</text>`;
-    content += `<text x="${x + 10}" y="${y + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.projectName || 'SEM NOME'}</text>`;
+    // 3. Box Info (Center-Right)
+    const col3X = x + w * 0.55;
+    content += renderText(col3X, y + 25, 'CAIXA / CTO', 9, 'normal', ENG.colors.textLabel);
+    content += renderText(col3X, y + 45, (data.boxName || '-').toUpperCase(), 14, 'bold', '#0f172a');
 
-    // Box
-    content += `<rect x="${x}" y="${y + rowH + 5}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">CAIXA <tspan fill="#94a3b8" font-size="12">(${data.date})</tspan></text>`;
-    content += `<text x="${x + 10}" y="${y + rowH + 5 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="24" fill="#0f172a">${data.boxName}</text>`;
+    // 4. Meta Info (Right)
+    const col4X = x + w - 20;
+    content += renderText(col4X, y + 25, 'DATA DE EMISSÃO', 9, 'normal', ENG.colors.textLabel, 'end');
+    content += renderText(col4X, y + 45, data.date, 12, 'bold', '#0f172a', 'end');
 
-    // Coords
-    content += `<rect x="${x}" y="${y + (rowH * 2) + 10}" width="${col1W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">LAT/LNG</text>`;
-    content += `<text x="${x + 10}" y="${y + (rowH * 2) + 10 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="18" fill="#0f172a">${data.lat}, ${data.lng}</text>`;
+    return content;
+};
 
-    // --- COLUMN 2 ---
-    const c2x = x + col1W + 5;
+// --- COMPONENT: FOOTER (Legend & Tech Data) ---
+const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterData) => {
+    let content = '';
+    const h = ENG.sizes.footerH;
+    const LEGEND_W = 350; // Width for color legend
+    const INFO_W = w - LEGEND_W;
 
-    // Status
-    content += `<rect x="${c2x}" y="${y}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">STATUS</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.status}</text>`;
+    // Outer Border
+    content += renderBox(x, y, w, h, 'white', ENG.colors.border);
 
-    // Level
-    content += `<rect x="${c2x}" y="${y + rowH + 5}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">NÍVEL</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH + 5 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.level}</text>`;
+    // --- ZONE 1: ABNT COLOR LEGEND (Left) ---
+    content += renderBox(x, y, LEGEND_W, h, 'none', ENG.colors.border);
+    content += renderText(x + 15, y + 20, 'LEGENDA DE FIBRAS (PADRÃO ABNT)', 9, 'bold', ENG.colors.textLabel);
 
-    // Pole
-    content += `<rect x="${c2x}" y="${y + rowH * 2 + 10}" width="${col2W}" height="${rowH}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.3}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">POSTE</text>`;
-    content += `<text x="${c2x + 10}" y="${y + rowH * 2 + 10 + rowH * 0.7}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="20" fill="#0f172a">${data.pole || '-'}</text>`;
+    // Grid of colors (2 columns x 6 rows)
+    const startY = y + 40;
+    const colW = 140;
+    const rowH = 15;
 
-    // --- OBS ROW ---
-    const obsY = y + topSectionHeight + 5;
-    content += `<rect x="${x}" y="${obsY}" width="${width}" height="${obsHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />`;
-    content += `<text x="${x + 10}" y="${obsY + 20}" dominant-baseline="middle" font-family="Arial" font-size="14" fill="#64748b">OBSERVAÇÃO</text>`;
+    ABNT_COLORS.forEach((item, i) => {
+        const cx = x + 20 + (i >= 6 ? colW : 0);
+        const cy = startY + ((i % 6) * rowH);
 
-    // Obs Text Wrapping
-    const maxChars = Math.floor(width / 12); // approx 12px per char? Arial 18 is wide. say 15px.
-    const obsLines = breakText(data.obs || '', maxChars);
-
-    let lineY = obsY + 50;
-    obsLines.slice(0, 3).forEach(line => { // Max 3 lines
-        content += `<text x="${x + 10}" y="${lineY}" dominant-baseline="middle" font-family="Arial" font-weight="bold" font-size="18" fill="#0f172a">${line}</text>`;
-        lineY += 24;
+        // Color Swatch
+        content += `<rect x="${cx}" y="${cy - 8}" width="12" height="8" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
+        // Label
+        content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
     });
 
-    // --- COLUMN 3: MAP ---
-    const c3x = c2x + col2W + 5;
-    const mapH = topSectionHeight;
+    // --- ZONE 2: TECHNICAL DATA (Right) ---
+    const infoX = x + LEGEND_W;
 
-    if (data.mapImage) {
-        // Use slice for CSS/SVG rendering (cover)
-        content += `<image x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
-        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="none" stroke="#cbd5e1" stroke-width="1" />`;
-    } else {
-        content += `<rect x="${c3x}" y="${y}" width="${mapW}" height="${mapH}" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />`;
-        content += `<text x="${c3x + mapW / 2}" y="${y + mapH / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="24" fill="#64748b">MAPA</text>`;
-    }
+    // Grid Setup
+    const col1X = infoX + 20;
+    const col2X = infoX + (INFO_W / 2);
+
+    // Row 1: Location
+    const r1y = y + 25;
+    content += renderText(col1X, r1y, 'LOCALIZAÇÃO (LAT/LNG)', 9, 'normal', ENG.colors.textLabel);
+    content += renderText(col1X, r1y + 18, `${data.lat}, ${data.lng}`, 11, 'bold', '#0f172a');
+
+    content += renderText(col2X, r1y, 'MUNICÍPIO / UF', 9, 'normal', ENG.colors.textLabel);
+    content += renderText(col2X, r1y + 18, 'NÃO INFORMADO', 11, 'bold', '#0f172a'); // Placeholder or from Obs
+
+    // Divider
+    content += `<line x1="${infoX}" y1="${y + 60}" x2="${x + w}" y2="${y + 60}" stroke="${ENG.colors.border}" stroke-width="1" stroke-dasharray="2,2" />`;
+
+    // Row 2: Tech Specs
+    const r2y = y + 85;
+    content += renderText(col1X, r2y, 'STATUS / NÍVEL', 9, 'normal', ENG.colors.textLabel);
+    content += renderText(col1X, r2y + 18, `${data.status} / ${data.level}`, 11, 'bold', '#0f172a');
+
+    content += renderText(col2X, r2y, 'OBSERVAÇÕES', 9, 'normal', ENG.colors.textLabel);
+
+    // Obs wrap
+    const obsLines = breakText(data.obs || '-', 50);
+    obsLines.slice(0, 2).forEach((l, i) => {
+        content += renderText(col2X, r2y + 18 + (i * 12), l, 10, 'normal', '#0f172a');
+    });
+
+    // --- CARIMBO (Bottom Right Corner) ---
+    // Signature area
+    content += renderText(x + w - 15, y + h - 10, 'FTTH PLANNER SYS 1.0', 7, 'normal', '#94a3b8', 'end');
 
     return content;
 };
@@ -379,11 +458,8 @@ export const generateCTOSVG = (
 ): string => {
     let svgContent = '';
 
-    // 1. CALCULATE BOUNDS
+    // 1. CALCULATE DIAGRAM BOUNDS (Content Only)
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    // We reuse the logic from Editor mostly, but simplified for brevity
-    // We assume the caller knows the effective bounds or we recalculate:
 
     const checkPt = (x: number, y: number) => {
         if (x < minX) minX = x;
@@ -392,71 +468,64 @@ export const generateCTOSVG = (
         if (y > maxY) maxY = y;
     };
 
-    // Use Layout to determine bounds
     if (cto.layout) {
         incomingCables.forEach(c => {
             const l = cto.layout![c.id];
-            if (l) { checkPt(l.x, l.y); checkPt(l.x + 200, l.y + 500); } // Rough Estimate
+            if (l) {
+                // Expanded BBox for cable size safety
+                checkPt(l.x, l.y); checkPt(l.x + 190, l.y + 200);
+            }
         });
         cto.splitters.forEach(s => {
             const l = cto.layout![s.id];
-            if (l) { checkPt(l.x, l.y); checkPt(l.x + (s.outputPortIds.length * 12), l.y + 100); }
+            if (l) { checkPt(l.x, l.y); checkPt(l.x + (s.outputPortIds.length * 12), l.y + 72); }
         });
         cto.fusions.forEach(f => {
             const l = cto.layout![f.id];
             if (l) { checkPt(l.x, l.y); checkPt(l.x + 24, l.y + 12); }
         });
         cto.connections.forEach(c => {
-            // Check points?
-            // Assuming points array
-            // If no points, we need port positions.
-            // Complex. For export, we rely on the points existing in the CTOData if saved.
-            // If points are empty, the editor calc'd them on fly.
-            // Note: `localCTO` in Editor has the active points. Pass `localCTO` to this func!
             if (c.points) c.points.forEach(p => checkPt(p.x, p.y));
         });
     }
 
-    // Default Bounds if null
     if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
 
-    const PADDING = 50;
-    const FOOTER_HEIGHT = footerData ? 360 : 0; // consistent with renderFooter height
+    // Diagram Size
+    const diaW = maxX - minX;
+    const diaH = maxY - minY;
 
-    // Initial Bounds with Padding
-    minX -= PADDING;
-    minY -= PADDING;
-    maxX += PADDING;
-    maxY += PADDING;
+    // 2. SETUP PAGE LAYOUT (Engineering Standard)
+    // Header (Top) -> Diagram (Middle) -> Footer (Bottom)
 
-    let width = maxX - minX;
-    const contentHeight = maxY - minY;
-    const totalHeight = contentHeight + FOOTER_HEIGHT;
+    // Page Width: Max of Diagram+Margins OR Min Standard Width (1100px)
+    const PAGE_W = Math.max(diaW + (ENG.sizes.margin * 2), ENG.sizes.minWidth);
 
-    // FORCE LANDSCAPE ASPECT RATIO for Footer Expansion
-    // If aspect ratio < 1.4, widen the viewbox
-    const targetRatio = 1.4;
-    const currentRatio = width / totalHeight;
+    // Diagram Section Height
+    // Ensure diagram has breathing room and is strictly separated
+    const DIAGRAM_SECTION_H = diaH + (ENG.sizes.margin * 2);
 
-    if (currentRatio < targetRatio) {
-        const targetWidth = totalHeight * targetRatio;
-        const diff = targetWidth - width;
-        minX -= diff / 2;
-        maxX += diff / 2;
-        width = targetWidth;
+    // Total Page Height
+    const PAGE_H = ENG.sizes.headerH + DIAGRAM_SECTION_H + (footerData ? ENG.sizes.footerH : 0);
+
+    // 3. CENTERING OFFSETS
+    // X Center: PAGE_W / 2
+    // Diagram Center X: minX + diaW/2
+    // Shift X goes from (minX) to (DesiredLeft)
+    // DesiredLeft = (PAGE_W - diaW) / 2
+    // ShiftX = DesiredLeft - minX
+
+    const shiftX = (PAGE_W - diaW) / 2 - minX;
+    const shiftY = ENG.sizes.headerH + ENG.sizes.margin - minY; // Align top of diagram to margin
+
+    // 4. RENDER FRAME (Header & Footer)
+    if (footerData) {
+        svgContent += renderEngineeringHeader(0, 0, PAGE_W, footerData);
+        svgContent += renderEngineeringFooter(0, PAGE_H - ENG.sizes.footerH, PAGE_W, footerData);
     }
 
-    // Recalculate Width is handled by minX/maxX updates, but explicit var:
-    // width = maxX - minX; // (Matches targetWidth)
-
-    const height = totalHeight;
-
-    // 2. RENDER CONNECTIONS (Bottom Layer)
-    // We need Port Positions to draw lines if points are partial.
-    // However, recreating `getPortCenter` efficiently is hard without DOM.
-    // CRITICAL: The `localCTO` passed from Editor SHOULD have fully populated `points` if we ensure it.
-    // BUT the editor calculates start/end from DOM. 
-    // SOLUTION: We must calculate Port Centers mathematically based on Layout + Component Logic.
+    // 5. RENDER DIAGRAM (Shifted)
+    let diagramContent = '';
 
     // --- HELPER: Rotate Point around Center ---
     const rotatePoint = (x: number, y: number, cx: number, cy: number, angleDeg: number): { x: number, y: number } => {
@@ -470,127 +539,44 @@ export const generateCTOSVG = (
     };
 
     const getCalculatedPortCenter = (portId: string): { x: number, y: number } | null => {
-        // CABLE FIBER
-        if (portId.includes('-fiber-')) {
-            const cable = incomingCables.find(c => portId.startsWith(c.id));
-            if (!cable || !cto.layout?.[cable.id]) return null;
-            const l = cto.layout[cable.id];
-            const rotation = l.rotation || 0;
-            const isMirrored = !!l.mirrored;
+        // CABLE FIBER: Use DOM position (portPositions) where possible, OR SSoT if implemented.
+        // For professional export, trusting the exact layout from Editor is safest for simple nodes.
+        // We return null here to fallback to portPositions or Editor Points for fibers.
+        // ONLY Component-Inside logic (Splitter/Fusion) is strictly enforced here.
 
-            const parts = portId.split('-fiber-');
-            const idx = parseInt(parts[1]);
-            const looseTubeCount = cable.looseTubeCount || 1;
-            const fpt = Math.ceil(cable.fiberCount / looseTubeCount);
-            const tubeIdx = Math.floor(idx / fpt);
-            const fiberInTube = idx % fpt;
-
-            // Geometry Calc (Must match renderCable)
-            // Calculate total height of the cable component
-            // Geometry Calc (Must match renderCable)
-            // Calculate total height
-            // Formula: 6 + (tubes * fibers * 12) + ((tubes - 1) * 12)
-            // But we need to account for varying fibers per tube if needed? 
-            // Simplified: Sum of all tube heights + (tubes-1)*12 gaps + 6 top padding.
-            let sumTubeHeights = 0;
-            for (let t = 0; t < looseTubeCount; t++) {
-                const startFiberInTube = t * fpt;
-                const countFibersInTube = Math.min(fpt, cable.fiberCount - startFiberInTube);
-                if (countFibersInTube > 0) {
-                    sumTubeHeights += (countFibersInTube * 12);
-                }
-            }
-            const totalGaps = (looseTubeCount > 1) ? (looseTubeCount - 1) * 12 : 0;
-            // Also need paddingBottom logic? 
-            // renderCable: fibersHeight = 6 + sum + gaps.
-            const fibersHeight = 6 + sumTubeHeights + totalGaps;
-            const remainder = fibersHeight % 24;
-            const paddingBottom = remainder > 0 ? 24 - remainder : 0;
-            const totalHeight = fibersHeight + paddingBottom;
-            const totalWidth = 190; // Sync with renderCable (190)
-
-            const cx = totalWidth / 2;
-            const cy = totalHeight / 2;
-
-            // Start Tube Y
-            let yOffset = 6;
-            for (let t = 0; t < tubeIdx; t++) {
-                const startF = t * fpt;
-                const endF = Math.min(startF + fpt, cable.fiberCount);
-                const count = endF - startF;
-                yOffset += (count * 12) + 12; // +gap
-            }
-
-            const lineY = yOffset + (fiberInTube * 12) + 6; // Center Y of port relative to TopLeft
-
-            // Port CX Calculation
-            // Standard: 190 + 2 = 192 (Port CX)
-            // Mirrored: 0 - 2 = -2 (Port CX)
-            // Wait, renderCable uses: isMirrored ? -2 : 192.
-            const portRelativeX = isMirrored ? -2 : 192;
-            const portRelativeY = lineY;
-
-            // Now apply rotation around (cx, cy)
-            const rotated = rotatePoint(portRelativeX, portRelativeY, cx, cy, rotation);
-
-            // Finally translate to Layout Position
-            // Revert Nudge - Pure Math
-            return { x: l.x + rotated.x, y: l.y + rotated.y };
-        }
-
-        // SPLITTER
+        // SPLITTER USING SHARED GEOMETRY
         if (portId.includes('spl-')) {
             const spl = cto.splitters.find(s => portId.startsWith(s.id));
             if (!spl || !cto.layout?.[spl.id]) return null;
             const l = cto.layout[spl.id];
             const rotation = l.rotation || 0;
 
-            const portCount = spl.outputPortIds.length;
-            const width = portCount * 12;
-            const height = 72;
-            const size = Math.max(width, height); // Square Container
-            const offX = (size - width) / 2;
-            const offY = (size - height) / 2;
-            const cx = size / 2;
-            const cy = size / 2;
-
-            // The content is offset by (offX, offY) INSIDE the square size*size.
-            // Component is at l.x, l.y.
+            const geo = getSplitterGeometry(spl);
+            const cx = geo.size / 2;
+            const cy = geo.size / 2;
 
             let portRelativeX = 0;
             let portRelativeY = 0;
 
             if (portId === spl.inputPortId) {
-                // Input: Relative to Inner Content (width/2, 12).
-                // Relative to Node Origin (0,0 of square): offX + width/2, offY + 12
-                portRelativeX = offX + (width / 2);
-                portRelativeY = offY + 12;
+                // Input Port
+                portRelativeX = geo.inputPort.x;
+                portRelativeY = geo.inputPort.y;
             } else {
-                // Output
-                const idx = spl.outputPortIds.indexOf(portId);
-                if (idx >= 0) {
-                    // Center of 12px block: (i*12) + 6
-                    // Y: 60 (Synced with Visual Renderer)
-                    // Visual X was (idx*12)+12.
-                    portRelativeX = offX + (idx * 12) + 12;
-                    portRelativeY = offY + 60;
+                // Output Port
+                const outPort = geo.outputPorts.find(p => p.id === portId);
+                if (outPort) {
+                    portRelativeX = outPort.x;
+                    portRelativeY = outPort.y;
                 }
             }
 
-            // Rotate around cx, cy (size/2, size/2)
             const rotated = rotatePoint(portRelativeX, portRelativeY, cx, cy, rotation);
-
-            // Shift Down 4px - REVERTED
             return { x: l.x + rotated.x, y: l.y + rotated.y };
         }
 
-        // FUSION
+        // FUSION USING SHARED GEOMETRY
         if (portId.includes('fus-')) {
-            // fus-ID-a or fus-ID-b
-            // But we need to find the ID. 
-            // Format: fus-${fusion.id}-a
-            // fusion.id might be UUID? 
-            // Let's iterate fusions to find match.
             const foundFus = cto.fusions.find(f => portId === `${f.id}-a` || portId === `${f.id}-b`);
             if (!foundFus) return null;
 
@@ -598,118 +584,71 @@ export const generateCTOSVG = (
             if (!l) return null;
             const rotation = l.rotation || 0;
 
-            // Fusion Geometry (renderFusion)
-            // Transform: translate(x, y+6) rotate(r, 12, 6)
-            // NOTE: The rotation pivot (12, 6) is relative to the *translated* group.
-            // The group visual top-left is effectively (l.x, l.y+6).
-            // Width 24, Height 12.
-            // Left Port: cx=2, cy=6 (Relative to group)
-            // Right Port: cx=22, cy=6 (Relative to group)
+            const geo = getFusionGeometry(foundFus);
 
-            // To get absolute coordinates:
-            // 1. Point relative to Group Origin (0,0): (2,6) or (22,6)
-            // 2. Rotate around Pivot (12,6).
-            // 3. Translate by Group Origin (l.x, l.y + 6).
+            const pk = portId.endsWith('-a') ? 'leftPort' : 'rightPort';
+            const px = geo[pk].x;
+            const py = geo[pk].y;
 
-            const px = portId.endsWith('-a') ? 2 : 22;
-            const py = 6;
+            const rotated = rotatePoint(px, py, geo.cx, geo.cy, rotation);
 
-            // Pivot
-            const cx = 12;
-            const cy = 6;
-
-            const rotated = rotatePoint(px, py, cx, cy, rotation);
-
-            return { x: l.x + rotated.x, y: (l.y + 6) + rotated.y }; // Note +6 y-offset
+            return { x: l.x + rotated.x, y: l.y + rotated.y };
         }
 
-        return null;
+        return null; // Fallback
     };
 
-    // Render Connections
+    // RENDER CONNECTIONS
     cto.connections.forEach(conn => {
-        let p1 = getCalculatedPortCenter(conn.sourceId);
-        let p2 = getCalculatedPortCenter(conn.targetId);
-
-        // If we have intermediate points from the editor, use them to anchor
-        // But start/end must be precise.
-        // If math fails (e.g. rotation), lines might detach.
-        // RISK: Rotated elements.
-        // MITIGATION: IGNORE rotation in calculation if complexity is too high? 
-        // No, user has rotated elements.
-
-        // For now, render the connection path using points if available.
-        // Assuming Editor passes `conn.points`.
+        // FIXED: Force Math Calculation for Components (Splitter/Fusion) 
+        const isComponent = (id: string) => id.includes('spl-') || id.includes('fus-');
+        let p1 = isComponent(conn.sourceId) ? getCalculatedPortCenter(conn.sourceId) : (portPositions[conn.sourceId] || getCalculatedPortCenter(conn.sourceId));
+        let p2 = isComponent(conn.targetId) ? getCalculatedPortCenter(conn.targetId) : (portPositions[conn.targetId] || getCalculatedPortCenter(conn.targetId));
 
         let pathD = '';
         if (p1) pathD += `M ${p1.x} ${p1.y} `;
-
         if (conn.points && conn.points.length > 0) {
-            // If p1 is missing, M first point
             if (!p1) pathD += `M ${conn.points[0].x} ${conn.points[0].y} `;
             conn.points.forEach(p => pathD += `L ${p.x} ${p.y} `);
         }
-
         if (p2) pathD += `L ${p2.x} ${p2.y}`;
 
-        // Attributes
         const isLit = litPorts.has(conn.id) || litPorts.has(conn.sourceId) || litPorts.has(conn.targetId);
-
         let color = isLit ? '#ef4444' : conn.color;
 
-        // User Request: Splitter to Fusion fiber should be BLACK.
-        // Check if ends are splitter/fusion
         const isSplitter = (id: string) => id.includes('spl-');
         const isFusion = (id: string) => id.includes('fus-');
-
-        if (!isLit && (
-            (isSplitter(conn.sourceId) && isFusion(conn.targetId)) ||
-            (isFusion(conn.sourceId) && isSplitter(conn.targetId))
-        )) {
+        if (!isLit && ((isSplitter(conn.sourceId) && isFusion(conn.targetId)) || (isFusion(conn.sourceId) && isSplitter(conn.targetId)))) {
             color = '#000000';
-        } else if (!isLit && (conn.color.toLowerCase() === '#ffffff' || conn.color.toLowerCase() === 'white' || conn.color.toLowerCase() === '#fff')) {
-            // Visible color for white connections
-            color = '#94a3b8';
+        } else if (!isLit && (conn.color === '#ffffff' || conn.color === 'white' || conn.color === '#fff' || conn.color === '#FFF')) {
+            color = '#94a3b8'; // Visible for white
         }
 
-        const width = isLit ? 4 : 3; // Thicker for visibility export
-
-        svgContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
-
-        // Dots - REMOVED per user request (only show during editing)
-        /*
-        if (conn.points) {
-            conn.points.forEach(p => {
-                svgContent += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="white" stroke="${color}" stroke-width="2" />`;
-            });
-        }
-        */
+        const width = isLit ? 4 : 3;
+        diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
     });
 
-    // 3. RENDER COMPONENTS (Top Layer)
+    // RENDER COMPONENTS
     incomingCables.forEach(c => {
         const l = cto.layout![c.id];
-        if (l) svgContent += renderCable(c, l.x, l.y, l.rotation || 0, !!l.mirrored, litPorts);
+        if (l) diagramContent += renderCable(c, l.x, l.y, l.rotation || 0, !!l.mirrored, litPorts);
     });
 
     cto.splitters.forEach(s => {
         const l = cto.layout![s.id];
-        if (l) svgContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts);
+        if (l) diagramContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts);
     });
 
     cto.fusions.forEach(f => {
         const l = cto.layout![f.id];
-        if (l) svgContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts);
+        if (l) diagramContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts);
     });
 
-    // 6. Draw Footer if data provided
-    if (footerData) {
-        const footer = renderFooter(minX, maxY, width, footerData);
-        svgContent += footer;
-    }
+    // Wrap Diagram in Translation Group
+    svgContent += `<g transform="translate(${shiftX}, ${shiftY})">${diagramContent}</g>`;
 
-    // Wrap in Root SVG
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${width} ${height}" width="${width}" height="${height}">${svgContent}</svg>`;
+    // Final SVG
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE_W} ${PAGE_H}" width="${PAGE_W}" height="${PAGE_H}" preserveAspectRatio="xMidYMid meet">${svgContent}</svg>`;
 };
 
 
@@ -966,8 +905,14 @@ export const exportToPDF = async (svgString: string, filename: string) => {
 
                     let localY = y;
                     const baseline = getAttr('dominant-baseline');
+                    const pdfAlign = getAttr('data-pdf-align'); // Check for correction flag
+
                     if (baseline === 'middle' || baseline === 'central') {
-                        localY += (fontSize * 0.4);
+                        // User Request: Cable Labels (correction) need different offset to match PNG.
+                        // Standard (Fiber Numbers) uses 0.4.
+                        // Correction (Cable Labels) uses 0.30 (Lifts text slightly).
+                        const offsetFactor = pdfAlign === 'correction' ? 0.30 : 0.4;
+                        localY += (fontSize * offsetFactor);
                     }
                     const pAdjusted = applyToPoint(finalMatrix, x, localY);
                     pdf.text(text, pAdjusted.x, pAdjusted.y, {

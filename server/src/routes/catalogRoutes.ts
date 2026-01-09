@@ -25,4 +25,14 @@ router.post('/poles', catalogController.createPole);
 router.put('/poles/:id', catalogController.updatePole);
 router.delete('/poles/:id', catalogController.deletePole);
 
+router.get('/fusions', catalogController.getFusions);
+router.post('/fusions', catalogController.createFusion);
+router.delete('/fusions/:id', catalogController.deleteFusion);
+
+
+router.get('/olts', catalogController.getOLTs);
+router.post('/olts', catalogController.createOLT);
+router.put('/olts/:id', catalogController.updateOLT);
+router.delete('/olts/:id', catalogController.deleteOLT);
+
 export default router;

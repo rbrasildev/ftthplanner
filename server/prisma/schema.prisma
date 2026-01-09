@@ -273,3 +273,26 @@ model Pole {
   @@index([lat, lng])
   @@map("poles")
 }
+
+model CatalogFusion {
+  id          String   @id @default(uuid())
+  name        String
+  attenuation Float    @default(0.0) // Attenuation in dB
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("catalog_fusions")
+}
+
+model CatalogOLT {
+  id           String   @id @default(uuid())
+  name         String
+  outputPower  Float    @default(3.0) @map("output_power")
+  slots        Int      @default(1)
+  portsPerSlot Int      @default(16) @map("ports_per_slot")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("catalog_olts")
+}

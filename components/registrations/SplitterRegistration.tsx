@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Search, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
 
@@ -38,6 +38,25 @@ export const SplitterRegistration: React.FC = () => {
         }
     };
 
+    // Helper to extract display value from attenuation (which might be JSON)
+    const getAttenuationValue = (val: any): string => {
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'object') {
+            return val.value || val.v || JSON.stringify(val);
+        }
+        if (typeof val === 'string') {
+            try {
+                if (val.trim().startsWith('{')) {
+                    const parsed = JSON.parse(val);
+                    return parsed.value || parsed.v || val;
+                }
+            } catch (e) {
+                // Ignore parse error, return as is
+            }
+        }
+        return String(val);
+    };
+
     const handleOpenModal = (item?: SplitterCatalogItem) => {
         if (item) {
             setEditingItem(item);
@@ -47,7 +66,7 @@ export const SplitterRegistration: React.FC = () => {
                 mode: item.mode,
                 inputs: item.inputs,
                 outputs: item.outputs,
-                attenuation: typeof item.attenuation === 'string' ? item.attenuation : JSON.stringify(item.attenuation),
+                attenuation: getAttenuationValue(item.attenuation),
                 description: item.description || ''
             });
         } else {
@@ -67,10 +86,22 @@ export const SplitterRegistration: React.FC = () => {
 
     const handleSave = async () => {
         try {
+            // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
+            let attenuationValue: any = formData.attenuation;
+
+            try {
+                if (formData.attenuation.trim().startsWith('{')) {
+                    attenuationValue = JSON.parse(formData.attenuation);
+                } else {
+                    attenuationValue = { value: formData.attenuation };
+                }
+            } catch (e) {
+                attenuationValue = { value: formData.attenuation };
+            }
+
             const payload = {
                 ...formData,
-                attenuation: formData.attenuation // Store as string or parse if specific format required. Backend expects Json.
-                // Simple string is valid JSON value.
+                attenuation: attenuationValue
             };
 
             if (editingItem) {
@@ -103,84 +134,103 @@ export const SplitterRegistration: React.FC = () => {
     );
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <GitFork className="w-7 h-7 text-sky-500" />
                         {t('reg_splitter') || 'Splitter Registration'}
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                         {t('splitter_catalog_desc') || 'Manage your splitter catalog types.'}
                     </p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-sky-500/20"
                 >
-                    <Plus className="w-4 h-4" />
-                    <span>{t('add_splitter') || 'Add Splitter'}</span>
+                    <Plus className="w-4 h-4" /> {t('add_splitter') || 'Add Splitter'}
                 </button>
             </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-4 mb-6 bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder={t('search_splitters')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
+            {/* List Container */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                {/* Search Bar */}
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="relative max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder={t('search_splitters')}
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                        />
+                    </div>
                 </div>
+
+                {loading ? (
+                    <div className="flex justify-center p-12">
+                        <div className="text-center text-slate-500">{t('loading')}</div>
+                    </div>
+                ) : filteredSplitters.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                        {t('no_results') || 'Nenhum splitter encontrado'}
+                    </div>
+                ) : (
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                            <tr>
+                                <th className="px-6 py-4">{t('splitter_name')}</th>
+                                <th className="px-6 py-4">{t('splitter_type')}</th>
+                                <th className="px-6 py-4">{t('splitter_mode')}</th>
+                                <th className="px-6 py-4">{t('splitter_ports')}</th>
+                                <th className="px-6 py-4">{t('attenuation')}</th>
+                                <th className="px-6 py-4 text-right">{t('actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredSplitters.map(splitter => (
+                                <tr key={splitter.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                                            {splitter.name}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{splitter.type}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                        {splitter.mode === 'Balanced' ? t('splitter_mode_balanced') : t('splitter_mode_unbalanced')}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                        {splitter.inputs} {t('splitter_in')} / {splitter.outputs} {t('splitter_out')}
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-300">
+                                        {getAttenuationValue(splitter.attenuation)}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleOpenModal(splitter)}
+                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(splitter.id)}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
-
-            {/* List */}
-            {loading ? (
-                <div className="text-center py-12 text-slate-500">{t('loading')}</div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredSplitters.map(splitter => (
-                        <div key={splitter.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-shadow">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">{splitter.name}</h3>
-                                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 mt-1 inline-block">
-                                        {splitter.type} • {splitter.mode === 'Balanced' ? t('splitter_mode_balanced') : t('splitter_mode_unbalanced')}
-                                    </span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => handleOpenModal(splitter)} className="p-2 text-slate-400 hover:text-sky-500 transition-colors">
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => handleDelete(splitter.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 text-sm text-slate-600 dark:text-slate-400 mb-4">
-                                <div>
-                                    <span className="block text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{t('splitter_ports')}</span>
-                                    {splitter.inputs} {t('splitter_in')} / {splitter.outputs} {t('splitter_out')}
-                                </div>
-                                <div>
-                                    <span className="block text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{t('attenuation')}</span>
-                                    {typeof splitter.attenuation === 'string' ? splitter.attenuation : JSON.stringify(splitter.attenuation)}
-                                </div>
-                            </div>
-
-                            {splitter.description && (
-                                <p className="text-sm text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    {splitter.description}
-                                </p>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
 
             {/* Modal */}
             {isModalOpen && (
@@ -285,7 +335,7 @@ export const SplitterRegistration: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-sky-500/20"
                             >
                                 <Save className="w-4 h-4" />
                                 {t('save')}

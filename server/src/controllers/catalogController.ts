@@ -282,3 +282,106 @@ export const deletePole = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to delete pole' });
     }
 };
+
+// --- FUSIONS ---
+
+export const getFusions = async (req: Request, res: Response) => {
+    try {
+        const fusions = await prisma.catalogFusion.findMany({
+            orderBy: { name: 'asc' }
+        });
+        res.json(fusions);
+    } catch (error) {
+        console.error("Get Fusions Error:", error);
+        res.status(500).json({ error: 'Failed to fetch fusions' });
+    }
+};
+
+export const createFusion = async (req: Request, res: Response) => {
+    try {
+        const { name, attenuation } = req.body;
+        const fusion = await prisma.catalogFusion.create({
+            data: { name, attenuation: Number(attenuation) }
+        });
+        res.json(fusion);
+    } catch (error) {
+        console.error("Create Fusion Error:", error);
+        res.status(500).json({ error: 'Failed to create fusion' });
+    }
+};
+
+export const deleteFusion = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await prisma.catalogFusion.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Delete Fusion Error:", error);
+        res.status(500).json({ error: 'Failed to delete fusion' });
+    }
+};
+
+// --- OLTS ---
+
+export const getOLTs = async (req: Request, res: Response) => {
+    try {
+        const olts = await prisma.catalogOLT.findMany({
+            orderBy: { name: 'asc' }
+        });
+        res.json(olts);
+    } catch (error) {
+        console.error("Get OLTs Error:", error);
+        res.status(500).json({ error: 'Failed to fetch OLTs' });
+    }
+};
+
+export const createOLT = async (req: Request, res: Response) => {
+    try {
+        const { name, outputPower, slots, portsPerSlot, description } = req.body;
+        const olt = await prisma.catalogOLT.create({
+            data: {
+                name,
+                outputPower: Number(outputPower),
+                slots: Number(slots) || 1,
+                portsPerSlot: Number(portsPerSlot),
+                description
+            }
+        });
+        res.status(201).json(olt);
+    } catch (error) {
+        console.error("Create OLT Error:", error);
+        res.status(500).json({ error: 'Failed to create OLT' });
+    }
+};
+
+export const updateOLT = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const { name, outputPower, slots, portsPerSlot, description } = req.body;
+        const olt = await prisma.catalogOLT.update({
+            where: { id },
+            data: {
+                name,
+                outputPower: Number(outputPower),
+                slots: Number(slots) || 1,
+                portsPerSlot: Number(portsPerSlot),
+                description
+            }
+        });
+        res.json(olt);
+    } catch (error) {
+        console.error("Update OLT Error:", error);
+        res.status(500).json({ error: 'Failed to update OLT' });
+    }
+};
+
+export const deleteOLT = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await prisma.catalogOLT.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Delete OLT Error:", error);
+        res.status(500).json({ error: 'Failed to delete OLT' });
+    }
+};

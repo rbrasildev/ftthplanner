@@ -128,7 +128,80 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
             return changed ? next : prev;
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [incomingCables.length, localPOP.olts.length, localPOP.dios.length]);
+
+    // Initial Center View Effect (Robust Bounding Box)
+    const hasCentered = useRef(false);
+    useEffect(() => {
+        if (hasCentered.current) return;
+
+        // Ensure container is ready
+        if (!containerRef.current) return;
+
+        // Check if data is ready (if items exist, layout must exist)
+        const hasItems = localPOP.olts.length > 0 || localPOP.dios.length > 0;
+        const hasLayout = localPOP.layout && Object.keys(localPOP.layout).length > 0;
+
+        if (hasItems && !hasLayout) {
+            // Wait for internal layout initialization effect to run
+            return;
+        }
+
+        const containerW = containerRef.current.clientWidth;
+        const containerH = containerRef.current.clientHeight;
+        if (containerW === 0 || containerH === 0) return; // Wait for layout
+
+        // Calculate Bounding Box of all content
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let count = 0;
+
+        // Helper to expand bounds
+        const expand = (id: string, width = EQUIPMENT_WIDTH, height = 200) => {
+            const l = localPOP.layout?.[id];
+            if (l) {
+                if (l.x < minX) minX = l.x;
+                if (l.y < minY) minY = l.y;
+                if (l.x + width > maxX) maxX = l.x + width;
+                if (l.y + height > maxY) maxY = l.y + height;
+                count++;
+            }
+        };
+
+        localPOP.olts.forEach(o => expand(o.id));
+        localPOP.dios.forEach(d => expand(d.id));
+
+        // If no content or bounds invalid, default to center of screen for x=400
+        let targetX = 0;
+        let targetY = 0;
+
+        if (count > 0 && minX !== Infinity) {
+            const contentCenterX = (minX + maxX) / 2;
+            const contentCenterY = (minY + maxY) / 2;
+
+            // Center content in container
+            targetX = (containerW / 2) - contentCenterX;
+            // Place top of content slightly down from top (e.g. 50px padding)
+            // targetY = 50 - minY; 
+            // OR Center Vertically:
+            targetY = (containerH / 2) - contentCenterY;
+
+            // Prefer top-alignment if content is tall? 
+            // Let's stick to vertical centering but clamp top
+            if (maxY - minY > containerH) {
+                targetY = 20 - minY; // Start at top if too tall
+            }
+        } else {
+            // Default Fallback
+            const centerX = 400 + (EQUIPMENT_WIDTH / 2);
+            targetX = (containerW / 2) - centerX;
+            targetY = 50;
+        }
+
+        setViewState({ x: targetX, y: targetY, zoom: 1 });
+        hasCentered.current = true;
+
+    }, [localPOP.layout, localPOP.olts.length, localPOP.dios.length]);
 
 
     // --- Deduplicate Incoming Cables (Protect against state errors) ---
@@ -408,7 +481,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         }
         const newOLT: OLT = {
             id,
-            name: `OLT ${localPOP.olts.length + 1}`,
+            name: (newOLTConfig as any).modelName
+                ? `${(newOLTConfig as any).modelName} ${localPOP.olts.length + 1}`
+                : `OLT ${localPOP.olts.length + 1}`,
             ports: totalPorts,
             portIds,
             status: 'PLANNED',
