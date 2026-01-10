@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
+import { cloneTemplatesToCompany } from '../services/templateService';
+
 // Helper to get Plans
 async function getPlanByName(name: string) {
     return prisma.plan.findFirst({ where: { name } });
@@ -53,6 +55,9 @@ export const register = async (req: Request, res: Response) => {
 
             return { user: updatedUser, company };
         });
+
+        // Clone default templates to the new company
+        await cloneTemplatesToCompany(result.company.id);
 
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
     } catch (error) {

@@ -186,15 +186,13 @@ export const BackupManager: React.FC = () => {
                                                 >
                                                     <Clock className="w-4 h-4" />
                                                 </button>
-                                                <a
-                                                    href={backupService.getDownloadUrl(backup.filename)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    onClick={() => backupService.downloadBackupFile(backup.filename)}
                                                     className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/10 rounded-lg transition-colors"
                                                     title={t('download')}
                                                 >
                                                     <Download className="w-4 h-4" />
-                                                </a>
+                                                </button>
                                                 <button
                                                     onClick={() => handleDeleteBackup(backup.filename)}
                                                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"

@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000/api/catalog';
+import api from './api';
 
 export interface SplitterCatalogItem {
     id: string;
@@ -15,22 +13,22 @@ export interface SplitterCatalogItem {
 }
 
 export const getSplitters = async (): Promise<SplitterCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/splitters`);
+    const response = await api.get('/catalog/splitters');
     return response.data;
 };
 
 export const createSplitter = async (data: Omit<SplitterCatalogItem, 'id' | 'updatedAt'>): Promise<SplitterCatalogItem> => {
-    const response = await axios.post(`${API_URL}/splitters`, data);
+    const response = await api.post('/catalog/splitters', data);
     return response.data;
 };
 
 export const updateSplitter = async (id: string, data: Partial<SplitterCatalogItem>): Promise<SplitterCatalogItem> => {
-    const response = await axios.put(`${API_URL}/splitters/${id}`, data);
+    const response = await api.put(`/catalog/splitters/${id}`, data);
     return response.data;
 };
 
 export const deleteSplitter = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/splitters/${id}`);
+    await api.delete(`/catalog/splitters/${id}`);
 };
 
 export interface CableCatalogItem {
@@ -51,22 +49,22 @@ export interface CableCatalogItem {
 }
 
 export const getCables = async (): Promise<CableCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/cables`);
+    const response = await api.get('/catalog/cables');
     return response.data;
 };
 
 export const createCable = async (data: Omit<CableCatalogItem, 'id' | 'updatedAt'>): Promise<CableCatalogItem> => {
-    const response = await axios.post(`${API_URL}/cables`, data);
+    const response = await api.post('/catalog/cables', data);
     return response.data;
 };
 
 export const updateCable = async (id: string, data: Partial<CableCatalogItem>): Promise<CableCatalogItem> => {
-    const response = await axios.put(`${API_URL}/cables/${id}`, data);
+    const response = await api.put(`/catalog/cables/${id}`, data);
     return response.data;
 };
 
 export const deleteCable = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/cables/${id}`);
+    await api.delete(`/catalog/cables/${id}`);
 };
 
 export interface BoxCatalogItem {
@@ -82,22 +80,22 @@ export interface BoxCatalogItem {
 }
 
 export const getBoxes = async (): Promise<BoxCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/boxes`);
+    const response = await api.get('/catalog/boxes');
     return response.data;
 };
 
 export const createBox = async (data: Omit<BoxCatalogItem, 'id' | 'updatedAt'>): Promise<BoxCatalogItem> => {
-    const response = await axios.post(`${API_URL}/boxes`, data);
+    const response = await api.post('/catalog/boxes', data);
     return response.data;
 };
 
 export const updateBox = async (id: string, data: Partial<BoxCatalogItem>): Promise<BoxCatalogItem> => {
-    const response = await axios.put(`${API_URL}/boxes/${id}`, data);
+    const response = await api.put(`/catalog/boxes/${id}`, data);
     return response.data;
 };
 
 export const deleteBox = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/boxes/${id}`);
+    await api.delete(`/catalog/boxes/${id}`);
 };
 
 export interface PoleCatalogItem {
@@ -112,23 +110,23 @@ export interface PoleCatalogItem {
 }
 
 export const getPoles = async (): Promise<PoleCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/poles`);
+    const response = await api.get('/catalog/poles');
     return response.data;
 };
 
 export const createPole = async (data: Omit<PoleCatalogItem, 'id' | 'updatedAt'>): Promise<PoleCatalogItem> => {
-    const response = await axios.post(`${API_URL}/poles`, data);
+    const response = await api.post('/catalog/poles', data);
     return response.data;
 };
 
 export const updatePole = async (id: string, data: Partial<PoleCatalogItem>): Promise<PoleCatalogItem> => {
-    const response = await axios.put(`${API_URL}/poles/${id}`, data);
+    const response = await api.put(`/catalog/poles/${id}`, data);
     return response.data;
 };
 
 
 export const deletePole = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/poles/${id}`);
+    await api.delete(`/catalog/poles/${id}`);
 };
 
 
@@ -142,22 +140,22 @@ export interface FusionCatalogItem {
 }
 
 export const getFusions = async (): Promise<FusionCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/fusions`);
+    const response = await api.get('/catalog/fusions');
     return response.data;
 };
 
 export const createFusion = async (data: Omit<FusionCatalogItem, 'id' | 'updatedAt'>): Promise<FusionCatalogItem> => {
-    const response = await axios.post(`${API_URL}/fusions`, data);
+    const response = await api.post('/catalog/fusions', data);
     return response.data;
 };
 
 export const updateFusion = async (id: string, data: Partial<FusionCatalogItem>): Promise<FusionCatalogItem> => {
-    const response = await axios.put(`${API_URL}/fusions/${id}`, data);
+    const response = await api.put(`/catalog/fusions/${id}`, data);
     return response.data;
 };
 
 export const deleteFusion = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/fusions/${id}`);
+    await api.delete(`/catalog/fusions/${id}`);
 };
 
 // --- OLTS ---
@@ -173,21 +171,21 @@ export interface OLTCatalogItem {
 }
 
 export const getOLTs = async (): Promise<OLTCatalogItem[]> => {
-    const response = await axios.get(`${API_URL}/olts`);
+    const response = await api.get('/catalog/olts');
     return response.data;
 };
 
 export const createOLT = async (data: Omit<OLTCatalogItem, 'id' | 'updatedAt'>): Promise<OLTCatalogItem> => {
-    const response = await axios.post(`${API_URL}/olts`, data);
+    const response = await api.post('/catalog/olts', data);
     return response.data;
 };
 
 export const updateOLT = async (id: string, data: Partial<OLTCatalogItem>): Promise<OLTCatalogItem> => {
-    const response = await axios.put(`${API_URL}/olts/${id}`, data);
+    const response = await api.put(`/catalog/olts/${id}`, data);
     return response.data;
 };
 
 export const deleteOLT = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/olts/${id}`);
+    await api.delete(`/catalog/olts/${id}`);
 };
 

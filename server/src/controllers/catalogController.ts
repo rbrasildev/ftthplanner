@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
+import { AuthRequest } from '../middleware/auth';
+
 const prisma = new PrismaClient();
 
 export const getSplitters = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
         const splitters = await prisma.catalogSplitter.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(splitters);
@@ -17,10 +23,13 @@ export const getSplitters = async (req: Request, res: Response) => {
 
 export const createSplitter = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, type, mode, inputs, outputs, attenuation, description } = req.body;
 
         const newSplitter = await prisma.catalogSplitter.create({
             data: {
+                companyId: user.companyId,
                 name,
                 type,
                 mode,
@@ -40,8 +49,13 @@ export const createSplitter = async (req: Request, res: Response) => {
 
 export const updateSplitter = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
         const { name, type, mode, inputs, outputs, attenuation, description } = req.body;
+
+        const exists = await prisma.catalogSplitter.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Splitter not found" });
 
         const updatedSplitter = await prisma.catalogSplitter.update({
             where: { id },
@@ -65,7 +79,13 @@ export const updateSplitter = async (req: Request, res: Response) => {
 
 export const deleteSplitter = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
+
+        const exists = await prisma.catalogSplitter.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Splitter not found" });
+
         await prisma.catalogSplitter.delete({
             where: { id }
         });
@@ -78,7 +98,11 @@ export const deleteSplitter = async (req: Request, res: Response) => {
 
 export const getCables = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
         const cables = await prisma.catalogCable.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(cables);
@@ -90,6 +114,9 @@ export const getCables = async (req: Request, res: Response) => {
 
 export const createCable = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
         const {
             name, brand, model, defaultLevel, fiberCount, looseTubeCount,
             fibersPerTube, attenuation, fiberProfile, description,
@@ -98,6 +125,7 @@ export const createCable = async (req: Request, res: Response) => {
 
         const newCable = await prisma.catalogCable.create({
             data: {
+                companyId: user.companyId,
                 name, brand, model, defaultLevel,
                 fiberCount: Number(fiberCount),
                 looseTubeCount: Number(looseTubeCount),
@@ -118,12 +146,18 @@ export const createCable = async (req: Request, res: Response) => {
 
 export const updateCable = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
         const { id } = req.params;
         const {
             name, brand, model, defaultLevel, fiberCount, looseTubeCount,
             fibersPerTube, attenuation, fiberProfile, description,
             deployedSpec, plannedSpec
         } = req.body;
+
+        const exists = await prisma.catalogCable.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Cable not found" });
 
         const updatedCable = await prisma.catalogCable.update({
             where: { id },
@@ -148,7 +182,13 @@ export const updateCable = async (req: Request, res: Response) => {
 
 export const deleteCable = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
+
+        const exists = await prisma.catalogCable.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Cable not found" });
+
         await prisma.catalogCable.delete({
             where: { id }
         });
@@ -161,7 +201,10 @@ export const deleteCable = async (req: Request, res: Response) => {
 
 export const getBoxes = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const boxes = await prisma.catalogBox.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(boxes);
@@ -173,12 +216,15 @@ export const getBoxes = async (req: Request, res: Response) => {
 
 export const createBox = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const {
             name, brand, model, type, reserveLoopLength, color, description
         } = req.body;
 
         const newBox = await prisma.catalogBox.create({
             data: {
+                companyId: user.companyId,
                 name, brand, model, type,
                 reserveLoopLength: Number(reserveLoopLength),
                 color: color || '#64748b',
@@ -195,10 +241,15 @@ export const createBox = async (req: Request, res: Response) => {
 
 export const updateBox = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
         const {
             name, brand, model, type, reserveLoopLength, color, description
         } = req.body;
+
+        const exists = await prisma.catalogBox.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Box not found" });
 
         const updatedBox = await prisma.catalogBox.update({
             where: { id },
@@ -219,7 +270,13 @@ export const updateBox = async (req: Request, res: Response) => {
 
 export const deleteBox = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
+
+        const exists = await prisma.catalogBox.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Box not found" });
+
         await prisma.catalogBox.delete({
             where: { id }
         });
@@ -234,7 +291,10 @@ export const deleteBox = async (req: Request, res: Response) => {
 
 export const getPoles = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const poles = await prisma.catalogPole.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(poles);
@@ -246,9 +306,11 @@ export const getPoles = async (req: Request, res: Response) => {
 
 export const createPole = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, type, height, strength, shape, description } = req.body;
         const pole = await prisma.catalogPole.create({
-            data: { name, type, height: Number(height), strength: Number(strength), shape, description }
+            data: { companyId: user.companyId, name, type, height: Number(height), strength: Number(strength), shape, description }
         });
         res.json(pole);
     } catch (error) {
@@ -260,7 +322,13 @@ export const createPole = async (req: Request, res: Response) => {
 export const updatePole = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, type, height, strength, shape, description } = req.body;
+
+        const exists = await prisma.catalogPole.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Pole not found" });
+
         const pole = await prisma.catalogPole.update({
             where: { id },
             data: { name, type, height: Number(height), strength: Number(strength), shape, description }
@@ -275,6 +343,12 @@ export const updatePole = async (req: Request, res: Response) => {
 export const deletePole = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
+        const exists = await prisma.catalogPole.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Pole not found" });
+
         await prisma.catalogPole.delete({ where: { id } });
         res.json({ success: true });
     } catch (error) {
@@ -287,7 +361,10 @@ export const deletePole = async (req: Request, res: Response) => {
 
 export const getFusions = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const fusions = await prisma.catalogFusion.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(fusions);
@@ -299,9 +376,11 @@ export const getFusions = async (req: Request, res: Response) => {
 
 export const createFusion = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, attenuation } = req.body;
         const fusion = await prisma.catalogFusion.create({
-            data: { name, attenuation: Number(attenuation) }
+            data: { companyId: user.companyId, name, attenuation: Number(attenuation) }
         });
         res.json(fusion);
     } catch (error) {
@@ -313,7 +392,13 @@ export const createFusion = async (req: Request, res: Response) => {
 export const updateFusion = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, attenuation } = req.body;
+
+        const exists = await prisma.catalogFusion.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Fusion not found" });
+
         const fusion = await prisma.catalogFusion.update({
             where: { id },
             data: { name, attenuation: Number(attenuation) }
@@ -328,6 +413,12 @@ export const updateFusion = async (req: Request, res: Response) => {
 export const deleteFusion = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
+        const exists = await prisma.catalogFusion.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "Fusion not found" });
+
         await prisma.catalogFusion.delete({ where: { id } });
         res.json({ success: true });
     } catch (error) {
@@ -340,7 +431,10 @@ export const deleteFusion = async (req: Request, res: Response) => {
 
 export const getOLTs = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const olts = await prisma.catalogOLT.findMany({
+            where: { companyId: user.companyId },
             orderBy: { name: 'asc' }
         });
         res.json(olts);
@@ -352,9 +446,12 @@ export const getOLTs = async (req: Request, res: Response) => {
 
 export const createOLT = async (req: Request, res: Response) => {
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, outputPower, slots, portsPerSlot, description } = req.body;
         const olt = await prisma.catalogOLT.create({
             data: {
+                companyId: user.companyId,
                 name,
                 outputPower: Number(outputPower),
                 slots: Number(slots) || 1,
@@ -372,7 +469,13 @@ export const createOLT = async (req: Request, res: Response) => {
 export const updateOLT = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
         const { name, outputPower, slots, portsPerSlot, description } = req.body;
+
+        const exists = await prisma.catalogOLT.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "OLT not found" });
+
         const olt = await prisma.catalogOLT.update({
             where: { id },
             data: {
@@ -393,6 +496,12 @@ export const updateOLT = async (req: Request, res: Response) => {
 export const deleteOLT = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
+        const exists = await prisma.catalogOLT.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "OLT not found" });
+
         await prisma.catalogOLT.delete({ where: { id } });
         res.json({ success: true });
     } catch (error) {

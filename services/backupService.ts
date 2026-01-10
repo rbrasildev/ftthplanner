@@ -51,11 +51,20 @@ export const deleteBackup = async (filename: string): Promise<void> => {
     await api.delete(`/backups/${filename}`);
 };
 
-export const getDownloadUrl = (filename: string): string => {
-    // We need the base URL. 'api' axios instance might have baseURL set.
-    // If api.defaults.baseURL is set, use it.
-    // Assuming api.defaults.baseURL is '/api' or similar.
-    // However, for download link (href), we need a full URL or absolute path relative to root.
-    // Let's assume /api/backups is the route.
-    return `/api/backups/${filename}/download`;
+
+export const downloadBackupFile = async (filename: string): Promise<void> => {
+    const response = await api.get(`/backups/${filename}/download`, {
+        responseType: 'blob'
+    });
+
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
 };
+

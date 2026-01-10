@@ -39,6 +39,12 @@ model Company {
   projects              Project[]
   users                 User[]
   poles                 Pole[]
+  catalogCables         CatalogCable[]
+  catalogBoxes          CatalogBox[]
+  catalogPoles          CatalogPole[]
+  catalogSplitters      CatalogSplitter[]
+  catalogFusions        CatalogFusion[]
+  catalogOLTs           CatalogOLT[]
 
   @@map("companies")
 }
@@ -196,8 +202,26 @@ model CatalogSplitter {
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_splitters")
+}
+
+model TemplateSplitter {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // PLC, FBT
+  mode        String   // Balanced, Unbalanced
+  inputs      Int      @default(1)
+  outputs     Int
+  attenuation Json?    @default("{}")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_splitters")
 }
 
 model CatalogCable {
@@ -219,8 +243,31 @@ model CatalogCable {
 
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId      String?  @map("company_id")
+  company        Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_cables")
+}
+
+model TemplateCable {
+  id             String   @id @default(uuid())
+  name           String
+  brand          String?
+  model          String?
+  defaultLevel   String?
+  fiberCount     Int
+  looseTubeCount Int
+  fibersPerTube  Int
+  attenuation    Float?
+  fiberProfile   String?
+  description    String?
+  deployedSpec   Json?    @default("{\"color\": \"#10b981\", \"width\": 3}")
+  plannedSpec    Json?    @default("{\"color\": \"#86efac\", \"width\": 3}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_cables")
 }
 
 model CatalogBox {
@@ -235,8 +282,26 @@ model CatalogBox {
 
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId         String?  @map("company_id")
+  company           Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_boxes")
+}
+
+model TemplateBox {
+  id                String   @id @default(uuid())
+  name              String
+  brand             String?
+  model             String?
+  type              String
+  reserveLoopLength Float?
+  color             String?  @default("#64748b")
+  description       String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_boxes")
 }
 
 model CatalogPole {
@@ -250,8 +315,25 @@ model CatalogPole {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
   instances   Pole[]
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_poles")
+}
+
+model TemplatePole {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  height      Float
+  strength    Float
+  shape       String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_poles")
 }
 
 model Pole {
@@ -280,8 +362,21 @@ model CatalogFusion {
   attenuation Float    @default(0.0) // Attenuation in dB
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_fusions")
+}
+
+model TemplateFusion {
+  id          String   @id @default(uuid())
+  name        String
+  attenuation Float    @default(0.0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_fusions")
 }
 
 model CatalogOLT {
@@ -293,6 +388,22 @@ model CatalogOLT {
   description  String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId    String?  @map("company_id")
+  company      Company? @relation(fields: [companyId], references: [id])
 
+  @@index([companyId])
   @@map("catalog_olts")
+}
+
+model TemplateOLT {
+  id           String   @id @default(uuid())
+  name         String
+  outputPower  Float    @default(3.0) @map("output_power")
+  slots        Int      @default(1)
+  portsPerSlot Int      @default(16) @map("ports_per_slot")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_olts")
 }

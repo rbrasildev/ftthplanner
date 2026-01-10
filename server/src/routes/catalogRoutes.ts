@@ -1,7 +1,10 @@
 import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
 import * as catalogController from '../controllers/catalogController';
 
 const router = Router();
+
+router.use(authenticateToken);
 
 router.get('/splitters', catalogController.getSplitters);
 router.post('/splitters', catalogController.createSplitter);

@@ -1,0 +1,408 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client_temp"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid())
+  username     String     @unique
+  passwordHash String     @map("password_hash")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  companyId    String?    @map("company_id")
+  role         UserRole   @default(OWNER)
+  active       Boolean    @default(true)
+  projects     Project[]
+  company      Company?   @relation(fields: [companyId], references: [id])
+  auditLogs    AuditLog[]
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model Company {
+  id                    String            @id @default(uuid())
+  name                  String
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @default(now()) @updatedAt @map("updated_at")
+  planId                String?           @map("plan_id")
+  subscriptionExpiresAt DateTime?         @map("subscription_expires_at")
+  status                String            @default("ACTIVE")
+  cables                Cable[]
+  plan                  Plan?             @relation(fields: [planId], references: [id])
+  ctos                  Cto[]
+  pops                  Pop[]
+  projects              Project[]
+  users                 User[]
+  poles                 Pole[]
+  catalogCables         CatalogCable[]
+  catalogBoxes          CatalogBox[]
+  catalogPoles          CatalogPole[]
+  catalogSplitters      CatalogSplitter[]
+  catalogFusions        CatalogFusion[]
+  catalogOLTs           CatalogOLT[]
+
+  @@map("companies")
+}
+
+model Plan {
+  id        String    @id @default(uuid())
+  name      String
+  price     Float     @default(0.0)
+  limits    Json      @default("{}")
+  createdAt DateTime  @default(now()) @map("created_at")
+  companies Company[]
+
+  @@map("plans")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  centerLat Float    @map("center_lat")
+  centerLng Float    @map("center_lng")
+  zoom      Int      @default(15)
+  settings  Json?    @default("{\"snapDistance\": 30}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId String?  @map("company_id")
+  cables    Cable[]
+  ctos      Cto[]
+  pops      Pop[]
+  poles     Pole[]
+  company   Company? @relation(fields: [companyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("projects")
+}
+
+model Cto {
+  id                String          @id @default(uuid())
+  projectId         String          @map("project_id")
+  name              String
+  status            EquipmentStatus @default(PLANNED)
+  lat               Float
+  lng               Float
+  splitters         Json?           @default("[]")
+  fusions           Json?           @default("[]")
+  connections       Json?           @default("[]")
+  inputCableIds     String[]        @default([]) @map("input_cable_ids")
+  layout            Json?           @default("{}")
+  clientCount       Int             @default(0) @map("client_count")
+  catalogId         String?         @map("catalog_id")
+  type              String?         @default("CTO")
+  color             String?
+  reserveLoopLength Float?          @map("reserve_loop_length")
+  companyId         String?         @map("company_id")
+  company           Company?        @relation(fields: [companyId], references: [id])
+  project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([lat, lng])
+  @@map("ctos")
+}
+
+model Pop {
+  id            String          @id @default(uuid())
+  projectId     String          @map("project_id")
+  name          String
+  status        EquipmentStatus @default(PLANNED)
+  lat           Float
+  lng           Float
+  olts          Json?           @default("[]")
+  dios          Json?           @default("[]")
+  fusions       Json?           @default("[]")
+  connections   Json?           @default("[]")
+  inputCableIds String[]        @default([]) @map("input_cable_ids")
+  layout        Json?           @default("{}")
+  color         String?         @default("#6366f1")
+  size          Int?            @default(24)
+  companyId     String?         @map("company_id")
+  company       Company?        @relation(fields: [companyId], references: [id])
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([lat, lng])
+  @@map("pops")
+}
+
+model Cable {
+  id             String   @id @default(uuid())
+  projectId      String   @map("project_id")
+  name           String
+  status         String?  @default("DEPLOYED")
+  fiberCount     Int      @map("fiber_count")
+  looseTubeCount Int?     @default(1) @map("loose_tube_count")
+  color          String?  @default("#0ea5e9")
+  coordinates    Json
+  fromNodeId     String?  @map("from_node_id")
+  toNodeId       String?  @map("to_node_id")
+  catalogId      String?  @map("catalog_id")
+  companyId      String?  @map("company_id")
+  company        Company? @relation(fields: [companyId], references: [id])
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("cables")
+}
+
+enum EquipmentStatus {
+  PLANNED
+  NOT_DEPLOYED
+  DEPLOYED
+  CERTIFIED
+  ANALYSING
+  LICENSED
+
+  @@map("equipment_status")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  SUPER_ADMIN
+
+  @@map("user_roles")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String   @default("SYSTEM")
+  entityId  String   @default("") @map("entity_id")
+  details   Json?    @default("{}")
+  userId    String?  @map("user_id")
+  companyId String?  @map("company_id")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model CatalogSplitter {
+  id          String   @id @default(uuid())
+  name        String
+  type        String // PLC, FBT
+  mode        String // Balanced, Unbalanced
+  inputs      Int      @default(1)
+  outputs     Int
+  attenuation Json?    @default("{}") // Store attenuation details
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_splitters")
+}
+
+model TemplateSplitter {
+  id          String   @id @default(uuid())
+  name        String
+  type        String // PLC, FBT
+  mode        String // Balanced, Unbalanced
+  inputs      Int      @default(1)
+  outputs     Int
+  attenuation Json?    @default("{}")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_splitters")
+}
+
+model CatalogCable {
+  id             String  @id @default(uuid())
+  name           String // Código
+  brand          String? // Marca
+  model          String? // Modelo
+  defaultLevel   String? // Nível Padrão (DISTRIBUICAO, TRONCO, etc)
+  fiberCount     Int // Número total de fibras
+  looseTubeCount Int // Número de looses
+  fibersPerTube  Int // Fibras por loose
+  attenuation    Float? // Atenuação por Km (dB)
+  fiberProfile   String? // Perfil de fibra (ABNT)
+  description    String? // Descrição
+
+  // Visual Specs
+  deployedSpec Json? @default("{\"color\": \"#10b981\", \"width\": 3}") // Cor/Espessura Implantado
+  plannedSpec  Json? @default("{\"color\": \"#86efac\", \"width\": 3}") // Cor/Espessura Não Implantado
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_cables")
+}
+
+model TemplateCable {
+  id             String   @id @default(uuid())
+  name           String
+  brand          String?
+  model          String?
+  defaultLevel   String?
+  fiberCount     Int
+  looseTubeCount Int
+  fibersPerTube  Int
+  attenuation    Float?
+  fiberProfile   String?
+  description    String?
+  deployedSpec   Json?    @default("{\"color\": \"#10b981\", \"width\": 3}")
+  plannedSpec    Json?    @default("{\"color\": \"#86efac\", \"width\": 3}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_cables")
+}
+
+model CatalogBox {
+  id                String  @id @default(uuid())
+  name              String // Nome
+  brand             String? // Marca
+  model             String? // Modelo
+  type              String // CTO, CEO
+  reserveLoopLength Float? // Reserva Técnica (m)
+  color             String? @default("#64748b") // Visual Color
+  description       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_boxes")
+}
+
+model TemplateBox {
+  id                String   @id @default(uuid())
+  name              String
+  brand             String?
+  model             String?
+  type              String
+  reserveLoopLength Float?
+  color             String?  @default("#64748b")
+  description       String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_boxes")
+}
+
+model CatalogPole {
+  id          String   @id @default(uuid())
+  name        String
+  type        String // Concreto, Madeira, Metal, etc.
+  height      Float // em metros
+  strength    Float // em daN (Resistência)
+  shape       String // Circular, Duplo T, Quadrado, etc.
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  instances   Pole[]
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_poles")
+}
+
+model TemplatePole {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  height      Float
+  strength    Float
+  shape       String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_poles")
+}
+
+model Pole {
+  id        String          @id @default(uuid())
+  projectId String          @map("project_id")
+  name      String
+  status    EquipmentStatus @default(PLANNED)
+  lat       Float
+  lng       Float
+  catalogId String?         @map("catalog_id")
+  companyId String?         @map("company_id")
+
+  // Relations
+  company Company?     @relation(fields: [companyId], references: [id])
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  catalog CatalogPole? @relation(fields: [catalogId], references: [id])
+
+  @@index([companyId])
+  @@index([lat, lng])
+  @@map("poles")
+}
+
+model CatalogFusion {
+  id          String   @id @default(uuid())
+  name        String
+  attenuation Float    @default(0.0) // Attenuation in dB
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId   String?  @map("company_id")
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_fusions")
+}
+
+model TemplateFusion {
+  id          String   @id @default(uuid())
+  name        String
+  attenuation Float    @default(0.0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_fusions")
+}
+
+model CatalogOLT {
+  id           String   @id @default(uuid())
+  name         String
+  outputPower  Float    @default(3.0) @map("output_power")
+  slots        Int      @default(1)
+  portsPerSlot Int      @default(16) @map("ports_per_slot")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId    String?  @map("company_id")
+  company      Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_olts")
+}
+
+model TemplateOLT {
+  id           String   @id @default(uuid())
+  name         String
+  outputPower  Float    @default(3.0) @map("output_power")
+  slots        Int      @default(1)
+  portsPerSlot Int      @default(16) @map("ports_per_slot")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_olts")
+}
