@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -765,6 +765,10 @@ export const MapView: React.FC<MapViewProps> = ({
     const [isLayersOpen, setIsLayersOpen] = useState(false);
     const [enableClustering, setEnableClustering] = useState(true);
 
+    // --- PERFORMANCE REFS (Stabilize Callbacks) ---
+    const cablesRef = useRef(cables);
+    useEffect(() => { cablesRef.current = cables; }, [cables]);
+
     // --- DRAG FEEDBACK STATE ---
     const [dragState, setDragState] = useState<{ isDragging: boolean, currentPosition: Coordinates | null, tetherPoints: Coordinates[] }>({
         isDragging: false, currentPosition: null, tetherPoints: []
@@ -772,22 +776,23 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const handleNodeDragStart = useCallback((id: string) => {
         const tethers: Coordinates[] = [];
-        cables.forEach(c => {
+        // Use Ref to avoid re-creating callback when cables change (prevents Marker re-renders)
+        cablesRef.current.forEach(c => {
             // If dragging a node, tether to the "next" point of any connected cable
             if (c.fromNodeId === id && c.coordinates.length > 1) tethers.push(c.coordinates[1]);
             else if (c.toNodeId === id && c.coordinates.length > 1) tethers.push(c.coordinates[c.coordinates.length - 2]);
         });
         setDragState({ isDragging: true, currentPosition: null, tetherPoints: tethers });
-    }, [cables]);
+    }, []); // No dependency on 'cables'
 
     const handlePointDragStart = useCallback((cableId: string, index: number) => {
-        const cable = cables.find(c => c.id === cableId);
+        const cable = cablesRef.current.find(c => c.id === cableId);
         if (!cable) return;
         const tethers: Coordinates[] = [];
         if (index > 0) tethers.push(cable.coordinates[index - 1]);
         if (index < cable.coordinates.length - 1) tethers.push(cable.coordinates[index + 1]);
         setDragState({ isDragging: true, currentPosition: null, tetherPoints: tethers });
-    }, [cables]);
+    }, []); // No dependency on 'cables'
 
     const handleDrag = useCallback((lat: number, lng: number) => {
         setDragState(prev => ({ ...prev, currentPosition: { lat, lng } }));
@@ -847,21 +852,21 @@ export const MapView: React.FC<MapViewProps> = ({
     const visibleCTOs = useMemo(() => {
         if (!showCTOs) return [];
         if (!mapBoundsState) return ctos.slice(0, 100); // Initial load safety
-        const paddedBounds = mapBoundsState.pad(0.5); // 50% buffer for smoother panning
+        const paddedBounds = mapBoundsState.pad(0.3); // Reduced buffer to 30% (was 50%)
         return ctos.filter(c => paddedBounds.contains(c.coordinates));
     }, [showCTOs, ctos, mapBoundsState]);
 
     const visiblePOPs = useMemo(() => {
         if (!showPOPs) return [];
         if (!mapBoundsState) return pops;
-        const paddedBounds = mapBoundsState.pad(0.5);
+        const paddedBounds = mapBoundsState.pad(0.3); // Reduced buffer to 30%
         return pops.filter(p => paddedBounds.contains(p.coordinates));
     }, [showPOPs, pops, mapBoundsState]);
 
     const visiblePoles = useMemo(() => {
         if (!showPoles) return [];
         if (!mapBoundsState) return poles.slice(0, 100);
-        const paddedBounds = mapBoundsState.pad(0.5);
+        const paddedBounds = mapBoundsState.pad(0.3); // Reduced buffer to 30%
         return poles.filter(p => paddedBounds.contains(p.coordinates));
     }, [showPoles, poles, mapBoundsState]);
 
