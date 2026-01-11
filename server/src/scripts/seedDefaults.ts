@@ -25,18 +25,32 @@ async function main() {
                 plannedSpec: { color: "#999999", width: 2 }
             },
             {
+                name: "Cabo AS-80 6FO",
+                brand: "Genérico",
+                model: "AS-80",
+                defaultLevel: "Distribuição",
+                fiberCount: 6,
+                looseTubeCount: 1, // Ex: 1 tubo de 6
+                fibersPerTube: 6,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo de distribuição 6 fibras",
+                deployedSpec: { color: "#ff00ff", width: 4 }, // Orange
+                plannedSpec: { color: "#f1f1f154", width: 4 }
+            },
+            {
                 name: "Cabo AS-80 12FO",
                 brand: "Genérico",
                 model: "AS-80",
                 defaultLevel: "Distribuição",
                 fiberCount: 12,
-                looseTubeCount: 2, // Ex: 2 tubos de 6
-                fibersPerTube: 6,
+                looseTubeCount: 1, // Ex: 1 tubo de 12
+                fibersPerTube: 12,
                 attenuation: 0.35,
                 fiberProfile: "G.652D",
                 description: "Cabo de distribuição 12 fibras",
-                deployedSpec: { color: "#FFA500", width: 4 }, // Orange
-                plannedSpec: { color: "#FFD700", width: 4 }
+                deployedSpec: { color: "#0000ff", width: 4 }, // Orange
+                plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
                 name: "Cabo AS-120 48FO",
@@ -73,7 +87,7 @@ async function main() {
     await prisma.templateBox.createMany({
         data: [
             {
-                name: "CTO 1:8 NAP",
+                name: "CTO",
                 brand: "Genérico",
                 model: "NAP-16",
                 type: "CTO",
@@ -82,12 +96,12 @@ async function main() {
                 description: "Caixa Terminal Óptica para 16 assinantes (equipada 1:8)"
             },
             {
-                name: "CEO 144FO",
+                name: "CEO",
                 brand: "Genérico",
                 model: "Domo 144",
                 type: "CEO",
                 reserveLoopLength: 50,
-                color: "#FF0000",
+                color: "#00ffff",
                 description: "Caixa de Emenda Óptica tipo Domo"
             }
         ]

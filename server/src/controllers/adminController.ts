@@ -32,7 +32,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 // Create User
 export const createUser = async (req: AuthRequest, res: Response) => {
     try {
-        const { username, password, role } = req.body;
+        const { username, email, password, role } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
@@ -41,9 +41,16 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         // Basic validation
         if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
-        // Check if username exists
-        const existingUser = await prisma.user.findUnique({ where: { username } });
-        if (existingUser) return res.status(400).json({ error: 'Username already taken' });
+        // Check if username of email exists
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { username },
+                    { email: email || `${username}@placeholder.com` } // rudimentary check
+                ]
+            }
+        });
+        if (existingUser) return res.status(400).json({ error: 'Username or Email already taken' });
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -56,7 +63,9 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             }
         });
 
-        if (company?.plan?.limits) {
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        if (company.plan?.limits) {
             const limits = company.plan.limits as any;
             if (limits.maxUsers && company._count.users >= limits.maxUsers) {
                 return res.status(403).json({
@@ -66,9 +75,12 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             }
         }
 
+        const userEmail = email || `${username}@${company.name.replace(/\s+/g, '').toLowerCase()}.com`;
+
         const newUser = await prisma.user.create({
             data: {
                 username,
+                email: userEmail,
                 passwordHash,
                 role: role || 'MEMBER',
                 companyId

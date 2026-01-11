@@ -20,6 +20,7 @@ interface DashboardPageProps {
   username: string;
   userRole?: string;
   userPlan?: string;
+  userPlanType?: string;
   subscriptionExpiresAt?: string | null;
   projects: Project[];
   onOpenProject: (id: string) => void;
@@ -27,6 +28,7 @@ interface DashboardPageProps {
   onDeleteProject: (id: string) => void;
   onUpdateProject?: (id: string, name: string, center: Coordinates) => void;
   onLogout: () => void;
+  onUpgradeClick?: () => void;
   isLoading?: boolean;
 }
 
@@ -84,18 +86,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
   userRole, // Receive role
   userPlan = 'Plano Grátis',
+  userPlanType = 'STANDARD',
   subscriptionExpiresAt,
   projects,
   onOpenProject,
   onCreateProject,
   onDeleteProject,
   onLogout,
+  onUpgradeClick,
   onUpdateProject,
   isLoading = false
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
-  const [currentView, setCurrentView] = useState<DashboardView>('projects');
+  /* State for active view, verified to persist on refresh */
+  const [currentView, setCurrentView] = useState<DashboardView>(() => {
+    const saved = localStorage.getItem('dashboard_active_view');
+    return (saved as DashboardView) || 'projects';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboard_active_view', currentView);
+  }, [currentView]);
 
   // State for expanded menus
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
@@ -290,7 +302,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { id: 'users', label: t('users') || 'Usuários', icon: Users },
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
     { id: 'backup', label: t('backup') || 'Backup', icon: Save },
-  ];
+  ].filter(item => {
+    // Only show Users and Backup to ADMIN or OWNER
+    if (item.id === 'users' || item.id === 'backup') {
+      return userRole === 'ADMIN' || userRole === 'OWNER';
+    }
+    return true;
+  }) as MenuItem[];
 
   // Need to import GitFork or use a fallback. Let's use Component inside map to solve icon imports if needed.
   // Actually, I need to check imports. Activity, Box, Unplug, Zap are imported. GitFork is NOT imported.
@@ -433,11 +451,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <span className={`inline-block w-2 h-2 rounded-full mt-0.5 ${userPlan === 'Plano Ilimitado' ? 'bg-purple-500' : userPlan === 'Plano Intermediário' ? 'bg-sky-500' : 'bg-emerald-500'}`}></span>
                 <div className="flex flex-col">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wide truncate leading-tight" title={userPlan}>{userPlan}</p>
-                  {subscriptionExpiresAt && (
-                    <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wide leading-tight">
-                      Teste: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {subscriptionExpiresAt && userPlanType === 'TRIAL' && (
+                      <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wide leading-tight">
+                        Teste: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
+                      </p>
+                    )}
+                    {(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL') && onUpgradeClick && (
+                      <button
+                        onClick={onUpgradeClick}
+                        className="flex items-center gap-1 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded-full font-bold transition-colors w-fit shadow-sm shadow-indigo-900/20"
+                      >
+                        <Zap className="w-3 h-3" /> Upgrade
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -34,3 +34,17 @@ export const getGlobalMapData = async () => {
     const response = await api.get('/saas/map-data');
     return response.data;
 };
+export const deleteCompany = async (id: string) => {
+    const response = await api.delete(`/saas/companies/${id}`);
+    return response.data;
+};
+
+export const getUsers = async () => {
+    const response = await api.get('/saas/users');
+    return response.data;
+};
+
+export const updateUser = async (id: string, data: any) => {
+    const response = await api.put(`/saas/users/${id}`, data);
+    return response.data;
+};

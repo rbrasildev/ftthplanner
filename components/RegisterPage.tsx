@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { KeyRound, ArrowLeft } from 'lucide-react';
 
 interface RegisterPageProps {
-    onRegister: (username: string, password?: string, companyName?: string) => void;
+    onRegister: (username: string, email: string, password?: string, companyName?: string) => void;
     onBackToLogin: () => void;
     onBackToLanding: () => void;
 }
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding }) => {
-    const [username, setUsername] = useState('');
+    // const [username, setUsername] = useState(''); // Removed state
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [companyName, setCompanyName] = useState('');
@@ -16,7 +17,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username.trim() || !password.trim() || !companyName.trim()) {
+        // Auto-generate username from email (part before @)
+        // If empty or invalid, fallback to full email or random string?
+        // Let's use part before @ for now.
+        const generatedUsername = email.split('@')[0] || email;
+
+        if (!email.trim() || !password.trim() || !companyName.trim()) {
             setError('Por favor, preencha todos os campos.');
             return;
         }
@@ -25,7 +31,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
             return;
         }
         setError(null);
-        onRegister(username, password, companyName);
+        // Pass generated username
+        onRegister(generatedUsername, email, password, companyName);
     };
 
     return (
@@ -96,15 +103,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                     </div>
                                 </div>
 
+                                {/* Username input removed */}
+
                                 <div className="space-y-1">
-                                    <label className="sr-only">Nome de Usuário</label>
+                                    <label className="sr-only">Email</label>
                                     <div className="relative">
                                         <input
-                                            type="text"
-                                            value={username}
-                                            onChange={(e) => setUsername(e.target.value)}
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
                                             className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder="Nome de Usuário"
+                                            placeholder="Email"
                                             required
                                         />
                                     </div>

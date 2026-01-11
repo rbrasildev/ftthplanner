@@ -10,12 +10,12 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading, onBackToLanding }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onLogin(username, password);
+        onLogin(email, password);
     };
 
     return (
@@ -62,14 +62,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                         <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
                             <div className="space-y-5 lg:space-y-4">
                                 <div className="space-y-1">
-                                    <label className="sr-only">Usuário</label>
+                                    <label className="sr-only">Email</label>
                                     <div className="relative">
                                         <input
-                                            type="text"
-                                            value={username}
-                                            onChange={(e) => setUsername(e.target.value)}
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
                                             className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder="Usuário"
+                                            placeholder="Email"
                                             required
                                             autoFocus
                                         />

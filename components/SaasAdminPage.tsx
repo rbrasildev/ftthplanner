@@ -2,16 +2,44 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server } from 'lucide-react';
 import * as saasService from '../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
+import { ChangePasswordModal } from './modals/ChangePasswordModal';
 
 interface Company {
     id: string;
     name: string;
     status: string;
     plan?: { id: string; name: string; price: number };
-    _count: { projects: number; users: number };
+    _count: { projects: number; users: number; ctos?: number; pops?: number };
+    createdAt: string;
+    users: { id: string; username: string; role: string }[];
+    projects: { id: string; name: string }[];
+}
+
+interface Plan {
+    id: string;
+    name: string;
+    price: number;
+    limits: {
+        maxProjects?: number;
+        maxUsers?: number;
+        maxCTOs?: number;
+        maxPOPs?: number;
+    };
+    features?: string[];
+    isRecommended?: boolean;
+}
+
+interface User {
+    id: string;
+    username: string;
+    email?: string;
+    role: string;
+    active: boolean;
+    companyId?: string;
+    company?: { id: string; name: string };
     createdAt: string;
 }
 
@@ -21,17 +49,21 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users'>('dashboard');
     const [plans, setPlans] = useState<any[]>([]);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     // ... (omitted) ...
 
     const navItems = [
         { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
         { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
         { id: 'companies', label: 'Companies', icon: <Building2 className="w-5 h-5" /> },
+        { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
         { id: 'plans', label: 'SaaS Plans', icon: <CreditCard className="w-5 h-5" /> },
         { id: 'audit', label: 'Audit Logs', icon: <Settings className="w-5 h-5" /> },
     ];
@@ -46,13 +78,25 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             if (activeView === 'audit') {
                 const logs = await saasService.getAuditLogs({ limit: 50 });
                 setAuditLogs(logs);
+            } else if (activeView === 'users') {
+                const usersData = await saasService.getUsers();
+                setUsers(usersData);
             } else {
-                const [companiesData, plansData] = await Promise.all([
+                const promises: Promise<any>[] = [
                     saasService.getCompanies(),
                     saasService.getPlans()
-                ]);
-                setCompanies(companiesData);
-                setPlans(plansData);
+                ];
+
+                if (activeView === 'dashboard') {
+                    promises.push(saasService.getAuditLogs({ limit: 10 }));
+                }
+
+                const results = await Promise.all(promises);
+                setCompanies(results[0]);
+                setPlans(results[1]);
+                if (activeView === 'dashboard' && results[2]) {
+                    setAuditLogs(results[2]);
+                }
             }
         } catch (error) {
             console.error('Failed to load data', error);
@@ -70,29 +114,58 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         }
     };
 
-    const handleSavePlan = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const form = e.target as HTMLFormElement;
-        const formData = new FormData(form);
+    const handleUserUpdate = async (id: string, updates: any) => {
+        try {
+            await saasService.updateUser(id, updates);
+            alert('User updated successfully');
+            loadData();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update user');
+        }
+    };
 
-        const data = {
+    const handleCompanyDelete = async (id: string, name: string) => {
+        if (window.confirm(`Are you sure you want to delete company "${name}"? This action CANNOT be undone and will delete all associated projects, users, and data.`)) {
+            try {
+                await saasService.deleteCompany(id);
+                loadData();
+                alert('Company deleted successfully');
+            } catch (error: any) {
+                console.error("Delete failed", error);
+                const msg = error.response?.data?.error || 'Failed to delete company';
+                alert(msg);
+            }
+        }
+    };
+
+    const handleSavePlan = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const featuresText = formData.get('features') as string;
+        const featuresValid = featuresText ? featuresText.split('\n').filter(s => s.trim()) : [];
+
+        const planData = {
             name: formData.get('name'),
             price: parseFloat(formData.get('price') as string),
+            type: formData.get('type') || 'STANDARD',
+            trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
+            features: featuresValid,
+            isRecommended: formData.get('isRecommended') === 'on',
             limits: {
-                maxProjects: formData.get('maxProjects') ? parseInt(formData.get('maxProjects') as string) : null,
-                maxUsers: formData.get('maxUsers') ? parseInt(formData.get('maxUsers') as string) : null,
-                maxCTOs: formData.get('maxCTOs') ? parseInt(formData.get('maxCTOs') as string) : null,
-                maxPOPs: formData.get('maxPOPs') ? parseInt(formData.get('maxPOPs') as string) : null,
+                maxProjects: formData.get('maxProjects') ? parseInt(formData.get('maxProjects') as string) : 999999,
+                maxUsers: formData.get('maxUsers') ? parseInt(formData.get('maxUsers') as string) : 999999,
+                maxCTOs: formData.get('maxCTOs') ? parseInt(formData.get('maxCTOs') as string) : 999999,
+                maxPOPs: formData.get('maxPOPs') ? parseInt(formData.get('maxPOPs') as string) : 999999
             }
         };
-
         try {
             if (editingPlan) {
-                await saasService.updatePlan(editingPlan.id, data);
+                await saasService.updatePlan(editingPlan.id, planData);
             } else {
-                await saasService.createPlan(data);
+                await saasService.createPlan(planData);
             }
-            loadData();
+            await loadData();
             setIsPlanModalOpen(false);
             setEditingPlan(null);
         } catch (error) {
@@ -101,7 +174,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     };
 
     const openPlanModal = (plan?: any) => {
-        setEditingPlan(plan || null);
+        setEditingPlan(plan || { features: [], isRecommended: false });
         setIsPlanModalOpen(true);
     };
 
@@ -157,6 +230,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         <p className="text-sm text-slate-500 dark:text-slate-400">Manage your platform resources and subscriptions</p>
                     </div>
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsPasswordModalOpen(true)}
+                            className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-sm"
+                        >
+                            <Lock className="w-3 h-3" />
+                            Change Password
+                        </button>
                         <div className="text-right hidden sm:block">
                             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Administrator</p>
                             <p className="text-xs text-slate-400">super@ftthmaster.com</p>
@@ -208,35 +288,106 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                             </div>
 
-                            {/* Recent Activity / Simplified Table for Dashboard */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                    <h3 className="font-bold text-lg">Recent Companies</h3>
-                                    <button onClick={() => setActiveView('companies')} className="text-sm text-indigo-600 hover:text-indigo-500 font-medium hover:underline">View All</button>
+                            {/* Platform Health & Activity Feed */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Left Column: Health Metrics & Quick Actions */}
+                                <div className="space-y-6">
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                            <Activity className="w-5 h-5 text-indigo-500" />
+                                            Platform Health
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                                        <Zap className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-500 uppercase">Total Projects</p>
+                                                        <p className="font-bold text-slate-900 dark:text-white">{companies.reduce((acc, c) => acc + (c._count.projects || 0), 0)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                                                        <Server className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-500 uppercase">Avg. Size</p>
+                                                        <p className="font-bold text-slate-900 dark:text-white">
+                                                            {(companies.reduce((acc, c) => acc + (c._count.projects || 0), 0) / (companies.length || 1)).toFixed(1)} <span className="text-xs font-normal text-slate-400">proj/sub</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Banner */}
+                                    <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => setActiveView('companies')}>
+                                        <div className="relative z-10">
+                                            <h3 className="font-bold text-lg mb-1">Manage Companies</h3>
+                                            <p className="text-indigo-100 text-sm mb-4">View details, update limits, or suspend access.</p>
+                                            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-bold transition-all">Go to Companies &rarr;</button>
+                                        </div>
+                                        <Building2 className="absolute -bottom-4 -right-4 w-32 h-32 text-indigo-500/30 group-hover:scale-110 transition-transform duration-500" />
+                                    </div>
                                 </div>
-                                <div className="p-6">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="text-slate-400 font-medium text-xs uppercase tracking-wider">
-                                            <tr>
-                                                <th className="pb-3">Company</th>
-                                                <th className="pb-3">Plan</th>
-                                                <th className="pb-3 text-right">Joined</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                            {companies.slice(0, 5).map(c => (
-                                                <tr key={c.id}>
-                                                    <td className="py-3 font-medium text-slate-700 dark:text-slate-300">{c.name}</td>
-                                                    <td className="py-3">
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                                                            {c.plan?.name || 'No Plan'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-3 text-right text-slate-500">{new Date(c.createdAt).toLocaleDateString()}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+
+                                {/* Right Column: Activity Feed */}
+                                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                                    <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
+                                        <div>
+                                            <h3 className="font-bold text-lg">Live Activity Feed</h3>
+                                            <p className="text-xs text-slate-500">Real-time system events and audit logs</p>
+                                        </div>
+                                        <button onClick={() => setActiveView('audit')} className="text-xs text-indigo-600 hover:text-indigo-500 font-bold uppercase tracking-wider hover:underline">View History</button>
+                                    </div>
+                                    <div className="flex-1 overflow-auto max-h-[400px] p-0">
+                                        {auditLogs.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                                                <Activity className="w-12 h-12 mb-3 opacity-20" />
+                                                <p>No recent activity recorded.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                {auditLogs.map((log, idx) => (
+                                                    <div key={log.id || idx} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-4 items-start group">
+                                                        <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${log.action?.includes('CREATE') ? 'bg-emerald-100 text-emerald-600' :
+                                                            log.action?.includes('DELETE') ? 'bg-red-100 text-red-600' :
+                                                                log.action?.includes('UPDATE') ? 'bg-blue-100 text-blue-600' :
+                                                                    'bg-slate-100 text-slate-600'
+                                                            }`}>
+                                                            {log.action?.includes('CREATE') ? <Zap className="w-4 h-4" /> :
+                                                                log.action?.includes('DELETE') ? <Trash2 className="w-4 h-4" /> :
+                                                                    log.action?.includes('UPDATE') ? <RotateCcw className="w-4 h-4" /> :
+                                                                        <Activity className="w-4 h-4" />}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                                                    <span className="font-bold">{log.user?.username || 'System'}</span>
+                                                                    <span className="text-slate-500 font-normal"> {log.action.toLowerCase().replace('_', ' ')} </span>
+                                                                    <span className="font-bold text-slate-700 dark:text-slate-300">{log.entity}</span>
+                                                                </p>
+                                                                <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                                                                    {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                                                                {log.details ? JSON.stringify(log.details).replace(/"/g, '').replace(/[{}]/g, '') : 'No details'}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                                {new Date(log.createdAt).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -286,7 +437,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         ))}
                                                     </select>
                                                 </td>
-                                                <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-medium">{company._count.projects}</td>
+                                                <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-medium">
+                                                    <div className="flex flex-col text-xs">
+                                                        <span>{company._count.projects} Proj</span>
+                                                        <span className="text-slate-400">{company._count.ctos || 0} CTOs</span>
+                                                        <span className="text-slate-400">{company._count.pops || 0} POPs</span>
+                                                    </div>
+                                                </td>
                                                 <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-medium">{company._count.users}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline - flex items - center gap - 1.5 px - 2.5 py - 1 rounded - full text - xs font - bold border shadow - sm ${company.status === 'ACTIVE'
@@ -312,7 +469,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         >
                                                             Reactivate
                                                         </button>
+
                                                     )}
+                                                    <button
+                                                        onClick={() => setSelectedCompany(company)}
+                                                        className="ml-2 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
+                                                        title="Quick View"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCompanyDelete(company.id, company.name)}
+                                                        className="ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
+                                                        title="Delete Company"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -335,44 +507,63 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {plans.map(plan => (
-                                    <div key={plan.id} className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6 flex flex-col relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                            <CreditCard className="w-24 h-24 text-indigo-500 rotate-12 transform translate-x-4 -translate-y-4" />
-                                        </div>
-
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 relative">{plan.name}</h3>
-                                        <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2 mb-6 relative">
-                                            {plan.price === 0 ? 'Free' : `R$ ${plan.price.toFixed(2)} `}
-                                            <span className="text-sm font-medium text-slate-400 ml-1">/mo</span>
-                                        </p>
-
-                                        <div className="space-y-4 flex-1 relative z-10">
-                                            <div className="flex justify-between text-sm py-2 border-b border-slate-100 dark:border-slate-800">
-                                                <span className="text-slate-500 dark:text-slate-400">Projects</span>
-                                                <span className="font-bold text-slate-700 dark:text-slate-200">{plan.limits?.maxProjects === null ? 'Unlimited' : plan.limits?.maxProjects}</span>
+                                    <div key={plan.id} className={`bg-white dark:bg-slate-900 rounded-3xl p-8 border hover:shadow-2xl transition-all relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/10 scale-105 shadow-xl' : 'border-slate-200 dark:border-slate-800'}`}>
+                                        {plan.isRecommended && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+                                                Most Popular
                                             </div>
-                                            <div className="flex justify-between text-sm py-2 border-b border-slate-100 dark:border-slate-800">
-                                                <span className="text-slate-500 dark:text-slate-400">Users</span>
-                                                <span className="font-bold text-slate-700 dark:text-slate-200">{plan.limits?.maxUsers === null ? 'Unlimited' : plan.limits?.maxUsers}</span>
+                                        )}
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
+                                                <div className="mt-2 flex items-baseline gap-1">
+                                                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white">${plan.price}</span>
+                                                    <span className="text-sm font-medium text-slate-500">/month</span>
+                                                </div>
                                             </div>
-                                            <div className="flex justify-between text-sm py-2 border-b border-slate-100 dark:border-slate-800">
-                                                <span className="text-slate-500 dark:text-slate-400">CTOs</span>
-                                                <span className="font-bold text-slate-700 dark:text-slate-200">{plan.limits?.maxCTOs === null ? 'Unlimited' : plan.limits?.maxCTOs}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm py-2 border-b border-slate-100 dark:border-slate-800">
-                                                <span className="text-slate-500 dark:text-slate-400">POPs</span>
-                                                <span className="font-bold text-slate-700 dark:text-slate-200">{plan.limits?.maxPOPs === null ? 'Unlimited' : plan.limits?.maxPOPs}</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                                                    <Settings className="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </div>
 
-                                        <div className="mt-8 pt-4">
-                                            <button
-                                                onClick={() => openPlanModal(plan)}
-                                                className="w-full py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl text-sm font-bold transition-all border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700"
-                                            >
-                                                Edit Configuration
-                                            </button>
+                                        <div className="space-y-4 mb-8">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl space-y-3">
+                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                    <LayoutDashboard className="w-4 h-4 text-indigo-500" />
+                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxProjects || 0) >= 999999 ? '∞' : plan.limits?.maxProjects || '∞'}</span> Max Projects
+                                                </div>
+                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                    <Users className="w-4 h-4 text-emerald-500" />
+                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxUsers || 0) >= 999999 ? '∞' : plan.limits?.maxUsers || '∞'}</span> Max Users
+                                                </div>
+                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                    <Network className="w-4 h-4 text-blue-500" />
+                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxCTOs || 0) >= 999999 ? '∞' : plan.limits?.maxCTOs || '∞'}</span> CTOs & POPs
+                                                </div>
+                                            </div>
+
+                                            {/* Features List */}
+                                            {plan.features && plan.features.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Everything in:</p>
+                                                    {plan.features.map((feature: string, idx: number) => (
+                                                        <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                                            <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                                            <span>{feature}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
+
+                                        <button className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${plan.isRecommended
+                                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
+                                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500'
+                                            }`}>
+                                            Assign Plan
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -426,7 +617,108 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         </div>
                     )}
 
-                    {activeView === 'analytics' && <SaasAnalytics />}
+                    {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
+
+                    {activeView === 'users' && (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                <h3 className="font-bold text-lg">Platform Users</h3>
+                                <div className="text-sm text-slate-500">
+                                    Total: <span className="font-bold text-slate-900 dark:text-white">{users.length}</span>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">User</th>
+                                            <th className="px-6 py-4">Company</th>
+                                            <th className="px-6 py-4">Role</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {users.map(user => (
+                                            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                                                            }`}>
+                                                            {user.username.slice(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-slate-900 dark:text-white">{user.username}</div>
+                                                            <div className="text-xs text-slate-500">ID: {user.id.slice(0, 8)}...</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {user.company ? (
+                                                        <div className="text-slate-700 dark:text-slate-300 font-medium text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block">
+                                                            {user.company.name}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400 italic">No Company</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <select
+                                                        value={user.role}
+                                                        onChange={(e) => handleUserUpdate(user.id, { role: e.target.value })}
+                                                        className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs rounded py-1 px-2"
+                                                        disabled={user.role === 'SUPER_ADMIN'}
+                                                    >
+                                                        <option value="OWNER">Owner</option>
+                                                        <option value="ADMIN">Admin</option>
+                                                        <option value="EDITOR">Editor</option>
+                                                        <option value="VIEWER">Viewer</option>
+                                                    </select>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.active
+                                                        ? 'bg-emerald-50 text-emerald-600'
+                                                        : 'bg-red-50 text-red-600'
+                                                        }`}>
+                                                        {user.active ? 'Active' : 'Blocked'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newPass = prompt("Enter new password for " + user.username);
+                                                            if (newPass) handleUserUpdate(user.id, { password: newPass });
+                                                        }}
+                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                        title="Reset Password"
+                                                    >
+                                                        <RotateCcw className="w-4 h-4" />
+                                                    </button>
+                                                    {user.active ? (
+                                                        <button
+                                                            onClick={() => handleUserUpdate(user.id, { active: false })}
+                                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                            title="Block Access"
+                                                        >
+                                                            <Lock className="w-4 h-4" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleUserUpdate(user.id, { active: true })}
+                                                            className="p-1.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                                            title="Unblock"
+                                                        >
+                                                            <Shield className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {isPlanModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -466,10 +758,44 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan Type</label>
+                                            <select
+                                                name="type"
+                                                defaultValue={editingPlan?.type || 'STANDARD'}
+                                                onChange={(e) => {
+                                                    const trialInput = document.getElementById('trialDurationInput');
+                                                    if (trialInput) {
+                                                        if (e.target.value === 'TRIAL') {
+                                                            trialInput.classList.remove('hidden');
+                                                        } else {
+                                                            trialInput.classList.add('hidden');
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            >
+                                                <option value="STANDARD">Standard (Paid)</option>
+                                                <option value="TRIAL">Trial (Free/Time Limited)</option>
+                                                <option value="ENTERPRISE">Enterprise (Custom)</option>
+                                            </select>
+                                        </div>
+                                        <div id="trialDurationInput" className={editingPlan?.type === 'TRIAL' ? '' : 'hidden'}>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Trial Duration (Days)</label>
+                                            <input
+                                                name="trialDurationDays"
+                                                type="number"
+                                                defaultValue={editingPlan?.trialDurationDays || 15}
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            />
+                                        </div>
+                                    </div>
+
 
                                     <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Resource Limits (Leave empty for Unlimited)</h4>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Max Projects</label>
                                                 <input
@@ -507,6 +833,30 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 />
                                             </div>
                                         </div>
+
+                                        <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="isRecommended"
+                                                        defaultChecked={editingPlan?.isRecommended}
+                                                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                                    />
+                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Mark as Recommended Plan (Highlighted)</span>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Features List (one per line)</label>
+                                                <textarea
+                                                    name="features"
+                                                    rows={4}
+                                                    placeholder="24/7 Support&#10;Daily Backups&#10;Advanced Analytics"
+                                                    defaultValue={editingPlan?.features?.join('\n')}
+                                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
@@ -528,6 +878,106 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         </div>
                     </div>
                 )}
+                {/* Company Quick View Drawer */}
+                {selectedCompany && (
+                    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedCompany(null)}>
+                        <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl p-6 overflow-y-auto border-l border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCompany.name}</h2>
+                                    <p className="text-sm text-slate-500">ID: {selectedCompany.id}</p>
+                                </div>
+                                <button onClick={() => setSelectedCompany(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Summary Card */}
+                                <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Overview</h3>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-slate-400 text-xs">Plan</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">{selectedCompany.plan?.name || 'No Plan'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400 text-xs">Status</p>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${selectedCompany.status === 'ACTIVE'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                {selectedCompany.status}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400 text-xs">Joined</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">{new Date(selectedCompany.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400 text-xs">Infrastructure</p>
+                                            <p className="font-medium text-slate-900 dark:text-white">
+                                                {selectedCompany._count.ctos || 0} CTOs, {selectedCompany._count.pops || 0} POPs
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Users List */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        Team Members <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {selectedCompany.users?.map(u => (
+                                            <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                        {u.username.slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-sm text-slate-900 dark:text-white">{u.username}</p>
+                                                        <p className="text-xs text-slate-400 uppercase">{u.role}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {(!selectedCompany.users || selectedCompany.users.length === 0) && (
+                                            <p className="text-sm text-slate-400 italic">No users found.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Projects List */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        Projects <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
+                                    </h3>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                        {selectedCompany.projects?.map(p => (
+                                            <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg hover:border-indigo-300 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded">
+                                                        <Network className="w-4 h-4" />
+                                                    </div>
+                                                    <p className="font-medium text-sm text-slate-900 dark:text-white">{p.name}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
+                                            <p className="text-sm text-slate-400 italic">No projects found.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+                <ChangePasswordModal
+                    isOpen={isPasswordModalOpen}
+                    onClose={() => setIsPasswordModalOpen(false)}
+                />
             </main>
         </div>
     );

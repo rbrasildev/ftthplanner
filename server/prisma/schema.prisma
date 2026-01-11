@@ -10,6 +10,7 @@ datasource db {
 model User {
   id           String    @id @default(uuid())
   username     String    @unique
+  email        String    @unique
   passwordHash String    @map("password_hash")
   createdAt    DateTime  @default(now()) @map("created_at")
   companyId    String?   @map("company_id")
@@ -53,7 +54,11 @@ model Plan {
   id        String    @id @default(uuid())
   name      String
   price     Float     @default(0.0)
+  type      String    @default("STANDARD") // STANDARD, TRIAL, ENTERPRISE
+  trialDurationDays Int? @map("trial_duration_days")
   limits    Json      @default("{}")
+  features  Json      @default("[]")
+  isRecommended Boolean @default(false)
   createdAt DateTime  @default(now()) @map("created_at")
   companies Company[]
 

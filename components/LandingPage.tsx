@@ -9,7 +9,25 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [plans, setPlans] = React.useState<any[]>([]);
     const { language, setLanguage, t } = useLanguage();
+
+    React.useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                // If in dev mode, assume local server; otherwise use relative path
+                const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+                const res = await fetch(`${baseUrl}/api/saas/public/plans`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPlans(data);
+                }
+            } catch (err) {
+                console.error("Failed to load public plans", err);
+            }
+        };
+        fetchPlans();
+    }, []);
 
     return (
         <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-sky-500/30">
@@ -271,94 +289,51 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            {
-                                name: t('plan_free'),
-                                price: t('price_free'),
-                                desc: "For hobbyists",
-                                features: [
-                                    { k: 'feature_projects', v: 1 },
-                                    { k: 'feature_users', v: 1 },
-                                    { k: 'feature_ctos', v: 50 },
-                                    { k: 'feature_pops', v: 2 }
-                                ],
-                                popular: false,
-                                color: "border-slate-800"
-                            },
-                            {
-                                name: t('plan_basic'),
-                                price: "R$ 149,90",
-                                desc: "For small ISPs",
-                                features: [
-                                    { k: 'feature_projects', v: 5 },
-                                    { k: 'feature_users', v: 3 },
-                                    { k: 'feature_ctos', v: 500 },
-                                    { k: 'feature_pops', v: 10 }
-                                ],
-                                popular: false,
-                                color: "border-sky-800 bg-sky-900/10"
-                            },
-                            {
-                                name: t('plan_inter'),
-                                price: "R$ 399,90",
-                                desc: "For growing networks",
-                                features: [
-                                    { k: 'feature_projects', v: 20 },
-                                    { k: 'feature_users', v: 10 },
-                                    { k: 'feature_ctos', v: '2.000' },
-                                    { k: 'feature_pops', v: 50 }
-                                ],
-                                popular: true,
-                                color: "border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl"
-                            },
-                            {
-                                name: t('plan_unlimited'),
-                                price: "R$ 899,90",
-                                desc: "For enterprise",
-                                features: [
-                                    { k: 'feature_unlimited', v: '' },
-                                    { k: 'feature_unlimited', v: '' },
-                                    { k: 'feature_unlimited', v: '' },
-                                    { k: 'feature_unlimited', v: '' }
-                                ],
-                                popular: false,
-                                color: "border-slate-800"
-                            }
-                        ].map((plan, idx) => (
-                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col ${plan.color} relative`}>
-                                {plan.popular && (
+                        {plans.length > 0 ? plans.map((plan, idx) => (
+                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'}`}>
+                                {plan.isRecommended && (
                                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                         {t('most_popular')}
                                     </div>
                                 )}
                                 <h3 className="text-lg font-bold text-white mb-2">{plan.name}</h3>
                                 <div className="mb-6">
-                                    <span className="text-3xl font-extrabold text-white">{plan.price}</span>
-                                    {plan.price !== t('price_free') && <span className="text-sm font-medium text-slate-400">{t('month')}</span>}
+                                    <span className="text-3xl font-extrabold text-white">R$ {plan.price}</span>
+                                    {plan.price > 0 && <span className="text-sm font-medium text-slate-400">{t('month')}</span>}
                                 </div>
                                 <div className="space-y-4 mb-8 flex-1">
+                                    {/* Limits */}
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{t('feature_projects', { count: plan.features[0].v })}</span>
+                                        <span>{(plan.limits?.maxProjects || 0) >= 999999 ? t('feature_unlimited').replace('Projects', '').trim() : plan.limits?.maxProjects} Projects</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{t('feature_users', { count: plan.features[1].v })}</span>
+                                        <span>{(plan.limits?.maxUsers || 0) >= 999999 ? t('feature_unlimited').replace('Users', '').trim() : plan.limits?.maxUsers} Users</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{t('feature_ctos', { count: plan.features[2].v })}</span>
+                                        <span>{(plan.limits?.maxCTOs || 0) >= 999999 ? t('feature_unlimited').replace('CTOs', '').trim() : plan.limits?.maxCTOs} CTOs</span>
                                     </div>
-                                    <div className="flex items-center gap-3 text-sm text-slate-300">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{t('feature_pops', { count: plan.features[3].v })}</span>
-                                    </div>
+
+
+                                    {/* Features List */}
+                                    {plan.features && Array.isArray(plan.features) && plan.features.map((feature: string, i: number) => (
+                                        <div key={i} className="flex items-center gap-3 text-sm text-slate-300">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                            <span>{feature}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                                <button className={`w-full py-3 rounded-xl font-bold transition-all ${plan.popular ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+                                <button className={`w-full py-3 rounded-xl font-bold transition-all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
                                     {t('plan_cta')}
                                 </button>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="col-span-full text-center text-slate-500">
+                                Loading plans...
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

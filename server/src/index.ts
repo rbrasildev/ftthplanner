@@ -68,6 +68,11 @@ app.use('/api/backups', backupRoutes);
 // Initialize Scheduler
 BackupService.initScheduledBackups();
 
+// Seed Plans and Admin
+import { seedDefaultPlans, seedSuperAdmin } from './services/seedService';
+seedDefaultPlans();
+seedSuperAdmin();
+
 app.get('/', (req, res) => {
     res.send('FTTH Master Planner API is active');
 });

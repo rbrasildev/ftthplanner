@@ -41,6 +41,7 @@ async function main() {
         },
         create: {
             username,
+            email: 'admin@ftthplanner.com',
             passwordHash: hashedPassword,
             role: UserRole.SUPER_ADMIN,
             companyId: company?.id,

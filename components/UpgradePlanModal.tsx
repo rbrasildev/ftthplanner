@@ -18,61 +18,78 @@ interface UpgradePlanModalProps {
     limitDetails?: string;
 }
 
-const PLANS: Plan[] = [
-    {
-        id: 'free',
-        name: 'Plano Grátis',
-        price: 'R$ 0,00',
-        features: ['1 Projeto', '5 Usuários', '100 CTOs', 'Suporte Comunitário'],
-        icon: Globe
-    },
-    {
-        id: 'basic',
-        name: 'Plano Básico',
-        price: 'R$ 89,90/mês',
-        features: ['5 Projetos', '10 Usuários', '500 CTOs', 'Suporte Email'],
-        icon: Zap
-    },
-    {
-        id: 'intermediate',
-        name: 'Plano Intermediário',
-        price: 'R$ 199,90/mês',
-        features: ['15 Projetos', '20 Usuários', '2.000 CTOs', 'Suporte Prioritário', 'Backup Diário'],
-        highlight: true,
-        icon: Star
-    },
-    {
-        id: 'unlimited',
-        name: 'Plano Ilimitado',
-        price: 'R$ 499,90/mês',
-        features: ['Projetos Ilimitados', 'Usuários Ilimitados', 'CTOs Ilimitados', 'Gerente de Conta', 'API Access'],
-        icon: Shield
-    }
-];
+// Icon mapping helper
+const getPlanIcon = (index: number, name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('grátis') || lower.includes('free')) return Globe;
+    if (lower.includes('básico') || lower.includes('basic')) return Zap;
+    if (lower.includes('inter') || lower.includes('medio')) return Star;
+    if (lower.includes('ilimitado') || lower.includes('unlimited') || lower.includes('pro')) return Shield;
+
+    // Fallback by index
+    const icons = [Globe, Zap, Star, Shield];
+    return icons[index % icons.length];
+};
 
 export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ isOpen, onClose, currentPlanName, limitDetails }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-    const [plans, setPlans] = useState<Plan[]>(PLANS);
+    const [plans, setPlans] = useState<Plan[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (isOpen) {
             const fetchPlans = async () => {
                 try {
-                    const response = await api.get('/saas/plans');
+                    setLoading(true);
+                    // Use public endpoint or authenticated one based on needs. 
+                    // Since this is inside the app, user is technically logged in, but 'api' instance handles auth.
+                    // Let's use the public one to be safe/fast or the secure one if we have it?
+                    // The previous code used /saas/plans (authenticated). Let's stick to that if it works, or fallback to public.
+                    // Actually, let's use the new /public/plans which returns the clean view data we need.
+                    // But 'api' helper usually adds /api prefix? checking view_file of components/UpgradePlanModal.tsx line 2 imports 'api'.
+                    // Assuming api helper works for both.
+
+                    const response = await api.get('/saas/public/plans');
                     const dbPlans = response.data;
 
-                    setPlans(prev => prev.map(uiPlan => {
-                        const match = dbPlans.find((p: any) => p.name.trim() === uiPlan.name.trim());
-                        if (match) {
-                            return {
-                                ...uiPlan,
-                                price: `R$ ${match.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês`,
-                            };
-                        }
-                        return uiPlan;
+                    const formattedPlans: Plan[] = dbPlans.map((p: any, idx: number) => ({
+                        id: p.id,
+                        name: p.name,
+                        price: p.price > 0 ? `R$ ${p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês` : 'Grátis',
+                        features: p.features || [], // Use raw features from DB
+                        highlight: p.isRecommended,
+                        icon: getPlanIcon(idx, p.name),
+                        limits: p.limits // Store limits to display "Infinite" logic if we want to augment features
                     }));
+
+                    // Optional: Augment features list with limits if they are missing from text features?
+                    // For now, let's trust the 'features' array from DB as requested ("direto do banco").
+                    // But the user liked the "Unlimited" display.
+                    // Let's PREPEND the limits to the features list for clarity, formatted nicely.
+
+                    const enrichedPlans = formattedPlans.map(p => {
+                        const limits = (p as any).limits;
+                        if (limits) {
+                            const limitFeatures = [];
+                            // Projects
+                            limitFeatures.push(limits.maxProjects >= 999999 ? 'Projetos Ilimitados' : `${limits.maxProjects} Projetos`);
+                            // Users
+                            limitFeatures.push(limits.maxUsers >= 999999 ? 'Usuários Ilimitados' : `${limits.maxUsers} Usuários`);
+                            // CTOs
+                            limitFeatures.push(limits.maxCTOs >= 999999 ? 'CTOs Ilimitados' : `${limits.maxCTOs} CTOs`);
+
+                            // Combine with DB features, avoiding duplicates if meaningful? 
+                            // Simple approach: Prepend limits, then show DB features.
+                            return { ...p, features: [...limitFeatures, ...p.features] };
+                        }
+                        return p;
+                    });
+
+                    setPlans(enrichedPlans);
                 } catch (error) {
                     console.error("Failed to fetch plan prices", error);
+                } finally {
+                    setLoading(false);
                 }
             };
             fetchPlans();
@@ -144,7 +161,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ isOpen, onCl
 
                                     <div className="mb-4">
                                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${plan.highlight ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                                            <plan.icon className="w-6 h-6" />
+                                            {plan.icon ? <plan.icon className="w-6 h-6" /> : <Star className="w-6 h-6" />}
                                         </div>
                                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
                                         <div className="mt-2 flex items-baseline">

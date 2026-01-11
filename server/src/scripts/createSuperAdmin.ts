@@ -29,6 +29,7 @@ async function main() {
     const user = await prisma.user.create({
         data: {
             username,
+            email: `${username}@ftthplanner.com`,
             passwordHash: hashedPassword,
             role: 'SUPER_ADMIN',
             // No company needed

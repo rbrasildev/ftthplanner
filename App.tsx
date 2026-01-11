@@ -114,6 +114,7 @@ export default function App() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
+    const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target'>('view');
@@ -179,6 +180,9 @@ export default function App() {
 
                     if (data.user.company?.plan?.name) {
                         setUserPlan(data.user.company.plan.name);
+                    }
+                    if (data.user.company?.plan?.type) {
+                        setUserPlanType(data.user.company.plan.type);
                     }
                     if (data.user.company?.subscriptionExpiresAt) {
                         setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
@@ -1092,11 +1096,11 @@ export default function App() {
 
     // --- UPGRADE MODAL STATE REMOVED (Duplicate) ---
 
-    const handleLogin = async (username: string, password?: string) => {
+    const handleLogin = async (email: string, password?: string) => {
         setIsLoggingIn(true);
         setLoginError(null);
         try {
-            const data = await authService.login(username, password);
+            const data = await authService.login(email, password);
             setUser(data.user.username);
             setToken(data.token);
             // Fetch Plan Name
@@ -1111,7 +1115,7 @@ export default function App() {
         } catch (e: any) {
             console.error("Login error:", e);
             if (e.response && e.response.status === 401) {
-                setLoginError("Usuário ou senha incorretos.");
+                setLoginError("Email ou senha incorretos.");
             } else {
                 setLoginError("Erro ao conectar ao servidor. Tente novamente.");
             }
@@ -1120,12 +1124,12 @@ export default function App() {
         }
     };
 
-    const handleRegister = async (username: string, password?: string, companyName?: string) => {
+    const handleRegister = async (username: string, email: string, password?: string, companyName?: string) => {
         try {
             // Re-using the logic from authService if we had a separate register, 
             // but authService.login already has a silent register.
             // However, we want to be explicit here.
-            await api.post('/auth/register', { username, password: password || "123456", companyName });
+            await api.post('/auth/register', { username, email, password: password || "123456", companyName });
             showToast(t('registration_success'), 'success');
             setAuthView('login');
         } catch (e) {
@@ -1191,11 +1195,11 @@ export default function App() {
 
                 <DashboardPage
                     username={user}
-                    userRole={userRole || undefined}
+                    userRole={userRole || 'MEMBER'}
                     userPlan={userPlan}
+                    userPlanType={userPlanType}
                     subscriptionExpiresAt={subscriptionExpiresAt}
                     projects={projects}
-                    isLoading={isLoadingProjects}
                     onOpenProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
                     onCreateProject={async (name, center) => {
                         if (!token) return;
@@ -1233,6 +1237,10 @@ export default function App() {
                         }
                     }}
                     onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                    onUpgradeClick={() => {
+                        setUpgradeModalDetails(undefined);
+                        setShowUpgradeModal(true);
+                    }}
                 />
             </>
         );

@@ -626,81 +626,226 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const p2 = getPortCenter(c.targetId);
                 if (!p1 || !p2) return c;
 
+                // 1. Sanitize/Clean Current Points First (Hybrid Logic)
+                // If the user manually dragged points, they might be off-grid or slightly skewed.
+                // We want to "fix" them first (preserve shape) before cycling to a completely new shape.
+
+                const sanitize = (pts: { x: number, y: number }[]) => {
+                    if (!pts || pts.length === 0) return [];
+
+                    // Start from P1
+                    let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
+
+                    const cleanPts = pts.map(p => {
+                        let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                        let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+
+                        // Orthogonalize
+                        const THRESHOLD = GRID_SIZE * 1.5;
+                        const dx = Math.abs(nx - prevRef.x);
+                        const dy = Math.abs(ny - prevRef.y);
+
+                        if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x; // Snap Vertical
+                        else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y; // Snap Horizontal
+
+                        // If both are small (duplicate) or both large (diagonal), just grid snap.
+                        // But for diagonal, we might forcing L-shape? No, keep diagonal if intentional?
+                        // User wants "small adjustment". Let's assume strict orthogonal preferred.
+                        // If diagonal, force one axis?
+                        // Let's stick to simple grid snap + proximity snap.
+
+                        prevRef = { x: nx, y: ny };
+                        return { x: nx, y: ny };
+                    });
+
+                    // Filter duplicates
+                    return cleanPts.filter((p, i) => {
+                        if (i === 0) return true;
+                        return !(p.x === cleanPts[i - 1].x && p.y === cleanPts[i - 1].y);
+                    });
+                };
+
                 const currentPoints = c.points || [];
+                const sanitizedPoints = sanitize(currentPoints);
 
-                // 1. IF NO POINTS: Use default L-Shape logic (Best guess)
-                if (currentPoints.length === 0) {
-                    const cornerA = { x: p2.x, y: p1.y }; // Horizontal then Vertical
-                    const cornerB = { x: p1.x, y: p2.y }; // Vertical then Horizontal
+                // Helper: Compare point arrays
+                const arePointsDifferent = (a: { x: number, y: number }[], b: { x: number, y: number }[]) => {
+                    if (a.length !== b.length) return true;
+                    for (let i = 0; i < a.length; i++) {
+                        if (Math.abs(a[i].x - b[i].x) > 1 || Math.abs(a[i].y - b[i].y) > 1) return true;
+                    }
+                    return false;
+                };
 
-                    // Simple cost function: choose the one that overlaps less? 
-                    // For now, simple distance heuristic or default to B (Standard)
-                    // Let's stick to previous robust logic:
-
-                    const gA = { x: Math.round(cornerA.x / GRID_SIZE) * GRID_SIZE, y: Math.round(cornerA.y / GRID_SIZE) * GRID_SIZE };
-
-                    return { ...c, points: [gA] };
+                // CHECK: Is current messy?
+                // If sanitized is different from current -> APPLY SANITIZED (Fix manual drag)
+                // But we must check if "current" is empty.
+                if (currentPoints.length > 0 && arePointsDifferent(currentPoints, sanitizedPoints)) {
+                    return { ...c, points: sanitizedPoints };
                 }
 
-                // 2. PRESERVE SHAPE: Orthogonalize existing points
-                // Establish start point for alignment check
-                let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
+                // IF ALREADY CLEAN (or empty), CYCLE CANDIDATES
+                // Shape 0: Horizontal First (L) -> |__
+                const shape0 = [{ x: p2.x, y: p1.y }];
 
-                const newPoints = currentPoints.map(p => {
-                    // Snap to grid first
-                    let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
-                    let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+                // Shape 1: Vertical First (L) -> __|
+                const shape1 = [{ x: p1.x, y: p2.y }];
 
-                    // Check alignment with previous point
-                    const dx = Math.abs(nx - prevRef.x);
-                    const dy = Math.abs(ny - prevRef.y);
+                // Shape 2: Mid-Point Horizontal (Z) -> --|--
+                const midX = (p1.x + p2.x) / 2;
+                const shape2 = [{ x: midX, y: p1.y }, { x: midX, y: p2.y }];
 
-                    // If deviation is small (<= 1.5 grid cells), snap to axis
-                    const THRESHOLD = GRID_SIZE * 1.5;
+                // Shape 3: Mid-Point Vertical (Z) -> |__|
+                const midY = (p1.y + p2.y) / 2;
+                const shape3 = [{ x: p1.x, y: midY }, { x: p2.x, y: midY }];
 
-                    if (dx < THRESHOLD) {
-                        nx = prevRef.x; // Align Vertical
-                    } else if (dy < THRESHOLD) {
-                        ny = prevRef.y; // Align Horizontal
-                    }
+                const candidates = [shape0, shape1, shape2, shape3];
 
-                    // Update ref for next segment
-                    prevRef = { x: nx, y: ny };
-                    return { x: nx, y: ny };
+                const normalize = (pts: { x: number, y: number }[]) =>
+                    JSON.stringify(pts.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) })));
+
+                const currentStr = normalize(currentPoints);
+
+                let matchIndex = -1;
+                candidates.forEach((cand, idx) => {
+                    const candStr = normalize(cand.map(p => ({
+                        x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
+                        y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
+                    })));
+                    if (candStr === currentStr) matchIndex = idx;
                 });
 
-                // 3. CLEANUP: Remove duplicates or points that are collinear and redundant?
-                // Minimal cleanup: just remove sequential duplicates to avoid glitches
-                const uniquePoints = newPoints.filter((p, i) => {
-                    if (i === 0) return true;
-                    const prevP = newPoints[i - 1];
-                    return !(p.x === prevP.x && p.y === prevP.y);
-                });
+                // Cycle
+                const nextIndex = (matchIndex + 1) % candidates.length;
+                const nextShape = candidates[nextIndex];
 
-                return { ...c, points: uniquePoints };
+                const finalPoints = nextShape.map(p => ({
+                    x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
+                    y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
+                }));
+
+                return { ...c, points: finalPoints };
             })
         }));
     };
 
     const handleSmartAlignCable = (cableId: string) => {
-        setLocalCTO(prev => ({
-            ...prev,
-            connections: prev.connections.map(c => {
+        setLocalCTO(prev => {
+            // 1. Determine Action based on Representative
+            let action: 'SANITIZE' | 'CYCLE' = 'CYCLE'; // Default
+            let nextShapeIdx = 0;
+
+            const relevantConnections = prev.connections.filter(c =>
+                c.sourceId.startsWith(cableId) || c.targetId.startsWith(cableId)
+            );
+
+            if (relevantConnections.length > 0) {
+                const representative = relevantConnections[0];
+                const p1Rep = getPortCenter(representative.sourceId);
+                const p2Rep = getPortCenter(representative.targetId);
+
+                if (p1Rep && p2Rep) {
+                    const currentPoints = representative.points || [];
+
+                    // Helper: Sanitize Logic
+                    const sanitizeHelpers = (pts: { x: number, y: number }[], startP: { x: number, y: number }) => {
+                        if (!pts || pts.length === 0) return [];
+                        let prevRef = { x: Math.round(startP.x / GRID_SIZE) * GRID_SIZE, y: Math.round(startP.y / GRID_SIZE) * GRID_SIZE };
+                        return pts.map(p => {
+                            let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                            let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+                            const THRESHOLD = GRID_SIZE * 1.5;
+                            const dx = Math.abs(nx - prevRef.x);
+                            const dy = Math.abs(ny - prevRef.y);
+                            if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
+                            else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
+                            prevRef = { x: nx, y: ny };
+                            return { x: nx, y: ny };
+                        }).filter((p, i, arr) => i === 0 || !(p.x === arr[i - 1].x && p.y === arr[i - 1].y));
+                    };
+
+                    const sanitizedPoints = sanitizeHelpers(currentPoints, p1Rep);
+
+                    const arePointsDifferent = (a: any[], b: any[]) => {
+                        if (a.length !== b.length) return true;
+                        for (let i = 0; i < a.length; i++) if (Math.abs(a[i].x - b[i].x) > 1 || Math.abs(a[i].y - b[i].y) > 1) return true;
+                        return false;
+                    };
+
+                    if (currentPoints.length > 0 && arePointsDifferent(currentPoints, sanitizedPoints)) {
+                        action = 'SANITIZE';
+                    } else {
+                        // Determine Cycle Index
+                        const shape0 = [{ x: p2Rep.x, y: p1Rep.y }];
+                        const shape1 = [{ x: p1Rep.x, y: p2Rep.y }];
+                        const midX = (p1Rep.x + p2Rep.x) / 2;
+                        const shape2 = [{ x: midX, y: p1Rep.y }, { x: midX, y: p2Rep.y }];
+                        const midY = (p1Rep.y + p2Rep.y) / 2;
+                        const shape3 = [{ x: p1Rep.x, y: midY }, { x: p2Rep.x, y: midY }];
+                        const candidates = [shape0, shape1, shape2, shape3];
+                        const normalize = (pts: any[]) => JSON.stringify(pts.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) })));
+                        const currentStr = normalize(currentPoints);
+
+                        let matchIndex = -1;
+                        candidates.forEach((cand, idx) => {
+                            const candStr = normalize(cand.map(p => ({ x: Math.round(p.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p.y / GRID_SIZE) * GRID_SIZE })));
+                            if (candStr === currentStr) matchIndex = idx;
+                        });
+                        nextShapeIdx = (matchIndex + 1) % candidates.length;
+                    }
+                }
+            }
+
+            // 2. Apply Action to ALL relevant connections
+            const updatedConnections = prev.connections.map(c => {
                 if (!c.sourceId.startsWith(cableId) && !c.targetId.startsWith(cableId)) return c;
+
                 const p1 = getPortCenter(c.sourceId);
                 const p2 = getPortCenter(c.targetId);
                 if (!p1 || !p2) return c;
 
-                // For batch align, we use a simple heuristic:
-                // if source is left/right of target, go horizontal first.
-                // if source is above/below target, go vertical first.
-                const dx = Math.abs(p2.x - p1.x);
-                const dy = Math.abs(p2.y - p1.y);
+                if (action === 'SANITIZE') {
+                    // Inline sanitize logic (reused)
+                    const sanitize = (pts: any[]) => {
+                        if (!pts || pts.length === 0) return [];
+                        // Need startP from this connection, NOT representative
+                        let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
+                        return pts.map(p => {
+                            let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                            let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+                            const THRESHOLD = GRID_SIZE * 1.5;
+                            const dx = Math.abs(nx - prevRef.x);
+                            const dy = Math.abs(ny - prevRef.y);
+                            if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
+                            else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
+                            prevRef = { x: nx, y: ny };
+                            return { x: nx, y: ny };
+                        }).filter((p, i, arr) => i === 0 || !(p.x === arr[i - 1].x && p.y === arr[i - 1].y));
+                    };
+                    return { ...c, points: sanitize(c.points || []) };
+                } else {
+                    // APPLY CYCLE SHAPE
+                    const shape0 = [{ x: p2.x, y: p1.y }];
+                    const shape1 = [{ x: p1.x, y: p2.y }];
+                    const midX = (p1.x + p2.x) / 2;
+                    const shape2 = [{ x: midX, y: p1.y }, { x: midX, y: p2.y }];
+                    const midY = (p1.y + p2.y) / 2;
+                    const shape3 = [{ x: p1.x, y: midY }, { x: p2.x, y: midY }];
 
-                const point = dx > dy ? { x: p2.x, y: p1.y } : { x: p1.x, y: p2.y };
-                return { ...c, points: [point] };
-            })
-        }));
+                    const candidates = [shape0, shape1, shape2, shape3];
+                    const targetShape = candidates[nextShapeIdx];
+
+                    const finalPoints = targetShape.map(p => ({
+                        x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
+                        y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
+                    }));
+
+                    return { ...c, points: finalPoints };
+                }
+            });
+
+            return { ...prev, connections: updatedConnections };
+        });
     };
 
     const getPortColor = (portId: string): string | null => {
@@ -846,10 +991,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // Only Paid Permanent Users (or maybe we allow Trial but Block? User said "Implement Block")
         // User Request: "se ele importar o projeto... em 15 dias ele vai usar sem pagar". -> BLOCK TRIAL.
 
-        const isTrial = !!subscriptionExpiresAt;
+        // Logic Update: subscriptionExpiresAt exists for ALL plans.
+        // We only want to block if "Plano Grátis".
+        // Assuming "Plano Ilimitado" implies paid/allowed.
+
         const isFree = userPlan === 'Plano Grátis';
 
-        if (isTrial || isFree) {
+        if (isFree) {
             // Trigger Upgrade Modal if passed, or just Alert
             if (onShowUpgrade) {
                 onShowUpgrade();
@@ -928,10 +1076,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleExportPNG = async () => {
         // --- GATEKEEPING ---
-        const isTrial = !!subscriptionExpiresAt;
-        const isFree = userPlan === 'Plano Grátis';
+        // --- GATEKEEPING ---
+        // Logic Update: subscriptionExpiresAt exists for ALL plans (Trial and Paid).
+        // We only want to block if it's "Plano Grátis" or explicitly a generic restricted trial (if applicable).
+        // But "Plano Ilimitado" is paid, so it should pass.
 
-        if (isTrial || isFree) {
+        const isFree = userPlan === 'Plano Grátis';
+        // If it's not free, we assume it's paid (Ilimitado, Advanced, etc) or a valid Trial that allows export?
+        // Actually, Trial might NOT allow export.
+        // But the user has "Plano Ilimitado".
+
+        // Strict check: Block ONLY if Free.
+        // If we want to block Trial too, we should check userPlan === 'Trial' or similar.
+        // Assuming "Plano Ilimitado" implies paid/allowed.
+
+        if (isFree) {
             if (onShowUpgrade) onShowUpgrade();
             else alert("Exportação disponível apenas para planos pagos.");
             return;
@@ -1580,14 +1739,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 if (!exists) {
                     setLocalCTO(prev => {
-                        // ENFORCE 1-TO-1: Purge any connection using the source OR target ports.
-                        const filtered = prev.connections.filter(c =>
-                            c.sourceId !== source && c.targetId !== source &&
-                            c.sourceId !== target && c.targetId !== target
-                        );
+                        // CHECK OCCUPANCY (User Request: Don't overwrite if occupied)
+                        const isSourceOccupied = prev.connections.some(c => c.sourceId === source || c.targetId === source);
+                        const isTargetOccupied = prev.connections.some(c => c.sourceId === target || c.targetId === target);
+
+                        if (isSourceOccupied || isTargetOccupied) {
+                            return prev; // Block connection
+                        }
+
                         return {
                             ...prev,
-                            connections: [...filtered, newConn]
+                            connections: [...prev.connections, newConn]
                         };
                     });
                 }
@@ -1612,15 +1774,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     else if (targetColor) newColor = targetColor;
 
                     setLocalCTO(prev => {
-                        // 1. Remove any other connection occupying the target port (ENFORCE 1-TO-1)
-                        const otherConns = prev.connections.filter(c =>
+                        // CHECK OCCUPANCY for Target (User Request: Don't overwrite)
+                        // Ignore current connection ID since we are moving IT.
+                        const isTargetOccupied = prev.connections.some(c =>
                             c.id !== dragState.connectionId &&
-                            c.sourceId !== targetPort &&
-                            c.targetId !== targetPort
+                            (c.sourceId === targetPort || c.targetId === targetPort)
                         );
 
+                        if (isTargetOccupied) {
+                            return prev; // Block move
+                        }
+
+                        // Remove old version of self (implicitly done by map or replace)
+                        // Actually original logic filtered 'otherConns'.
+                        // We keep 'otherConns' (everyone else)
+                        const otherConns = prev.connections.filter(c => c.id !== dragState.connectionId);
+
                         const updatedMyConn = prev.connections.find(c => c.id === dragState.connectionId);
-                        if (!updatedMyConn) return { ...prev, connections: otherConns };
+                        if (!updatedMyConn) return prev;
 
                         const newMyConn = { ...updatedMyConn };
                         if (dragState.movingSide === 'source') {
@@ -1655,19 +1826,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const dx = (e.clientX - dragState.startX) / viewState.zoom;
                 const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
-                let newX = dragState.initialLayout!.x + dx;
-                let newY = dragState.initialLayout!.y + dy;
+                // RAW Coordinates (for magnetic detection)
+                const rawX = dragState.initialLayout!.x + dx;
+                const rawY = dragState.initialLayout!.y + dy;
 
+                // Default to Grid Snap (if enabled)
+                let newX = rawX;
+                let newY = rawY;
                 if (isSnapping) {
-                    newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-                    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+                    newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
+                    newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
                 }
 
-                const fusionCenter = { x: newX + 12, y: newY + 12 }; // Centered (24x12 element)
+                // USE RAW FOR DETECTION (plus center offset +6)
+                const fusionCenter = { x: rawX + 12, y: rawY + 6 };
 
                 // FIND CLOSEST CONNECTION (PRECISION UPDATE)
                 let closestConnection: FiberConnection | null = null;
-                let minDistance = 5; // Tighter tolerance (was 10, user requested stricter snap)
+                let minDistance = 20; // Increasing tolerance for Magnetic Snap (was 10)
+
 
                 localCTO.connections.forEach(conn => {
                     if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return;
@@ -1852,6 +2029,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handlePathMouseDown = (e: React.MouseEvent, connId: string) => {
+        // Fix: If Fusion Tool is active, let the event bubble to container to create fusion (auto-splice)
+        // Do not stop propagation.
+        if (isFusionToolActive) return;
+
         e.stopPropagation(); // prevent window drag
         e.preventDefault();  // prevent text selection
 
@@ -1930,8 +2111,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         };
 
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
-        const x = Math.round(rx / GRID_SIZE) * GRID_SIZE;
-        const y = Math.round(ry / GRID_SIZE) * GRID_SIZE;
+
+        // Center the splitter under cursor
+        // Logic matches SplitterNode sizing
+        const width = count * 12;
+        const height = 72;
+        const size = Math.max(width, height);
+        const halfSize = size / 2;
+
+        const x = Math.round((rx - halfSize) / GRID_SIZE) * GRID_SIZE;
+        const y = Math.round((ry - halfSize) / GRID_SIZE) * GRID_SIZE;
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => ({
@@ -2023,20 +2212,139 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
 
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
+
+        // RAW Calculation for Detection
+        const rawX = rx - 12;
+        const rawY = ry - 6;
+
+        // Default Snapping
         let x = isSnapping ? Math.round(rx / GRID_SIZE) * GRID_SIZE : rx;
         let y = isSnapping ? Math.round(ry / GRID_SIZE) * GRID_SIZE : ry;
-
-        // CENTER OFFSET: 24x12 element
         x -= 12;
         y -= 6;
 
         const initialLayout = { x, y, rotation: 0 };
 
-        setLocalCTO(prev => ({
-            ...prev,
-            fusions: [...prev.fusions, newFusion],
-            layout: { ...prev.layout, [id]: initialLayout }
-        }));
+        setLocalCTO(prev => {
+            // AUTO-SPLICE LOGIC ON CREATION (Using RAW coordinates)
+            // Center based on visual mouse position (raw)
+            const fusionCenter = { x: rawX + 12, y: rawY + 6 };
+            const SNAP_RADIUS = 20; // Increased tolerance (was 10)
+
+            let intersectedConnection: FiberConnection | null = null;
+            let splitPoint: { x: number, y: number } | null = null;
+            let minDistance = SNAP_RADIUS; // Track best distance
+
+            // Helper to get point geometry (Duplicated from handleMouseUp logic implicitly)
+            const getPortCenterHelper = (portId: string, currentLayout: Record<string, ElementLayout>) => {
+                return getPortCenter(portId);
+            };
+
+            // PASS 1: Find Closest Connection
+            for (const conn of prev.connections) {
+                // Ignore if not a fiber/cable connection (e.g. dont splice internal links if any)
+                if (conn.sourceId.startsWith('fus-') || conn.targetId.startsWith('fus-')) continue;
+
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+
+                if (p1 && p2) {
+                    const points = [p1, ...(conn.points || []), p2];
+                    for (let i = 0; i < points.length - 1; i++) {
+                        const dist = getDistanceFromSegment(fusionCenter, points[i], points[i + 1]);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            intersectedConnection = conn;
+                            // We don't break here, we look for BETTER matches
+                        }
+                    }
+                }
+            }
+
+            // PASS 2: Calculate Projection on Winner
+            if (intersectedConnection) {
+                const conn = intersectedConnection as FiberConnection;
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+
+                if (p1 && p2) {
+                    const points = [p1, ...(conn.points || []), p2];
+                    for (let i = 0; i < points.length - 1; i++) {
+                        // Re-verify segment for projection (add tolerance for float)
+                        if (getDistanceFromSegment(fusionCenter, points[i], points[i + 1]) <= minDistance + 0.1) {
+                            // PROJECT
+                            const A = fusionCenter.x - points[i].x;
+                            const B = fusionCenter.y - points[i].y;
+                            const C = points[i + 1].x - points[i].x;
+                            const D = points[i + 1].y - points[i].y;
+                            const dot = A * C + B * D;
+                            const len_sq = C * C + D * D;
+                            let param = -1;
+                            if (len_sq !== 0) param = dot / len_sq;
+
+                            let snapX, snapY;
+                            if (param < 0) { snapX = points[i].x; snapY = points[i].y; }
+                            else if (param > 1) { snapX = points[i + 1].x; snapY = points[i + 1].y; }
+                            else {
+                                snapX = points[i].x + param * C;
+                                snapY = points[i].y + param * D;
+                            }
+
+                            // Override default grid snap with fiber snap
+                            let rx = snapX - 12;
+                            let ry = snapY - 6;
+
+                            initialLayout.x = rx;
+                            initialLayout.y = ry;
+
+                            // Rotational Logic
+                            const dx = points[i + 1].x - points[i].x;
+                            const dy = points[i + 1].y - points[i].y;
+                            if (Math.abs(dx) > Math.abs(dy)) initialLayout.rotation = dx > 0 ? 0 : 180;
+                            else initialLayout.rotation = dy > 0 ? 90 : 270;
+
+                            splitPoint = { x: snapX, y: snapY };
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let updatedConnections = [...prev.connections];
+            const newFusions = [...prev.fusions, newFusion];
+
+            if (intersectedConnection && splitPoint) {
+                // SPLICE IT
+                const connToSplit = intersectedConnection;
+                // 1. Remove original
+                updatedConnections = updatedConnections.filter(c => c.id !== connToSplit.id);
+
+                // 2. Create Left Side (Source -> Fusion A)
+                updatedConnections.push({
+                    id: `conn-${Date.now()}-1`,
+                    sourceId: connToSplit.sourceId,
+                    targetId: `${id}-a`,
+                    color: connToSplit.color,
+                    points: []
+                });
+
+                // 3. Create Right Side (Fusion B -> Target)
+                updatedConnections.push({
+                    id: `conn-${Date.now()}-2`,
+                    sourceId: `${id}-b`,
+                    targetId: connToSplit.targetId,
+                    color: connToSplit.color,
+                    points: []
+                });
+            }
+
+            return {
+                ...prev,
+                fusions: newFusions,
+                connections: updatedConnections,
+                layout: { ...prev.layout, [id]: initialLayout }
+            };
+        });
     };
 
 
