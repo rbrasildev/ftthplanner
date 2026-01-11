@@ -218,45 +218,22 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           />
         </div>
 
-        {/* Fiber Count - Text Only if Catalog Selected */}
+        {/* Fiber Count - Text Only (Driven by Catalog) */}
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('fiber_count')}</label>
-            {selectedCatalogId ? (
-              <div className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
-                {formData.fiberCount} FO
-              </div>
-            ) : (
-              <select
-                value={formData.fiberCount}
-                onChange={(e) => setFormData({ ...formData, fiberCount: Number(e.target.value) })}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-              >
-                {FIBER_COUNTS.map(count => (
-                  <option key={count} value={count}>{count} FO</option>
-                ))}
-              </select>
-            )}
+            <div className={`w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium ${!selectedCatalogId ? 'text-slate-300 dark:text-slate-600' : ''}`}>
+              {selectedCatalogId ? `${formData.fiberCount} FO` : '-'}
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
               <Layers className="w-3 h-3" /> {t('loose_tubes')}
             </label>
-            {selectedCatalogId ? (
-              <div className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
-                {formData.looseTubeCount}
-              </div>
-            ) : (
-              <input
-                type="number"
-                min="1"
-                max="24"
-                value={formData.looseTubeCount}
-                onChange={(e) => setFormData({ ...formData, looseTubeCount: Math.max(1, parseInt(e.target.value) || 1) })}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-              />
-            )}
+            <div className={`w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-2 text-slate-500 dark:text-slate-400 text-sm font-medium ${!selectedCatalogId ? 'text-slate-300 dark:text-slate-600' : ''}`}>
+              {selectedCatalogId ? formData.looseTubeCount : '-'}
+            </div>
           </div>
 
           <div>
@@ -274,37 +251,15 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           </div>
         </div>
 
-        {/* Color Standard Selection - Hidden completely if catalog selected, just show text label? No, show text label of what it is. */}
+        {/* Color Standard Selection - Display Only */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
             {t('fiber_color_standard') || "Padrão de Cores"}
           </label>
-          {selectedCatalogId ? (
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-              <span>{formData.colorStandard === 'EIA598' ? 'EIA-598-A (Intl)' : 'ABNT (Brasil)'}</span>
-              <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">Definido no Catálogo</span>
-            </div>
-          ) : (
-            <div>
-              <h3 className="text-xs font-bold text-slate-400 uppercase mb-2 mt-4">{t('color_standard')}</h3>
-              <div className="bg-slate-900 rounded-lg p-1 flex gap-1 border border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, colorStandard: 'ABNT' })}
-                  className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'ABNT' || !formData.colorStandard ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                  <span className="font-bold">{t('standard_abnt')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, colorStandard: 'EIA598' })}
-                  className={`flex-1 py-1.5 text-xs rounded transition-colors ${formData.colorStandard === 'EIA598' ? 'bg-sky-600 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                >
-                  <span className="font-bold">{t('standard_eia')}</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <span>{formData.colorStandard === 'EIA598' ? 'EIA-598-A (Intl)' : 'ABNT (Brasil)'}</span>
+            <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">Definido no Catálogo</span>
+          </div>
 
           {/* Small Preview of first 12 fibers */}
           <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
@@ -332,40 +287,21 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           </div>
         </div>
 
-        {/* Color Picker - Only enabled if DEPLOYED and NOT using catalog */}
-        {selectedCatalogId ? (
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-              <Palette className="w-3 h-3" /> {t('map_color')}
-            </label>
-            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
-              <div
-                className="w-12 h-6 rounded-md shadow-sm border border-slate-200 dark:border-slate-600"
-                style={{ backgroundColor: formData.color }}
-              />
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Cor definida pelo status <strong>{formData.status === 'DEPLOYED' ? 'Implantado' : 'Não Implantado'}</strong> do catálogo.
-              </span>
-            </div>
+        {/* Color Display (Enforced by Catalog) */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+            <Palette className="w-3 h-3" /> {t('map_color')}
+          </label>
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div
+              className="w-12 h-6 rounded-md shadow-sm border border-slate-200 dark:border-slate-600"
+              style={{ backgroundColor: formData.color }}
+            />
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Cor definida pelo status <strong>{formData.status === 'DEPLOYED' ? 'Implantado' : 'Não Implantado'}</strong> do catálogo.
+            </span>
           </div>
-        ) : (
-          <div className={`transition-opacity ${formData.status === 'NOT_DEPLOYED' ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-              <Palette className="w-3 h-3" /> {t('map_color')} {formData.status === 'NOT_DEPLOYED' && `(${t('disabled')})`}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {CABLE_MAP_COLORS.map(color => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color })}
-                  className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm ${formData.color === color ? 'border-white dark:border-slate-100 scale-110 shadow-lg ring-2 ring-sky-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : 'border-slate-200 dark:border-slate-700 hover:scale-105'}`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
 
         <div className="pt-4">
           {showDeleteConfirm ? (

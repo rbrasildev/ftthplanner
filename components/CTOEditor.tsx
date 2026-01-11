@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Share2, Triangle, Pencil, Loader2, ArrowRight, Activity } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -2387,7 +2387,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 `}</style>
             )}
             <div
-                className={`cto-editor-container w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -2446,7 +2446,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     title={t('add_fusion')}
                                     className={`p-1.5 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                 >
-                                    <Share2 className="w-4 h-4" />
+                                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
+                                        <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
+                                        <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
+                                    </svg>
                                 </button>
                             </div>
 
@@ -2571,7 +2575,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     {/* FUSION TOOL BANNER */}
                     {isFusionToolActive && (
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-full border border-yellow-600 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none animate-bounce">
-                            <Share2 className="w-4 h-4" />
+                            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
+                                <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
+                                <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
+                            </svg>
                             {t('fusion_tool_active')}
                         </div>
                     )}
@@ -2858,8 +2866,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 {/* FUSION TYPE SELECTION MODAL */}
                 {showFusionTypeModal && (
-                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-auto">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
                             <div className="flex items-center justify-between mb-2 px-2">
                                 <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                     {t('select_fusion_type')}

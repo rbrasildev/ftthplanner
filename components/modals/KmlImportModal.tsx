@@ -4,7 +4,7 @@ import * as toGeoJSON from '@mapbox/togeojson';
 import JSZip from 'jszip';
 import { useLanguage } from '../../LanguageContext';
 import * as catalogService from '../../services/catalogService';
-import { PoleCatalogItem } from '../../services/catalogService'; // Ensure this is exported or redefined if needed locally until update
+import { PoleCatalogItem } from '../../services/catalogService';
 
 interface KmlImportModalProps {
     isOpen: boolean;
@@ -86,6 +86,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
 
             const points: Array<{ lat: number, lng: number }> = [];
 
+            /* @ts-ignore */
             if (geoJson.features) {
                 geoJson.features.forEach((feature: any) => {
                     if (feature.geometry && feature.geometry.type === 'Point') {
@@ -128,7 +129,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                         <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                             <FileUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">Importar Postes</h3>
+                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">Importar Postes (KMZ)</h3>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                         <X className="w-5 h-5 text-slate-500" />

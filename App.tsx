@@ -36,6 +36,7 @@ const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
 import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
 import { KmlImportModal } from './components/modals/KmlImportModal';
+import { AdvancedImportModal } from './components/modals/AdvancedImportModal';
 import { FusionModule } from './components/FusionModule';
 
 import { PoleData, FusionType } from './types';
@@ -123,6 +124,7 @@ export default function App() {
     // Pole Modal State
     const [isPoleModalOpen, setIsPoleModalOpen] = useState(false);
     const [isKmlImportOpen, setIsKmlImportOpen] = useState(false);
+    const [isAdvancedImportOpen, setIsAdvancedImportOpen] = useState(false);
 
     const [pendingPoleLocation, setPendingPoleLocation] = useState<Coordinates | null>(null);
     const [pendingConnectionCableId, setPendingConnectionCableId] = useState<string | null>(null);
@@ -156,6 +158,13 @@ export default function App() {
 
     // --- OTDR State ---
     const [otdrResult, setOtdrResult] = useState<Coordinates | null>(null);
+
+    // --- KMZ Import Preview State ---
+    const [previewImportData, setPreviewImportData] = useState<{
+        cables: any[];
+        ctos: any[];
+        ceos: any[];
+    } | null>(null);
 
     useEffect(() => user ? localStorage.setItem(STORAGE_KEY_USER, user) : localStorage.removeItem(STORAGE_KEY_USER), [user]);
     useEffect(() => token ? localStorage.setItem(STORAGE_KEY_TOKEN, token) : localStorage.removeItem(STORAGE_KEY_TOKEN), [token]);
@@ -348,6 +357,37 @@ export default function App() {
         */
     }, [systemSettings.snapDistance, currentProjectId]);
 
+
+    const handleImportPoles = async (points: Array<{ lat: number, lng: number }>, poleTypeId: string) => {
+        if (!currentProjectId) return;
+        setIsLoadingProjects(true);
+
+        try {
+            const newPoles: PoleData[] = points.map((pt, idx) => ({
+                id: crypto.randomUUID(),
+                name: `Poste ${idx + 1}`,
+                status: 'PLANNED',
+                coordinates: pt,
+                catalogId: poleTypeId,
+            }));
+
+            const updated = { ...getCurrentNetwork() };
+            updated.poles = [...(updated.poles || []), ...newPoles];
+
+            await projectService.syncProject(currentProjectId, updated);
+
+            // Update Local
+            setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+            setToast({ msg: `${newPoles.length} postes importados com sucesso!`, type: 'success' });
+            setIsKmlImportOpen(false); // Close legacy modal
+
+        } catch (err) {
+            console.error(err);
+            setToast({ msg: 'Erro ao importar postes.', type: 'error' });
+        } finally {
+            setIsLoadingProjects(false);
+        }
+    };
 
     const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
         // Map position saving disabled for better performance
@@ -1292,6 +1332,7 @@ export default function App() {
                 }}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
+                onImportClick={() => setIsAdvancedImportOpen(true)}
             />
 
             <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
@@ -1466,39 +1507,124 @@ export default function App() {
                 />
             )}
 
-            {/* KML Import Modal */}
+
+
+            // ...
+
+
+
+            {/* ... */}
+
+            {/* Legacy KML Import Modal (Poles Only - via Toolbar) */}
             <KmlImportModal
                 isOpen={isKmlImportOpen}
                 onClose={() => setIsKmlImportOpen(false)}
-                onImport={async (points, poleTypeId) => {
+                onImport={async (coordinates, poleTypeId) => {
+                    handleImportPoles(coordinates, poleTypeId); // Ensure this legacy handler exists or is recreated
+                }}
+            />
+
+            {/* Advanced Import Modal (Sidebar) */}
+            <AdvancedImportModal
+                isOpen={isAdvancedImportOpen}
+                onClose={() => {
+                    setIsAdvancedImportOpen(false);
+                    setPreviewImportData(null);
+                }}
+                onPreview={(data) => setPreviewImportData(data)}
+                onImport={async (data) => {
                     if (!currentProjectId) return;
+                    if (!data) return;
 
-                    const catalogItem = await catalogService.getPoles().then(items => items.find(i => i.id === poleTypeId));
-                    const baseName = catalogItem ? catalogItem.name : 'Poste';
+                    setIsLoadingProjects(true);
 
-                    let startingIndex = (getCurrentNetwork().poles || []).length + 1;
+                    try {
+                        const updated = { ...getCurrentNetwork() };
 
-                    const newPoles: PoleData[] = points.map((pt, idx) => ({
-                        id: crypto.randomUUID(),
-                        name: `${baseName} ${startingIndex + idx}`,
-                        coordinates: pt,
-                        type: baseName, // Or specific type name
-                        status: 'PLANNED',
-                        catalogId: poleTypeId
-                    }));
+                        // 1. Process Cables
+                        if (data.cables && data.cables.length > 0) {
+                            const newCables: CableData[] = data.cables.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `Cabo ${idx + 1}`,
+                                status: c.status || 'DEPLOYED', // Use imported status or default
+                                fiberCount: c.type?.fiberCount || 1, // Fallback
+                                looseTubeCount: c.type?.looseTubeCount || 1,
+                                color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9', // Use catalog color
+                                colorStandard: 'ABNT',
+                                // Transform [[lng, lat]] -> [{lat, lng}]
+                                coordinates: c.coordinates.map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
+                                fromNodeId: null,
+                                toNodeId: null,
+                                catalogId: c.type?.id
+                            }));
+                            updated.cables = [...(updated.cables || []), ...newCables];
+                        }
 
-                    updateCurrentNetwork(prev => ({
-                        ...prev,
-                        poles: [...(prev.poles || []), ...newPoles]
-                    }));
+                        // 2. Process CTOs
+                        if (data.ctos && data.ctos.length > 0) {
+                            const newCTOs: CTOData[] = data.ctos.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `CTO ${idx + 1}`,
+                                status: c.status || 'DEPLOYED', // Use imported status
+                                type: 'CTO',
+                                coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                catalogId: c.type?.id,
+                                splitters: [],
+                                fusions: [],
+                                connections: [],
+                                inputCableIds: [],
+                                clientCount: 0
+                            }));
+                            updated.ctos = [...(updated.ctos || []), ...newCTOs];
+                        }
 
-                    showToast(`${newPoles.length} postes importados com sucesso!`, 'success');
+                        // 3. Process CEOs (Boxes)
+                        if (data.ceos && data.ceos.length > 0) {
+                            const newCEOs: CTOData[] = data.ceos.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `CEO ${idx + 1}`,
+                                status: c.status || 'DEPLOYED',
+                                type: 'CEO',
+                                coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                catalogId: c.type?.id,
+                                splitters: [],
+                                fusions: [],
+                                connections: [],
+                                inputCableIds: [],
+                                clientCount: 0
+                            }));
+                            updated.ctos = [...(updated.ctos || []), ...newCEOs];
+                        }
 
-                    if (newPoles.length > 0) {
-                        setMapBounds([[newPoles[0].coordinates.lat, newPoles[0].coordinates.lng], [newPoles[0].coordinates.lat, newPoles[0].coordinates.lng]]);
+                        // 4. Process Poles
+                        if (data.poles && data.poles.length > 0) {
+                            const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: p.originalName || `Poste ${idx + 1}`,
+                                status: p.status || 'PLANNED', // Poles default to PLANNED usually
+                                coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
+                                catalogId: p.type?.id,
+                                type: p.type?.name,
+                                height: p.type?.height
+                            }));
+                            updated.poles = [...(updated.poles || []), ...newPoles];
+                        }
+
+                        // SAVE TO BACKEND
+                        await projectService.syncProject(currentProjectId, updated);
+                        setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+                        setToast({ msg: 'Importação realizada com sucesso!', type: 'success' });
+                        setIsAdvancedImportOpen(false);
+                        setPreviewImportData(null);
+                    } catch (error) {
+                        console.error("Import failed", error);
+                        setToast({ msg: 'Erro ao importar.', type: 'error' });
+                    } finally {
+                        setIsLoadingProjects(false);
                     }
                 }}
             />
+
 
             {/* Detail Panels (Mini-Editors/Actions) */}
             {selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (

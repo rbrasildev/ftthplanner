@@ -732,6 +732,12 @@ interface MapViewProps {
     onUpdateCableGeometry?: (cableId: string, newCoordinates: Coordinates[]) => void;
     onCableClick?: (cableId: string) => void;
     onToggleLabels?: () => void;
+    previewImportData?: {
+        cables: any[];
+        ctos: any[];
+        ceos: any[];
+        poles: any[];
+    } | null;
 }
 
 const noOp = () => { };
@@ -740,7 +746,8 @@ export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
-    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onToggleLabels
+    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onToggleLabels,
+    previewImportData
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1205,6 +1212,38 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragEnd={handleDragEnd}
                             />
                         ))}
+                    </>
+                )}
+                {/* PREVIEW IMPORT DATA (Temporary Layer) */}
+                {previewImportData && (
+                    <>
+                        {previewImportData.cables.map((cable, idx) => (
+                            <Polyline
+                                key={`preview-cable-${idx}`}
+                                positions={cable.coordinates.map((c: any) => [c[1], c[0]])} // GeoJSON [lng, lat] -> Leaflet [lat, lng]
+                                pathOptions={{ color: '#f59e0b', weight: 4, dashArray: '10, 10', opacity: 0.8 }}
+                            />
+                        ))}
+                        {[...previewImportData.ctos, ...previewImportData.ceos, ...previewImportData.poles].map((item, idx) => {
+                            const lat = item.coordinates[1];
+                            const lng = item.coordinates[0];
+                            return (
+                                <Marker
+                                    key={`preview-node-${idx}`}
+                                    position={[lat, lng]}
+                                    zIndexOffset={1000}
+                                    icon={L.divIcon({
+                                        className: 'preview-icon',
+                                        html: `<div style="width: 14px; height: 14px; background: #f59e0b; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
+                                        iconSize: [14, 14]
+                                    })}
+                                >
+                                    <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                                        <div className="text-xs font-bold text-amber-600 bg-white px-1 rounded shadow">{item.originalName}</div>
+                                    </Tooltip>
+                                </Marker>
+                            );
+                        })}
                     </>
                 )}
 

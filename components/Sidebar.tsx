@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Settings2, FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun, LogOut } from 'lucide-react';
+import { Network, Settings2, FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun, LogOut, FileUp } from 'lucide-react';
 import { SearchBox } from './SearchBox';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
@@ -35,6 +35,7 @@ interface SidebarProps {
     onLogout: () => void;
     setCurrentProjectId: (id: string | null) => void;
     setShowProjectManager: (show: boolean) => void;
+    onImportClick: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -49,7 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onResultClick,
     onLogout,
     setCurrentProjectId,
-    setShowProjectManager
+    setShowProjectManager,
+    onImportClick
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -74,21 +76,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* Project Selector (Elevated look) */}
-                <button
-                    onClick={() => setShowProjectManager(true)}
-                    className="group w-full flex items-center justify-between bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-500 border border-slate-200 dark:border-slate-800 p-2 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center group-hover:bg-sky-100 dark:group-hover:bg-sky-900/40 transition-colors">
-                            <FolderOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={onImportClick}
+                        className="group w-full flex items-center justify-between bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-500 border border-slate-200 dark:border-slate-800 p-2 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                        title="Importar KMZ"
+                    >
+                        <div className="flex items-center gap-3 overflow-hidden text-left">
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center group-hover:bg-sky-100 dark:group-hover:bg-sky-900/40 transition-colors">
+                                <FolderOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                            </div>
+                            <div className="flex flex-col items-start overflow-hidden">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projeto Atual</span>
+                                <span className="truncate max-w-[140px] font-semibold text-xs text-slate-700 dark:text-slate-200">{projects.find(p => p.id === currentProjectId)?.name}</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col items-start overflow-hidden">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Projeto Atual</span>
-                            <span className="truncate max-w-[140px] font-semibold text-xs text-slate-700 dark:text-slate-200">{projects.find(p => p.id === currentProjectId)?.name}</span>
-                        </div>
-                    </div>
-                    <Upload className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
-                </button>
+                        <Upload className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
+                    </button>
+                </div>
             </div>
 
             {/* 2. Deployment Stats (Tech Look) */}
