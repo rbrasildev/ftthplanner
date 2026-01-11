@@ -1111,8 +1111,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 {enableClustering ? (
                     <MarkerClusterGroup
                         chunkedLoading
-                        maxClusterRadius={30} // Reduced from 50 to 30 to group less aggressively (items must be closer)
-                        disableClusteringAtZoom={16} // Disable clustering sooner (at zoom 16+) to show individual items
+                        maxClusterRadius={50} // Reduced from 50 to 30 to group less aggressively (items must be closer)
+                        disableClusteringAtZoom={17} // Disable clustering sooner (at zoom 16+) to show individual items
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                     >

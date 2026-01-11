@@ -1843,8 +1843,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 // FIND CLOSEST CONNECTION (PRECISION UPDATE)
                 let closestConnection: FiberConnection | null = null;
-                let minDistance = 20; // Increasing tolerance for Magnetic Snap (was 10)
-
+                let minDistance = 20; // Tolerance
 
                 localCTO.connections.forEach(conn => {
                     if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return;
@@ -1864,26 +1863,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 });
 
                 if (closestConnection) {
-                    const hitConnection = closestConnection as FiberConnection; // TypeScript safety
+                    const hitConnection = closestConnection as FiberConnection;
 
                     // SNAP TO FIBER LOGIC
-                    // We want to align the fusion perfectly on the fiber.
-                    // Calculate the projection of fusion center onto the line segment.
-                    // Fusion is 24x12. Visual Center is relative to layout: x+12, y+12.
-                    // FusionNode render offset is NOW 0. So center is layout.y + 6.
+                    const p1_seg = getPortCenter(hitConnection.sourceId);
+                    const p2_seg = getPortCenter(hitConnection.targetId);
 
-                    // 1. Get Fiber Segment
-                    const p1 = getPortCenter(hitConnection.sourceId);
-                    const p2 = getPortCenter(hitConnection.targetId);
-
-                    // Re-calculate projection for accurate snapping
-                    if (p1 && p2) {
-                        const points = [p1, ...(hitConnection.points || []), p2];
+                    if (p1_seg && p2_seg) {
+                        const points = [p1_seg, ...(hitConnection.points || []), p2_seg];
                         for (let i = 0; i < points.length - 1; i++) {
-                            // +1 for float tolerance, reusing minDistance found earlier
                             if (getDistanceFromSegment(fusionCenter, points[i], points[i + 1]) < minDistance + 1) {
-                                // Found the segment. Project fusionCenter onto it.
-                                // Code from getDistanceFromSegment adaptation:
+                                // Project onto segment
                                 const A = fusionCenter.x - points[i].x;
                                 const B = fusionCenter.y - points[i].y;
                                 const C = points[i + 1].x - points[i].x;
@@ -1901,9 +1891,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     snapY = points[i].y + param * D;
                                 }
 
-                                // Apply Snap
-                                // Fusion Layout X = SnapX - 12 (Center X offset)
-                                // Fusion Layout Y = SnapY - 6 (Center Y offset: 6 half-height, No render offset)
                                 newX = snapX - 12;
                                 newY = snapY - 6;
                                 break;
@@ -1930,20 +1917,33 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         points: []
                     };
 
-                    // CALCULATE ROTATION BASED ON CABLE DIRECTION
+                    // CALCULATE ROTATION
                     let rotation = 0;
-                    if (p1 && p2) { // Re-use logic to find rotation
-                        const points = [p1, ...(hitConnection.points || []), p2];
+                    if (p1_seg && p2_seg) {
+                        const points = [p1_seg, ...(hitConnection.points || []), p2_seg];
                         for (let i = 0; i < points.length - 1; i++) {
-                            // Simplified check since we snapped already or are close
-                            // Just check angle of the segment we are replacing
                             const dx = points[i + 1].x - points[i].x;
                             const dy = points[i + 1].y - points[i].y;
                             if (Math.abs(dx) > Math.abs(dy)) rotation = dx > 0 ? 0 : 180;
                             else rotation = dy > 0 ? 90 : 270;
-                            // Heuristic: If we are close to this segment, use its rotation
                             if (getDistanceFromSegment(fusionCenter, points[i], points[i + 1]) < 20) break;
                         }
+                    }
+
+                    // SMART VERTICAL SNAP (Highest Priority for Stacking)
+                    // Apply after Fiber Snap to ensure we align X with neighbors even if Fiber Snap suggests otherwise.
+                    // This allows "sliding" along horizontal fibers to match stack.
+                    const VERTICAL_SNAP_THRESHOLD = 10;
+                    const closestVerticalFusion = localCTO.fusions.find(f => {
+                        if (f.id === fusionId) return false;
+                        const layout = localCTO.layout[f.id];
+                        if (!layout) return false;
+                        return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
+                    });
+
+                    if (closestVerticalFusion) {
+                        const layout = localCTO.layout[closestVerticalFusion.id];
+                        if (layout) newX = layout.x; // Force X alignment
                     }
 
                     setLocalCTO(prev => ({
@@ -1957,7 +1957,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 y: newY
                             }
                         },
-                        // RUTHLESS ENFORCEMENT: Remove the cable being split AND any existing connections on THIS fusion's ports.
                         connections: [
                             ...prev.connections.filter(c =>
                                 c.id !== hitConnection.id &&
@@ -1968,7 +1967,78 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             conn2
                         ]
                     }));
+                } else {
+                    // NO CONNECTION HIT
+
+                    // Vertical Snap for free move
+                    const VERTICAL_SNAP_THRESHOLD = 10;
+                    const closestVerticalFusion = localCTO.fusions.find(f => {
+                        if (f.id === fusionId) return false;
+                        const layout = localCTO.layout[f.id];
+                        if (!layout) return false;
+                        return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
+                    });
+
+                    if (closestVerticalFusion) {
+                        const layout = localCTO.layout[closestVerticalFusion.id];
+                        if (layout) newX = layout.x;
+                    }
+
+                    setLocalCTO(prev => ({
+                        ...prev,
+                        layout: {
+                            ...prev.layout,
+                            [fusionId]: {
+                                ...prev.layout![fusionId],
+                                x: newX,
+                                y: newY
+                            }
+                        }
+                    }));
                 }
+            } else {
+                // NO CONNECTION HIT - Just update position (with Grid/Vertical Snap only)
+                // Logic here was missing in previous simplification implicitly, 
+                // but `if (closestConnection)` block handles the SNAP. 
+                // If NO snap, we still need to update position in the ELSE block or outside.
+                // The original code seemingly ONLY updated position inside the `if (closestConnection)`.
+                // Wait, if no connection is hit, the fusion should still move!
+                // Looking at original code... ah, the `setLocalCTO` for pure move was seemingly missing or implicit?
+                // No, line 2650+ handles standard dragging.
+                // BUT here we are in `dragState.mode === 'element' && targetId.startswith('fus-')`.
+                // This block handles AUTO-SPLICE.
+                // If we DO NOT find a connection... do we fall back to normal drag?
+                // Currently, if no `closestConnection` found, nothing happens inside this block.
+                // BUT `handleMouseUp` usually falls through?
+                // Let's check the logic flow.
+                // The block `else if (dragState?.mode === 'element' ...)` is exclusive.
+                // So if we don't find a connection, we MUST update the position manually here or it won't move.
+
+                // Re-apply Vertical Snap for the free-floating case too
+                const VERTICAL_SNAP_THRESHOLD = 10;
+                const closestVerticalFusion = localCTO.fusions.find(f => {
+                    if (f.id === fusionId) return false;
+                    const layout = localCTO.layout[f.id];
+                    if (!layout) return false;
+                    return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
+                });
+
+                if (closestVerticalFusion) {
+                    const layout = localCTO.layout[closestVerticalFusion.id];
+                    if (layout) newX = layout.x;
+                }
+
+                setLocalCTO(prev => ({
+                    ...prev,
+                    layout: {
+                        ...prev.layout,
+                        [fusionId]: {
+                            ...prev.layout![fusionId],
+                            x: newX,
+                            y: newY
+                        }
+                    }
+                }));
             }
         }
 
@@ -2223,6 +2293,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         x -= 12;
         y -= 6;
 
+        // SMART VERTICAL SNAP (User Request: Align with existing fusions)
+        // Check if we are close to another fusion's vertical axis
+        const VERTICAL_SNAP_THRESHOLD = 10;
+        const closestVerticalFusion = localCTO.fusions.find(f => {
+            // Compare with fusion's layout X
+            const layout = localCTO.layout[f.id];
+            if (!layout) return false;
+            return Math.abs(layout.x - x) < VERTICAL_SNAP_THRESHOLD;
+        });
+
+        if (closestVerticalFusion) {
+            const layout = localCTO.layout[closestVerticalFusion.id];
+            if (layout) {
+                x = layout.x; // Snap to exact X of usage
+            }
+        }
+
         const initialLayout = { x, y, rotation: 0 };
 
         setLocalCTO(prev => {
@@ -2336,6 +2423,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     color: connToSplit.color,
                     points: []
                 });
+            }
+
+            // RE-APPLY VERTICAL SNAP (Highest Priority for Stacking)
+            // Ensure creation also respects vertical alignment even after fiber snap
+            const VERTICAL_SNAP_THRESHOLD = 10;
+            const closestVerticalFusion = prev.fusions.find(f => {
+                const layout = prev.layout[f.id];
+                if (!layout) return false;
+                return Math.abs(layout.x - initialLayout.x) < VERTICAL_SNAP_THRESHOLD;
+            });
+
+            if (closestVerticalFusion) {
+                const layout = prev.layout[closestVerticalFusion.id];
+                if (layout) initialLayout.x = layout.x;
             }
 
             return {

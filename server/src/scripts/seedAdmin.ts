@@ -34,6 +34,7 @@ async function main() {
     const user = await prisma.user.upsert({
         where: { username },
         update: {
+            email: 'admin@ftthplanner.com',
             passwordHash: hashedPassword,
             role: UserRole.SUPER_ADMIN,
             companyId: company?.id,
@@ -52,6 +53,7 @@ async function main() {
     console.log(`
     ✅ Super Admin Seeded Successfully!
     Username: ${user.username}
+    Email: ${user.email}
     Password: ${password}
     Role: ${user.role}
     `);

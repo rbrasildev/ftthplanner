@@ -25,7 +25,7 @@ async function main() {
                 plannedSpec: { color: "#999999", width: 2 }
             },
             {
-                name: "Cabo AS-80 6FO",
+                name: "Cabo 6FO",
                 brand: "Genérico",
                 model: "AS-80",
                 defaultLevel: "Distribuição",
@@ -39,7 +39,7 @@ async function main() {
                 plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
-                name: "Cabo AS-80 12FO",
+                name: "Cabo 12FO",
                 brand: "Genérico",
                 model: "AS-80",
                 defaultLevel: "Distribuição",
@@ -53,7 +53,21 @@ async function main() {
                 plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
-                name: "Cabo AS-120 48FO",
+                name: "Cabo 36FO",
+                brand: "Genérico",
+                model: "AS-120",
+                defaultLevel: "Troncal",
+                fiberCount: 36,
+                looseTubeCount: 6,
+                fibersPerTube: 6,
+                attenuation: 0.354,
+                fiberProfile: "G.652D",
+                description: "Cabo troncal 36 fibras",
+                deployedSpec: { color: "#aa00ff", width: 6 },
+                plannedSpec: { color: "#f1f1f154", width: 6 }
+            },
+            {
+                name: "Cabo 48FO",
                 brand: "Genérico",
                 model: "AS-120",
                 defaultLevel: "Troncal",
