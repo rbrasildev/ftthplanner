@@ -80,8 +80,9 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             <!-- Centering Fix: Use Center Y for First Line, Offset Second Line Down -->
             <!-- Adding dominant-baseline to ensure PDF alignment logic kicks in -->
             <!-- ADDED data-pdf-align="correction" to fix vertical offset in PDF export (User Request: Match PNG) -->
-            <text x="84" y="${totalHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="correction">${cable.name}</text>
-            <text x="84" y="${totalHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="correction">${cable.fiberCount} FIBRAS</text>
+            <!-- DYNAMIC ALIGNMENT: Check rotation to separate Vertical vs Horizontal logic -->
+            <text x="84" y="${totalHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.name}</text>
+            <text x="84" y="${totalHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount} FIBRAS</text>
         </g>
     `;
 
@@ -134,7 +135,7 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             content += `<circle cx="${portCX}" cy="${lineY}" r="5" fill="${color}" stroke="${isLit ? '#ef4444' : '#000000'}" stroke-width="1" />`;
 
             const isLight = [1, 2, 3, 8, 10, 11, 12].includes((posInTube % 12) + 1);
-            content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${isLight ? 'black' : 'white'}">${globalIndex + 1}</text>`;
+            content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${isLight ? 'black' : 'white'}" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-port-number-vertical' : 'cable-port-number-horizontal'}">${globalIndex + 1}</text>`;
         }
 
         // Advance Y (Tube Height + Gap 12px)
@@ -166,7 +167,7 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Label Position
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 50 // Moved down to wider area (output side)
+        y: offsetY + 50 // Keep at 50 for PNG/Editor (Output side)
     };
 
     const inputPort = {
@@ -210,13 +211,13 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
 
     // Input Port
     content += `<circle cx="${geo.inputPort.x}" cy="${geo.inputPort.y}" r="5" fill="white" stroke="${strokeColor}" stroke-width="1" />`;
-    content += `<text x="${geo.inputPort.x}" y="${geo.inputPort.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">1</text>`;
+    content += `<text x="${geo.inputPort.x}" y="${geo.inputPort.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8" data-pdf-align="splitter-port-number">1</text>`;
 
     // Output Ports
     geo.outputPorts.forEach((port, idx) => {
         const isLit = litPorts.has(port.id);
         content += `<circle cx="${port.x}" cy="${port.y}" r="5" fill="white" stroke="${isLit ? '#ef4444' : strokeColor}" stroke-width="1" />`;
-        content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8">${idx + 1}</text>`;
+        content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8" data-pdf-align="splitter-port-number">${idx + 1}</text>`;
     });
 
     const cx = geo.size / 2;
@@ -485,9 +486,14 @@ export const generateCTOSVG = (
     // Fit diagram into available area with 95% fill factor
     let scale = Math.min(AVAIL_W / diaW, AVAIL_H / diaH) * 0.95;
 
+    // --- MANUAL SCALE LIMIT (PDF/PNG) ---
+    // User Request: Prevent huge zoom when few elements.
+    const manualMaxScale = 1; // MANIPULE AQUI: Limite máximo de zoom (ex: 1.5, 2.0, 3.0)
+
     // Safety clamps
     if (diaW === 0 || diaH === 0) scale = 1;
-    if (scale > 5) scale = 5; // Prevent absurd zoom on single point
+    if (scale > 5) scale = 5; // Absolute hard limit
+    if (scale > manualMaxScale) scale = manualMaxScale; // Apply User Limit
 
     // 4. CENTERING LOGIC
     const diaCenterX = minX + diaW / 2;
@@ -606,7 +612,9 @@ export const generateCTOSVG = (
             color = '#94a3b8'; // Visible for white
         }
 
-        const width = isLit ? 4 : 3;
+        // MANIPULE AQUI: Espessura da linha da fibra (Padrão era 3)
+        const manualFiberThickness = 2;
+        const width = isLit ? (manualFiberThickness + 1) : manualFiberThickness;
         diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
     });
 
@@ -892,6 +900,8 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                     const angleDeg = (angleRad * 180) / Math.PI;
 
                     let localY = y;
+                    let localX = x; // Propagate X to be mutable
+
                     const baseline = getAttr('dominant-baseline');
                     const pdfAlign = getAttr('data-pdf-align'); // Check for correction flag
 
@@ -900,15 +910,51 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                         // Standard (Fiber Numbers) uses 0.4.
                         // Correction (Cable Labels) uses 0.30 (Lifts text slightly).
                         // Standard (Fiber Numbers) uses 0.4.
-                        // Correction (Cable Labels) uses 0.25 (User Req: Center vertical label).
-                        // Splitter Label uses 0.35 to ensure middle alignment matches Editor.
-                        let offsetFactor = 0.4;
-                        if (pdfAlign === 'correction') offsetFactor = 0.25;
-                        if (pdfAlign === 'splitter-label') offsetFactor = 0.35;
+                        // --- AJUSTE FINO MANUAL (PDF ONLY) ---
+                        let offsetFactor = 0.5;
+                        let extraPixelShiftY = 0; // Mexe no eixo Y local (Pode ser Horizontal visual se girado)
+                        let extraPixelShiftX = 0; // Mexe no eixo X local (Pode ser Vertical visual se girado)
 
-                        localY += (fontSize * offsetFactor);
+                        if (pdfAlign === 'correction') {
+                            offsetFactor = 0.3;     // Legacy fallback
+                        }
+                        if (pdfAlign === 'cable-label-horizontal') {
+                            offsetFactor = 0.3;
+                            extraPixelShiftY = 0;   // Ajuste H
+                            extraPixelShiftX = 0;   // Ajuste V
+                        }
+                        if (pdfAlign === 'cable-label-vertical') {
+                            offsetFactor = 0.3;
+                            extraPixelShiftY = -40;   // Ajuste H (no visual girado)
+                            extraPixelShiftX = -30;   // Ajuste V (no visual girado) -> TENTE AQUI PARA CABO EM PÉ
+                        }
+                        if (pdfAlign === 'cable-port-number-horizontal') {
+                            offsetFactor = 0.4;
+                            extraPixelShiftY = 0;
+                            extraPixelShiftX = 0;
+                        }
+                        if (pdfAlign === 'cable-port-number-vertical') {
+                            offsetFactor = 0.4;
+                            extraPixelShiftY = -2;   // Ajuste H
+                            extraPixelShiftX = -1;   // Ajuste V -> TENTE AQUI PARA BOLINHAS DO CABO EM PÉ
+                        }
+                        if (pdfAlign === 'splitter-label') {
+                            offsetFactor = 1.3;
+                            extraPixelShiftY = 0;
+                            extraPixelShiftX = -20; // TENTE AQUI: Se Y mexeu na horizontal, X mexerá na vertical!
+                        }
+                        if (pdfAlign === 'splitter-port-number') {
+                            // Ajuste Fino para Números das Portas (Bolinhas)
+                            offsetFactor = 0.4;
+                            extraPixelShiftY = 1.3; // AXIS Y (Vertical visualmente se não girado)
+                            extraPixelShiftX = -3; // AXIS X
+                        }
+
+                        localX += extraPixelShiftX;
+                        localY += (fontSize * offsetFactor) + extraPixelShiftY;
+
                     }
-                    const pAdjusted = applyToPoint(finalMatrix, x, localY);
+                    const pAdjusted = applyToPoint(finalMatrix, localX, localY);
 
                     // Map SVG text-anchor to jsPDF align
                     let pdfAlignOpt: 'left' | 'center' | 'right' = 'left';
