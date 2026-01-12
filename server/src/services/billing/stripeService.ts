@@ -45,6 +45,11 @@ export class StripeService {
 
         let customerId = uniqueCompany.stripeCustomerId;
 
+        // DEBUG: Verify keys and IDs
+        console.log(`[StripeService] Creating sub for Company: ${companyId}`);
+        console.log(`[StripeService] Price ID: ${priceId}`);
+        console.log(`[StripeService] Key Prefix: ${process.env.STRIPE_SECRET_KEY?.substring(0, 8)}...`);
+
         // Ensure customer exists
         if (!customerId) {
             customerId = await this.createCustomer(companyId, email, uniqueCompany.name);
