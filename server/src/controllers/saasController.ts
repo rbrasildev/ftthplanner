@@ -32,7 +32,8 @@ export const getPublicPlans = async (req: Request, res: Response) => {
                 price: true,
                 limits: true,
                 features: true,
-                isRecommended: true
+                isRecommended: true,
+                stripePriceId: true
             }
         });
         res.json(plans);
