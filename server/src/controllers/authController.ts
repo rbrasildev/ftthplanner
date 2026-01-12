@@ -95,9 +95,9 @@ export const login = async (req: Request, res: Response) => {
 
 
             if (user.company) {
-                if (user.company.status === 'SUSPENDED' && user.role !== 'SUPER_ADMIN') {
-                    return res.status(403).json({ error: 'Company subscription is suspended' });
-                }
+                // if (user.company.status === 'SUSPENDED' && user.role !== 'SUPER_ADMIN') {
+                //     return res.status(403).json({ error: 'Company subscription is suspended' });
+                // }
 
                 // CHECK TRIAL / SUBSCRIPTION EXPIRATION
                 if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {

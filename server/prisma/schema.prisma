@@ -45,6 +45,8 @@ model Company {
   catalogPoles          CatalogPole[]
   catalogSplitters      CatalogSplitter[]
   catalogFusions        CatalogFusion[]
+  stripeCustomerId      String?   @map("stripe_customer_id")
+  subscription          Subscription?
   catalogOLTs           CatalogOLT[]
 
   @@map("companies")
@@ -60,7 +62,9 @@ model Plan {
   features  Json      @default("[]")
   isRecommended Boolean @default(false)
   createdAt DateTime  @default(now()) @map("created_at")
-  companies Company[]
+  stripePriceId   String?   @map("stripe_price_id")
+  stripeProductId String?   @map("stripe_product_id")
+  companies       Company[]
 
   @@map("plans")
 }
@@ -382,6 +386,22 @@ model TemplateFusion {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("template_fusions")
+}
+
+model Subscription {
+  id                   String   @id @default(uuid())
+  companyId            String   @unique @map("company_id")
+  stripeSubscriptionId String   @unique @map("stripe_subscription_id")
+  stripeCustomerId     String   @map("stripe_customer_id")
+  status               String // trialing, active, past_due, canceled, incomplete, incomplete_expired
+  currentPeriodEnd     DateTime @map("current_period_end")
+  cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("subscriptions")
 }
 
 model CatalogOLT {

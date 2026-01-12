@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 import { AuthRequest } from '../middleware/auth';
+import { StripeService } from '../services/billing/stripeService';
 
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
@@ -71,9 +72,9 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
 
 export const createPlan = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, price, type, trialDurationDays, limits, features, isRecommended } = req.body;
+        const { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } = req.body; // Added stripePriceId
         const plan = await prisma.plan.create({
-            data: { name, price, type, trialDurationDays, limits, features, isRecommended }
+            data: { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } // Added stripePriceId
         });
 
         // Audit Log
@@ -90,10 +91,10 @@ export const createPlan = async (req: AuthRequest, res: Response) => {
 export const updatePlan = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, price, type, trialDurationDays, limits, features, isRecommended } = req.body;
+        const { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } = req.body; // Added stripePriceId
         const plan = await prisma.plan.update({
             where: { id },
-            data: { name, price, type, trialDurationDays, limits, features, isRecommended }
+            data: { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } // Added stripePriceId
         });
 
         if (req.user?.id) {
@@ -138,6 +139,16 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
         const data: any = {};
         if (status) data.status = status;
         if (planId) data.planId = planId;
+
+        // If suspending, try to cancel Stripe subscription
+        if (status === 'SUSPENDED') {
+            try {
+                await StripeService.cancelSubscription(id);
+            } catch (e) {
+                console.warn("Failed to cancel stripe subscription during suspension:", e);
+                // Proceed with local suspension anyway
+            }
+        }
 
         const company = await prisma.company.update({
             where: { id },

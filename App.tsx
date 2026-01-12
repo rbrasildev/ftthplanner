@@ -117,6 +117,10 @@ export default function App() {
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
+    const [companyId, setCompanyId] = useState<string | null>(null);
+
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
@@ -197,6 +201,15 @@ export default function App() {
                         setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
                     } else {
                         setSubscriptionExpiresAt(null);
+                    }
+                    if (data.user.company?.id) {
+                        setCompanyId(data.user.company.id);
+                    }
+                    if (data.user.email) {
+                        setUserEmail(data.user.email);
+                    }
+                    if (data.user.company?.status) {
+                        setCompanyStatus(data.user.company.status);
                     }
                 }
             }).catch(err => {
@@ -1231,6 +1244,8 @@ export default function App() {
                     onClose={() => setShowUpgradeModal(false)}
                     limitDetails={upgradeModalDetails}
                     currentPlanName={userPlan}
+                    companyId={companyId || undefined}
+                    email={userEmail || undefined}
                 />
 
                 <DashboardPage
@@ -1240,8 +1255,21 @@ export default function App() {
                     userPlanType={userPlanType}
                     subscriptionExpiresAt={subscriptionExpiresAt}
                     projects={projects}
-                    onOpenProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
+                    onOpenProject={(id) => {
+                        if (companyStatus === 'SUSPENDED') {
+                            setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                            setShowUpgradeModal(true);
+                            return;
+                        }
+                        setCurrentProjectId(id);
+                        setShowProjectManager(false);
+                    }}
                     onCreateProject={async (name, center) => {
+                        if (companyStatus === 'SUSPENDED') {
+                            setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
+                            setShowUpgradeModal(true);
+                            return;
+                        }
                         if (!token) return;
                         try {
                             const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
@@ -1313,6 +1341,8 @@ export default function App() {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 limitDetails={upgradeModalDetails}
+                companyId={companyId || undefined}
+                email={userEmail || undefined}
             />
 
             <Sidebar
@@ -1696,6 +1726,8 @@ export default function App() {
                 onClose={() => setShowUpgradeModal(false)}
                 currentPlanName={userPlan}
                 limitDetails={upgradeModalDetails}
+                companyId={companyId || undefined}
+                email={userEmail || undefined}
             />
 
             <PoleSelectionModal

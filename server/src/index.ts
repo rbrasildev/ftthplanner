@@ -41,15 +41,26 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'live', time: new Date().toISOString() });
 });
 
-app.use(express.json({ limit: '100mb' }));
+// app.use(express.json({ limit: '100mb' }));  <-- REMOVED (Handled conditionally below)
+
+import billingRoutes from './routes/billingRoutes';
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
         console.error('Bad JSON received:', err.message);
-        console.error('Raw Body Content:', (err as any).body); // Log the actual bad content
+        console.error('Raw Body Content:', (err as any).body);
         return res.status(400).json({ error: 'Invalid JSON request', details: err.message });
     }
     next();
+});
+
+// JSON Parser (Skip for Webhook to allow raw signature verification)
+app.use((req, res, next) => {
+    if (req.originalUrl.includes('/api/billing/webhook')) {
+        next();
+    } else {
+        express.json({ limit: '100mb' })(req, res, next);
+    }
 });
 
 app.use('/api/auth', authRoutes);
@@ -58,6 +69,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Import Backup Service and Routes
 import backupRoutes from './routes/backupRoutes';

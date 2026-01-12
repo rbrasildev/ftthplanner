@@ -13,6 +13,7 @@ async function main() {
             type: 'STANDARD',
             features: JSON.stringify(['basic_features']),
             limits: JSON.stringify({ projects: 1, users: 1 }),
+            stripePriceId: 'price_H5ggYJDqBQ3', // EXAMPLE
         },
         {
             name: 'Plano Ilimitado',
@@ -20,6 +21,7 @@ async function main() {
             type: 'ENTERPRISE',
             features: JSON.stringify(['all_features']),
             limits: JSON.stringify({ projects: 999, users: 999 }),
+            stripePriceId: 'price_H5ggYJDqBQ4', // EXAMPLE
         },
     ];
 

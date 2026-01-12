@@ -150,6 +150,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             price: parseFloat(formData.get('price') as string),
             type: formData.get('type') || 'STANDARD',
             trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
+            stripePriceId: formData.get('stripePriceId'),
             features: featuresValid,
             isRecommended: formData.get('isRecommended') === 'on',
             limits: {
@@ -174,7 +175,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     };
 
     const openPlanModal = (plan?: any) => {
-        setEditingPlan(plan || { features: [], isRecommended: false });
+        if (plan) {
+            let features = plan.features;
+            if (typeof features === 'string') {
+                try {
+                    features = JSON.parse(features);
+                } catch (e) {
+                    features = [];
+                }
+            }
+            if (!Array.isArray(features)) features = [];
+            setEditingPlan({ ...plan, features });
+        } else {
+            setEditingPlan({ features: [], isRecommended: false });
+        }
         setIsPlanModalOpen(true);
     };
 
@@ -545,17 +559,34 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
 
                                             {/* Features List */}
-                                            {plan.features && plan.features.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Everything in:</p>
-                                                    {plan.features.map((feature: string, idx: number) => (
-                                                        <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                                                            <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                                            <span>{feature}</span>
+                                            {/* Features List */}
+                                            {(() => {
+                                                let featuresList = plan.features;
+                                                if (typeof featuresList === 'string') {
+                                                    try {
+                                                        featuresList = JSON.parse(featuresList);
+                                                    } catch (e) {
+                                                        featuresList = [];
+                                                    }
+                                                }
+
+                                                if (!Array.isArray(featuresList)) featuresList = [];
+
+                                                if (featuresList.length > 0) {
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Included Features:</p>
+                                                            {featuresList.map((feature: string, idx: number) => (
+                                                                <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                                                    <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                                                    <span>{feature}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         </div>
 
                                         <button className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${plan.isRecommended
@@ -790,6 +821,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
+                                        <input
+                                            name="stripePriceId"
+                                            defaultValue={editingPlan?.stripePriceId || ''}
+                                            placeholder="price_..."
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">Required for automated billing via Stripe.</p>
                                     </div>
 
 

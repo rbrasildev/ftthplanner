@@ -13,7 +13,8 @@ export const seedDefaultPlans = async () => {
                 type: 'STANDARD',
                 limits: { maxProjects: 1, maxUsers: 1, maxCTOs: 10, maxPOPs: 1 },
                 features: ['1 Projeto', '1 Usuário', 'Mapas Básicos'],
-                isRecommended: false
+                isRecommended: false,
+                stripePriceId: 'price_FREE_TIER_PLACEHOLDER'
             },
             {
                 name: 'Plano Básico',
@@ -21,7 +22,8 @@ export const seedDefaultPlans = async () => {
                 type: 'STANDARD',
                 limits: { maxProjects: 5, maxUsers: 3, maxCTOs: 100, maxPOPs: 10 },
                 features: ['5 Projetos', '3 Usuários', 'Suporte por Email'],
-                isRecommended: false
+                isRecommended: false,
+                stripePriceId: 'price_BASIC_TIER_PLACEHOLDER'
             },
             {
                 name: 'Plano Ilimitado',
@@ -30,7 +32,8 @@ export const seedDefaultPlans = async () => {
                 trialDurationDays: 15,
                 limits: { maxProjects: 999999, maxUsers: 999999, maxCTOs: 999999, maxPOPs: 999999 },
                 features: ['Tudo Ilimitado', 'Suporte Prioritário', 'Backup Automático'],
-                isRecommended: true
+                isRecommended: true,
+                stripePriceId: 'price_UNLIMITED_TIER_PLACEHOLDER'
             }
         ];
 
