@@ -30,7 +30,14 @@ app.use((req, res, next) => {
 
 // CORS mais permissivo possível para teste
 app.use(cors({
-    origin: '*',
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://www.ftthplan.com',
+        'https://ftthplan.com',
+        'https://ftth.redeconexaonet.com'
+    ],
+    credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     optionsSuccessStatus: 204
