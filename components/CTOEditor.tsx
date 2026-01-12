@@ -1667,7 +1667,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent) => {
         // COMMIT DRAG CHANGES TO STATE
-        if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+        if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout && !dragState.targetId.startsWith('fus-')) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
@@ -1816,6 +1816,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         else if (dragState?.mode === 'element' && dragState.targetId?.startsWith('fus-')) {
             const fusionId = dragState.targetId;
 
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+
+            // RAW Coordinates (for magnetic detection)
+            const rawX = dragState.initialLayout!.x + dx;
+            const rawY = dragState.initialLayout!.y + dy;
+
+            // Default to Grid Snap (if enabled)
+            let newX = rawX;
+            let newY = rawY;
+            if (isSnapping) {
+                newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
+                newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
+            }
+
             // CHECK IF FUSION IS ALREADY CONNECTED
             const isAlreadyConnected = localCTO.connections.some(c =>
                 c.sourceId === `${fusionId}-a` || c.targetId === `${fusionId}-a` ||
@@ -1823,27 +1838,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             );
 
             if (!isAlreadyConnected) {
-                const dx = (e.clientX - dragState.startX) / viewState.zoom;
-                const dy = (e.clientY - dragState.startY) / viewState.zoom;
-
-                // RAW Coordinates (for magnetic detection)
-                const rawX = dragState.initialLayout!.x + dx;
-                const rawY = dragState.initialLayout!.y + dy;
-
-                // Default to Grid Snap (if enabled)
-                let newX = rawX;
-                let newY = rawY;
-                if (isSnapping) {
-                    newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
-                    newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
-                }
 
                 // USE RAW FOR DETECTION (plus center offset +6)
                 const fusionCenter = { x: rawX + 12, y: rawY + 6 };
 
                 // FIND CLOSEST CONNECTION (PRECISION UPDATE)
                 let closestConnection: FiberConnection | null = null;
-                let minDistance = 20; // Tolerance
+                let minDistance = 5; // Tolerance - Reduced from 20 to 5 per user request
 
                 localCTO.connections.forEach(conn => {
                     if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return;
@@ -2191,7 +2192,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         const x = Math.round((rx - halfSize) / GRID_SIZE) * GRID_SIZE;
         const y = Math.round((ry - halfSize) / GRID_SIZE) * GRID_SIZE;
-        const initialLayout = { x, y, rotation: 0 };
+        const initialLayout = { x, y, rotation: 270 };
 
         setLocalCTO(prev => ({
             ...prev,
@@ -2540,14 +2541,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     className={`p-1.5 rounded border transition ${showSplitterDropdown ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                     title={t('splitters')}
                                 >
-                                    <Triangle className="w-4 h-4" />
+                                    <Triangle className="w-4 h-4 -rotate-90" />
                                 </button>
                                 <button
                                     onClick={handleAddFusion}
                                     title={t('add_fusion')}
                                     className={`p-1.5 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                 >
-                                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
                                         <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
                                         <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
@@ -2921,7 +2922,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             onClick={handleCloseRequest}
                             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <Save className="w-4 h-4" /> {t('save_or_done') || 'Concluir'}
+                            <Save className="w-4 h-4" /> {t('save_or_done') || 'Salvar / Sair'}
                         </button>
                     </div>
                 </div>
@@ -2941,22 +2942,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2 mt-6">
+                            <div className="flex flex-row gap-2 mt-6">
                                 <button
                                     onClick={handleSaveAndClose}
-                                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all"
+                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all"
                                 >
                                     {t('save_and_close')}
                                 </button>
                                 <button
                                     onClick={onClose}
-                                    className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all"
+                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all"
                                 >
                                     {t('discard')}
                                 </button>
                                 <button
                                     onClick={() => setShowCloseConfirm(false)}
-                                    className="w-full py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium transition-colors"
+                                    className="flex-1 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium transition-colors"
                                 >
                                     {t('cancel')}
                                 </button>

@@ -114,7 +114,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             }}
                         />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ paddingLeft: `${shiftPx}px` }}>
+                    <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-2" style={{ paddingLeft: `${shiftPx}px` }}>
                         <span className={`text-[8px] font-bold leading-none ${isLitIn ? 'text-red-500' : 'text-slate-500 dark:text-slate-600'}`}>{splitter.type}</span>
                     </div>
                 </div>
@@ -144,9 +144,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
                         ${isLitIn
                                 ? 'border-red-500 bg-red-900 text-white'
-                                : connections.some(c => c.targetId === splitter.inputPortId)
-                                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                                    : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'}
+                                : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'}
                     `}
                     >
                         1
@@ -186,9 +184,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 ${hoveredPortId === pid ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-500 bg-red-900 text-white'
-                                        : isConnected
-                                            ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                                            : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
+                                        : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
                                     }
                             `}
                                 style={{

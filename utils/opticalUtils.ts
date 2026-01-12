@@ -101,6 +101,12 @@ function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | unde
                 const val = parseFloat(att.value);
                 if (!isNaN(val)) return val;
             }
+            // @ts-ignore
+            if (att.x !== undefined) {
+                // @ts-ignore
+                const val = parseFloat(att.x);
+                if (!isNaN(val)) return val;
+            }
         }
     }
 

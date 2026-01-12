@@ -378,12 +378,12 @@ export default function App() {
 
             // Update Local
             setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
-            setToast({ msg: `${newPoles.length} postes importados com sucesso!`, type: 'success' });
+            showToast(`${newPoles.length} postes importados com sucesso!`, 'success');
             setIsKmlImportOpen(false); // Close legacy modal
 
         } catch (err) {
             console.error(err);
-            setToast({ msg: 'Erro ao importar postes.', type: 'error' });
+            showToast('Erro ao importar postes.', 'error');
         } finally {
             setIsLoadingProjects(false);
         }
@@ -1613,12 +1613,12 @@ export default function App() {
                         // SAVE TO BACKEND
                         await projectService.syncProject(currentProjectId, updated);
                         setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
-                        setToast({ msg: 'Importação realizada com sucesso!', type: 'success' });
+                        showToast('Importação realizada com sucesso!', 'success');
                         setIsAdvancedImportOpen(false);
                         setPreviewImportData(null);
                     } catch (error) {
                         console.error("Import failed", error);
-                        setToast({ msg: 'Erro ao importar.', type: 'error' });
+                        showToast('Erro ao importar.', 'error');
                     } finally {
                         setIsLoadingProjects(false);
                     }

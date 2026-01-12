@@ -166,7 +166,7 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Label Position
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 20 // Adjusted further up (closer to input) to ensure clearance from output ports
+        y: offsetY + 50 // Moved down to wider area (output side)
     };
 
     const inputPort = {
@@ -206,7 +206,7 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     content += `<polygon points="${geo.polygonPoints}" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1.5" />`;
 
     // Label
-    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b">${splitter.type}</text>`;
+    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b" data-pdf-align="splitter-label">${splitter.type}</text>`;
 
     // Input Port
     content += `<circle cx="${geo.inputPort.x}" cy="${geo.inputPort.y}" r="5" fill="white" stroke="${strokeColor}" stroke-width="1" />`;
@@ -899,7 +899,13 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                         // User Request: Cable Labels (correction) need different offset to match PNG.
                         // Standard (Fiber Numbers) uses 0.4.
                         // Correction (Cable Labels) uses 0.30 (Lifts text slightly).
-                        const offsetFactor = pdfAlign === 'correction' ? 0.30 : 0.4;
+                        // Standard (Fiber Numbers) uses 0.4.
+                        // Correction (Cable Labels) uses 0.25 (User Req: Center vertical label).
+                        // Splitter Label uses 0.35 to ensure middle alignment matches Editor.
+                        let offsetFactor = 0.4;
+                        if (pdfAlign === 'correction') offsetFactor = 0.25;
+                        if (pdfAlign === 'splitter-label') offsetFactor = 0.35;
+
                         localY += (fontSize * offsetFactor);
                     }
                     const pAdjusted = applyToPoint(finalMatrix, x, localY);

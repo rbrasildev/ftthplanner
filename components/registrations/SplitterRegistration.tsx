@@ -41,20 +41,28 @@ export const SplitterRegistration: React.FC = () => {
     // Helper to extract display value from attenuation (which might be JSON)
     const getAttenuationValue = (val: any): string => {
         if (val === null || val === undefined) return '';
+        let displayVal = val;
+
         if (typeof val === 'object') {
-            return val.value || val.v || JSON.stringify(val);
-        }
-        if (typeof val === 'string') {
+            displayVal = val.value || val.v || val.x || JSON.stringify(val);
+        } else if (typeof val === 'string') {
             try {
                 if (val.trim().startsWith('{')) {
                     const parsed = JSON.parse(val);
-                    return parsed.value || parsed.v || val;
+                    displayVal = parsed.value || parsed.v || parsed.x || val;
+                } else {
+                    displayVal = val;
                 }
             } catch (e) {
-                // Ignore parse error, return as is
+                displayVal = val;
             }
         }
-        return String(val);
+
+        if (typeof displayVal === 'number' || (typeof displayVal === 'string' && !isNaN(parseFloat(displayVal)) && !displayVal.trim().startsWith('{'))) {
+            return `${displayVal} dB`;
+        }
+
+        return String(displayVal);
     };
 
     const handleOpenModal = (item?: SplitterCatalogItem) => {

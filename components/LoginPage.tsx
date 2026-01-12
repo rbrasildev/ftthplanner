@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { KeyRound, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface LoginPageProps {
     onLogin: (username: string, password: string) => void;
@@ -10,6 +11,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading, onBackToLanding }) => {
+    const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -19,7 +21,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-0 relative overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-0 relative overflow-hidden bg-slate-950 dark">
 
             {/* 1. Page Background (Blurred Map) - HIDDEN ON MOBILE */}
             <div
@@ -35,7 +37,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                 className="absolute top-8 left-8 z-20 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white transition-colors"
             >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-bold text-sm">Back to Home</span>
+                <span className="font-bold text-sm">{t('back_to_home')}</span>
             </button>
 
             {/* 2. Main Container */}
@@ -46,9 +48,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
 
                     <div className="max-w-sm mx-auto w-full space-y-8">
                         <div className="text-center space-y-2">
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">FTTH Master</h1>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{t('login_title')}</h1>
                             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                                Entre com suas credenciais
+                                {t('login_subtitle')}
                             </p>
                         </div>
 
@@ -62,14 +64,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                         <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
                             <div className="space-y-5 lg:space-y-4">
                                 <div className="space-y-1">
-                                    <label className="sr-only">Email</label>
+                                    <label className="sr-only">{t('login_email_placeholder')}</label>
                                     <div className="relative">
                                         <input
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder="Email"
+                                            placeholder={t('login_email_placeholder')}
                                             required
                                             autoFocus
                                         />
@@ -77,14 +79,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="sr-only">Senha</label>
+                                    <label className="sr-only">{t('login_password_placeholder')}</label>
                                     <div className="relative">
                                         <input
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder="Senha"
+                                            placeholder={t('login_password_placeholder')}
                                             required
                                         />
                                     </div>
@@ -96,12 +98,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                 disabled={isLoading}
                                 className="w-full text-white bg-sky-600 hover:bg-sky-500 focus:ring-4 focus:outline-none focus:ring-sky-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-sky-600/20 active:scale-[0.98]"
                             >
-                                {isLoading ? 'Entrando...' : 'Entrar'}
+                                {isLoading ? t('login_button_loading') : t('login_button')}
                             </button>
 
                             <div className="text-center pt-2">
                                 <button type="button" onClick={onRegisterClick} className="text-sky-600 dark:text-sky-400 hover:underline text-sm font-semibold transition-colors">
-                                    Criar nova conta
+                                    {t('login_create_account')}
                                 </button>
                             </div>
 
@@ -132,8 +134,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                 <KeyRound className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Destaque</div>
-                                <div className="text-sm font-bold text-slate-800 dark:text-white">Editor de Fusão</div>
+                                <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('login_feature_label')}</div>
+                                <div className="text-sm font-bold text-slate-800 dark:text-white">{t('login_feature_title')}</div>
                             </div>
                         </div>
                     </div>
