@@ -32,7 +32,11 @@ router.post('/create-subscription', async (req, res) => {
 
         res.json(result);
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        console.error('Stripe/Billing Error:', error);
+        res.status(500).json({
+            error: error.message || 'Internal Billing Error',
+            details: error.type ? `${error.type}: ${error.code}` : undefined
+        });
     }
 });
 
