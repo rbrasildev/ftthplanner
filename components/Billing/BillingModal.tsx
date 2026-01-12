@@ -8,6 +8,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { X, Check, Loader2 } from 'lucide-react';
 import { useTheme } from '../../ThemeContext';
+import api from '../../services/api';
 
 // Initialize Stripe outside of component to avoid recreating object on renders
 // Initialize Stripe
@@ -90,18 +91,14 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
             setError(null);
 
             // Call Backend to create intent
-            // Use relative URL for portability
-            fetch('/api/billing/create-subscription', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companyId,
-                    priceId: planId, // Assuming planId passed is actually the Stripe Price ID for now, or backend maps it
-                    email: billingEmail
-                })
+            // Use api.post to leverage base URL configuration
+            api.post('/billing/create-subscription', {
+                companyId,
+                priceId: planId, // Assuming planId passed is actually the Stripe Price ID for now, or backend maps it
+                email: billingEmail
             })
-                .then(res => res.json())
-                .then(data => {
+                .then(response => {
+                    const data = response.data;
                     if (data.error) throw new Error(data.error);
                     if (data.clientSecret) {
                         setClientSecret(data.clientSecret);
