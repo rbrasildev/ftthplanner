@@ -108,9 +108,20 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                         alert(`Assinatura ativa! Status: ${data.status}`);
                     }
                 })
-                .catch(err => {
-                    console.error(err);
-                    setError('Falha ao iniciar pagamento. ' + err.message);
+                .catch((err: any) => {
+                    console.error("Billing Error:", err);
+                    let msg = 'Falha ao iniciar pagamento.';
+
+                    if (err.response && err.response.data) {
+                        const backendError = err.response.data;
+                        const detailedMsg = backendError.details || backendError.error;
+                        if (detailedMsg) {
+                            msg = `Erro: ${detailedMsg}`;
+                        }
+                    } else if (err.message) {
+                        msg += ` ${err.message}`;
+                    }
+                    setError(msg);
                 })
                 .finally(() => setLoadingSecret(false));
         }
