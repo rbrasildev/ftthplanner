@@ -55,6 +55,7 @@ export interface FusionPoint {
   id: string;
   name: string;
   type?: 'generic' | 'tray';
+  catalogId?: string;
 }
 
 export interface ElementLayout {

@@ -268,6 +268,19 @@ export default function App() {
             setMapBounds(null);
             prevProjectIdRef.current = currentProjectId || '';
             isInitialLoad.current = true;
+
+            // --- Reset UI State on Project Switch/Entry ---
+            setEditingCTO(null);
+            setEditingPOP(null);
+            setEditingCable(null);
+            setSelectedId(null);
+            setHighlightedCableId(null);
+            setToolMode('view');
+            setIsAdvancedImportOpen(false);
+            setIsKmlImportOpen(false);
+            setIsPoleModalOpen(false);
+            setShowSettingsModal(false);
+            setOtdrResult(null);
         }
     }, [currentProjectId]);
 

@@ -316,7 +316,17 @@ export function traceOpticalPath(
             const fusion = node.fusions.find(f => f.id + '-a' === sourceId || f.id + '-b' === sourceId);
             if (fusion) {
                 // It's a fusion point.
-                const fusionData = catalogs.fusions.find(f => f.name === fusion.type) || catalogs.fusions[0];
+                // Robust Lookup (Updated for Catalog ID)
+                // Priority 1: Catalog ID (best match)
+                let fusionData = catalogs.fusions.find(f => f.id === fusion.catalogId);
+
+                // Priority 2: Name Lookup (fallback)
+                if (!fusionData && fusion.type && fusion.type !== 'generic' && fusion.type !== 'tray') {
+                    const fusionTypeNorm = (fusion.type as string).trim().toLowerCase();
+                    fusionData = catalogs.fusions.find(f => f.name.trim().toLowerCase() === fusionTypeNorm);
+                }
+
+                // If not found, defaults to 0 in getFusionLoss
                 const fLoss = getFusionLoss(fusion, fusionData);
 
                 path.unshift({
