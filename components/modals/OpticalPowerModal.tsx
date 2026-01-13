@@ -89,8 +89,8 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                             </div>
                             {result.oltDetails ? (
                                 <div className="text-xs text-slate-500 mt-1 flex gap-2">
-                                    <span>Slot: <strong>{result.oltDetails.slot || '?'}</strong></span>
-                                    <span>Porta: <strong>{result.oltDetails.port || '?'}</strong></span>
+                                    <span>{t('slot') || 'Slot'}: <strong>{result.oltDetails.slot || '?'}</strong></span>
+                                    <span>{t('pon') || 'PON'}: <strong>{result.oltDetails.port || '?'}</strong></span>
                                 </div>
                             ) : (
                                 <div className="text-xs text-slate-500 mt-1">Potência de Saída: <strong>{result.oltPower} dBm</strong></div>

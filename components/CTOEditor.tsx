@@ -136,6 +136,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     userPlan, subscriptionExpiresAt, onShowUpgrade, network
 }) => {
     const { t } = useLanguage();
+    const [isApplying, setIsApplying] = useState(false);
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
@@ -877,6 +878,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             ...prev,
             connections: prev.connections.filter(c => c.id !== connId)
         }));
+    };
+
+    const handleApply = async () => {
+        setIsApplying(true);
+        const finalCTO = { ...localCTO, viewState: viewState };
+        onSave(finalCTO);
+        // Fake delay for visual feedback
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsApplying(false);
     };
 
     const handleCloseRequest = () => {
@@ -2489,7 +2499,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 `}</style>
             )}
             <div
-                className={`cto-editor-container relative w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -2636,7 +2646,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-slate-200 dark:bg-slate-950 relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-slate-950 relative overflow-hidden"
                     style={{ cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
@@ -2771,7 +2781,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
 
                                 const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
-                                const finalWidth = isLit ? 4 : 3;
+                                const finalWidth = isLit ? 4 : 2.5;
 
                                 let d = `M ${p1.x} ${p1.y} `;
                                 if (conn.points && conn.points.length > 0) {
@@ -2918,6 +2928,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         <span>{t('general_help')}</span>
                     </div>
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleApply}
+                            disabled={isApplying}
+                            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
+                        >
+                            {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : ""}
+                            {t('apply') || 'Aplicar'}
+                        </button>
                         <button
                             onClick={handleCloseRequest}
                             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"

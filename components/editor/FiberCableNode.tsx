@@ -113,7 +113,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 {/* VISUAL BODY - Draggable Area Updated */}
                 <div
                     className={`
-                        flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden w-[168px] h-full
+                        flex flex-col bg-white dark:bg-slate-900  border-slate-200 dark:border-slate-700 overflow-hidden w-[168px] h-full
                         ${isMirrored ? 'border-l-0' : 'border-r-0'}
                         cursor-grab active:cursor-grabbing
                     `}

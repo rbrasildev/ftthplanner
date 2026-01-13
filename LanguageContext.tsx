@@ -525,6 +525,16 @@ const translations = {
     'upload_restore': 'Upload & Restore',
     'restore_confirm': 'WARNING: This will delete ALL current network data (CTOs, Cables, POPs, Projects) and replace it with the backup. This cannot be undone. Are you sure?',
     'restore_success': 'System restored successfully. Reloading...',
+    'apply': 'Apply',
+    'loading': 'Loading...',
+    'pon': 'PON',
+    'slot': 'Slot',
+    'properties': 'Properties',
+    'edit_cable': 'Edit Cable',
+    'editing_cable': 'Editing Cable...',
+    'connecting_cable': 'Connecting Cables...',
+    'finish': 'Finish',
+    'connection_cancelled': 'Connection Cancelled',
   },
   pt: {
     // Theme
@@ -1078,6 +1088,15 @@ const translations = {
     'upload_restore': 'Enviar & Restaurar',
     'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
+    'apply': 'Aplicar',
+    'loading': 'Carregando...',
+
+    'save_or_done': 'Salvar / Sair',
+    'moving_node': 'Movendo Elemento...',
+
+    'position_saved': 'Posição salva com sucesso!',
+    'properties': 'Propriedades',
+    'editing_cable': 'Editando Cabo...',
   }
 };
 

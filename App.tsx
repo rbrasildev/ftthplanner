@@ -124,7 +124,7 @@ export default function App() {
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -1073,12 +1073,20 @@ export default function App() {
 
             showToast(t('toast_cable_disconnected') || "Cabo desconectado");
 
-            return {
+            const newState = {
                 ...prev,
                 cables: prev.cables.map(c => c.id === cableId ? { ...c, fromNodeId: newFrom, toNodeId: newTo } : c),
                 ctos: updatedCTOs,
                 pops: updatedPOPs
             };
+
+            // Sync local editing state to reflect removal immediately
+            const updatedEditingCTO = updatedCTOs.find(c => c.id === nodeId);
+            if (updatedEditingCTO) {
+                setEditingCTO(updatedEditingCTO);
+            }
+
+            return newState;
         });
     };
 
@@ -1459,6 +1467,28 @@ export default function App() {
                     </div>
                 </div>
 
+                {/* Move Mode Floating Controls */}
+                {toolMode === 'move_node' && (
+                    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
+                            <Move className="w-4 h-4 text-sky-500" />
+                            {t('moving_node') || 'Movendo Elemento...'}
+                        </div>
+                        <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                        <button
+                            onClick={() => {
+                                setToolMode('view');
+                                setSelectedId(null);
+                                showToast(t('position_saved') || 'Posição salva com sucesso!', 'success');
+                            }}
+                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
+                        >
+                            <Check className="w-4 h-4" />
+                            {t('save_position') || 'Salvar'}
+                        </button>
+                    </div>
+                )}
+
                 <MapView
                     ctos={getCurrentNetwork().ctos}
                     pops={getCurrentNetwork().pops || []}
@@ -1491,12 +1521,22 @@ export default function App() {
                     onConnectCable={handleConnectCable}
                     onUpdateCableGeometry={handleUpdateCableGeometry}
                     multiConnectionIds={multiConnectionIds}
+
                     previewImportData={previewImportData}
                     onCableClick={(id) => {
                         // Left click in view mode: Just select (or do nothing to avoid annoying popups)
-                        if (toolMode === 'view') {
+                        if (toolMode === 'view' || toolMode === 'edit_cable') {
+                            // In edit_cable mode, clicking other cables shouldn't do much, maybe select them?
+                            // For now, allow selection update but keep mode
                             setSelectedId(id);
                         }
+                    }}
+                    onEditCableGeometry={(id) => {
+                        // Start Edit Mode with Backup
+                        previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                        setToolMode('edit_cable');
+                        setSelectedId(id);
+                        setHighlightedCableId(id);
                     }}
                     onEditCable={(id) => {
                         if (toolMode === 'view') {
@@ -1516,6 +1556,104 @@ export default function App() {
                     otdrResult={otdrResult}
                 />
 
+
+
+
+                {/* Save/Cancel Toolbar for Cable Edit */}
+                {
+                    toolMode === 'edit_cable' && (
+                        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                            <div className="flex items-center gap-3 px-3">
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    {t('editing_cable') || "Editando Cabo..."}
+                                </span>
+                                <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                <button
+                                    onClick={() => {
+                                        setToolMode('view');
+                                        setHighlightedCableId(null);
+                                        setSelectedId(null);
+                                        previousNetworkState.current = null;
+                                        showToast(t('changes_saved') || "Alterações Salvas!", 'success');
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                >
+                                    {t('save_changes') || "Salvar Alterações"}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // CANCEL (Revert changes)
+                                        if (previousNetworkState.current) {
+                                            const backup = previousNetworkState.current; // Capture ref value
+                                            updateCurrentNetwork(() => backup); // Return backup as new state
+                                            previousNetworkState.current = null;
+
+                                            // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                            setEditingCTO(null);
+                                            setEditingPOP(null);
+                                        }
+                                        setToolMode('view');
+                                        setMultiConnectionIds(new Set());
+                                        setSelectedId(null);
+                                        showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
+                                    }}
+                                    className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* Save/Cancel Toolbar for Connect Cable */}
+                {
+                    toolMode === 'connect_cable' && (
+                        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                            <div className="flex items-center gap-3 px-3">
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    {t('connecting_cable') || "Conectando Cabos..."}
+                                </span>
+                                <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                <button
+                                    onClick={() => {
+                                        setToolMode('view');
+                                        setMultiConnectionIds(new Set());
+                                        setSelectedId(null);
+                                        previousNetworkState.current = null;
+                                        showToast(t('finish') || "Concluir", 'success');
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                >
+                                    {t('finish') || "Concluir"}
+                                </button>
+                                <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                                <button
+                                    onClick={() => {
+                                        // CANCEL (Revert changes)
+                                        if (previousNetworkState.current) {
+                                            const backup = previousNetworkState.current; // Capture ref value
+                                            updateCurrentNetwork(() => backup); // Return backup as new state
+                                            previousNetworkState.current = null;
+
+                                            // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                            setEditingCTO(null);
+                                            setEditingPOP(null);
+                                        }
+                                        setToolMode('view');
+                                        setMultiConnectionIds(new Set());
+                                        setSelectedId(null);
+                                        showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
+                                    }}
+                                    className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )
+                }
+
                 <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
                     {toolMode === 'view' && t('tooltip_view')}
                     {toolMode === 'move_node' && t('tooltip_move')}
@@ -1526,116 +1664,82 @@ export default function App() {
                     {toolMode === 'pick_connection_target' && (t('toast_select_next_box') || 'Selecione a próxima caixa no mapa')}
                 </div>
 
-                {toolMode === 'draw_cable' && drawingPath.length > 0 && (
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
-                        <button
-                            onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
-                        >
-                            <CheckCircle2 className="w-5 h-5" />
-                            {t('finish_cable') || 'Finalizar Cabo'}
-                        </button>
-                        <button
-                            onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
-                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                        >
-                            <X className="w-5 h-5" />
-                            {t('cancel') || 'Cancelar'}
-                        </button>
-                    </div>
-                )}
+                {
+                    toolMode === 'draw_cable' && drawingPath.length > 0 && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                            <button
+                                onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                            >
+                                <CheckCircle2 className="w-5 h-5" />
+                                {t('finish_cable') || 'Finalizar Cabo'}
+                            </button>
+                            <button
+                                onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                                className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                            >
+                                <X className="w-5 h-5" />
+                                {t('cancel') || 'Cancelar'}
+                            </button>
+                        </div>
+                    )
+                }
 
-                {toolMode === 'connect_cable' && (
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
-                        <button
-                            onClick={() => {
-                                setMultiConnectionIds(new Set());
-                                setToolMode('view');
-                                previousNetworkState.current = null; // Clear backup
-                                showToast(t('changes_saved') || 'Alterações Salvas!');
-                            }}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 animate-in slide-in-from-bottom-5 fade-in duration-300"
-                        >
-                            <CheckCircle2 className="w-5 h-5" />
-                            {t('save_changes') || 'Salvar Alterações'}
-                        </button>
-                        <button
-                            onClick={() => {
-                                try {
-                                    if (previousNetworkState.current) {
-                                        // Validate state before restoring
-                                        const stateToRestore = previousNetworkState.current;
-                                        if (stateToRestore.ctos && stateToRestore.cables) {
-                                            updateCurrentNetwork(() => stateToRestore);
-                                        } else {
-                                            console.warn("Invalid previous state, skipping restore");
-                                        }
-                                        previousNetworkState.current = null;
-                                    }
-                                } catch (e) {
-                                    console.error("Error restoring state:", e);
-                                    showToast(t('error_restoring_state') || "Erro ao restaurar estado", 'info');
-                                }
-                                setToolMode('view');
-                            }}
-                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 animate-in slide-in-from-bottom-5 fade-in duration-300 delay-75"
-                        >
-                            <X className="w-5 h-5" />
-                            {t('cancel') || 'Cancelar'}
-                        </button>
-                    </div>
-                )}
-            </main>
+            </main >
 
             {/* Editors */}
-            {editingPOP && (
-                <POPEditor
-                    pop={editingPOP}
-                    incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
-                    litPorts={litNetwork.litPorts}
-                    vflSource={vflSource}
-                    onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                    onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
-                    onSave={handleSavePOP}
-                    onHoverCable={(id) => setHighlightedCableId(id)}
-                    onEditCable={setEditingCable}
-                    onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
-                />
-            )}
-            {editingCTO && (
-                <CTOEditor
-                    cto={editingCTO}
-                    projectName={currentProject?.name || ''}
-                    incomingCables={getCurrentNetwork().cables.filter(c =>
-                        c.fromNodeId === editingCTO.id ||
-                        c.toNodeId === editingCTO.id ||
-                        editingCTO.inputCableIds?.includes(c.id)
-                    )}
-                    litPorts={litNetwork.litPorts}
-                    vflSource={vflSource}
-                    onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                    onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
-                    onSave={handleSaveCTO}
-                    onEditCable={setEditingCable}
-                    onHoverCable={(id) => setHighlightedCableId(id)}
-                    onDisconnectCable={handleDisconnectCableFromBox}
-                    onSelectNextNode={handleSelectNextNode}
-                    onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
+            {
+                editingPOP && (
+                    <POPEditor
+                        pop={editingPOP}
+                        incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
+                        litPorts={litNetwork.litPorts}
+                        vflSource={vflSource}
+                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                        onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
+                        onSave={handleSavePOP}
+                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onEditCable={setEditingCable}
+                        onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
+                    />
+                )
+            }
+            {
+                editingCTO && (
+                    <CTOEditor
+                        cto={editingCTO}
+                        projectName={currentProject?.name || ''}
+                        incomingCables={getCurrentNetwork().cables.filter(c =>
+                            c.fromNodeId === editingCTO.id ||
+                            c.toNodeId === editingCTO.id ||
+                            editingCTO.inputCableIds?.includes(c.id)
+                        )}
+                        litPorts={litNetwork.litPorts}
+                        vflSource={vflSource}
+                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                        onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
+                        onSave={handleSaveCTO}
+                        onEditCable={setEditingCable}
+                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onDisconnectCable={handleDisconnectCableFromBox}
+                        onSelectNextNode={handleSelectNextNode}
+                        onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
 
-                    // Auth / Protection Props
-                    userPlan={userPlan}
-                    subscriptionExpiresAt={subscriptionExpiresAt}
-                    onShowUpgrade={() => {
-                        setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
-                        setShowUpgradeModal(true);
-                    }}
-                    network={getCurrentNetwork()}
-                />
-            )}
+                        // Auth / Protection Props
+                        userPlan={userPlan}
+                        subscriptionExpiresAt={subscriptionExpiresAt}
+                        onShowUpgrade={() => {
+                            setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
+                            setShowUpgradeModal(true);
+                        }}
+                        network={getCurrentNetwork()}
+                    />
+                )
+            }
 
 
 
-            // ...
+// ...
 
 
 
@@ -1762,68 +1866,78 @@ export default function App() {
 
 
             {/* Detail Panels (Mini-Editors/Actions) */}
-            {selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (
-                <CTODetailsPanel
-                    cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
-                    onRename={handleRenameCTO}
-                    onUpdateStatus={handleUpdateCTOStatus}
-                    onUpdate={(updates) => {
-                        updateCurrentNetwork(prev => ({
-                            ...prev,
-                            ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, ...updates } : c)
-                        }));
-                    }}
-                    onOpenSplicing={() => { setEditingCTO(getCurrentNetwork().ctos.find(c => c.id === selectedId)!); setSelectedId(null); }}
-                    onDelete={handleDeleteCTO}
-                    onClose={() => setSelectedId(null)}
-                />
-            )}
+            {
+                selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (
+                    <CTODetailsPanel
+                        cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
+                        onRename={handleRenameCTO}
+                        onUpdateStatus={handleUpdateCTOStatus}
+                        onUpdate={(updates) => {
+                            updateCurrentNetwork(prev => ({
+                                ...prev,
+                                ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, ...updates } : c)
+                            }));
+                        }}
+                        onOpenSplicing={() => { setEditingCTO(getCurrentNetwork().ctos.find(c => c.id === selectedId)!); setSelectedId(null); }}
+                        onDelete={handleDeleteCTO}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
 
-            {selectedId && !editingPOP && toolMode === 'view' && getCurrentNetwork().pops?.find(p => p.id === selectedId) && (
-                <POPDetailsPanel
-                    pop={getCurrentNetwork().pops?.find(p => p.id === selectedId)!}
-                    onRename={handleRenamePOP}
-                    onUpdateStatus={handleUpdatePOPStatus}
-                    onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
-                    onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
-                    onDelete={handleDeletePOP}
-                    onClose={() => setSelectedId(null)}
-                />
-            )}
+            {
+                selectedId && !editingPOP && toolMode === 'view' && getCurrentNetwork().pops?.find(p => p.id === selectedId) && (
+                    <POPDetailsPanel
+                        pop={getCurrentNetwork().pops?.find(p => p.id === selectedId)!}
+                        onRename={handleRenamePOP}
+                        onUpdateStatus={handleUpdatePOPStatus}
+                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
+                        onDelete={handleDeletePOP}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
 
-            {selectedId && toolMode === 'view' && getCurrentNetwork().poles?.find(p => p.id === selectedId) && (
-                <PoleDetailsPanel
-                    pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
-                    onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
-                    onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
-                    onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
-                    onDelete={(id) => {
-                        updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.filter(p => p.id !== id) }));
-                        setSelectedId(null);
-                        showToast('Poste removido', 'success');
-                    }}
-                    onClose={() => setSelectedId(null)}
-                />
-            )}
+            {
+                selectedId && toolMode === 'view' && getCurrentNetwork().poles?.find(p => p.id === selectedId) && (
+                    <PoleDetailsPanel
+                        pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
+                        onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
+                        onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
+                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onDelete={(id) => {
+                            updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.filter(p => p.id !== id) }));
+                            setSelectedId(null);
+                            showToast('Poste removido', 'success');
+                        }}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
 
-            {editingCable && (
-                <CableEditor
-                    cable={editingCable}
-                    onClose={() => setEditingCable(null)}
-                    onSave={handleSaveCable}
-                    onDelete={handleDeleteCable}
-                />
-            )}
-            {showProjectManager && (
-                <ProjectManager
-                    projects={projects}
-                    currentProjectId={currentProjectId!}
-                    onSelectProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
-                    onDeleteProject={(id) => setProjects(p => p.filter(x => x.id !== id))}
-                    onImportKMZ={handleImportKMZ}
-                    onClose={() => setShowProjectManager(false)}
-                />
-            )}
+            {
+                editingCable && (
+                    <CableEditor
+                        cable={editingCable}
+                        onClose={() => setEditingCable(null)}
+                        onSave={handleSaveCable}
+                        onDelete={handleDeleteCable}
+                    />
+                )
+            }
+            {
+                showProjectManager && (
+                    <ProjectManager
+                        projects={projects}
+                        currentProjectId={currentProjectId!}
+                        onSelectProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
+                        onDeleteProject={(id) => setProjects(p => p.filter(x => x.id !== id))}
+                        onImportKMZ={handleImportKMZ}
+                        onClose={() => setShowProjectManager(false)}
+                    />
+                )
+            }
 
             {/* --- UPGRADE MODAL --- */}
             <UpgradePlanModal
@@ -1859,64 +1973,66 @@ export default function App() {
             />
 
             {/* --- SYSTEM SETTINGS MODAL --- */}
-            {showSettingsModal && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
-                    <div
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="h-12 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                <Settings className="w-4 h-4" /> {t('system_settings')}
-                            </h3>
-                            <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-white" /></button>
-                        </div>
-                        <div className="p-6 space-y-6">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-                                    <Ruler className="w-3 h-3" /> {t('snap_distance_lbl')}
-                                </label>
-                                <div className="flex gap-2 items-center">
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="200"
-                                        value={systemSettings.snapDistance}
-                                        onChange={(e) => {
-                                            const val = Math.max(1, parseInt(e.target.value) || 1);
-                                            setSystemSettings(prev => ({ ...prev, snapDistance: val }));
-                                            setSettingsSaved(true);
-                                            if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
-                                            settingsTimeoutRef.current = setTimeout(() => setSettingsSaved(false), 2000);
-                                        }}
-                                        className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                                    />
-                                    <span className="text-sm text-slate-500">meters</span>
-                                    {settingsSaved && (
-                                        <span className="flex items-center gap-1 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-left-2">
-                                            <Check className="w-3 h-3" /> Saved
-                                        </span>
-                                    )}
+            {
+                showSettingsModal && (
+                    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
+                        <div
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="h-12 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                    <Settings className="w-4 h-4" /> {t('system_settings')}
+                                </h3>
+                                <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-white" /></button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                        <Ruler className="w-3 h-3" /> {t('snap_distance_lbl')}
+                                    </label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="200"
+                                            value={systemSettings.snapDistance}
+                                            onChange={(e) => {
+                                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                setSystemSettings(prev => ({ ...prev, snapDistance: val }));
+                                                setSettingsSaved(true);
+                                                if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
+                                                settingsTimeoutRef.current = setTimeout(() => setSettingsSaved(false), 2000);
+                                            }}
+                                            className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+                                        />
+                                        <span className="text-sm text-slate-500">meters</span>
+                                        {settingsSaved && (
+                                            <span className="flex items-center gap-1 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-left-2">
+                                                <Check className="w-3 h-3" /> Saved
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        {t('snap_distance_help')}
+                                    </p>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">
-                                    {t('snap_distance_help')}
-                                </p>
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        performAutoSnap(systemSettings.snapDistance);
+                                        setShowSettingsModal(false);
+                                    }}
+                                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition"
+                                >
+                                    Done
+                                </button>
                             </div>
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
-                            <button
-                                onClick={() => {
-                                    performAutoSnap(systemSettings.snapDistance);
-                                    setShowSettingsModal(false);
-                                }}
-                                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition"
-                            >
-                                Done
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Upgrade Modal (Moved to bottom to ensure z-index over other modals) */}
             <UpgradePlanModal
@@ -1926,6 +2042,6 @@ export default function App() {
                 companyId={companyId || undefined}
                 email={userEmail || undefined}
             />
-        </div>
+        </div >
     );
 }

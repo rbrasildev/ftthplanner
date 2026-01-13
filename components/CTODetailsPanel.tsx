@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CTOData, CTOStatus, CTO_STATUS_COLORS } from '../types';
-import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { getBoxes, BoxCatalogItem } from '../services/catalogService';
 
@@ -28,13 +28,18 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   const [name, setName] = useState(cto.name);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setName(cto.name);
   }, [cto.id, cto.name]);
 
   useEffect(() => {
-    getBoxes().then(setAvailableBoxes).catch(console.error);
+    setIsLoading(true);
+    getBoxes()
+      .then(setAvailableBoxes)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleNameBlur = () => {
@@ -204,32 +209,41 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
             <Box className="w-3 h-3" /> {t('box_model') || 'Modelo de Caixa'}
           </label>
           <div className="relative">
-            <select
-              value={cto.catalogId || ''}
-              onChange={(e) => {
-                const selectedId = e.target.value;
-                const box = availableBoxes.find(b => b.id === selectedId);
-                if (box) {
-                  onUpdate({
-                    catalogId: selectedId,
-                    type: box.type as any, // 'CTO' | 'CEO'
-                    color: box.color,
-                    reserveLoopLength: box.reserveLoopLength
-                  });
-                } else if (selectedId === '') {
-                  onUpdate({ catalogId: undefined });
-                }
-              }}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer appearance-none"
-            >
-              <option value="">{t('select_box_model') || 'Selecione Modelo...'}</option>
-              {availableBoxes.map(box => (
-                <option key={box.id} value={box.id}>
-                  {box.name} ({box.type})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {isLoading ? (
+              <div className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <Loader2 className="w-4 h-4 animate-spin text-sky-500" />
+                <span className="text-sm">{t('loading') || 'Carregando...'}</span>
+              </div>
+            ) : (
+              <>
+                <select
+                  value={cto.catalogId || ''}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const box = availableBoxes.find(b => b.id === selectedId);
+                    if (box) {
+                      onUpdate({
+                        catalogId: selectedId,
+                        type: box.type as any, // 'CTO' | 'CEO'
+                        color: box.color,
+                        reserveLoopLength: box.reserveLoopLength
+                      });
+                    } else if (selectedId === '') {
+                      onUpdate({ catalogId: undefined });
+                    }
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer appearance-none"
+                >
+                  <option value="">{t('select_box_model') || 'Selecione Modelo...'}</option>
+                  {availableBoxes.map(box => (
+                    <option key={box.id} value={box.id}>
+                      {box.name} ({box.type})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </>
+            )}
           </div>
         </div>
 

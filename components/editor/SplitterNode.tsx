@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Splitter, ElementLayout, FiberConnection } from '../../types';
-import { RotateCw, Trash2, Triangle } from 'lucide-react';
 
 interface SplitterNodeProps {
     splitter: Splitter;
@@ -99,7 +98,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
                             points={`${50 + skewPercent},0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
-                            className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-300 dark:stroke-slate-600'} cursor-pointer pointer-events-auto`}
+                            className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
@@ -115,7 +114,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         />
                     </svg>
                     <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-2" style={{ paddingLeft: `${shiftPx}px` }}>
-                        <span className={`text-[8px] font-bold leading-none ${isLitIn ? 'text-red-500' : 'text-slate-500 dark:text-slate-600'}`}>{splitter.type}</span>
+                        <span className={`text-[8px] font-normal leading-none ${isLitIn ? 'text-red-500' : 'text-slate-500 dark:text-slate-100'}`}>{splitter.type}</span>
                     </div>
                 </div>
 
@@ -144,7 +143,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
                         ${isLitIn
                                 ? 'border-red-500 bg-red-900 text-white'
-                                : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'}
+                                : 'border-slate-900 dark:border-slate-500 text-slate-900 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'}
                     `}
                     >
                         1
@@ -180,11 +179,11 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 className={`
                                 w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
-                                text-[6.5px] font-bold select-none shadow-sm flex items-center justify-center
+                                text-[6.5px] font-normal select-none  flex items-center justify-center
                                 ${hoveredPortId === pid ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-500 bg-red-900 text-white'
-                                        : 'border-slate-300 dark:border-slate-500 text-slate-400 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
+                                        : 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
                                     }
                             `}
                                 style={{

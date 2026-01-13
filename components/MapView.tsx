@@ -425,6 +425,7 @@ interface CablePolylineProps {
     mode: string;
     t: (key: string) => string;
     onClick: (e: any, cable: CableData) => void;
+    onDoubleClick?: (e: any, cable: CableData) => void;
     onUpdateGeometry?: (id: string, coords: Coordinates[]) => void;
     onConnect?: (cableId: string, nodeId: string, index: number) => void;
     snapDistance?: number;
@@ -437,7 +438,7 @@ interface CablePolylineProps {
 }
 
 const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
-    cable, isLit, isActive, isHighlighted, mode, t, onClick, onUpdateGeometry, onConnect,
+    cable, isLit, isActive, isHighlighted, mode, t, onClick, onDoubleClick, onUpdateGeometry, onConnect,
     snapDistance = 30, ctos = [], pops = [], onPointDragStart, onDrag, onDragEnd, handlePane
 }) => {
 
@@ -458,7 +459,7 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
 
     const handleDragEnd = useCallback((e: any, index: number) => {
         // onDragEnd(); // Moved to end to prevent premature re-render resetting position
-        if (!onConnect || !onUpdateGeometry) return;
+        if (!onUpdateGeometry) return;
         const marker = e.target;
         const pos = marker.getLatLng();
         let nearestNode: string | null = null;
@@ -473,7 +474,7 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
             if (dist < snapDistance) { if (dist < minDist) { minDist = dist; nearestNode = pop.id; } }
         });
 
-        if (nearestNode) {
+        if (nearestNode && onConnect) {
             // Defer update to allow Leaflet drag cycle to complete
             setTimeout(() => {
                 onConnect(cable.id, nearestNode, index);
@@ -597,11 +598,14 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
                     opacity: 0,
                     className: 'cursor-pointer' // Tailwind class for pointer cursor
                 }}
-                eventHandlers={{ click: (e) => onClick(e, cable) }}
+                eventHandlers={{
+                    click: (e) => onClick(e, cable),
+                    dblclick: (e) => onDoubleClick && onDoubleClick(e, cable) // Pass double click to handler
+                }}
             />
 
             {
-                isActive && mode === 'connect_cable' && cable.coordinates.map((coord, index) => (
+                isActive && (mode === 'connect_cable' || mode === 'edit_cable') && cable.coordinates.map((coord, index) => (
                     <Marker
                         key={`${cable.id}-pt-${index}`}
                         position={[coord.lat, coord.lng]}
@@ -732,7 +736,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target';
+    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -763,6 +767,7 @@ interface MapViewProps {
     } | null;
     multiConnectionIds?: Set<string>;
     onEditCable?: (cableId: string) => void;
+    onEditCableGeometry?: (cableId: string) => void;
     onDeleteCable?: (cableId: string) => void;
     onInitConnection?: (cableId: string) => void;
     onEditNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
@@ -777,7 +782,7 @@ export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
-    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onDeleteCable, onInitConnection, onToggleLabels,
+    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode
 }) => {
     const { t } = useLanguage();
@@ -846,8 +851,10 @@ export const MapView: React.FC<MapViewProps> = ({
     const allActiveCableIds = useMemo(() => {
         const set = new Set(multiConnectionIds);
         if (activeCableId) set.add(activeCableId);
+        // Include selected cable in Edit Cable mode to show handles immediately
+        if (mode === 'edit_cable' && selectedId) set.add(selectedId);
         return set;
-    }, [multiConnectionIds, activeCableId]);
+    }, [multiConnectionIds, activeCableId, selectedId, mode]);
 
     const visibleCables = useMemo(() => {
         if (!showCables) return [];
@@ -945,7 +952,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableDoubleClickInternal = useCallback((e: any, cable: CableData) => {
         L.DomEvent.stopPropagation(e);
 
-        if (mode === 'connect_cable') {
+        if (mode === 'connect_cable' || (mode === 'edit_cable' && selectedId === cable.id)) {
             setActiveCableId(cable.id);
             if (onUpdateCableGeometry) {
                 const clickLat = e.latlng.lat;
@@ -1114,8 +1121,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                     mode={mode}
                                     t={t}
                                     onClick={handleCableClickInternal}
+                                    onDoubleClick={handleCableDoubleClickInternal}
                                     onUpdateGeometry={onUpdateCableGeometry}
-                                    onConnect={handleConnectWrapper}
+                                    onConnect={mode === 'connect_cable' ? handleConnectWrapper : undefined}
                                     snapDistance={snapDistance}
                                     ctos={ctos}
                                     pops={pops}
@@ -1322,6 +1330,12 @@ export const MapView: React.FC<MapViewProps> = ({
                     x={contextMenu.x}
                     y={contextMenu.y}
                     onEdit={() => {
+                        // "Editar Cabo" -> Geometry Edit (Select ID)
+                        if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
+                        setContextMenu(null);
+                    }}
+                    onProperties={() => {
+                        // "Propriedades" -> Open Side Panel
                         if (onEditCable) onEditCable(contextMenu.id);
                         setContextMenu(null);
                     }}

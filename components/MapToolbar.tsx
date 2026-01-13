@@ -3,7 +3,7 @@ import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, P
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr';
+    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;

@@ -6,12 +6,13 @@ interface CableContextMenuProps {
     x: number;
     y: number;
     onEdit: () => void;
+    onProperties: () => void;
     onDelete?: () => void;
     onConnect?: () => void;
     onClose: () => void;
 }
 
-export const CableContextMenu: React.FC<CableContextMenuProps> = ({ x, y, onEdit, onDelete, onConnect, onClose }) => {
+export const CableContextMenu: React.FC<CableContextMenuProps> = ({ x, y, onEdit, onProperties, onDelete, onConnect, onClose }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -46,10 +47,24 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({ x, y, onEdit
                 }}
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
             >
+                <div className="p-1.5 bg-sky-50 dark:bg-sky-900/30 rounded-md group-hover:bg-sky-100 dark:group-hover:bg-sky-900/50 transition-colors">
+                    <Edit className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                <span className="text-sm font-medium">{t('edit_cable') || 'Editar Cabo'}</span>
+            </button>
+
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onProperties();
+                    onClose();
+                }}
+                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
+            >
                 <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
                     <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-sm font-medium">Editar Cabo</span>
+                <span className="text-sm font-medium">{t('properties') || 'Propriedades'}</span>
             </button>
 
             <button
