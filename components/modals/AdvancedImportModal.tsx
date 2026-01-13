@@ -250,18 +250,27 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             items.poles.filter(i => i.selected).length;
     }, [items]);
 
-    const handleConfirm = () => {
+    const [isImporting, setIsImporting] = useState(false);
+
+    const handleConfirm = async () => {
         if (invalidCount > 0) return;
 
-        // Prepare Data for Import
-        const exportData = {
-            cables: items.cables.filter(i => i.selected).map(c => ({ ...c, type: cableTypes.find(t => t.id === c.typeId) })),
-            ctos: items.ctos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
-            ceos: items.ceos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
-            poles: items.poles.filter(i => i.selected).map(p => ({ ...p, type: poleTypes.find(t => t.id === p.typeId) }))
-        };
+        setIsImporting(true);
+        try {
+            // Prepare Data for Import
+            const exportData = {
+                cables: items.cables.filter(i => i.selected).map(c => ({ ...c, type: cableTypes.find(t => t.id === c.typeId) })),
+                ctos: items.ctos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
+                ceos: items.ceos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
+                poles: items.poles.filter(i => i.selected).map(p => ({ ...p, type: poleTypes.find(t => t.id === p.typeId) }))
+            };
 
-        onImport(exportData);
+            await onImport(exportData);
+        } catch (error) {
+            console.error("Internal Import Error", error);
+        } finally {
+            setIsImporting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -517,11 +526,20 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                 </button>
                                 <button
                                     onClick={handleConfirm}
-                                    disabled={invalidCount > 0 || totalSelected === 0}
+                                    disabled={invalidCount > 0 || totalSelected === 0 || isImporting}
                                     className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95 transition-all"
                                 >
-                                    <FileUp className="w-5 h-5" />
-                                    <span>Confirmar Importação</span>
+                                    {isImporting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Importando...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FileUp className="w-5 h-5" />
+                                            <span>Confirmar Importação</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

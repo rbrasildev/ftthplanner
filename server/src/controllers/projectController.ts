@@ -60,8 +60,8 @@ export const createProject = async (req: Request, res: Response) => {
             const limits = company.plan.limits as any;
             if (limits.maxProjects && company._count.projects >= limits.maxProjects) {
                 return res.status(403).json({
-                    error: 'Project limit reached for your plan',
-                    details: `Max projects: ${limits.maxProjects}`
+                    error: 'Limite de projetos atingido para seu plano',
+                    details: `Máximo de projetos: ${limits.maxProjects}`
                 });
             }
         }
@@ -328,12 +328,12 @@ export const syncProject = async (req: Request, res: Response) => {
 
             if (deltaCTO > 0 && maxCTOs > 0 && (totalGlobalCTOs + deltaCTO) > maxCTOs) {
                 console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${maxCTOs}`);
-                return res.status(403).json({ error: `CTO Limit Exceeded. Max: ${maxCTOs}. You have: ${totalGlobalCTOs}. Attempting to add: ${deltaCTO}.` });
+                return res.status(403).json({ error: `Limite de CTOs excedido. Máximo: ${maxCTOs}. Você tem: ${totalGlobalCTOs}. Tentando adicionar: ${deltaCTO}.` });
             }
 
             if (deltaPOP > 0 && maxPOPs > 0 && (totalGlobalPOPs + deltaPOP) > maxPOPs) {
                 console.error(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${maxPOPs}`);
-                return res.status(403).json({ error: `POP Limit Exceeded (${maxPOPs})` });
+                return res.status(403).json({ error: `Limite de POPs excedido (${maxPOPs})` });
             }
         }
 

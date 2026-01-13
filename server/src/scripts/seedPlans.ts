@@ -19,7 +19,7 @@ const plans = [
         limits: {
             maxProjects: 50,
             maxUsers: 10,
-            maxCTOs: 5,
+            maxCTOs: 500,
             maxPOPs: 10
         }
     },

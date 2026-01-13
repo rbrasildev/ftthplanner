@@ -12,6 +12,7 @@ interface D3CablesLayerProps {
     visible: boolean;
     onClick: (e: any, cable: CableData) => void;
     onDoubleClick?: (e: any, cable: CableData) => void;
+    onContextMenu?: (e: any, cable: CableData) => void;
 }
 
 // LOD Thresholds
@@ -24,7 +25,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     highlightedCableId,
     visible,
     onClick,
-    onDoubleClick
+    onDoubleClick,
+    onContextMenu
 }) => {
     const map = useMap();
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -211,6 +213,22 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
                     onClick(leafletEvent, d);
                     L.DomEvent.stopPropagation(event);
+                })
+                .on("contextmenu", (event, d) => {
+                    // Prevent default browser context menu
+                    event.preventDefault();
+                    if (onContextMenu) {
+                        const latlng = map.mouseEventToLatLng(event);
+                        const leafletEvent = {
+                            originalEvent: event,
+                            latlng: latlng,
+                            target: { getLatLng: () => latlng },
+                            // Add raw mouse coordinates for menu positioning
+                            containerPoint: map.mouseEventToContainerPoint(event)
+                        };
+                        onContextMenu(leafletEvent, d);
+                        L.DomEvent.stopPropagation(event);
+                    }
                 });
         };
 

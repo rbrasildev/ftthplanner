@@ -150,6 +150,7 @@ export default function App() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
     // State for highlighting cable on map when hovering in editor
+    const [multiConnectionIds, setMultiConnectionIds] = useState<Set<string>>(new Set());
     const [highlightedCableId, setHighlightedCableId] = useState<string | null>(null);
 
     // New Cable Creation State (Multipoint)
@@ -170,6 +171,7 @@ export default function App() {
         cables: any[];
         ctos: any[];
         ceos: any[];
+        poles: any[];
     } | null>(null);
 
     useEffect(() => user ? localStorage.setItem(STORAGE_KEY_USER, user) : localStorage.removeItem(STORAGE_KEY_USER), [user]);
@@ -323,25 +325,23 @@ export default function App() {
                     setIsSaving(false);
                     syncErrorCount.current++;
 
-                    // Only show toast on first 2 errors to avoid spam
-                    if (syncErrorCount.current <= 5) {
-                        if (e.response && e.response.status === 403) {
-                            const errorMsg = e.response.data?.error || 'Acesso negado';
+                    // Upgrade Modal for Limits (403) - ALWAYS show if blocked
+                    if (e.response && e.response.status === 403) {
+                        const errorMsg = e.response.data?.error || e.response.data?.details || 'Limite atingido ou acesso negado';
+                        console.log('Sync 403:', errorMsg);
 
-                            // Check for limit words
-                            if (errorMsg.includes('Limit') || errorMsg.includes('Limite')) {
-                                setUpgradeModalDetails(errorMsg);
-                                setShowUpgradeModal(true);
-                            } else {
-                                showToast(`Erro de sincronização: ${errorMsg}`, 'info');
-                            }
-                        } else {
-                            const detail = e.response?.data?.details || e.message;
-                            showToast(`Erro ao sincronizar: ${detail}`, 'info');
-                            // Alert explicitly for 500s so user can screenshot
-                            if (!e.response || e.response.status === 500) {
-                                console.error('SYNC CRITICAL FAILURE:', e.response?.data);
-                            }
+                        setUpgradeModalDetails(errorMsg);
+                        setShowUpgradeModal(true);
+                        return; // Exit early
+                    }
+
+                    // Only show generic toasts on first few errors
+                    if (syncErrorCount.current <= 5) {
+                        const detail = e.response?.data?.details || e.message;
+                        showToast(`Erro ao sincronizar: ${detail}`, 'info');
+
+                        if (!e.response || e.response.status === 500) {
+                            console.error('SYNC CRITICAL FAILURE:', e.response?.data);
                         }
                     }
                 });
@@ -740,9 +740,61 @@ export default function App() {
     }, [getCurrentNetwork, t, editingCTO]);
 
     const handleNodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
-        // Handle Pole click specifically if needed, or share same select logic
-        if (toolMode === 'view' || toolMode === 'move_node') {
+        if (toolMode === 'view') {
+            // Direct Open Editor - Do NOT select (avoids opening DetailsPanel)
+            const net = getCurrentNetwork();
+            if (type === 'CTO') {
+                const cto = net.ctos.find(c => c.id === id);
+                if (cto) {
+                    setEditingCTO(cto);
+                    setSelectedId(null); // Clear selection so DetailsPanel doesn't show
+                }
+            } else if (type === 'POP') {
+                const pop = net.pops.find(p => p.id === id);
+                if (pop) {
+                    setEditingPOP(pop);
+                    setSelectedId(null);
+                }
+            }
+        } else if (toolMode === 'move_node') {
             setSelectedId(id);
+        }
+    }, [toolMode, getCurrentNetwork]);
+
+    const handleEditNode = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        const net = getCurrentNetwork();
+        if (type === 'CTO') {
+            const cto = net.ctos.find(c => c.id === id);
+            if (cto) {
+                setEditingCTO(cto);
+                setSelectedId(null);
+            }
+        } else if (type === 'POP') {
+            const pop = net.pops.find(p => p.id === id);
+            if (pop) {
+                setEditingPOP(pop);
+                setSelectedId(null);
+            }
+        }
+    }, [getCurrentNetwork]);
+
+    const handleDeleteNode = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        if (type === 'CTO') handleDeleteCTO(id);
+        else if (type === 'POP') handleDeletePOP(id);
+    }, []); // Dependencies like handleDeleteCTO are closures, assuming stable enough or re-created with safe deps
+
+    const handleMoveNodeStart = useCallback((id: string) => {
+        setToolMode('move_node');
+        setSelectedId(id);
+        showToast(t('toast_mode_move_node') || 'Modo mover ativado', 'info');
+    }, [t]);
+
+    const handlePropertiesNode = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        if (toolMode === 'view') {
+            setSelectedId(id);
+            // Ensure full editor is closed so that Details Panel (Properties) shows up
+            setEditingCTO(null);
+            setEditingPOP(null);
         }
     }, [toolMode]);
 
@@ -893,6 +945,15 @@ export default function App() {
             const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
 
             showToast(t('toast_cable_split', { name: node.name }));
+
+            // Multi-connection: Add both parts to the active set to keep them editable
+            setMultiConnectionIds(prev => {
+                const newSet = new Set(prev);
+                newSet.add(cableId); // Original (modified)
+                newSet.add(newCableId); // New part
+                return newSet;
+            });
+
             return {
                 ...prev,
                 cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
@@ -1345,15 +1406,6 @@ export default function App() {
                 </div>
             )}
 
-            {/* Upgrade Modal */}
-            <UpgradePlanModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
-                limitDetails={upgradeModalDetails}
-                companyId={companyId || undefined}
-                email={userEmail || undefined}
-            />
-
             <Sidebar
                 user={user}
                 projects={projects}
@@ -1417,14 +1469,35 @@ export default function App() {
                     onAddPoint={handleAddPoint}
                     onNodeClick={handleNodeClick}
                     onMoveNode={handleMoveNode}
+                    onEditNode={handleEditNode}
+                    onDeleteNode={handleDeleteNode}
+                    onMoveNodeStart={handleMoveNodeStart}
+                    onPropertiesNode={handlePropertiesNode}
                     onCableStart={handleNodeForCableStable}
                     onCableEnd={handleNodeForCableStable}
                     onConnectCable={handleConnectCable}
                     onUpdateCableGeometry={handleUpdateCableGeometry}
+                    multiConnectionIds={multiConnectionIds}
+                    previewImportData={previewImportData}
                     onCableClick={(id) => {
+                        // Left click in view mode: Just select (or do nothing to avoid annoying popups)
+                        if (toolMode === 'view') {
+                            setSelectedId(id);
+                        }
+                    }}
+                    onEditCable={(id) => {
                         if (toolMode === 'view') {
                             setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
+                            // Also clear any previous selection
+                            setSelectedId(null);
                         }
+                    }}
+                    onDeleteCable={handleDeleteCable}
+                    onInitConnection={(id) => {
+                        setToolMode('connect_cable');
+                        // Start with this cable selected for connection
+                        setMultiConnectionIds(new Set([id]));
+                        showToast(t('toast_select_next_cable') || 'Selecione outro cabo para conectar');
                     }}
                     // Pass OTDR Result Point to MapView to render marker
                     otdrResult={otdrResult}
@@ -1463,6 +1536,7 @@ export default function App() {
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
                         <button
                             onClick={() => {
+                                setMultiConnectionIds(new Set());
                                 setToolMode('view');
                                 previousNetworkState.current = null; // Clear backup
                                 showToast(t('changes_saved') || 'Alterações Salvas!');
@@ -1655,9 +1729,18 @@ export default function App() {
                         showToast('Importação realizada com sucesso!', 'success');
                         setIsAdvancedImportOpen(false);
                         setPreviewImportData(null);
-                    } catch (error) {
+                    } catch (error: any) {
                         console.error("Import failed", error);
-                        showToast('Erro ao importar.', 'error');
+
+                        // Limit Check Handler
+                        if (error.response && error.response.status === 403) {
+                            const errorMsg = error.response.data?.error || error.response.data?.details || 'Acesso negado';
+                            setUpgradeModalDetails(errorMsg);
+                            setShowUpgradeModal(true);
+                            // Do not show generic error toast if it's a limit issue
+                        } else {
+                            showToast('Erro ao importar.', 'error');
+                        }
                     } finally {
                         setIsLoadingProjects(false);
                     }
@@ -1822,6 +1905,14 @@ export default function App() {
                 </div>
             )}
 
+            {/* Upgrade Modal (Moved to bottom to ensure z-index over other modals) */}
+            <UpgradePlanModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                limitDetails={upgradeModalDetails}
+                companyId={companyId || undefined}
+                email={userEmail || undefined}
+            />
         </div>
     );
 }

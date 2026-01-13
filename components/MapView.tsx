@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMa
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
+import { CableContextMenu } from './CableContextMenu';
+import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond, UtilityPole } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
@@ -235,7 +237,7 @@ const startPointIcon = L.divIcon({
 
 const CTOMarker = React.memo(({
     cto, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd
+    onDragStart, onDrag, onDragEnd, onContextMenu
 }: {
     cto: CTOData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'CTO') => void,
@@ -245,7 +247,8 @@ const CTOMarker = React.memo(({
     cableStartPoint: any,
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void
+    onDragEnd: () => void,
+    onContextMenu: (e: any, id: string, type: 'CTO') => void
 }) => {
     const icon = useMemo(() =>
         createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color),
@@ -261,6 +264,12 @@ const CTOMarker = React.memo(({
                 onNodeClick(cto.id, 'CTO');
             }
         },
+        contextmenu: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            if (mode === 'view') {
+                onContextMenu(e, cto.id, 'CTO');
+            }
+        },
         dragstart: () => onDragStart(cto.id),
         drag: (e: any) => {
             const pos = e.target.getLatLng();
@@ -272,7 +281,7 @@ const CTOMarker = React.memo(({
             const position = marker.getLatLng();
             onMoveNode(cto.id, position.lat, position.lng);
         }
-    }), [mode, cto.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd]);
+    }), [mode, cto.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
 
     return (
         <Marker
@@ -290,7 +299,7 @@ const CTOMarker = React.memo(({
 
 const POPMarker = React.memo(({
     pop, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd
+    onDragStart, onDrag, onDragEnd, onContextMenu
 }: {
     pop: POPData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'POP') => void,
@@ -300,7 +309,8 @@ const POPMarker = React.memo(({
     cableStartPoint: any,
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void
+    onDragEnd: () => void,
+    onContextMenu: (e: any, id: string, type: 'POP') => void
 }) => {
     const icon = useMemo(() =>
         createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size),
@@ -316,6 +326,12 @@ const POPMarker = React.memo(({
                 onNodeClick(pop.id, 'POP');
             }
         },
+        contextmenu: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            if (mode === 'view') {
+                onContextMenu(e, pop.id, 'POP');
+            }
+        },
         dragstart: () => onDragStart(pop.id),
         drag: (e: any) => {
             const pos = e.target.getLatLng();
@@ -327,7 +343,7 @@ const POPMarker = React.memo(({
             const position = marker.getLatLng();
             onMoveNode(pop.id, position.lat, position.lng);
         }
-    }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd]);
+    }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
 
     return (
         <Marker
@@ -345,14 +361,15 @@ const POPMarker = React.memo(({
 
 const PoleMarker = React.memo(({
     pole, isSelected, showLabels, mode, onNodeClick, onMoveNode,
-    onDragStart, onDrag, onDragEnd
+    onDragStart, onDrag, onDragEnd, onContextMenu
 }: {
     pole: PoleData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'Pole') => void,
     onMoveNode: (id: string, lat: number, lng: number) => void,
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void
+    onDragEnd: () => void,
+    onContextMenu: (e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => void
 }) => {
     const icon = useMemo(() =>
         createPoleIcon(pole.name, isSelected, pole.status, showLabels),
@@ -363,6 +380,12 @@ const PoleMarker = React.memo(({
             L.DomEvent.stopPropagation(e);
             if (mode === 'view' || mode === 'move_node') {
                 onNodeClick(pole.id, 'Pole');
+            }
+        },
+        contextmenu: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            if (mode === 'view') {
+                onContextMenu(e, pole.id, 'Pole');
             }
         },
         dragstart: () => onDragStart(pole.id),
@@ -376,7 +399,7 @@ const PoleMarker = React.memo(({
             const position = marker.getLatLng();
             onMoveNode(pole.id, position.lat, position.lng);
         }
-    }), [mode, pole.id, isSelected, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd]);
+    }), [mode, pole.id, isSelected, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
 
     return (
         <Marker
@@ -709,7 +732,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr';
+    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -738,6 +761,14 @@ interface MapViewProps {
         ceos: any[];
         poles: any[];
     } | null;
+    multiConnectionIds?: Set<string>;
+    onEditCable?: (cableId: string) => void;
+    onDeleteCable?: (cableId: string) => void;
+    onInitConnection?: (cableId: string) => void;
+    onEditNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    onPropertiesNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
 }
 
 const noOp = () => { };
@@ -746,8 +777,8 @@ export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
-    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onToggleLabels,
-    previewImportData
+    onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onDeleteCable, onInitConnection, onToggleLabels,
+    previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -785,6 +816,8 @@ export const MapView: React.FC<MapViewProps> = ({
         setDragState({ isDragging: true, currentPosition: null, tetherPoints: tethers });
     }, []); // No dependency on 'cables'
 
+
+
     const handlePointDragStart = useCallback((cableId: string, index: number) => {
         const cable = cablesRef.current.find(c => c.id === cableId);
         if (!cable) return;
@@ -810,6 +843,12 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
     // Filter visible elements using useMemo for performance
+    const allActiveCableIds = useMemo(() => {
+        const set = new Set(multiConnectionIds);
+        if (activeCableId) set.add(activeCableId);
+        return set;
+    }, [multiConnectionIds, activeCableId]);
+
     const visibleCables = useMemo(() => {
         if (!showCables) return [];
 
@@ -827,26 +866,21 @@ export const MapView: React.FC<MapViewProps> = ({
             // Optimization: Check if at least one point is visible
             // This handles most cases. For very long cables passing through but with no points inside, 
             // strict intersection is harder but this is a good trade-off for speed.
-            // We check start, middle, and end to be safer? 
-            // Checking ALL points is O(N*M), but M is small (points per cable).
-            // For 71k cables, simple loop is fast enough in JS engine.
-
-            // NOTE: D3 Layer can handle more, but filtering helps D3 performance too.
-            // Let's keep this filtering logic.
             for (const coord of cable.coordinates) {
                 // Safety check for valid coordinates
                 if (!coord || typeof coord.lat !== 'number' || typeof coord.lng !== 'number' || isNaN(coord.lat) || isNaN(coord.lng)) continue;
-
                 if (paddedBounds.contains(coord)) return true;
             }
             return false;
         });
     }, [showCables, cables, mapBoundsState]);
 
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole' } | null>(null);
+
     const activeCable = useMemo(() => cables.find(c => c.id === activeCableId), [cables, activeCableId]);
 
     // Cables visible in D3 layer (everything EXCEPT the one being edited/active)
-    const d3Cables = useMemo(() => visibleCables.filter(c => c.id !== activeCableId), [visibleCables, activeCableId]);
+    const d3Cables = useMemo(() => visibleCables.filter(c => !allActiveCableIds.has(c.id)), [visibleCables, allActiveCableIds]);
 
 
     const visibleCTOs = useMemo(() => {
@@ -888,8 +922,25 @@ export const MapView: React.FC<MapViewProps> = ({
             setActiveCableId(cable.id);
         } else if ((mode === 'view' || mode === 'otdr') && onCableClick) {
             onCableClick(cable.id);
+            // NOTE: Logic moved to App.tsx. Left click in View Mode now only Selects (Highlights).
+            // Right click (ContextMenu) is used to Edit.
         }
     }, [mode, onCableClick]);
+
+    const handleCableContextMenu = useCallback((e: any, cable: CableData) => {
+        // e.containerPoint comes from D3 layer or needs to be calculated
+        // Use clientX/Y directly for fixed position menu if using Portal or fixed overlay
+        const clientX = e.originalEvent.clientX;
+        const clientY = e.originalEvent.clientY;
+
+        setContextMenu({ x: clientX, y: clientY, id: cable.id, type: 'CABLE' });
+    }, []);
+
+    const handleNodeContextMenu = useCallback((e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        const clientX = e.originalEvent.clientX;
+        const clientY = e.originalEvent.clientY;
+        setContextMenu({ x: clientX, y: clientY, id: id, type: type });
+    }, []);
 
     const handleCableDoubleClickInternal = useCallback((e: any, cable: CableData) => {
         L.DomEvent.stopPropagation(e);
@@ -1044,43 +1095,40 @@ export const MapView: React.FC<MapViewProps> = ({
                     visible={showCables}
                     onClick={handleCableClickInternal}
                     onDoubleClick={handleCableDoubleClickInternal}
+                    onContextMenu={handleCableContextMenu}
                 />
 
                 {/* Render ONLY active cable with React-Leaflet for editing interactions (drag handles) */}
-                {activeCable && (
-                    <>
-                        {/* PANE HIERARCHY:
-                            z-350: D3 Cables (Static) (Already configured above)
-                            z-400: Default Overlay Pane
-                            z-550: Active Cable Line (Below Markers but above D3)
-                            z-600: Markers (CTOs/POPs)
-                            z-700: Active Cable Handles (ABOVE Markers for clickability)
-                        */}
-                        <Pane name="cable-edit" style={{ zIndex: 550 }}>
-                            <CablePolyline
-                                key={activeCable.id}
-                                cable={activeCable}
-                                isLit={litCableIds.has(activeCable.id)}
-                                isActive={true}
-                                isHighlighted={highlightedCableId === activeCable.id}
-                                mode={mode}
-                                t={t}
-                                onClick={handleCableClickInternal}
-                                onUpdateGeometry={onUpdateCableGeometry}
-                                onConnect={handleConnectWrapper}
-                                snapDistance={snapDistance}
-                                ctos={ctos}
-                                pops={pops}
-                                onPointDragStart={handlePointDragStart}
-                                onDrag={handleDrag}
-                                onDragEnd={handleDragEnd}
-                                // Pass specific pane for handles to be ABOVE markers
-                                handlePane="cable-handles"
-                            />
-                        </Pane>
-                        <Pane name="cable-handles" style={{ zIndex: 700 }} />
-                    </>
-                )}
+                {/* Render ALL active cables from multi-connection set + current active */}
+                {Array.from(allActiveCableIds).map(id => {
+                    const cable = cables.find(c => c.id === id);
+                    if (!cable) return null;
+                    return (
+                        <React.Fragment key={cable.id}>
+                            <Pane name={`cable-edit-${cable.id}`} style={{ zIndex: 550 }}>
+                                <CablePolyline
+                                    cable={cable}
+                                    isLit={litCableIds.has(cable.id)}
+                                    isActive={true}
+                                    isHighlighted={highlightedCableId === cable.id}
+                                    mode={mode}
+                                    t={t}
+                                    onClick={handleCableClickInternal}
+                                    onUpdateGeometry={onUpdateCableGeometry}
+                                    onConnect={handleConnectWrapper}
+                                    snapDistance={snapDistance}
+                                    ctos={ctos}
+                                    pops={pops}
+                                    onPointDragStart={handlePointDragStart}
+                                    onDrag={handleDrag}
+                                    onDragEnd={handleDragEnd}
+                                    handlePane="cable-handles"
+                                />
+                            </Pane>
+                        </React.Fragment>
+                    );
+                })}
+                <Pane name="cable-handles" style={{ zIndex: 700 }} />
 
 
                 {mode === 'draw_cable' && drawingPath.length > 0 && (
@@ -1131,6 +1179,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
 
@@ -1149,6 +1198,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
                         {visiblePoles.map(pole => (
@@ -1163,6 +1213,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
                     </MarkerClusterGroup>
@@ -1183,6 +1234,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
 
@@ -1201,6 +1253,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
                         {visiblePoles.map(pole => (
@@ -1215,6 +1268,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
+                                onContextMenu={handleNodeContextMenu}
                             />
                         ))}
                     </>
@@ -1261,6 +1315,52 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
             </MapContainer>
+
+            {/* Context Menu for Cables */}
+            {contextMenu && contextMenu.type === 'CABLE' && (
+                <CableContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onEdit={() => {
+                        if (onEditCable) onEditCable(contextMenu.id);
+                        setContextMenu(null);
+                    }}
+                    onDelete={() => {
+                        if (onDeleteCable) onDeleteCable(contextMenu.id);
+                        setContextMenu(null);
+                    }}
+                    onConnect={() => {
+                        if (onInitConnection) onInitConnection(contextMenu.id);
+                        setContextMenu(null);
+                    }}
+                    onClose={() => setContextMenu(null)}
+                />
+            )}
+
+            {contextMenu && contextMenu.type !== 'CABLE' && (
+                <NodeContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    type={contextMenu.type as 'CTO' | 'POP' | 'Pole'}
+                    onEdit={() => {
+                        if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
+                        setContextMenu(null);
+                    }}
+                    onProperties={onPropertiesNode ? () => {
+                        onPropertiesNode(contextMenu.id, contextMenu.type as any);
+                        setContextMenu(null);
+                    } : undefined}
+                    onDelete={() => {
+                        if (onDeleteNode) onDeleteNode(contextMenu.id, contextMenu.type as any);
+                        setContextMenu(null);
+                    }}
+                    onMove={() => {
+                        if (onMoveNodeStart) onMoveNodeStart(contextMenu.id, contextMenu.type as any);
+                        setContextMenu(null);
+                    }}
+                    onClose={() => setContextMenu(null)}
+                />
+            )}
         </div>
     );
 };

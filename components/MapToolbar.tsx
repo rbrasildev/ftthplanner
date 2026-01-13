@@ -20,6 +20,22 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
     onConnectClick
 }) => {
     const { t } = useLanguage();
+    const menuRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (activeMenuId === 'pole_menu' && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setActiveMenuId(null);
+            }
+        };
+
+        if (activeMenuId === 'pole_menu') {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [activeMenuId, setActiveMenuId]);
 
     const ToolButton = ({ mode, icon: Icon, label, onClick }: { mode?: string, icon: any, label: string, onClick?: () => void }) => {
         const isActive = toolMode === mode;
@@ -46,7 +62,6 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {/* Group 1: Navigation */}
             <div className="flex items-center gap-1 pr-2 border-r border-slate-200 dark:border-slate-700/50">
                 <ToolButton mode="view" icon={MousePointer2} label={t('sidebar_select')} />
-                <ToolButton mode="move_node" icon={Move} label={t('sidebar_move')} />
             </div>
 
             {/* Group 2: Construction */}
@@ -55,7 +70,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 <ToolButton mode="add_pop" icon={Building2} label="POP" />
 
                 {/* Pole Dropdown Trigger */}
-                <div className="relative">
+                <div className="relative" ref={menuRef}>
                     <ToolButton
                         mode="add_pole"
                         icon={UtilityPole}
@@ -100,7 +115,6 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {/* Group 3: Cabling */}
             <div className="flex items-center gap-1 pl-2">
                 <ToolButton mode="draw_cable" icon={Activity} label="Cabo" />
-                <ToolButton mode="connect_cable" icon={Unplug} label="Conectar" onClick={onConnectClick} />
             </div>
 
         </div>

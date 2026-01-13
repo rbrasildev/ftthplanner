@@ -83,6 +83,7 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [loadingSecret, setLoadingSecret] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
 
     // Fetch Client Secret (create subscription) when modal opens
     useEffect(() => {
@@ -104,8 +105,7 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                         setClientSecret(data.clientSecret);
                     } else if (data.status === 'active' || data.status === 'trialing') {
                         // Already active or trial (no payment needed yet)
-                        onClose();
-                        alert(`Assinatura ativa! Status: ${data.status}`);
+                        setSuccess(true);
                     } else {
                         throw new Error(`Status não tratado: ${data.status} (Sem segredo de pagamento)`);
                     }
@@ -142,43 +142,65 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-900'}`}>
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Assinar {planName}</h2>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className={`w-full max-w-md p-6 rounded-2xl shadow-2xl transition-all ${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-900'}`}>
 
-                <div className="mb-4">
-                    <p className="text-sm opacity-80">Total a pagar: R$ {price.toFixed(2)} / mês</p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded mb-4 text-sm">
-                        {error}
-                    </div>
-                )}
-
-                {loadingSecret ? (
-                    <div className="flex flex-col items-center justify-center py-8 gap-3">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                        <p className="text-sm opacity-70">Preparando pagamento seguro...</p>
-                    </div>
-                ) : clientSecret ? (
-                    <Elements options={options} stripe={stripePromise}>
-                        <CheckoutForm
-                            onSuccess={() => {
-                                alert('Pagamento Confirmado!');
+                {success ? (
+                    <div className="flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-300">
+                        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6">
+                            <Check className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2 text-slate-800 dark:text-white">Pagamento Confirmado!</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mb-8">
+                            Sua assinatura foi atualizada com sucesso. Você já pode aproveitar todos os recursos do seu novo plano.
+                        </p>
+                        <button
+                            onClick={() => {
                                 onClose();
-                                window.location.reload(); // Refresh to update status
+                                window.location.reload();
                             }}
-                            onError={(msg) => setError(msg)}
-                        />
-                    </Elements>
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-105 active:scale-95"
+                        >
+                            Continuar
+                        </button>
+                    </div>
                 ) : (
-                    !error && <div className="text-center py-4">Inicializando...</div>
+                    <>
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold">Assinar {planName}</h2>
+                                <p className="text-sm opacity-70 mt-1">Total: R$ {price.toFixed(2)} / mês</p>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-xl mb-6 text-sm flex gap-3 items-start">
+                                <div className="p-1 bg-red-100 dark:bg-red-800 rounded-full shrink-0">
+                                    <X className="w-3 h-3" />
+                                </div>
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        {loadingSecret ? (
+                            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                <Loader2 className="w-10 h-10 animate-spin text-sky-500" />
+                                <p className="text-sm font-medium text-slate-500">Iniciando pagamento seguro...</p>
+                            </div>
+                        ) : clientSecret ? (
+                            <Elements options={options} stripe={stripePromise}>
+                                <CheckoutForm
+                                    onSuccess={() => setSuccess(true)}
+                                    onError={(msg) => setError(msg)}
+                                />
+                            </Elements>
+                        ) : (
+                            !error && <div className="text-center py-8 text-slate-500">Inicializando...</div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
