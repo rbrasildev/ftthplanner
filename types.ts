@@ -21,7 +21,7 @@ export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
   'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
   'NOT_DEPLOYED': '#ef4444', // Red (Não implantado)
-  'DEPLOYED': '#3b82f6', // Blue (Implantado)
+  'DEPLOYED': '#30b15fff', // Blue (Implantado)
   'CERTIFIED': '#22c55e', // Green (Certificado)
 };
 

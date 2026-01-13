@@ -75,6 +75,7 @@ export default function App() {
     }, [token]);
 
     const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+    const [selectedRegisterPlan, setSelectedRegisterPlan] = useState<string | undefined>(undefined);
 
     // Projects List (Summaries)
     const [projects, setProjects] = useState<Project[]>([]);
@@ -117,6 +118,7 @@ export default function App() {
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
+    const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -201,6 +203,11 @@ export default function App() {
                         setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
                     } else {
                         setSubscriptionExpiresAt(null);
+                    }
+                    if (data.user.company?.subscription?.cancelAtPeriodEnd) {
+                        setCancelAtPeriodEnd(true);
+                    } else {
+                        setCancelAtPeriodEnd(false);
                     }
                     if (data.user.company?.id) {
                         setCompanyId(data.user.company.id);
@@ -1177,12 +1184,12 @@ export default function App() {
         }
     };
 
-    const handleRegister = async (username: string, email: string, password?: string, companyName?: string) => {
+    const handleRegister = async (username: string, email: string, password?: string, companyName?: string, planName?: string) => {
         try {
             // Re-using the logic from authService if we had a separate register, 
             // but authService.login already has a silent register.
             // However, we want to be explicit here.
-            await api.post('/auth/register', { username, email, password: password || "123456", companyName });
+            await api.post('/auth/register', { username, email, password: password || "123456", companyName, planName });
             showToast(t('registration_success'), 'success');
             setAuthView('login');
         } catch (e) {
@@ -1210,7 +1217,7 @@ export default function App() {
 
     if (!user) {
         if (authView === 'landing') {
-            return <LandingPage onLoginClick={() => setAuthView('login')} onRegisterClick={() => setAuthView('register')} />;
+            return <LandingPage onLoginClick={() => setAuthView('login')} onRegisterClick={(planName) => { setSelectedRegisterPlan(planName); setAuthView('register'); }} />;
         }
         if (authView === 'register') {
             return (
@@ -1218,6 +1225,7 @@ export default function App() {
                     onRegister={handleRegister}
                     onBackToLogin={() => setAuthView('login')}
                     onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
+                    initialPlan={selectedRegisterPlan}
                 />
             );
         }
@@ -1254,6 +1262,7 @@ export default function App() {
                     userPlan={userPlan}
                     userPlanType={userPlanType}
                     subscriptionExpiresAt={subscriptionExpiresAt}
+                    cancelAtPeriodEnd={cancelAtPeriodEnd}
                     projects={projects}
                     onOpenProject={(id) => {
                         if (companyStatus === 'SUSPENDED') {

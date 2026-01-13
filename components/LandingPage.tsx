@@ -4,7 +4,7 @@ import { useLanguage } from '../LanguageContext';
 
 interface LandingPageProps {
     onLoginClick: () => void;
-    onRegisterClick: () => void;
+    onRegisterClick: (planName?: string) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick }) => {
@@ -19,8 +19,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
                 const res = await fetch(`${baseUrl}/api/saas/public/plans`);
                 if (res.ok) {
-                    const data = await res.json();
-                    setPlans(data);
+                    const msg = await res.json();
+                    // Filter out Free Plan as requested ("Só plano trial")
+                    setPlans(msg.filter((p: any) => p.name !== 'Plano Grátis'));
                 }
             } catch (err) {
                 console.error("Failed to load public plans", err);
@@ -72,7 +73,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 {t('landing_login')}
                             </button>
                             <button
-                                onClick={onRegisterClick}
+                                onClick={() => onRegisterClick()}
                                 className="group bg-white text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                             >
                                 {t('landing_get_started')}
@@ -132,7 +133,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center mb-16">
                         <button
-                            onClick={onRegisterClick}
+                            onClick={() => onRegisterClick()}
                             className="w-full sm:w-auto px-8 py-4 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-sky-600/30 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                         >
                             {t('landing_start_trial')}
@@ -325,7 +326,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         </div>
                                     ))}
                                 </div>
-                                <button className={`w-full py-3 rounded-xl font-bold transition-all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+                                <button onClick={() => onRegisterClick(plan.name)} className={`w-full py-3 rounded-xl font-bold transition-all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
                                     {t('plan_cta')}
                                 </button>
                             </div>
@@ -471,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         {t('landing_cta_desc')}
                     </p>
                     <button
-                        onClick={onRegisterClick}
+                        onClick={() => onRegisterClick()}
                         className="px-10 py-5 bg-white text-sky-600 rounded-2xl font-bold text-xl shadow-2xl hover:bg-sky-50 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
                     >
                         {t('landing_cta_btn')}

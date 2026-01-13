@@ -40,6 +40,20 @@ router.post('/create-subscription', async (req, res) => {
     }
 });
 
+// POST /api/billing/cancel-subscription
+router.post('/cancel-subscription', async (req, res) => {
+    try {
+        const { companyId } = req.body;
+        if (!companyId) return res.status(400).json({ error: 'Company ID is required' });
+
+        const result = await StripeService.cancelSubscription(companyId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Cancel Subscription Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to cancel subscription' });
+    }
+});
+
 // POST /api/billing/webhook
 // This route needs raw body for signature verification.
 // Ensure generic express.json() middleware doesn't pre-parse this if configured globally without exclusion.

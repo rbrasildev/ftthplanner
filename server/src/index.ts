@@ -21,11 +21,11 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware de log ultra-simples no topo
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
-    next();
-});
+// Middleware de log ultra-simples no topo (REMOVED for cleanup)
+// app.use((req, res, next) => {
+//     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+//     next();
+// });
 
 
 // CORS mais permissivo possível para teste

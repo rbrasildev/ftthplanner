@@ -493,6 +493,18 @@ const translations = {
     'feature_unlimited': 'Unlimited',
     'plan_cta': 'Get Started',
     'most_popular': 'Most Popular',
+    'feature_1_project': '1 Project',
+    'feature_1_user': '1 User',
+    'feature_basic_maps': 'Basic Maps',
+    'feature_5_projects': '5 Projects',
+    'feature_3_users': '3 Users',
+    'feature_email_support': 'Email Support',
+    'feature_unlimited_all': 'Unlimited Everything',
+    'feature_priority_support': 'Priority Support',
+    'feature_auto_backup': 'Automatic Backup',
+    'feature_projects_unlimited': 'Unlimited Projects',
+    'feature_users_unlimited': 'Unlimited Users',
+    'feature_ctos_unlimited': 'Unlimited CTOs',
 
     // Backup
     'backup_title': 'Backup Manager',
@@ -613,6 +625,18 @@ const translations = {
     'feature_unlimited': 'Ilimitado',
     'plan_cta': 'Começar Agora',
     'most_popular': 'Mais Popular',
+    'feature_1_project': '1 Projeto',
+    'feature_1_user': '1 Usuário',
+    'feature_basic_maps': 'Mapas Básicos',
+    'feature_5_projects': '5 Projetos',
+    'feature_3_users': '3 Usuários',
+    'feature_email_support': 'Suporte por Email',
+    'feature_unlimited_all': 'Tudo Ilimitado',
+    'feature_priority_support': 'Suporte Prioritário',
+    'feature_auto_backup': 'Backup Automático',
+    'feature_projects_unlimited': 'Projetos Ilimitados',
+    'feature_users_unlimited': 'Usuários Ilimitados',
+    'feature_ctos_unlimited': 'CTOs Ilimitados',
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
@@ -874,6 +898,7 @@ const translations = {
     'delete_pop_btn': 'Deletar POP',
 
     // Cable Editor
+    'edit_cable': 'Editar Cabo',
 
     'cable_name': 'Nome do Cabo',
     'fiber_count': 'Qtd. Fibras',

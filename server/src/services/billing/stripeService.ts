@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    // apiVersion defaulted to latest supported by SDK
+    apiVersion: '2023-10-16' as any, // Lock to a stable version knowing we need PI on invoice
 });
 
 interface CreateSubscriptionParams {
@@ -45,11 +45,6 @@ export class StripeService {
 
         let customerId = uniqueCompany.stripeCustomerId;
 
-        // DEBUG: Verify keys and IDs
-        console.log(`[StripeService] Creating sub for Company: ${companyId}`);
-        console.log(`[StripeService] Price ID: ${priceId}`);
-        console.log(`[StripeService] Key Prefix: ${process.env.STRIPE_SECRET_KEY?.substring(0, 8)}...`);
-
         // Ensure customer exists
         if (!customerId) {
             customerId = await this.createCustomer(companyId, email, uniqueCompany.name);
@@ -75,12 +70,13 @@ export class StripeService {
             items: [{ price: priceId }],
             payment_behavior: 'default_incomplete',
             payment_settings: { save_default_payment_method: 'on_subscription' },
+            collection_method: 'charge_automatically',
             expand: ['latest_invoice.payment_intent'],
             trial_period_days: trialDays > 0 ? trialDays : undefined,
             metadata: { companyId },
         });
 
-        // Store basic sub info (status 'incomplete' initially)
+        // Store basic sub info
         await this.upsertSubscriptionInDb(subscription, companyId);
 
         // If active or trialing immediately (no payment action needed)
@@ -88,13 +84,40 @@ export class StripeService {
             return { subscriptionId: subscription.id, status: subscription.status };
         }
 
-        // Requires payment action (SCA, etc.) or just initial payment
-        const invoice = subscription.latest_invoice as any;
+        // Requires payment action
+        let invoice = subscription.latest_invoice as any;
+
+        // Ensure invoice object is available
+        if (typeof invoice === 'string') {
+            invoice = await stripe.invoices.retrieve(invoice, { expand: ['payment_intent'] });
+        } else if (!invoice.payment_intent) {
+            invoice = await stripe.invoices.retrieve(invoice.id, { expand: ['payment_intent'] });
+        }
+
+        // RETRY LOGIC: Ensure PaymentIntent is available
+        let attempts = 0;
+        while (!invoice.payment_intent && attempts < 3) {
+            attempts++;
+            await new Promise(r => setTimeout(r, 1000));
+            invoice = await stripe.invoices.retrieve(invoice.id, { expand: ['payment_intent'] });
+
+            // Force finalization if still draft
+            if (invoice.status === 'draft') {
+                invoice = await stripe.invoices.finalizeInvoice(invoice.id, { expand: ['payment_intent'] });
+            }
+        }
+
         const paymentIntent = invoice?.payment_intent as any;
+        const clientSecret = paymentIntent?.client_secret;
+
+        if (!clientSecret && subscription.status === 'incomplete') {
+            // Fallback error if still missing, but cleaner
+            throw new Error(`Falha no pagamento: Segredo de pagamento não gerado (Invoice: ${invoice.id}). Tente novamente.`);
+        }
 
         return {
             subscriptionId: subscription.id,
-            clientSecret: paymentIntent?.client_secret,
+            clientSecret: clientSecret,
             status: subscription.status,
         };
     }
@@ -130,7 +153,14 @@ export class StripeService {
                 process.env.STRIPE_WEBHOOK_SECRET as string
             );
         } catch (err: any) {
-            console.error(`Webhook signature verification failed: ${err.message}`);
+            const secret = process.env.STRIPE_WEBHOOK_SECRET || '';
+            console.error(`[Webhook Debug] Signature Verification Failed!`);
+            console.error(`- Secret in ENV: '${secret.substring(0, 10)}...' (Total Length: ${secret.length})`);
+            console.error(`- Header Signature: '${signature}'`);
+            console.error(`- Raw Body Type: ${typeof rawBody}`);
+            console.error(`- Raw Body Length: ${Buffer.isBuffer(rawBody) ? rawBody.length : (rawBody as any)?.length}`);
+            console.error(`- Raw Body Preview: ${(rawBody as any)?.toString?.().substring(0, 50)}...`);
+            console.error(`- Error Message: ${err.message}`);
             return false;
         }
 
@@ -177,16 +207,43 @@ export class StripeService {
                 stripeSubscriptionId: stripeSub.id,
                 stripeCustomerId: stripeSub.customer as string,
                 status: stripeSub.status,
-                currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+                currentPeriodEnd: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
             },
             update: {
                 stripeSubscriptionId: stripeSub.id,
                 status: stripeSub.status,
-                currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+                currentPeriodEnd: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
             }
         });
+
+        // Sync Plan if active
+        // Retrieve the price ID from the subscription items
+        const priceId = stripeSub.items?.data?.[0]?.price?.id;
+
+        if (priceId && ['active', 'trialing'].includes(stripeSub.status)) {
+            const plan = await prisma.plan.findFirst({
+                where: {
+                    OR: [
+                        { stripePriceId: priceId },
+                        { stripePriceIdYearly: priceId }
+                    ]
+                }
+            });
+            if (plan) {
+                console.log(`[StripeService] Syncing Company ${companyId} to Plan ${plan.name} (${plan.id})`);
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        planId: plan.id,
+                        subscriptionExpiresAt: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : null
+                    }
+                });
+            } else {
+                console.warn(`[StripeService] Plan not found for Price ID: ${priceId}`);
+            }
+        }
     }
 
     // Helper: Sync Company Status

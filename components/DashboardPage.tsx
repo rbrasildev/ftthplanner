@@ -9,6 +9,7 @@ import { SplitterRegistration } from './registrations/SplitterRegistration';
 import CableRegistration from './registrations/CableRegistration';
 import BoxRegistration from './registrations/BoxRegistration';
 
+import { AccountSettingsModal } from './AccountSettingsModal';
 import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
@@ -22,6 +23,7 @@ interface DashboardPageProps {
   userPlan?: string;
   userPlanType?: string;
   subscriptionExpiresAt?: string | null;
+  cancelAtPeriodEnd?: boolean;
   projects: Project[];
   onOpenProject: (id: string) => void;
   onCreateProject: (name: string, center?: Coordinates, snapDistance?: number) => void;
@@ -88,6 +90,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   userPlan = 'Plano Grátis',
   userPlanType = 'STANDARD',
   subscriptionExpiresAt,
+  cancelAtPeriodEnd = false,
   projects,
   onOpenProject,
   onCreateProject,
@@ -111,6 +114,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   // State for expanded menus
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+
+  // Modal States
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -441,32 +447,45 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* User / Footer */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
+          <div className="flex items-start gap-3 mb-4 px-2">
+            <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 shrink-0 mt-0.5">
               {username.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{username}</p>
-              <div className="flex items-center gap-1.5 align-middle">
-                <span className={`inline-block w-2 h-2 rounded-full mt-0.5 ${userPlan === 'Plano Ilimitado' ? 'bg-purple-500' : userPlan === 'Plano Intermediário' ? 'bg-sky-500' : 'bg-emerald-500'}`}></span>
-                <div className="flex flex-col">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wide truncate leading-tight" title={userPlan}>{userPlan}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {subscriptionExpiresAt && userPlanType === 'TRIAL' && (
-                      <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wide leading-tight">
-                        Teste: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
-                      </p>
-                    )}
-                    {(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL') && onUpgradeClick && (
-                      <button
-                        onClick={onUpgradeClick}
-                        className="flex items-center gap-1 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded-full font-bold transition-colors w-fit shadow-sm shadow-indigo-900/20"
-                      >
-                        <Zap className="w-3 h-3" /> Upgrade
-                      </button>
-                    )}
-                  </div>
-                </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5">{username}</p>
+
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`inline-block w-1.5 h-1.5 rounded-full ${userPlan === 'Plano Ilimitado' ? 'bg-purple-500' : userPlan === 'Plano Intermediário' ? 'bg-sky-500' : 'bg-emerald-500'}`}></span>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide truncate font-medium" title={userPlan}>{userPlan}</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                {subscriptionExpiresAt && (userPlanType === 'TRIAL' || cancelAtPeriodEnd) && (
+                  <p className={`text-[9px] font-bold uppercase tracking-wide leading-tight ${userPlanType === 'TRIAL' ? 'text-amber-500' : 'text-red-500'}`}>
+                    {userPlanType === 'TRIAL' ? 'Teste' : 'Expira'}: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
+                  </p>
+                )}
+
+                {onUpgradeClick && (
+                  <button
+                    onClick={() => {
+                      if (userPlan === 'Plano Grátis' || userPlanType === 'TRIAL') {
+                        onUpgradeClick && onUpgradeClick();
+                      } else {
+                        setIsAccountSettingsOpen(true);
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg font-bold transition-all w-full shadow-sm border border-transparent 
+                        ${(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 hover:shadow-md'}`}
+                  >
+                    {(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
+                      ? <><Zap className="w-3 h-3" /> Fazer Upgrade</>
+                      : <><Settings className="w-3 h-3" /> Gerenciar Assinatura</>
+                    }
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1026,6 +1045,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         )
       }
+
+      {/* Account Settings Modal */}
+      <AccountSettingsModal
+        isOpen={isAccountSettingsOpen}
+        onClose={() => setIsAccountSettingsOpen(false)}
+        onManagePlan={() => {
+          setIsAccountSettingsOpen(false);
+          if (onUpgradeClick) onUpgradeClick();
+        }}
+        userData={{
+          username,
+          plan: userPlan,
+          planType: userPlanType,
+          expiresAt: subscriptionExpiresAt || null,
+          companyId: (projects[0] as any)?.companyId || 'UNKNOWN'
+        }}
+      />
 
     </div >
   );

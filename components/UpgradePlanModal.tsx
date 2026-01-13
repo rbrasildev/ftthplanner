@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Check, X, Star, Zap, Shield, Globe } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface Plan {
     id: string;
+    stripePriceId?: string;
+    stripePriceIdYearly?: string;
     name: string;
-    price: string;
+    price: string; // Formatted monthly price
+    priceRaw: number;
+    priceYearlyRaw?: number;
     features: string[];
     highlight?: boolean;
     icon: React.FC<any>;
@@ -18,7 +23,7 @@ interface UpgradePlanModalProps {
     limitDetails?: string;
 }
 
-// Icon mapping helper
+// Icon mapping helper (unchanged)
 const getPlanIcon = (index: number, name: string) => {
     const lower = name.toLowerCase();
     if (lower.includes('grátis') || lower.includes('free')) return Globe;
@@ -38,6 +43,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlanForBilling, setSelectedPlanForBilling] = useState<Plan | null>(null);
+    const { t } = useLanguage();
 
     useEffect(() => {
         if (isOpen) {
@@ -57,11 +63,14 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                             }
                         }
                         return {
-                            id: p.id, // Using DB ID which should map to Stripe Price ID or be looked up
-                            stripePriceId: p.stripePriceId || p.id, // Fallback
+                            id: p.id,
+                            stripePriceId: p.stripePriceId || p.id,
+                            stripePriceIdYearly: p.stripePriceIdYearly,
                             name: p.name,
+                            priceRaw: p.price,
+                            priceYearlyRaw: p.priceYearly,
                             price: p.price > 0 ? `R$ ${p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês` : 'Grátis',
-                            features: Array.isArray(features) ? features : [],
+                            features: Array.isArray(features) ? features.map((f: string) => t(f)) : [],
                             highlight: p.isRecommended,
                             icon: getPlanIcon(idx, p.name),
                             limits: p.limits
@@ -72,9 +81,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         const limits = (p as any).limits;
                         if (limits) {
                             const limitFeatures = [];
-                            if (limits.maxProjects) limitFeatures.push(limits.maxProjects >= 999999 ? 'Projetos Ilimitados' : `${limits.maxProjects} Projetos`);
-                            if (limits.maxUsers) limitFeatures.push(limits.maxUsers >= 999999 ? 'Usuários Ilimitados' : `${limits.maxUsers} Usuários`);
-                            if (limits.maxCTOs) limitFeatures.push(limits.maxCTOs >= 999999 ? 'CTOs Ilimitados' : `${limits.maxCTOs} CTOs`);
+                            if (limits.maxProjects) limitFeatures.push(limits.maxProjects >= 999999 ? t('feature_projects_unlimited') : t('feature_projects', { count: limits.maxProjects }));
+                            if (limits.maxUsers) limitFeatures.push(limits.maxUsers >= 999999 ? t('feature_users_unlimited') : t('feature_users', { count: limits.maxUsers }));
+                            if (limits.maxCTOs) limitFeatures.push(limits.maxCTOs >= 999999 ? t('feature_ctos_unlimited') : t('feature_ctos', { count: limits.maxCTOs }));
                             return { ...p, features: [...limitFeatures, ...p.features] };
                         }
                         return p;
@@ -89,17 +98,30 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
             };
             fetchPlans();
         }
-    }, [isOpen]);
+    }, [isOpen, t]);
 
     const handleSelectPlan = (plan: Plan) => {
-        if (plan.price === 'Grátis') {
+        if (plan.price === 'Grátis' && billingCycle === 'monthly') {
             onClose();
             return;
         }
+        // Force Monthly if Free plan has no yearly option (usually Free is just Free, no cycle)
+        if (plan.name.toLowerCase().includes('grátis')) {
+            onClose();
+            return;
+        }
+
         if (!companyId) {
             alert('Erro: ID da empresa não encontrado. Faça login novamente.');
             return;
         }
+
+        // Validation: If yearly selected but no yearly price exists
+        if (billingCycle === 'yearly' && !plan.stripePriceIdYearly) {
+            alert('O plano anual ainda não está disponível para esta opção.');
+            return;
+        }
+
         setSelectedPlanForBilling(plan);
     };
 
@@ -119,19 +141,24 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                             <X className="w-6 h-6" />
                         </button>
 
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mb-6 ring-4 ring-red-50 dark:ring-red-900/10">
-                            <Zap className="w-8 h-8" />
+                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ring-4 
+                            ${limitDetails
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-50 dark:ring-red-900/10'
+                                : 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 ring-sky-50 dark:ring-sky-900/10'}`}>
+                            {limitDetails ? <Shield className="w-8 h-8" /> : <Star className="w-8 h-8" />}
                         </div>
 
                         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
-                            {limitDetails ? "Limite Atingido!" : "Faça um Upgrade"}
+                            {limitDetails ? "Limite Atingido!" : (currentPlanName && !currentPlanName.toLowerCase().includes('grátis') ? "Gerenciar Assinatura" : "Faça um Upgrade")}
                         </h2>
                         <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-                            {limitDetails || "Você atingiu os limites do seu plano atual."} <br />
-                            Escolha um plano ideal para continuar expandindo sua rede.
+                            {limitDetails
+                                ? <>{limitDetails} <br /> Escolha um plano ideal para continuar expandindo.</>
+                                : "Confira as opções disponíveis e escolha o plano ideal para o seu crescimento."
+                            }
                         </p>
 
-                        {/* Simple Toggle for visual effect (functionality mocked) */}
+                        {/* Toggle */}
                         <div className="flex items-center justify-center gap-4 mt-8">
                             <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Mensal</span>
                             <button
@@ -151,6 +178,24 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {plans.map((plan) => {
                                 const isCurrent = currentPlanName === plan.name;
+
+                                // Calculate display price
+                                let displayPrice = plan.price; // Default monthly
+                                let priceSubtext = '/mês';
+
+                                if (billingCycle === 'yearly' && plan.priceYearlyRaw) {
+                                    // Yearly display
+                                    const yearlyTotal = plan.priceYearlyRaw;
+                                    // Show equivalent monthly price for comparison? Or just yearly full price?
+                                    // "R$ X/ano" is clearer for billing.
+                                    displayPrice = `R$ ${yearlyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                                    priceSubtext = '/ano';
+                                } else if (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) {
+                                    // Plan doesn't have yearly option
+                                    displayPrice = 'N/A';
+                                    priceSubtext = '';
+                                }
+
                                 return (
                                     <div
                                         key={plan.id}
@@ -159,6 +204,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                 ? 'border-sky-500 ring-4 ring-sky-500/10 shadow-xl scale-105 z-10'
                                                 : 'border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-lg'
                                             }
+                                            ${(billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'opacity-50 grayscale' : ''}
                                         `}
                                     >
                                         {plan.highlight && (
@@ -174,14 +220,20 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
                                             <div className="mt-2 flex items-baseline">
                                                 <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                                    {plan.price.split('/')[0]}
+                                                    {displayPrice === 'Grátis' ? 'Grátis' : displayPrice.replace('/mês', '').replace('R$ ', '')}
                                                 </span>
-                                                {plan.price.includes('/') && (
+                                                {displayPrice !== 'Grátis' && (
                                                     <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
-                                                        /{plan.price.split('/')[1]}
+                                                        {priceSubtext}
                                                     </span>
                                                 )}
                                             </div>
+                                            {/* Show savings if yearly */}
+                                            {billingCycle === 'yearly' && plan.priceYearlyRaw && plan.priceRaw > 0 && (
+                                                <div className="text-xs text-green-600 font-bold mt-1">
+                                                    Economize R$ {(plan.priceRaw * 12 - plan.priceYearlyRaw).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano
+                                                </div>
+                                            )}
                                         </div>
 
                                         <ul className="space-y-3 mb-8 flex-1">
@@ -195,7 +247,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
                                         <button
                                             onClick={() => handleSelectPlan(plan)}
-                                            disabled={isCurrent}
+                                            disabled={isCurrent || (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0)}
                                             className={`w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all
                                                 ${isCurrent
                                                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
@@ -205,7 +257,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                 }
                                             `}
                                         >
-                                            {isCurrent ? 'Plano Atual' : 'Assinar Agora'}
+                                            {isCurrent ? 'Plano Atual' : (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'Indisponível Anual' : 'Assinar Agora'}
                                         </button>
                                     </div>
                                 );
@@ -214,9 +266,32 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                     </div>
 
                     <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Pagamento seguro via Stripe. Cancele a qualquer momento.
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                            Pagamento seguro via Stripe. Mudanças entram em vigor imediatamente.
                         </p>
+                        {currentPlanName && !currentPlanName.toLowerCase().includes('grátis') && !currentPlanName.toLowerCase().includes('free') && (
+                            <button
+                                onClick={async () => {
+                                    if (confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium no fim do período.')) {
+                                        try {
+                                            setLoading(true);
+                                            await api.post('/billing/cancel-subscription', { companyId });
+                                            alert('Assinatura cancelada com sucesso.');
+                                            onClose();
+                                            window.location.reload();
+                                        } catch (error) {
+                                            console.error('Cancel Error:', error);
+                                            alert('Erro ao cancelar assinatura. Tente novamente.');
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }
+                                }}
+                                className="text-xs text-red-500 hover:text-red-600 underline"
+                            >
+                                Cancelar Assinatura
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -225,10 +300,17 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                 <BillingModal
                     isOpen={!!selectedPlanForBilling}
                     onClose={() => setSelectedPlanForBilling(null)}
-                    planId={(selectedPlanForBilling as any).stripePriceId || selectedPlanForBilling.id}
+                    planId={(billingCycle === 'yearly' && selectedPlanForBilling.stripePriceIdYearly)
+                        ? selectedPlanForBilling.stripePriceIdYearly
+                        : (selectedPlanForBilling.stripePriceId || selectedPlanForBilling.id)
+                    }
                     companyId={companyId}
-                    planName={selectedPlanForBilling.name}
-                    price={parseFloat(selectedPlanForBilling.price.replace('R$ ', '').replace('/mês', '').replace(',', '.'))}
+                    planName={`${selectedPlanForBilling.name} (${billingCycle === 'yearly' ? 'Anual' : 'Mensal'})`}
+                    price={
+                        billingCycle === 'yearly' && selectedPlanForBilling.priceYearlyRaw
+                            ? selectedPlanForBilling.priceYearlyRaw
+                            : selectedPlanForBilling.priceRaw
+                    }
                     billingEmail={email || ''}
                 />
             )}

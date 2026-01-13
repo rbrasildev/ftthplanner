@@ -167,7 +167,7 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Label Position
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 50 // Keep at 50 for PNG/Editor (Output side)
+        y: offsetY + 45 // Keep at 50 for PNG/Editor (Output side)
     };
 
     const inputPort = {

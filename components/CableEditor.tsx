@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { CableData, CableStatus } from '../types';
-import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen } from 'lucide-react';
+import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen, Loader2 } from 'lucide-react';
 import L from 'leaflet';
 import { useLanguage } from '../LanguageContext';
 import { getCables, CableCatalogItem } from '../services/catalogService';
@@ -43,9 +43,15 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   const [selectedCatalogId, setSelectedCatalogId] = useState<string>(cable.catalogId || '');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+
   useEffect(() => {
     // Load catalog cables
-    getCables().then(data => setCatalogCables(data)).catch(err => console.error(err));
+    setIsLoadingCatalog(true);
+    getCables()
+      .then(data => setCatalogCables(data))
+      .catch(err => console.error(err))
+      .finally(() => setIsLoadingCatalog(false));
   }, []);
 
   const handleCatalogSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -191,20 +197,29 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
         {/* Catalog Selection */}
-        <div className="bg-sky-50 dark:bg-sky-900/10 p-3 rounded-lg border border-sky-100 dark:border-sky-800/30">
+        <div className="bg-sky-50 dark:bg-sky-900/10 p-3 rounded-lg border border-sky-100 dark:border-sky-800/30 min-h-[76px]">
           <label className="block text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase mb-1 flex items-center gap-1">
             <BookOpen className="w-3 h-3" /> Usar Modelo do Catálogo
           </label>
-          <select
-            value={selectedCatalogId}
-            onChange={handleCatalogSelect}
-            className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-          >
-            <option value="">-- Selecione um Modelo --</option>
-            {catalogCables.map(c => (
-              <option key={c.id} value={c.id}>{c.name} ({c.fiberCount}FO)</option>
-            ))}
-          </select>
+
+          {isLoadingCatalog ? (
+            <div className="w-full flex items-center justify-center gap-2 py-2 text-sky-600 dark:text-sky-400 text-xs font-medium bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg opacity-70 cursor-wait">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Carregando catálogo...</span>
+            </div>
+          ) : (
+            <select
+              value={selectedCatalogId}
+              onChange={handleCatalogSelect}
+              className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
+              disabled={isLoadingCatalog}
+            >
+              <option value="">-- Selecione um Modelo --</option>
+              {catalogCables.map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.fiberCount}FO)</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>

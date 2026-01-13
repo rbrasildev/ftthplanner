@@ -106,6 +106,8 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                         // Already active or trial (no payment needed yet)
                         onClose();
                         alert(`Assinatura ativa! Status: ${data.status}`);
+                    } else {
+                        throw new Error(`Status não tratado: ${data.status} (Sem segredo de pagamento)`);
                     }
                 })
                 .catch((err: any) => {

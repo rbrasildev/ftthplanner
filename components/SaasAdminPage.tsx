@@ -28,8 +28,17 @@ interface Plan {
         maxCTOs?: number;
         maxPOPs?: number;
     };
+    limits: {
+        maxProjects?: number;
+        maxUsers?: number;
+        maxCTOs?: number;
+        maxPOPs?: number;
+    };
     features?: string[];
     isRecommended?: boolean;
+    stripePriceId?: string;
+    stripePriceIdYearly?: string;
+    priceYearly?: number;
 }
 
 interface User {
@@ -148,9 +157,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         const planData = {
             name: formData.get('name'),
             price: parseFloat(formData.get('price') as string),
+            priceYearly: formData.get('priceYearly') ? parseFloat(formData.get('priceYearly') as string) : null,
             type: formData.get('type') || 'STANDARD',
             trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
             stripePriceId: formData.get('stripePriceId'),
+            stripePriceIdYearly: formData.get('stripePriceIdYearly'),
             features: featuresValid,
             isRecommended: formData.get('isRecommended') === 'on',
             limits: {
@@ -789,6 +800,16 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Yearly Price ($)</label>
+                                        <input
+                                            name="priceYearly"
+                                            type="number"
+                                            step="0.01"
+                                            defaultValue={editingPlan?.priceYearly}
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan Type</label>
@@ -823,15 +844,25 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
-                                        <input
-                                            name="stripePriceId"
-                                            defaultValue={editingPlan?.stripePriceId || ''}
-                                            placeholder="price_..."
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                        <p className="text-[10px] text-slate-400 mt-1">Required for automated billing via Stripe.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
+                                            <input
+                                                name="stripePriceId"
+                                                defaultValue={editingPlan?.stripePriceId || ''}
+                                                placeholder="price_..."
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Yearly Price ID</label>
+                                            <input
+                                                name="stripePriceIdYearly"
+                                                defaultValue={editingPlan?.stripePriceIdYearly || ''}
+                                                placeholder="price_..."
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            />
+                                        </div>
                                     </div>
 
 
@@ -918,109 +949,111 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                             </form>
                         </div>
-                    </div>
+                    </div >
                 )}
                 {/* Company Quick View Drawer */}
-                {selectedCompany && (
-                    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedCompany(null)}>
-                        <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl p-6 overflow-y-auto border-l border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCompany.name}</h2>
-                                    <p className="text-sm text-slate-500">ID: {selectedCompany.id}</p>
+                {
+                    selectedCompany && (
+                        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedCompany(null)}>
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl p-6 overflow-y-auto border-l border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCompany.name}</h2>
+                                        <p className="text-sm text-slate-500">ID: {selectedCompany.id}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedCompany(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
+                                        <X className="w-6 h-6" />
+                                    </button>
                                 </div>
-                                <button onClick={() => setSelectedCompany(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
 
-                            <div className="space-y-6">
-                                {/* Summary Card */}
-                                <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Overview</h3>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <p className="text-slate-400 text-xs">Plan</p>
-                                            <p className="font-medium text-slate-900 dark:text-white">{selectedCompany.plan?.name || 'No Plan'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-400 text-xs">Status</p>
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${selectedCompany.status === 'ACTIVE'
-                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                                                {selectedCompany.status}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-400 text-xs">Joined</p>
-                                            <p className="font-medium text-slate-900 dark:text-white">{new Date(selectedCompany.createdAt).toLocaleDateString()}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-400 text-xs">Infrastructure</p>
-                                            <p className="font-medium text-slate-900 dark:text-white">
-                                                {selectedCompany._count.ctos || 0} CTOs, {selectedCompany._count.pops || 0} POPs
-                                            </p>
+                                <div className="space-y-6">
+                                    {/* Summary Card */}
+                                    <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Overview</h3>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <p className="text-slate-400 text-xs">Plan</p>
+                                                <p className="font-medium text-slate-900 dark:text-white">{selectedCompany.plan?.name || 'No Plan'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-400 text-xs">Status</p>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${selectedCompany.status === 'ACTIVE'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                    {selectedCompany.status}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-400 text-xs">Joined</p>
+                                                <p className="font-medium text-slate-900 dark:text-white">{new Date(selectedCompany.createdAt).toLocaleDateString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-400 text-xs">Infrastructure</p>
+                                                <p className="font-medium text-slate-900 dark:text-white">
+                                                    {selectedCompany._count.ctos || 0} CTOs, {selectedCompany._count.pops || 0} POPs
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Users List */}
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        Team Members <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
-                                    </h3>
-                                    <div className="space-y-2">
-                                        {selectedCompany.users?.map(u => (
-                                            <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                        {u.username.slice(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium text-sm text-slate-900 dark:text-white">{u.username}</p>
-                                                        <p className="text-xs text-slate-400 uppercase">{u.role}</p>
+                                    {/* Users List */}
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            Team Members <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {selectedCompany.users?.map(u => (
+                                                <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                            {u.username.slice(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium text-sm text-slate-900 dark:text-white">{u.username}</p>
+                                                            <p className="text-xs text-slate-400 uppercase">{u.role}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                        {(!selectedCompany.users || selectedCompany.users.length === 0) && (
-                                            <p className="text-sm text-slate-400 italic">No users found.</p>
-                                        )}
+                                            ))}
+                                            {(!selectedCompany.users || selectedCompany.users.length === 0) && (
+                                                <p className="text-sm text-slate-400 italic">No users found.</p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Projects List */}
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        Projects <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
-                                    </h3>
-                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                        {selectedCompany.projects?.map(p => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg hover:border-indigo-300 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded">
-                                                        <Network className="w-4 h-4" />
+                                    {/* Projects List */}
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            Projects <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
+                                        </h3>
+                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                            {selectedCompany.projects?.map(p => (
+                                                <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg hover:border-indigo-300 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded">
+                                                            <Network className="w-4 h-4" />
+                                                        </div>
+                                                        <p className="font-medium text-sm text-slate-900 dark:text-white">{p.name}</p>
                                                     </div>
-                                                    <p className="font-medium text-sm text-slate-900 dark:text-white">{p.name}</p>
                                                 </div>
-                                            </div>
-                                        ))}
-                                        {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
-                                            <p className="text-sm text-slate-400 italic">No projects found.</p>
-                                        )}
+                                            ))}
+                                            {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
+                                                <p className="text-sm text-slate-400 italic">No projects found.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
 
                 <ChangePasswordModal
                     isOpen={isPasswordModalOpen}
                     onClose={() => setIsPasswordModalOpen(false)}
                 />
-            </main>
-        </div>
+            </main >
+        </div >
     );
 };

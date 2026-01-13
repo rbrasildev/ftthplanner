@@ -10,11 +10,9 @@ import { StripeService } from '../services/billing/stripeService';
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
     try {
-        console.log("GET /api/saas/plans called by user:", req.user?.id);
         const plans = await prisma.plan.findMany({
             orderBy: { price: 'asc' }
         });
-        console.log("Plans found:", plans.length);
         res.json(plans);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch plans' });
@@ -30,10 +28,13 @@ export const getPublicPlans = async (req: Request, res: Response) => {
                 id: true,
                 name: true,
                 price: true,
-                limits: true,
+                priceYearly: true,
+                type: true,
                 features: true,
+                limits: true,
                 isRecommended: true,
-                stripePriceId: true
+                stripePriceId: true,
+                stripePriceIdYearly: true
             }
         });
         res.json(plans);
@@ -73,9 +74,9 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
 
 export const createPlan = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } = req.body; // Added stripePriceId
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly } = req.body;
         const plan = await prisma.plan.create({
-            data: { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } // Added stripePriceId
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly }
         });
 
         // Audit Log
@@ -92,10 +93,10 @@ export const createPlan = async (req: AuthRequest, res: Response) => {
 export const updatePlan = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } = req.body; // Added stripePriceId
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly } = req.body;
         const plan = await prisma.plan.update({
             where: { id },
-            data: { name, price, type, trialDurationDays, limits, features, isRecommended, stripePriceId } // Added stripePriceId
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly }
         });
 
         if (req.user?.id) {

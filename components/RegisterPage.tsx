@@ -3,12 +3,13 @@ import { KeyRound, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface RegisterPageProps {
-    onRegister: (username: string, email: string, password?: string, companyName?: string) => void;
+    onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string) => void;
     onBackToLogin: () => void;
     onBackToLanding: () => void;
+    initialPlan?: string;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding, initialPlan }) => {
     const { t } = useLanguage();
     // const [username, setUsername] = useState(''); // Removed state
     const [email, setEmail] = useState('');
@@ -33,8 +34,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
             return;
         }
         setError(null);
-        // Pass generated username
-        onRegister(generatedUsername, email, password, companyName);
+        // Pass generated username and initialPlan
+        onRegister(generatedUsername, email, password, companyName, initialPlan);
     };
 
     return (

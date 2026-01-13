@@ -13,24 +13,33 @@ async function getPlanByName(name: string) {
 }
 
 export const register = async (req: Request, res: Response) => {
-    const { username, email, password, companyName } = req.body;
+    const { username, email, password, companyName, planName } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Fetch Unlimited Plan for Trial (or whatever is marked as TRIAL type, but let's stick to name if logic requires, 
-        // OR better: Find the FIRST plan with type='TRIAL' or fallback to specific name?)
-        // User didn't ask to change WHICH plan is picked, just the duration.
-        // Assuming 'Plano Ilimitado' is the one used for trial or user creates a specific one.
-        // Let's stick to existing fetch but check the new field.
-        let trialPlan = await getPlanByName('Plano Ilimitado');
-        if (!trialPlan) {
-            console.warn("Unlimited plan not found for trial");
+        // Determine Initial Plan
+        let initialPlanName = 'Plano Ilimitado'; // Default to Trial of Unlimited
+        if (planName && typeof planName === 'string') {
+            initialPlanName = planName;
         }
 
-        // Use configured duration or default to 15
-        const trialDays = trialPlan?.trialDurationDays || 15;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + trialDays);
+        let selectedPlan = await getPlanByName(initialPlanName);
+        if (!selectedPlan) {
+            console.warn(`Plan ${initialPlanName} not found, falling back to Unlimited`);
+            selectedPlan = await getPlanByName('Plano Ilimitado');
+        }
+
+        // Calculate Expiration
+        let expiresAt: Date | null = null;
+
+        // If it's NOT the Free plan, it's a Trial (with expiration)
+        if (selectedPlan?.name !== 'Plano Grátis') {
+            // User requested to use trial_duration_days from DB
+            const trialDays = selectedPlan?.trialDurationDays || 7;
+            expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + trialDays);
+        }
+        // If it IS Free plan, expiresAt remains null (permanent)
 
         // Transaction to ensure User and Company are created together
         const result = await prisma.$transaction(async (tx) => {
@@ -47,7 +56,7 @@ export const register = async (req: Request, res: Response) => {
                 data: {
                     name: companyName || `${username}'s Company`,
                     users: { connect: { id: user.id } },
-                    planId: trialPlan?.id,
+                    planId: selectedPlan?.id,
                     subscriptionExpiresAt: expiresAt,
                     status: 'ACTIVE'
                 }
@@ -160,7 +169,7 @@ export const getMe = async (req: Request, res: Response) => {
             where: { id: userId },
             include: {
                 company: {
-                    include: { plan: true }
+                    include: { plan: true, subscription: true }
                 }
             }
         });
@@ -185,6 +194,20 @@ export const getMe = async (req: Request, res: Response) => {
                         user.company.planId = freePlan.id;
                         user.company.subscriptionExpiresAt = null;
                     }
+                }
+            }
+        }
+        // -------------------------------------
+        // DYNAMICALLY SET PLAN TYPE TO TRIAL IF NO SUBSCRIPTION IS ACTIVE
+        // This ensures the frontend shows "Teste: X dias" instead of "Plano Ilimitado" implying permanent access
+        if (user.company?.plan?.name !== 'Plano Grátis' && user.company?.subscriptionExpiresAt) {
+            // If there is NO subscription record, OR subscription is not active/trialing
+            const hasActiveSub = user.company.subscription && ['active', 'trialing'].includes(user.company.subscription.status);
+
+            if (!hasActiveSub) {
+                // Force type to TRIAL for frontend display
+                if (user.company.plan) {
+                    user.company.plan.type = 'TRIAL';
                 }
             }
         }

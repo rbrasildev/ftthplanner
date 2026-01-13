@@ -4,38 +4,38 @@ const prisma = new PrismaClient();
 
 const plans = [
     {
-        name: 'Plano Grátis',
+        name: 'Plano Trial',
         price: 0,
         limits: {
-            maxProjects: 10,
-            maxUsers: 5,
-            maxCTOs: 5000,
-            maxPOPs: 200
+            maxProjects: 1,
+            maxUsers: 1,
+            maxCTOs: 500,
+            maxPOPs: 1
         }
     },
     {
         name: 'Plano Básico',
-        price: 149.90,
+        price: 99.90,
         limits: {
             maxProjects: 50,
             maxUsers: 10,
-            maxCTOs: 50000,
-            maxPOPs: 1000
+            maxCTOs: 5,
+            maxPOPs: 10
         }
     },
     {
         name: 'Plano Intermediário',
-        price: 399.90,
+        price: 199.90,
         limits: {
-            maxProjects: 200,
-            maxUsers: 50,
-            maxCTOs: 200000,
-            maxPOPs: 5000
+            maxProjects: 10,
+            maxUsers: 10,
+            maxCTOs: 2000,
+            maxPOPs: 10
         }
     },
     {
         name: 'Plano Ilimitado',
-        price: 899.90,
+        price: 399.90,
         limits: {
             maxProjects: 999999,
             maxUsers: 999999,

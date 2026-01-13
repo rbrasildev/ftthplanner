@@ -63,7 +63,9 @@ model Plan {
   isRecommended Boolean @default(false)
   createdAt DateTime  @default(now()) @map("created_at")
   stripePriceId   String?   @map("stripe_price_id")
+  stripePriceIdYearly String? @map("stripe_price_id_yearly")
   stripeProductId String?   @map("stripe_product_id")
+  priceYearly     Float?    @map("price_yearly")
   companies       Company[]
 
   @@map("plans")
