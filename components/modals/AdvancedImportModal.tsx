@@ -145,23 +145,45 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             const lineFeatures = geoJson.features?.filter((f: any) => f.geometry?.type === 'LineString') || [];
 
             // Parse Cables
-            newItems.cables = lineFeatures.map((f: any, idx: number) => ({
-                id: `cable-${idx}`,
-                originalName: f.properties?.name || `Cabo ${idx + 1}`,
-                coordinates: f.geometry.coordinates,
-                properties: f.properties,
-                selected: true,
-                typeId: '', // Unclassified
-                extra: { length: 0 } // Calculate length if possible (simplified here)
-            }));
+            newItems.cables = lineFeatures.map((f: any, idx: number) => {
+                // VALIDATION: Ensure coordinates are valid arrays of numbers
+                const rawCoords = f.geometry.coordinates;
+                if (!Array.isArray(rawCoords)) return null;
+
+                const validCoords = rawCoords.filter((c: any) =>
+                    Array.isArray(c) &&
+                    c.length >= 2 &&
+                    !isNaN(Number(c[0])) &&
+                    !isNaN(Number(c[1]))
+                );
+
+                if (validCoords.length < 2) return null; // Need at least 2 points for a line
+
+                return {
+                    id: `cable-${idx}`,
+                    originalName: f.properties?.name || `Cabo ${idx + 1}`,
+                    coordinates: validCoords,
+                    properties: f.properties,
+                    selected: true,
+                    typeId: '', // Unclassified
+                    extra: { length: 0 } // Calculate length if possible (simplified here)
+                };
+            }).filter((item: any) => item !== null) as DetectedItem[];
 
             // Parse Points (Heuristic Distribution)
             pointFeatures.forEach((f: any, idx: number) => {
                 const name = (f.properties?.name || '').toUpperCase();
+
+                // VALIDATION: Ensure point coordinate is valid
+                const rawCoord = f.geometry.coordinates;
+                if (!Array.isArray(rawCoord) || rawCoord.length < 2 || isNaN(Number(rawCoord[0])) || isNaN(Number(rawCoord[1]))) {
+                    return;
+                }
+
                 const item: DetectedItem = {
                     id: `node-${idx}`,
                     originalName: f.properties?.name || `Ponto ${idx + 1}`,
-                    coordinates: f.geometry.coordinates,
+                    coordinates: rawCoord,
                     properties: f.properties,
                     selected: true,
                     typeId: ''

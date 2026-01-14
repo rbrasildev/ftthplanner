@@ -15,7 +15,10 @@ export const getPlans = async (req: AuthRequest, res: Response) => {
         });
         res.json(plans);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch plans' });
+        res.status(500).json({
+            error: 'Failed to fetch plans',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -39,7 +42,10 @@ export const getPublicPlans = async (req: Request, res: Response) => {
         });
         res.json(plans);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch public plans' });
+        res.status(500).json({
+            error: 'Failed to fetch public plans',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -68,7 +74,10 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
         res.json(formatted);
     } catch (error) {
         console.error('Error fetching map data:', error);
-        res.status(500).json({ error: 'Failed to fetch map data' });
+        res.status(500).json({
+            error: 'Failed to fetch map data',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -86,7 +95,10 @@ export const createPlan = async (req: AuthRequest, res: Response) => {
 
         res.status(201).json(plan);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create plan' });
+        res.status(500).json({
+            error: 'Failed to create plan',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -105,7 +117,10 @@ export const updatePlan = async (req: AuthRequest, res: Response) => {
 
         res.json(plan);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update plan' });
+        res.status(500).json({
+            error: 'Failed to update plan',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -129,7 +144,10 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
         });
         res.json(companies);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch companies' });
+        res.status(500).json({
+            error: 'Failed to fetch companies',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -158,7 +176,11 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
         });
         res.json(company);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update company' });
+        console.error("Update company error:", error);
+        res.status(500).json({
+            error: 'Failed to update company',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -170,6 +192,9 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         if (req.user?.companyId === id) {
             return res.status(400).json({ error: 'Cannot delete your own company while logged in.' });
         }
+
+        // 0. PRE-CLEANUP: Delete Subscription (FK Constraint)
+        await prisma.subscription.deleteMany({ where: { companyId: id } });
 
         // 1. Delete Projects (Manual Cascade)
         // Note: Project elements (Cables, CTOs, etc.) usually cascade from Project if configured,
@@ -185,7 +210,11 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         await prisma.catalogFusion.deleteMany({ where: { companyId: id } });
         await prisma.catalogOLT.deleteMany({ where: { companyId: id } });
 
-        // 3. Delete Users
+        // 3. Delete Audit Logs (FK Constraint for Users and Company)
+        await prisma.auditLog.deleteMany({ where: { companyId: id } });
+        await prisma.auditLog.deleteMany({ where: { user: { companyId: id } } });
+
+        // 4. Delete Users
         await prisma.user.deleteMany({ where: { companyId: id } });
 
         // 4. Delete Company
@@ -200,7 +229,10 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         res.json({ message: 'Company and all associated data deleted successfully' });
     } catch (error) {
         console.error("Delete company error:", error);
-        res.status(500).json({ error: 'Failed to delete company' });
+        res.status(500).json({
+            error: 'Failed to delete company',
+            details: error instanceof Error ? error.message : String(error)
+        });
 
     }
 };
@@ -225,7 +257,10 @@ export const getGlobalUsers = async (req: AuthRequest, res: Response) => {
 
         res.json(sanitized);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users' });
+        res.status(500).json({
+            error: 'Failed to fetch users',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };
 
@@ -257,6 +292,9 @@ export const updateGlobalUser = async (req: AuthRequest, res: Response) => {
         res.json(rest);
     } catch (error) {
         console.error("Update user error:", error);
-        res.status(500).json({ error: 'Failed to update user' });
+        res.status(500).json({
+            error: 'Failed to update user',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 };

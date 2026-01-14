@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Edit, Trash2, Unplug, AlertTriangle, X, Check } from 'lucide-react';
+import { Edit, Trash2, Unplug, AlertTriangle, X, Check, Settings } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface CableContextMenuProps {
@@ -61,8 +61,8 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({ x, y, onEdit
                 }}
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
             >
-                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
-                    <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
+                    <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span className="text-sm font-medium">{t('properties') || 'Propriedades'}</span>
             </button>

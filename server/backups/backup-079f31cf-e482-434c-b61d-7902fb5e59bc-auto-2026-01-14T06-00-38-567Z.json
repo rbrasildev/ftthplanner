@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "createdAt": "2026-01-14T06:00:38.570Z",
+    "version": "1.0",
+    "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc"
+  },
+  "projects": [
+    {
+      "id": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "userId": "b029e08e-b412-4b17-9197-3cdf3e88ecb0",
+      "name": "PROJETO-FTTX-SOUZEL/PA",
+      "centerLat": -2.590024075090756,
+      "centerLng": -51.94348812103271,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-13T12:10:15.724Z",
+      "updatedAt": "2026-01-13T12:10:15.724Z",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc"
+    }
+  ],
+  "ctos": [],
+  "pops": [],
+  "cables": [],
+  "poles": []
+}

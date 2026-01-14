@@ -1782,12 +1782,16 @@ export default function App() {
                                 color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9', // Use catalog color
                                 colorStandard: 'ABNT',
                                 // Transform [[lng, lat]] -> [{lat, lng}]
-                                coordinates: c.coordinates.map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
+                                // VALIDATION: Ensure we only map valid points
+                                coordinates: (Array.isArray(c.coordinates) ? c.coordinates : [])
+                                    .filter((pt: any) => Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]))
+                                    .map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
                                 fromNodeId: null,
                                 toNodeId: null,
                                 catalogId: c.type?.id
                             }));
-                            updated.cables = [...(updated.cables || []), ...newCables];
+                            // DOUBLE CHECK: Remove cables with too few points
+                            updated.cables = [...(updated.cables || []), ...newCables.filter(c => c.coordinates.length >= 2)];
                         }
 
                         // 2. Process CTOs
