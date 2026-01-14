@@ -138,6 +138,8 @@ const translations = {
     'loading_diagram': 'Loading diagram...',
     'error_saving_splitter': 'Error saving splitter',
     'attenuation_help': 'For Unbalanced, describe the split ratio attenuation.',
+    'attenuation_port1': 'Attenuation Port 1 (dB)',
+    'attenuation_port2': 'Attenuation Port 2 (dB)',
     'splitter_ports': 'Ports',
     'splitter_in': 'In',
     'splitter_out': 'Out',
@@ -526,11 +528,10 @@ const translations = {
     'restore_confirm': 'WARNING: This will delete ALL current network data (CTOs, Cables, POPs, Projects) and replace it with the backup. This cannot be undone. Are you sure?',
     'restore_success': 'System restored successfully. Reloading...',
     'apply': 'Apply',
-    'loading': 'Loading...',
     'pon': 'PON',
     'slot': 'Slot',
     'properties': 'Properties',
-    'edit_cable': 'Edit Cable',
+
     'editing_cable': 'Editing Cable...',
     'connecting_cable': 'Connecting Cables...',
     'finish': 'Finish',
@@ -776,7 +777,9 @@ const translations = {
     'sidebar_add_pole': 'Adicionar Poste',
     'sidebar_add_pole_desc': 'Posicionar Manualmente',
     'insertion_options': 'Opções de inserção',
-    'attenuation_help': 'Para Desbalanceado, descreva a atenuação por via (ex: 5%: 14dB).',
+
+    'attenuation_port1': 'Atenuação Porta 1 (dB)',
+    'attenuation_port2': 'Atenuação Porta 2 (dB)',
     'splitter_ports': 'Portas',
     'splitter_in': 'Ent',
     'splitter_out': 'Sai',
@@ -1089,9 +1092,8 @@ const translations = {
     'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
     'apply': 'Aplicar',
-    'loading': 'Carregando...',
 
-    'save_or_done': 'Salvar / Sair',
+
     'moving_node': 'Movendo Elemento...',
 
     'position_saved': 'Posição salva com sucesso!',

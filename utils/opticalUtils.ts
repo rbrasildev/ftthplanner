@@ -71,18 +71,58 @@ function getCableLength(cable: CableData): number {
 // Helper: Get Splitter Loss
 // Helper: Get Splitter Loss
 // Helper: Get Splitter Loss
-function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | undefined): number {
+function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | undefined, outputPortId?: string): number {
     const outputs = splitter.outputPortIds.length;
-
-    // Default Theoretical Values (Approximate)
-    // REMOVED PER USER REQUEST: If not in catalog, assume 0 loss (or user defined)
-    const getDefaultLoss = (n: number) => 0;
 
     if (!catalog) return 0;
 
+
     // Try to extract from catalog
     if (catalog.attenuation !== undefined && catalog.attenuation !== null) {
-        const att = catalog.attenuation;
+        const att: any = catalog.attenuation; // Cast to any to handle mixed types (string/number/object)
+
+        // NEW: Check for Port-Specific Attenuation (Unbalanced)
+        if (outputPortId && splitter.outputPortIds.includes(outputPortId)) {
+            // Determine port index (0 = Port 1, 1 = Port 2, etc.)
+            const portIndex = splitter.outputPortIds.indexOf(outputPortId);
+
+
+            // Helper to parse value
+            const parseVal = (v: any) => {
+                const parsed = parseFloat(v);
+                return isNaN(parsed) ? null : parsed;
+            };
+
+            // Case A: Attenuation is an object with port1/port2 keys
+            if (typeof att === 'object') {
+                if (portIndex === 0 && att.port1 !== undefined) {
+                    const v = parseVal(att.port1);
+                    if (v !== null) return v;
+                }
+                if (portIndex === 1 && att.port2 !== undefined) {
+                    const v = parseVal(att.port2);
+                    if (v !== null) return v;
+                }
+            }
+            // Case B: Attenuation is a JSON string containing port1/port2
+            else if (typeof att === 'string' && att.trim().startsWith('{')) {
+                try {
+                    const parsedObj = JSON.parse(att);
+                    if (portIndex === 0 && parsedObj.port1 !== undefined) {
+                        const v = parseVal(parsedObj.port1);
+                        if (v !== null) return v;
+                    }
+                    if (portIndex === 1 && parsedObj.port2 !== undefined) {
+                        const v = parseVal(parsedObj.port2);
+                        if (v !== null) return v;
+                    }
+                } catch (e) {
+                    // fall through
+                }
+            }
+        }
+
+        // Standard Fallback (Balanced or Main Value)
 
         // 1. Direct Number
         if (typeof att === 'number' && !isNaN(att)) return att;
@@ -90,7 +130,7 @@ function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | unde
         // 2. String Number
         if (typeof att === 'string') {
             const parsed = parseFloat(att);
-            if (!isNaN(parsed)) return parsed;
+            if (!isNaN(parsed) && !att.trim().startsWith('{')) return parsed; // Only if not JSON
         }
 
         // 3. Object with 'value' (Common in this codebase for some types)
@@ -107,6 +147,17 @@ function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | unde
                 const val = parseFloat(att.x);
                 if (!isNaN(val)) return val;
             }
+        }
+
+        // 4. JSON String with 'value'
+        if (typeof att === 'string' && att.trim().startsWith('{')) {
+            try {
+                const parsedObj = JSON.parse(att);
+                if (parsedObj.value !== undefined) {
+                    const val = parseFloat(parsedObj.value);
+                    if (!isNaN(val)) return val;
+                }
+            } catch (e) { }
         }
     }
 
@@ -349,8 +400,19 @@ export function traceOpticalPath(
             if ('splitters' in node) {
                 const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    const psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
-                    const psLoss = getSplitterLoss(parentSplitter, psCatalog);
+                    // ROBUST LOOKUP (Copied from main logic)
+                    let psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
+                    if (!psCatalog) {
+                        const psNameNorm = parentSplitter.type.trim().toLowerCase();
+                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === psNameNorm);
+                    }
+                    if (!psCatalog) {
+                        const outCount = parentSplitter.outputPortIds.length;
+                        psCatalog = catalogs.splitters.find(c => c.outputs === outCount);
+                    }
+
+                    // Pass sourceId (which is the output port we are connected to) to determine specific loss
+                    const psLoss = getSplitterLoss(parentSplitter, psCatalog, sourceId);
 
                     path.unshift({
                         type: 'SPLITTER',

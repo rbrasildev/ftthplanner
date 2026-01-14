@@ -19,6 +19,8 @@ export const SplitterRegistration: React.FC = () => {
         inputs: 1,
         outputs: 8,
         attenuation: '', // We will parse this to JSON if needed, or store as string in JSON
+        port1: '', // New field for Unbalanced Port 1
+        port2: '', // New field for Unbalanced Port 2
         description: ''
     });
 
@@ -44,11 +46,18 @@ export const SplitterRegistration: React.FC = () => {
         let displayVal = val;
 
         if (typeof val === 'object') {
+            // Check for new port1/port2 format
+            if (val.port1 && val.port2) {
+                return `P1: ${val.port1}dB / P2: ${val.port2}dB`;
+            }
             displayVal = val.value || val.v || val.x || JSON.stringify(val);
         } else if (typeof val === 'string') {
             try {
                 if (val.trim().startsWith('{')) {
                     const parsed = JSON.parse(val);
+                    if (parsed.port1 && parsed.port2) {
+                        return `P1: ${parsed.port1}dB / P2: ${parsed.port2}dB`;
+                    }
                     displayVal = parsed.value || parsed.v || parsed.x || val;
                 } else {
                     displayVal = val;
@@ -68,13 +77,33 @@ export const SplitterRegistration: React.FC = () => {
     const handleOpenModal = (item?: SplitterCatalogItem) => {
         if (item) {
             setEditingItem(item);
+
+            // Extract port1 and port2 if available
+            let p1 = '';
+            let p2 = '';
+            let att = getAttenuationValue(item.attenuation);
+            // NOTE: getAttenuationValue returns formatted string. We need raw values for inputs.
+            // Let's re-parse for the form state.
+
+            let rawAtt = item.attenuation;
+            if (typeof rawAtt === 'string' && String(rawAtt).trim().startsWith('{')) {
+                try { rawAtt = JSON.parse(rawAtt); } catch (e) { }
+            }
+
+            if (rawAtt && typeof rawAtt === 'object') {
+                if (rawAtt.port1) p1 = rawAtt.port1;
+                if (rawAtt.port2) p2 = rawAtt.port2;
+            }
+
             setFormData({
                 name: item.name,
                 type: item.type,
                 mode: item.mode,
                 inputs: item.inputs,
                 outputs: item.outputs,
-                attenuation: getAttenuationValue(item.attenuation),
+                attenuation: typeof rawAtt === 'object' && rawAtt.value ? rawAtt.value : (typeof rawAtt === 'object' ? '' : rawAtt), // Try to keep 'value' for the main input if needed, though we might hide it.
+                port1: p1,
+                port2: p2,
                 description: item.description || ''
             });
         } else {
@@ -86,6 +115,8 @@ export const SplitterRegistration: React.FC = () => {
                 inputs: 1,
                 outputs: 8,
                 attenuation: '',
+                port1: '',
+                port2: '',
                 description: ''
             });
         }
@@ -97,14 +128,30 @@ export const SplitterRegistration: React.FC = () => {
             // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
             let attenuationValue: any = formData.attenuation;
 
-            try {
-                if (formData.attenuation.trim().startsWith('{')) {
-                    attenuationValue = JSON.parse(formData.attenuation);
-                } else {
+            // SPECIAL LOGIC FOR UNBALANCED
+            if (formData.mode === 'Unbalanced') {
+                // Construct JSON object with port1, port2, and a default value (use P1 as value or max of both?)
+                // Usually unbalanced is like 70/30. The "loss" depends on the port.
+                // But opticalUtils.ts expects a single 'value' for generic loss if it doesn't know better.
+                // We'll store: { value: <p1>, port1: <p1>, port2: <p2> }
+                // So if legacy code reads .value, it gets port1 attenuation (highest usually? or lowest?). 
+                // Let's assume port 1 is the first output group.
+                attenuationValue = {
+                    value: formData.port1,
+                    port1: formData.port1,
+                    port2: formData.port2
+                };
+            } else {
+                try {
+                    const attStr = String(formData.attenuation);
+                    if (attStr.trim().startsWith('{')) {
+                        attenuationValue = JSON.parse(attStr);
+                    } else {
+                        attenuationValue = { value: formData.attenuation };
+                    }
+                } catch (e) {
                     attenuationValue = { value: formData.attenuation };
                 }
-            } catch (e) {
-                attenuationValue = { value: formData.attenuation };
             }
 
             const payload = {
@@ -312,15 +359,42 @@ export const SplitterRegistration: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_db')}</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                    value={formData.attenuation}
-                                    onChange={e => setFormData({ ...formData, attenuation: e.target.value })}
-                                    placeholder={formData.mode === 'Balanced' ? "e.g., 10.5" : "e.g., 5%: 14dB, 95%: 0.5dB"}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">{t('attenuation_help')}</p>
+                                {formData.mode === 'Unbalanced' ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_port1')}</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                                value={formData.port1}
+                                                onChange={e => setFormData({ ...formData, port1: e.target.value })}
+                                                placeholder="e.g. 14"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_port2')}</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                                value={formData.port2}
+                                                onChange={e => setFormData({ ...formData, port2: e.target.value })}
+                                                placeholder="e.g. 0.5"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_db')}</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                            value={formData.attenuation}
+                                            onChange={e => setFormData({ ...formData, attenuation: e.target.value })}
+                                            placeholder="e.g., 10.5"
+                                        />
+                                    </div>
+                                )}
+
                             </div>
 
                             <div>
