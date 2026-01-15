@@ -80,7 +80,7 @@ const translations = {
     'tooltip_connect': 'Connection Mode: Click cable line to add SPLIT point. Drag point to Node to connect.',
     'ai_report_title': 'AI Engineer Report',
     'deployment_progress': 'Deployment Progress',
-    'search_placeholder': 'Search CTO or POP...',
+    'search_placeholder': 'Search CTO, POP or Coordinates...',
     'search_no_results': 'No results found',
 
     // New Sidebar Keys
@@ -204,6 +204,14 @@ const translations = {
     'save': 'Save',
     'cancel': 'Cancel',
     'delete': 'Delete',
+
+    'copy_coordinates': 'Copy Coordinates',
+    'open_google_maps': 'Open in Google Maps',
+    'coordinates': 'Coordinates',
+    'pinned_location': 'Save as',
+    'convert_to_cto': 'Convert to CTO',
+    'convert_to_pole': 'Convert to Pole',
+    'remove_pin': 'Remove Pin',
     'manage_splicing': 'Manage Splicing',
     'manage_pop': 'Manage Rack & Patching',
     'unsaved_changes': 'Unsaved Changes',
@@ -270,7 +278,7 @@ const translations = {
     'search_location_placeholder': 'Search city or address...',
     'searching_location': 'Searching...',
     'no_location_results': 'No location found',
-    'pinned_location': 'Pinned Location',
+
     'create_project_modal_title': 'Create New Project',
     'map_instruction': 'Drag the map or click to set the project center.',
     'confirm_create': 'Create Project',
@@ -638,6 +646,13 @@ const translations = {
     'most_popular': 'Mais Popular',
     'feature_1_project': '1 Projeto',
     'feature_1_user': '1 Usuário',
+    'copy_coordinates': 'Copiar Coordenadas',
+    'open_google_maps': 'Abrir no Google Maps',
+    'coordinates': 'Coordenadas',
+    'pinned_location': 'Salvar como',
+    'convert_to_cto': 'Salvar como Caixa',
+    'convert_to_pole': 'Salvar como Poste',
+    'remove_pin': 'Remover Pin',
     'feature_basic_maps': 'Mapas Básicos',
     'feature_5_projects': '5 Projetos',
     'feature_3_users': '3 Usuários',
@@ -723,7 +738,7 @@ const translations = {
     'tooltip_connect': 'Conexão: Clique no cabo para criar ponto de SANGRIA. Arraste até o Nó.',
     'ai_report_title': 'Relatório de Engenharia IA',
     'deployment_progress': 'Progresso de Implantação',
-    'search_placeholder': 'Buscar CTO ou POP...',
+    'search_placeholder': 'Buscar CTO, POP ou Coordenadas...',
     'search_no_results': 'Nenhum resultado',
 
     // New Sidebar Keys
@@ -941,7 +956,7 @@ const translations = {
     'search_location_placeholder': 'Pesquise cidade ou endereço...',
     'searching_location': 'Buscando...',
     'no_location_results': 'Local não encontrado',
-    'pinned_location': 'Local Fixado',
+
     'create_project_modal_title': 'Criar Novo Projeto',
     'map_instruction': 'Arraste o mapa ou clique para definir o centro do projeto.',
     'confirm_create': 'Criar Projeto',

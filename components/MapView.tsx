@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
@@ -231,6 +231,14 @@ const startPointIcon = L.divIcon({
     html: `<div style="width: 10px; height: 10px; background: #fbbf24; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
     iconSize: [10, 10],
     iconAnchor: [5, 5]
+});
+
+const pinIcon = L.divIcon({
+    className: 'custom-pin-icon',
+    html: `<div style="background-color: #ef4444; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    popupAnchor: [0, -10]
 });
 
 // --- SUB COMPONENTS (Memoized for Performance) ---
@@ -638,13 +646,22 @@ const MapEvents: React.FC<{
     mode: string,
     onMapClick: (lat: number, lng: number) => void,
     onClearSelection: () => void,
-    onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void
-}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd }) => {
+    onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void,
+    onContextMenu?: (e: L.LeafletMouseEvent) => void
+}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu }) => {
     useMapEvents({
+        contextmenu(e) {
+            if (onContextMenu) {
+                onContextMenu(e);
+            }
+        },
         click(e) {
             if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
+                onClearSelection();
+            } else {
+                // Always attempt to clear selection/menus on generic map clicks
                 onClearSelection();
             }
         },
@@ -774,6 +791,9 @@ interface MapViewProps {
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onPropertiesNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    pinnedLocation?: Coordinates | null;
+    onConvertPin?: (type: 'CTO' | 'Pole') => void;
+    onClearPin?: () => void;
 }
 
 const noOp = () => { };
@@ -783,7 +803,8 @@ export const MapView: React.FC<MapViewProps> = ({
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
-    previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode
+    previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
+    pinnedLocation, onConvertPin, onClearPin
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -883,6 +904,25 @@ export const MapView: React.FC<MapViewProps> = ({
     }, [showCables, cables, mapBoundsState]);
 
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole' } | null>(null);
+
+    const [mapContextMenu, setMapContextMenu] = useState<{
+        x: number,
+        y: number,
+        lat: number,
+        lng: number
+    } | null>(null);
+
+    // Close menus on interaction (escape key)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setContextMenu(null);
+                setMapContextMenu(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const activeCable = useMemo(() => cables.find(c => c.id === activeCableId), [cables, activeCableId]);
 
@@ -1089,7 +1129,28 @@ export const MapView: React.FC<MapViewProps> = ({
                     />
                 )}
 
-                <MapEvents mode={mode} onMapClick={onAddPoint} onClearSelection={() => setActiveCableId(null)} onMapMoveEnd={onMapMoveEnd} />
+                <MapEvents
+                    mode={mode}
+                    onMapClick={(lat, lng) => {
+                        setMapContextMenu(null); // Close map menu on click
+                        onAddPoint(lat, lng);
+                    }}
+                    onClearSelection={() => {
+                        setActiveCableId(null);
+                        setMapContextMenu(null);
+                    }}
+                    onMapMoveEnd={onMapMoveEnd}
+                    onContextMenu={(e) => {
+                        L.DomEvent.preventDefault(e as any);
+                        setContextMenu(null); // Close other menus
+                        setMapContextMenu({
+                            x: e.originalEvent.clientX,
+                            y: e.originalEvent.clientY,
+                            lat: e.latlng.lat,
+                            lng: e.latlng.lng
+                        });
+                    }}
+                />
 
                 <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />
 
@@ -1322,6 +1383,41 @@ export const MapView: React.FC<MapViewProps> = ({
                     </Marker>
                 )}
 
+                {pinnedLocation && (
+                    <Marker position={[pinnedLocation.lat, pinnedLocation.lng]} icon={pinIcon}>
+                        <Popup>
+                            <div className="flex flex-col gap-2 min-w-[150px]">
+                                <h3 className="text-sm font-bold text-slate-800">{t('pinned_location')}</h3>
+                                <div className="text-xs text-slate-500 font-mono mb-1">
+                                    {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => onConvertPin && onConvertPin('CTO')}
+                                        title={t('convert_to_cto')}
+                                        className="flex items-center justify-center px-2 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 transition-colors"
+                                    >
+                                        <Box className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => onConvertPin && onConvertPin('Pole')}
+                                        title={t('convert_to_pole')}
+                                        className="flex items-center justify-center px-2 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
+                                    >
+                                        <UtilityPole className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={() => onClearPin && onClearPin()}
+                                    className="w-full mt-1 px-2 py-1 text-red-500 text-[10px] font-bold hover:bg-red-50 rounded"
+                                >
+                                    {t('remove_pin')}
+                                </button>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
             </MapContainer>
 
             {/* Context Menu for Cables */}
@@ -1374,6 +1470,58 @@ export const MapView: React.FC<MapViewProps> = ({
                     }}
                     onClose={() => setContextMenu(null)}
                 />
+            )}
+
+
+            {/* Map Background Context Menu */}
+            {mapContextMenu && (
+                <div
+                    className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: mapContextMenu.y, left: mapContextMenu.x }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 mb-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">{t('coordinates')}</div>
+                        <div className="text-xs font-mono text-slate-700 dark:text-slate-300 select-all">
+                            {mapContextMenu.lat.toFixed(6)}, {mapContextMenu.lng.toFixed(6)}
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            navigator.clipboard.writeText(`${mapContextMenu.lat}, ${mapContextMenu.lng}`);
+                            setMapContextMenu(null);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                    >
+                        <Tag className="w-4 h-4 text-slate-400" />
+                        {t('copy_coordinates') || "Copiar Coordenadas"}
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            window.open(`https://www.google.com/maps?q=${mapContextMenu.lat},${mapContextMenu.lng}`, '_blank');
+                            setMapContextMenu(null);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                    >
+                        <Globe className="w-4 h-4 text-sky-500" />
+                        {t('open_google_maps') || "Abrir no Google Maps"}
+                    </button>
+
+                    {/* Add Node Quick Actions (Optional, but nice to have) */}
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
+                    <button
+                        onClick={() => {
+                            setMapContextMenu(null);
+                            // To Add Node, we need to switch mode, but we can't do it easily from here without 'setToolMode' prop which isn't passed to MapView currently. 
+                            // So limiting to requested features.
+                        }}
+                        className="hidden w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                    >
+                        Place Node Here
+                    </button>
+                </div>
             )}
         </div>
     );

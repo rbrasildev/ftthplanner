@@ -148,6 +148,7 @@ export default function App() {
     // Search State
     // searchTerm handled by SearchBox component to avoid re-renders
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+    const [mapForceUpdateKey, setMapForceUpdateKey] = useState<string>('');
 
     // State for highlighting cable on map when hovering in editor
     const [multiConnectionIds, setMultiConnectionIds] = useState<Set<string>>(new Set());
@@ -165,6 +166,9 @@ export default function App() {
 
     // --- OTDR State ---
     const [otdrResult, setOtdrResult] = useState<Coordinates | null>(null);
+
+    // --- Pinned Location State ---
+    const [pinnedLocation, setPinnedLocation] = useState<Coordinates | null>(null);
 
     // --- KMZ Import Preview State ---
     const [previewImportData, setPreviewImportData] = useState<{
@@ -430,9 +434,15 @@ export default function App() {
     // Search Logic - Optimized
     const searchResults = useMemo(() => {
         const term = debouncedSearchTerm.trim();
-
-        // Require at least 2 characters to search
         if (term.length < 2) return [];
+
+        const coordMatch = term.match(/^(-?\d+(\.\d+)?)[,\s]+(-?\d+(\.\d+)?)$/);
+        const pinResult = coordMatch ? [{
+            id: 'pin-location',
+            name: `${t('coordinates')}: ${coordMatch[1]}, ${coordMatch[3]}`,
+            type: 'PIN' as const,
+            coordinates: { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[3]) }
+        }] : [];
 
         const lowerTerm = term.toLowerCase();
         const net = getCurrentNetwork();
@@ -445,11 +455,10 @@ export default function App() {
             .filter(p => p.name.toLowerCase().includes(lowerTerm))
             .map(p => ({ ...p, type: 'POP' as const }));
 
-        // Limit to 10 results for better performance
-        return [...matchedPops, ...matchedCtos].slice(0, 10);
-    }, [debouncedSearchTerm, projects, currentProjectId]);
+        return [...pinResult, ...matchedPops, ...matchedCtos].slice(0, 10);
+    }, [debouncedSearchTerm, projects, currentProjectId, t]);
 
-    const handleSearchResultClick = useCallback((item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' }) => {
+    const handleSearchResultClick = useCallback((item: { id: string, coordinates: Coordinates, type: 'CTO' | 'POP' | 'PIN' }) => {
         setSelectedId(item.id);
         setToolMode('view');
         const offset = 0.0015;
@@ -1417,7 +1426,72 @@ export default function App() {
         );
     }
 
+    const handleConvertPinToNode = (type: 'CTO' | 'Pole') => {
+        if (!pinnedLocation || !currentProject) return;
+
+        const newId = crypto.randomUUID();
+        // Use translation for default names if possible, else fallback
+
+        if (type === 'CTO') {
+            const newCTO: CTOData = {
+                id: newId,
+                name: `CTO ${getCurrentNetwork().ctos.length + 1}`,
+                status: 'PLANNED',
+                type: 'CTO',
+                coordinates: pinnedLocation,
+                splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
+            };
+            updateCurrentNetwork(prev => ({ ...prev, ctos: [...prev.ctos, newCTO] }));
+            showToast(t('toast_cto_added') || "CTO Adicionada", 'success');
+        } else {
+            const newPole: PoleData = {
+                id: newId,
+                name: `Poste ${getCurrentNetwork().poles.length + 1}`,
+                status: 'PLANNED',
+                coordinates: pinnedLocation,
+                type: 'Poste Padrão'
+            };
+            updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
+            showToast(t('toast_pole_added') || "Poste Adicionado", 'success');
+        }
+        setPinnedLocation(null);
+    };
+
     const deploymentProgress = Math.round(((getCurrentNetwork().ctos.filter(c => c.status === 'DEPLOYED').length + (getCurrentNetwork().pops?.length || 0)) / (getCurrentNetwork().ctos.length + (getCurrentNetwork().pops?.length || 1))) * 100) || 0;
+
+    const handleMainSearch = (term: string) => {
+        // Smart Search: Check for coordinates (Lat, Lng)
+        // Supports: "-23.123, -46.123" or "-23.123 -46.123"
+        const coordMatch = term.trim().match(/^(-?\d+(\.\d+)?)[,\s]+(-?\d+(\.\d+)?)$/);
+
+        if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lng = parseFloat(coordMatch[3]);
+
+            if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                // Determine valid coordinate range
+                if (currentProject) {
+                    // Update project center state (transient) to force View update
+                    setCurrentProject(prev => prev ? {
+                        ...prev,
+                        mapState: {
+                            ...prev.mapState,
+                            center: { lat, lng },
+                            zoom: 18 // Auto zoom in
+                        }
+                    } : null);
+
+                    // Force MapComponent update
+                    setMapForceUpdateKey(Date.now().toString());
+                    setPinnedLocation({ lat, lng }); // Set Pin
+                    showToast(t('searching_location') || "Localizando...", "info");
+                    // Allow search term debounce to update so dropdown shows the result
+                }
+            }
+        }
+
+        setDebouncedSearchTerm(term);
+    };
 
     return (
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
@@ -1437,7 +1511,7 @@ export default function App() {
                 vflSource={vflSource}
                 setVflSource={setVflSource}
                 searchResults={searchResults}
-                onSearch={setDebouncedSearchTerm}
+                onSearch={handleMainSearch}
                 onResultClick={handleSearchResultClick}
                 onLogout={() => {
                     setUser(null);
@@ -1505,7 +1579,7 @@ export default function App() {
                     drawingPath={drawingPath}
                     snapDistance={systemSettings.snapDistance}
 
-                    viewKey={currentProjectId || undefined}
+                    viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
                     initialCenter={currentProject?.mapState?.center}
                     initialZoom={currentProject?.mapState?.zoom}
                     onMapMoveEnd={handleMapMoveEnd}
@@ -1556,6 +1630,9 @@ export default function App() {
                     }}
                     // Pass OTDR Result Point to MapView to render marker
                     otdrResult={otdrResult}
+                    pinnedLocation={pinnedLocation}
+                    onConvertPin={handleConvertPinToNode}
+                    onClearPin={() => setPinnedLocation(null)}
                 />
 
 

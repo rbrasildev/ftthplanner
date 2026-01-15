@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Server, Box, LucideIcon } from 'lucide-react';
+import { Search, Server, Box, MapPin, LucideIcon } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { Coordinates } from '../types';
 
 interface SearchBoxProps {
     onSearch: (term: string) => void;
-    results: { id: string, name: string, type: 'CTO' | 'POP', coordinates: Coordinates }[];
-    onResultClick: (item: { id: string, name: string, type: 'CTO' | 'POP', coordinates: Coordinates }) => void;
+    results: { id: string, name: string, type: 'CTO' | 'POP' | 'PIN', coordinates: Coordinates }[];
+    onResultClick: (item: { id: string, name: string, type: 'CTO' | 'POP' | 'PIN', coordinates: Coordinates }) => void;
 }
 
 export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResultClick }) => {
@@ -56,7 +56,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
                     type="text"
                     value={inputValue}
                     onChange={handleInputChange}
-                    placeholder="Buscar cabos, caixas..."
+                    placeholder={t('search_placeholder')}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
                 />
 
@@ -70,8 +70,13 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
                                     onClick={() => handleSelect(item)}
                                     className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center gap-3 group/item"
                                 >
-                                    <div className={`p-1.5 rounded-md ${item.type === 'POP' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
-                                        {item.type === 'POP' ? <Server className="w-3 h-3" /> : <Box className="w-3 h-3" />}
+                                    <div className={`p-1.5 rounded-md ${item.type === 'POP' ? 'bg-indigo-100 text-indigo-600' :
+                                            item.type === 'PIN' ? 'bg-red-100 text-red-600' :
+                                                'bg-orange-100 text-orange-600'
+                                        }`}>
+                                        {item.type === 'POP' ? <Server className="w-3 h-3" /> :
+                                            item.type === 'PIN' ? <MapPin className="w-3 h-3" /> :
+                                                <Box className="w-3 h-3" />}
                                     </div>
                                     <span className="font-medium text-slate-700 dark:text-slate-200 group-hover/item:text-sky-600 dark:group-hover/item:text-sky-400 transition-colors truncate">{item.name}</span>
                                 </button>
