@@ -880,6 +880,36 @@ export default function App() {
         }
     }, [getCurrentNetwork, finalizeCableCreation]);
 
+    const handleCableClick = useCallback((id: string) => {
+        // Left click in view mode: Just select (or do nothing to avoid annoying popups)
+        if (toolMode === 'view' || toolMode === 'edit_cable') {
+            setSelectedId(id);
+        }
+    }, [toolMode]);
+
+    const handleEditCableGeometry = useCallback((id: string) => {
+        // Start Edit Mode with Backup
+        previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+        setToolMode('edit_cable');
+        setSelectedId(id);
+        setHighlightedCableId(id);
+    }, [getCurrentNetwork]);
+
+    const handleEditCable = useCallback((id: string) => {
+        if (toolMode === 'view') {
+            setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
+            // Also clear any previous selection
+            setSelectedId(null);
+        }
+    }, [toolMode, getCurrentNetwork]);
+
+    const handleInitConnection = useCallback((id: string) => {
+        setToolMode('connect_cable');
+        // Start with this cable selected for connection
+        setMultiConnectionIds(new Set([id]));
+        showToast(t('toast_select_next_cable') || 'Selecione outro cabo para conectar');
+    }, [t]);
+
     const handleMoveNode = useCallback((id: string, lat: number, lng: number) => {
         updateCurrentNetwork(prev => {
             let updatedCTOs = prev.ctos;
@@ -1635,35 +1665,11 @@ export default function App() {
                     multiConnectionIds={multiConnectionIds}
 
                     previewImportData={previewImportData}
-                    onCableClick={(id) => {
-                        // Left click in view mode: Just select (or do nothing to avoid annoying popups)
-                        if (toolMode === 'view' || toolMode === 'edit_cable') {
-                            // In edit_cable mode, clicking other cables shouldn't do much, maybe select them?
-                            // For now, allow selection update but keep mode
-                            setSelectedId(id);
-                        }
-                    }}
-                    onEditCableGeometry={(id) => {
-                        // Start Edit Mode with Backup
-                        previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
-                        setToolMode('edit_cable');
-                        setSelectedId(id);
-                        setHighlightedCableId(id);
-                    }}
-                    onEditCable={(id) => {
-                        if (toolMode === 'view') {
-                            setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
-                            // Also clear any previous selection
-                            setSelectedId(null);
-                        }
-                    }}
+                    onCableClick={handleCableClick}
+                    onEditCableGeometry={handleEditCableGeometry}
+                    onEditCable={handleEditCable}
                     onDeleteCable={handleDeleteCable}
-                    onInitConnection={(id) => {
-                        setToolMode('connect_cable');
-                        // Start with this cable selected for connection
-                        setMultiConnectionIds(new Set([id]));
-                        showToast(t('toast_select_next_cable') || 'Selecione outro cabo para conectar');
-                    }}
+                    onInitConnection={handleInitConnection}
                     // Pass OTDR Result Point to MapView to render marker
                     otdrResult={otdrResult}
                     pinnedLocation={pinnedLocation}

@@ -799,7 +799,7 @@ interface MapViewProps {
 const noOp = () => { };
 
 export const MapView: React.FC<MapViewProps> = ({
-    ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set(),
+    ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set<string>(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
