@@ -307,7 +307,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     },
     { id: 'users', label: t('users') || 'Usuários', icon: Users },
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
-    { id: 'backup', label: t('backup') || 'Backup', icon: Save },
+    { id: 'backup', label: t('backup') || 'Backup', icon: Database },
   ].filter(item => {
     // Only show Users and Backup to ADMIN or OWNER
     if (item.id === 'users' || item.id === 'backup') {
@@ -454,40 +454,50 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate mb-0.5">{username}</p>
 
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className={`inline-block w-1.5 h-1.5 rounded-full ${userPlan === 'Plano Ilimitado' ? 'bg-purple-500' : userPlan === 'Plano Intermediário' ? 'bg-sky-500' : 'bg-emerald-500'}`}></span>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wide truncate font-medium" title={userPlan}>{userPlan}</p>
-              </div>
+              {isLoading ? (
+                <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mb-1.5" />
+              ) : (
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${userPlan === 'Plano Ilimitado' ? 'bg-purple-500' : userPlan === 'Plano Intermediário' ? 'bg-sky-500' : 'bg-emerald-500'}`}></span>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wide truncate font-medium" title={userPlan}>{userPlan}</p>
+                </div>
+              )}
 
-              <div className="flex flex-col gap-1">
-                {subscriptionExpiresAt && (userPlanType === 'TRIAL' || cancelAtPeriodEnd) && (
-                  <p className={`text-[9px] font-bold uppercase tracking-wide leading-tight ${userPlanType === 'TRIAL' ? 'text-amber-500' : 'text-red-500'}`}>
-                    {userPlanType === 'TRIAL' ? 'Teste' : 'Expira'}: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
-                  </p>
-                )}
 
-                {onUpgradeClick && (
-                  <button
-                    onClick={() => {
-                      if (userPlan === 'Plano Grátis' || userPlanType === 'TRIAL') {
-                        onUpgradeClick && onUpgradeClick();
-                      } else {
-                        setIsAccountSettingsOpen(true);
-                      }
-                    }}
-                    className={`flex items-center justify-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg font-bold transition-all w-full shadow-sm border border-transparent 
-                        ${(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 hover:shadow-md'}`}
-                  >
-                    {(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
-                      ? <><Zap className="w-3 h-3" /> Fazer Upgrade</>
-                      : <><Settings className="w-3 h-3" /> Gerenciar Assinatura</>
-                    }
-                  </button>
-                )}
-              </div>
             </div>
+
+          </div>
+          <div className="flex flex-col gap-1 mb-2">
+            {subscriptionExpiresAt && (userPlanType === 'TRIAL' || cancelAtPeriodEnd) && (
+              <p className={`text-[9px] font-bold uppercase tracking-wide leading-tight ${userPlanType === 'TRIAL' ? 'text-amber-500' : 'text-red-500'}`}>
+                {userPlanType === 'TRIAL' ? 'Teste' : 'Expira'}: {Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} dias
+              </p>
+            )}
+
+            {isLoading ? (
+              <div className="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+            ) : (
+              onUpgradeClick && (
+                <button
+                  onClick={() => {
+                    if (userPlan === 'Plano Grátis' || userPlanType === 'TRIAL') {
+                      onUpgradeClick && onUpgradeClick();
+                    } else {
+                      setIsAccountSettingsOpen(true);
+                    }
+                  }}
+                  className={`flex items-center justify-center gap-1.5 text-[10px] px-3 py-1.5 rounded-lg font-bold w-full shadow-sm border border-transparent 
+                        ${(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
+                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 hover:shadow-md'}`}
+                >
+                  {(userPlan === 'Plano Grátis' || userPlanType === 'TRIAL')
+                    ? <><Zap className="w-3 h-3" /> Fazer Upgrade</>
+                    : <><Settings className="w-3 h-3" /> Gerenciar Assinatura</>
+                  }
+                </button>
+              )
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -660,7 +670,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
               {currentView === 'settings' && <Settings className="w-10 h-10 text-slate-400" />}
-              {currentView === 'backup' && <Save className="w-10 h-10 text-slate-400" />}
+
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 capitalize">
               {menuItems.find(m => m.id === currentView)?.label}

@@ -674,7 +674,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     return (
         <div className="fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center backdrop-blur-sm">
-            <div className="w-[95vw] h-[95vh] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+            <div className="w-[95vw] h-[95vh] bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
 
                 {/* 1. HEADER (Title + Close) */}
                 <PopHeader

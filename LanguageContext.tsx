@@ -1099,6 +1099,10 @@ const translations = {
     'position_saved': 'Posição salva com sucesso!',
     'properties': 'Propriedades',
     'editing_cable': 'Editando Cabo...',
+    'connecting_cable': 'Conectando Cabos...',
+    'finish': 'Finalizar',
+    'connection_cancelled': 'Conexão Cancelada',
+    'toast_select_next_cable': 'Selecione outro cabo para conectar',
   }
 };
 

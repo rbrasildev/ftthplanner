@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../LanguageContext';
-import { useTheme } from '../ThemeContext';
+import { useLanguage } from '../../LanguageContext';
+import { useTheme } from '../../ThemeContext';
 import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server } from 'lucide-react';
-import * as saasService from '../services/saasService';
+import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
-import { ChangePasswordModal } from './modals/ChangePasswordModal';
+import { ChangePasswordModal } from '../modals/ChangePasswordModal';
 
 interface Company {
     id: string;
@@ -28,12 +28,7 @@ interface Plan {
         maxCTOs?: number;
         maxPOPs?: number;
     };
-    limits: {
-        maxProjects?: number;
-        maxUsers?: number;
-        maxCTOs?: number;
-        maxPOPs?: number;
-    };
+
     features?: string[];
     isRecommended?: boolean;
     stripePriceId?: string;

@@ -449,6 +449,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         loadCatalogs();
     }, []);
 
+    // NEW: Clean up connections if a cable is removed from incomingCables
+    useEffect(() => {
+        setLocalCTO(prev => {
+            const currentCableIds = new Set(incomingCables.map(c => c.id));
+            const validConnections = prev.connections.filter(c => {
+                // Check Source
+                if (c.sourceId.includes('-fiber-')) {
+                    const cableId = c.sourceId.split('-fiber-')[0];
+                    if (!currentCableIds.has(cableId)) return false;
+                }
+                // Check Target
+                if (c.targetId.includes('-fiber-')) {
+                    const cableId = c.targetId.split('-fiber-')[0];
+                    if (!currentCableIds.has(cableId)) return false;
+                }
+                return true;
+            });
+
+            if (validConnections.length !== prev.connections.length) {
+                return { ...prev, connections: validConnections };
+            }
+            return prev;
+        });
+    }, [incomingCables]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (splitterDropdownRef.current && !splitterDropdownRef.current.contains(event.target as Node)) {
@@ -1728,9 +1753,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 let connColor = '#22c55e'; // Default Green
                 const isFiber = (id: string) => id.includes('-fiber-');
+                const isSplitter = (id: string) => id.includes('spl-');
 
                 if (isFiber(source) && sourceColor) connColor = sourceColor;
                 else if (isFiber(target) && targetColor) connColor = targetColor;
+                else if (isSplitter(source) || isSplitter(target)) connColor = '#0f172a'; // Neutral if Splitter involved (and not Fiber)
                 else if (sourceColor) connColor = sourceColor;
                 else if (targetColor) connColor = targetColor;
 
@@ -2250,6 +2277,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const createFusionAtCursor = (e: React.MouseEvent) => {
+        // Helper to resolve fiber color from Port ID
+        const resolvePortColor = (portId: string): string | null => {
+            // Priority 1: Fiber Port
+            const match = portId.match && portId.match(/(.*)-fiber-(\d+)$/);
+            if (match) {
+                const cableId = match[1];
+                const fiberGlobalIndex = parseInt(match[2], 10);
+                const cable = incomingCables.find(c => c.id === cableId);
+                if (cable) {
+                    const looseTubeCount = cable.looseTubeCount || 1;
+                    const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
+                    const positionInTube = fiberGlobalIndex % fibersPerTube;
+                    return getFiberColor(positionInTube, cable.colorStandard);
+                }
+            }
+            // Priority 2: Splitter Port (Neutral)
+            if (portId.includes('spl-')) {
+                return '#0f172a'; // Neutral Color
+            }
+            return null;
+        };
+
         const id = `fus-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         // Note: FusionPoint interface might not have 'typeId'. Checking types.ts previously.
         // FusionPoint { id, name, type?: 'generic' | 'tray' }
@@ -2422,7 +2471,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     id: `conn-${Date.now()}-1`,
                     sourceId: connToSplit.sourceId,
                     targetId: `${id}-a`,
-                    color: connToSplit.color,
+                    color: resolvePortColor(connToSplit.sourceId) || connToSplit.color,
                     points: []
                 });
 
@@ -2431,7 +2480,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     id: `conn-${Date.now()}-2`,
                     sourceId: `${id}-b`,
                     targetId: connToSplit.targetId,
-                    color: connToSplit.color,
+                    color: resolvePortColor(connToSplit.targetId) || connToSplit.color,
                     points: []
                 });
             }

@@ -10,7 +10,7 @@ import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { PoleDetailsPanel } from './components/PoleDetailsPanel';
 import { MapToolbar } from './components/MapToolbar';
-import { SaasAdminPage } from './components/SaasAdminPage';
+import { SaasAdminPage } from './components/admin/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { LandingPage } from './components/LandingPage';

@@ -66,7 +66,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
 
             {/* Group 2: Construction */}
             <div className="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700/50">
-                <ToolButton mode="add_cto" icon={Box} label="CTO" />
+                <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />
                 <ToolButton mode="add_pop" icon={Building2} label="POP" />
 
                 {/* Pole Dropdown Trigger */}
