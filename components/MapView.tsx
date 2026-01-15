@@ -7,7 +7,7 @@ import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, 
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
-import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond, UtilityPole } from 'lucide-react';
+import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond, UtilityPole, CheckCircle2, XCircle, LocateFixed } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 
 
@@ -791,7 +791,7 @@ interface MapViewProps {
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onPropertiesNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
-    pinnedLocation?: Coordinates | null;
+    pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
     onConvertPin?: (type: 'CTO' | 'Pole') => void;
     onClearPin?: () => void;
 }
@@ -1359,7 +1359,6 @@ export const MapView: React.FC<MapViewProps> = ({
                                 <Marker
                                     key={`preview-node-${idx}`}
                                     position={[lat, lng]}
-                                    zIndexOffset={1000}
                                     icon={L.divIcon({
                                         className: 'preview-icon',
                                         html: `<div style="width: 14px; height: 14px; background: #f59e0b; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
@@ -1384,7 +1383,20 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
                 {pinnedLocation && (
-                    <Marker position={[pinnedLocation.lat, pinnedLocation.lng]} icon={pinIcon}>
+                    <Marker
+                        position={[pinnedLocation.lat, pinnedLocation.lng]}
+                        icon={L.divIcon({
+                            className: 'custom-icon',
+                            html: `
+                                <div class="relative flex items-center justify-center">
+                                    <div class="relative z-10">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-locate-fixed bg-white rounded-full p-1 shadow-md"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/></svg>
+                                    </div>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(239, 68, 68, 0.3); border-radius: 50%; animation: pulse-red 2s infinite; pointer-events: none;"></div>
+                                </div>
+                            `
+                        })}
+                    >
                         <Popup>
                             <div className="flex flex-col gap-2 min-w-[150px]">
                                 <h3 className="text-sm font-bold text-slate-800">{t('pinned_location')}</h3>
@@ -1413,6 +1425,19 @@ export const MapView: React.FC<MapViewProps> = ({
                                 >
                                     {t('remove_pin')}
                                 </button>
+                                {pinnedLocation.viability && (
+                                    <div className={`mt-2 p-2 rounded-lg border flex items-center gap-2 ${pinnedLocation.viability.active ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}`}>
+                                        {pinnedLocation.viability.active ? <CheckCircle2 className={`w-5 h-5 ${pinnedLocation.viability.active ? 'text-emerald-600 dark:text-emerald-400' : ''}`} /> : <XCircle className="w-5 h-5 text-red-500" />}
+                                        <div className="flex flex-col">
+                                            <span className={`text-[10px] font-bold uppercase ${pinnedLocation.viability.active ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                                                {pinnedLocation.viability.active ? t('viability_available') : t('viability_unavailable')}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                                {t('distance_nearest', { dist: Math.round(pinnedLocation.viability.distance) })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </Popup>
                     </Marker>
@@ -1421,108 +1446,114 @@ export const MapView: React.FC<MapViewProps> = ({
             </MapContainer>
 
             {/* Context Menu for Cables */}
-            {contextMenu && contextMenu.type === 'CABLE' && (
-                <CableContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    onEdit={() => {
-                        // "Editar Cabo" -> Geometry Edit (Select ID)
-                        if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
-                        setContextMenu(null);
-                    }}
-                    onProperties={() => {
-                        // "Propriedades" -> Open Side Panel
-                        if (onEditCable) onEditCable(contextMenu.id);
-                        setContextMenu(null);
-                    }}
-                    onDelete={() => {
-                        if (onDeleteCable) onDeleteCable(contextMenu.id);
-                        setContextMenu(null);
-                    }}
-                    onConnect={() => {
-                        if (onInitConnection) onInitConnection(contextMenu.id);
-                        setContextMenu(null);
-                    }}
-                    onClose={() => setContextMenu(null)}
-                />
-            )}
+            {
+                contextMenu && contextMenu.type === 'CABLE' && (
+                    <CableContextMenu
+                        x={contextMenu.x}
+                        y={contextMenu.y}
+                        onEdit={() => {
+                            // "Editar Cabo" -> Geometry Edit (Select ID)
+                            if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
+                            setContextMenu(null);
+                        }}
+                        onProperties={() => {
+                            // "Propriedades" -> Open Side Panel
+                            if (onEditCable) onEditCable(contextMenu.id);
+                            setContextMenu(null);
+                        }}
+                        onDelete={() => {
+                            if (onDeleteCable) onDeleteCable(contextMenu.id);
+                            setContextMenu(null);
+                        }}
+                        onConnect={() => {
+                            if (onInitConnection) onInitConnection(contextMenu.id);
+                            setContextMenu(null);
+                        }}
+                        onClose={() => setContextMenu(null)}
+                    />
+                )
+            }
 
-            {contextMenu && contextMenu.type !== 'CABLE' && (
-                <NodeContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    type={contextMenu.type as 'CTO' | 'POP' | 'Pole'}
-                    onEdit={() => {
-                        if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
-                        setContextMenu(null);
-                    }}
-                    onProperties={onPropertiesNode ? () => {
-                        onPropertiesNode(contextMenu.id, contextMenu.type as any);
-                        setContextMenu(null);
-                    } : undefined}
-                    onDelete={() => {
-                        if (onDeleteNode) onDeleteNode(contextMenu.id, contextMenu.type as any);
-                        setContextMenu(null);
-                    }}
-                    onMove={() => {
-                        if (onMoveNodeStart) onMoveNodeStart(contextMenu.id, contextMenu.type as any);
-                        setContextMenu(null);
-                    }}
-                    onClose={() => setContextMenu(null)}
-                />
-            )}
+            {
+                contextMenu && contextMenu.type !== 'CABLE' && (
+                    <NodeContextMenu
+                        x={contextMenu.x}
+                        y={contextMenu.y}
+                        type={contextMenu.type as 'CTO' | 'POP' | 'Pole'}
+                        onEdit={() => {
+                            if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
+                            setContextMenu(null);
+                        }}
+                        onProperties={onPropertiesNode ? () => {
+                            onPropertiesNode(contextMenu.id, contextMenu.type as any);
+                            setContextMenu(null);
+                        } : undefined}
+                        onDelete={() => {
+                            if (onDeleteNode) onDeleteNode(contextMenu.id, contextMenu.type as any);
+                            setContextMenu(null);
+                        }}
+                        onMove={() => {
+                            if (onMoveNodeStart) onMoveNodeStart(contextMenu.id, contextMenu.type as any);
+                            setContextMenu(null);
+                        }}
+                        onClose={() => setContextMenu(null)}
+                    />
+                )
+            }
 
 
             {/* Map Background Context Menu */}
-            {mapContextMenu && (
-                <div
-                    className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
-                    style={{ top: mapContextMenu.y, left: mapContextMenu.x }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 mb-1">
-                        <div className="text-[10px] uppercase font-bold text-slate-400">{t('coordinates')}</div>
-                        <div className="text-xs font-mono text-slate-700 dark:text-slate-300 select-all">
-                            {mapContextMenu.lat.toFixed(6)}, {mapContextMenu.lng.toFixed(6)}
+            {
+                mapContextMenu && (
+                    <div
+                        className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
+                        style={{ top: mapContextMenu.y, left: mapContextMenu.x }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 mb-1">
+                            <div className="text-[10px] uppercase font-bold text-slate-400">{t('coordinates')}</div>
+                            <div className="text-xs font-mono text-slate-700 dark:text-slate-300 select-all">
+                                {mapContextMenu.lat.toFixed(6)}, {mapContextMenu.lng.toFixed(6)}
+                            </div>
                         </div>
+
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(`${mapContextMenu.lat}, ${mapContextMenu.lng}`);
+                                setMapContextMenu(null);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                        >
+                            <Tag className="w-4 h-4 text-slate-400" />
+                            {t('copy_coordinates') || "Copiar Coordenadas"}
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                window.open(`https://www.google.com/maps?q=${mapContextMenu.lat},${mapContextMenu.lng}`, '_blank');
+                                setMapContextMenu(null);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                        >
+                            <Globe className="w-4 h-4 text-sky-500" />
+                            {t('open_google_maps') || "Abrir no Google Maps"}
+                        </button>
+
+                        {/* Add Node Quick Actions (Optional, but nice to have) */}
+                        <div className="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
+                        <button
+                            onClick={() => {
+                                setMapContextMenu(null);
+                                // To Add Node, we need to switch mode, but we can't do it easily from here without 'setToolMode' prop which isn't passed to MapView currently. 
+                                // So limiting to requested features.
+                            }}
+                            className="hidden w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
+                        >
+                            Place Node Here
+                        </button>
                     </div>
-
-                    <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(`${mapContextMenu.lat}, ${mapContextMenu.lng}`);
-                            setMapContextMenu(null);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                    >
-                        <Tag className="w-4 h-4 text-slate-400" />
-                        {t('copy_coordinates') || "Copiar Coordenadas"}
-                    </button>
-
-                    <button
-                        onClick={() => {
-                            window.open(`https://www.google.com/maps?q=${mapContextMenu.lat},${mapContextMenu.lng}`, '_blank');
-                            setMapContextMenu(null);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                    >
-                        <Globe className="w-4 h-4 text-sky-500" />
-                        {t('open_google_maps') || "Abrir no Google Maps"}
-                    </button>
-
-                    {/* Add Node Quick Actions (Optional, but nice to have) */}
-                    <div className="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
-                    <button
-                        onClick={() => {
-                            setMapContextMenu(null);
-                            // To Add Node, we need to switch mode, but we can't do it easily from here without 'setToolMode' prop which isn't passed to MapView currently. 
-                            // So limiting to requested features.
-                        }}
-                        className="hidden w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                    >
-                        Place Node Here
-                    </button>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
-import { autoSnapNetwork } from './utils/geometryUtils';
+import { autoSnapNetwork, calculateDistance } from './utils/geometryUtils';
 import { CTOEditor } from './components/CTOEditor';
 import { POPEditor } from './components/POPEditor';
 import { ProjectManager } from './components/ProjectManager';
@@ -168,7 +168,7 @@ export default function App() {
     const [otdrResult, setOtdrResult] = useState<Coordinates | null>(null);
 
     // --- Pinned Location State ---
-    const [pinnedLocation, setPinnedLocation] = useState<Coordinates | null>(null);
+    const [pinnedLocation, setPinnedLocation] = useState<(Coordinates & { viability?: { active: boolean, distance: number } }) | null>(null);
 
     // --- KMZ Import Preview State ---
     const [previewImportData, setPreviewImportData] = useState<{
@@ -803,6 +803,7 @@ export default function App() {
     const handleDeleteNode = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
         if (type === 'CTO') handleDeleteCTO(id);
         else if (type === 'POP') handleDeletePOP(id);
+        else if (type === 'Pole') handleDeletePole(id); // Fixed: Handle Pole deletion
     }, []); // Dependencies like handleDeleteCTO are closures, assuming stable enough or re-created with safe deps
 
     const handleMoveNodeStart = useCallback((id: string) => {
@@ -997,6 +998,11 @@ export default function App() {
         setSelectedId(null);
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.filter(c => c.id !== id) }));
         showToast(t('toast_cto_deleted'));
+    };
+    const handleDeletePole = (id: string) => {
+        setSelectedId(null);
+        updateCurrentNetwork(prev => ({ ...prev, poles: (prev.poles || []).filter(p => p.id !== id) }));
+        showToast(t('toast_pole_deleted'));
     };
     const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); setHighlightedCableId(null); };
     const handleUpdateCable = (c: CableData) => updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) }));
@@ -1460,6 +1466,12 @@ export default function App() {
     const deploymentProgress = Math.round(((getCurrentNetwork().ctos.filter(c => c.status === 'DEPLOYED').length + (getCurrentNetwork().pops?.length || 0)) / (getCurrentNetwork().ctos.length + (getCurrentNetwork().pops?.length || 1))) * 100) || 0;
 
     const handleMainSearch = (term: string) => {
+        if (!term || term.trim() === '') {
+            setPinnedLocation(null);
+            setDebouncedSearchTerm('');
+            return;
+        }
+
         // Smart Search: Check for coordinates (Lat, Lng)
         // Supports: "-23.123, -46.123" or "-23.123 -46.123"
         const coordMatch = term.trim().match(/^(-?\d+(\.\d+)?)[,\s]+(-?\d+(\.\d+)?)$/);
@@ -1483,7 +1495,31 @@ export default function App() {
 
                     // Force MapComponent update
                     setMapForceUpdateKey(Date.now().toString());
-                    setPinnedLocation({ lat, lng }); // Set Pin
+                    setMapBounds(null); // Fix: Clear previous bounds to prevent jumping to old location
+
+
+                    // Viability Check
+                    let minDistance = Infinity;
+                    const net = getCurrentNetwork();
+                    net.ctos.forEach(cto => {
+                        const d = calculateDistance({ lat, lng }, cto.coordinates);
+                        if (d < minDistance) minDistance = d;
+                    });
+                    // Optional: Check POPs too if they count for viability
+                    if (net.pops) {
+                        net.pops.forEach(pop => {
+                            const d = calculateDistance({ lat, lng }, pop.coordinates);
+                            if (d < minDistance) minDistance = d;
+                        });
+                    }
+
+                    const isViable = minDistance <= 200;
+
+                    setPinnedLocation({
+                        lat,
+                        lng,
+                        viability: { active: isViable, distance: minDistance }
+                    });
                     showToast(t('searching_location') || "Localizando...", "info");
                     // Allow search term debounce to update so dropdown shows the result
                 }
@@ -2049,7 +2085,7 @@ export default function App() {
                             height: catalogItem.height
                         };
                         updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
-                        showToast(t('toast_pole_added') || 'Poste adicionado com sucesso');
+                        showToast(t('toast_pole_added'));
                         setIsPoleModalOpen(false);
                         setPendingPoleLocation(null);
                         setToolMode('view');
