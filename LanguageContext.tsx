@@ -24,7 +24,7 @@ const translations = {
     'back_to_login': 'Back to Login',
     'registration_success': 'Account created! You can now log in.',
     'registration_failed': 'Registration failed. Username might be taken.',
-    'login_title': 'FTTH Master',
+    'login_title': 'FTTH Planner',
     'login_subtitle': 'Enter your credentials',
     'login_email_placeholder': 'Email',
     'login_password_placeholder': 'Password',
@@ -651,7 +651,7 @@ const translations = {
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
-    'login_title': 'FTTH Master',
+    'login_title': 'FTTH Planner',
     'login_subtitle': 'Entre com suas credenciais',
     'login_email_placeholder': 'Email',
     'login_password_placeholder': 'Senha',

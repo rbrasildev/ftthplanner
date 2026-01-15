@@ -83,7 +83,7 @@ export default function App() {
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
 
-    const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+    const [isLoadingProjects, setIsLoadingProjects] = useState(() => !!localStorage.getItem(STORAGE_KEY_TOKEN));
 
     // Global System Settings
     const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
@@ -1243,6 +1243,7 @@ export default function App() {
         setLoginError(null);
         try {
             const data = await authService.login(email, password);
+            setIsLoadingProjects(true); // START LOADING IMMEDIATELY to prevent "No Projects" flash
             setUser(data.user.username);
             setToken(data.token);
             // Fetch Plan Name
@@ -1395,6 +1396,7 @@ export default function App() {
                             showToast('Failed to update project', 'info');
                         }
                     }}
+                    isLoading={isLoadingProjects}
                     onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
                     onUpgradeClick={() => {
                         setUpgradeModalDetails(undefined);

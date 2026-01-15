@@ -48,6 +48,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
 
                     <div className="max-w-sm mx-auto w-full space-y-8">
                         <div className="text-center space-y-2">
+                            <div className="flex justify-center mb-6">
+                                <img src="/logo.png" alt="Logo" className="h-24 w-auto object-contain" />
+                            </div>
                             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{t('login_title')}</h1>
                             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                                 {t('login_subtitle')}

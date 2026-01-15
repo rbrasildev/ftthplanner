@@ -62,12 +62,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="p-4 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-sky-600 rounded-lg shadow-lg shadow-sky-600/20 flex items-center justify-center">
-                            <Network className="text-white w-5 h-5" />
+                        <div className="w-8 h-8 flex items-center justify-center">
+                            <img src="/logo.png" alt="FTTH Planner" className="w-full h-full object-contain" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-none">FTTH Master</h1>
-                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Planner Pro</span>
+                            <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-none">FTTH Planner</h1>
+                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Professional</span>
                         </div>
                     </div>
                     <button onClick={() => { setCurrentProjectId(null); setShowProjectManager(false); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title={t('exit_project')}>

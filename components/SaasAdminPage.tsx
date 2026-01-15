@@ -66,6 +66,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
     // ... (omitted) ...
 
     const navItems = [
@@ -134,17 +138,25 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         }
     };
 
-    const handleCompanyDelete = async (id: string, name: string) => {
-        if (window.confirm(`Are you sure you want to delete company "${name}"? This action CANNOT be undone and will delete all associated projects, users, and data.`)) {
-            try {
-                await saasService.deleteCompany(id);
-                loadData();
-                alert('Company deleted successfully');
-            } catch (error: any) {
-                console.error("Delete failed", error);
-                const msg = error.response?.data?.error || 'Failed to delete company';
-                alert(msg);
-            }
+    const handleCompanyDelete = (company: Company) => {
+        setCompanyToDelete(company);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteCompany = async () => {
+        if (!companyToDelete) return;
+
+        try {
+            await saasService.deleteCompany(companyToDelete.id);
+            setCompanies(prev => prev.filter(c => c.id !== companyToDelete.id));
+            loadData();
+        } catch (error: any) {
+            console.error("Delete failed", error);
+            const msg = error.response?.data?.details || error.response?.data?.error || 'Failed to delete company';
+            alert(msg);
+        } finally {
+            setIsDeleteModalOpen(false);
+            setCompanyToDelete(null);
         }
     };
 
@@ -504,7 +516,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <Eye className="w-4 h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleCompanyDelete(company.id, company.name)}
+                                                        onClick={() => handleCompanyDelete(company)}
                                                         className="ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
                                                         title="Delete Company"
                                                     >
@@ -1054,6 +1066,48 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     onClose={() => setIsPasswordModalOpen(false)}
                 />
             </main >
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && companyToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-8">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full mb-2">
+                                <AlertTriangle className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Company?</h3>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">
+                                <p>You are about to delete <span className="font-bold text-slate-800 dark:text-slate-200">{companyToDelete.name}</span>.</p>
+                                <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl text-left border border-red-100 dark:border-red-900/50">
+                                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">This will permanently delete:</p>
+                                    <ul className="space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> All Projects & Networks</li>
+                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {companyToDelete._count.users} Users accounts</li>
+                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> Active Subscriptions</li>
+                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> System Audit Logs</li>
+                                    </ul>
+                                </div>
+                                <p className="mt-4 text-xs text-slate-400">This action cannot be undone.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteCompany}
+                                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Confirm Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

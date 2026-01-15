@@ -193,6 +193,23 @@ export class StripeService {
                 // Logic to mark as past_due is usually handled by subscription.updated, 
                 // but we can add specific notifications here if needed.
                 break;
+
+            case 'invoice.payment_succeeded':
+                const invoice = dataObject;
+                if (invoice.subscription) {
+                    // Force refresh subscription from Stripe to get latest status (e.g. active)
+                    const latestSub = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                    const compId = latestSub.metadata?.companyId || invoice.metadata?.companyId; // Try both
+
+                    if (compId) {
+                        console.log(`[StripeService] Invoice Payment Succeeded. Waking up Subscription ${latestSub.id} for Company ${compId}`);
+                        await this.upsertSubscriptionInDb(latestSub, compId);
+                        await this.syncCompanyStatus(compId, latestSub.status);
+                    } else {
+                        console.warn(`[StripeService] Invoice paid but no CompanyID found in metadata. Sub: ${latestSub.id}`);
+                    }
+                }
+                break;
         }
 
         return true;
@@ -219,8 +236,13 @@ export class StripeService {
         });
 
         // Sync Plan if active
+
+
+        // Sync Plan if active
         // Retrieve the price ID from the subscription items
         const priceId = stripeSub.items?.data?.[0]?.price?.id;
+
+        console.log(`[StripeService] Syncing Subscription. Status: ${stripeSub.status}, PriceID: ${priceId}, CompanyID: ${companyId} `);
 
         if (priceId && ['active', 'trialing'].includes(stripeSub.status)) {
             const plan = await prisma.plan.findFirst({
@@ -231,8 +253,9 @@ export class StripeService {
                     ]
                 }
             });
+
             if (plan) {
-                console.log(`[StripeService] Syncing Company ${companyId} to Plan ${plan.name} (${plan.id})`);
+                console.log(`[StripeService] ✅ Plan FOUND: ${plan.name} (${plan.id}). Updating Company...`);
                 await prisma.company.update({
                     where: { id: companyId },
                     data: {
@@ -240,9 +263,15 @@ export class StripeService {
                         subscriptionExpiresAt: stripeSub.current_period_end ? new Date(stripeSub.current_period_end * 1000) : null
                     }
                 });
+                console.log(`[StripeService] Company ${companyId} updated successfully.`);
             } else {
-                console.warn(`[StripeService] Plan not found for Price ID: ${priceId}`);
+                console.error(`[StripeService] ❌ Plan NOT FOUND for Price ID: ${priceId} `);
+                // Fallback debugging: List all plans to see what we have
+                const allPlans = await prisma.plan.findMany({ select: { id: true, name: true, stripePriceId: true, stripePriceIdYearly: true } });
+                console.error(`[StripeService] Available Plans in DB: `, JSON.stringify(allPlans, null, 2));
             }
+        } else {
+            console.log(`[StripeService] Skipping Plan Sync.PriceID present: ${!!priceId}, Status: ${stripeSub.status} `);
         }
     }
 

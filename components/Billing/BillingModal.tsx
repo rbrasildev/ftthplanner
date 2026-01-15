@@ -84,6 +84,7 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
     const [loadingSecret, setLoadingSecret] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false); // New state for backend verification
 
     // Fetch Client Secret (create subscription) when modal opens
     useEffect(() => {
@@ -92,10 +93,9 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
             setError(null);
 
             // Call Backend to create intent
-            // Use api.post to leverage base URL configuration
             api.post('/billing/create-subscription', {
                 companyId,
-                priceId: planId, // Assuming planId passed is actually the Stripe Price ID for now, or backend maps it
+                priceId: planId,
                 email: billingEmail
             })
                 .then(response => {
@@ -104,7 +104,6 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                     if (data.clientSecret) {
                         setClientSecret(data.clientSecret);
                     } else if (data.status === 'active' || data.status === 'trialing') {
-                        // Already active or trial (no payment needed yet)
                         setSuccess(true);
                     } else {
                         throw new Error(`Status não tratado: ${data.status} (Sem segredo de pagamento)`);
@@ -113,13 +112,8 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                 .catch((err: any) => {
                     console.error("Billing Error:", err);
                     let msg = 'Falha ao iniciar pagamento.';
-
-                    if (err.response && err.response.data) {
-                        const backendError = err.response.data;
-                        const detailedMsg = backendError.details || backendError.error;
-                        if (detailedMsg) {
-                            msg = `Erro: ${detailedMsg}`;
-                        }
+                    if (err.response?.data?.details || err.response?.data?.error) {
+                        msg = `Erro: ${err.response.data.details || err.response.data.error}`;
                     } else if (err.message) {
                         msg += ` ${err.message}`;
                     }
@@ -129,78 +123,152 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
         }
     }, [isOpen, planId, companyId]);
 
+    // Polling function to verify subscription
+    const verifySubscriptionUpdate = async () => {
+        setIsVerifying(true);
+        let attempts = 0;
+        const maxAttempts = 10; // 20 seconds total
+
+        const poll = async () => {
+            try {
+                const res = await api.get('/auth/me');
+                const user = res.data.user;
+                // Check if plan matches or subscription is active
+                const isPlanUpdated = user.company?.planId === planId || user.company?.plan?.id === planId; // Depends on how planId matches
+                // OR check active/trialing status if we don't have exact plan ID match handy (sometimes prices differ)
+                const isActive = ['active', 'trialing'].includes(user.company?.subscription?.status || '');
+
+                // If we upgraded, we expect active status.
+                if (isActive) {
+                    setIsVerifying(false);
+                    setSuccess(true);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Verification poll failed", e);
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                setTimeout(poll, 2000);
+            } else {
+                setIsVerifying(false);
+                setSuccess(true); // Show success anyway eventually, user can refresh if needed.
+                // Optionally show a warning "Activation delayed"
+            }
+        };
+
+        setTimeout(poll, 2000); // Start polling after 2s
+    };
+
+
     if (!isOpen) return null;
 
     const appearance = {
         theme: theme === 'dark' ? 'night' : 'stripe',
+        variables: {
+            colorPrimary: '#0ea5e9',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            borderRadius: '12px',
+        }
     };
 
-    // Options for Elements
     const options = {
         clientSecret,
         appearance: appearance as any,
     };
 
     return (
-        <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className={`w-full max-w-md p-6 rounded-2xl shadow-2xl transition-all ${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-900'}`}>
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+            {/* Added min-h and flex structure to prevent layout jumps */}
+            <div className={`w-full max-w-lg p-0 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col 
+                ${theme === 'dark' ? 'bg-slate-900 text-white border border-slate-800' : 'bg-white text-gray-900 border border-slate-100'}`}>
 
-                {success ? (
-                    <div className="flex flex-col items-center justify-center p-6 text-center animate-in zoom-in-95 duration-300">
-                        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6">
-                            <Check className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                {/* Header Area */}
+                <div className={`px-8 py-6 border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'} flex justify-between items-center`}>
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+                            <h2 className="text-xl font-bold tracking-tight">Assinar {planName}</h2>
                         </div>
-                        <h2 className="text-2xl font-bold mb-2 text-slate-800 dark:text-white">Pagamento Confirmado!</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mb-8">
-                            Sua assinatura foi atualizada com sucesso. Você já pode aproveitar todos os recursos do seu novo plano.
-                        </p>
-                        <button
-                            onClick={() => {
-                                onClose();
-                                window.location.reload();
-                            }}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-105 active:scale-95"
-                        >
-                            Continuar
-                        </button>
+                        <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-2xl font-bold text-sky-500">R$ {price.toFixed(2)}</span>
+                            <span className="text-sm opacity-60">/ mês</span>
+                        </div>
                     </div>
-                ) : (
-                    <>
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold">Assinar {planName}</h2>
-                                <p className="text-sm opacity-70 mt-1">Total: R$ {price.toFixed(2)} / mês</p>
+                    {!success && !isVerifying && (
+                        <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Content Area - Fixed min-height to prevent jitter */}
+                <div className="p-8 min-h-[300px] flex flex-col justify-center relative">
+
+                    {error && (
+                        <div className="absolute top-4 left-8 right-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm flex gap-3 items-start animate-in slide-in-from-top-2">
+                            <div className="p-1 bg-red-100 dark:bg-red-800 rounded-full shrink-0">
+                                <X className="w-3 h-3" />
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
-                                <X className="w-5 h-5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    {success ? (
+                        <div className="flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500">
+                            <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50 dark:ring-emerald-500/5">
+                                <Check className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">Assinatura Ativa!</h2>
+                            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs mx-auto leading-relaxed">
+                                Seu plano foi atualizado com sucesso. Aproveite seus novos recursos.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    window.location.reload();
+                                }}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                Continuar
                             </button>
                         </div>
-
-                        {error && (
-                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-xl mb-6 text-sm flex gap-3 items-start">
-                                <div className="p-1 bg-red-100 dark:bg-red-800 rounded-full shrink-0">
-                                    <X className="w-3 h-3" />
-                                </div>
-                                <span>{error}</span>
+                    ) : isVerifying ? (
+                        <div className="flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <Loader2 className="w-16 h-16 animate-spin text-sky-500 mb-6" />
+                            <h3 className="text-xl font-bold mb-2">Verificando Pagamento...</h3>
+                            <p className="text-slate-500 dark:text-slate-400">Aguarde enquanto confirmamos sua ativação.</p>
+                        </div>
+                    ) : loadingSecret ? (
+                        <div className="flex flex-col items-center justify-center gap-6 animate-pulse">
+                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800" />
+                            <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="space-y-3 w-full max-w-xs">
+                                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                                <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 rounded-lg" />
                             </div>
-                        )}
-
-                        {loadingSecret ? (
-                            <div className="flex flex-col items-center justify-center py-12 gap-4">
-                                <Loader2 className="w-10 h-10 animate-spin text-sky-500" />
-                                <p className="text-sm font-medium text-slate-500">Iniciando pagamento seguro...</p>
-                            </div>
-                        ) : clientSecret ? (
+                        </div>
+                    ) : clientSecret ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <Elements options={options} stripe={stripePromise}>
                                 <CheckoutForm
-                                    onSuccess={() => setSuccess(true)}
+                                    onSuccess={verifySubscriptionUpdate}
                                     onError={(msg) => setError(msg)}
                                 />
                             </Elements>
-                        ) : (
-                            !error && <div className="text-center py-8 text-slate-500">Inicializando...</div>
-                        )}
-                    </>
+                        </div>
+                    ) : (
+                        !error && <div className="text-center py-8 text-slate-500">Inicializando sistema de pagamento...</div>
+                    )}
+                </div>
+
+                {/* Footer / Trust Badge */}
+                {!success && !isVerifying && (
+                    <div className="px-8 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        Ambiente seguro criptografado de ponta a ponta
+                    </div>
                 )}
             </div>
         </div>
