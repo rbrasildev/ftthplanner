@@ -808,19 +808,36 @@ export const MapView: React.FC<MapViewProps> = ({
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
-    const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
+
+    // --- PERSISTENCE HELPERS ---
+    const getSaved = <T,>(key: string, def: T): T => {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : def;
+        } catch { return def; }
+    };
+
+    const [mapType, setMapType] = useState<'street' | 'satellite'>(() => getSaved('ftth_map_type', 'street'));
 
     // Performance optimizations state
     const [mapBoundsState, setMapBoundsState] = useState<L.LatLngBounds | null>(null);
     const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
 
     // Visibility States
-    const [showCables, setShowCables] = useState(true);
-    const [showCTOs, setShowCTOs] = useState(true);
-    const [showPOPs, setShowPOPs] = useState(true);
-    const [showPoles, setShowPoles] = useState(false);
+    const [showCables, setShowCables] = useState(() => getSaved('ftth_show_cables', true));
+    const [showCTOs, setShowCTOs] = useState(() => getSaved('ftth_show_ctos', true));
+    const [showPOPs, setShowPOPs] = useState(() => getSaved('ftth_show_pops', true));
+    const [showPoles, setShowPoles] = useState(() => getSaved('ftth_show_poles', false));
     const [isLayersOpen, setIsLayersOpen] = useState(false);
-    const [enableClustering, setEnableClustering] = useState(true);
+    const [enableClustering, setEnableClustering] = useState(() => getSaved('ftth_clustering', true));
+
+    // --- PERSISTENCE EFFECTS ---
+    useEffect(() => { localStorage.setItem('ftth_map_type', JSON.stringify(mapType)); }, [mapType]);
+    useEffect(() => { localStorage.setItem('ftth_show_cables', JSON.stringify(showCables)); }, [showCables]);
+    useEffect(() => { localStorage.setItem('ftth_show_ctos', JSON.stringify(showCTOs)); }, [showCTOs]);
+    useEffect(() => { localStorage.setItem('ftth_show_pops', JSON.stringify(showPOPs)); }, [showPOPs]);
+    useEffect(() => { localStorage.setItem('ftth_show_poles', JSON.stringify(showPoles)); }, [showPoles]);
+    useEffect(() => { localStorage.setItem('ftth_clustering', JSON.stringify(enableClustering)); }, [enableClustering]);
 
     // --- PERFORMANCE REFS (Stabilize Callbacks) ---
     const cablesRef = useRef(cables);
