@@ -1,0 +1,2677 @@
+{
+  "meta": {
+    "createdAt": "2026-01-15T06:00:06.638Z",
+    "version": "1.0",
+    "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+  },
+  "projects": [
+    {
+      "id": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "userId": "3e96ac10-4c0a-495e-8b0f-aeac7f9e3c3a",
+      "name": "PROJETO FTTH COSTA DO ARITAPERA",
+      "centerLat": -2.1236317,
+      "centerLng": -54.5790533,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-13T23:08:59.308Z",
+      "updatedAt": "2026-01-14T04:39:16.474Z",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "81ccecb2-de53-4623-88cb-a211b890c02e",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.117529833620541,
+      "lng": -54.58730667829514,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352361442-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "384b6d77-3c7f-40b5-8e38-7f96cf5b3be1",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.118877727834414,
+      "lng": -54.58547204732895,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352358345-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "ea7b7315-7c1d-45fa-85a7-96587713c79f",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.119745163982521,
+      "lng": -54.58425331860781,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352355313-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "075146a5-3e58-41db-96ef-f504f4707f83",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.120555306689987,
+      "lng": -54.5830449834466,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352305270-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "0be9d3c6-92e1-4bb1-b541-d49681eb7223",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0108",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.122061675129195,
+      "lng": -54.58060819655657,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352149126-split"
+      ],
+      "layout": {
+        "cable-1768352305270-split": {
+          "x": 300,
+          "y": 0,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "4d4f70c2-bc25-4b6d-8dc2-b42936e5fe3a",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0107",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.12359518081625,
+      "lng": -54.5784882494912,
+      "splitters": [
+        {
+          "id": "spl-1768352206395",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768352206395-in",
+          "outputPortIds": [
+            "spl-1768352206395-out-0",
+            "spl-1768352206395-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768352265867",
+          "name": "2",
+          "type": "Splitter 1:4",
+          "inputPortId": "spl-1768352265867-in",
+          "outputPortIds": [
+            "spl-1768352265867-out-0",
+            "spl-1768352265867-out-1",
+            "spl-1768352265867-out-2",
+            "spl-1768352265867-out-3"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768352222543-9cce4",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768352248837-rq26x",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768352281110-x558j",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768352191172-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-1",
+          "targetId": "cable-1768352149126-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768352191172-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-2",
+          "targetId": "cable-1768352149126-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768352191172-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-3",
+          "targetId": "cable-1768352149126-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768352191172-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-4",
+          "targetId": "cable-1768352149126-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768352191172-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-5",
+          "targetId": "cable-1768352149126-split-fiber-5"
+        },
+        {
+          "id": "conn-1768352222543-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 390,
+              "y": -84
+            },
+            {
+              "x": 390,
+              "y": -30
+            }
+          ],
+          "sourceId": "spl-1768352206395-in",
+          "targetId": "fus-1768352222543-9cce4-a"
+        },
+        {
+          "id": "conn-1768352222543-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768352222543-9cce4-b",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-0"
+        },
+        {
+          "id": "conn-1768352248838-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768352248837-rq26x-b",
+          "targetId": "cable-1768352149126-split-fiber-0"
+        },
+        {
+          "id": "conn-1768352281110-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768352265867-in",
+          "targetId": "fus-1768352281110-x558j-a"
+        },
+        {
+          "id": "conn-1768362387881",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768352281110-x558j-b",
+          "targetId": "spl-1768352206395-out-0"
+        },
+        {
+          "id": "conn-1768362392591",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 264,
+              "y": -30
+            },
+            {
+              "x": 264,
+              "y": -78
+            }
+          ],
+          "sourceId": "fus-1768352248837-rq26x-a",
+          "targetId": "spl-1768352206395-out-1"
+        }
+      ],
+      "inputCableIds": [
+        "b48c1eed-d46e-4ca4-b0c7-0f555655780b"
+      ],
+      "layout": {
+        "spl-1768352206395": {
+          "x": 294,
+          "y": -126,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "spl-1768352265867": {
+          "x": 96,
+          "y": -132,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1768352222543-9cce4": {
+          "x": 426,
+          "y": -36,
+          "rotation": 0
+        },
+        "fus-1768352248837-rq26x": {
+          "x": 206.2540998635272,
+          "y": -35.78876377438387,
+          "rotation": 180
+        },
+        "fus-1768352281110-x558j": {
+          "x": 192,
+          "y": -96,
+          "rotation": 0
+        },
+        "cable-1768352149126-split": {
+          "x": -6,
+          "y": -42,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "b48c1eed-d46e-4ca4-b0c7-0f555655780b": {
+          "x": 468,
+          "y": -42,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "fdc7465b-a696-4354-8ecd-36cde45f70ec",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0101",
+      "status": "DEPLOYED",
+      "lat": -2.124245284212893,
+      "lng": -54.57724552372398,
+      "splitters": [
+        {
+          "id": "spl-1768350390642",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1768350390642-in",
+          "outputPortIds": [
+            "spl-1768350390642-out-0",
+            "spl-1768350390642-out-1",
+            "spl-1768350390642-out-2",
+            "spl-1768350390642-out-3",
+            "spl-1768350390642-out-4",
+            "spl-1768350390642-out-5",
+            "spl-1768350390642-out-6",
+            "spl-1768350390642-out-7"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768350404085-x4rc9",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768348107074-0",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-0",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-0"
+        },
+        {
+          "id": "conn-pass-1768348107074-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-1",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768348107074-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-2",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768348107074-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-3",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768348107074-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-4",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768348107074-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-5",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-5"
+        },
+        {
+          "id": "conn-1768350404085-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 150,
+              "y": -132
+            }
+          ],
+          "sourceId": "cable-1768348191058-fiber-0",
+          "targetId": "fus-1768350404085-x4rc9-a"
+        },
+        {
+          "id": "conn-1768350404085-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768350404085-x4rc9-b",
+          "targetId": "spl-1768350390642-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768348123903",
+        "cable-1768348191058"
+      ],
+      "layout": {
+        "spl-1768350390642": {
+          "x": 186,
+          "y": -174,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768361194451": {
+          "x": 174,
+          "y": -294,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1768348191058": {
+          "x": 90,
+          "y": 30,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768350404085-x4rc9": {
+          "x": 168,
+          "y": -138,
+          "rotation": 0
+        },
+        "fus-1768361183956-veiuc": {
+          "x": 168,
+          "y": -126,
+          "rotation": 0
+        },
+        "a34e4f88-3819-4d59-b93a-5f15686cd542": {
+          "x": 624,
+          "y": 42,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "b48c1eed-d46e-4ca4-b0c7-0f555655780b": {
+          "x": 168,
+          "y": 42,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "34e74e5d-b011-4b94-8a50-0ed628e49fc2",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0102",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.124991986397927,
+      "lng": -54.57587644457817,
+      "splitters": [
+        {
+          "id": "spl-1768350712579",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768350712579-in",
+          "outputPortIds": [
+            "spl-1768350712579-out-0",
+            "spl-1768350712579-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768350755971",
+          "name": "2",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1768350755971-in",
+          "outputPortIds": [
+            "spl-1768350755971-out-0",
+            "spl-1768350755971-out-1",
+            "spl-1768350755971-out-2",
+            "spl-1768350755971-out-3",
+            "spl-1768350755971-out-4",
+            "spl-1768350755971-out-5",
+            "spl-1768350755971-out-6",
+            "spl-1768350755971-out-7"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768350730701-5g0g4",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768350795843-aeaf4",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768350835828-a4gwp",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768350696752-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 360,
+              "y": 30
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-1",
+          "targetId": "cable-1768350677635-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768350696752-2",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 360,
+              "y": 42
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-2",
+          "targetId": "cable-1768350677635-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768350696752-3",
+          "color": "#3b82f6",
+          "points": [
+            {
+              "x": 360,
+              "y": 54
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-3",
+          "targetId": "cable-1768350677635-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768350696752-4",
+          "color": "#ef4444",
+          "points": [
+            {
+              "x": 360,
+              "y": 66
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-4",
+          "targetId": "cable-1768350677635-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768350696752-5",
+          "color": "#a855f7",
+          "points": [
+            {
+              "x": 360,
+              "y": 78
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-5",
+          "targetId": "cable-1768350677635-split-fiber-5"
+        },
+        {
+          "id": "conn-1768350730701-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 210,
+              "y": 18
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-0",
+          "targetId": "fus-1768350730701-5g0g4-a"
+        },
+        {
+          "id": "conn-1768350730701-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 246,
+              "y": 18
+            }
+          ],
+          "sourceId": "fus-1768350730701-5g0g4-b",
+          "targetId": "spl-1768350712579-in"
+        },
+        {
+          "id": "conn-1768350795843-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1768350712579-out-1",
+          "targetId": "fus-1768350795843-aeaf4-a"
+        },
+        {
+          "id": "conn-1768350795843-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 342,
+              "y": -36
+            },
+            {
+              "x": 342,
+              "y": 18
+            }
+          ],
+          "sourceId": "fus-1768350795843-aeaf4-b",
+          "targetId": "cable-1768350677635-split-fiber-0"
+        },
+        {
+          "id": "conn-1768350835828-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768350712579-out-0",
+          "targetId": "fus-1768350835828-a4gwp-a"
+        },
+        {
+          "id": "conn-1768350835828-2",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 408,
+              "y": -24
+            }
+          ],
+          "sourceId": "fus-1768350835828-a4gwp-b",
+          "targetId": "spl-1768350755971-in"
+        }
+      ],
+      "inputCableIds": [
+        "a34e4f88-3819-4d59-b93a-5f15686cd542"
+      ],
+      "layout": {
+        "spl-1768350712579": {
+          "x": 234,
+          "y": -60,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768350755971": {
+          "x": 366,
+          "y": -114,
+          "mirrored": false,
+          "rotation": 180
+        },
+        "spl-1768364809007": {
+          "x": 456,
+          "y": -66,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768350730701-5g0g4": {
+          "x": 201.8146586820809,
+          "y": 11.56177974882416,
+          "rotation": 0
+        },
+        "fus-1768350795843-aeaf4": {
+          "x": 298.4596178774496,
+          "y": -41.95942100032864,
+          "rotation": 0
+        },
+        "fus-1768350835828-a4gwp": {
+          "x": 360.8955999820995,
+          "y": -30.36016617298026,
+          "rotation": 0
+        },
+        "cable-1768350677635-split": {
+          "x": 360,
+          "y": 6,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "a34e4f88-3819-4d59-b93a-5f15686cd542": {
+          "x": 0,
+          "y": 6,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "0826e834-6934-4d9b-b43e-ba790804d638",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0103",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.126949991423401,
+      "lng": -54.57306548953056,
+      "splitters": [
+        {
+          "id": "spl-1768351042834",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768351042834-in",
+          "outputPortIds": [
+            "spl-1768351042834-out-0",
+            "spl-1768351042834-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768351128648",
+          "name": "2",
+          "type": "Splitter 1:4",
+          "inputPortId": "spl-1768351128648-in",
+          "outputPortIds": [
+            "spl-1768351128648-out-0",
+            "spl-1768351128648-out-1",
+            "spl-1768351128648-out-2",
+            "spl-1768351128648-out-3"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768351075871-n0s3o",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351103315-4zek0",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351150600-pdqdo",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768350963835-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-1",
+          "targetId": "cable-1768350899759-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768350963835-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-2",
+          "targetId": "cable-1768350899759-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768350963835-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-3",
+          "targetId": "cable-1768350899759-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768350963835-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-4",
+          "targetId": "cable-1768350899759-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768350963835-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-5",
+          "targetId": "cable-1768350899759-split-fiber-5"
+        },
+        {
+          "id": "conn-1768351075872-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768350677635-split-fiber-0",
+          "targetId": "fus-1768351075871-n0s3o-a"
+        },
+        {
+          "id": "conn-1768351075872-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 246,
+              "y": 12
+            },
+            {
+              "x": 246,
+              "y": -36
+            }
+          ],
+          "sourceId": "fus-1768351075871-n0s3o-b",
+          "targetId": "spl-1768351042834-in"
+        },
+        {
+          "id": "conn-1768351103315-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768351103315-4zek0-b",
+          "targetId": "cable-1768350899759-split-fiber-0"
+        },
+        {
+          "id": "conn-1768351150600-1",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 396,
+              "y": -30
+            }
+          ],
+          "sourceId": "spl-1768351042834-out-0",
+          "targetId": "fus-1768351150600-pdqdo-a"
+        },
+        {
+          "id": "conn-1768351150600-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768351150600-pdqdo-b",
+          "targetId": "spl-1768351128648-in"
+        },
+        {
+          "id": "conn-1768351259969",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 366,
+              "y": -42
+            }
+          ],
+          "sourceId": "spl-1768351042834-out-1",
+          "targetId": "fus-1768351103315-4zek0-a"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768350677635-split"
+      ],
+      "layout": {
+        "spl-1768350989036": {
+          "x": 258,
+          "y": -54,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768351037344": {
+          "x": 228,
+          "y": -54,
+          "rotation": 270
+        },
+        "spl-1768351042834": {
+          "x": 258,
+          "y": -66,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768351128648": {
+          "x": 426,
+          "y": -84,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768351075871-n0s3o": {
+          "x": 201.9503224983177,
+          "y": 5.99999481009284,
+          "rotation": 0
+        },
+        "fus-1768351103315-4zek0": {
+          "x": 360,
+          "y": 6,
+          "rotation": 0
+        },
+        "fus-1768351150600-pdqdo": {
+          "x": 388.8892252447292,
+          "y": -58.38209219365602,
+          "rotation": 0
+        },
+        "cable-1768350677635-split": {
+          "x": -48,
+          "y": 0,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1768350899759-split": {
+          "x": 432,
+          "y": 0,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "c8a13896-6d84-40fb-b6d6-920787b7b76d",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.116627133299472,
+      "lng": -54.58892651321344,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352367005-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "b777a2a4-481c-4ede-972e-15e72d9b40e8",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.116172456486839,
+      "lng": -54.59001386816182,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352371499-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "93d9e20f-266f-4433-a175-73283e28c7f8",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.115079558106747,
+      "lng": -54.59001016641073,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "e1fd2c57-de53-4176-89db-2c87b5c6ac3a",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.114727949051802,
+      "lng": -54.59073061586083,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "48b706c8-fa7a-4f31-86b4-242eb2dff105",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.115713411409085,
+      "lng": -54.59204024068995,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768352376670-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "054d13ab-8f7c-4cf8-97cc-a724d6d49624",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0104",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.131572916508398,
+      "lng": -54.56665759948587,
+      "splitters": [
+        {
+          "id": "spl-1768351352249",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768351352249-in",
+          "outputPortIds": [
+            "spl-1768351352249-out-0",
+            "spl-1768351352249-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768351463969",
+          "name": "2",
+          "type": "Splitter 1:4",
+          "inputPortId": "spl-1768351463969-in",
+          "outputPortIds": [
+            "spl-1768351463969-out-0",
+            "spl-1768351463969-out-1",
+            "spl-1768351463969-out-2",
+            "spl-1768351463969-out-3"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768351364239-vy4ld",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351415570-xuxz5",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351475408-peljm",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768351341669-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-1",
+          "targetId": "cable-1768351312531-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768351341669-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-2",
+          "targetId": "cable-1768351312531-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768351341669-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-3",
+          "targetId": "cable-1768351312531-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768351341669-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-4",
+          "targetId": "cable-1768351312531-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768351341669-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-5",
+          "targetId": "cable-1768351312531-split-fiber-5"
+        },
+        {
+          "id": "conn-1768351364239-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768350899759-split-fiber-0",
+          "targetId": "fus-1768351364239-vy4ld-a"
+        },
+        {
+          "id": "conn-1768351364239-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 276,
+              "y": 12
+            }
+          ],
+          "sourceId": "fus-1768351364239-vy4ld-b",
+          "targetId": "spl-1768351352249-in"
+        },
+        {
+          "id": "conn-1768351415570-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 402,
+              "y": 12
+            }
+          ],
+          "sourceId": "fus-1768351415570-xuxz5-b",
+          "targetId": "cable-1768351312531-split-fiber-0"
+        },
+        {
+          "id": "conn-1768351437225",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 348,
+              "y": -42
+            },
+            {
+              "x": 348,
+              "y": 12
+            }
+          ],
+          "sourceId": "spl-1768351352249-out-1",
+          "targetId": "fus-1768351415570-xuxz5-a"
+        },
+        {
+          "id": "conn-1768351475408-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768351352249-out-0",
+          "targetId": "fus-1768351475408-peljm-a"
+        },
+        {
+          "id": "conn-1768351475408-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768351475408-peljm-b",
+          "targetId": "spl-1768351463969-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768350899759-split"
+      ],
+      "layout": {
+        "spl-1768351352249": {
+          "x": 264,
+          "y": -66,
+          "rotation": 270
+        },
+        "spl-1768351463969": {
+          "x": 426,
+          "y": -60,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768351364239-vy4ld": {
+          "x": 216,
+          "y": 6,
+          "rotation": 0
+        },
+        "fus-1768351415570-xuxz5": {
+          "x": 366,
+          "y": 6,
+          "rotation": 0
+        },
+        "fus-1768351475408-peljm": {
+          "x": 396,
+          "y": -36,
+          "rotation": 0
+        },
+        "cable-1768351312531-split": {
+          "x": 402,
+          "y": 0,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "a1ada620-6bc8-47d2-a26a-e16228d0d5c0",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0105",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.133593554670392,
+      "lng": -54.56374970989696,
+      "splitters": [
+        {
+          "id": "spl-1768351602584",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768351602584-in",
+          "outputPortIds": [
+            "spl-1768351602584-out-0",
+            "spl-1768351602584-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768351667314",
+          "name": "2",
+          "type": "Splitter 1:4",
+          "inputPortId": "spl-1768351667314-in",
+          "outputPortIds": [
+            "spl-1768351667314-out-0",
+            "spl-1768351667314-out-1",
+            "spl-1768351667314-out-2",
+            "spl-1768351667314-out-3"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768351622499-4j6yp",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351645699-dafz0",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351680661-eemyj",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768351590229-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-1",
+          "targetId": "cable-1768351318826-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768351590229-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-2",
+          "targetId": "cable-1768351318826-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768351590229-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-3",
+          "targetId": "cable-1768351318826-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768351590229-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-4",
+          "targetId": "cable-1768351318826-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768351590229-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-5",
+          "targetId": "cable-1768351318826-split-fiber-5"
+        },
+        {
+          "id": "conn-1768351622500-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768351312531-split-fiber-0",
+          "targetId": "fus-1768351622499-4j6yp-a"
+        },
+        {
+          "id": "conn-1768351622500-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 366,
+              "y": 78
+            }
+          ],
+          "sourceId": "fus-1768351622499-4j6yp-b",
+          "targetId": "spl-1768351602584-in"
+        },
+        {
+          "id": "conn-1768351645699-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 438,
+              "y": 48
+            },
+            {
+              "x": 438,
+              "y": 78
+            }
+          ],
+          "sourceId": "spl-1768351602584-out-1",
+          "targetId": "fus-1768351645699-dafz0-a"
+        },
+        {
+          "id": "conn-1768351645699-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768351645699-dafz0-b",
+          "targetId": "cable-1768351318826-split-fiber-0"
+        },
+        {
+          "id": "conn-1768351680661-1",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 456,
+              "y": 60
+            },
+            {
+              "x": 456,
+              "y": 42
+            }
+          ],
+          "sourceId": "spl-1768351602584-out-0",
+          "targetId": "fus-1768351680661-eemyj-a"
+        },
+        {
+          "id": "conn-1768351680661-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768351680661-eemyj-b",
+          "targetId": "spl-1768351667314-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768351312531-split"
+      ],
+      "layout": {
+        "spl-1768351602584": {
+          "x": 354,
+          "y": 24,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768351667314": {
+          "x": 522,
+          "y": 12,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768351622499-4j6yp": {
+          "x": 294,
+          "y": 72,
+          "rotation": 0
+        },
+        "fus-1768351645699-dafz0": {
+          "x": 460.5095766040715,
+          "y": 71.78184289162445,
+          "rotation": 0
+        },
+        "fus-1768351680661-eemyj": {
+          "x": 496.2579647761431,
+          "y": 35.50563784848551,
+          "rotation": 0
+        },
+        "cable-1768351312531-split": {
+          "x": 72,
+          "y": 66,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1768351318826-split": {
+          "x": 516,
+          "y": 66,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "f8612860-7974-4a13-a097-f2e0f70c93b6",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CA-AA-0106",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.13515080875722,
+      "lng": -54.56134523947769,
+      "splitters": [
+        {
+          "id": "spl-1768351778235",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768351778235-in",
+          "outputPortIds": [
+            "spl-1768351778235-out-0",
+            "spl-1768351778235-out-1"
+          ]
+        },
+        {
+          "id": "spl-1768351840213",
+          "name": "2",
+          "type": "Splitter 1:4",
+          "inputPortId": "spl-1768351840213-in",
+          "outputPortIds": [
+            "spl-1768351840213-out-0",
+            "spl-1768351840213-out-1",
+            "spl-1768351840213-out-2",
+            "spl-1768351840213-out-3"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768351753444-nmys7",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351847656-ex11d",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768351890029-2kbzs",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768351753444-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768351318826-split-fiber-0",
+          "targetId": "fus-1768351753444-nmys7-a"
+        },
+        {
+          "id": "conn-1768351812934",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 438,
+              "y": 168
+            },
+            {
+              "x": 438,
+              "y": 138
+            }
+          ],
+          "sourceId": "fus-1768351753444-nmys7-b",
+          "targetId": "spl-1768351778235-in"
+        },
+        {
+          "id": "conn-1768351847657-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768351778235-out-0",
+          "targetId": "fus-1768351847656-ex11d-a"
+        },
+        {
+          "id": "conn-1768351847657-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768351847656-ex11d-b",
+          "targetId": "spl-1768351840213-in"
+        },
+        {
+          "id": "conn-1768351890029-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 528,
+              "y": 132
+            },
+            {
+              "x": 528,
+              "y": 180
+            }
+          ],
+          "sourceId": "spl-1768351778235-out-1",
+          "targetId": "fus-1768351890029-2kbzs-a"
+        },
+        {
+          "id": "conn-1768351890029-2",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "fus-1768351890029-2kbzs-b",
+          "targetId": "cable-1768351318826-split-fiber-1"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768351318826-split"
+      ],
+      "layout": {
+        "spl-1768351746011": {
+          "x": 456,
+          "y": 138,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768351778235": {
+          "x": 450,
+          "y": 108,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768351840213": {
+          "x": 570,
+          "y": 114,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768351753444-nmys7": {
+          "x": 396,
+          "y": 162,
+          "rotation": 0
+        },
+        "fus-1768351847656-ex11d": {
+          "x": 540,
+          "y": 138,
+          "rotation": 0
+        },
+        "fus-1768351890029-2kbzs": {
+          "x": 396,
+          "y": 174.0000028603874,
+          "rotation": 180
+        },
+        "cable-1768351318826-split": {
+          "x": 162,
+          "y": 156,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "9a5fee1f-1624-4feb-8f10-7d237ae77224",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "a4febb9b-3b97-4354-ad32-07466299924d",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CEO-01-12F",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.124257150875116,
+      "lng": -54.57723850409613,
+      "splitters": [
+        {
+          "id": "spl-1768349866985",
+          "name": "1",
+          "type": "1:2-10/90",
+          "inputPortId": "spl-1768349866985-in",
+          "outputPortIds": [
+            "spl-1768349866985-out-0",
+            "spl-1768349866985-out-1"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768349964012-paysa",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768349986546-1fpxo",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768350321470-na4yf",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768350353293-aphay",
+          "name": "F-4",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        },
+        {
+          "id": "fus-1768352079895-gdyjq",
+          "name": "F-5",
+          "type": "generic",
+          "catalogId": "9c698f24-e2c6-4874-b67a-a586d0d52f5a"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768350323538",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 54,
+              "y": 90
+            }
+          ],
+          "sourceId": "fus-1768350321470-na4yf-b",
+          "targetId": "spl-1768349866985-in"
+        },
+        {
+          "id": "conn-1768350331394",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 6,
+              "y": 90
+            }
+          ],
+          "sourceId": "fus-1768350321470-na4yf-a",
+          "targetId": "cable-1768346580179-fiber-0"
+        },
+        {
+          "id": "conn-1768350353293-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": -6,
+              "y": 6
+            }
+          ],
+          "sourceId": "cable-1768346580179-fiber-1",
+          "targetId": "fus-1768350353293-aphay-a"
+        },
+        {
+          "id": "conn-1768350353293-2",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "fus-1768350353293-aphay-b",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-1"
+        },
+        {
+          "id": "conn-1768352079895-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 18,
+              "y": -36
+            },
+            {
+              "x": 18,
+              "y": -6
+            }
+          ],
+          "sourceId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-1",
+          "targetId": "fus-1768352079895-gdyjq-a"
+        },
+        {
+          "id": "conn-1768352079895-2",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "fus-1768352079895-gdyjq-b",
+          "targetId": "b48c1eed-d46e-4ca4-b0c7-0f555655780b-fiber-0"
+        },
+        {
+          "id": "conn-1768349986547-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768349986546-1fpxo-b",
+          "targetId": "cable-1768348191058-fiber-0"
+        },
+        {
+          "id": "conn-1768361017977",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 61.21222141154295,
+              "y": -71.39848400051444
+            }
+          ],
+          "sourceId": "spl-1768349866985-out-0",
+          "targetId": "fus-1768349986546-1fpxo-a"
+        },
+        {
+          "id": "conn-1768361026069",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 47.08632416272535,
+              "y": -48.44390097118584
+            }
+          ],
+          "sourceId": "spl-1768349866985-out-1",
+          "targetId": "fus-1768349964012-paysa-a"
+        },
+        {
+          "id": "conn-1768362300389",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768349964012-paysa-b",
+          "targetId": "a34e4f88-3819-4d59-b93a-5f15686cd542-fiber-0"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768346667563",
+        "cable-1768346580179",
+        "cable-1768348123903",
+        "cable-1768348191058",
+        "a34e4f88-3819-4d59-b93a-5f15686cd542",
+        "b48c1eed-d46e-4ca4-b0c7-0f555655780b"
+      ],
+      "layout": {
+        "spl-1768349717843": {
+          "x": -30,
+          "y": -12,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1768349866985": {
+          "x": 24,
+          "y": 12,
+          "mirrored": false,
+          "rotation": 180
+        },
+        "cable-1768346580179": {
+          "x": -126,
+          "y": 174,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "cable-1768346667563": {
+          "x": 0,
+          "y": 0,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1768348123903": {
+          "x": 90,
+          "y": 90,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1768348191058": {
+          "x": -132,
+          "y": -270,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1768349964012-paysa": {
+          "x": 66,
+          "y": -54,
+          "rotation": 0
+        },
+        "fus-1768349978275-i62l1": {
+          "x": -12.57289830047907,
+          "y": 90,
+          "rotation": 270
+        },
+        "fus-1768349986546-1fpxo": {
+          "x": -6,
+          "y": -78,
+          "rotation": 180
+        },
+        "fus-1768350087559-mybjm": {
+          "x": -12.57289830047907,
+          "y": 90,
+          "rotation": 270
+        },
+        "fus-1768350321470-na4yf": {
+          "x": 12,
+          "y": 84,
+          "rotation": 0
+        },
+        "fus-1768350353293-aphay": {
+          "x": -94.968792111684,
+          "y": 0.001227016940531733,
+          "rotation": 180
+        },
+        "fus-1768352079895-gdyjq": {
+          "x": -94.968792111684,
+          "y": -12.35419298779014,
+          "rotation": 180
+        },
+        "a34e4f88-3819-4d59-b93a-5f15686cd542": {
+          "x": 108,
+          "y": -60,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "b48c1eed-d46e-4ca4-b0c7-0f555655780b": {
+          "x": -300,
+          "y": -18,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "catalogId": "fa021c0c-2af6-443b-a952-452be1f49ab1",
+      "type": "CEO",
+      "color": null,
+      "reserveLoopLength": null,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cto-1768352599859",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CTO-19",
+      "status": "PLANNED",
+      "lat": -2.116072712755101,
+      "lng": -54.59046887441496,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "fa021c0c-2af6-443b-a952-452be1f49ab1",
+      "type": "CEO",
+      "color": "#00ffff",
+      "reserveLoopLength": 50,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    }
+  ],
+  "pops": [
+    {
+      "id": "pop-1768346358540",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "POP-COSTA DO ARITAPERA",
+      "status": "PLANNED",
+      "lat": -2.12458289571194,
+      "lng": -54.57747369701833,
+      "olts": [
+        {
+          "id": "olt-1768346403253",
+          "name": "Olt V-Sol 2 pon 1",
+          "ports": 2,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1768346403253-s1-p1",
+            "olt-1768346403253-s1-p2"
+          ],
+          "structure": {
+            "slots": 1,
+            "portsPerSlot": 2
+          }
+        }
+      ],
+      "dios": [
+        {
+          "id": "dio-1768346387734",
+          "name": "DIO 1",
+          "ports": 12,
+          "status": "PLANNED",
+          "portIds": [
+            "dio-1768346387734-p-0",
+            "dio-1768346387734-p-1",
+            "dio-1768346387734-p-2",
+            "dio-1768346387734-p-3",
+            "dio-1768346387734-p-4",
+            "dio-1768346387734-p-5",
+            "dio-1768346387734-p-6",
+            "dio-1768346387734-p-7",
+            "dio-1768346387734-p-8",
+            "dio-1768346387734-p-9",
+            "dio-1768346387734-p-10",
+            "dio-1768346387734-p-11"
+          ],
+          "inputCableIds": [
+            "cable-1768346580179"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "fusion-1768347644363",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-0",
+          "targetId": "dio-1768346387734-p-0"
+        },
+        {
+          "id": "fusion-1768347650726",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-1",
+          "targetId": "dio-1768346387734-p-1"
+        },
+        {
+          "id": "fusion-1768347654009",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-2",
+          "targetId": "dio-1768346387734-p-2"
+        },
+        {
+          "id": "fusion-1768347657535",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-3",
+          "targetId": "dio-1768346387734-p-3"
+        },
+        {
+          "id": "fusion-1768347660191",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-4",
+          "targetId": "dio-1768346387734-p-4"
+        },
+        {
+          "id": "fusion-1768347663889",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768346580179-fiber-5",
+          "targetId": "dio-1768346387734-p-5"
+        },
+        {
+          "id": "patch-1768347861523",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1768346403253-s1-p1",
+          "targetId": "dio-1768346387734-p-0"
+        },
+        {
+          "id": "patch-1768347864146",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1768346403253-s1-p2",
+          "targetId": "dio-1768346387734-p-1"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768346580179"
+      ],
+      "layout": {
+        "dio-1768346387734": {
+          "x": 640,
+          "y": 260,
+          "rotation": 0
+        },
+        "olt-1768346403253": {
+          "x": 640,
+          "y": 116,
+          "rotation": 0
+        },
+        "cable-1768346580179": {
+          "x": 280,
+          "y": 340,
+          "rotation": 0
+        }
+      },
+      "color": "#6366f1",
+      "size": 36,
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    }
+  ],
+  "cables": [
+    {
+      "id": "a34e4f88-3819-4d59-b93a-5f15686cd542",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-02-RM1-6F (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.124257150875116,
+          "lng": -54.57723850409613
+        },
+        {
+          "lat": -2.124371300077065,
+          "lng": -54.5770055951874
+        },
+        {
+          "lat": -2.124464133793208,
+          "lng": -54.57683874778391
+        },
+        {
+          "lat": -2.124590029792464,
+          "lng": -54.57658839939305
+        },
+        {
+          "lat": -2.12478894148994,
+          "lng": -54.5762782072757
+        },
+        {
+          "lat": -2.124991986397927,
+          "lng": -54.57587644457817
+        }
+      ],
+      "fromNodeId": "a4febb9b-3b97-4354-ad32-07466299924d",
+      "toNodeId": "34e74e5d-b011-4b94-8a50-0ed628e49fc2",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "b48c1eed-d46e-4ca4-b0c7-0f555655780b",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.124257150875116,
+          "lng": -54.57723850409613
+        },
+        {
+          "lat": -2.124153683522715,
+          "lng": -54.57746463000376
+        },
+        {
+          "lat": -2.124016523414203,
+          "lng": -54.57771622609058
+        },
+        {
+          "lat": -2.123831234423567,
+          "lng": -54.57806410919891
+        },
+        {
+          "lat": -2.12359518081625,
+          "lng": -54.5784882494912
+        }
+      ],
+      "fromNodeId": "a4febb9b-3b97-4354-ad32-07466299924d",
+      "toNodeId": "4d4f70c2-bc25-4b6d-8dc2-b42936e5fe3a",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "89fd8a4b-a525-49ee-bc4a-0ee956e25bd7",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-04-RM2-6F",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.116041709909889,
+          "lng": -54.59045122708253
+        },
+        {
+          "lat": -2.115476335326202,
+          "lng": -54.5902121094752
+        },
+        {
+          "lat": -2.115067240368904,
+          "lng": -54.59000290733463
+        },
+        {
+          "lat": -2.114902857270639,
+          "lng": -54.59027419713609
+        },
+        {
+          "lat": -2.11477490931159,
+          "lng": -54.59054616373082
+        },
+        {
+          "lat": -2.114719086185658,
+          "lng": -54.59073431296098
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768346580179",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "Cabo 6FO",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.124257150875116,
+          "lng": -54.57723850409613
+        },
+        {
+          "lat": -2.124530628589453,
+          "lng": -54.5774522073817
+        },
+        {
+          "lat": -2.12458289571194,
+          "lng": -54.57747369701833
+        }
+      ],
+      "fromNodeId": "a4febb9b-3b97-4354-ad32-07466299924d",
+      "toNodeId": "pop-1768346358540",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768348191058",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "Cabo 6FO",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.124257150875116,
+          "lng": -54.57723850409613
+        },
+        {
+          "lat": -2.124245284212893,
+          "lng": -54.57724552372398
+        }
+      ],
+      "fromNodeId": "a4febb9b-3b97-4354-ad32-07466299924d",
+      "toNodeId": "fdc7465b-a696-4354-8ecd-36cde45f70ec",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768350677635-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-02-RM1-6F (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.124991986397927,
+          "lng": -54.57587644457817
+        },
+        {
+          "lat": -2.125104196653132,
+          "lng": -54.57577852686372
+        },
+        {
+          "lat": -2.125379514256248,
+          "lng": -54.57538608254785
+        },
+        {
+          "lat": -2.125593312297325,
+          "lng": -54.57506119764151
+        },
+        {
+          "lat": -2.125705263674285,
+          "lng": -54.57490481505725
+        },
+        {
+          "lat": -2.125978603809233,
+          "lng": -54.57451711439813
+        },
+        {
+          "lat": -2.12629456870421,
+          "lng": -54.57403569579865
+        },
+        {
+          "lat": -2.126642722960996,
+          "lng": -54.5735281844766
+        },
+        {
+          "lat": -2.126761777507652,
+          "lng": -54.57335280297048
+        },
+        {
+          "lat": -2.126949991423401,
+          "lng": -54.57306548953056
+        }
+      ],
+      "fromNodeId": "34e74e5d-b011-4b94-8a50-0ed628e49fc2",
+      "toNodeId": "0826e834-6934-4d9b-b43e-ba790804d638",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768350899759-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-02-RM1-6F (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.126949991423401,
+          "lng": -54.57306548953056
+        },
+        {
+          "lat": -2.127038771602429,
+          "lng": -54.57295740917239
+        },
+        {
+          "lat": -2.127311070375841,
+          "lng": -54.57257556487718
+        },
+        {
+          "lat": -2.127578554332946,
+          "lng": -54.57223753353706
+        },
+        {
+          "lat": -2.127857746900913,
+          "lng": -54.57187075598351
+        },
+        {
+          "lat": -2.128173315797989,
+          "lng": -54.57146048770416
+        },
+        {
+          "lat": -2.12847549821294,
+          "lng": -54.5709996303074
+        },
+        {
+          "lat": -2.128741909599067,
+          "lng": -54.57059006405548
+        },
+        {
+          "lat": -2.129105842345891,
+          "lng": -54.57003705928049
+        },
+        {
+          "lat": -2.129424823285051,
+          "lng": -54.56956788149193
+        },
+        {
+          "lat": -2.129761388520291,
+          "lng": -54.56904922542106
+        },
+        {
+          "lat": -2.130103530114549,
+          "lng": -54.568628272029
+        },
+        {
+          "lat": -2.130392974076329,
+          "lng": -54.56822044081949
+        },
+        {
+          "lat": -2.130795902717188,
+          "lng": -54.56768138651417
+        },
+        {
+          "lat": -2.131109737118219,
+          "lng": -54.56725034384438
+        },
+        {
+          "lat": -2.131572916508398,
+          "lng": -54.56665759948587
+        }
+      ],
+      "fromNodeId": "0826e834-6934-4d9b-b43e-ba790804d638",
+      "toNodeId": "054d13ab-8f7c-4cf8-97cc-a724d6d49624",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768351312531-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-02-RM1-6F (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.131572916508398,
+          "lng": -54.56665759948587
+        },
+        {
+          "lat": -2.131911544061989,
+          "lng": -54.5661989475651
+        },
+        {
+          "lat": -2.132153886887802,
+          "lng": -54.56585079426313
+        },
+        {
+          "lat": -2.132485162834996,
+          "lng": -54.56542133244747
+        },
+        {
+          "lat": -2.13283143443353,
+          "lng": -54.56494019607596
+        },
+        {
+          "lat": -2.133138538095555,
+          "lng": -54.56452709093517
+        },
+        {
+          "lat": -2.133269697673658,
+          "lng": -54.56421432234718
+        },
+        {
+          "lat": -2.133593554670392,
+          "lng": -54.56374970989696
+        }
+      ],
+      "fromNodeId": "054d13ab-8f7c-4cf8-97cc-a724d6d49624",
+      "toNodeId": "a1ada620-6bc8-47d2-a26a-e16228d0d5c0",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768351318826-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-02-RM1-6F (B) (B) (B) (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.133593554670392,
+          "lng": -54.56374970989696
+        },
+        {
+          "lat": -2.133938601854968,
+          "lng": -54.56315969099757
+        },
+        {
+          "lat": -2.134350311347283,
+          "lng": -54.56251948285618
+        },
+        {
+          "lat": -2.134650639208218,
+          "lng": -54.56209460398075
+        },
+        {
+          "lat": -2.134903408017805,
+          "lng": -54.56172084997558
+        },
+        {
+          "lat": -2.13515080875722,
+          "lng": -54.56134523947769
+        }
+      ],
+      "fromNodeId": "a1ada620-6bc8-47d2-a26a-e16228d0d5c0",
+      "toNodeId": "f8612860-7974-4a13-a097-f2e0f70c93b6",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352149126-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.12359518081625,
+          "lng": -54.5784882494912
+        },
+        {
+          "lat": -2.123153130573249,
+          "lng": -54.57917958516392
+        },
+        {
+          "lat": -2.122939506404873,
+          "lng": -54.57946888698245
+        },
+        {
+          "lat": -2.122592920425371,
+          "lng": -54.57990822805361
+        },
+        {
+          "lat": -2.122354137954411,
+          "lng": -54.58024218789669
+        },
+        {
+          "lat": -2.122061675129195,
+          "lng": -54.58060819655657
+        }
+      ],
+      "fromNodeId": "4d4f70c2-bc25-4b6d-8dc2-b42936e5fe3a",
+      "toNodeId": "0be9d3c6-92e1-4bb1-b541-d49681eb7223",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352305270-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.122061675129195,
+          "lng": -54.58060819655657
+        },
+        {
+          "lat": -2.121943509661332,
+          "lng": -54.58077922926351
+        },
+        {
+          "lat": -2.121829880328372,
+          "lng": -54.58099764977478
+        },
+        {
+          "lat": -2.121522461052655,
+          "lng": -54.58159333656366
+        },
+        {
+          "lat": -2.121288600315244,
+          "lng": -54.58201714113427
+        },
+        {
+          "lat": -2.121084141570423,
+          "lng": -54.58234399799874
+        },
+        {
+          "lat": -2.120825544193725,
+          "lng": -54.58271260293636
+        },
+        {
+          "lat": -2.120555306689987,
+          "lng": -54.5830449834466
+        }
+      ],
+      "fromNodeId": "0be9d3c6-92e1-4bb1-b541-d49681eb7223",
+      "toNodeId": "075146a5-3e58-41db-96ef-f504f4707f83",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352355313-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.120555306689987,
+          "lng": -54.5830449834466
+        },
+        {
+          "lat": -2.120257526464638,
+          "lng": -54.58352760758519
+        },
+        {
+          "lat": -2.119940558512058,
+          "lng": -54.58398900787535
+        },
+        {
+          "lat": -2.119745163982521,
+          "lng": -54.58425331860781
+        }
+      ],
+      "fromNodeId": "075146a5-3e58-41db-96ef-f504f4707f83",
+      "toNodeId": "ea7b7315-7c1d-45fa-85a7-96587713c79f",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352358345-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.119745163982521,
+          "lng": -54.58425331860781
+        },
+        {
+          "lat": -2.119133080259993,
+          "lng": -54.58517613712406
+        },
+        {
+          "lat": -2.118877727834414,
+          "lng": -54.58547204732895
+        }
+      ],
+      "fromNodeId": "ea7b7315-7c1d-45fa-85a7-96587713c79f",
+      "toNodeId": "384b6d77-3c7f-40b5-8e38-7f96cf5b3be1",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352361442-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.118877727834414,
+          "lng": -54.58547204732895
+        },
+        {
+          "lat": -2.118465381049399,
+          "lng": -54.58614162227027
+        },
+        {
+          "lat": -2.118107970379755,
+          "lng": -54.58666092708635
+        },
+        {
+          "lat": -2.117816294092751,
+          "lng": -54.58712903604081
+        },
+        {
+          "lat": -2.117529833620541,
+          "lng": -54.58730667829514
+        }
+      ],
+      "fromNodeId": "384b6d77-3c7f-40b5-8e38-7f96cf5b3be1",
+      "toNodeId": "81ccecb2-de53-4623-88cb-a211b890c02e",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352367005-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.117529833620541,
+          "lng": -54.58730667829514
+        },
+        {
+          "lat": -2.117216834918806,
+          "lng": -54.58799893901647
+        },
+        {
+          "lat": -2.116872439462921,
+          "lng": -54.58848458689839
+        },
+        {
+          "lat": -2.116627133299472,
+          "lng": -54.58892651321344
+        }
+      ],
+      "fromNodeId": "81ccecb2-de53-4623-88cb-a211b890c02e",
+      "toNodeId": "c8a13896-6d84-40fb-b6d6-920787b7b76d",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352371499-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (B) (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.116627133299472,
+          "lng": -54.58892651321344
+        },
+        {
+          "lat": -2.116397303035247,
+          "lng": -54.5893074921721
+        },
+        {
+          "lat": -2.116272959775736,
+          "lng": -54.58951891336513
+        },
+        {
+          "lat": -2.11624963127372,
+          "lng": -54.5897448895405
+        },
+        {
+          "lat": -2.116172456486839,
+          "lng": -54.59001386816182
+        }
+      ],
+      "fromNodeId": "c8a13896-6d84-40fb-b6d6-920787b7b76d",
+      "toNodeId": "b777a2a4-481c-4ede-972e-15e72d9b40e8",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    },
+    {
+      "id": "cable-1768352376670-split",
+      "projectId": "8989597a-9e03-4779-828a-cd731b4f3d73",
+      "name": "CABO-03-RM2-6F (B) (B) (B) (B) (B) (B) (B) (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.116172456486839,
+          "lng": -54.59001386816182
+        },
+        {
+          "lat": -2.116044204902263,
+          "lng": -54.59044756293159
+        },
+        {
+          "lat": -2.115954187451336,
+          "lng": -54.5908372081556
+        },
+        {
+          "lat": -2.115884087709702,
+          "lng": -54.59123855032654
+        },
+        {
+          "lat": -2.115807156456496,
+          "lng": -54.59163380573394
+        },
+        {
+          "lat": -2.115713411409085,
+          "lng": -54.59204024068995
+        }
+      ],
+      "fromNodeId": "b777a2a4-481c-4ede-972e-15e72d9b40e8",
+      "toNodeId": "48b706c8-fa7a-4f31-86b4-242eb2dff105",
+      "catalogId": "17d6c151-267c-44da-a6a2-5bcc68440b0e",
+      "companyId": "89b5c3b5-7bc5-4ed8-93a1-549819e5fc3c"
+    }
+  ],
+  "poles": []
+}

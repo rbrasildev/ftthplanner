@@ -6,9 +6,13 @@ const prisma = new PrismaClient();
 
 export const getProjects = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
-    if (!user || !user.companyId) return res.status(401).send();
+    if (!user || !user.companyId) {
+        console.log("[getProjects] Unauthorized: No user/companyId");
+        return res.status(401).send();
+    }
 
     try {
+        console.log(`[getProjects] Fetching projects for company ${user.companyId}...`);
         const projects = await prisma.project.findMany({
             where: { companyId: user.companyId },
             orderBy: { updatedAt: 'desc' },
@@ -19,6 +23,7 @@ export const getProjects = async (req: Request, res: Response) => {
                 poles: true
             }
         });
+        console.log(`[getProjects] Found ${projects.length} projects.`);
 
         res.json(projects.map((p: any) => ({
             id: p.id,
@@ -32,9 +37,9 @@ export const getProjects = async (req: Request, res: Response) => {
                 poles: p.poles || []
             }
         })));
-    } catch (error) {
+    } catch (error: any) {
         console.error("Get Projects Error:", error);
-        res.status(500).json({ error: 'Failed to fetch projects' });
+        res.status(500).json({ error: 'Failed to fetch projects', details: error.message });
     }
 };
 

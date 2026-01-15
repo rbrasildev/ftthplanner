@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "createdAt": "2026-01-15T06:00:06.445Z",
+    "version": "1.0",
+    "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+  },
+  "projects": [
+    {
+      "id": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "userId": "b3b1d998-5af0-4ce8-9a51-e15824f6f301",
+      "name": "FTTH Paris",
+      "centerLat": -2.636632267392264,
+      "centerLng": -56.73968588798594,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-15T00:54:10.890Z",
+      "updatedAt": "2026-01-15T01:14:50.770Z",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "cto-1768439625470",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "CTO-1",
+      "status": "DEPLOYED",
+      "lat": -2.634083457468761,
+      "lng": -56.73488459703763,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "0cfddea2-5436-4c89-802e-d101f2084029",
+      "type": "CTO",
+      "color": "#00FF00",
+      "reserveLoopLength": 30,
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "cto-1768439636494",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "CTO-2",
+      "status": "DEPLOYED",
+      "lat": -2.633654992034404,
+      "lng": -56.73425175972294,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "0cfddea2-5436-4c89-802e-d101f2084029",
+      "type": "CTO",
+      "color": "#00FF00",
+      "reserveLoopLength": 30,
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "cto-1768439641919",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "CTO-3",
+      "status": "DEPLOYED",
+      "lat": -2.633290796299301,
+      "lng": -56.73371545691386,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "0cfddea2-5436-4c89-802e-d101f2084029",
+      "type": "CTO",
+      "color": "#00FF00",
+      "reserveLoopLength": 30,
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    }
+  ],
+  "pops": [
+    {
+      "id": "pop-1768439285535",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "POP-1",
+      "status": "PLANNED",
+      "lat": -2.634274991002463,
+      "lng": -56.73509498692203,
+      "olts": [],
+      "dios": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "color": "#6366f1",
+      "size": 24,
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    }
+  ],
+  "cables": [
+    {
+      "id": "cable-1768439489974",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "CBL-1",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -2.634103604872754,
+          "lng": -56.73508426086588
+        },
+        {
+          "lat": -2.631757754852393,
+          "lng": -56.73151248415751
+        },
+        {
+          "lat": -2.629336918695851,
+          "lng": -56.72788707716825
+        },
+        {
+          "lat": -2.630472355708412,
+          "lng": -56.72722206168502
+        },
+        {
+          "lat": -2.631340000275953,
+          "lng": -56.7284877363144
+        },
+        {
+          "lat": -2.632400453927353,
+          "lng": -56.72771546026937
+        },
+        {
+          "lat": -2.636599806080568,
+          "lng": -56.73417168432817
+        },
+        {
+          "lat": -2.634425346871223,
+          "lng": -56.73560897585647
+        },
+        {
+          "lat": -2.634071862995555,
+          "lng": -56.73510485121594
+        },
+        {
+          "lat": -2.632133055711741,
+          "lng": -56.73205865126047
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": null,
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    }
+  ],
+  "poles": [
+    {
+      "id": "pole-1768438903768",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.644992484535746,
+      "lng": -56.73477982594366,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768438960776",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.645247825136515,
+      "lng": -56.73439228686246,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768438972080",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.630979974873233,
+      "lng": -56.72993024749106,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439029648",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.631409004368505,
+      "lng": -56.73031660790384,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439095800",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.630723458131509,
+      "lng": -56.72932981073519,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439110007",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.630209298206429,
+      "lng": -56.73010208678022,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439119039",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.628838204036807,
+      "lng": -56.72830010934177,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439182791",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.630384679657329,
+      "lng": -56.72913000704186,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439191687",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.630191869657915,
+      "lng": -56.72880822535642,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439197720",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.630031194635606,
+      "lng": -56.72859370423279,
+      "catalogId": "4f06ecb5-9795-442d-beeb-ed7bc450f93e",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439551502",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.634136132798611,
+      "lng": -56.73485815192378,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439564926",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633943323379534,
+      "lng": -56.73456854840687,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439584744",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633815666589579,
+      "lng": -56.73437510936902,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439592117",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633713906040352,
+      "lng": -56.7342088554982,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439599085",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633585366387385,
+      "lng": -56.73399433437457,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439607142",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633472894180179,
+      "lng": -56.73383344353186,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    },
+    {
+      "id": "pole-1768439616790",
+      "projectId": "02b1460d-01c5-403e-bdcd-8a9084d7e3a8",
+      "name": "Poste DT 09/300",
+      "status": "PLANNED",
+      "lat": -2.633360421962783,
+      "lng": -56.73366718966105,
+      "catalogId": "8ad51b9f-5d04-4d12-be5c-13df2f6f3c1d",
+      "companyId": "995b99a7-cc97-4fc8-a433-82bfe4916b85"
+    }
+  ]
+}

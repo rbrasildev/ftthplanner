@@ -163,8 +163,12 @@ export const login = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
-        if (!userId) return res.sendStatus(401);
+        if (!userId) {
+            console.log("[getMe] No userId in request");
+            return res.sendStatus(401);
+        }
 
+        console.log(`[getMe] Fetching user ${userId}...`);
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
@@ -174,7 +178,12 @@ export const getMe = async (req: Request, res: Response) => {
             }
         });
 
-        if (!user) return res.sendStatus(404);
+        if (!user) {
+            console.log("[getMe] User not found in DB");
+            return res.sendStatus(404);
+        }
+
+        console.log(`[getMe] User found: ${user.username}. Checking expiration...`);
 
         // --- REPEAT EXPIRATION CHECK LOGIC ---
         if (user.company) {
@@ -193,13 +202,17 @@ export const getMe = async (req: Request, res: Response) => {
                         user.company.plan = freePlan;
                         user.company.planId = freePlan.id;
                         user.company.subscriptionExpiresAt = null;
+                        console.log("[getMe] Downgraded to Free Plan.");
+                    } else {
+                        console.warn("[getMe] Free Plan not found!");
                     }
                 }
             }
         }
+
+        console.log("[getMe] Checking Plan Type logic...");
         // -------------------------------------
         // DYNAMICALLY SET PLAN TYPE TO TRIAL IF NO SUBSCRIPTION IS ACTIVE
-        // This ensures the frontend shows "Teste: X dias" instead of "Plano Ilimitado" implying permanent access
         if (user.company?.plan?.name !== 'Plano Grátis' && user.company?.subscriptionExpiresAt) {
             // If there is NO subscription record, OR subscription is not active/trialing
             const hasActiveSub = user.company.subscription && ['active', 'trialing'].includes(user.company.subscription.status);
@@ -211,8 +224,8 @@ export const getMe = async (req: Request, res: Response) => {
                 }
             }
         }
-        // -------------------------------------
 
+        console.log("[getMe] Sending response.");
         res.json({
             user: {
                 id: user.id,
@@ -224,9 +237,9 @@ export const getMe = async (req: Request, res: Response) => {
             }
         });
 
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Failed to fetch user profile' });
+    } catch (e: any) {
+        console.error("[getMe] CRITIAL ERROR:", e);
+        res.status(500).json({ error: 'Failed to fetch user profile', details: e.message });
     }
 };
 

@@ -989,7 +989,7 @@ export default function App() {
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.filter(c => c.id !== id) }));
         showToast(t('toast_cto_deleted'));
     };
-    const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); };
+    const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); setHighlightedCableId(null); };
     const handleUpdateCable = (c: CableData) => updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) }));
     const handleDeleteCable = (id: string) => { setEditingCable(null); updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) })); showToast(t('toast_cable_deleted')); };
 
@@ -1597,6 +1597,7 @@ export default function App() {
                                         setToolMode('view');
                                         setMultiConnectionIds(new Set());
                                         setSelectedId(null);
+                                        setHighlightedCableId(null); // Fix: Clear highlight on cancel
                                         showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                                     }}
                                     className="text-slate-500 hover:text-red-500 transition-colors p-1"
@@ -1645,6 +1646,7 @@ export default function App() {
                                         setToolMode('view');
                                         setMultiConnectionIds(new Set());
                                         setSelectedId(null);
+                                        setHighlightedCableId(null); // Fix: Clear highlight on cancel
                                         showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                                     }}
                                     className="text-slate-500 hover:text-red-500 transition-colors p-1"
@@ -1926,7 +1928,7 @@ export default function App() {
                 editingCable && (
                     <CableEditor
                         cable={editingCable}
-                        onClose={() => setEditingCable(null)}
+                        onClose={() => { setEditingCable(null); setHighlightedCableId(null); }} // Fix: Clear highlight on close
                         onSave={handleSaveCable}
                         onDelete={handleDeleteCable}
                     />
