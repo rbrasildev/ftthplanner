@@ -79,6 +79,7 @@ const translations = {
     'tooltip_otdr': 'OTDR Mode: Click a cable to locate a distance/event.',
     'tooltip_add_cto': 'Placement Mode: Click on map to add CTO.',
     'tooltip_add_pop': 'Placement Mode: Click on map to add a Central Office (POP).',
+    'tooltip_add_pole': 'Placement Mode: Click on map to add a Pole.',
     'tooltip_draw_cable': 'Drawing: Click anywhere to draw cable. Click markers to snap.',
     'tooltip_draw_cable_start': 'Drawing: Click map or Node to start cable.',
     'tooltip_connect': 'Connection Mode: Click cable line to add SPLIT point. Drag point to Node to connect.',
@@ -558,6 +559,7 @@ const translations = {
     'editing_cable': 'Editing Cable...',
     'connecting_cable': 'Connecting Cables...',
     'finish': 'Finish',
+    'finish_cable': 'Finish Cable',
     'connection_cancelled': 'Connection Cancelled',
   },
   pt: {
@@ -756,6 +758,7 @@ const translations = {
     'tooltip_otdr': 'Modo OTDR: Clique em um cabo para localizar um evento.',
     'tooltip_add_cto': 'Posicionamento: Clique no mapa para adicionar CTO.',
     'tooltip_add_pop': 'Posicionamento: Clique no mapa para adicionar um POP (Central).',
+    'tooltip_add_pole': 'Posicionamento: Clique no mapa para adicionar um poste.',
     'tooltip_draw_cable': 'Desenhando: Clique no mapa ou nó para finalizar o cabo.',
     'tooltip_draw_cable_start': 'Desenhando: Clique no mapa ou Nó para iniciar o cabo.',
     'tooltip_connect': 'Conexão: Clique no cabo para criar ponto de SANGRIA. Arraste até o Nó.',
@@ -1145,6 +1148,7 @@ const translations = {
     'editing_cable': 'Editando Cabo...',
     'connecting_cable': 'Conectando Cabos...',
     'finish': 'Finalizar',
+    'finish_cable': 'Finalizar Cabo',
     'connection_cancelled': 'Conexão Cancelada',
     'toast_select_next_cable': 'Selecione outro cabo para conectar',
   }

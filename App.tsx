@@ -926,6 +926,16 @@ export default function App() {
         }
     }, [toolMode, getCurrentNetwork]);
 
+    const handleUndoDrawingPoint = useCallback(() => {
+        setDrawingPath(prev => {
+            if (prev.length <= 1) {
+                setDrawingFromId(null);
+                return [];
+            }
+            return prev.slice(0, -1);
+        });
+    }, []);
+
     const handleInitConnection = useCallback((id: string) => {
         setToolMode('connect_cable');
         // Start with this cable selected for connection
@@ -1705,6 +1715,7 @@ export default function App() {
                         onToggleLabels={() => setShowLabels(!showLabels)}
 
                         onAddPoint={handleAddPoint}
+                        onUndoDrawingPoint={handleUndoDrawingPoint}
                         onNodeClick={handleNodeClick}
                         onMoveNode={handleMoveNode}
                         onEditNode={handleEditNode}
@@ -1835,9 +1846,9 @@ export default function App() {
                         {toolMode === 'move_node' && t('tooltip_move')}
                         {toolMode === 'add_cto' && t('tooltip_add_cto')}
                         {toolMode === 'add_pop' && t('tooltip_add_pop')}
-                        {toolMode === 'add_pole' && (t('tooltip_add_pole') || 'Clique no mapa para adicionar um poste')}
+                        {toolMode === 'add_pole' && t('tooltip_add_pole')}
                         {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
-                        {toolMode === 'pick_connection_target' && (t('toast_select_next_box') || 'Selecione a próxima caixa no mapa')}
+                        {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
                     </div>
 
                     {
@@ -1848,14 +1859,14 @@ export default function App() {
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
                                 >
                                     <CheckCircle2 className="w-5 h-5" />
-                                    {t('finish_cable') || 'Finalizar Cabo'}
+                                    {t('finish_cable')}
                                 </button>
                                 <button
                                     onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
                                     className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
                                 >
                                     <X className="w-5 h-5" />
-                                    {t('cancel') || 'Cancelar'}
+                                    {t('cancel')}
                                 </button>
                             </div>
                         )

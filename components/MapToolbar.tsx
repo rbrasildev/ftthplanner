@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Activity, Unplug } from 'lucide-react';
+import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
@@ -114,7 +114,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
 
             {/* Group 3: Cabling */}
             <div className="flex items-center gap-1 pl-2">
-                <ToolButton mode="draw_cable" icon={Activity} label="Cabo" />
+                <ToolButton mode="draw_cable" icon={Waypoints} label="Cabo" />
             </div>
 
         </div>

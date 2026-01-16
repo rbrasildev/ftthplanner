@@ -652,10 +652,19 @@ const MapEvents: React.FC<{
     onMapClick: (lat: number, lng: number) => void,
     onClearSelection: () => void,
     onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void,
-    onContextMenu?: (e: L.LeafletMouseEvent) => void
-}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu }) => {
+    onContextMenu?: (e: L.LeafletMouseEvent) => void,
+    onUndoDrawingPoint?: () => void
+}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint }) => {
     useMapEvents({
         contextmenu(e) {
+            if (mode === 'draw_cable') {
+                L.DomEvent.preventDefault(e as any);
+                if (onUndoDrawingPoint) {
+                    onUndoDrawingPoint();
+                }
+                return;
+            }
+
             if (onContextMenu) {
                 onContextMenu(e);
             }
@@ -796,9 +805,10 @@ interface MapViewProps {
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onPropertiesNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
-    pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
     onConvertPin?: (type: 'CTO' | 'Pole') => void;
     onClearPin?: () => void;
+    onUndoDrawingPoint?: () => void;
+    pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
 }
 
 const noOp = () => { };
@@ -809,7 +819,7 @@ export const MapView: React.FC<MapViewProps> = ({
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
-    pinnedLocation, onConvertPin, onClearPin
+    pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1161,6 +1171,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         setActiveCableId(null);
                         setMapContextMenu(null);
                     }}
+                    onUndoDrawingPoint={onUndoDrawingPoint}
                     onMapMoveEnd={onMapMoveEnd}
                     onContextMenu={(e) => {
                         L.DomEvent.preventDefault(e as any);
