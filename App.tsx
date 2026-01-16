@@ -31,6 +31,7 @@ import * as authService from './services/authService';
 import * as catalogService from './services/catalogService';
 import api from './services/api';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
+import { AccountSettingsModal } from './components/AccountSettingsModal';
 
 const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
@@ -114,12 +115,14 @@ export default function App() {
     // Upgrade Modal State
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
     const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
+    const [isHydrated, setIsHydrated] = useState(false);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
@@ -178,6 +181,22 @@ export default function App() {
         poles: any[];
     } | null>(null);
 
+    // --- Sidebar & Responsive State ---
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [dashboardView, setDashboardView] = useState<any>(() => {
+        const saved = localStorage.getItem('dashboard_active_view');
+        return saved || 'projects';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('ftth_sidebar_collapsed', isSidebarCollapsed.toString());
+    }, [isSidebarCollapsed]);
+
+    useEffect(() => {
+        localStorage.setItem('dashboard_active_view', dashboardView);
+    }, [dashboardView]);
+
     useEffect(() => user ? localStorage.setItem(STORAGE_KEY_USER, user) : localStorage.removeItem(STORAGE_KEY_USER), [user]);
     useEffect(() => token ? localStorage.setItem(STORAGE_KEY_TOKEN, token) : localStorage.removeItem(STORAGE_KEY_TOKEN), [token]);
 
@@ -207,6 +226,8 @@ export default function App() {
                     }
                     if (data.user.company?.subscriptionExpiresAt) {
                         setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
+                    } else if (data.user.company?.subscription?.currentPeriodEnd) {
+                        setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
                     } else {
                         setSubscriptionExpiresAt(null);
                     }
@@ -232,6 +253,8 @@ export default function App() {
                     setToken(null);
                     setUser(null);
                 }
+            }).finally(() => {
+                setIsHydrated(true);
             });
         }
     }, [token, user]);
@@ -1372,95 +1395,7 @@ export default function App() {
         return <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />;
     }
 
-    if (!currentProjectId) {
-        return (
-            <>
-                <UpgradePlanModal
-                    isOpen={showUpgradeModal}
-                    onClose={() => setShowUpgradeModal(false)}
-                    limitDetails={upgradeModalDetails}
-                    currentPlanName={userPlan}
-                    companyId={companyId || undefined}
-                    email={userEmail || undefined}
-                />
 
-                <DashboardPage
-                    username={user}
-                    userRole={userRole || 'MEMBER'}
-                    userPlan={userPlan}
-                    userPlanType={userPlanType}
-                    subscriptionExpiresAt={subscriptionExpiresAt}
-                    cancelAtPeriodEnd={cancelAtPeriodEnd}
-                    projects={projects}
-                    onOpenProject={(id) => {
-                        if (companyStatus === 'SUSPENDED') {
-                            setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
-                            setShowUpgradeModal(true);
-                            return;
-                        }
-                        setCurrentProjectId(id);
-                        setShowProjectManager(false);
-                    }}
-                    onCreateProject={async (name, center) => {
-                        if (companyStatus === 'SUSPENDED') {
-                            setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
-                            setShowUpgradeModal(true);
-                            return;
-                        }
-                        if (!token) return;
-                        try {
-                            const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
-                            setProjects(prev => [newProject, ...prev]);
-                            setCurrentProjectId(newProject.id);
-                            showToast(t('toast_project_created'), 'success');
-                        } catch (e: any) {
-                            if (e.response && e.response.status === 403) {
-                                // Limit Reached!
-                                setUpgradeModalDetails(e.response.data?.details || "Você atingiu o limite de projetos do seu plano.");
-                                setShowUpgradeModal(true);
-                            } else {
-                                showToast('Failed to create project', 'info');
-                            }
-                        }
-                    }}
-                    onDeleteProject={async (id) => {
-                        try {
-                            await projectService.deleteProject(id);
-                            setProjects(prev => prev.filter(p => p.id !== id));
-                            showToast(t('toast_project_deleted'));
-                        } catch (e) {
-                            showToast('Failed to delete project', 'info');
-                        }
-                    }}
-                    onUpdateProject={async (id, name, center) => {
-                        try {
-                            const updated = await projectService.updateProject(id, name, center);
-                            setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
-                            showToast(t('project_updated') || 'Projeto atualizado!', 'success');
-                        } catch (e) {
-                            showToast('Failed to update project', 'info');
-                        }
-                    }}
-                    isLoading={isLoadingProjects}
-                    onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
-                    onUpgradeClick={() => {
-                        setUpgradeModalDetails(undefined);
-                        setShowUpgradeModal(true);
-                    }}
-                />
-            </>
-        );
-    }
-
-    // Loading State for specific project
-    if (currentProjectId && !currentProject) {
-        return (
-            <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white gap-4">
-                <Loader2 className="w-12 h-12 text-sky-500 animate-spin" />
-                <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
-            </div>
-        );
-    }
 
     const handleConvertPinToNode = (type: 'CTO' | 'Pole') => {
         if (!pinnedLocation || !currentProject) return;
@@ -1569,8 +1504,28 @@ export default function App() {
                 </div>
             )}
 
+            {/* Mobile TopBar */}
+            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
+                <div className="flex items-center gap-2">
+                    <img src="/logo.png" alt="Logo" className="w-7 h-7" />
+                    <span className="font-bold text-sm tracking-tight">{t('app_title')}</span>
+                </div>
+                <button
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                    <MapIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </button>
+            </header>
+
             <Sidebar
+                viewMode={currentProjectId ? 'project' : 'dashboard'}
                 user={user}
+                userRole={userRole}
+                userPlan={userPlan}
+                userPlanType={userPlanType}
+                subscriptionExpiresAt={subscriptionExpiresAt}
+                cancelAtPeriodEnd={cancelAtPeriodEnd}
                 projects={projects}
                 currentProjectId={currentProjectId}
                 deploymentProgress={deploymentProgress}
@@ -1584,231 +1539,311 @@ export default function App() {
                     setToken(null);
                     setCurrentProjectId(null);
                 }}
+                onUpgradeClick={() => setIsAccountSettingsOpen(true)}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                isMobileOpen={isMobileMenuOpen}
+                onCloseMobile={() => setIsMobileMenuOpen(false)}
+                currentDashboardView={dashboardView}
+                onDashboardViewChange={setDashboardView}
+                isHydrated={isHydrated}
             />
 
-            <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
-                {/* Map Toolbar (Floating) */}
-                <div className="absolute top-4 left-0 right-0 z-[1000] pointer-events-none">
-                    {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
-                    <div className="pointer-events-auto w-fit mx-auto">
-                        <MapToolbar
-                            toolMode={toolMode}
-                            setToolMode={setToolMode}
-                            activeMenuId={activeMenuId}
-                            setActiveMenuId={setActiveMenuId}
-                            onImportKml={() => setIsKmlImportOpen(true)}
-                            onConnectClick={() => {
-                                previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
-                                setToolMode('connect_cable');
-                                setSelectedId(null);
-                            }}
-                        />
+            {!currentProjectId ? (
+                <main className="flex-1 relative overflow-hidden">
+                    <DashboardPage
+                        username={user!}
+                        userRole={userRole || 'MEMBER'}
+                        userPlan={userPlan}
+                        userPlanType={userPlanType}
+                        subscriptionExpiresAt={subscriptionExpiresAt}
+                        cancelAtPeriodEnd={cancelAtPeriodEnd}
+                        projects={projects}
+                        currentView={dashboardView}
+                        onViewChange={setDashboardView}
+                        onOpenProject={(id) => {
+                            if (companyStatus === 'SUSPENDED') {
+                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                                setShowUpgradeModal(true);
+                                return;
+                            }
+                            setCurrentProjectId(id);
+                            setShowProjectManager(false);
+                        }}
+                        onCreateProject={async (name, center) => {
+                            if (companyStatus === 'SUSPENDED') {
+                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
+                                setShowUpgradeModal(true);
+                                return;
+                            }
+                            if (!token) return;
+                            try {
+                                const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
+                                setProjects(prev => [newProject, ...prev]);
+                                setCurrentProjectId(newProject.id);
+                                showToast(t('toast_project_created'), 'success');
+                            } catch (e: any) {
+                                if (e.response && e.response.status === 403) {
+                                    setUpgradeModalDetails(e.response.data?.details || "Você atingiu o limite de projetos do seu plano.");
+                                    setShowUpgradeModal(true);
+                                } else {
+                                    showToast('Failed to create project', 'info');
+                                }
+                            }
+                        }}
+                        onDeleteProject={async (id) => {
+                            try {
+                                await projectService.deleteProject(id);
+                                setProjects(prev => prev.filter(p => p.id !== id));
+                                showToast(t('toast_project_deleted'));
+                            } catch (e) {
+                                showToast('Failed to delete project', 'info');
+                            }
+                        }}
+                        onUpdateProject={async (id, name, center) => {
+                            try {
+                                const updated = await projectService.updateProject(id, name, center);
+                                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
+                                showToast(t('project_updated') || 'Projeto atualizado!', 'success');
+                            } catch (e) {
+                                showToast('Failed to update project', 'info');
+                            }
+                        }}
+                        isLoading={isLoadingProjects}
+                        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                        onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                    />
+                </main>
+            ) : currentProjectId && !currentProject ? (
+                <main className="flex-1 relative flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white gap-4 transition-colors">
+                    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
+                    <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
+                </main>
+            ) : (
+                <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                    {/* Map Toolbar (Floating) */}
+                    <div className="absolute top-20 lg:top-4 left-0 right-0 z-[1000] pointer-events-none">
+                        {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
+                        <div className="pointer-events-auto w-fit mx-auto">
+                            <MapToolbar
+                                toolMode={toolMode}
+                                setToolMode={setToolMode}
+                                activeMenuId={activeMenuId}
+                                setActiveMenuId={setActiveMenuId}
+                                onImportKml={() => setIsKmlImportOpen(true)}
+                                onConnectClick={() => {
+                                    previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                                    setToolMode('connect_cable');
+                                    setSelectedId(null);
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                {/* Move Mode Floating Controls */}
-                {toolMode === 'move_node' && (
-                    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
-                            <Move className="w-4 h-4 text-sky-500" />
-                            {t('moving_node') || 'Movendo Elemento...'}
-                        </div>
-                        <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
-                        <button
-                            onClick={() => {
-                                setToolMode('view');
-                                setSelectedId(null);
-                                showToast(t('position_saved') || 'Posição salva com sucesso!', 'success');
-                            }}
-                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
-                        >
-                            <Check className="w-4 h-4" />
-                            {t('save_position') || 'Salvar'}
-                        </button>
-                    </div>
-                )}
-
-                <MapView
-                    ctos={getCurrentNetwork().ctos}
-                    pops={getCurrentNetwork().pops || []}
-                    poles={getCurrentNetwork().poles || []}
-                    cables={getCurrentNetwork().cables}
-                    mode={toolMode}
-                    selectedId={selectedId}
-                    mapBounds={mapBounds}
-                    showLabels={showLabels}
-                    litCableIds={litNetwork.litCables}
-                    highlightedCableId={highlightedCableId}
-                    drawingPath={drawingPath}
-                    snapDistance={systemSettings.snapDistance}
-
-                    viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
-                    initialCenter={currentProject?.mapState?.center}
-                    initialZoom={currentProject?.mapState?.zoom}
-                    onMapMoveEnd={handleMapMoveEnd}
-                    onToggleLabels={() => setShowLabels(!showLabels)}
-
-                    onAddPoint={handleAddPoint}
-                    onNodeClick={handleNodeClick}
-                    onMoveNode={handleMoveNode}
-                    onEditNode={handleEditNode}
-                    onDeleteNode={handleDeleteNode}
-                    onMoveNodeStart={handleMoveNodeStart}
-                    onPropertiesNode={handlePropertiesNode}
-                    onCableStart={handleNodeForCableStable}
-                    onCableEnd={handleNodeForCableStable}
-                    onConnectCable={handleConnectCable}
-                    onUpdateCableGeometry={handleUpdateCableGeometry}
-                    multiConnectionIds={multiConnectionIds}
-
-                    previewImportData={previewImportData}
-                    onCableClick={handleCableClick}
-                    onEditCableGeometry={handleEditCableGeometry}
-                    onEditCable={handleEditCable}
-                    onDeleteCable={handleDeleteCable}
-                    onInitConnection={handleInitConnection}
-                    // Pass OTDR Result Point to MapView to render marker
-                    otdrResult={otdrResult}
-                    pinnedLocation={pinnedLocation}
-                    onConvertPin={handleConvertPinToNode}
-                    onClearPin={() => setPinnedLocation(null)}
-                />
-
-
-
-
-                {/* Save/Cancel Toolbar for Cable Edit */}
-                {
-                    toolMode === 'edit_cable' && (
-                        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
-                            <div className="flex items-center gap-3 px-3">
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                    {t('editing_cable') || "Editando Cabo..."}
-                                </span>
-                                <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
-                                <button
-                                    onClick={() => {
-                                        setToolMode('view');
-                                        setHighlightedCableId(null);
-                                        setSelectedId(null);
-                                        previousNetworkState.current = null;
-                                        showToast(t('changes_saved') || "Alterações Salvas!", 'success');
-                                    }}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
-                                >
-                                    {t('save_changes') || "Salvar Alterações"}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        // CANCEL (Revert changes)
-                                        if (previousNetworkState.current) {
-                                            const backup = previousNetworkState.current; // Capture ref value
-                                            updateCurrentNetwork(() => backup); // Return backup as new state
-                                            previousNetworkState.current = null;
-
-                                            // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
-                                            setEditingCTO(null);
-                                            setEditingPOP(null);
-                                        }
-                                        setToolMode('view');
-                                        setMultiConnectionIds(new Set());
-                                        setSelectedId(null);
-                                        setHighlightedCableId(null); // Fix: Clear highlight on cancel
-                                        showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
-                                    }}
-                                    className="text-slate-500 hover:text-red-500 transition-colors p-1"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
+                    {/* Move Mode Floating Controls */}
+                    {toolMode === 'move_node' && (
+                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
+                                <Move className="w-4 h-4 text-sky-500" />
+                                {t('moving_node') || 'Movendo Elemento...'}
                             </div>
-                        </div>
-                    )
-                }
-
-                {/* Save/Cancel Toolbar for Connect Cable */}
-                {
-                    toolMode === 'connect_cable' && (
-                        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
-                            <div className="flex items-center gap-3 px-3">
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                    {t('connecting_cable') || "Conectando Cabos..."}
-                                </span>
-                                <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
-                                <button
-                                    onClick={() => {
-                                        setToolMode('view');
-                                        setMultiConnectionIds(new Set());
-                                        setSelectedId(null);
-                                        previousNetworkState.current = null;
-                                        showToast(t('finish') || "Concluir", 'success');
-                                    }}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
-                                >
-                                    {t('finish') || "Concluir"}
-                                </button>
-                                <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
-                                <button
-                                    onClick={() => {
-                                        // CANCEL (Revert changes)
-                                        if (previousNetworkState.current) {
-                                            const backup = previousNetworkState.current; // Capture ref value
-                                            updateCurrentNetwork(() => backup); // Return backup as new state
-                                            previousNetworkState.current = null;
-
-                                            // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
-                                            setEditingCTO(null);
-                                            setEditingPOP(null);
-                                        }
-                                        setToolMode('view');
-                                        setMultiConnectionIds(new Set());
-                                        setSelectedId(null);
-                                        setHighlightedCableId(null); // Fix: Clear highlight on cancel
-                                        showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
-                                    }}
-                                    className="text-slate-500 hover:text-red-500 transition-colors p-1"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )
-                }
-
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
-                    {toolMode === 'view' && t('tooltip_view')}
-                    {toolMode === 'move_node' && t('tooltip_move')}
-                    {toolMode === 'add_cto' && t('tooltip_add_cto')}
-                    {toolMode === 'add_pop' && t('tooltip_add_pop')}
-                    {toolMode === 'add_pole' && (t('tooltip_add_pole') || 'Clique no mapa para adicionar um poste')}
-                    {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
-                    {toolMode === 'pick_connection_target' && (t('toast_select_next_box') || 'Selecione a próxima caixa no mapa')}
-                </div>
-
-                {
-                    toolMode === 'draw_cable' && drawingPath.length > 0 && (
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                            <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
                             <button
-                                onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                                onClick={() => {
+                                    setToolMode('view');
+                                    setSelectedId(null);
+                                    showToast(t('position_saved') || 'Posição salva com sucesso!', 'success');
+                                }}
+                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
                             >
-                                <CheckCircle2 className="w-5 h-5" />
-                                {t('finish_cable') || 'Finalizar Cabo'}
-                            </button>
-                            <button
-                                onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
-                                className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                            >
-                                <X className="w-5 h-5" />
-                                {t('cancel') || 'Cancelar'}
+                                <Check className="w-4 h-4" />
+                                {t('save_position') || 'Salvar'}
                             </button>
                         </div>
-                    )
-                }
+                    )}
 
-            </main >
+                    <MapView
+                        ctos={getCurrentNetwork().ctos}
+                        pops={getCurrentNetwork().pops || []}
+                        poles={getCurrentNetwork().poles || []}
+                        cables={getCurrentNetwork().cables}
+                        mode={toolMode}
+                        selectedId={selectedId}
+                        mapBounds={mapBounds}
+                        showLabels={showLabels}
+                        litCableIds={litNetwork.litCables}
+                        highlightedCableId={highlightedCableId}
+                        drawingPath={drawingPath}
+                        snapDistance={systemSettings.snapDistance}
+
+                        viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
+                        initialCenter={currentProject?.mapState?.center}
+                        initialZoom={currentProject?.mapState?.zoom}
+                        onMapMoveEnd={handleMapMoveEnd}
+                        onToggleLabels={() => setShowLabels(!showLabels)}
+
+                        onAddPoint={handleAddPoint}
+                        onNodeClick={handleNodeClick}
+                        onMoveNode={handleMoveNode}
+                        onEditNode={handleEditNode}
+                        onDeleteNode={handleDeleteNode}
+                        onMoveNodeStart={handleMoveNodeStart}
+                        onPropertiesNode={handlePropertiesNode}
+                        onCableStart={handleNodeForCableStable}
+                        onCableEnd={handleNodeForCableStable}
+                        onConnectCable={handleConnectCable}
+                        onUpdateCableGeometry={handleUpdateCableGeometry}
+                        multiConnectionIds={multiConnectionIds}
+
+                        previewImportData={previewImportData}
+                        onCableClick={handleCableClick}
+                        onEditCableGeometry={handleEditCableGeometry}
+                        onEditCable={handleEditCable}
+                        onDeleteCable={handleDeleteCable}
+                        onInitConnection={handleInitConnection}
+                        // Pass OTDR Result Point to MapView to render marker
+                        otdrResult={otdrResult}
+                        pinnedLocation={pinnedLocation}
+                        onConvertPin={handleConvertPinToNode}
+                        onClearPin={() => setPinnedLocation(null)}
+                    />
+
+
+
+
+                    {/* Save/Cancel Toolbar for Cable Edit */}
+                    {
+                        toolMode === 'edit_cable' && (
+                            <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                                <div className="flex items-center gap-3 px-3">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                        {t('editing_cable') || "Editando Cabo..."}
+                                    </span>
+                                    <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                    <button
+                                        onClick={() => {
+                                            setToolMode('view');
+                                            setHighlightedCableId(null);
+                                            setSelectedId(null);
+                                            previousNetworkState.current = null;
+                                            showToast(t('changes_saved') || "Alterações Salvas!", 'success');
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                    >
+                                        {t('save_changes') || "Salvar Alterações"}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            // CANCEL (Revert changes)
+                                            if (previousNetworkState.current) {
+                                                const backup = previousNetworkState.current; // Capture ref value
+                                                updateCurrentNetwork(() => backup); // Return backup as new state
+                                                previousNetworkState.current = null;
+
+                                                // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                                setEditingCTO(null);
+                                                setEditingPOP(null);
+                                            }
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            setHighlightedCableId(null); // Fix: Clear highlight on cancel
+                                            showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
+                                        }}
+                                        className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {/* Save/Cancel Toolbar for Connect Cable */}
+                    {
+                        toolMode === 'connect_cable' && (
+                            <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                                <div className="flex items-center gap-3 px-3">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                        {t('connecting_cable') || "Conectando Cabos..."}
+                                    </span>
+                                    <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                    <button
+                                        onClick={() => {
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            previousNetworkState.current = null;
+                                            showToast(t('finish') || "Concluir", 'success');
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                    >
+                                        {t('finish') || "Concluir"}
+                                    </button>
+                                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                                    <button
+                                        onClick={() => {
+                                            // CANCEL (Revert changes)
+                                            if (previousNetworkState.current) {
+                                                const backup = previousNetworkState.current; // Capture ref value
+                                                updateCurrentNetwork(() => backup); // Return backup as new state
+                                                previousNetworkState.current = null;
+
+                                                // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                                setEditingCTO(null);
+                                                setEditingPOP(null);
+                                            }
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            setHighlightedCableId(null); // Fix: Clear highlight on cancel
+                                            showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
+                                        }}
+                                        className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
+                        {toolMode === 'view' && t('tooltip_view')}
+                        {toolMode === 'move_node' && t('tooltip_move')}
+                        {toolMode === 'add_cto' && t('tooltip_add_cto')}
+                        {toolMode === 'add_pop' && t('tooltip_add_pop')}
+                        {toolMode === 'add_pole' && (t('tooltip_add_pole') || 'Clique no mapa para adicionar um poste')}
+                        {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
+                        {toolMode === 'pick_connection_target' && (t('toast_select_next_box') || 'Selecione a próxima caixa no mapa')}
+                    </div>
+
+                    {
+                        toolMode === 'draw_cable' && drawingPath.length > 0 && (
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                                <button
+                                    onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                                >
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    {t('finish_cable') || 'Finalizar Cabo'}
+                                </button>
+                                <button
+                                    onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                                    className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                                >
+                                    <X className="w-5 h-5" />
+                                    {t('cancel') || 'Cancelar'}
+                                </button>
+                            </div>
+                        )
+                    }
+
+                </main >
+            )}
 
             {/* Editors */}
             {
@@ -2160,6 +2195,25 @@ export default function App() {
                     </div>
                 )
             }
+
+            {/* Account Settings Modal */}
+            <AccountSettingsModal
+                isOpen={isAccountSettingsOpen}
+                onClose={() => setIsAccountSettingsOpen(false)}
+                onManagePlan={() => {
+                    setIsAccountSettingsOpen(false);
+                    setUpgradeModalDetails(undefined);
+                    setShowUpgradeModal(true);
+                }}
+                userData={{
+                    username: user!,
+                    email: userEmail || undefined,
+                    plan: userPlan,
+                    planType: userPlanType,
+                    expiresAt: subscriptionExpiresAt,
+                    companyId: companyId || 'UNKNOWN'
+                }}
+            />
 
             {/* Upgrade Modal (Moved to bottom to ensure z-index over other modals) */}
             <UpgradePlanModal
