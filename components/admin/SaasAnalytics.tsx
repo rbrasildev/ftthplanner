@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import * as saasService from '../../services/saasService';
 import L from 'leaflet';
@@ -7,17 +7,45 @@ import * as d3 from 'd3';
 import { useTheme } from '../../ThemeContext';
 
 // Fix Leaflet Default Icon
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: '/leaflet/images/marker-icon-2x.png',
+    iconUrl: '/leaflet/images/marker-icon.png',
+    shadowUrl: '/leaflet/images/marker-shadow.png',
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
+const ProjectIcon = L.divIcon({
+    className: 'custom-project-icon',
+    html: `
+      <div style="
+        background-color: #6366f1;
+        border: 2px solid #ffffff;
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12]
+});
+
+const MapResizeHandler = () => {
+    const map = useMap();
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [map]);
+    return null;
+};
 
 export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] }) => {
     const [projects, setProjects] = useState<any[]>([]);
@@ -254,12 +282,13 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
                 </div>
                 <div className="h-[500px] w-full relative z-0">
                     <MapContainer center={[-23.5505, -46.6333]} zoom={4} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+                        <MapResizeHandler />
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                         {projects.map(p => (
-                            <Marker key={p.id} position={[p.centerLat, p.centerLng]}>
+                            <Marker key={p.id} position={[p.centerLat, p.centerLng]} icon={ProjectIcon}>
                                 <Popup>
                                     <div className="text-sm">
                                         <strong className="block text-slate-900">{p.name}</strong>

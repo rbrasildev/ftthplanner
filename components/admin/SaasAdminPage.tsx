@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
@@ -11,11 +11,28 @@ interface Company {
     id: string;
     name: string;
     status: string;
-    plan?: { id: string; name: string; price: number };
+    plan?: {
+        id: string;
+        name: string;
+        price: number;
+        limits: {
+            maxProjects?: number;
+            maxUsers?: number;
+            maxCTOs?: number;
+            maxPOPs?: number;
+        }
+    };
     _count: { projects: number; users: number; ctos?: number; pops?: number };
     createdAt: string;
     users: { id: string; username: string; role: string }[];
     projects: { id: string; name: string }[];
+    subscription?: {
+        status: string;
+        currentPeriodEnd: string;
+        cancelAtPeriodEnd: boolean;
+    };
+    subscriptionExpiresAt?: string;
+    billingMode: 'STRIPE' | 'MANUAL';
 }
 
 interface Plan {
@@ -59,12 +76,51 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [users, setUsers] = useState<User[]>([]);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [planFilter, setPlanFilter] = useState('ALL');
+
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+
+    const filteredCompanies = companies.filter(company => {
+        const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            company.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
+        const matchesPlan = planFilter === 'ALL' || company.plan?.id === planFilter;
+        return matchesSearch && matchesStatus && matchesPlan;
+    });
+
+    const getUsagePercentage = (current: number, max: number | undefined) => {
+        if (!max || max >= 999999) return 0;
+        return Math.min(Math.round((current / max) * 100), 100);
+    };
+
+    const UsageBar = ({ label, current, max, color }: { label: string, current: number, max: number | undefined, color: string }) => {
+        const percent = getUsagePercentage(current, max);
+        const isUnlimited = !max || max >= 999999;
+
+        return (
+            <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-500 uppercase">{label}</span>
+                    <span className={percent > 90 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}>
+                        {current} / {isUnlimited ? '∞' : max}
+                    </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                        className={`h-full transition-all duration-500 ${color}`}
+                        style={{ width: `${isUnlimited ? 0 : percent}%` }}
+                    />
+                </div>
+            </div>
+        );
+    };
     // ... (omitted) ...
 
     const navItems = [
@@ -113,11 +169,18 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         }
     };
 
-    const handleCompanyUpdate = async (id: string, updates: { status?: string; planId?: string }) => {
+    const handleCompanyUpdate = async (id: string, updates: { status?: string; planId?: string; billingMode?: string }) => {
         try {
-            await saasService.updateCompany(id, updates);
-            loadData(); // Re-fetch to update UI
+            const updatedCompany = await saasService.updateCompany(id, updates);
+            loadData(); // Re-fetch to update UI list
+
+            // If the updated company is the one currently selected, sync the detail view
+            if (selectedCompany && selectedCompany.id === id) {
+                // We merge carefully to avoid losing _count or other nested data not returned by basic update
+                setSelectedCompany(prev => prev ? { ...prev, ...updatedCompany } : null);
+            }
         } catch (error) {
+            console.error('Update attempt failed:', error);
             alert('Failed to update company');
         }
     };
@@ -357,6 +420,35 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </div>
                                     </div>
 
+                                    {/* Capacity Alerts Section */}
+                                    {companies.filter(c => {
+                                        const p = getUsagePercentage(c._count.projects, c.plan?.limits?.maxProjects);
+                                        const u = getUsagePercentage(c._count.users, c.plan?.limits?.maxUsers);
+                                        const ct = getUsagePercentage(c._count.ctos || 0, c.plan?.limits?.maxCTOs);
+                                        return p > 80 || u > 80 || ct > 80;
+                                    }).length > 0 && (
+                                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-500">
+                                                <h3 className="font-bold text-sm text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
+                                                    <AlertTriangle className="w-4 h-4" />
+                                                    Capacity Alerts
+                                                </h3>
+                                                <div className="space-y-2">
+                                                    {companies.filter(c => {
+                                                        const p = getUsagePercentage(c._count.projects, c.plan?.limits?.maxProjects);
+                                                        const u = getUsagePercentage(c._count.users, c.plan?.limits?.maxUsers);
+                                                        const ct = getUsagePercentage(c._count.ctos || 0, c.plan?.limits?.maxCTOs);
+                                                        return p > 80 || u > 80 || ct > 80;
+                                                    }).slice(0, 5).map(c => (
+                                                        <div key={c.id} className="text-[11px] flex justify-between items-center bg-white/50 dark:bg-slate-900/50 p-2 rounded-lg group cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-amber-200" onClick={() => setSelectedCompany(c)}>
+                                                            <span className="font-bold text-slate-700 dark:text-slate-200 truncate pr-2">{c.name}</span>
+                                                            <span className="shrink-0 text-[10px] text-amber-600 font-bold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded">Near Limit</span>
+                                                        </div>
+                                                    ))}
+                                                    <button onClick={() => setActiveView('companies')} className="w-full text-center text-[10px] text-amber-600 font-bold hover:underline mt-2">View all companies &rarr;</button>
+                                                </div>
+                                            </div>
+                                        )}
+
                                     {/* Action Banner */}
                                     <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => setActiveView('companies')}>
                                         <div className="relative z-10">
@@ -427,13 +519,40 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                     {activeView === 'companies' && (
                         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div className="relative w-full sm:w-72">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input type="text" placeholder="Search companies..." className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row justify-between items-center gap-4">
+                                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                                    <div className="relative w-full sm:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search name or ID..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                        >
+                                            <option value="ALL">All Status</option>
+                                            <option value="ACTIVE">Active</option>
+                                            <option value="SUSPENDED">Suspended</option>
+                                        </select>
+                                        <select
+                                            value={planFilter}
+                                            onChange={(e) => setPlanFilter(e.target.value)}
+                                            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                        >
+                                            <option value="ALL">All Plans</option>
+                                            {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="text-sm text-slate-500">
-                                    Showing <span className="font-bold text-slate-900 dark:text-white">{companies.length}</span> results
+                                    Showing <span className="font-bold text-slate-900 dark:text-white">{filteredCompanies.length}</span> results
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -449,7 +568,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {companies.map(company => (
+                                        {filteredCompanies.map(company => (
                                             <tr key={company.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div>
@@ -469,20 +588,40 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         ))}
                                                     </select>
                                                 </td>
-                                                <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-medium">
-                                                    <div className="flex flex-col text-xs">
-                                                        <span>{company._count.projects} Proj</span>
-                                                        <span className="text-slate-400">{company._count.ctos || 0} CTOs</span>
-                                                        <span className="text-slate-400">{company._count.pops || 0} POPs</span>
+                                                <td className="px-6 py-4">
+                                                    <div className="w-48 space-y-2">
+                                                        <UsageBar
+                                                            label="Projects"
+                                                            current={company._count.projects}
+                                                            max={company.plan?.limits?.maxProjects}
+                                                            color="bg-indigo-500"
+                                                        />
+                                                        <UsageBar
+                                                            label="CTOs"
+                                                            current={company._count.ctos || 0}
+                                                            max={company.plan?.limits?.maxCTOs}
+                                                            color="bg-blue-500"
+                                                        />
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-medium">{company._count.users}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`inline - flex items - center gap - 1.5 px - 2.5 py - 1 rounded - full text - xs font - bold border shadow - sm ${company.status === 'ACTIVE'
+                                                    <div className="w-32">
+                                                        <UsageBar
+                                                            label="Users"
+                                                            current={company._count.users}
+                                                            max={company.plan?.limits?.maxUsers}
+                                                            color="bg-emerald-500"
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm ${company.status === 'ACTIVE'
                                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                                                        : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-                                                        } `}>
-                                                        {company.status === 'ACTIVE' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                                        : company.status === 'TRIAL'
+                                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+                                                            : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
+                                                        }`}>
+                                                        {company.status === 'ACTIVE' ? <CheckCircle2 className="w-3 h-3" /> : company.status === 'TRIAL' ? <Clock className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
                                                         {company.status}
                                                     </span>
                                                 </td>
@@ -976,31 +1115,122 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <div className="space-y-6">
                                     {/* Summary Card */}
                                     <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Overview</h3>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Health & Usage</h3>
+                                        <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-4">
                                             <div>
-                                                <p className="text-slate-400 text-xs">Plan</p>
-                                                <p className="font-medium text-slate-900 dark:text-white">{selectedCompany.plan?.name || 'No Plan'}</p>
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">Plan info</p>
+                                                <p className="font-bold text-slate-900 dark:text-white text-sm">{selectedCompany.plan?.name || 'No Plan'}</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-400 text-xs">Status</p>
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${selectedCompany.status === 'ACTIVE'
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">Status</p>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${selectedCompany.status === 'ACTIVE'
                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                    : selectedCompany.status === 'TRIAL'
+                                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                                                     {selectedCompany.status}
                                                 </span>
                                             </div>
-                                            <div>
-                                                <p className="text-slate-400 text-xs">Joined</p>
-                                                <p className="font-medium text-slate-900 dark:text-white">{new Date(selectedCompany.createdAt).toLocaleDateString()}</p>
+                                        </div>
+
+                                        {/* Stripe & Expiration Info */}
+                                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Expires At</p>
+                                                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                        {selectedCompany.subscriptionExpiresAt
+                                                            ? new Date(selectedCompany.subscriptionExpiresAt).toLocaleDateString()
+                                                            : 'No expiration'}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Stripe status</p>
+                                                    <p className={`text-xs font-bold uppercase ${['active', 'trialing'].includes(selectedCompany.subscription?.status || '')
+                                                        ? 'text-emerald-600'
+                                                        : 'text-amber-500'
+                                                        }`}>
+                                                        {selectedCompany.subscription?.status || 'No subscription'}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-slate-400 text-xs">Infrastructure</p>
-                                                <p className="font-medium text-slate-900 dark:text-white">
-                                                    {selectedCompany._count.ctos || 0} CTOs, {selectedCompany._count.pops || 0} POPs
+
+                                            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Billing Mode</p>
+                                                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                                            {selectedCompany.billingMode === 'STRIPE' ? 'Automatic (Stripe)' : 'Manual (Admin Controlled)'}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleCompanyUpdate(selectedCompany.id, {
+                                                            billingMode: selectedCompany.billingMode === 'STRIPE' ? 'MANUAL' : 'STRIPE'
+                                                        })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${selectedCompany.billingMode === 'STRIPE'
+                                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-300'
+                                                            : 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20'
+                                                            }`}
+                                                    >
+                                                        Switch to {selectedCompany.billingMode === 'STRIPE' ? 'Manual' : 'Stripe'}
+                                                    </button>
+                                                </div>
+                                                <p className="text-[9px] text-slate-400 mt-2 leading-relaxed italic">
+                                                    {selectedCompany.billingMode === 'STRIPE'
+                                                        ? 'Following Stripe status. Failed payments will suspend access.'
+                                                        : 'Bypassing Stripe. Subscription managed manually by administrator.'}
                                                 </p>
                                             </div>
                                         </div>
+
+                                        <div className="space-y-3 mt-4">
+                                            <UsageBar
+                                                label="Projects"
+                                                current={selectedCompany._count.projects}
+                                                max={selectedCompany.plan?.limits?.maxProjects}
+                                                color="bg-indigo-500"
+                                            />
+                                            <UsageBar
+                                                label="Users"
+                                                current={selectedCompany._count.users}
+                                                max={selectedCompany.plan?.limits?.maxUsers}
+                                                color="bg-emerald-500"
+                                            />
+                                            <UsageBar
+                                                label="Infrastructure (CTOs)"
+                                                current={selectedCompany._count.ctos || 0}
+                                                max={selectedCompany.plan?.limits?.maxCTOs}
+                                                color="bg-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {selectedCompany.status === 'ACTIVE' ? (
+                                            <button
+                                                onClick={() => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' })}
+                                                className="flex items-center justify-center gap-2 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-xl text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
+                                            >
+                                                <Lock className="w-3.5 h-3.5" />
+                                                Suspend
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' })}
+                                                className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
+                                            >
+                                                <Shield className="w-3.5 h-3.5" />
+                                                Activate
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => handleCompanyDelete(selectedCompany)}
+                                            className="flex items-center justify-center gap-2 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            Delete
+                                        </button>
                                     </div>
 
                                     {/* Users List */}

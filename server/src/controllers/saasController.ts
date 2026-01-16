@@ -154,11 +154,22 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
 export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { status, planId } = req.body;
+        const { status, planId, billingMode } = req.body;
 
         const data: any = {};
         if (status) data.status = status;
         if (planId) data.planId = planId;
+        if (billingMode) data.billingMode = billingMode;
+
+        // --- NEW LOGIC: RENEW EXPIRATION ON MANUAL ACTIVATION/PLAN CHANGE/MODE CHANGE ---
+        // If we are activating, changing a plan manually, or switching to MANUAL billing,
+        // we give the user a long expiration to prevent the auto-downgrade logic.
+        if (status === 'ACTIVE' || planId || billingMode === 'MANUAL') {
+            const nextYear = new Date();
+            nextYear.setFullYear(nextYear.getFullYear() + 1);
+            data.subscriptionExpiresAt = nextYear;
+            console.log(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()} (Billing Mode: ${billingMode || 'Unchanged'})`);
+        }
 
         // If suspending, try to cancel Stripe subscription
         if (status === 'SUSPENDED') {
@@ -174,12 +185,19 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
             where: { id },
             data
         });
+        console.log(`[saasController] ✅ Company ${id} updated successfully:`, { billingMode: (company as any).billingMode });
         res.json(company);
-    } catch (error) {
-        console.error("Update company error:", error);
+    } catch (error: any) {
+        console.error("Critical Update Company Error:", {
+            id: req.params.id,
+            errorMessage: error?.message,
+            errorStack: error?.stack,
+            prismaCode: error?.code
+        });
         res.status(500).json({
             error: 'Failed to update company',
-            details: error instanceof Error ? error.message : String(error)
+            details: error instanceof Error ? error.message : String(error),
+            code: (error as any)?.code
         });
     }
 };

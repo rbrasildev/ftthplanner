@@ -33,6 +33,7 @@ model Company {
   planId                String?   @map("plan_id")
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   status                String    @default("ACTIVE")
+  billingMode           String    @default("STRIPE") @map("billing_mode")
   cables                Cable[]
   plan                  Plan?     @relation(fields: [planId], references: [id])
   ctos                  Cto[]

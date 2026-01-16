@@ -277,19 +277,27 @@ export class StripeService {
 
     // Helper: Sync Company Status
     private static async syncCompanyStatus(companyId: string, subStatus: string) {
-        // Map Stripe status to internal logic if needed, currently storing raw status or simplified
-        // Active states: trialing, active
-        // Inactive states: past_due, canceled, incomplete, incomplete_expired, unpaid
+        // --- NEW LOGIC: HYBRID BILLING CONTROL ---
+        // We check if the company is in STRIPE or MANUAL billing mode.
+        const company = await prisma.company.findUnique({
+            where: { id: companyId },
+            include: { plan: true }
+        });
 
-        // Example: Update company 'status' field if you want one-source-of-truth on Company table
-        // But we have Subscription table now. 
-        // Let's keep Company.status generic (ACTIVE, SUSPENDED)
+        if (!company) return;
+
+        // If billing mode is MANUAL, we do NOT allow Stripe webhooks to suspend the account.
+        if (company.billingMode === 'MANUAL' && ['past_due', 'canceled', 'unpaid', 'incomplete_expired'].includes(subStatus)) {
+            console.log(`[StripeService] ✋ BYPASSING suspension for Company ${companyId} (${company.name}). Manual Billing Mode active.`);
+            return;
+        }
 
         let newStatus = 'ACTIVE';
         if (['past_due', 'canceled', 'unpaid', 'incomplete_expired'].includes(subStatus)) {
             newStatus = 'SUSPENDED';
+            console.log(`[StripeService] ⚠️ SUSPENDING Company ${companyId} due to Stripe status: ${subStatus}`);
         } else if (subStatus === 'trialing') {
-            newStatus = 'TRIAL'; // If your Company status supports TRIAL enum/string
+            newStatus = 'TRIAL';
         }
 
         await prisma.company.update({
@@ -298,5 +306,6 @@ export class StripeService {
                 status: newStatus
             }
         });
+        console.log(`[StripeService] Sync Status Complete: Company ${companyId} is now ${newStatus}`);
     }
 }
