@@ -1045,7 +1045,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
     return (
-        <div className="relative h-full w-full">
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-3">
                 {/* Map Type Switcher - Segmented Control Style */}
                 <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex gap-1.5">
