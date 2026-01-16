@@ -439,6 +439,7 @@ interface CablePolylineProps {
     snapDistance?: number;
     ctos?: CTOData[];
     pops?: POPData[];
+    poles?: PoleData[];
     onPointDragStart: (cableId: string, index: number) => void;
     onDrag: (lat: number, lng: number) => void;
     onDragEnd: () => void;
@@ -447,7 +448,7 @@ interface CablePolylineProps {
 
 const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
     cable, isLit, isActive, isHighlighted, mode, t, onClick, onDoubleClick, onUpdateGeometry, onConnect,
-    snapDistance = 30, ctos = [], pops = [], onPointDragStart, onDrag, onDragEnd, handlePane
+    snapDistance = 30, ctos = [], pops = [], poles = [], onPointDragStart, onDrag, onDragEnd, handlePane
 }) => {
 
     const positions = useMemo(() => cable.coordinates.map(c => [c.lat, c.lng] as [number, number]), [cable.coordinates]);
@@ -481,6 +482,10 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
             const dist = pos.distanceTo(L.latLng(pop.coordinates.lat, pop.coordinates.lng));
             if (dist < snapDistance) { if (dist < minDist) { minDist = dist; nearestNode = pop.id; } }
         });
+        poles.forEach(pole => {
+            const dist = pos.distanceTo(L.latLng(pole.coordinates.lat, pole.coordinates.lng));
+            if (dist < snapDistance) { if (dist < minDist) { minDist = dist; nearestNode = pole.id; } }
+        });
 
         if (nearestNode && onConnect) {
             // Defer update to allow Leaflet drag cycle to complete
@@ -494,7 +499,7 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
             onUpdateGeometry(cable.id, newCoords);
             onDragEnd(); // Cleanup visual tether after update
         }
-    }, [cable.coordinates, cable.id, ctos, pops, snapDistance, onConnect, onUpdateGeometry, onDragEnd]);
+    }, [cable.coordinates, cable.id, ctos, pops, poles, snapDistance, onConnect, onUpdateGeometry, onDragEnd]);
 
     const handleRemovePoint = useCallback((e: any, index: number) => {
         L.DomEvent.stopPropagation(e);
@@ -1205,6 +1210,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                     snapDistance={snapDistance}
                                     ctos={ctos}
                                     pops={pops}
+                                    poles={poles}
                                     onPointDragStart={handlePointDragStart}
                                     onDrag={handleDrag}
                                     onDragEnd={handleDragEnd}

@@ -81,7 +81,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 paddingBottom: `${paddingBottom}px` // invisible padding to align center
             }}
-            className="absolute flex flex-row group z-20 cursor-default items-stretch"
+            className="absolute flex flex-row group z-20 cursor-default items-stretch select-none"
         >
             {/* 1. THE LABEL BOX (Horizontal style, height tied to content) */}
             <div
@@ -90,8 +90,8 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 ${isMirrored ? 'order-2' : 'order-1'}
             `}
             >
-                {/* CONTROLS (Floating above) - Adjusted to be closer and easier to catch */}
-                <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+                {/* CONTROLS (Floating above) - Adjusted for better persistence (sticky hover) */}
+                <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-all duration-500 delay-300 group-hover:duration-150 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
@@ -128,10 +128,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         onMouseLeave={() => onCableMouseLeave?.(cable.id)}
                         onClick={(e) => onCableClick?.(e, cable.id)}
                     >
-                        <span className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight line-clamp-2 uppercase select-none">
+                        <span className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight line-clamp-2 uppercase select-none pointer-events-none">
                             {cable.name}
                         </span>
-                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-1 uppercase tracking-wider">
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-1 uppercase tracking-wider select-none pointer-events-none">
                             {cable.fiberCount} FIBRAS
                         </span>
                     </div>

@@ -141,11 +141,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
 
-        // Position Incoming Cables on the Left if missing
-        incomingCables.forEach((cable, idx) => {
+        // Position Incoming Cables on the Left if missing (Stacking with 10px gap)
+        let currentCableY = 42;
+        incomingCables.forEach((cable) => {
+            const looseTubeCount = cable.looseTubeCount || 1;
+            const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
+            const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12); // Base height approx
+            const remainder = fibersHeight % 24;
+            const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+
             if (!next.layout![cable.id]) {
-                next.layout![cable.id] = { x: 42, y: 42 + (idx * 204), rotation: 0 };
+                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
             }
+            // Update currentCableY for the NEXT cable in the iteration
+            const finalLayout = next.layout![cable.id];
+            currentCableY = Math.max(currentCableY, finalLayout.y + totalHeight + 10);
         });
 
         // Position Existing Splitters if missing
@@ -1350,13 +1360,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
 
-        setLocalCTO(prev => ({
-            ...prev,
-            layout: {
-                ...prev.layout,
-                [id]: { ...prev.layout![id], mirrored: !prev.layout![id].mirrored }
-            }
-        }));
+        setLocalCTO(prev => {
+            const existingLayout = prev.layout?.[id];
+            if (!existingLayout) return prev; // Safety check
+
+            return {
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    [id]: { ...existingLayout, mirrored: !existingLayout.mirrored }
+                }
+            };
+        });
     }, [isVflToolActive, isOtdrToolActive]);
 
     const handlePortMouseDown = useCallback((e: React.MouseEvent, portId: string) => {
@@ -1430,7 +1445,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     ...prev,
                     layout: {
                         ...prev.layout,
-                        [id]: { ...prev.layout![id], rotation: newRot }
+                        [id]: { ...(prev.layout?.[id] || { x: 0, y: 0, rotation: 0 }), rotation: newRot }
                     }
                 };
             });
@@ -1456,7 +1471,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 ...prev,
                 layout: {
                     ...prev.layout,
-                    [id]: { ...prev.layout![id], rotation: newRot }
+                    [id]: { ...(prev.layout?.[id] || { x: 0, y: 0, rotation: 0 }), rotation: newRot }
                 }
             };
         });
@@ -2900,30 +2915,50 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                         </svg>
 
-                        {incomingCables.map(cable => {
-                            const layout = getLayout(cable.id);
-                            return (
-                                <FiberCableNode
-                                    key={cable.id}
-                                    cable={cable}
-                                    layout={layout}
-                                    connections={localCTO.connections}
-                                    litPorts={litPorts}
-                                    hoveredPortId={hoveredPortId}
-                                    onDragStart={handleElementDragStart}
-                                    onRotate={handleRotateElement}
-                                    onMirror={handleMirrorElement}
-                                    onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={setHoveredPortId}
-                                    onPortMouseLeave={handlePortMouseLeave}
-                                    onCableMouseEnter={handleCableMouseEnter}
-                                    onCableMouseLeave={handleCableMouseLeave}
-                                    onCableClick={handleCableClick}
-                                    onEdit={handleCableEditClick}
-                                    onContextMenu={handleCableContextMenu}
-                                />
-                            );
-                        })}
+                        {(() => {
+                            let currentEmergencyY = 42;
+                            return incomingCables.map((cable) => {
+                                const savedLayout = getLayout(cable.id);
+
+                                // Calculate Dynamic Height (Sync with FiberCableNode logic)
+                                const looseTubeCount = cable.looseTubeCount || 1;
+                                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                                const remainder = fibersHeight % 24;
+                                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+
+                                // --- EMERGENCY SYSTEM: If layout is lost or in invalid state (0,0), calc on-the-fly ---
+                                // Using 10px gap as requested
+                                const emergencyPos = { x: 42, y: currentEmergencyY, rotation: 0 };
+                                const layout = (savedLayout.x !== 0 || savedLayout.y !== 0)
+                                    ? savedLayout
+                                    : emergencyPos;
+
+                                // Advance Y for the next iteration
+                                currentEmergencyY = layout.y + totalHeight + 10;
+
+                                return (
+                                    <FiberCableNode
+                                        key={cable.id}
+                                        cable={cable}
+                                        layout={layout}
+                                        connections={localCTO.connections}
+                                        litPorts={litPorts}
+                                        hoveredPortId={hoveredPortId}
+                                        onDragStart={handleElementDragStart}
+                                        onRotate={handleRotateElement}
+                                        onMirror={handleMirrorElement}
+                                        onPortMouseDown={handlePortMouseDown}
+                                        onPortMouseEnter={setHoveredPortId}
+                                        onPortMouseLeave={handlePortMouseLeave}
+                                        onCableMouseEnter={handleCableMouseEnter}
+                                        onCableMouseLeave={handleCableMouseLeave}
+                                        onCableClick={handleCableClick}
+                                        onEdit={handleCableEditClick}
+                                        onContextMenu={handleCableContextMenu}
+                                    />
+                                );
+                            });
+                        })()}
 
                         {localCTO.fusions.map(fusion => {
                             const layout = getLayout(fusion.id);

@@ -985,12 +985,22 @@ export default function App() {
         // We use updateCurrentNetwork to access latest state via prev
         updateCurrentNetwork(prev => {
             const cable = prev.cables.find(c => c.id === cableId);
-            const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId);
+            const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId) || (prev.poles || []).find(p => p.id === nodeId);
             if (!cable || !node) return prev;
+
+            // --- CLEANUP: REMOVE CABLE FROM OLD NODE INPUT LISTS ---
+            const oldNodeId = pointIndex === 0 ? cable.fromNodeId : cable.toNodeId;
+            let updatedCTOs = prev.ctos;
+            let updatedPOPs = prev.pops;
+
+            if (oldNodeId && oldNodeId !== nodeId) {
+                updatedCTOs = updatedCTOs.map(c => c.id === oldNodeId ? { ...c, inputCableIds: (c.inputCableIds || []).filter(id => id !== cableId) } : c);
+                updatedPOPs = updatedPOPs.map(p => p.id === oldNodeId ? { ...p, inputCableIds: (p.inputCableIds || []).filter(id => id !== cableId) } : p);
+            }
 
             // --- VALIDATION: PREVENT DUPLICATE CONNECTION OF SAME CABLE ---
             const isCTO = prev.ctos.some(c => c.id === nodeId);
-            if (isCTO && (node.inputCableIds || []).includes(cableId)) {
+            if (node && 'inputCableIds' in node && (node.inputCableIds || []).includes(cableId)) {
                 showToast(t('error_cto_duplicate_cable') || "Este cabo já está conectado a esta CTO.", 'info');
                 return prev;
             }
@@ -1006,8 +1016,8 @@ export default function App() {
                         coordinates: newCoords,
                         [pointIndex === 0 ? 'fromNodeId' : 'toNodeId']: node.id
                     } : c),
-                    ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cable.id) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
-                    pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cable.id) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
+                    ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cable.id) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
+                    pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cable.id) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
                 };
             }
 
@@ -1033,8 +1043,8 @@ export default function App() {
             return {
                 ...prev,
                 cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
-                ctos: prev.ctos.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
-                pops: prev.pops.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
+                ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
+                pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
             };
         });
     }, [updateCurrentNetwork, t]);
@@ -1109,6 +1119,15 @@ export default function App() {
                     }
                 }
             }
+
+            // --- REMOVE DUPLICATE CONSECUTIVE POINTS ---
+            const filteredCoords = updatedCable.coordinates.filter((c, i, arr) => {
+                if (i === 0) return true;
+                const prevPt = arr[i - 1];
+                const d = Math.sqrt(Math.pow(c.lat - prevPt.lat, 2) + Math.pow(c.lng - prevPt.lng, 2));
+                return d > 0.0000001; // Filter points closer than ~1cm
+            });
+            updatedCable.coordinates = filteredCoords;
 
             // Apply AutoSnap (disabled but kept for consistency) and return
             const tempState = { ...prev, cables: prev.cables.map(c => c.id === id ? updatedCable : c), ctos: updatedCTOs, pops: updatedPOPs };
