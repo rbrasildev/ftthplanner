@@ -10,7 +10,6 @@ import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { PoleDetailsPanel } from './components/PoleDetailsPanel';
 import { MapToolbar } from './components/MapToolbar';
-import { exportProjectToPDF } from './components/ProjectExporter';
 import { SaasAdminPage } from './components/admin/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
@@ -450,8 +449,9 @@ export default function App() {
         }
     };
 
-    const handleMapMoveEnd = (lat: number, lng: number, zoom: number, bounds: L.LatLngBounds) => {
-        setMapBounds(bounds);
+    const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
+        // Map position saving disabled for better performance
+        // The map will reset to project center on reload
     };
 
     // Search Logic - Optimized
@@ -1625,35 +1625,6 @@ export default function App() {
         setDebouncedSearchTerm(term);
     };
 
-    const handleExportProjectPDF = async () => {
-        if (!currentProject) return;
-        try {
-            showToast(t('generating_project_pdf') || "Gerando PDF do Projeto...", 'info');
-            // Safely extract bounds if they are Leaflet LatLngBounds
-            const b = mapBounds ? L.latLngBounds(mapBounds as any) : null;
-            // Pad the bounds slightly to match screen visual better
-            const box = b ? b.pad(0.05) : null;
-            const simpleBounds = box ? {
-                north: box.getNorth(),
-                south: box.getSouth(),
-                east: box.getEast(),
-                west: box.getWest()
-            } : null;
-
-            await exportProjectToPDF({
-                project: currentProject,
-                poles: getCurrentNetwork().poles || [],
-                mapElementId: 'project-map-capture',
-                mapBounds: simpleBounds,
-                t
-            });
-            showToast(t('export_success') || "PDF gerado com sucesso!", 'success');
-        } catch (error) {
-            console.error("PDF Export failed", error);
-            showToast(t('export_failed') || "Erro ao gerar PDF", 'error');
-        }
-    };
-
     return (
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
@@ -1700,7 +1671,6 @@ export default function App() {
                     setCurrentProjectId(null);
                 }}
                 onUpgradeClick={() => setIsAccountSettingsOpen(true)}
-                onExportPDF={currentProjectId ? handleExportProjectPDF : undefined}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
@@ -1784,7 +1754,7 @@ export default function App() {
                     <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
                 </main>
             ) : (
-                <main id="project-map-capture" className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
                     {/* Map Toolbar (Floating) */}
                     <div className="absolute top-20 lg:top-4 left-0 right-0 z-[1000] pointer-events-none">
                         {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}

@@ -47,7 +47,6 @@ interface SidebarProps {
     isHydrated?: boolean;
     currentDashboardView?: DashboardView;
     onDashboardViewChange?: (view: DashboardView) => void;
-    onExportPDF?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -77,8 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onCloseMobile,
     isHydrated,
     currentDashboardView = 'projects',
-    onDashboardViewChange,
-    onExportPDF
+    onDashboardViewChange
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -250,16 +248,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     variant="emerald"
                                     progress={deploymentProgress}
                                 />
-
-                                {onExportPDF && (
-                                    <NavButton
-                                        icon={<FileUp className="w-5 h-5" />}
-                                        label={t('export_project_pdf') || 'Exportar Projeto/Postes (PDF)'}
-                                        onClick={onExportPDF}
-                                        isCollapsed={isCollapsed}
-                                        variant="zinc"
-                                    />
-                                )}
                             </div>
 
                             {/* VFL Indicator */}

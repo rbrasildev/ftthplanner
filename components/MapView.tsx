@@ -651,7 +651,7 @@ const MapEvents: React.FC<{
     mode: string,
     onMapClick: (lat: number, lng: number) => void,
     onClearSelection: () => void,
-    onMapMoveEnd?: (lat: number, lng: number, zoom: number, bounds: L.LatLngBounds) => void,
+    onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void,
     onContextMenu?: (e: L.LeafletMouseEvent) => void,
     onUndoDrawingPoint?: () => void
 }> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint }) => {
@@ -683,8 +683,7 @@ const MapEvents: React.FC<{
             if (onMapMoveEnd) {
                 const c = e.target.getCenter();
                 const z = e.target.getZoom();
-                const b = e.target.getBounds();
-                onMapMoveEnd(c.lat, c.lng, z, b);
+                onMapMoveEnd(c.lat, c.lng, z);
             }
         }
     });
@@ -705,14 +704,10 @@ const MapController = ({ bounds, viewKey, center, zoom }: { bounds: any, viewKey
     const lastViewKey = React.useRef<string | undefined>(undefined);
 
     useEffect(() => {
-        // Only run fitBounds if specifically triggered by code (via tool, search, or project load handled via viewKey)
-        // Manual map moves update the state but shouldn't trigger fitBounds back onto the map.
-        if (bounds && viewKey !== lastViewKey.current) {
+        if (bounds) {
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 22, animate: true, duration: 1.5 });
-            lastViewKey.current = viewKey;
             return;
         }
-
         // Only update view if we have a center AND it's a new viewKey (project switch) 
         // AND we haven't processed this viewKey yet.
         if (center && zoom && viewKey && viewKey !== lastViewKey.current) {
@@ -785,7 +780,7 @@ interface MapViewProps {
     viewKey?: string;
     initialCenter?: Coordinates;
     initialZoom?: number;
-    onMapMoveEnd?: (lat: number, lng: number, zoom: number, bounds: L.LatLngBounds) => void;
+    onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void;
     onAddPoint: (lat: number, lng: number) => void;
     onNodeClick: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNode?: (id: string, lat: number, lng: number) => void;

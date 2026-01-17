@@ -21,7 +21,7 @@ export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
   'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
   'NOT_DEPLOYED': '#ef4444', // Red (Não implantado)
-  'DEPLOYED': '#30b15f', // Blue (Implantado)
+  'DEPLOYED': '#30b15fff', // Blue (Implantado)
   'CERTIFIED': '#22c55e', // Green (Certificado)
 };
 
@@ -150,7 +150,7 @@ export interface CableData {
 export type PoleStatus = 'PLANNED' | 'ANALYSING' | 'LICENSED';
 
 export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
-  'PLANNED': '#1b1b1b', // Black (Em projeto)
+  'PLANNED': '#1b1b1bff', // Black (Em projeto)
   'ANALYSING': '#eab308', // Yellow (Em análise)
   'LICENSED': '#22c55e', // Green (Licenciado)
 };

@@ -566,12 +566,6 @@ const translations = {
     'finish': 'Finish',
     'finish_cable': 'Finish Cable',
     'connection_cancelled': 'Connection Cancelled',
-    'export_project_pdf': 'Export Project/Poles (PDF)',
-    'generating_project_pdf': 'Generating Project/Poles PDF...',
-    'project_report': 'Project Report',
-    'pole_report': 'Pole Report',
-    'location': 'Location',
-    'pole_list_desc': 'Complete list of technical poles in the project.',
   },
   pt: {
     // Theme
@@ -1167,12 +1161,6 @@ const translations = {
     'linked_pole': 'Poste Vinculado',
     'link_to_nearest_pole': 'Vincular ao poste próximo',
     'unlinked': 'Sem vínculo',
-    'export_project_pdf': 'Exportar Projeto/Postes (PDF)',
-    'generating_project_pdf': 'Gerando PDF do Projeto/Postes...',
-    'project_report': 'Relatório de Projeto',
-    'pole_report': 'Relatório de Postes',
-    'location': 'Localização',
-    'pole_list_desc': 'Lista completa de postes técnicos do projeto.',
   }
 };
 
