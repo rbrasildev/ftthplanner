@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { POPData, CTOStatus, CTO_STATUS_COLORS } from '../types';
+import { POPData, CTOStatus, CTO_STATUS_COLORS, PoleData } from '../types';
 import { Settings2, Trash2, Activity, MapPin, Building2, Type, X, AlertTriangle, Palette, Scaling } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { calculateDistance } from '../utils/geometryUtils';
 
 interface POPDetailsPanelProps {
   pop: POPData;
+  poles: PoleData[];
   onRename: (id: string, newName: string) => void;
   onUpdateStatus: (status: CTOStatus) => void;
-  onUpdate: (id: string, updates: Partial<POPData>) => void; // Generic update handler
+  onUpdate: (id: string, updates: Partial<POPData>) => void;
   onOpenRack: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
@@ -16,6 +18,7 @@ interface POPDetailsPanelProps {
 
 export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   pop,
+  poles,
   onRename,
   onUpdateStatus,
   onUpdate,
@@ -55,7 +58,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
     setShowDeleteConfirm(false);
   };
 
-  // Draggable Logic - Optimized with Refs for smoothness
   const panelRef = React.useRef<HTMLDivElement>(null);
   const dragRef = React.useRef({
     isDragging: false,
@@ -65,10 +67,9 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
     initialTop: 0
   });
 
-  // Set initial position
   useEffect(() => {
     if (panelRef.current) {
-      const width = 400; // Matches w-[400px]
+      const width = 400;
       const height = panelRef.current.offsetHeight || 600;
       const initialX = (window.innerWidth - width) / 2;
       const initialY = Math.max(50, (window.innerHeight - height) / 2);
@@ -80,24 +81,18 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current.isDragging || !panelRef.current) return;
-
       e.preventDefault();
-
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-
       panelRef.current.style.left = `${dragRef.current.initialLeft + dx}px`;
       panelRef.current.style.top = `${dragRef.current.initialTop + dy}px`;
     };
-
     const handleMouseUp = () => {
       dragRef.current.isDragging = false;
       document.body.style.userSelect = '';
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -109,11 +104,9 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
     dragRef.current.isDragging = true;
     dragRef.current.startX = e.clientX;
     dragRef.current.startY = e.clientY;
-
     const rect = panelRef.current.getBoundingClientRect();
     dragRef.current.initialLeft = rect.left;
     dragRef.current.initialTop = rect.top;
-
     document.body.style.userSelect = 'none';
   };
 
@@ -123,8 +116,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
       className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
-
-      {/* Header - Draggable Handle */}
       <div
         onMouseDown={handleMouseDown}
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
@@ -145,10 +136,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
         </div>
       </div>
 
-      {/* Form Content */}
       <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-
-        {/* Name Input */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Type className="w-3 h-3" /> {t('name')}
@@ -165,7 +153,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
           />
         </div>
 
-        {/* Status Select */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Activity className="w-3 h-3" /> {t('status')}
@@ -182,14 +169,49 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
           </select>
         </div>
 
-        {/* Visual Customization */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
+            <MapPin className="w-3 h-3" /> {t('linked_pole') || 'Poste Vinculado'}
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={pop.poleId || ''}
+              onChange={(e) => onUpdate(pop.id, { poleId: e.target.value || undefined })}
+              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none text-sm"
+            >
+              <option value="">{t('unlinked') || 'Sem vínculo'}</option>
+              {poles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                let nearest = null;
+                let minDist = Infinity;
+                poles.forEach(p => {
+                  const d = calculateDistance(pop.coordinates, p.coordinates);
+                  if (d < minDist) {
+                    minDist = d;
+                    nearest = p;
+                  }
+                });
+                if (nearest && minDist < 20) {
+                  onUpdate(pop.id, { poleId: (nearest as any).id });
+                }
+              }}
+              title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
+              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Palette className="w-3 h-3" /> Visualização
           </label>
-
           <div className="grid grid-cols-2 gap-3">
-            {/* Color Picker */}
             <div>
               <label className="text-[10px] text-slate-400 mb-1 block">Cor do Ícone</label>
               <div className="flex gap-2 items-center">
@@ -203,8 +225,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
                 <span className="text-xs font-mono text-slate-500">{pop.color || '#6366f1'}</span>
               </div>
             </div>
-
-            {/* Size Slider */}
             <div>
               <label className="text-[10px] text-slate-400 mb-1 block flex items-center gap-1"><Scaling className="w-3 h-3" /> Tamanho ({pop.size || 24}px)</label>
               <input
@@ -220,7 +240,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
           </div>
         </div>
 
-        {/* Info Grid */}
         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500">{t('backbone_cables')}</span>
@@ -285,7 +304,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
             </button>
           )}
         </div>
-
       </div>
     </div>
   );

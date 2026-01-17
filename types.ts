@@ -21,7 +21,7 @@ export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
   'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
   'NOT_DEPLOYED': '#ef4444', // Red (Não implantado)
-  'DEPLOYED': '#30b15fff', // Blue (Implantado)
+  'DEPLOYED': '#30b15f', // Blue (Implantado)
   'CERTIFIED': '#22c55e', // Green (Certificado)
 };
 
@@ -103,6 +103,7 @@ export interface POPData {
   // Customization
   color?: string; // Hex color for the marker
   size?: number; // Size/radius of the marker (default 24)
+  poleId?: string; // Associated pole for licensing/anchoring
 }
 
 export interface CTOData {
@@ -128,6 +129,7 @@ export interface CTOData {
     y: number;
     zoom: number;
   };
+  poleId?: string; // Associated pole for licensing/anchoring
 }
 
 export interface CableData {
@@ -148,7 +150,7 @@ export interface CableData {
 export type PoleStatus = 'PLANNED' | 'ANALYSING' | 'LICENSED';
 
 export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
-  'PLANNED': '#1b1b1bff', // Black (Em projeto)
+  'PLANNED': '#1b1b1b', // Black (Em projeto)
   'ANALYSING': '#eab308', // Yellow (Em análise)
   'LICENSED': '#22c55e', // Green (Licenciado)
 };

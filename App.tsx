@@ -10,6 +10,7 @@ import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { PoleDetailsPanel } from './components/PoleDetailsPanel';
 import { MapToolbar } from './components/MapToolbar';
+import { exportProjectToPDF } from './components/ProjectExporter';
 import { SaasAdminPage } from './components/admin/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
@@ -449,9 +450,8 @@ export default function App() {
         }
     };
 
-    const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
-        // Map position saving disabled for better performance
-        // The map will reset to project center on reload
+    const handleMapMoveEnd = (lat: number, lng: number, zoom: number, bounds: L.LatLngBounds) => {
+        setMapBounds(bounds);
     };
 
     // Search Logic - Optimized
@@ -546,6 +546,28 @@ export default function App() {
                 if (fusion) {
                     const otherSide = curr.endsWith('-a') ? `${fusion.id}-b` : `${fusion.id}-a`;
                     if (!litPorts.has(otherSide)) { litPorts.add(otherSide); queue.push(otherSide); }
+                }
+            }
+
+            // --- POLE Auto-Pass-Through (VFL) ---
+            if (curr.includes('-fiber-')) {
+                const [cableId, fiberIndex] = curr.split('-fiber-');
+                const cable = network.cables.find(c => c.id === cableId);
+                if (cable) {
+                    // Check if current end of cable is at a pole
+                    const nodesAtEnd = (network.poles || []).filter(p => p.id === cable.fromNodeId || p.id === cable.toNodeId);
+                    nodesAtEnd.forEach(pole => {
+                        // Find OTHER cables connected to this pole
+                        const otherCables = network.cables.filter(c => c.id !== cable.id && (c.fromNodeId === pole.id || c.toNodeId === pole.id));
+                        otherCables.forEach(oc => {
+                            const nextPort = `${oc.id}-fiber-${fiberIndex}`;
+                            if (!litPorts.has(nextPort)) {
+                                litPorts.add(nextPort);
+                                litCables.add(oc.id);
+                                queue.push(nextPort);
+                            }
+                        });
+                    });
                 }
             }
         }
@@ -709,7 +731,8 @@ export default function App() {
                 ...prev,
                 cables: [...prev.cables, newCable],
                 ctos: updatedCTOs,
-                pops: updatedPOPs
+                pops: updatedPOPs,
+                poles: prev.poles // Ensure poles are preserved
             };
         });
 
@@ -886,7 +909,7 @@ export default function App() {
 
     const handleNodeForCableStable = useCallback((nodeId: string) => {
         const net = getCurrentNetwork();
-        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
+        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId) || (net.poles || []).find(p => p.id === nodeId);
         if (!node) return;
 
         const currentPath = drawingPathRef.current;
@@ -945,6 +968,12 @@ export default function App() {
 
     const handleMoveNode = useCallback((id: string, lat: number, lng: number) => {
         updateCurrentNetwork(prev => {
+            const oldNode = prev.ctos.find(c => c.id === id) || prev.pops.find(p => p.id === id) || (prev.poles || []).find(p => p.id === id);
+            if (!oldNode) return prev;
+
+            const oldLat = oldNode.coordinates.lat;
+            const oldLng = oldNode.coordinates.lng;
+
             let updatedCTOs = prev.ctos;
             let updatedPOPs = prev.pops;
             let updatedPoles = prev.poles || [];
@@ -957,17 +986,32 @@ export default function App() {
             }
             else if (updatedPoles.some(p => p.id === id)) {
                 updatedPoles = updatedPoles.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p);
+                // Also move any CTO/POP linked to this pole
+                updatedCTOs = updatedCTOs.map(c => c.poleId === id ? { ...c, coordinates: { lat, lng } } : c);
+                updatedPOPs = updatedPOPs.map(p => p.poleId === id ? { ...p, coordinates: { lat, lng } } : p);
             }
 
             const updatedCables = prev.cables.map(cable => {
-                const newCoords = [...cable.coordinates];
+                let changed = false;
+                const newCoords = cable.coordinates.map(coord => {
+                    // Match by location (epsilon check) for intermediate anchors
+                    const d = Math.sqrt(Math.pow(coord.lat - oldLat, 2) + Math.pow(coord.lng - oldLng, 2));
+                    if (d < 0.00000001) {
+                        changed = true;
+                        return { lat, lng };
+                    }
+                    return coord;
+                });
+
                 if (cable.fromNodeId === id) {
                     newCoords[0] = { lat, lng };
+                    changed = true;
                 }
                 if (cable.toNodeId === id) {
                     newCoords[newCoords.length - 1] = { lat, lng };
+                    changed = true;
                 }
-                return { ...cable, coordinates: newCoords };
+                return changed ? { ...cable, coordinates: newCoords } : cable;
             });
 
             return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables, poles: updatedPoles };
@@ -1031,6 +1075,18 @@ export default function App() {
                 };
             }
 
+            // --- POLE ANCHORAGE WITHOUT SPLIT ---
+            const isPole = (prev.poles || []).some(p => p.id === nodeId);
+            if (isPole) {
+                const newCoords = [...cable.coordinates];
+                newCoords[pointIndex] = node.coordinates;
+                showToast(t('toast_cable_anchored_pole', { name: node.name }) || `Cabo ancorado ao poste ${node.name}`);
+                return {
+                    ...prev,
+                    cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c)
+                };
+            }
+
             const coordSegment1 = cable.coordinates.slice(0, pointIndex + 1);
             const coordSegment2 = cable.coordinates.slice(pointIndex);
             coordSegment1[coordSegment1.length - 1] = node.coordinates;
@@ -1074,7 +1130,17 @@ export default function App() {
     };
     const handleDeletePole = (id: string) => {
         setSelectedId(null);
-        updateCurrentNetwork(prev => ({ ...prev, poles: (prev.poles || []).filter(p => p.id !== id) }));
+        updateCurrentNetwork(prev => {
+            const updatedPoles = (prev.poles || []).filter(p => p.id !== id);
+            const updatedCables = prev.cables.map(cable => {
+                if (cable.fromNodeId === id) return { ...cable, fromNodeId: undefined };
+                if (cable.toNodeId === id) return { ...cable, toNodeId: undefined };
+                return cable;
+            });
+            const updatedCTOs = prev.ctos.map(c => c.poleId === id ? { ...c, poleId: undefined } : c);
+            const updatedPOPs = prev.pops.map(p => p.poleId === id ? { ...p, poleId: undefined } : p);
+            return { ...prev, poles: updatedPoles, cables: updatedCables, ctos: updatedCTOs, pops: updatedPOPs };
+        });
         showToast(t('toast_pole_deleted'));
     };
     const handleSaveCable = (c: CableData) => { updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.map(cb => cb.id === c.id ? c : cb) })); setEditingCable(null); setHighlightedCableId(null); };
@@ -1267,10 +1333,36 @@ export default function App() {
                 return;
             }
 
-            const nextNode = net.ctos.find(c => c.id === nextNodeId) || net.pops.find(p => p.id === nextNodeId);
+            const nextNode = net.ctos.find(c => c.id === nextNodeId) || net.pops.find(p => p.id === nextNodeId) || (net.poles || []).find(p => p.id === nextNodeId);
             if (!nextNode) {
                 showToast(t('otdr_next_node_error'), "info");
                 return;
+            }
+
+            // --- POLE Auto-Pass-Through ---
+            // Poles don't have explicit internal connections. We assume anchoring = continuity.
+            // If it's a pole, find the next cable connected to it and continue on the same fiber index.
+            const isPole = (net.poles || []).some(p => p.id === nextNodeId);
+            if (isPole) {
+                const fiberIndex = currentPortId.split('-fiber-')[1];
+                // Find another cable connected to this pole (excluding the current one)
+                const nextCable = net.cables.find(c =>
+                    c.id !== cableId &&
+                    (c.fromNodeId === nextNode.id || c.toNodeId === nextNode.id)
+                );
+
+                if (nextCable) {
+                    showToast(t('otdr_traversing_pole', { name: nextNode.name }), 'info');
+                    currentPortId = `${nextCable.id}-fiber-${fiberIndex}`;
+                    currentNodeId = nextNode.id;
+                    continue; // Jump to next iteration for the new cable
+                } else {
+                    showToast(t('otdr_end_open'), "info");
+                    const end = nextNode.coordinates;
+                    setOtdrResult(end);
+                    setMapBounds([[end.lat, end.lng], [end.lat, end.lng]]);
+                    return;
+                }
             }
 
             // --- CTO Slack Logic ---
@@ -1299,7 +1391,17 @@ export default function App() {
                 }
             }
 
-            const connection = nextNode.connections.find(c => c.sourceId === currentPortId || c.targetId === currentPortId);
+            if (!('connections' in nextNode)) {
+                showToast(t('otdr_fiber_end_node', { node: nextNode.name }), "info");
+                const end = nextNode.coordinates;
+                setOtdrResult(end);
+                setMapBounds([[end.lat, end.lng], [end.lat, end.lng]]);
+                setEditingCTO(null);
+                setEditingPOP(null);
+                return;
+            }
+
+            const connection = (nextNode as any).connections.find((c: any) => c.sourceId === currentPortId || c.targetId === currentPortId);
 
             if (!connection) {
                 showToast(t('otdr_fiber_end_node', { node: nextNode.name }), "info");
@@ -1523,6 +1625,35 @@ export default function App() {
         setDebouncedSearchTerm(term);
     };
 
+    const handleExportProjectPDF = async () => {
+        if (!currentProject) return;
+        try {
+            showToast(t('generating_project_pdf') || "Gerando PDF do Projeto...", 'info');
+            // Safely extract bounds if they are Leaflet LatLngBounds
+            const b = mapBounds ? L.latLngBounds(mapBounds as any) : null;
+            // Pad the bounds slightly to match screen visual better
+            const box = b ? b.pad(0.05) : null;
+            const simpleBounds = box ? {
+                north: box.getNorth(),
+                south: box.getSouth(),
+                east: box.getEast(),
+                west: box.getWest()
+            } : null;
+
+            await exportProjectToPDF({
+                project: currentProject,
+                poles: getCurrentNetwork().poles || [],
+                mapElementId: 'project-map-capture',
+                mapBounds: simpleBounds,
+                t
+            });
+            showToast(t('export_success') || "PDF gerado com sucesso!", 'success');
+        } catch (error) {
+            console.error("PDF Export failed", error);
+            showToast(t('export_failed') || "Erro ao gerar PDF", 'error');
+        }
+    };
+
     return (
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             {toast && (
@@ -1569,6 +1700,7 @@ export default function App() {
                     setCurrentProjectId(null);
                 }}
                 onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                onExportPDF={currentProjectId ? handleExportProjectPDF : undefined}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
@@ -1652,7 +1784,7 @@ export default function App() {
                     <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
                 </main>
             ) : (
-                <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                <main id="project-map-capture" className="flex-1 relative bg-slate-100 dark:bg-slate-900">
                     {/* Map Toolbar (Floating) */}
                     <div className="absolute top-20 lg:top-4 left-0 right-0 z-[1000] pointer-events-none">
                         {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
@@ -2062,6 +2194,7 @@ export default function App() {
                 selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (
                     <CTODetailsPanel
                         cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
+                        poles={getCurrentNetwork().poles || []}
                         onRename={handleRenameCTO}
                         onUpdateStatus={handleUpdateCTOStatus}
                         onUpdate={(updates) => {
@@ -2081,6 +2214,7 @@ export default function App() {
                 selectedId && !editingPOP && toolMode === 'view' && getCurrentNetwork().pops?.find(p => p.id === selectedId) && (
                     <POPDetailsPanel
                         pop={getCurrentNetwork().pops?.find(p => p.id === selectedId)!}
+                        poles={getCurrentNetwork().poles || []}
                         onRename={handleRenamePOP}
                         onUpdateStatus={handleUpdatePOPStatus}
                         onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}

@@ -185,6 +185,7 @@ const translations = {
     'toast_cable_created': 'Cable created successfully',
     'toast_cable_connected_start': 'Cable start connected to {name}',
     'toast_cable_connected_end': 'Cable end connected to {name}',
+    'toast_cable_anchored_pole': 'Cable anchored to pole {name}',
     'toast_cable_split': 'Cable split (Sangria) and connected to {name}',
     'import_error': 'Failed to import file. See console for details.',
     'import_no_geo': 'No compatible geometry (Points or Lines) found in this file.',
@@ -211,6 +212,7 @@ const translations = {
     'otdr_trace_msg': 'Trace from selected fiber',
     'otdr_instruction_banner': 'Click a fiber port to measure distance.',
     'otdr_event_tooltip': 'OTDR Event',
+    'otdr_traversing_pole': 'Traversing pole {name}...',
 
     // Common
     'save': 'Save',
@@ -331,7 +333,10 @@ const translations = {
 
     // DIO Editor Strings
     'link_cables': 'Link Cables',
-    'no_cables_linked': 'No Cables Linked',
+    'no_available_fusions': 'No fusion types registered',
+    'linked_pole': 'Linked Pole',
+    'link_to_nearest_pole': 'Link to nearest pole',
+    'unlinked': 'Unlinked',
     'link_cables_help': 'You can link cables to this DIO using the button above.',
     'connect_fiber_tray': 'Connect Fiber to DIO Tray',
     'connected_to_port': 'Currently connected to Port {port}',
@@ -561,6 +566,12 @@ const translations = {
     'finish': 'Finish',
     'finish_cable': 'Finish Cable',
     'connection_cancelled': 'Connection Cancelled',
+    'export_project_pdf': 'Export Project/Poles (PDF)',
+    'generating_project_pdf': 'Generating Project/Poles PDF...',
+    'project_report': 'Project Report',
+    'pole_report': 'Pole Report',
+    'location': 'Location',
+    'pole_list_desc': 'Complete list of technical poles in the project.',
   },
   pt: {
     // Theme
@@ -1151,6 +1162,17 @@ const translations = {
     'finish_cable': 'Finalizar Cabo',
     'connection_cancelled': 'Conexão Cancelada',
     'toast_select_next_cable': 'Selecione outro cabo para conectar',
+    'otdr_traversing_pole': 'Atravessando poste {name}...',
+    'toast_cable_anchored_pole': 'Cabo ancorado ao poste {name}',
+    'linked_pole': 'Poste Vinculado',
+    'link_to_nearest_pole': 'Vincular ao poste próximo',
+    'unlinked': 'Sem vínculo',
+    'export_project_pdf': 'Exportar Projeto/Postes (PDF)',
+    'generating_project_pdf': 'Gerando PDF do Projeto/Postes...',
+    'project_report': 'Relatório de Projeto',
+    'pole_report': 'Relatório de Postes',
+    'location': 'Localização',
+    'pole_list_desc': 'Lista completa de postes técnicos do projeto.',
   }
 };
 

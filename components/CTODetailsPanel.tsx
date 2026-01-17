@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { CTOData, CTOStatus, CTO_STATUS_COLORS } from '../types';
+import { CTOData, CTOStatus, CTO_STATUS_COLORS, PoleData } from '../types';
 import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { getBoxes, BoxCatalogItem } from '../services/catalogService';
+import { calculateDistance } from '../utils/geometryUtils';
 
 interface CTODetailsPanelProps {
   cto: CTOData;
+  poles: PoleData[];
   onRename: (id: string, newName: string) => void;
   onUpdateStatus: (status: CTOStatus) => void;
   onUpdate: (updates: Partial<CTOData>) => void;
@@ -17,6 +19,7 @@ interface CTODetailsPanelProps {
 
 export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   cto,
+  poles,
   onRename,
   onUpdateStatus,
   onUpdate,
@@ -66,33 +69,22 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
     setShowDeleteConfirm(false);
   };
 
-  // Calculate accurate fusion count (Real Fusions vs Pass-throughs)
+  // Calculate accurate fusion count
   const fusionCount = useMemo(() => {
-    // 1. Count explicit fusion protector elements
     const explicitFusions = cto.fusions.length;
-
-    // 2. Count direct connections to Splitter Inputs (Implicit Splices)
-    // We exclude those coming from a Fusion Node to avoid double counting.
     const splitterInputIds = new Set(cto.splitters.map(s => s.inputPortId));
-
     const implicitSplitterSplices = cto.connections.filter(c => {
       const isSourceSplitterIn = splitterInputIds.has(c.sourceId);
       const isTargetSplitterIn = splitterInputIds.has(c.targetId);
-
       if (!isSourceSplitterIn && !isTargetSplitterIn) return false;
-
-      // Check if connected to a fusion point (which is already counted as explicit)
       const otherId = isSourceSplitterIn ? c.targetId : c.sourceId;
       if (otherId.includes('fus-')) return false;
-
       return true;
     }).length;
-
     return explicitFusions + implicitSplitterSplices;
   }, [cto]);
 
   // Draggable Logic
-  // Draggable Logic - Optimized with Refs for smoothness
   const panelRef = React.useRef<HTMLDivElement>(null);
   const dragRef = React.useRef({
     isDragging: false,
@@ -102,10 +94,9 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
     initialTop: 0
   });
 
-  // Center initial position
   useEffect(() => {
     if (panelRef.current) {
-      const width = 400; // Matches w-[400px]
+      const width = 400;
       const height = panelRef.current.offsetHeight || 500;
       const initialX = (window.innerWidth - width) / 2;
       const initialY = Math.max(50, (window.innerHeight - height) / 2);
@@ -117,24 +108,18 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current.isDragging || !panelRef.current) return;
-
-      e.preventDefault(); // Prevent selection text behavior
-
+      e.preventDefault();
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-
       panelRef.current.style.left = `${dragRef.current.initialLeft + dx}px`;
       panelRef.current.style.top = `${dragRef.current.initialTop + dy}px`;
     };
-
     const handleMouseUp = () => {
       dragRef.current.isDragging = false;
-      document.body.style.userSelect = ''; // Restore text selection
+      document.body.style.userSelect = '';
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -146,13 +131,10 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
     dragRef.current.isDragging = true;
     dragRef.current.startX = e.clientX;
     dragRef.current.startY = e.clientY;
-
-    // Get current computed positions
     const rect = panelRef.current.getBoundingClientRect();
     dragRef.current.initialLeft = rect.left;
     dragRef.current.initialTop = rect.top;
-
-    document.body.style.userSelect = 'none'; // Prevent text selection while dragging
+    document.body.style.userSelect = 'none';
   };
 
   return (
@@ -161,8 +143,6 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
       className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
-
-      {/* Header - Draggable Handle */}
       <div
         onMouseDown={handleMouseDown}
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
@@ -183,10 +163,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
         </div>
       </div>
 
-      {/* Form Content */}
       <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-
-        {/* Name Input */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Type className="w-3 h-3" /> {t('name')}
@@ -203,7 +180,6 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
           />
         </div>
 
-        {/* Box Model Select */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Box className="w-3 h-3" /> {t('box_model') || 'Modelo de Caixa'}
@@ -224,7 +200,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
                     if (box) {
                       onUpdate({
                         catalogId: selectedId,
-                        type: box.type as any, // 'CTO' | 'CEO'
+                        type: box.type as any,
                         color: box.color,
                         reserveLoopLength: box.reserveLoopLength
                       });
@@ -247,7 +223,6 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
           </div>
         </div>
 
-        {/* Status Select */}
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Activity className="w-3 h-3" /> {t('status')}
@@ -264,7 +239,44 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
           </select>
         </div>
 
-        {/* Info Grid */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
+            <MapPin className="w-3 h-3" /> {t('linked_pole') || 'Poste Vinculado'}
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={cto.poleId || ''}
+              onChange={(e) => onUpdate({ poleId: e.target.value || undefined })}
+              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer appearance-none text-sm"
+            >
+              <option value="">{t('unlinked') || 'Sem vínculo'}</option>
+              {poles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                let nearest = null;
+                let minDist = Infinity;
+                poles.forEach(p => {
+                  const d = calculateDistance(cto.coordinates, p.coordinates);
+                  if (d < minDist) {
+                    minDist = d;
+                    nearest = p;
+                  }
+                });
+                if (nearest && minDist < 20) {
+                  onUpdate({ poleId: (nearest as any).id });
+                }
+              }}
+              title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
+              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500">{t('inputs')}</span>
@@ -329,7 +341,6 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
             </button>
           )}
         </div>
-
       </div>
     </div>
   );
