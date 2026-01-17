@@ -130,7 +130,8 @@ export const getProject = async (req: Request, res: Response) => {
                 catalogId: c.catalogId,
                 type: c.type,
                 color: c.color,
-                reserveLoopLength: c.reserveLoopLength
+                reserveLoopLength: c.reserveLoopLength,
+                poleId: c.poleId
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id,
@@ -144,7 +145,8 @@ export const getProject = async (req: Request, res: Response) => {
                 inputCableIds: p.inputCableIds,
                 layout: p.layout || {},
                 color: p.color,
-                size: p.size
+                size: p.size,
+                poleId: p.poleId
             })),
             cables: project.cables.map((c: any) => ({
                 id: c.id,
@@ -513,7 +515,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             catalogId: c.catalogId,
                             type: c.type,
                             color: c.color,
-                            reserveLoopLength: c.reserveLoopLength
+                            reserveLoopLength: c.reserveLoopLength,
+                            poleId: c.poleId
                         }))
                     });
                 }
@@ -540,7 +543,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             inputCableIds: p.inputCableIds || [],
                             layout: p.layout || {},
                             color: p.color,
-                            size: p.size
+                            size: p.size,
+                            poleId: p.poleId
                         }))
                     });
                 }

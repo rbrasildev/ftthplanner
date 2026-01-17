@@ -70,25 +70,35 @@ import bcrypt from 'bcryptjs';
 
 export const seedSuperAdmin = async () => {
     try {
+        const adminEmail = 'admin@ftthplanner.com';
         const adminUsername = 'admin';
         const adminPassword = 'admin'; // Default password
 
-        const existingAdmin = await prisma.user.findUnique({ where: { username: adminUsername } });
+        const existingAdmin = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: adminEmail },
+                    { username: adminUsername }
+                ]
+            }
+        });
+
         if (!existingAdmin) {
             console.log('Seeding Super Admin user...');
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-            // Create admin user without company first
             await prisma.user.create({
                 data: {
                     username: adminUsername,
-                    email: 'admin@ftthplanner.com',
+                    email: adminEmail,
                     passwordHash: hashedPassword,
                     role: 'SUPER_ADMIN',
                     active: true
                 }
             });
-            console.log(`Created Super Admin: ${adminUsername} / ${adminPassword}`);
+            console.log(`Created Super Admin: ${adminEmail} / ${adminPassword}`);
+        } else {
+            console.log('Super Admin already exists. Skipping seed.');
         }
     } catch (error) {
         console.error('Error seeding admin:', error);

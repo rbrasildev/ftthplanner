@@ -111,6 +111,7 @@ model Cto {
   type              String?         @default("CTO")
   color             String?
   reserveLoopLength Float?          @map("reserve_loop_length")
+  poleId            String?         @map("pole_id")
   companyId         String?         @map("company_id")
   company           Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -135,6 +136,7 @@ model Pop {
   layout        Json?           @default("{}")
   color         String?         @default("#6366f1")
   size          Int?            @default(24)
+  poleId        String?         @map("pole_id")
   companyId     String?         @map("company_id")
   company       Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)

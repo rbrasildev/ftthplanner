@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "createdAt": "2026-01-17T06:00:14.705Z",
+    "version": "1.0",
+    "companyId": "16e79705-1743-4e2e-a335-f6725f41c3c0"
+  },
+  "projects": [
+    {
+      "id": "ddc9da9e-e014-423b-927e-4f538e4e5e2f",
+      "userId": "cbceab7c-373f-4612-a6e5-5854cf997db1",
+      "name": "PROJETO-FTTX-PARINTINS",
+      "centerLat": -2.6329,
+      "centerLng": -56.7408,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-17T01:28:52.433Z",
+      "updatedAt": "2026-01-17T01:28:52.433Z",
+      "companyId": "16e79705-1743-4e2e-a335-f6725f41c3c0"
+    }
+  ],
+  "ctos": [],
+  "pops": [],
+  "cables": [],
+  "poles": []
+}
