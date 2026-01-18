@@ -165,7 +165,10 @@ export const getProject = async (req: Request, res: Response) => {
                 name: p.name,
                 status: p.status,
                 coordinates: { lat: p.lat, lng: p.lng },
-                catalogId: p.catalogId
+                catalogId: p.catalogId,
+                type: p.type,
+                height: p.height,
+                linkedCableIds: p.linkedCableIds
             }))
         };
 
@@ -275,6 +278,14 @@ export const syncProject = async (req: Request, res: Response) => {
         network.cables = network.cables.filter((c: any) => {
             const duplicate = seen.has(c.id);
             seen.add(c.id);
+            return !duplicate;
+        });
+    }
+    if (network.poles) {
+        const seen = new Set();
+        network.poles = network.poles.filter((p: any) => {
+            const duplicate = seen.has(p.id);
+            seen.add(p.id);
             return !duplicate;
         });
     }
@@ -410,6 +421,7 @@ export const syncProject = async (req: Request, res: Response) => {
             collidingIds.forEach(oldId => {
                 // simple UUID-like generator or actual UUID
                 const newId = `remap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                idMap.set(oldId, newId);
             });
 
             // Helper to remap a string ID
@@ -463,6 +475,7 @@ export const syncProject = async (req: Request, res: Response) => {
             if (network.poles) {
                 network.poles.forEach((p: any) => {
                     if (idMap.has(p.id)) p.id = idMap.get(p.id);
+                    if (p.linkedCableIds) p.linkedCableIds = p.linkedCableIds.map(remap);
                 });
             }
         }
@@ -487,7 +500,6 @@ export const syncProject = async (req: Request, res: Response) => {
             // We delete in reverse dependency order: Cables -> POPs -> CTOs
             // We also relax the check to delete ANYTHING with this projectId, ensuring no ghost records remain.
             await tx.cable.deleteMany({ where: { projectId: id } });
-            await tx.pop.deleteMany({ where: { projectId: id } });
             await tx.pop.deleteMany({ where: { projectId: id } });
             await tx.cto.deleteMany({ where: { projectId: id } });
             await tx.pole.deleteMany({ where: { projectId: id } });
@@ -580,15 +592,18 @@ export const syncProject = async (req: Request, res: Response) => {
                 for (let i = 0; i < uniquePoles.length; i += CHUNK_SIZE) {
                     const chunk = uniquePoles.slice(i, i + CHUNK_SIZE);
                     await tx.pole.createMany({
-                        data: chunk.map((p: any) => ({
-                            id: p.id,
+                        data: chunk.map((pole: any) => ({
+                            id: pole.id,
                             projectId: id,
                             companyId: user.companyId,
-                            name: p.name,
-                            status: p.status,
-                            lat: p.coordinates.lat,
-                            lng: p.coordinates.lng,
-                            catalogId: p.catalogId
+                            name: pole.name,
+                            status: pole.status,
+                            lat: pole.coordinates.lat,
+                            lng: pole.coordinates.lng,
+                            catalogId: pole.catalogId || null,
+                            type: pole.type,
+                            height: pole.height,
+                            linkedCableIds: pole.linkedCableIds || []
                         }))
                     });
                 }

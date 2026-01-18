@@ -1,15 +1,12 @@
-
-import React, { useState, useEffect, useRef } from 'react';
-import { PoleData, PoleStatus, POLE_STATUS_COLORS } from '../types';
-import { UtilityPole, Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, MapPin, Trash2, Edit2, Check, Settings, Info, Share2, Plus, Unlink, Loader2 } from 'lucide-react';
+import { PoleData, PoleStatus, CableData, POLE_STATUS_COLORS } from '../types';
 import { useLanguage } from '../LanguageContext';
 import { getPoles, PoleCatalogItem } from '../services/catalogService';
 
-// Use definitions from types.ts
-// const POLE_STATUS_COLORS is imported now.
-
 interface PoleDetailsPanelProps {
     pole: PoleData;
+    cables: CableData[];
     onRename: (id: string, newName: string) => void;
     onUpdateStatus: (id: string, status: PoleStatus) => void;
     onUpdate: (id: string, updates: Partial<PoleData>) => void;
@@ -19,6 +16,7 @@ interface PoleDetailsPanelProps {
 
 export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
     pole,
+    cables = [],
     onRename,
     onUpdateStatus,
     onUpdate,
@@ -26,248 +24,237 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
     onClose
 }) => {
     const { t } = useLanguage();
-    const [name, setName] = useState(pole.name);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [availablePoles, setAvailablePoles] = useState<PoleCatalogItem[]>([]);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [newName, setNewName] = useState(pole.name);
+    const [polesCatalog, setPolesCatalog] = useState<PoleCatalogItem[]>([]);
+    const [loadingCatalog, setLoadingCatalog] = useState(false);
 
     useEffect(() => {
-        setName(pole.name);
-    }, [pole.id, pole.name]);
-
-    useEffect(() => {
-        getPoles().then(setAvailablePoles).catch(console.error);
+        loadCatalog();
     }, []);
 
-    const handleNameBlur = () => {
-        if (name !== pole.name) {
-            onRename(pole.id, name);
+    const loadCatalog = async () => {
+        try {
+            setLoadingCatalog(true);
+            const data = await getPoles();
+            setPolesCatalog(data);
+        } catch (error) {
+            console.error('Failed to load poles catalog', error);
+        } finally {
+            setLoadingCatalog(false);
         }
     };
 
-    const handleDeleteClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setShowDeleteConfirm(true);
-    };
-
-    const handleConfirmDelete = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        onDelete(pole.id);
-    };
-
-    const handleCancelDelete = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setShowDeleteConfirm(false);
-    };
-
-    // Draggable Logic
-    const panelRef = useRef<HTMLDivElement>(null);
-    const dragRef = useRef({
-        isDragging: false,
-        startX: 0,
-        startY: 0,
-        initialLeft: 0,
-        initialTop: 0
-    });
-
-    // Center initial position
-    useEffect(() => {
-        if (panelRef.current) {
-            const width = 400;
-            const height = panelRef.current.offsetHeight || 500;
-            const initialX = (window.innerWidth - width) / 2;
-            const initialY = Math.max(50, (window.innerHeight - height) / 2);
-            panelRef.current.style.left = `${initialX}px`;
-            panelRef.current.style.top = `${initialY}px`;
+    const handleSaveRename = () => {
+        if (newName.trim() && newName !== pole.name) {
+            onRename(pole.id, newName);
         }
-    }, []);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!dragRef.current.isDragging || !panelRef.current) return;
-
-            e.preventDefault();
-            const dx = e.clientX - dragRef.current.startX;
-            const dy = e.clientY - dragRef.current.startY;
-
-            panelRef.current.style.left = `${dragRef.current.initialLeft + dx}px`;
-            panelRef.current.style.top = `${dragRef.current.initialTop + dy}px`;
-        };
-
-        const handleMouseUp = () => {
-            dragRef.current.isDragging = false;
-            document.body.style.userSelect = '';
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []);
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!panelRef.current) return;
-        dragRef.current.isDragging = true;
-        dragRef.current.startX = e.clientX;
-        dragRef.current.startY = e.clientY;
-
-        const rect = panelRef.current.getBoundingClientRect();
-        dragRef.current.initialLeft = rect.left;
-        dragRef.current.initialTop = rect.top;
-
-        document.body.style.userSelect = 'none';
+        setIsRenaming(false);
     };
+
+    const handleRemoveCable = (cableId: string) => {
+        const currentLinks = pole.linkedCableIds || [];
+        onUpdate(pole.id, { linkedCableIds: currentLinks.filter(id => id !== cableId) });
+    };
+
+    const handleUpdateType = (catalogId: string) => {
+        const selected = polesCatalog.find(p => p.id === catalogId);
+        if (!selected) return;
+        onUpdate(pole.id, {
+            catalogId: selected.id,
+            type: selected.type,
+            height: selected.height
+        });
+    };
+
+    const linkedCables = (cables || []).filter(c => (pole.linkedCableIds || []).includes(c.id));
 
     return (
-        <div
-            ref={panelRef}
-            className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
-            style={{ willChange: 'top, left', transition: 'none' }}
-        >
-
+        <div className="fixed top-20 right-4 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-right overflow-hidden transition-colors z-[2000]">
             {/* Header */}
-            <div
-                onMouseDown={handleMouseDown}
-                className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
-            >
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <UtilityPole className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
-                    {t('edit_pole')}
-                </h2>
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-3 h-3 rounded-full shadow-sm"
-                        style={{ backgroundColor: POLE_STATUS_COLORS[pole.status || 'PLANNED'] }}
-                        title={pole.status}
-                    />
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
-                        <X className="w-6 h-6" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-
-                {/* Name Input */}
-                <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-                        <Type className="w-3 h-3" /> {t('name')}
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onBlur={handleNameBlur}
-                        onKeyDown={(e) => e.key === 'Enter' && handleNameBlur()}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                        placeholder={t('name')}
-                        autoFocus
-                    />
-                </div>
-
-                {/* Pole Type Select */}
-                <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-                        <UtilityPole className="w-3 h-3" /> {t('pole_type')}
-                    </label>
-                    <div className="relative">
-                        <select
-                            value={pole.catalogId || ''}
-                            onChange={(e) => {
-                                const selectedId = e.target.value;
-                                const poleItem = availablePoles.find(p => p.id === selectedId);
-                                if (poleItem) {
-                                    onUpdate(pole.id, {
-                                        catalogId: selectedId,
-                                        type: poleItem.name, // Update plain text type as well for backward compat
-                                    });
-                                } else if (selectedId === '') {
-                                    // Optional: handle clearing type
-                                    onUpdate(pole.id, { catalogId: undefined });
-                                }
-                            }}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none"
-                        >
-                            <option value="">{t('select_pole_type')}</option>
-                            {availablePoles.map(item => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name} ({item.type} {item.height}m)
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                        <MapPin className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                     </div>
-                </div>
-
-                {/* Status Select */}
-                <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-                        <Activity className="w-3 h-3" /> {t('status')}
-                    </label>
-                    <select
-                        value={pole.status || 'PLANNED'}
-                        onChange={(e) => onUpdateStatus(pole.id, e.target.value as PoleStatus)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
-                    >
-                        <option value="PLANNED">{t('status_PLANNED')}</option>
-                        <option value="ANALYSING">{t('status_ANALYSING')}</option>
-                        <option value="LICENSED">{t('status_LICENSED')}</option>
-                    </select>
-                </div>
-
-                {/* Info & Location */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
-                    <div className="pt-0 flex items-start gap-2">
-                        <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
-                        <span className="text-[10px] text-slate-500 font-mono leading-tight">
-                            {pole.coordinates.lat.toFixed(5)}, <br /> {pole.coordinates.lng.toFixed(5)}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Delete Button */}
-                <div className="pt-2">
-                    {showDeleteConfirm ? (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
-                            <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
-                                <AlertTriangle className="w-5 h-5 shrink-0" />
-                                <p className="text-xs font-medium leading-tight">
-                                    {t('confirm_delete_pole_msg').replace('{name}', pole.name)}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={handleCancelDelete}
-                                    className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
-                                >
-                                    {t('cancel')}
-                                </button>
-                                <button
-                                    onClick={handleConfirmDelete}
-                                    className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold transition shadow-lg shadow-red-900/20"
-                                >
-                                    {t('confirm_delete')}
-                                </button>
-                            </div>
+                    {isRenaming ? (
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <input
+                                autoFocus
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSaveRename()}
+                                className="bg-slate-100 dark:bg-slate-800 rounded px-2 py-1 text-sm font-bold text-slate-800 dark:text-white w-full"
+                            />
+                            <button onClick={handleSaveRename} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+                                <Check className="w-4 h-4 text-emerald-600" />
+                            </button>
                         </div>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={handleDeleteClick}
-                            className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center justify-center gap-2 transition text-sm font-medium cursor-pointer"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            {t('delete_pole_btn')}
-                        </button>
+                        <div className="flex items-center gap-2 overflow-hidden group">
+                            <h3 className="font-bold text-slate-800 dark:text-white truncate text-sm">
+                                {pole.name}
+                            </h3>
+                            <button onClick={() => setIsRenaming(true)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit2 className="w-3 h-3 text-slate-400" />
+                            </button>
+                        </div>
                     )}
                 </div>
+                <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg shrink-0">
+                    <X className="w-5 h-5 text-slate-400" />
+                </button>
+            </div>
 
+            <div className="p-5 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                {/* Status Selection */}
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2 tracking-wider">
+                        <Settings className="w-3 h-3" /> {t('status')}
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                        {(['PLANNED', 'ANALYSING', 'LICENSED'] as PoleStatus[]).map((status) => (
+                            <button
+                                key={status}
+                                onClick={() => onUpdateStatus(pole.id, status)}
+                                className={`
+                                    px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center justify-between
+                                    ${pole.status === status
+                                        ? `bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white`
+                                        : 'bg-transparent text-slate-400 dark:text-slate-500 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30'}
+                                `}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: POLE_STATUS_COLORS[status] }}></div>
+                                    {t(`status_${status}`)}
+                                </div>
+                                {pole.status === status && <Check className="w-4 h-4 text-emerald-500" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Technical Info */}
+                <div className="space-y-4">
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2 tracking-wider">
+                        <Info className="w-3 h-3" /> {t('technical_specifications')}
+                    </label>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-4 border border-slate-100 dark:border-slate-800">
+                        <div>
+                            <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1.5 block">
+                                {t('selection_pole_type')}
+                            </label>
+                            {loadingCatalog ? (
+                                <div className="flex items-center gap-2 text-xs text-slate-400 py-1">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    {t('loading')}
+                                </div>
+                            ) : (
+                                <select
+                                    value={pole.catalogId || ''}
+                                    onChange={(e) => handleUpdateType(e.target.value)}
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all"
+                                >
+                                    <option value="">{t('select_pole_type')}</option>
+                                    {polesCatalog.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                            <div>
+                                <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1 block">
+                                    {t('pole_height')}
+                                </label>
+                                <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                    {pole.height ? `${pole.height}m` : 'N/A'}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1 block">
+                                    {t('pole_shape')}
+                                </label>
+                                <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                    {polesCatalog.find(p => p.id === pole.catalogId)?.shape || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1 block">
+                                    {t('pole_strength')}
+                                </label>
+                                <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                    {polesCatalog.find(p => p.id === pole.catalogId)?.strength ? `${polesCatalog.find(p => p.id === pole.catalogId)?.strength} daN` : 'N/A'}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1 block">
+                                    {t('type')}
+                                </label>
+                                <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                    {pole.type || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Linked Cables Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2 tracking-wider">
+                            <Share2 className="w-3 h-3" /> {t('linked_cables')}
+                        </label>
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full">
+                            {linkedCables.length}
+                        </span>
+                    </div>
+
+                    <div className="space-y-2">
+                        {linkedCables.length === 0 ? (
+                            <div className="text-center py-4 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                                <span className="text-[10px] text-slate-400">{t('unlinked')}</span>
+                            </div>
+                        ) : (
+                            linkedCables.map(cable => (
+                                <div key={cable.id} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 group transition-all hover:border-slate-200 dark:hover:border-slate-700">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cable.color || '#0ea5e9' }}></div>
+                                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                                            {cable.name}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveCable(cable.id)}
+                                        className="p-1 text-slate-400 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        title={t('remove')}
+                                    >
+                                        <Unlink className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Danger Zone */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                        onClick={() => {
+                            if (window.confirm(t('confirm_delete_pole_confirm') || 'Deseja excluir este poste?')) {
+                                onDelete(pole.id);
+                            }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 p-3 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl text-xs font-bold transition-colors"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        {t('delete')}
+                    </button>
+                </div>
             </div>
         </div>
     );

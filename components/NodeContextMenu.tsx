@@ -40,19 +40,21 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
             style={{ top: y, left: x }}
             onContextMenu={(e) => e.preventDefault()}
         >
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                    onClose();
-                }}
-                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-            >
-                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
-                    <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <span className="text-sm font-medium">{getLabel('Editar')}</span>
-            </button>
+            {type !== 'Pole' && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit();
+                        onClose();
+                    }}
+                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
+                >
+                    <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                        <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium">{getLabel('Editar')}</span>
+                </button>
+            )}
 
             {onProperties && (
                 <button

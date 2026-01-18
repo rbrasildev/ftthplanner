@@ -189,6 +189,7 @@ const translations = {
     'toast_cable_split': 'Cable split (Sangria) and connected to {name}',
     'import_error': 'Failed to import file. See console for details.',
     'import_no_geo': 'No compatible geometry (Points or Lines) found in this file.',
+    'toast_mode_move_node': 'Move mode activated',
 
     // OTDR Messages & Errors
     'otdr_title': 'OTDR Calculator',
@@ -219,6 +220,9 @@ const translations = {
     'cancel': 'Cancel',
     'delete': 'Delete',
 
+    'name': 'Name',
+    'status': 'Status',
+    'type': 'Type',
     'copy_coordinates': 'Copy Coordinates',
     'open_google_maps': 'Open in Google Maps',
     'coordinates': 'Coordinates',
@@ -242,12 +246,26 @@ const translations = {
     'confirm_delete_equip_msg': 'Are you sure you want to delete {name}?',
     'delete_warning_msg': 'Warning: All connections associated with this {type} will be removed permanently.',
     'changes_saved': 'Changes saved successfully',
+    'position_saved': 'Position saved successfully!',
+    'save_position': 'Save Position',
+    'moving_node': 'Moving Element...',
+    'editing_cable': 'Editing Cable...',
+    'connecting_cable': 'Connecting Cables...',
+    'finish': 'Finish',
+    'finish_cable': 'Finish Cable',
+    'connection_cancelled': 'Connection Cancelled',
+    'meters': 'meters',
+    'saved': 'Saved',
+    'done': 'Done',
 
     // Statuses
-    'status_PLANNED': 'Planned',
-    'status_NOT_DEPLOYED': 'Not Deployed',
-    'status_DEPLOYED': 'Deployed',
-    'status_CERTIFIED': 'Certified',
+    'status_PLANNED': 'In Project',
+    'status_ANALYSING': 'Analysing',
+    'status_LICENSED': 'Licensed',
+    'pole_properties': 'Pole Properties',
+    'selection_pole_type': 'Pole Type',
+    'pole_height_placeholder': 'Ex: 10',
+    'confirm_delete_pole_msg': 'Are you sure you want to delete this pole?',
 
     // CTO/POP Details
     'edit_cto': 'Edit CTO',
@@ -336,6 +354,8 @@ const translations = {
     'no_available_fusions': 'No fusion types registered',
     'linked_pole': 'Linked Pole',
     'link_to_nearest_pole': 'Link to nearest pole',
+    'linked_cables': 'Linked Cables',
+    'link_to_nearest_cables': 'Link nearest cables',
     'unlinked': 'Unlinked',
     'link_cables_help': 'You can link cables to this DIO using the button above.',
     'connect_fiber_tray': 'Connect Fiber to DIO Tray',
@@ -556,16 +576,9 @@ const translations = {
     'upload_restore': 'Upload & Restore',
     'restore_confirm': 'WARNING: This will delete ALL current network data (CTOs, Cables, POPs, Projects) and replace it with the backup. This cannot be undone. Are you sure?',
     'restore_success': 'System restored successfully. Reloading...',
-    'apply': 'Apply',
     'pon': 'PON',
     'slot': 'Slot',
     'properties': 'Properties',
-
-    'editing_cable': 'Editing Cable...',
-    'connecting_cable': 'Connecting Cables...',
-    'finish': 'Finish',
-    'finish_cable': 'Finish Cable',
-    'connection_cancelled': 'Connection Cancelled',
   },
   pt: {
     // Theme
@@ -913,6 +926,7 @@ const translations = {
 
     'name': 'Nome',
     'status': 'Status',
+    'type': 'Tipo',
     'color': 'Cor',
     'id': 'ID',
     'manage_splicing': 'Gerenciar Fusões',
@@ -924,6 +938,17 @@ const translations = {
     'save_or_done': 'Salvar / Sair',
     'clear_connections_confirm': 'Tem certeza que deseja limpar TODAS as conexões? Isso não pode ser desfeito.',
     'changes_saved': 'Alterações salvas com sucesso',
+    'position_saved': 'Posição salva com sucesso!',
+    'save_position': 'Salvar Posição',
+    'moving_node': 'Movendo Elemento...',
+    'editing_cable': 'Editando Cabo...',
+    'connecting_cable': 'Conectando Cabos...',
+    'finish': 'Concluir',
+    'finish_cable': 'Finalizar Cabo',
+    'connection_cancelled': 'Conexão Cancelada',
+    'meters': 'metros',
+    'saved': 'Salvo',
+    'done': 'Concluir',
     'clear_all': 'Limpar Tudo',
     'confirm_delete_equip_msg': 'Tem certeza que deseja deletar {name}?',
     'delete_warning_msg': 'Aviso: Todas as conexões associadas a este {type} serão removidas permanentemente.',
@@ -938,10 +963,13 @@ const translations = {
 
     // Pole Details
     'edit_pole': 'Editar Poste',
+    'pole_properties': 'Propriedades do Poste',
     'pole_type': 'Tipo de Poste',
-    'select_pole_type': 'Selecione o Tipo...',
+    'selection_pole_type': 'Tipo de Poste',
+    'pole_height_placeholder': 'Ex: 10',
     'delete_pole_btn': 'Deletar Poste',
     'confirm_delete_pole_msg': 'Tem certeza que deseja deletar {name}?',
+    'confirm_delete_pole_confirm': 'Deseja excluir este poste?',
 
     // CTO/POP Details
     'edit_cto': 'Editar CTO',
@@ -977,6 +1005,7 @@ const translations = {
     'color_standard': 'Padrão de Cores',
     'standard_abnt': 'ABNT (Brasil)',
     'standard_eia': 'EIA-598-A (Intl)',
+    'toast_mode_move_node': 'Modo mover ativado',
 
     // Project Manager / Create Modal
     'project_manager': 'Gerenciador de Projetos',
@@ -1028,6 +1057,7 @@ const translations = {
 
     // DIO Editor Strings
     'link_cables': 'Vincular Cabos',
+    'linked_cables': 'Cabos Vinculados',
     'no_cables_linked': 'Nenhum Cabo Vinculado',
     'link_cables_help': 'Você pode vincular cabos a este DIO usando o botão acima.',
     'connect_fiber_tray': 'Conectar Fibra à Bandeja DIO',
@@ -1146,21 +1176,7 @@ const translations = {
     'apply': 'Aplicar',
 
 
-    'moving_node': 'Movendo Elemento...',
-
-    'position_saved': 'Posição salva com sucesso!',
-    'properties': 'Propriedades',
-    'editing_cable': 'Editando Cabo...',
-    'connecting_cable': 'Conectando Cabos...',
-    'finish': 'Finalizar',
-    'finish_cable': 'Finalizar Cabo',
-    'connection_cancelled': 'Conexão Cancelada',
     'toast_select_next_cable': 'Selecione outro cabo para conectar',
-    'otdr_traversing_pole': 'Atravessando poste {name}...',
-    'toast_cable_anchored_pole': 'Cabo ancorado ao poste {name}',
-    'linked_pole': 'Poste Vinculado',
-    'link_to_nearest_pole': 'Vincular ao poste próximo',
-    'unlinked': 'Sem vínculo',
   }
 };
 

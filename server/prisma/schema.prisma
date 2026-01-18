@@ -359,6 +359,9 @@ model Pole {
   lng           Float
   catalogId     String?         @map("catalog_id")
   companyId     String?         @map("company_id")
+  type          String?
+  height        Float?
+  linkedCableIds String[]        @default([]) @map("linked_cable_ids")
   
   // Relations
   company       Company?        @relation(fields: [companyId], references: [id])

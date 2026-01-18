@@ -163,6 +163,7 @@ export interface PoleData {
   catalogId?: string; // Reference to CatalogPole
   type?: string;
   height?: number;
+  linkedCableIds?: string[]; // Logically linked cables for licensing
 }
 
 export interface FusionType {

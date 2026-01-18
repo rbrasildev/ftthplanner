@@ -548,28 +548,6 @@ export default function App() {
                     if (!litPorts.has(otherSide)) { litPorts.add(otherSide); queue.push(otherSide); }
                 }
             }
-
-            // --- POLE Auto-Pass-Through (VFL) ---
-            if (curr.includes('-fiber-')) {
-                const [cableId, fiberIndex] = curr.split('-fiber-');
-                const cable = network.cables.find(c => c.id === cableId);
-                if (cable) {
-                    // Check if current end of cable is at a pole
-                    const nodesAtEnd = (network.poles || []).filter(p => p.id === cable.fromNodeId || p.id === cable.toNodeId);
-                    nodesAtEnd.forEach(pole => {
-                        // Find OTHER cables connected to this pole
-                        const otherCables = network.cables.filter(c => c.id !== cable.id && (c.fromNodeId === pole.id || c.toNodeId === pole.id));
-                        otherCables.forEach(oc => {
-                            const nextPort = `${oc.id}-fiber-${fiberIndex}`;
-                            if (!litPorts.has(nextPort)) {
-                                litPorts.add(nextPort);
-                                litCables.add(oc.id);
-                                queue.push(nextPort);
-                            }
-                        });
-                    });
-                }
-            }
         }
         return { litPorts, litCables, litConnections };
     }, [vflSource, projects, currentProjectId]);
@@ -855,7 +833,7 @@ export default function App() {
     const handleMoveNodeStart = useCallback((id: string) => {
         setToolMode('move_node');
         setSelectedId(id);
-        showToast(t('toast_mode_move_node') || 'Modo mover ativado', 'info');
+        showToast(t('toast_mode_move_node'), 'info');
     }, [t]);
 
     const handlePropertiesNode = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
@@ -1060,9 +1038,26 @@ export default function App() {
             }
 
             if (pointIndex === 0 || pointIndex === cable.coordinates.length - 1) {
+                const isPole = (prev.poles || []).some(p => p.id === nodeId);
                 const newCoords = [...cable.coordinates];
                 newCoords[pointIndex] = node.coordinates;
                 showToast(t(pointIndex === 0 ? 'toast_cable_connected_start' : 'toast_cable_connected_end', { name: node.name }));
+
+                if (isPole) {
+                    return {
+                        ...prev,
+                        cables: prev.cables.map(c => c.id === cableId ? {
+                            ...c,
+                            coordinates: newCoords
+                            // NOT setting fromNodeId/toNodeId for poles to allow logical link without interrupting continuity
+                        } : c),
+                        poles: (prev.poles || []).map(p => p.id === nodeId ? {
+                            ...p,
+                            linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId]))
+                        } : p)
+                    };
+                }
+
                 return {
                     ...prev,
                     cables: prev.cables.map(c => c.id === cableId ? {
@@ -1083,7 +1078,11 @@ export default function App() {
                 showToast(t('toast_cable_anchored_pole', { name: node.name }) || `Cabo ancorado ao poste ${node.name}`);
                 return {
                     ...prev,
-                    cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c)
+                    cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c),
+                    poles: (prev.poles || []).map(p => p.id === nodeId ? {
+                        ...p,
+                        linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId]))
+                    } : p)
                 };
             }
 
@@ -1779,19 +1778,19 @@ export default function App() {
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                             <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
                                 <Move className="w-4 h-4 text-sky-500" />
-                                {t('moving_node') || 'Movendo Elemento...'}
+                                {t('moving_node')}
                             </div>
                             <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
                             <button
                                 onClick={() => {
                                     setToolMode('view');
                                     setSelectedId(null);
-                                    showToast(t('position_saved') || 'Posição salva com sucesso!', 'success');
+                                    showToast(t('position_saved'), 'success');
                                 }}
                                 className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
                             >
                                 <Check className="w-4 h-4" />
-                                {t('save_position') || 'Salvar'}
+                                {t('save_position')}
                             </button>
                         </div>
                     )}
@@ -1852,7 +1851,7 @@ export default function App() {
                             <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
                                 <div className="flex items-center gap-3 px-3">
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                        {t('editing_cable') || "Editando Cabo..."}
+                                        {t('editing_cable')}
                                     </span>
                                     <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
                                     <button
@@ -1861,11 +1860,11 @@ export default function App() {
                                             setHighlightedCableId(null);
                                             setSelectedId(null);
                                             previousNetworkState.current = null;
-                                            showToast(t('changes_saved') || "Alterações Salvas!", 'success');
+                                            showToast(t('changes_saved'), 'success');
                                         }}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
                                     >
-                                        {t('save_changes') || "Salvar Alterações"}
+                                        {t('save_changes')}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -1900,7 +1899,7 @@ export default function App() {
                             <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
                                 <div className="flex items-center gap-3 px-3">
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                        {t('connecting_cable') || "Conectando Cabos..."}
+                                        {t('connecting_cable')}
                                     </span>
                                     <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
                                     <button
@@ -1909,11 +1908,11 @@ export default function App() {
                                             setMultiConnectionIds(new Set());
                                             setSelectedId(null);
                                             previousNetworkState.current = null;
-                                            showToast(t('finish') || "Concluir", 'success');
+                                            showToast(t('finish'), 'success');
                                         }}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
                                     >
-                                        {t('finish') || "Concluir"}
+                                        {t('finish')}
                                     </button>
                                     <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
                                     <button
@@ -2026,12 +2025,6 @@ export default function App() {
                     />
                 )
             }
-
-
-
-// ...
-
-
 
             {/* ... */}
 
@@ -2199,6 +2192,7 @@ export default function App() {
                 selectedId && toolMode === 'view' && getCurrentNetwork().poles?.find(p => p.id === selectedId) && (
                     <PoleDetailsPanel
                         pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
+                        cables={getCurrentNetwork().cables}
                         onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
                         onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
                         onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
@@ -2302,10 +2296,10 @@ export default function App() {
                                             }}
                                             className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
                                         />
-                                        <span className="text-sm text-slate-500">meters</span>
+                                        <span className="text-sm text-slate-500">{t('meters')}</span>
                                         {settingsSaved && (
                                             <span className="flex items-center gap-1 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-left-2">
-                                                <Check className="w-3 h-3" /> Saved
+                                                <Check className="w-3 h-3" /> {t('saved')}
                                             </span>
                                         )}
                                     </div>
@@ -2322,7 +2316,7 @@ export default function App() {
                                     }}
                                     className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition"
                                 >
-                                    Done
+                                    {t('done')}
                                 </button>
                             </div>
                         </div>

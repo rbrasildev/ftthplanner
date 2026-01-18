@@ -909,6 +909,21 @@ export const MapView: React.FC<MapViewProps> = ({
         return set;
     }, [multiConnectionIds, activeCableId, selectedId, mode]);
 
+    // Pre-calculate BBoxes for ALL cables only when cables change (high performance)
+    const cablesWithBBox = useMemo(() => {
+        return cables.map(cable => {
+            if (!cable.coordinates || cable.coordinates.length === 0) return { cable, bbox: null };
+            let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+            for (const c of cable.coordinates) {
+                if (c.lat < minLat) minLat = c.lat;
+                if (c.lat > maxLat) maxLat = c.lat;
+                if (c.lng < minLng) minLng = c.lng;
+                if (c.lng > maxLng) maxLng = c.lng;
+            }
+            return { cable, bbox: { minLat, maxLat, minLng, maxLng } };
+        });
+    }, [cables]);
+
     const visibleCables = useMemo(() => {
         if (!showCables) return [];
 
@@ -916,24 +931,21 @@ export const MapView: React.FC<MapViewProps> = ({
         if (!mapBoundsState) return cables.slice(0, 500);
 
         const paddedBounds = mapBoundsState.pad(0.2); // 20% buffer
+        const viewMinLat = paddedBounds.getSouth();
+        const viewMaxLat = paddedBounds.getNorth();
+        const viewMinLng = paddedBounds.getWest();
+        const viewMaxLng = paddedBounds.getEast();
 
         // Performance: optimization for large datasets (70k+ cables)
-        // Only render cables that intersect with the current viewport
-        return cables.filter(cable => {
-            // Quick check: if cable has no coordinates, skip
-            if (!cable.coordinates || cable.coordinates.length === 0) return false;
-
-            // Optimization: Check if at least one point is visible
-            // This handles most cases. For very long cables passing through but with no points inside, 
-            // strict intersection is harder but this is a good trade-off for speed.
-            for (const coord of cable.coordinates) {
-                // Safety check for valid coordinates
-                if (!coord || typeof coord.lat !== 'number' || typeof coord.lng !== 'number' || isNaN(coord.lat) || isNaN(coord.lng)) continue;
-                if (paddedBounds.contains(coord)) return true;
-            }
-            return false;
-        });
-    }, [showCables, cables, mapBoundsState]);
+        // Only render cables that intersect with the current viewport via BBox check
+        return cablesWithBBox
+            .filter(({ bbox }) => {
+                if (!bbox) return false;
+                // Standard BBox overlap check is very fast
+                return !(bbox.maxLat < viewMinLat || bbox.minLat > viewMaxLat || bbox.maxLng < viewMinLng || bbox.minLng > viewMaxLng);
+            })
+            .map(({ cable }) => cable);
+    }, [showCables, cablesWithBBox, mapBoundsState]);
 
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole' } | null>(null);
 
