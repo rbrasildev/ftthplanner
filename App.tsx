@@ -454,9 +454,18 @@ export default function App() {
     };
 
     const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
-        // Map position saving disabled for better performance
-        // The map will reset to project center on reload
+        if (currentProjectId) {
+            localStorage.setItem(`ftth_last_pos_${currentProjectId}`, JSON.stringify({ center: { lat, lng }, zoom }));
+        }
     };
+
+    // Map Persistence State Loading
+    const savedMapState = useMemo(() => {
+        if (!currentProjectId) return null;
+        try {
+            return JSON.parse(localStorage.getItem(`ftth_last_pos_${currentProjectId}`) || 'null');
+        } catch { return null; }
+    }, [currentProjectId]);
 
     // Search Logic - Optimized
     const searchResults = useMemo(() => {
@@ -1814,8 +1823,8 @@ export default function App() {
                         snapDistance={systemSettings.snapDistance}
 
                         viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
-                        initialCenter={currentProject?.mapState?.center}
-                        initialZoom={currentProject?.mapState?.zoom}
+                        initialCenter={savedMapState?.center || currentProject?.mapState?.center}
+                        initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
                         onMapMoveEnd={handleMapMoveEnd}
                         onToggleLabels={() => setShowLabels(!showLabels)}
 

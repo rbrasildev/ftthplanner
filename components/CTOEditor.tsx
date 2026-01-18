@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
-import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink } from 'lucide-react';
+import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -411,6 +411,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [autoTargetId, setAutoTargetId] = useState<string>('');
     const [exportingType, setExportingType] = useState<'png' | 'pdf' | null>(null);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+    const [showPropertiesModal, setShowPropertiesModal] = useState(false);
+    const [propertiesName, setPropertiesName] = useState('');
+    const [propertiesStatus, setPropertiesStatus] = useState<CTOStatus>('PLANNED');
+
+    const handleOpenProperties = () => {
+        setPropertiesName(localCTO.name);
+        setPropertiesStatus((localCTO.status as CTOStatus) || 'PLANNED');
+        setShowPropertiesModal(true);
+    };
+
+    const handleSaveProperties = () => {
+        setLocalCTO(prev => ({
+            ...prev,
+            name: propertiesName,
+            status: propertiesStatus
+        }));
+        setShowPropertiesModal(false);
+    };
+
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
     const [isRotateMode, setIsRotateMode] = useState(false);
@@ -772,7 +791,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             let nextShapeIdx = 0;
 
             const relevantConnections = prev.connections.filter(c =>
-                c.sourceId.startsWith(cableId) || c.targetId.startsWith(cableId)
+                c.sourceId.startsWith(cableId + '-') || c.targetId.startsWith(cableId + '-') ||
+                c.sourceId === cableId || c.targetId === cableId
             );
 
             if (relevantConnections.length > 0) {
@@ -834,7 +854,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
             // 2. Apply Action to ALL relevant connections
             const updatedConnections = prev.connections.map(c => {
-                if (!c.sourceId.startsWith(cableId) && !c.targetId.startsWith(cableId)) return c;
+                const isSourceRelated = c.sourceId === cableId || c.sourceId.startsWith(cableId + '-');
+                const isTargetRelated = c.targetId === cableId || c.targetId.startsWith(cableId + '-');
+                if (!isSourceRelated && !isTargetRelated) return c;
 
                 const p1 = getPortCenter(c.sourceId);
                 const p2 = getPortCenter(c.targetId);
@@ -888,7 +910,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (portId.includes('-fiber-')) {
             try {
                 // Find cable to check loose tube settings
-                const activeCable = incomingCables.find(c => portId.startsWith(c.id));
+                const activeCable = incomingCables.find(c => portId.startsWith(c.id + '-'));
                 const parts = portId.split('-fiber-');
                 const fiberIndex = parseInt(parts[1]);
 
@@ -1614,13 +1636,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const deltaY = newY - (localCTORef.current.layout?.[dragState.targetId!]?.y || dragState.initialLayout.y);
 
             localCTORef.current.connections.forEach(conn => {
-                const sourceIsOnEl = conn.sourceId.startsWith(dragState.targetId!) || (getPortCenter(conn.sourceId) !== null);
+                const sourceIsOnEl = conn.sourceId.startsWith(dragState.targetId! + '-') || conn.sourceId === dragState.targetId! || (getPortCenter(conn.sourceId) !== null);
                 // ^ Simple check doesn't work well because IDs vary.
                 // Better: Check if getPortCenter for the source is inside the element's box?
                 // Or stick to known naming conventions: `${element.id}-...`
 
-                const targetIsEl = conn.targetId.startsWith(dragState.targetId!);
-                const sourceIsEl = conn.sourceId.startsWith(dragState.targetId!);
+                const targetIsEl = conn.targetId === dragState.targetId! || conn.targetId.startsWith(dragState.targetId! + '-');
+                const sourceIsEl = conn.sourceId === dragState.targetId! || conn.sourceId.startsWith(dragState.targetId! + '-');
 
                 // If neither end is on this element, skip
                 if (!targetIsEl && !sourceIsEl) return;
@@ -2563,6 +2585,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 `}</style>
             )}
             <div
+                onContextMenu={(e) => e.preventDefault()}
                 className={`cto-editor-container relative w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
@@ -2699,9 +2722,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <ImageIcon className="w-3.5 h-3.5" />}
                                 PNG
                             </button>
+
                             <button onClick={handleExportPDF} disabled={!!exportingType} className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-1.5 text-[11px] border border-slate-300 dark:border-slate-600 transition">
                                 {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <FileDown className="w-3.5 h-3.5" />}
                                 PDF
+                            </button>
+
+                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 mx-1" />
+
+                            <button
+                                onClick={handleOpenProperties}
+                                className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                title={t('properties')}
+                            >
+                                <Settings className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
@@ -3148,6 +3182,96 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
                 )}
 
+                {/* PROPERTIES MODAL */}
+                {showPropertiesModal && (
+                    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-[400px] border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+                                <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                    <Settings className="w-5 h-5 text-indigo-500" />
+                                    {t('properties')}
+                                </h3>
+                                <button onClick={() => setShowPropertiesModal(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                    <X className="w-5 h-5 text-slate-500" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {t('name')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={propertiesName}
+                                        onChange={(e) => setPropertiesName(e.target.value)}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {t('model')}
+                                    </label>
+                                    <select
+                                        value={localCTO.catalogId || ''}
+                                        onChange={(e) => {
+                                            const selectedId = e.target.value;
+                                            setLocalCTO(prev => {
+                                                const box = availableBoxes.find(b => b.id === selectedId);
+                                                return {
+                                                    ...prev,
+                                                    catalogId: selectedId,
+                                                    type: box?.type || prev.type // Update type (CTO/CEO)
+                                                };
+                                            });
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    >
+                                        <option value="">{t('select_box_model') || 'Select Model...'}</option>
+                                        {availableBoxes.map(box => (
+                                            <option key={box.id} value={box.id}>
+                                                {box.name} ({box.brand})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {t('status')}
+                                    </label>
+                                    <select
+                                        value={propertiesStatus}
+                                        onChange={(e) => setPropertiesStatus(e.target.value as CTOStatus)}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    >
+                                        <option value="PLANNED">{t('status_PLANNED')}</option>
+                                        <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
+                                        <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
+                                        <option value="CERTIFIED">{t('status_CERTIFIED')}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    onClick={() => setShowPropertiesModal(false)}
+                                    className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    onClick={handleSaveProperties}
+                                    className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95"
+                                >
+                                    {t('save')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* AUTO SPLICE MODAL */}
                 {isAutoSpliceOpen && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsAutoSpliceOpen(false)}>
@@ -3280,6 +3404,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     <Pencil className="w-3.5 h-3.5" />
                                     {t('ctx_edit_cable')}
+                                </button>
+
+                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <button
+                                    onClick={(e) => {
+                                        // Trigger Mirror Action manually
+                                        handleMirrorElement(e, contextMenu.id);
+                                        setContextMenu(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                >
+                                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                                    {t('action_flip')}
                                 </button>
 
                                 <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>

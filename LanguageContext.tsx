@@ -232,6 +232,7 @@ const translations = {
     'save': 'Save',
     'cancel': 'Cancel',
     'delete': 'Delete',
+    'confirm': 'Confirm',
 
     'name': 'Name',
     'status': 'Status',
@@ -272,9 +273,12 @@ const translations = {
     'done': 'Done',
 
     // Statuses
-    'status_PLANNED': 'In Project',
-    'status_ANALYSING': 'Analysing',
-    'status_LICENSED': 'Licensed',
+    'status_PLANNED': 'Em Projeto',
+    'status_NOT_DEPLOYED': 'Não Implantado',
+    'status_DEPLOYED': 'Implantado',
+    'status_CERTIFIED': 'Certificado',
+    'status_ANALYSING': 'Em Análise',
+    'status_LICENSED': 'Licenciado',
     'pole_properties': 'Pole Properties',
     'selection_pole_type': 'Pole Type',
     'pole_height_placeholder': 'Ex: 10',
@@ -296,6 +300,7 @@ const translations = {
     'confirm_delete_pop_msg': 'Confirm deletion of POP {name}? This will remove all racks, equipment, and connected cables.',
     'delete_cto_btn': 'Delete CTO',
     'delete_pop_btn': 'Delete POP',
+    'action_flip': 'Flip Side',
 
     // Cable Editor
     'edit_cable': 'Edit Cable',
@@ -965,6 +970,8 @@ const translations = {
     'save': 'Salvar',
     'cancel': 'Cancelar',
     'delete': 'Deletar',
+    'properties': 'Propriedades',
+    'confirm': 'Confirmar',
 
     'name': 'Nome',
     'status': 'Status',
