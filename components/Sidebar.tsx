@@ -348,7 +348,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         {(() => {
                                             const isTrialPlan = userPlanType?.toUpperCase() === 'TRIAL' || userPlan?.toLowerCase().includes('trial') || userPlan?.toLowerCase().includes('teste');
                                             const isFree = userPlan === 'Plano Grátis';
-                                            const shouldShowExp = subscriptionExpiresAt && !isFree;
+                                            const shouldShowExp = subscriptionExpiresAt && !isFree && (isTrialPlan || cancelAtPeriodEnd);
                                             if (!shouldShowExp) return null;
 
                                             const days = Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));

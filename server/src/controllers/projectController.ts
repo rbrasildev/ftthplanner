@@ -28,14 +28,38 @@ export const getProjects = async (req: Request, res: Response) => {
         res.json(projects.map((p: any) => ({
             id: p.id,
             name: p.name,
-            updatedAt: p.updatedAt.getTime(),
-            createdAt: p.createdAt.getTime(),
+            updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now(),
+            createdAt: p.createdAt ? p.createdAt.getTime() : Date.now(),
             network: {
-                ctos: p.ctos,
-                pops: p.pops,
-                cables: p.cables,
-                poles: p.poles || []
-            }
+                ctos: p.ctos.map((c: any) => ({
+                    ...c,
+                    coordinates: { lat: c.lat, lng: c.lng },
+                    splitters: c.splitters || [],
+                    fusions: c.fusions || [],
+                    connections: c.connections || []
+                })),
+                pops: p.pops.map((pop: any) => ({
+                    ...pop,
+                    coordinates: { lat: pop.lat, lng: pop.lng },
+                    olts: pop.olts || [],
+                    dios: pop.dios || [],
+                    fusions: pop.fusions || [],
+                    connections: pop.connections || []
+                })),
+                cables: p.cables.map((cab: any) => ({
+                    ...cab,
+                    coordinates: cab.coordinates || []
+                })),
+                poles: (p.poles || []).map((pole: any) => ({
+                    ...pole,
+                    coordinates: { lat: pole.lat, lng: pole.lng }
+                }))
+            },
+            mapState: {
+                center: { lat: p.centerLat, lng: p.centerLng },
+                zoom: p.zoom
+            },
+            settings: p.settings
         })));
     } catch (error: any) {
         console.error("Get Projects Error:", error);

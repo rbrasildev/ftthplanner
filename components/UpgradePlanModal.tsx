@@ -20,6 +20,7 @@ interface UpgradePlanModalProps {
     isOpen: boolean;
     onClose: () => void;
     currentPlanName?: string;
+    currentPlanId?: string; // NEW
     limitDetails?: string;
 }
 
@@ -38,10 +39,10 @@ const getPlanIcon = (index: number, name: string) => {
 
 import { BillingModal } from './Billing/BillingModal';
 
-export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, limitDetails, companyId, email }) => {
+export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, limitDetails, companyId, email }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [plans, setPlans] = useState<Plan[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); // Ensure loading is initialized properly
     const [selectedPlanForBilling, setSelectedPlanForBilling] = useState<Plan | null>(null);
     const { t } = useLanguage();
 
@@ -87,7 +88,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                             return { ...p, features: [...limitFeatures, ...p.features] };
                         }
                         return p;
-                    });
+                    })
+                        // Filter out Trial plans from Upgrade options
+                        .filter(p => !p.name.toLowerCase().includes('trial') && !p.name.toLowerCase().includes('teste'));
 
                     setPlans(enrichedPlans);
                 } catch (error) {
@@ -175,9 +178,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
                     {/* Plans Grid */}
                     <div className="p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="flex flex-wrap justify-center gap-6">
                             {plans.map((plan) => {
-                                const isCurrent = currentPlanName === plan.name;
+                                const isCurrent = (currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase());
 
                                 // Calculate display price
                                 let displayPrice = plan.price; // Default monthly
@@ -199,7 +202,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                 return (
                                     <div
                                         key={plan.id}
-                                        className={`relative bg-white dark:bg-slate-900 rounded-xl p-6 border transition-all duration-300 flex flex-col
+                                        className={`relative bg-white dark:bg-slate-900 rounded-xl p-6 border transition-all duration-300 flex flex-col w-full max-w-[300px]
                                             ${plan.highlight
                                                 ? 'border-sky-500 ring-4 ring-sky-500/10 shadow-xl scale-105 z-10'
                                                 : 'border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-lg'
@@ -269,29 +272,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                             Pagamento seguro via Stripe. Mudanças entram em vigor imediatamente.
                         </p>
-                        {currentPlanName && !currentPlanName.toLowerCase().includes('grátis') && !currentPlanName.toLowerCase().includes('free') && (
-                            <button
-                                onClick={async () => {
-                                    if (confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium no fim do período.')) {
-                                        try {
-                                            setLoading(true);
-                                            await api.post('/billing/cancel-subscription', { companyId });
-                                            alert('Assinatura cancelada com sucesso.');
-                                            onClose();
-                                            window.location.reload();
-                                        } catch (error) {
-                                            console.error('Cancel Error:', error);
-                                            alert('Erro ao cancelar assinatura. Tente novamente.');
-                                        } finally {
-                                            setLoading(false);
-                                        }
-                                    }
-                                }}
-                                className="text-xs text-red-500 hover:text-red-600 underline"
-                            >
-                                Cancelar Assinatura
-                            </button>
-                        )}
+
                     </div>
                 </div>
             </div>

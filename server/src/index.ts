@@ -55,10 +55,18 @@ import billingRoutes from './routes/billingRoutes';
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
         console.error('Bad JSON received:', err.message);
-        console.error('Raw Body Content:', (err as any).body);
         return res.status(400).json({ error: 'Invalid JSON request', details: err.message });
     }
-    next();
+
+    // Global Error Handler
+    console.error(`[Global Error] ${req.method} ${req.url}:`, err);
+    if (res.headersSent) {
+        return next(err);
+    }
+    res.status(500).json({
+        error: 'Internal Server Error',
+        details: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
+    });
 });
 
 // JSON Parser (Skip for Webhook to allow raw signature verification)

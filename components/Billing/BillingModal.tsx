@@ -141,6 +141,7 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                 // If we upgraded, we expect active status.
                 if (isActive) {
                     setIsVerifying(false);
+                    setError(null); // Clear any previous errors
                     setSuccess(true);
                     return;
                 }
@@ -153,6 +154,7 @@ export const BillingModal: React.FC<BillingModalProps> = ({ isOpen, onClose, pla
                 setTimeout(poll, 2000);
             } else {
                 setIsVerifying(false);
+                setError(null); // Clear errors even if timeout (assume optimistic success for UX)
                 setSuccess(true); // Show success anyway eventually, user can refresh if needed.
                 // Optionally show a warning "Activation delayed"
             }

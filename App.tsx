@@ -118,6 +118,7 @@ export default function App() {
     const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
+    const [userPlanId, setUserPlanId] = useState<string | null>(null); // NEW: Track Plan ID for accurate comparison
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
     const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
@@ -220,6 +221,9 @@ export default function App() {
 
                     if (data.user.company?.plan?.name) {
                         setUserPlan(data.user.company.plan.name);
+                    }
+                    if (data.user.company?.plan?.id) {
+                        setUserPlanId(data.user.company.plan.id);
                     }
                     if (data.user.company?.plan?.type) {
                         setUserPlanType(data.user.company.plan.type);
@@ -2350,6 +2354,8 @@ export default function App() {
                 limitDetails={upgradeModalDetails}
                 companyId={companyId || undefined}
                 email={userEmail || undefined}
+                currentPlanName={userPlan}
+                currentPlanId={userPlanId || undefined}
             />
         </div >
     );

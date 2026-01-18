@@ -58,7 +58,7 @@ const translations = {
     'error_project_delete': 'Failed to delete project.',
 
     // App / Sidebar
-    'app_title': 'FTTH Planner',
+    'app_title': 'FTTx Planner',
     'active_project': 'Active Project',
     'tools': 'Tools',
     'settings': 'Settings',
@@ -473,7 +473,7 @@ const translations = {
     'landing_get_started': 'Get Started',
     'landing_hero_badge': 'New Generation Platform',
     'landing_hero_title_1': 'The Ultimate',
-    'landing_hero_title_2': 'FTTH Network',
+    'landing_hero_title_2': 'FTTx Network',
     'landing_hero_title_3': 'Management Platform',
     'landing_hero_desc': 'Design, document, and manage your fiber network with high-performance interactive maps. Built for ISPs who demand precision and scalability.',
     'landing_start_trial': 'Start Free Trial',
@@ -533,14 +533,14 @@ const translations = {
     'landing_step_3_desc': 'Invite your team and start managing operations.',
 
     'landing_cta_title': 'Ready to modernize your ISP?',
-    'landing_cta_desc': 'Join hundreds of network engineers who trust FTTH Master for their daily operations.',
+    'landing_cta_desc': 'Join hundreds of network engineers who trust FTTx Planner for their daily operations.',
     'landing_cta_btn': 'Get Started for Free',
 
-    'landing_footer_desc': 'The professional standard for FTTH network design and management.',
+    'landing_footer_desc': 'The professional standard for FTTx network design and management.',
     'landing_footer_product': 'Product',
     'landing_footer_company': 'Company',
     'landing_footer_legal': 'Legal',
-    'landing_footer_rights': '© 2024 FTTH Master. All rights reserved.',
+    'landing_footer_rights': '© 2024 FTTx Planner. All rights reserved.',
 
     // Pricing
     'pricing_title': 'Simple, Transparent Pricing',
@@ -593,8 +593,22 @@ const translations = {
     'pon': 'PON',
     'slot': 'Slot',
     'properties': 'Properties',
+    'cancel_subscription': 'Cancel Subscription',
+    'cancel_subscription_confirm': 'Are you sure you want to cancel? You will lose access to premium features at the end of the billing period.',
+    'cancel_subscription_success': 'Subscription canceled successfully.',
+    'cancel_subscription_error': 'Failed to cancel subscription. Please try again or contact support.',
+    'cancel_subscription_disclaimer': 'By canceling, you retain access until the end of original billing cycle.',
+    'upgrade_plan': 'Upgrade Plan',
+    'upgrade_disclaimer': 'Check available plans to upgrade your account.',
   },
   pt: {
+    'upgrade_plan': 'Fazer Upgrade',
+    'upgrade_disclaimer': 'Confira os planos disponíveis para turbinar sua conta.',
+    'cancel_subscription': 'Cancelar Assinatura',
+    'cancel_subscription_confirm': 'Tem certeza que deseja cancelar? Você perderá o acesso aos recursos premium no fim do período de faturamento.',
+    'cancel_subscription_success': 'Assinatura cancelada com sucesso.',
+    'cancel_subscription_error': 'Erro ao cancelar assinatura. Tente novamente ou contate o suporte.',
+    'cancel_subscription_disclaimer': 'Ao cancelar, você mantém o acesso até o fim do ciclo atual de faturamento.',
     // Theme
     'theme_light': 'Modo Claro',
     'theme_dark': 'Modo Escuro',
@@ -608,7 +622,7 @@ const translations = {
     'landing_get_started': 'Começar',
     'landing_hero_badge': 'Nova Geração',
     'landing_hero_title_1': 'A Plataforma Definitiva',
-    'landing_hero_title_2': 'de Rede FTTH',
+    'landing_hero_title_2': 'de Rede FTTx',
     'landing_hero_title_3': 'Gestão e Projetos',
     'landing_hero_desc': 'Projete, documente e gerencie sua rede de fibra com mapas interativos de alta performance. Feito para provedores que exigem precisão e escala.',
     'landing_start_trial': 'Teste Grátis',
@@ -668,14 +682,14 @@ const translations = {
     'landing_step_3_desc': 'Convide seu time e comece a gerenciar as operações.',
 
     'landing_cta_title': 'Pronto para modernizar seu ISP?',
-    'landing_cta_desc': 'Junte-se a centenas de engenheiros de rede que confiam no FTTH Master para suas operações diárias.',
+    'landing_cta_desc': 'Junte-se a centenas de engenheiros de rede que confiam no FTTx Planner para suas operações diárias.',
     'landing_cta_btn': 'Começar Grátis',
 
-    'landing_footer_desc': 'O padrão profissional para design e gestão de redes FTTH.',
+    'landing_footer_desc': 'O padrão profissional para design e gestão de redes FTTx.',
     'landing_footer_product': 'Produto',
     'landing_footer_company': 'Empresa',
     'landing_footer_legal': 'Legal',
-    'landing_footer_rights': '© 2024 FTTH Master. Todos os direitos reservados.',
+    'landing_footer_rights': '© 2024 FTTx Planner. Todos os direitos reservados.',
 
     // Pricing
     'pricing_title': 'Planos Simples e Transparentes',
@@ -719,7 +733,7 @@ const translations = {
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
-    'login_title': 'FTTH Planner',
+    'login_title': 'FTTx Planner',
     'login_subtitle': 'Entre com suas credenciais',
     'login_email_placeholder': 'Email',
     'login_password_placeholder': 'Senha',
@@ -729,8 +743,8 @@ const translations = {
     'login_feature_label': 'Destaque',
     'login_feature_title': 'Editor de Fusão',
     'back_to_home': 'Voltar ao Início',
-    'register_page_title': 'Criar Conta',
-    'register_subtitle': 'Junte-se ao FTTH Master Planner',
+    'register_page_title': 'Criar Conta FTTx Planner',
+    'register_subtitle': 'Junte-se ao FTTx Planner',
     'register_company_placeholder': 'Nome da Empresa (Provedor)',
     'register_password_placeholder': 'Senha',
     'register_confirm_password_placeholder': 'Confirmar Senha',
@@ -741,7 +755,7 @@ const translations = {
     'register_btn': 'Criar Conta',
     'no_account': 'Não tem uma conta?',
     'already_have_account': 'Já tem uma conta?',
-    'register_title': 'Criar Conta FTTH Planner',
+    'register_title': 'Criar Conta FTTx Planner',
     'back_to_login': 'Voltar para o Login',
     'registration_success': 'Conta criada! Agora você pode entrar.',
     'registration_failed': 'Falha no registro. Usuário já pode existir.',
@@ -816,7 +830,7 @@ const translations = {
     'sidebar_connect_cable': 'Conectar/Editar Cabos',
     'sidebar_connect_cable_desc': 'Ajustar conexões e geometria',
     'registrations': 'Cadastros',
-    'manage_networks_desc': 'Gerencie e organize suas redes FTTH.',
+    'manage_networks_desc': 'Gerencie e organize suas redes FTTx.',
     'cables': 'Cabos',
     'search_generic': 'Buscar...',
     'reg_poste': 'Poste',

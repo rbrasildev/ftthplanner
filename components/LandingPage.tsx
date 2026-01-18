@@ -39,9 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="flex justify-between items-center h-20">
                         {/* Logo */}
                         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                            <div className="w-10 h-10 bg-sky-600 rounded-xl shadow-lg shadow-sky-600/20 flex items-center justify-center transform hover:scale-105 transition-transform">
-                                <Network className="text-white w-6 h-6" />
-                            </div>
+                            <img src="/logo.png" alt="FTTH Planner Logo" className="h-10 w-auto object-contain rounded-lg" />
                             <div className="flex flex-col">
                                 <span className="font-bold text-xl tracking-tight leading-none text-white">{t('app_title')}</span>
                                 <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest">Planner Pro</span>
@@ -487,9 +485,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="grid md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-1 md:col-span-2">
                             <div className="flex items-center gap-2 mb-6">
-                                <div className="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
-                                    <Network className="text-white w-5 h-5" />
-                                </div>
+                                <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
                                 <span className="font-bold text-xl text-white">{t('app_title')}</span>
                             </div>
                             <p className="text-slate-400 max-w-sm mb-6">

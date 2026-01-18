@@ -276,6 +276,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       setNewProjectName('');
       setLocationQuery('');
       setIsCreating(false);
+      // Reset map center to default after creation for next time
+      setMapCenter({ lat: -23.5505, lng: -46.6333 });
     }
   };
 
@@ -346,6 +348,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     e.stopPropagation();
     setProjectToEdit(project);
     setEditProjectName(project.name);
+    // Use mapState if available from server
     setMapCenter(project.mapState?.center || { lat: -23.5505, lng: -46.6333 });
     setLocationQuery(''); // Reset search
     setLocationResults([]);
