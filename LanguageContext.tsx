@@ -20,11 +20,11 @@ const translations = {
     'register_btn': 'Create Account',
     'no_account': "Don't have an account?",
     'already_have_account': 'Already have an account?',
-    'register_title': 'Create FTTH Planner Account',
+    'register_title': 'Create FTTx Planner Account',
     'back_to_login': 'Back to Login',
     'registration_success': 'Account created! You can now log in.',
     'registration_failed': 'Registration failed. Username might be taken.',
-    'login_title': 'FTTH Planner',
+    'login_title': 'FTTx Planner',
     'login_subtitle': 'Enter your credentials',
     'login_email_placeholder': 'Email',
     'login_password_placeholder': 'Password',
@@ -34,8 +34,8 @@ const translations = {
     'login_feature_label': 'Feature',
     'login_feature_title': 'Fusion Editor',
     'back_to_home': 'Back to Home',
-    'register_page_title': 'Create Account',
-    'register_subtitle': 'Join FTTH Master Planner',
+    'register_page_title': 'Create FTTx Planner Account',
+    'register_subtitle': 'Join FTTx Master Planner',
     'register_company_placeholder': 'Company Name (ISP)',
     'register_password_placeholder': 'Password',
     'register_confirm_password_placeholder': 'Confirm Password',
@@ -52,9 +52,14 @@ const translations = {
     'open_project': 'Open Project',
     'exit_project': 'Exit to Dashboard',
     'delete_project_confirm': 'Are you sure you want to delete project "{name}"?',
+    'project_updated': 'Project updated successfully!',
+    'toast_project_deleted': 'Project deleted successfully!',
+    'error_project_update': 'Failed to update project.',
+    'error_project_delete': 'Failed to delete project.',
 
     // App / Sidebar
     'app_title': 'FTTH Planner',
+    'active_project': 'Active Project',
     'tools': 'Tools',
     'settings': 'Settings',
     'system_settings': 'Settings',
@@ -101,7 +106,7 @@ const translations = {
     'sidebar_connect_cable': 'Connect/Edit Cables',
     'sidebar_connect_cable_desc': 'Adjust connections & geometry',
     'registrations': 'Registrations',
-    'manage_networks_desc': 'Manage and organize your FTTH networks.',
+    'manage_networks_desc': 'Manage and organize your FTTx networks.',
     'cables': 'Cables',
     'search_generic': 'Search...',
     'reg_poste': 'Pole',
@@ -175,7 +180,7 @@ const translations = {
     'toast_cto_added': 'CTO added successfully',
     'toast_pop_added': 'POP added successfully',
     'toast_cto_splicing_saved': 'CTO Splicing saved',
-    'toast_pop_saved': 'POP configuration configuration saved',
+    'toast_pop_saved': 'POP configuration saved',
     'toast_cto_deleted': 'CTO deleted successfully',
     'toast_pole_deleted': 'Pole deleted successfully',
     'toast_pole_added': 'Pole added successfully',
@@ -190,6 +195,14 @@ const translations = {
     'import_error': 'Failed to import file. See console for details.',
     'import_no_geo': 'No compatible geometry (Points or Lines) found in this file.',
     'toast_mode_move_node': 'Move mode activated',
+    'error_cto_duplicate_cable': 'This cable is already connected to this CTO.',
+    'toast_auto_snap_success': 'Auto-connected/Split {count} locations within {distance}m.',
+    'toast_poles_imported': '{count} poles imported successfully!',
+    'toast_poles_import_error': 'Error importing poles.',
+    'error_cable_endpoint_missing': 'Loose cable at other end',
+    'error_target_not_found': 'Target not found',
+    'toast_select_next_cable': 'Select another cable to connect',
+    'toast_cable_disconnected': 'Cable disconnected',
 
     // OTDR Messages & Errors
     'otdr_title': 'OTDR Calculator',
@@ -316,6 +329,7 @@ const translations = {
     'no_location_results': 'No location found',
 
     'create_project_modal_title': 'Create New Project',
+    'edit_project': 'Edit Project',
     'map_instruction': 'Drag the map or click to set the project center.',
     'confirm_create': 'Create Project',
     'snap_distance_lbl': 'Auto-Connect Distance (meters)',
@@ -740,9 +754,14 @@ const translations = {
     'open_project': 'Abrir Projeto',
     'exit_project': 'Sair para o Painel',
     'delete_project_confirm': 'Tem certeza que deseja deletar o projeto "{name}"?',
+    'project_updated': 'Projeto atualizado com sucesso!',
+    'toast_project_deleted': 'Projeto excluído com sucesso!',
+    'error_project_update': 'Falha ao atualizar projeto.',
+    'error_project_delete': 'Falha ao excluir projeto.',
 
     // App / Sidebar
-    'app_title': 'Planejador FTTH',
+    'app_title': 'Planejador FTTx',
+    'active_project': 'Projeto Ativo',
     'tools': 'Ferramentas',
     'settings': 'Configurações',
     'system_settings': 'Configurações',
@@ -879,6 +898,15 @@ const translations = {
     'toast_cable_connected_start': 'Início do cabo conectado a {name}',
     'toast_cable_connected_end': 'Fim do cabo conectado a {name}',
     'toast_cable_split': 'Cabo sangrado e conectado a {name}',
+    'toast_cable_anchored_pole': 'Cabo ancorado ao poste {name}',
+    'error_cto_duplicate_cable': 'Este cabo já está conectado a esta CTO.',
+    'toast_auto_snap_success': 'Auto-conexão/Sangria de {count} pontos em {distance}m.',
+    'toast_poles_imported': '{count} postes importados com sucesso!',
+    'toast_poles_import_error': 'Erro ao importar postes.',
+    'error_cable_endpoint_missing': 'Cabo solto na outra ponta',
+    'error_target_not_found': 'Destino não encontrado',
+    'toast_select_next_cable': 'Selecione outro cabo para conectar',
+    'toast_cable_disconnected': 'Cabo desconectado',
     'import_error': 'Falha ao importar arquivo. Veja o console.',
     'import_no_geo': 'Nenhuma geometria compatível (Pontos ou Linhas) encontrada.',
 
@@ -1024,6 +1052,7 @@ const translations = {
     'no_location_results': 'Local não encontrado',
 
     'create_project_modal_title': 'Criar Novo Projeto',
+    'edit_project': 'Editar Projeto',
     'map_instruction': 'Arraste o mapa ou clique para definir o centro do projeto.',
     'confirm_create': 'Criar Projeto',
     'snap_distance_lbl': 'Distância de Imã (metros)',
@@ -1173,10 +1202,7 @@ const translations = {
     'upload_restore': 'Enviar & Restaurar',
     'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
-    'apply': 'Aplicar',
-
-
-    'toast_select_next_cable': 'Selecione outro cabo para conectar',
+    'apply': 'Aplicar'
   }
 };
 

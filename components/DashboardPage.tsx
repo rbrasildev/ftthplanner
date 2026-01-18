@@ -480,7 +480,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           <button
                             onClick={(e) => handleEditClick(e, project)}
                             className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
-                            title={t('edit') || 'Edit'}
+                            title={t('edit_project')}
                           >
                             <Settings className="w-4 h-4" />
                           </button>
@@ -837,7 +837,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]">
               <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {t('edit_project') || 'Edit Project'}
+                  <Settings className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {t('edit_project')}
                 </h3>
                 <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
               </div>
@@ -867,10 +867,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
                       <MapInvalidator />
                       <LayersControl position="topright">
-                        <LayersControl.BaseLayer checked name={t('map_street') || "Map rua"}>
+                        <LayersControl.BaseLayer checked name={t('map_street')}>
                           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
                         </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name={t('map_satellite') || "Satélite"}>
+                        <LayersControl.BaseLayer name={t('map_satellite')}>
                           <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
                         </LayersControl.BaseLayer>
                       </LayersControl>
@@ -884,7 +884,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </div>
               <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
                 <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                <button onClick={handleEditSubmit} disabled={!editProjectName.trim()} className="px-6 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Save className="w-4 h-4" /> {t('save_changes') || 'Salvar'} </button>
+                <button onClick={handleEditSubmit} disabled={!editProjectName.trim()} className="px-6 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Save className="w-4 h-4" /> {t('save_changes')} </button>
               </div>
             </div>
           </div>

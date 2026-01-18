@@ -400,7 +400,7 @@ export default function App() {
             return result.state;
         });
         if (count > 0) {
-            showToast(`Auto-connected/Split ${count} locations within ${distance}m.`, 'success');
+            showToast(t('toast_auto_snap_success', { count, distance }), 'success');
         }
     };
 
@@ -438,12 +438,12 @@ export default function App() {
 
             // Update Local
             setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
-            showToast(`${newPoles.length} postes importados com sucesso!`, 'success');
+            showToast(t('toast_poles_imported', { count: newPoles.length }), 'success');
             setIsKmlImportOpen(false); // Close legacy modal
 
         } catch (err) {
             console.error(err);
-            showToast('Erro ao importar postes.', 'error');
+            showToast(t('toast_poles_import_error'), 'error');
         } finally {
             setIsLoadingProjects(false);
         }
@@ -767,7 +767,7 @@ export default function App() {
         else if (cable.toNodeId === editingCTO.id) targetId = cable.fromNodeId;
 
         if (!targetId) {
-            showToast(t('error_cable_endpoint_missing') || "Cabo solto na outra ponta", 'info');
+            showToast(t('error_cable_endpoint_missing'), 'info');
             return;
         }
 
@@ -780,7 +780,7 @@ export default function App() {
             setEditingCTO(null);
             setEditingPOP(targetPOP);
         } else {
-            showToast(t('error_target_not_found') || "Destino não encontrado", 'error');
+            showToast(t('error_target_not_found'), 'error');
         }
 
     }, [getCurrentNetwork, t, editingCTO]);
@@ -941,7 +941,7 @@ export default function App() {
         setToolMode('connect_cable');
         // Start with this cable selected for connection
         setMultiConnectionIds(new Set([id]));
-        showToast(t('toast_select_next_cable') || 'Selecione outro cabo para conectar');
+        showToast(t('toast_select_next_cable'));
     }, [t]);
 
     const handleMoveNode = useCallback((id: string, lat: number, lng: number) => {
@@ -1033,7 +1033,7 @@ export default function App() {
             // --- VALIDATION: PREVENT DUPLICATE CONNECTION OF SAME CABLE ---
             const isCTO = prev.ctos.some(c => c.id === nodeId);
             if (node && 'inputCableIds' in node && (node.inputCableIds || []).includes(cableId)) {
-                showToast(t('error_cto_duplicate_cable') || "Este cabo já está conectado a esta CTO.", 'info');
+                showToast(t('error_cto_duplicate_cable'), 'info');
                 return prev;
             }
 
@@ -1075,7 +1075,7 @@ export default function App() {
             if (isPole) {
                 const newCoords = [...cable.coordinates];
                 newCoords[pointIndex] = node.coordinates;
-                showToast(t('toast_cable_anchored_pole', { name: node.name }) || `Cabo ancorado ao poste ${node.name}`);
+                showToast(t('toast_cable_anchored_pole', { name: node.name }));
                 return {
                     ...prev,
                     cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c),
@@ -1171,7 +1171,7 @@ export default function App() {
                         } else {
                             updatedPOPs = updatedPOPs.map(p => p.id === node.id ? { ...p, inputCableIds: p.inputCableIds?.filter(cid => cid !== id) } : p);
                         }
-                        showToast(t('toast_cable_disconnected') || "Cabo desconectado");
+                        showToast(t('toast_cable_disconnected'));
                     }
                 }
             }
@@ -1190,7 +1190,7 @@ export default function App() {
                         } else {
                             updatedPOPs = updatedPOPs.map(p => p.id === node.id ? { ...p, inputCableIds: p.inputCableIds?.filter(cid => cid !== id) } : p);
                         }
-                        showToast(t('toast_cable_disconnected') || "Cabo desconectado");
+                        showToast(t('toast_cable_disconnected'));
                     }
                 }
             }
@@ -1730,16 +1730,16 @@ export default function App() {
                                 setProjects(prev => prev.filter(p => p.id !== id));
                                 showToast(t('toast_project_deleted'));
                             } catch (e) {
-                                showToast('Failed to delete project', 'info');
+                                showToast(t('error_project_delete'), 'info');
                             }
                         }}
                         onUpdateProject={async (id, name, center) => {
                             try {
                                 const updated = await projectService.updateProject(id, name, center);
                                 setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
-                                showToast(t('project_updated') || 'Projeto atualizado!', 'success');
+                                showToast(t('project_updated'), 'success');
                             } catch (e) {
-                                showToast('Failed to update project', 'info');
+                                showToast(t('error_project_update'), 'info');
                             }
                         }}
                         isLoading={isLoadingProjects}

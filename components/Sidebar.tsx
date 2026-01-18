@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <FolderOpen className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5 text-zinc-400 group-hover:text-emerald-500' : 'w-4 h-4 text-zinc-400 group-hover:text-emerald-500'}`} />
                             {!isCollapsed && (
                                 <div className="flex flex-col items-start overflow-hidden text-left">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider leading-none mb-1">{t('active_project') || 'PROJETO'}</span>
+                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider leading-none mb-1">{t('active_project')}</span>
                                     <span className="truncate text-xs font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">{currentProjectName}</span>
                                 </div>
                             )}
