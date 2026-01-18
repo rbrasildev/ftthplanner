@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
@@ -1058,22 +1058,24 @@ export const MapView: React.FC<MapViewProps> = ({
 
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable'].includes(mode) ? 'drawing-cursor' : ''}`}>
-            <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-3">
+            <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-end gap-3">
                 {/* Map Type Switcher - Segmented Control Style */}
-                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex gap-1.5">
+                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row gap-1.5">
                     <button
                         onClick={() => setMapType('street')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'street' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'street' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                        title={t('map_street')}
                     >
                         <MapIcon className="w-4 h-4" />
-                        {t('map_street')}
+                        <span className="hidden lg:inline">{t('map_street')}</span>
                     </button>
                     <button
                         onClick={() => setMapType('satellite')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'satellite' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'satellite' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                        title={t('map_satellite')}
                     >
                         <Globe className="w-4 h-4" />
-                        {t('map_satellite')}
+                        <span className="hidden lg:inline">{t('map_satellite')}</span>
                     </button>
                 </div>
 
@@ -1153,7 +1155,9 @@ export const MapView: React.FC<MapViewProps> = ({
                 style={{ height: '100%', width: '100%', backgroundColor: '#e2e8f0' }}
                 className="z-0"
                 preferCanvas={true} /* KEY PERFORMANCE OPTIMIZATION */
+                zoomControl={false}
             >
+                <ZoomControl position="bottomright" />
 
                 <MapResizeHandler />
 

@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const currentProjectName = projects.find(p => p.id === currentProjectId)?.name || t('home');
 
     const sidebarClasses = `
-        fixed lg:relative z-50 h-screen transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 glass-sidebar flex flex-col
+        fixed lg:relative z-[2000] h-screen transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 glass-sidebar flex flex-col
         ${isCollapsed ? 'w-20' : 'w-[280px]'}
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
     `;

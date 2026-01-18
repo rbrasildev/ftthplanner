@@ -404,7 +404,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-8 h-full relative">
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 px-4 pb-4 pt-20 lg:p-8 h-full relative">
 
         {/* Projects View */}
         {currentView === 'projects' && (

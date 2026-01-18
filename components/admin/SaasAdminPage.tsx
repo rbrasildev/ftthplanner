@@ -984,7 +984,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 name="trialDurationDays"
                                                 type="number"
-                                                defaultValue={editingPlan?.trialDurationDays || 15}
+                                                defaultValue={editingPlan?.trialDurationDays || 7}
                                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             />
                                         </div>
