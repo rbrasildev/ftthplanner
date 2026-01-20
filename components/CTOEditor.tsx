@@ -1276,6 +1276,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handleElementDragStart = useCallback((e: React.MouseEvent, id: string) => {
+        if (e.button !== 0) return;
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive || isDeleteMode || isRotateMode || isSmartAlignMode) return;
 
@@ -1397,6 +1398,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     }, [isVflToolActive, isOtdrToolActive]);
 
     const handlePortMouseDown = useCallback((e: React.MouseEvent, portId: string) => {
+        if (e.button !== 0) return;
         e.stopPropagation();
 
         // VFL MODE LOGIC
@@ -2174,6 +2176,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handlePathMouseDown = (e: React.MouseEvent, connId: string) => {
+        if (e.button !== 0) return;
         // Fix: If Fusion Tool is active, let the event bubble to container to create fusion (auto-splice)
         // Do not stop propagation.
         if (isFusionToolActive) return;
