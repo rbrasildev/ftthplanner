@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const currentProjectName = projects.find(p => p.id === currentProjectId)?.name || t('home');
 
     const sidebarClasses = `
-        fixed lg:relative z-[2000] h-screen transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 glass-sidebar flex flex-col
+        fixed lg:relative z-[2000] h-screen transition-all duration-300 ease-in-out border-r border-slate-200/60 dark:border-slate-800 glass-sidebar flex flex-col
         ${isCollapsed ? 'w-20' : 'w-[280px]'}
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
     `;
@@ -426,8 +426,9 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed
     return (
         <button
             onClick={onClick}
-            className={`flex items-center group relative transition-all duration-200 rounded-xl border border-transparent overflow-hidden
-                ${isCollapsed ? 'w-10 h-10 justify-center mx-auto' : 'w-full px-3 py-2.5 gap-3'} ${activeClass}`}
+            className={`flex items-center group relative transition-all duration-300 rounded-xl border border-transparent overflow-hidden
+                ${isCollapsed ? 'w-10 h-10 justify-center mx-auto' : 'w-full px-3 py-2.5 gap-3'} ${activeClass}
+                ${!isActive && 'hover:shadow-sm hover:border-slate-200/50 dark:hover:border-zinc-800'}`}
             title={isCollapsed ? label : ''}
         >
             <div className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${isEmerald ? 'text-emerald-500' : 'text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100'}`}>

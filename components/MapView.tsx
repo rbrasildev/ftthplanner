@@ -233,6 +233,40 @@ const startPointIcon = L.divIcon({
     iconAnchor: [5, 5]
 });
 
+const createSearchPinIcon = (isSelected: boolean) => {
+    const cacheKey = `search-pin-${isSelected}`;
+    if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
+
+    const size = 40;
+    const icon = L.divIcon({
+        className: 'custom-pin-icon',
+        html: `
+            <div style="position: relative; width: ${size}px; height: ${size}px; display: flex; items-center; justify-content: center;">
+                <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 12px; height: 4px; background: rgba(0,0,0,0.2); border-radius: 50%; filter: blur(1px);"></div>
+                <div style="position: relative; z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 21C16 17.5 19 14.4183 19 10C19 6.13401 15.866 3 12 3C8.13401 3 5 6.13401 5 10C5 14.4183 8 17.5 12 21Z" fill="url(#pinGradient)" stroke="white" stroke-width="1.5"/>
+                        <circle cx="12" cy="10" r="3" fill="white"/>
+                        <defs>
+                            <linearGradient id="pinGradient" x1="12" y1="3" x2="12" y2="21" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#ef4444"/>
+                                <stop offset="1" stop-color="#b91c1c"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div style="position: absolute; top: 10px; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(239, 68, 68, 0.2); border-radius: 50%; animation: pulse-red 2.5s infinite; pointer-events: none; z-index: 5;"></div>
+            </div>
+        `,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size - 4],
+        popupAnchor: [0, -size + 10]
+    });
+
+    iconCache.set(cacheKey, icon);
+    return icon;
+};
+
 const pinIcon = L.divIcon({
     className: 'custom-pin-icon',
     html: `<div style="background-color: #ef4444; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
@@ -1435,17 +1469,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 {pinnedLocation && (
                     <Marker
                         position={[pinnedLocation.lat, pinnedLocation.lng]}
-                        icon={L.divIcon({
-                            className: 'custom-icon',
-                            html: `
-                                <div class="relative flex items-center justify-center">
-                                    <div class="relative z-10">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-locate-fixed bg-white rounded-full p-1 shadow-md"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/></svg>
-                                    </div>
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(239, 68, 68, 0.3); border-radius: 50%; animation: pulse-red 2s infinite; pointer-events: none;"></div>
-                                </div>
-                            `
-                        })}
+                        icon={createSearchPinIcon(selectedId === 'pin-location')}
                     >
                         <Popup>
                             <div className="flex flex-col gap-2 min-w-[150px]">
