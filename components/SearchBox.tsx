@@ -54,7 +54,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
 
     return (
         <div className="space-y-2" ref={wrapperRef}>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Localizar</label>
+
             <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
                 <input
