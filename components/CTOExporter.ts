@@ -204,7 +204,7 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     // Triangle
     const strokeColor = '#000000';
     const isLitIn = litPorts.has(splitter.inputPortId);
-    content += `<polygon points="${geo.polygonPoints}" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1.5" />`;
+    content += `<polygon points="${geo.polygonPoints}" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1" />`;
 
     // Label
     content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b" data-pdf-align="splitter-label">${splitter.type}</text>`;
@@ -612,9 +612,9 @@ export const generateCTOSVG = (
             color = '#94a3b8'; // Visible for white
         }
 
-        // MANIPULE AQUI: Espessura da linha da fibra (Padrão era 3)
-        const manualFiberThickness = 2;
-        const width = isLit ? (manualFiberThickness + 1) : manualFiberThickness;
+        // MANIPULE AQUI: Espessura da linha da fibra (Padrão era 2)
+        const manualFiberThickness = 1.2;
+        const width = isLit ? (manualFiberThickness + 0.5) : manualFiberThickness;
         diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
     });
 
@@ -846,7 +846,20 @@ export const exportToPDF = async (svgString: string, filename: string) => {
             if (drawMode) {
                 if (hasStroke) {
                     pdf.setDrawColor(strokeVal);
-                    pdf.setLineWidth(strokeWidth);
+
+                    // ESCALAMENTO DINÂMICO DE BORDAS:
+                    // Se o desenho for grande (escala < 1), as bordas diminuem proporcionalmente.
+                    // Exceto se houver vector-effect="non-scaling-stroke".
+                    const scaleFactor = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
+                    const isNonScaling = node.getAttribute('vector-effect') === 'non-scaling-stroke';
+
+                    let finalLineWidth = strokeWidth;
+                    if (!isNonScaling) {
+                        finalLineWidth *= scaleFactor;
+                    }
+
+                    // Garantir um mínimo de 0.2pt para não sumir na impressão
+                    pdf.setLineWidth(Math.max(0.2, finalLineWidth));
                 }
                 if (hasFill) pdf.setFillColor(fill);
             }
