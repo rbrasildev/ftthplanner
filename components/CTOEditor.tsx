@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -401,6 +401,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         return { x, y };
     });
+
+    const [isMaximized, setIsMaximized] = useState(false);
+    const [savedWindowPos, setSavedWindowPos] = useState(windowPos);
+
+    const toggleMaximize = () => {
+        if (!isMaximized) {
+            setSavedWindowPos(windowPos);
+            setIsMaximized(true);
+        } else {
+            setIsMaximized(false);
+            setWindowPos(savedWindowPos);
+        }
+        // Force re-center after layout settles
+        setTimeout(() => handleCenterView(), 100);
+    };
 
     const [isVflToolActive, setIsVflToolActive] = useState(false);
     const [isOtdrToolActive, setIsOtdrToolActive] = useState(false);
@@ -1245,6 +1260,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // --- Event Handlers ---
 
     const handleWindowDragStart = (e: React.MouseEvent) => {
+        if (isMaximized) return; // Prevent dragging while maximized
         if ((e.target as HTMLElement).closest('button')) return; // Don't drag if clicking a button
         setDragState({
             mode: 'window',
@@ -2578,8 +2594,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     return (
         <div
-            className="fixed z-[2000]"
-            style={{ left: windowPos.x, top: windowPos.y }}
+            className={`fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-4 w-auto h-auto' : ''}`}
+            style={isMaximized ? {} : { left: windowPos.x, top: windowPos.y }}
         >
             {dragState && (
                 <style>{`
@@ -2589,7 +2605,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative w-[1100px] h-[750px] bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full' : 'w-[1100px] h-[750px]'} bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -2605,7 +2621,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <span className="truncate">{t('splicing_title', { name: cto.name })}</span>
                             </h2>
                         </div>
-                        <div className="flex gap-2 pointer-events-auto items-center">
+                        <div className="flex gap-1 pointer-events-auto items-center">
+                            <button
+                                onClick={toggleMaximize}
+                                title={isMaximized ? t('restore') : t('maximize')}
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                            >
+                                {isMaximized ? <Minimize2 className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                            </button>
                             <button onClick={handleCloseRequest} title={t('cancel')} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
                                 <X className="w-5 h-5" />
                             </button>

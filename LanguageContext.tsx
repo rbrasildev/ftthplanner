@@ -605,6 +605,7 @@ const translations = {
     'cancel_subscription_disclaimer': 'By canceling, you retain access until the end of original billing cycle.',
     'upgrade_plan': 'Upgrade Plan',
     'upgrade_disclaimer': 'Check available plans to upgrade your account.',
+    'maximize': 'Maximize',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -1223,7 +1224,8 @@ const translations = {
     'upload_restore': 'Enviar & Restaurar',
     'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
-    'apply': 'Aplicar'
+    'apply': 'Aplicar',
+    'maximize': 'Maximizar',
   }
 };
 
