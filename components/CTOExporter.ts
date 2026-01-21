@@ -899,7 +899,10 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                 const anchor = getAttr('text-anchor');
                 if (hasFill && text.trim()) {
                     const scale = Math.sqrt(finalMatrix[0] * finalMatrix[0] + finalMatrix[1] * finalMatrix[1]);
-                    pdf.setFontSize(fontSize * scale);
+                    // jsPDF uses pt (points), SVG uses px (pixels). 
+                    // 1px = 0.75pt. Applying correction factor to match PNG.
+                    const PX_TO_PT = 0.75;
+                    pdf.setFontSize(fontSize * scale * PX_TO_PT);
                     const angleRad = Math.atan2(finalMatrix[1], finalMatrix[0]);
                     const angleDeg = (angleRad * 180) / Math.PI;
 
@@ -922,15 +925,10 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                         if (pdfAlign === 'correction') {
                             offsetFactor = 0.3;     // Legacy fallback
                         }
-                        if (pdfAlign === 'cable-label-horizontal') {
+                        if (pdfAlign === 'cable-label-horizontal' || pdfAlign === 'cable-label-vertical') {
                             offsetFactor = 0.3;
-                            extraPixelShiftY = 0;   // Ajuste H
-                            extraPixelShiftX = 0;   // Ajuste V
-                        }
-                        if (pdfAlign === 'cable-label-vertical') {
-                            offsetFactor = 0.3;
-                            extraPixelShiftY = -40;   // Ajuste H (no visual girado)
-                            extraPixelShiftX = -30;   // Ajuste V (no visual girado) -> TENTE AQUI PARA CABO EM PÉ
+                            extraPixelShiftY = 0;
+                            extraPixelShiftX = 0;
                         }
                         if (pdfAlign === 'cable-port-number-horizontal') {
                             offsetFactor = 0.4;
@@ -954,8 +952,9 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                             extraPixelShiftX = -3; // AXIS X
                         }
 
+                        const PX_TO_PT = 0.75;
                         localX += extraPixelShiftX;
-                        localY += (fontSize * offsetFactor) + extraPixelShiftY;
+                        localY += (fontSize * offsetFactor * PX_TO_PT) + extraPixelShiftY;
 
                     }
                     const pAdjusted = applyToPoint(finalMatrix, localX, localY);
