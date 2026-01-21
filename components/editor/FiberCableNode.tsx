@@ -64,14 +64,21 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     // We add paddingBottom to force the total height to be a multiple of 24px.
     // Let's calculate the natural height of the fibers column:
     // pt-1.5 (6px) + for each tube: (fibers * 12) + gap-3 (12px) between tubes.
-    const fibersHeight = 6 + tubes.reduce((acc, tube, idx) => {
+    const bundleHeight = tubes.reduce((acc, tube, idx) => {
         const height = tube.fiberIndices.length * 12;
         const gap = idx < tubes.length - 1 ? 12 : 0;
         return acc + height + gap;
     }, 0);
 
-    const remainder = fibersHeight % 24;
-    const paddingBottom = remainder > 0 ? 24 - remainder : 0;
+    // Aim for a symmetric design that fits the 24px grid
+    // We add a base 12px (6 top + 6 bottom) to the bundle
+    const contentNeededHeight = bundleHeight + 12;
+    const remainder = contentNeededHeight % 24;
+    const totalPadding = remainder > 0 ? (contentNeededHeight + (24 - remainder)) : contentNeededHeight;
+
+    const verticalOffset = (totalPadding - bundleHeight) / 2;
+    const paddingTop = verticalOffset;
+    const paddingBottom = totalPadding - bundleHeight - paddingTop;
 
     return (
         <div
@@ -79,7 +86,9 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             onContextMenu={(e) => onContextMenu?.(e, cable.id)}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
-                paddingBottom: `${paddingBottom}px` // invisible padding to align center
+                paddingTop: `${paddingTop}px`,
+                paddingBottom: `${paddingBottom}px`,
+                height: `${totalPadding}px`
             }}
             className="absolute flex flex-row group z-20 cursor-default items-stretch select-none"
         >
@@ -144,7 +153,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     <div
                         key={`tube-${tube.tubeIdx}`}
                         className={`
-                        relative flex flex-col justify-center pt-1.5
+                        relative flex flex-col justify-center
                         ${isMirrored ? 'border-r-2 pr-1' : 'border-l-2 pl-1'}
                     `}
                         style={{ borderColor: getFiberColor(tube.tubeIdx, cable.colorStandard) }}

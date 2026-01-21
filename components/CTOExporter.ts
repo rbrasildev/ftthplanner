@@ -42,14 +42,14 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
 
     // Calculate Geometry (Matching FiberCableNode.tsx)
-    // Base Height is calculated from fibers
-    // pt-1.5 (6px) per tube + tubes * (count*12) + gaps (12px)
-    const fibersHeight = (looseTubeCount * (6 + fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
+    const bundleHeight = (looseTubeCount * (fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
 
-    // Grid alignment padding (from FiberCableNode.tsx)
-    const remainder = fibersHeight % 24;
-    const paddingBottom = remainder > 0 ? 24 - remainder : 0;
-    const totalHeight = fibersHeight + paddingBottom;
+    // Fit to 24px grid with symmetric padding (min 6px top/bottom)
+    const contentNeededHeight = bundleHeight + 12;
+    const remainder = contentNeededHeight % 24;
+    const totalHeight = remainder > 0 ? (contentNeededHeight + (24 - remainder)) : contentNeededHeight;
+
+    const verticalOffset = (totalHeight - bundleHeight) / 2;
 
     // Width Logic (Re-Calculated):
     // Box: 168px
@@ -91,7 +91,7 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     // Standard: Border is Left (at 0 relative to wrapper). Padding Left 4. Content at 6.
     // Mirrored: Content at 0. Padding Right 4. Border Right (at 20).
 
-    let currentY = 0;
+    let currentY = verticalOffset;
 
     // Tube Vertical Line (The Border)
     const borderX = isMirrored ? fibersOffsetX + 21 : fibersOffsetX + 1;
@@ -102,21 +102,14 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
         const count = Math.min(fibersPerTube, cable.fiberCount - startFiber);
 
         // HEIGHTS
-        const padding = 6; // pt-1.5
-        const fibersH = count * 12; // h-3 * count
-        const tubeBlockHeight = padding + fibersH; // total visual height of this tube structure
+        const padding = 0; // Removed padding to match balanced logic
+        const fibersH = count * 12;
+        const tubeBlockHeight = fibersH;
 
-        // Draw Border (Entire Tube Height: Padding + Fibers)
-        // From relative 0 to relative height
+        // Draw Border
         content += `<line x1="${borderX}" y1="${currentY}" x2="${borderX}" y2="${currentY + tubeBlockHeight}" stroke="${tubeColor}" stroke-width="2" />`;
 
-        // Draw Fibers
-        // Fibers start after padding (6px)
-        // Center of first fiber is at +6px from its start.
-        // So first fiber Y = currentY + 6(pad) + 6(center) = currentY + 12
-
-        const fibersStartY = currentY + padding;
-
+        const fibersStartY = currentY;
         const portCX = isMirrored ? -2 : 192;
 
         for (let f = 0; f < count; f++) {
@@ -138,7 +131,6 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${isLight ? 'black' : 'white'}" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-port-number-vertical' : 'cable-port-number-horizontal'}">${globalIndex + 1}</text>`;
         }
 
-        // Advance Y (Tube Height + Gap 12px)
         currentY += tubeBlockHeight + 12;
     }
 
@@ -440,13 +432,12 @@ export const generateCTOSVG = (
                 // Calculate Real BBox Height
                 const looseTubeCount = c.looseTubeCount || 1;
                 const fibersPerTube = Math.ceil(c.fiberCount / looseTubeCount);
-                // Same formula as renderCable
-                const fibersHeight = (looseTubeCount * (6 + fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
+                const bundleHeight = (looseTubeCount * (fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
 
-                // Add paddingBottom logic (mod 24) matching Editor/Render
-                const remainder = fibersHeight % 24;
-                const paddingBottom = remainder > 0 ? 24 - remainder : 0;
-                const totalHeight = fibersHeight + paddingBottom;
+                // Symmetric padding logic to match renderCable
+                const contentNeededHeight = bundleHeight + 12;
+                const remainder = contentNeededHeight % 24;
+                const totalHeight = remainder > 0 ? (contentNeededHeight + (24 - remainder)) : contentNeededHeight;
 
                 checkPt(l.x, l.y);
                 checkPt(l.x + 190, l.y + totalHeight);
