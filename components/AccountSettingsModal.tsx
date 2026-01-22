@@ -120,7 +120,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     if (!confirm('Tem certeza que deseja cancelar sua assinatura? Sua conta retornará ao plano Grátis no final do período.')) return;
                                     try {
                                         setLoading(true);
-                                        await api.post('/payment/cancel_subscription');
+                                        await api.post('/payments/cancel_subscription');
                                         alert('Assinatura cancelada com sucesso.');
                                         window.location.reload();
                                     } catch (error) {
