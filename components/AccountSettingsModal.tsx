@@ -15,9 +15,10 @@ interface AccountSettingsModalProps {
         expiresAt: string | null;
         companyId: string;
     };
+    hasActiveSubscription?: boolean;
 }
 
-export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose, onManagePlan, userData }) => {
+export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOpen, onClose, onManagePlan, userData, hasActiveSubscription }) => {
     const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
 
@@ -114,7 +115,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             {t('upgrade_plan') || 'Fazer Upgrade / Trocar Plano'}
                         </button>
 
-                        {!isFree && !isTrial && (
+                        {!isFree && !isTrial && hasActiveSubscription && (
                             <button
                                 onClick={async () => {
                                     if (!confirm('Tem certeza que deseja cancelar sua assinatura? Sua conta retornará ao plano Grátis no final do período.')) return;

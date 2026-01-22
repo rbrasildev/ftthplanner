@@ -127,6 +127,7 @@ export default function App() {
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
+    const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
     const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
@@ -248,6 +249,11 @@ export default function App() {
                     }
                     if (data.user.company?.status) {
                         setCompanyStatus(data.user.company.status);
+                    }
+                    if (data.user.company?.mercadopagoSubscriptionId) {
+                        setHasActiveSubscription(true);
+                    } else {
+                        setHasActiveSubscription(false);
                     }
                 }
             }).catch(err => {
@@ -2243,6 +2249,21 @@ export default function App() {
             }
 
             {/* --- UPGRADE MODAL --- */}
+            <AccountSettingsModal
+                isOpen={isAccountSettingsOpen}
+                onClose={() => setIsAccountSettingsOpen(false)}
+                onManagePlan={() => { setIsAccountSettingsOpen(false); setShowUpgradeModal(true); }}
+                userData={{
+                    username: user || 'Usuário',
+                    email: userEmail || undefined,
+                    plan: userPlan,
+                    planType: userPlanType,
+                    expiresAt: subscriptionExpiresAt,
+                    companyId: companyId || 'N/A'
+                }}
+                hasActiveSubscription={hasActiveSubscription}
+            />
+
             <UpgradePlanModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}

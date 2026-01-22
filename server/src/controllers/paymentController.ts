@@ -99,6 +99,18 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     metadata: {
                         company_id: companyId,
                         plan_id: plan.id
+                    },
+                    additional_info: {
+                        items: [
+                            {
+                                id: plan.id,
+                                title: plan.name,
+                                description: `Subscription: ${plan.name}`,
+                                quantity: 1,
+                                unit_price: Number(plan.price),
+                                category_id: 'services'
+                            }
+                        ]
                     }
                 }
             };
@@ -160,9 +172,20 @@ export const processPayment = async (req: Request, res: Response) => {
                 payment_method_id: payment_method_id,
                 issuer_id: issuer_id,
                 payer: {
-                    email: payer.email,
                     identification: payer.identification
                 },
+                additional_info: {
+                    items: [
+                        {
+                            id: 'subscription-item',
+                            title: description || 'FTTH Planner Subscription',
+                            description: description || 'FTTH Planner Subscription',
+                            quantity: 1,
+                            unit_price: Number(transaction_amount),
+                            category_id: 'services'
+                        }
+                    ]
+                }
             }
         };
 
