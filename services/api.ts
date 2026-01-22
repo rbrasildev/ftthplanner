@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // Use environment variable or fallback to the confirmed live backend
-    baseURL: import.meta.env.VITE_API_URL || 'https://ftth.redeconexaonet.com/api',
+    baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 api.interceptors.request.use(
