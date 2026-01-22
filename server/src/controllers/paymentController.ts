@@ -142,3 +142,43 @@ export const processPayment = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const handleWebhook = async (req: Request, res: Response) => {
+    try {
+        const { query, body } = req;
+        const topic = query.topic || query.type;
+        const id = query.id || body.data?.id;
+
+        console.log('Webhook received:', { topic, id });
+
+        if (!id) {
+            return res.status(200).send('OK (No ID)');
+        }
+
+        if (topic === 'payment') {
+            const paymentInfo = await payment.get({ id: String(id) });
+            const companyId = paymentInfo.metadata?.company_id;
+
+            if (companyId && paymentInfo.status === 'approved') {
+                const nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        status: 'ACTIVE',
+                        subscriptionExpiresAt: nextMonth
+                    }
+                });
+                console.log(`Company ${companyId} subscription activated via webhook.`);
+            }
+        }
+
+        return res.status(200).send('OK');
+
+    } catch (error) {
+        console.error('Webhook Error:', error);
+        // Always return 200 to avoid retries from MP if it's just our logic failing
+        return res.status(200).send('OK (Error handled)');
+    }
+};
