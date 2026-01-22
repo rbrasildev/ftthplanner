@@ -124,6 +124,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
         setSelectedPlanForBilling(plan);
     };
 
+
+
     if (!isOpen) return null;
 
     return (
@@ -290,6 +292,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             >
                                                 {isCurrent ? 'Plano Atual' : (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'Indisponível Anual' : 'Assinar Agora'}
                                             </button>
+
+
                                         </div>
                                     );
                                 })}

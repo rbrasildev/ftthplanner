@@ -105,15 +105,39 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                     </div>
 
                     {/* Action Button */}
-                    <div className="pt-6">
+                    <div className="pt-6 space-y-3">
                         <button
                             onClick={onManagePlan}
                             className="w-full py-3 px-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group"
                         >
                             <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-sky-500 transition-colors" />
-                            {t('upgrade_plan') || 'Fazer Upgrade'}
+                            {t('upgrade_plan') || 'Fazer Upgrade / Trocar Plano'}
                         </button>
-                        <p className="text-center text-xs text-slate-400 mt-3">
+
+                        {!isFree && !isTrial && (
+                            <button
+                                onClick={async () => {
+                                    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Sua conta retornará ao plano Grátis no final do período.')) return;
+                                    try {
+                                        setLoading(true);
+                                        await api.post('/payment/cancel_subscription');
+                                        alert('Assinatura cancelada com sucesso.');
+                                        window.location.reload();
+                                    } catch (error) {
+                                        console.error('Failed to cancel subscription', error);
+                                        alert('Erro ao cancelar assinatura. Tente novamente ou contate o suporte.');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                                className="w-full py-2 px-4 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                            >
+                                {loading ? 'Processando...' : 'Cancelar Assinatura'}
+                            </button>
+                        )}
+
+                        <p className="text-center text-xs text-slate-400">
                             {t('upgrade_disclaimer') || 'Você será redirecionado para as opções de planos.'}
                         </p>
                     </div>

@@ -32,6 +32,7 @@ model Company {
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
   planId                String?   @map("plan_id")
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  mercadopagoSubscriptionId String? @map("mercadopago_subscription_id")
   status                String    @default("ACTIVE")
   // billingMode removed
   cables                Cable[]

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
 
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
@@ -9,8 +9,11 @@ const prisma = new PrismaClient();
 // Initialize the client object with the access token from environment variables
 const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
-    options: { timeout: 5000, idempotencyKey: 'ftth-planner-payment' }
+    options: { timeout: 10000, idempotencyKey: 'ftth-planner-payment' }
 });
+
+const preapproval = new PreApproval(client);
+const payment = new Payment(client);
 
 export const subscribe = async (req: AuthRequest, res: Response) => {
     try {
@@ -43,31 +46,70 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
             return res.json({ status: 'approved', message: 'Free plan activated' });
         }
 
-        // 2. Prepare Payment Data
-        const paymentBody = {
-            body: {
-                transaction_amount: plan.price,
-                token: token,
-                description: `Subscription: ${plan.name} (Company: ${companyId})`,
-                installments: Number(installments || 1),
-                payment_method_id: payment_method_id,
-                issuer_id: issuer_id,
-                payer: {
-                    email: payer.email,
-                    identification: payer.identification
-                },
-                metadata: {
-                    company_id: companyId,
-                    plan_id: plan.id
+        // 3. Process Payment/Subscription via Mercado Pago
+        let result;
+        let isSubscription = false;
+
+        // CHECK IF PLAN HAS A MERCADOPAGO PLAN ID (Recurring)
+        if (plan.mercadopagoId) {
+            isSubscription = true;
+            // Date for next payment (usually immediate for first)
+            // But for PreApproval we usually just create it and it charges.
+
+            const subscriptionBody = {
+                body: {
+                    reason: `Subscription: ${plan.name} (Company: ${companyId})`,
+                    auto_recurring: {
+                        frequency: 1,
+                        frequency_type: 'months',
+                        transaction_amount: plan.price,
+                        currency_id: 'BRL'
+                    },
+                    back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br', // Redirect after payment
+                    payer_email: payer.email,
+                    card_token_id: token, // Card token from frontend
+                    status: 'authorized', // Auto-approve
+                    external_reference: companyId // To identify in webhooks
                 }
+            };
+
+            try {
+                // Note: 'create' for PreApproval might verify the card and set up recurrence
+                result = await preapproval.create(subscriptionBody);
+            } catch (subError: any) {
+                console.error('PreApproval Create Error:', subError);
+                // Fallback or re-throw
+                throw subError;
             }
-        };
 
-        // 3. Process Payment via Mercado Pago
-        const result = await payment.create(paymentBody);
+        } else {
+            // FALLBACK TO ONE-TIME PAYMENT (Old Logic)
+            const paymentBody = {
+                body: {
+                    transaction_amount: plan.price,
+                    token: token,
+                    description: `Subscription: ${plan.name} (Company: ${companyId})`,
+                    installments: Number(installments || 1),
+                    payment_method_id: payment_method_id,
+                    issuer_id: issuer_id,
+                    payer: {
+                        email: payer.email,
+                        identification: payer.identification
+                    },
+                    metadata: {
+                        company_id: companyId,
+                        plan_id: plan.id
+                    }
+                }
+            };
+            result = await payment.create(paymentBody);
+        }
 
-        if (result.status === 'approved') {
-            // 4. Update Company Subscription on Success
+        // 4. Update Company Subscription on Success
+        // For subscriptions, status usually starts as 'authorized' or 'pending'
+        const isApproved = result.status === 'approved' || result.status === 'authorized';
+
+        if (isApproved) {
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1); // 30 days subscription
 
@@ -76,7 +118,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                 data: {
                     planId: plan.id,
                     status: 'ACTIVE',
-                    subscriptionExpiresAt: nextMonth
+                    subscriptionExpiresAt: nextMonth,
+                    mercadopagoSubscriptionId: isSubscription ? String(result.id) : undefined
                 }
             });
         }
@@ -84,7 +127,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             id: result.id,
             status: result.status,
-            status_detail: result.status_detail,
+            status_detail: (result as any).status_detail || 'active', // PreApproval might not have status_detail
         });
 
     } catch (error: any) {
@@ -97,7 +140,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
     }
 };
 
-const payment = new Payment(client);
+
 
 export const processPayment = async (req: Request, res: Response) => {
     try {
@@ -147,7 +190,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
     try {
         const { query, body } = req;
         const topic = query.topic || query.type;
-        const id = query.id || body.data?.id;
+        const id = query.id || body.data?.id; // Payment ID or Preapproval ID
 
         console.log('Webhook received:', { topic, id });
 
@@ -170,7 +213,20 @@ export const handleWebhook = async (req: Request, res: Response) => {
                         subscriptionExpiresAt: nextMonth
                     }
                 });
-                console.log(`Company ${companyId} subscription activated via webhook.`);
+                console.log(`Company ${companyId} subscription EXTENDED via payment webhook.`);
+            }
+        } else if (topic === 'subscription_preapproval') {
+            // Handle Subscription events (e.g., cancelled, paused)
+            const preapprovalInfo = await preapproval.get({ id: String(id) });
+            const externalRef = preapprovalInfo.external_reference; // We stored companyId here
+
+            if (externalRef) {
+                if (preapprovalInfo.status === 'cancelled') {
+                    // Optionally set status to CANCELLED or similar, but maybe just let it expire?
+                    // Let's just log for now, or maybe remove the planId?
+                    console.log(`Subscription ${id} for company ${externalRef} was CANCELLED.`);
+                    // Potentially update DB to reflect cancellation pending
+                }
             }
         }
 
@@ -180,5 +236,40 @@ export const handleWebhook = async (req: Request, res: Response) => {
         console.error('Webhook Error:', error);
         // Always return 200 to avoid retries from MP if it's just our logic failing
         return res.status(200).send('OK (Error handled)');
+    }
+};
+
+export const cancelSubscription = async (req: AuthRequest, res: Response) => {
+    try {
+        const companyId = req.user?.companyId;
+        if (!companyId) return res.status(401).json({ error: 'Company not found' });
+
+        const company = await prisma.company.findUnique({ where: { id: companyId } });
+        if (!company || !company.mercadopagoSubscriptionId) {
+            return res.status(400).json({ error: 'No active subscription found to cancel.' });
+        }
+
+        // Cancel on Mercado Pago
+        await preapproval.update({
+            id: company.mercadopagoSubscriptionId,
+            body: { status: 'cancelled' }
+        });
+
+        // Update local DB
+        // We might want to keep the plan active until subscriptionExpiresAt
+        // But remove the subscription ID so we don't try to cancel again
+        await prisma.company.update({
+            where: { id: companyId },
+            data: {
+                mercadopagoSubscriptionId: null
+                // We keep status ACTIVE and subscriptionExpiresAt as is, so they finish the paid period
+            }
+        });
+
+        res.json({ message: 'Subscription cancelled successfully.' });
+
+    } catch (error: any) {
+        console.error('Cancel Subscription Error:', error);
+        res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
     }
 };
