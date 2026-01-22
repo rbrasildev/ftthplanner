@@ -300,7 +300,6 @@ const translations = {
     'confirm_delete_pop_msg': 'Confirm deletion of POP {name}? This will remove all racks, equipment, and connected cables.',
     'delete_cto_btn': 'Delete CTO',
     'delete_pop_btn': 'Delete POP',
-    'action_flip': 'Flip Side',
 
     // Cable Editor
     'edit_cable': 'Edit Cable',

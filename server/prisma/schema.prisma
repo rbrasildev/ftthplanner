@@ -65,6 +65,10 @@ model Plan {
   createdAt DateTime  @default(now()) @map("created_at")
   priceYearly     Float?    @map("price_yearly")
   companies       Company[]
+  description     String?
+  mercadopagoId   String?   @map("mercadopago_id")
+  stripeId        String?   @map("stripe_id")
+  active          Boolean   @default(true)
 
   @@map("plans")
 }

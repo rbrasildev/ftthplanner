@@ -224,6 +224,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
             features: featuresValid,
             isRecommended: formData.get('isRecommended') === 'on',
+            active: formData.get('active') === 'on',
+            mercadopagoId: formData.get('mercadopagoId') as string,
+            stripeId: formData.get('stripeId') as string,
+            description: formData.get('description') as string,
             limits: {
                 maxProjects: formData.get('maxProjects') ? parseInt(formData.get('maxProjects') as string) : 999999,
                 maxUsers: formData.get('maxUsers') ? parseInt(formData.get('maxUsers') as string) : 999999,
@@ -978,6 +982,50 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mercado Pago ID</label>
+                                            <input
+                                                name="mercadopagoId"
+                                                defaultValue={editingPlan?.mercadopagoId || ''}
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                                placeholder="e.g. 2c938084..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
+                                            <input
+                                                name="stripeId"
+                                                defaultValue={editingPlan?.stripeId || ''}
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                                placeholder="e.g. price_1Hh..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Internal)</label>
+                                        <textarea
+                                            name="description"
+                                            rows={2}
+                                            defaultValue={editingPlan?.description || ''}
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="Plan description..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                name="active"
+                                                defaultChecked={editingPlan?.active ?? true}
+                                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Active (Visible to users)</span>
+                                        </label>
                                     </div>
 
 

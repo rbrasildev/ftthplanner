@@ -9,6 +9,7 @@ import adminRoutes from './routes/adminRoutes';
 import saasRoutes from './routes/saasRoutes';
 import auditRoutes from './routes/auditRoutes';
 import catalogRoutes from './routes/catalogRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 
 // Tratamento de erros globais para debug em produção
@@ -36,7 +37,9 @@ app.use(cors({
         'http://localhost:5173',
         'https://www.ftthplan.com',
         'https://ftthplan.com',
-        'https://ftth.redeconexaonet.com'
+        'https://ftth.redeconexaonet.com',
+        'https://ftthplanner.com.br',
+        'https://www.ftthplanner.com.br'
     ],
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -73,6 +76,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/payments', paymentRoutes);
 
 
 // Import Backup Service and Routes
@@ -90,7 +94,7 @@ seedDefaultPlans();
 seedSuperAdmin();
 
 app.get('/', (req, res) => {
-    res.send('FTTH Master Planner API is active');
+    res.send('FTTx Planner API is active');
 });
 
 
