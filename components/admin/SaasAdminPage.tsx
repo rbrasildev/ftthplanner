@@ -904,8 +904,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 </div>
                 {isPlanModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                            <form onSubmit={handleSavePlan}>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+                            <form onSubmit={handleSavePlan} className="flex flex-col h-full overflow-hidden">
                                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                                         {editingPlan ? 'Edit SaaS Plan' : 'Create New Plan'}
@@ -918,7 +918,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
-                                <div className="p-6 space-y-4">
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan Name</label>
                                         <input
@@ -984,26 +984,16 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mercado Pago ID</label>
-                                            <input
-                                                name="mercadopagoId"
-                                                defaultValue={editingPlan?.mercadopagoId || ''}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
-                                                placeholder="e.g. 2c938084..."
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
-                                            <input
-                                                name="stripeId"
-                                                defaultValue={editingPlan?.stripeId || ''}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
-                                                placeholder="e.g. price_1Hh..."
-                                            />
-                                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mercado Pago ID</label>
+                                        <input
+                                            name="mercadopagoId"
+                                            defaultValue={editingPlan?.mercadopagoId || ''}
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                            placeholder="e.g. 2c938084..."
+                                        />
                                     </div>
+
 
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Internal)</label>
@@ -1096,7 +1086,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </div>
                                     </div>
                                 </div>
-                                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() => setIsPlanModalOpen(false)}
@@ -1281,47 +1271,49 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 />
             </main >
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && companyToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-8">
-                        <div className="flex flex-col items-center text-center space-y-4">
-                            <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full mb-2">
-                                <AlertTriangle className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Company?</h3>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">
-                                <p>You are about to delete <span className="font-bold text-slate-800 dark:text-slate-200">{companyToDelete.name}</span>.</p>
-                                <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl text-left border border-red-100 dark:border-red-900/50">
-                                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">This will permanently delete:</p>
-                                    <ul className="space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> All Projects & Networks</li>
-                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {companyToDelete._count.users} Users accounts</li>
-                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> Active Subscriptions</li>
-                                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> System Audit Logs</li>
-                                    </ul>
+            {
+                isDeleteModalOpen && companyToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-8">
+                            <div className="flex flex-col items-center text-center space-y-4">
+                                <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full mb-2">
+                                    <AlertTriangle className="w-8 h-8" />
                                 </div>
-                                <p className="mt-4 text-xs text-slate-400">This action cannot be undone.</p>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Company?</h3>
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    <p>You are about to delete <span className="font-bold text-slate-800 dark:text-slate-200">{companyToDelete.name}</span>.</p>
+                                    <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl text-left border border-red-100 dark:border-red-900/50">
+                                        <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">This will permanently delete:</p>
+                                        <ul className="space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> All Projects & Networks</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {companyToDelete._count.users} Users accounts</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> Active Subscriptions</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> System Audit Logs</li>
+                                        </ul>
+                                    </div>
+                                    <p className="mt-4 text-xs text-slate-400">This action cannot be undone.</p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex gap-3 mt-8">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDeleteCompany}
-                                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                Confirm Delete
-                            </button>
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteCompany}
+                                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Confirm Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div >
     );
 };
