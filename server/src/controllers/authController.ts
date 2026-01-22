@@ -173,7 +173,7 @@ export const getMe = async (req: Request, res: Response) => {
             where: { id: userId },
             include: {
                 company: {
-                    include: { plan: true, subscription: true }
+                    include: { plan: true }
                 }
             }
         });
@@ -212,18 +212,7 @@ export const getMe = async (req: Request, res: Response) => {
 
         console.log("[getMe] Checking Plan Type logic...");
         // -------------------------------------
-        // DYNAMICALLY SET PLAN TYPE TO TRIAL IF NO SUBSCRIPTION IS ACTIVE
-        if (user.company?.plan?.name !== 'Plano Grátis' && user.company?.subscriptionExpiresAt) {
-            // If there is NO subscription record, OR subscription is not active/trialing
-            const hasActiveSub = user.company.subscription && ['active', 'trialing'].includes(user.company.subscription.status);
-
-            if (!hasActiveSub) {
-                // Force type to TRIAL for frontend display
-                if (user.company.plan) {
-                    user.company.plan.type = 'TRIAL';
-                }
-            }
-        }
+        // (Stripe Trial logic removed)
 
         console.log("[getMe] Sending response.");
         res.json({

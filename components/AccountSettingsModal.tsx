@@ -91,12 +91,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             </span>
                         </div>
 
-                        <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Método de Pagamento</span>
-                            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                                <CreditCard className="w-4 h-4 text-slate-400" />
-                                <span>Stripe</span>
-                            </div>
+                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                            <CreditCard className="w-4 h-4 text-slate-400" />
+                            <span>Manual</span>
                         </div>
 
                         <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
@@ -121,40 +118,6 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                         </p>
                     </div>
 
-                    {/* Subscription Actions */}
-                    {!isFree && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Ações da Assinatura</h4>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={async () => {
-                                        if (confirm(t('cancel_subscription_confirm') || 'Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium no fim do período.')) {
-                                            try {
-                                                setLoading(true);
-                                                await api.post('/billing/cancel-subscription', { companyId: userData.companyId });
-                                                alert(t('cancel_subscription_success') || 'Assinatura cancelada com sucesso.');
-                                                onClose();
-                                                window.location.reload();
-                                            } catch (error) {
-                                                console.error('Cancel Error:', error);
-                                                alert(t('cancel_subscription_error') || 'Erro ao cancelar assinatura. Tente novamente.');
-                                            } finally {
-                                                setLoading(false);
-                                            }
-                                        }
-                                    }}
-                                    disabled={loading}
-                                    className="w-full py-3 px-4 bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
-                                >
-                                    <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    {loading ? 'Processando...' : (t('cancel_subscription') || 'Cancelar Assinatura')}
-                                </button>
-                                <p className="text-center text-xs text-slate-400">
-                                    {t('cancel_subscription_disclaimer') || 'Ao cancelar, você mantém o acesso até o fim do ciclo atual.'}
-                                </p>
-                            </div>
-                        </div>
-                    )}
 
 
                 </div>

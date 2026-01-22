@@ -26,13 +26,7 @@ interface Company {
     createdAt: string;
     users: { id: string; username: string; role: string }[];
     projects: { id: string; name: string }[];
-    subscription?: {
-        status: string;
-        currentPeriodEnd: string;
-        cancelAtPeriodEnd: boolean;
-    };
     subscriptionExpiresAt?: string;
-    billingMode: 'STRIPE' | 'MANUAL';
 }
 
 interface Plan {
@@ -48,8 +42,6 @@ interface Plan {
 
     features?: string[];
     isRecommended?: boolean;
-    stripePriceId?: string;
-    stripePriceIdYearly?: string;
     priceYearly?: number;
 }
 
@@ -230,8 +222,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             priceYearly: formData.get('priceYearly') ? parseFloat(formData.get('priceYearly') as string) : null,
             type: formData.get('type') || 'STANDARD',
             trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
-            stripePriceId: formData.get('stripePriceId'),
-            stripePriceIdYearly: formData.get('stripePriceIdYearly'),
             features: featuresValid,
             isRecommended: formData.get('isRecommended') === 'on',
             limits: {
@@ -990,26 +980,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Price ID</label>
-                                            <input
-                                                name="stripePriceId"
-                                                defaultValue={editingPlan?.stripePriceId || ''}
-                                                placeholder="price_..."
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stripe Yearly Price ID</label>
-                                            <input
-                                                name="stripePriceIdYearly"
-                                                defaultValue={editingPlan?.stripePriceIdYearly || ''}
-                                                placeholder="price_..."
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                    </div>
 
 
                                     <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -1145,42 +1115,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Stripe status</p>
-                                                    <p className={`text-xs font-bold uppercase ${['active', 'trialing'].includes(selectedCompany.subscription?.status || '')
-                                                        ? 'text-emerald-600'
-                                                        : 'text-amber-500'
-                                                        }`}>
-                                                        {selectedCompany.subscription?.status || 'No subscription'}
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Billing Mode</p>
+                                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                                        Manual
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Billing Mode</p>
-                                                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                                                            {selectedCompany.billingMode === 'STRIPE' ? 'Automatic (Stripe)' : 'Manual (Admin Controlled)'}
-                                                        </p>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleCompanyUpdate(selectedCompany.id, {
-                                                            billingMode: selectedCompany.billingMode === 'STRIPE' ? 'MANUAL' : 'STRIPE'
-                                                        })}
-                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${selectedCompany.billingMode === 'STRIPE'
-                                                            ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-300'
-                                                            : 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/20'
-                                                            }`}
-                                                    >
-                                                        Switch to {selectedCompany.billingMode === 'STRIPE' ? 'Manual' : 'Stripe'}
-                                                    </button>
-                                                </div>
-                                                <p className="text-[9px] text-slate-400 mt-2 leading-relaxed italic">
-                                                    {selectedCompany.billingMode === 'STRIPE'
-                                                        ? 'Following Stripe status. Failed payments will suspend access.'
-                                                        : 'Bypassing Stripe. Subscription managed manually by administrator.'}
-                                                </p>
-                                            </div>
                                         </div>
 
                                         <div className="space-y-3 mt-4">

@@ -5,8 +5,6 @@ import { useLanguage } from '../LanguageContext';
 
 interface Plan {
     id: string;
-    stripePriceId?: string;
-    stripePriceIdYearly?: string;
     name: string;
     price: string; // Formatted monthly price
     priceRaw: number;
@@ -37,7 +35,7 @@ const getPlanIcon = (index: number, name: string) => {
     return icons[index % icons.length];
 };
 
-import { BillingModal } from './Billing/BillingModal';
+
 
 export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, limitDetails, companyId, email }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -65,8 +63,6 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         }
                         return {
                             id: p.id,
-                            stripePriceId: p.stripePriceId || p.id,
-                            stripePriceIdYearly: p.stripePriceIdYearly,
                             name: p.name,
                             priceRaw: p.price,
                             priceYearlyRaw: p.priceYearly,
@@ -119,13 +115,13 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
             return;
         }
 
-        // Validation: If yearly selected but no yearly price exists
-        if (billingCycle === 'yearly' && !plan.stripePriceIdYearly) {
+        if (billingCycle === 'yearly' && !plan.priceYearlyRaw) {
             alert('O plano anual ainda não está disponível para esta opção.');
             return;
         }
 
-        setSelectedPlanForBilling(plan);
+        alert(`Para realizar o upgrade para o ${plan.name}, entre em contato com nosso suporte via WhatsApp ou E-mail para instruções de pagamento manual.`);
+        onClose();
     };
 
     if (!isOpen) return null;
@@ -270,31 +266,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
                     <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-                            Pagamento seguro via Stripe. Mudanças entram em vigor imediatamente.
+                            Entre em contato com o suporte para ativação imediata.
                         </p>
-
                     </div>
                 </div>
             </div>
 
-            {selectedPlanForBilling && companyId && (
-                <BillingModal
-                    isOpen={!!selectedPlanForBilling}
-                    onClose={() => setSelectedPlanForBilling(null)}
-                    planId={(billingCycle === 'yearly' && selectedPlanForBilling.stripePriceIdYearly)
-                        ? selectedPlanForBilling.stripePriceIdYearly
-                        : (selectedPlanForBilling.stripePriceId || selectedPlanForBilling.id)
-                    }
-                    companyId={companyId}
-                    planName={`${selectedPlanForBilling.name} (${billingCycle === 'yearly' ? 'Anual' : 'Mensal'})`}
-                    price={
-                        billingCycle === 'yearly' && selectedPlanForBilling.priceYearlyRaw
-                            ? selectedPlanForBilling.priceYearlyRaw
-                            : selectedPlanForBilling.priceRaw
-                    }
-                    billingEmail={email || ''}
-                />
-            )}
         </>
     );
 };

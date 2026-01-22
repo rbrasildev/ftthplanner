@@ -13,12 +13,11 @@ async function fix() {
             const updated = await prisma.company.update({
                 where: { id: hrb.id },
                 data: {
-                    billingMode: 'MANUAL',
                     status: 'ACTIVE',
                     subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
                 }
             });
-            console.log('✅ FIXED HRB LACERDA:', updated.name, 'Mode:', updated.billingMode, 'Status:', updated.status);
+            console.log('✅ FIXED HRB LACERDA:', updated.name, 'Status:', updated.status);
         } else {
             console.log('❌ HRB LACERDA not found.');
             const all = await prisma.company.findMany({ select: { name: true } });

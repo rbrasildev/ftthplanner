@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 import { AuthRequest } from '../middleware/auth';
-import { StripeService } from '../services/billing/stripeService';
 
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
@@ -35,9 +34,7 @@ export const getPublicPlans = async (req: Request, res: Response) => {
                 type: true,
                 features: true,
                 limits: true,
-                isRecommended: true,
-                stripePriceId: true,
-                stripePriceIdYearly: true
+                isRecommended: true
             }
         });
         res.json(plans);
@@ -83,9 +80,9 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
 
 export const createPlan = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly } = req.body;
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended } = req.body;
         const plan = await prisma.plan.create({
-            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly }
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended }
         });
 
         // Audit Log
@@ -105,10 +102,10 @@ export const createPlan = async (req: AuthRequest, res: Response) => {
 export const updatePlan = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly } = req.body;
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended } = req.body;
         const plan = await prisma.plan.update({
             where: { id },
-            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, stripePriceId, stripePriceIdYearly }
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended }
         });
 
         if (req.user?.id) {
@@ -154,38 +151,29 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
 export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { status, planId, billingMode } = req.body;
+        const { status, planId } = req.body;
 
         const data: any = {};
         if (status) data.status = status;
         if (planId) data.planId = planId;
-        if (billingMode) data.billingMode = billingMode;
 
-        // --- NEW LOGIC: RENEW EXPIRATION ON MANUAL ACTIVATION/PLAN CHANGE/MODE CHANGE ---
-        // If we are activating, changing a plan manually, or switching to MANUAL billing,
+        // --- NEW LOGIC: RENEW EXPIRATION ON MANUAL ACTIVATION/PLAN CHANGE ---
+        // If we are activating or changing a plan manually,
         // we give the user a long expiration to prevent the auto-downgrade logic.
-        if (status === 'ACTIVE' || planId || billingMode === 'MANUAL') {
+        if (status === 'ACTIVE' || planId) {
             const nextYear = new Date();
             nextYear.setFullYear(nextYear.getFullYear() + 1);
             data.subscriptionExpiresAt = nextYear;
-            console.log(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()} (Billing Mode: ${billingMode || 'Unchanged'})`);
+            console.log(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()}`);
         }
 
-        // If suspending, try to cancel Stripe subscription
-        if (status === 'SUSPENDED') {
-            try {
-                await StripeService.cancelSubscription(id);
-            } catch (e) {
-                console.warn("Failed to cancel stripe subscription during suspension:", e);
-                // Proceed with local suspension anyway
-            }
-        }
+        // Stripe logic removed
 
         const company = await prisma.company.update({
             where: { id },
             data
         });
-        console.log(`[saasController] ✅ Company ${id} updated successfully:`, { billingMode: (company as any).billingMode });
+        console.log(`[saasController] ✅ Company ${id} updated successfully`);
         res.json(company);
     } catch (error: any) {
         console.error("Critical Update Company Error:", {
@@ -211,8 +199,6 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Cannot delete your own company while logged in.' });
         }
 
-        // 0. PRE-CLEANUP: Delete Subscription (FK Constraint)
-        await prisma.subscription.deleteMany({ where: { companyId: id } });
 
         // 1. Delete Projects (Manual Cascade)
         // Note: Project elements (Cables, CTOs, etc.) usually cascade from Project if configured,
