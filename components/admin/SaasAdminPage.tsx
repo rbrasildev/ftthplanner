@@ -236,7 +236,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             }
         };
         try {
-            if (editingPlan) {
+            if (editingPlan?.id) {
                 await saasService.updatePlan(editingPlan.id, planData);
             } else {
                 await saasService.createPlan(planData);
