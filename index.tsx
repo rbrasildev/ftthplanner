@@ -16,13 +16,13 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <HelmetProvider>
-      <ThemeProvider>
+    <ThemeProvider>
+      <HelmetProvider>
         <LanguageProvider>
           <App />
         </LanguageProvider>
-      </ThemeProvider>
-    </HelmetProvider>
+      </HelmetProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );
 // Register Service Worker for Map Caching

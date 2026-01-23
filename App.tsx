@@ -1,12 +1,16 @@
 ﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { HelmetProvider } from 'react-helmet-async'; // Removed since it's in index.tsx now, but import can stay or be removed. Removing it.
-
-// Lazy Load Heavy Components for Performance (LCP)
-const MapView = React.lazy(() => import('./components/MapView').then(module => ({ default: module.MapView })));
-const Sidebar = React.lazy(() => import('./components/Sidebar').then(module => ({ default: module.Sidebar })));
-const ProjectManager = React.lazy(() => import('./components/ProjectManager').then(module => ({ default: module.ProjectManager })));
-const SaasAdminPage = React.lazy(() => import('./components/admin/SaasAdminPage').then(module => ({ default: module.SaasAdminPage })));
-
+import { MapView } from './components/MapView';
+import { Sidebar } from './components/Sidebar';
+import { autoSnapNetwork, calculateDistance } from './utils/geometryUtils';
+import { CTOEditor } from './components/CTOEditor';
+import { POPEditor } from './components/POPEditor';
+import { ProjectManager } from './components/ProjectManager';
+import { CableEditor } from './components/CableEditor';
+import { CTODetailsPanel } from './components/CTODetailsPanel';
+import { POPDetailsPanel } from './components/POPDetailsPanel';
+import { PoleDetailsPanel } from './components/PoleDetailsPanel';
+import { MapToolbar } from './components/MapToolbar';
+import { SaasAdminPage } from './components/admin/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { LandingPage } from './components/LandingPage';
@@ -39,17 +43,9 @@ import { FusionModule } from './components/FusionModule';
 import { PoleData, FusionType } from './types';
 
 
+
+
 // --- GEOMETRY HELPERS MOVED TO utils/geometryUtils.ts ---
-import { autoSnapNetwork, calculateDistance } from './utils/geometryUtils';
-import { CTOEditor } from './components/CTOEditor';
-import { POPEditor } from './components/POPEditor';
-import { CableEditor } from './components/CableEditor';
-import { MapToolbar } from './components/MapToolbar';
-import { CTODetailsPanel } from './components/CTODetailsPanel';
-import { POPDetailsPanel } from './components/POPDetailsPanel';
-import { PoleDetailsPanel } from './components/PoleDetailsPanel';
-
-
 
 const parseJwt = (token: string) => {
     try {
@@ -67,14 +63,6 @@ const parseJwt = (token: string) => {
 export default function App() {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
-
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
 
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
     const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_TOKEN));
@@ -131,7 +119,7 @@ export default function App() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
-    const [userPlan, setUserPlan] = useState<string>('Plano GrÃ¡tis');
+    const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanId, setUserPlanId] = useState<string | null>(null); // NEW: Track Plan ID for accurate comparison
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
@@ -1517,7 +1505,7 @@ export default function App() {
             ...prev,
             fusionTypes: [...(prev.fusionTypes || []), newType]
         }));
-        showToast(t('toast_fusion_type_added') || 'Tipo de fusÃ£o adicionado');
+        showToast(t('toast_fusion_type_added') || 'Tipo de fusão adicionado');
     };
 
     const handleDeleteFusionType = (id: string) => {
@@ -1525,7 +1513,7 @@ export default function App() {
             ...prev,
             fusionTypes: (prev.fusionTypes || []).filter(ft => ft.id !== id)
         }));
-        showToast(t('toast_fusion_type_deleted') || 'Tipo de fusÃ£o removido');
+        showToast(t('toast_fusion_type_deleted') || 'Tipo de fusão removido');
     };
 
 
@@ -1583,7 +1571,7 @@ export default function App() {
                 name: `Poste ${getCurrentNetwork().poles.length + 1}`,
                 status: 'PLANNED',
                 coordinates: pinnedLocation,
-                type: 'Poste PadrÃ£o'
+                type: 'Poste Padrão'
             };
             updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
             showToast(t('toast_pole_added') || "Poste Adicionado", 'success');
@@ -1658,660 +1646,752 @@ export default function App() {
     };
 
     return (
-        <div className={`h-screen w-screen relative overflow-hidden flex flex-col ${theme}`}>
-            {/* Auth Views */}
-            {!token && (
-                <React.Suspense fallback={
-                    <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
-                        <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
-                            <p className="text-slate-500 font-medium">Carregando...</p>
-                        </div>
+        <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+            {toast && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-5">
+                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : toast.type === 'error' ? 'bg-red-100 dark:bg-red-900/90 border-red-500 text-red-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
+                        <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
                     </div>
-                }>
-                    {authView === 'landing' && (
-                        <LandingPage
-                            onLoginClick={() => setAuthView('login')}
-                            onRegisterClick={(planName) => {
-                                if (planName) setSelectedRegisterPlan(planName);
-                                setAuthView('register');
-                            }}
-                        />
-                    )}
-                    {authView === 'login' && (
-                        <LoginPage
-                            onLogin={handleLogin}
-                            onRegisterClick={() => setAuthView('register')}
-                            onBack={() => setAuthView('landing')}
-                            error={undefined}
-                            isLoading={false}
-                        />
-                    )}
-                    {authView === 'register' && (
-                        <RegisterPage
-                            onRegister={handleRegister}
-                            onLoginClick={() => setAuthView('login')}
-                            onBack={() => setAuthView('landing')}
-                            initialPlan={selectedRegisterPlan}
-                        />
-                    )}
-                </React.Suspense>
+                </div>
             )}
 
-            {/* Main App (Protected) */}
-            {token && (
-                <React.Suspense fallback={
-                    <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
-                        <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
-                            <p className="text-slate-500 font-medium">Carregando sistema...</p>
+            {/* Mobile TopBar */}
+            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
+                <div className="flex items-center gap-2">
+                    <img src="/logo.png" alt="Logo" className="w-7 h-7" />
+                    <span className="font-bold text-sm tracking-tight">{t('app_title')}</span>
+                </div>
+                <button
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                    <MapIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </button>
+            </header>
+
+            <Sidebar
+                viewMode={currentProjectId ? 'project' : 'dashboard'}
+                user={user}
+                userRole={userRole}
+                userPlan={userPlan}
+                userPlanType={userPlanType}
+                subscriptionExpiresAt={subscriptionExpiresAt}
+                cancelAtPeriodEnd={cancelAtPeriodEnd}
+                projects={projects}
+                currentProjectId={currentProjectId}
+                deploymentProgress={deploymentProgress}
+                vflSource={vflSource}
+                setVflSource={setVflSource}
+                searchResults={searchResults}
+                onSearch={handleMainSearch}
+                onResultClick={handleSearchResultClick}
+                onLogout={() => {
+                    setUser(null);
+                    setToken(null);
+                    setCurrentProjectId(null);
+                }}
+                onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                setCurrentProjectId={setCurrentProjectId}
+                setShowProjectManager={setShowProjectManager}
+                onImportClick={() => setIsAdvancedImportOpen(true)}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                isMobileOpen={isMobileMenuOpen}
+                onCloseMobile={() => setIsMobileMenuOpen(false)}
+                currentDashboardView={dashboardView}
+                onDashboardViewChange={setDashboardView}
+                isHydrated={isHydrated}
+            />
+
+            {!currentProjectId ? (
+                <main className="flex-1 relative overflow-hidden">
+                    <DashboardPage
+                        username={user!}
+                        userRole={userRole || 'MEMBER'}
+                        userPlan={userPlan}
+                        userPlanType={userPlanType}
+                        subscriptionExpiresAt={subscriptionExpiresAt}
+                        cancelAtPeriodEnd={cancelAtPeriodEnd}
+                        projects={projects}
+                        currentView={dashboardView}
+                        onViewChange={setDashboardView}
+                        onOpenProject={(id) => {
+                            if (companyStatus === 'SUSPENDED') {
+                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                                setShowUpgradeModal(true);
+                                return;
+                            }
+                            setCurrentProjectId(id);
+                            setShowProjectManager(false);
+                        }}
+                        onCreateProject={async (name, center) => {
+                            if (companyStatus === 'SUSPENDED') {
+                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
+                                setShowUpgradeModal(true);
+                                return;
+                            }
+                            if (!token) return;
+                            try {
+                                const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
+                                setProjects(prev => [newProject, ...prev]);
+                                setCurrentProjectId(newProject.id);
+                                showToast(t('toast_project_created'), 'success');
+                            } catch (e: any) {
+                                if (e.response && e.response.status === 403) {
+                                    setUpgradeModalDetails(e.response.data?.details || "Você atingiu o limite de projetos do seu plano.");
+                                    setShowUpgradeModal(true);
+                                } else {
+                                    showToast('Failed to create project', 'info');
+                                }
+                            }
+                        }}
+                        onDeleteProject={async (id) => {
+                            try {
+                                await projectService.deleteProject(id);
+                                setProjects(prev => prev.filter(p => p.id !== id));
+                                showToast(t('toast_project_deleted'));
+                            } catch (e) {
+                                showToast(t('error_project_delete'), 'info');
+                            }
+                        }}
+                        onUpdateProject={async (id, name, center) => {
+                            try {
+                                const updated = await projectService.updateProject(id, name, center);
+                                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
+                                showToast(t('project_updated'), 'success');
+                            } catch (e) {
+                                showToast(t('error_project_update'), 'info');
+                            }
+                        }}
+                        isLoading={isLoadingProjects}
+                        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                        onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                    />
+                </main>
+            ) : currentProjectId && !currentProject ? (
+                <main className="flex-1 relative flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white gap-4 transition-colors">
+                    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
+                    <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
+                </main>
+            ) : (
+                <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                    {/* Map Toolbar (Floating) */}
+                    <div className="absolute top-20 lg:top-4 left-0 right-0 z-[1000] pointer-events-none">
+                        {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
+                        <div className="pointer-events-auto w-fit mx-auto">
+                            <MapToolbar
+                                toolMode={toolMode}
+                                setToolMode={setToolMode}
+                                activeMenuId={activeMenuId}
+                                setActiveMenuId={setActiveMenuId}
+                                onImportKml={() => setIsKmlImportOpen(true)}
+                                onConnectClick={() => {
+                                    previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                                    setToolMode('connect_cable');
+                                    setSelectedId(null);
+                                }}
+                            />
                         </div>
                     </div>
-                }>
-                    {/* Header */}
-                    <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-40 shrink-0 shadow-sm relative">
-                        <div className="flex items-center gap-3">
-                            {isMobile && (
-                                <button
-                                    onClick={() => setIsMobileMenuOpen(true)}
-                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                >
-                                    <MapIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                                </button>
-                            )}
-                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => {
-                                if (userRole === 'SUPER_ADMIN') {
-                                    window.location.reload();
-                                } else {
-                                    setCurrentProjectId(null);
-                                    setDashboardView('projects');
-                                }
-                            }}>
-                                <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-                                {!isSidebarCollapsed && (
-                                    <div className="hidden md:flex flex-col">
-                                        <h1 className="text-lg font-bold text-slate-800 dark:text-white leading-none tracking-tight">
-                                            {t('app_title')}
-                                        </h1>
-                                        <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider">Planner Pro</span>
-                                    </div>
-                                )}
+
+                    {/* Move Mode Floating Controls */}
+                    {toolMode === 'move_node' && (
+                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                            <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
+                                <Move className="w-4 h-4 text-sky-500" />
+                                {t('moving_node')}
                             </div>
-                        </div>
-
-                        {/* Search and User Controls */}
-                        <div className="flex items-center gap-2 md:gap-4">
-                            <SearchBox
-                                onResultClick={handleSearchResultClick}
-                                searchResults={searchResults}
-                            // onSearch={handleMainSearch} // If needed
-                            />
-
-                            <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                                <button
-                                    onClick={() => setLanguage('pt')}
-                                    className={`px-2 py-1 text-xs font-bold rounded ${language === 'pt' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                >
-                                    PT
-                                </button>
-                                <button
-                                    onClick={() => setLanguage('en')}
-                                    className={`px-2 py-1 text-xs font-bold rounded ${language === 'en' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                >
-                                    EN
-                                </button>
-                            </div>
-
-                            <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300">
-                                {theme === 'dark' ? <Zap className="w-5 h-5 fill-yellow-400 text-yellow-400" /> : <Zap className="w-5 h-5" />}
+                            <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                            <button
+                                onClick={() => {
+                                    setToolMode('view');
+                                    setSelectedId(null);
+                                    showToast(t('position_saved'), 'success');
+                                }}
+                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
+                            >
+                                <Check className="w-4 h-4" />
+                                {t('save_position')}
                             </button>
+                        </div>
+                    )}
 
-                            {/* User Menu */}
-                            <div className="relative group">
-                                <button className="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors">
-                                    <div className="w-8 h-8 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 rounded-full flex items-center justify-center font-bold border border-sky-200 dark:border-sky-800">
-                                        {user?.charAt(0).toUpperCase()}
-                                    </div>
-                                </button>
+                    <MapView
+                        ctos={getCurrentNetwork().ctos}
+                        pops={getCurrentNetwork().pops || []}
+                        poles={getCurrentNetwork().poles || []}
+                        cables={getCurrentNetwork().cables}
+                        mode={toolMode}
+                        selectedId={selectedId}
+                        mapBounds={mapBounds}
+                        showLabels={showLabels}
+                        litCableIds={litNetwork.litCables}
+                        highlightedCableId={highlightedCableId}
+                        drawingPath={drawingPath}
+                        snapDistance={systemSettings.snapDistance}
 
-                                {/* Dropdown */}
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 hidden group-hover:block p-2 animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
-                                        <p className="font-bold text-slate-900 dark:text-white truncate">{user}</p>
-                                        <p className="text-xs text-slate-500 truncate">{userEmail}</p>
-                                        <div className="mt-2 flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${userPlan === 'Plano GrÃ¡tis' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-100 text-indigo-700'}`}>
-                                                {userPlan}
-                                            </span>
-                                        </div>
-                                    </div>
+                        viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
+                        initialCenter={savedMapState?.center || currentProject?.mapState?.center}
+                        initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
+                        onMapMoveEnd={handleMapMoveEnd}
+                        onToggleLabels={() => setShowLabels(!showLabels)}
 
-                                    <button onClick={() => setIsAccountSettingsOpen(true)} className="w-full text-left px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2">
-                                        <Settings className="w-4 h-4" /> Conta
+                        onAddPoint={handleAddPoint}
+                        onUndoDrawingPoint={handleUndoDrawingPoint}
+                        onNodeClick={handleNodeClick}
+                        onMoveNode={handleMoveNode}
+                        onEditNode={handleEditNode}
+                        onDeleteNode={handleDeleteNode}
+                        onMoveNodeStart={handleMoveNodeStart}
+                        onPropertiesNode={handlePropertiesNode}
+                        onCableStart={handleNodeForCableStable}
+                        onCableEnd={handleNodeForCableStable}
+                        onConnectCable={handleConnectCable}
+                        onUpdateCableGeometry={handleUpdateCableGeometry}
+                        multiConnectionIds={multiConnectionIds}
+
+                        previewImportData={previewImportData}
+                        onCableClick={handleCableClick}
+                        onEditCableGeometry={handleEditCableGeometry}
+                        onEditCable={handleEditCable}
+                        onDeleteCable={handleDeleteCable}
+                        onInitConnection={handleInitConnection}
+                        // Pass OTDR Result Point to MapView to render marker
+                        otdrResult={otdrResult}
+                        pinnedLocation={pinnedLocation}
+                        onConvertPin={handleConvertPinToNode}
+                        onClearPin={() => setPinnedLocation(null)}
+                    />
+
+
+
+
+                    {/* Save/Cancel Toolbar for Cable Edit */}
+                    {
+                        toolMode === 'edit_cable' && (
+                            <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                                <div className="flex items-center gap-3 px-3">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                        {t('editing_cable')}
+                                    </span>
+                                    <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                    <button
+                                        onClick={() => {
+                                            setToolMode('view');
+                                            setHighlightedCableId(null);
+                                            setSelectedId(null);
+                                            previousNetworkState.current = null;
+                                            showToast(t('changes_saved'), 'success');
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                    >
+                                        {t('save_changes')}
                                     </button>
                                     <button
                                         onClick={() => {
-                                            setToken(null);
-                                            setUser(null);
-                                            window.location.reload();
+                                            // CANCEL (Revert changes)
+                                            if (previousNetworkState.current) {
+                                                const backup = previousNetworkState.current; // Capture ref value
+                                                updateCurrentNetwork(() => backup); // Return backup as new state
+                                                previousNetworkState.current = null;
+
+                                                // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                                setEditingCTO(null);
+                                                setEditingPOP(null);
+                                            }
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            setHighlightedCableId(null); // Fix: Clear highlight on cancel
+                                            showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                                         }}
-                                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2"
+                                        className="text-slate-500 hover:text-red-500 transition-colors p-1"
                                     >
-                                        <Unplug className="w-4 h-4" /> Sair
+                                        <X className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    </header>
+                        )
+                    }
 
-                    {/* Content Area */}
-                    {userRole === 'SUPER_ADMIN' ? (
-                        <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />
-                    ) : (
-                        <div className="flex-1 flex overflow-hidden relative">
-                            <Sidebar
-                                isCollapsed={isSidebarCollapsed}
-                                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                activeView={dashboardView}
-                                onViewChange={setDashboardView}
-                                currentProjectId={currentProjectId}
-                                onProjectSelect={setCurrentProjectId}
-                                projects={projects}
-                                onCreateProject={() => setShowProjectManager(true)}
-                                userPlan={userPlan}
-                                userRole={userRole}
-                                onUpgradeClick={() => setShowUpgradeModal(true)}
-                                isMobileOpen={isMobileMenuOpen}
-                                onCloseMobile={() => setIsMobileMenuOpen(false)}
-                                // Missing props but essential
-                                vflSource={vflSource}
-                                setVflSource={setVflSource}
-                                searchResults={searchResults}
-                                onSearch={(term) => setDebouncedSearchTerm(term)}
-                                onResultClick={handleSearchResultClick}
-                                onLogout={() => { setUser(null); setToken(null); }}
-                                setShowProjectManager={setShowProjectManager}
-                                onImportClick={() => setIsAdvancedImportOpen(true)}
-                                currentDashboardView={dashboardView}
-                                onDashboardViewChange={setDashboardView}
-                                isHydrated={isHydrated}
-                            />
-
-                            <main className="flex-1 relative flex flex-col overflow-hidden bg-slate-50 dark:bg-black transition-all duration-300">
-                                {dashboardView === 'map' && currentProjectId ? (
-                                    <>
-                                        <MapToolbar
-                                            toolMode={toolMode}
-                                            setToolMode={setToolMode}
-                                            onUndo={() => { }}
-                                            onRedo={() => { }}
-                                            canUndo={false}
-                                            canRedo={false}
-                                            currentProjectId={currentProjectId}
-                                            activeMenuId={activeMenuId}
-                                            setActiveMenuId={setActiveMenuId}
-                                            onImportKml={() => setIsKmlImportOpen(true)}
-                                            onConnectClick={() => {
-                                                previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
-                                                setToolMode('connect_cable');
-                                                setSelectedId(null);
-                                            }}
-                                        />
-
-                                        <div className="flex-1 relative">
-                                            <MapView
-                                                ctos={getCurrentNetwork().ctos}
-                                                pops={getCurrentNetwork().pops || []}
-                                                poles={getCurrentNetwork().poles || []}
-                                                cables={getCurrentNetwork().cables}
-                                                mode={toolMode}
-                                                selectedId={selectedId}
-                                                mapBounds={mapBounds}
-                                                showLabels={showLabels}
-                                                litCableIds={litNetwork.litCables}
-                                                highlightedCableId={highlightedCableId}
-                                                drawingPath={drawingPath}
-                                                snapDistance={systemSettings.snapDistance}
-
-                                                viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
-                                                initialCenter={savedMapState?.center || currentProject?.mapState?.center}
-                                                initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
-                                                onMapMoveEnd={handleMapMoveEnd}
-                                                onToggleLabels={() => setShowLabels(!showLabels)}
-
-                                                onAddPoint={handleAddPoint}
-                                                onNodeClick={(id, type) => {
-                                                    setSelectedId(id);
-                                                    if (type === 'CTO') {
-                                                        const cto = getCurrentNetwork().ctos.find(c => c.id === id);
-                                                        if (cto) setEditingCTO(cto);
-                                                    } else if (type === 'POP') {
-                                                        const pop = getCurrentNetwork().pops.find(p => p.id === id);
-                                                        if (pop) setEditingPOP(pop);
-                                                    }
-                                                }}
-                                                onMoveNode={(id, lat, lng) => {
-                                                    // Simplified move handler
-                                                    updateCurrentNetwork(prev => {
-                                                        return {
-                                                            ...prev,
-                                                            ctos: prev.ctos.map(c => c.id === id ? { ...c, coordinates: { lat, lng } } : c),
-                                                            pops: prev.pops.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p),
-                                                            poles: prev.poles?.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p)
-                                                        };
-                                                    });
-                                                }}
-                                                onEditNode={(id, type) => {
-                                                    setSelectedId(id); // Select triggers editor via Effect or direct check
-                                                }}
-                                                onDeleteNode={(id) => {
-                                                    // Implement delete logic or stub
-                                                    updateCurrentNetwork(prev => ({
-                                                        ...prev,
-                                                        ctos: prev.ctos.filter(c => c.id !== id),
-                                                        pops: prev.pops.filter(p => p.id !== id),
-                                                        poles: prev.poles?.filter(p => p.id !== id),
-                                                        cables: prev.cables.filter(c => c.fromNodeId !== id && c.toNodeId !== id)
-                                                    }));
-                                                }}
-                                                onCableStart={() => { }} // Stub
-                                                onCableEnd={() => { }}   // Stub
-                                                onConnectCable={(cableId, targetId) => {
-                                                    // Logic moved to internal MapView or separate handler?
-                                                    // Implementing stub to fix TS error
-                                                    handleSelectNextNode(cableId);
-                                                }}
-                                                onUpdateCableGeometry={(id, coords) => {
-                                                    updateCurrentNetwork(prev => ({
-                                                        ...prev,
-                                                        cables: prev.cables.map(c => c.id === id ? { ...c, coordinates: coords } : c)
-                                                    }));
-                                                }}
-                                                multiConnectionIds={multiConnectionIds}
-
-                                                previewImportData={previewImportData}
-                                                onCableClick={(id) => {
-                                                    setSelectedId(id);
-                                                    setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
-                                                }}
-                                                onEditCableGeometry={(id) => {
-                                                    setSelectedId(id);
-                                                    setToolMode('edit_cable');
-                                                }}
-                                                onEditCable={(id) => {
-                                                    setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
-                                                }}
-                                                onDeleteCable={(id) => {
-                                                    updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) }));
-                                                }}
-                                                onInitConnection={(id) => {
-                                                    setPendingConnectionCableId(id);
-                                                    setToolMode('connect_cable');
-                                                }}
-                                                otdrResult={otdrResult}
-                                                pinnedLocation={pinnedLocation}
-                                                onConvertPin={() => { }} // Stub
-                                                onClearPin={() => setPinnedLocation(null)}
-                                            />
-
-                                            {/* Floating Panels */}
-                                            {editingCTO && (
-                                                <div className="absolute top-4 right-4 z-[1000] w-96 max-h-[calc(100vh-8rem)]">
-                                                    <CTOEditor
-                                                        cto={editingCTO}
-                                                        projectName={currentProject?.name || ''}
-                                                        incomingCables={getCurrentNetwork().cables.filter(c =>
-                                                            c.fromNodeId === editingCTO.id ||
-                                                            c.toNodeId === editingCTO.id ||
-                                                            editingCTO.inputCableIds?.includes(c.id)
-                                                        )}
-                                                        litPorts={litNetwork.litPorts}
-                                                        vflSource={vflSource}
-                                                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                                                        onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
-                                                        onSave={(updated) => {
-                                                            updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updated.id ? updated : c) }));
-                                                            setEditingCTO(updated);
-                                                        }}
-                                                        onEditCable={setEditingCable}
-                                                        onHoverCable={(id) => setHighlightedCableId(id)}
-                                                        onDisconnectCable={() => { }} // Stub
-                                                        onSelectNextNode={handleSelectNextNode}
-                                                        onOtdrTrace={() => { }} // Stub
-
-                                                        // Auth / Protection Props
-                                                        userPlan={userPlan}
-                                                        subscriptionExpiresAt={subscriptionExpiresAt}
-                                                        onShowUpgrade={() => setShowUpgradeModal(true)}
-                                                        network={getCurrentNetwork()}
-                                                    />
-                                                </div>
-                                            )}
-                                            {
-                                                editingPOP && (
-                                                    <POPEditor
-                                                        pop={editingPOP}
-                                                        incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
-                                                        litPorts={litNetwork.litPorts}
-                                                        vflSource={vflSource}
-                                                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                                                        onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
-                                                        onSave={(updated) => {
-                                                            updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === updated.id ? updated : p) }));
-                                                            setEditingPOP(updated);
-                                                        }}
-                                                        onHoverCable={(id) => setHighlightedCableId(id)}
-                                                        onEditCable={setEditingCable}
-                                                        onOtdrTrace={() => { }} // Stub
-                                                    />
-                                                )
-                                            }
-
-                                            {/* Save/Cancel Toolbar for Cable Edit */}
-                                            {
-                                                toolMode === 'edit_cable' && (
-                                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
-                                                        <div className="flex items-center gap-3 px-3">
-                                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                                                {t('editing_cable')}
-                                                            </span>
-                                                            <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setToolMode('view');
-                                                                    setHighlightedCableId(null);
-                                                                    setSelectedId(null);
-                                                                    previousNetworkState.current = null;
-                                                                    showToast(t('changes_saved'), 'success');
-                                                                }}
-                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
-                                                            >
-                                                                {t('save_changes')}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    // CANCEL (Revert changes)
-                                                                    if (previousNetworkState.current) {
-                                                                        const backup = previousNetworkState.current; // Capture ref value
-                                                                        updateCurrentNetwork(() => backup); // Return backup as new state
-                                                                        previousNetworkState.current = null;
-                                                                        setEditingCTO(null);
-                                                                        setEditingPOP(null);
-                                                                    }
-                                                                    setToolMode('view');
-                                                                    setMultiConnectionIds(new Set());
-                                                                    setSelectedId(null);
-                                                                    setHighlightedCableId(null);
-                                                                    showToast(t('connection_cancelled') || "ConexÃ£o Cancelada", 'info');
-                                                                }}
-                                                                className="text-slate-500 hover:text-red-500 transition-colors p-1"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }
-
-                                            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
-                                                {toolMode === 'view' && t('tooltip_view')}
-                                                {toolMode === 'move_node' && t('tooltip_move')}
-                                                {toolMode === 'add_cto' && t('tooltip_add_cto')}
-                                                {toolMode === 'add_pop' && t('tooltip_add_pop')}
-                                                {toolMode === 'add_pole' && t('tooltip_add_pole')}
-                                                {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
-                                                {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
-                                            </div>
-
-                                            {
-                                                toolMode === 'draw_cable' && drawingPath.length > 0 && (
-                                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
-                                                        <button
-                                                            onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
-                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
-                                                        >
-                                                            <CheckCircle2 className="w-5 h-5" />
-                                                            {t('finish_cable')}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
-                                                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                                                        >
-                                                            <X className="w-5 h-5" />
-                                                            {t('cancel')}
-                                                        </button>
-                                                    </div>
-                                                )
-                                            }
-                                        </div>
-                                    </>
-                                ) : (
-                                    <DashboardPage
-                                        username={user!}
-                                        userRole={userRole || 'MEMBER'}
-                                        userPlan={userPlan}
-                                        userPlanType={userPlanId}
-                                        subscriptionExpiresAt={subscriptionExpiresAt}
-                                        cancelAtPeriodEnd={cancelAtPeriodEnd}
-                                        projects={projects}
-                                        currentView={dashboardView}
-                                        onViewChange={setDashboardView}
-                                        onOpenProject={(id) => {
-                                            if (companyStatus === 'SUSPENDED') {
-                                                setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para acessar os projetos.");
-                                                setShowUpgradeModal(true);
-                                                return;
-                                            }
-                                            setCurrentProjectId(id);
-                                            setShowProjectManager(false);
+                    {/* Save/Cancel Toolbar for Connect Cable */}
+                    {
+                        toolMode === 'connect_cable' && (
+                            <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                                <div className="flex items-center gap-3 px-3">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                        {t('connecting_cable')}
+                                    </span>
+                                    <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
+                                    <button
+                                        onClick={() => {
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            previousNetworkState.current = null;
+                                            showToast(t('finish'), 'success');
                                         }}
-                                        onCreateProject={async (name, center) => {
-                                            if (companyStatus === 'SUSPENDED') {
-                                                setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para criar novos projetos.");
-                                                setShowUpgradeModal(true);
-                                                return;
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                    >
+                                        {t('finish')}
+                                    </button>
+                                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                                    <button
+                                        onClick={() => {
+                                            // CANCEL (Revert changes)
+                                            if (previousNetworkState.current) {
+                                                const backup = previousNetworkState.current; // Capture ref value
+                                                updateCurrentNetwork(() => backup); // Return backup as new state
+                                                previousNetworkState.current = null;
+
+                                                // FORCE MODAL CLOSE / REFRESH to prevent stale state in modals
+                                                setEditingCTO(null);
+                                                setEditingPOP(null);
                                             }
-                                            if (!token) return;
-                                            try {
-                                                const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
-                                                setProjects(prev => [newProject, ...prev]);
-                                                setCurrentProjectId(newProject.id);
-                                                showToast(t('toast_project_created'), 'success');
-                                            } catch (e: any) {
-                                                if (e.response && e.response.status === 403) {
-                                                    setUpgradeModalDetails(e.response.data?.details || "VocÃª atingiu o limite de projetos do seu plano.");
-                                                    setShowUpgradeModal(true);
-                                                } else {
-                                                    showToast('Failed to create project', 'info');
-                                                }
-                                            }
+                                            setToolMode('view');
+                                            setMultiConnectionIds(new Set());
+                                            setSelectedId(null);
+                                            setHighlightedCableId(null); // Fix: Clear highlight on cancel
+                                            showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                                         }}
-                                        onDeleteProject={async (id) => {
-                                            try {
-                                                await projectService.deleteProject(id);
-                                                setProjects(prev => prev.filter(p => p.id !== id));
-                                                showToast(t('toast_project_deleted'));
-                                            } catch (e) {
-                                                showToast(t('error_project_delete'), 'info');
-                                            }
-                                        }}
-                                        onUpdateProject={async (id, name, center) => {
-                                            try {
-                                                const updated = await projectService.updateProject(id, name, center);
-                                                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
-                                                showToast(t('project_updated'), 'success');
-                                            } catch (e) {
-                                                showToast(t('error_project_update'), 'info');
-                                            }
-                                        }}
-                                        isLoading={isLoadingProjects}
-                                        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
-                                        onUpgradeClick={() => setIsAccountSettingsOpen(true)}
-                                    />
-                                )}
-                            </main>
-                        </div>
-                    )}
+                                        className="text-slate-500 hover:text-red-500 transition-colors p-1"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }
 
-                    {/* Modals outside main layout */}
-                    {showProjectManager && (
-                        <ProjectManager
-                            isOpen={showProjectManager}
-                            onClose={() => setShowProjectManager(false)}
-                            onProjectCreated={(p) => {
-                                setProjects(prev => [p, ...prev]);
-                                setCurrentProjectId(p.id);
-                                setShowProjectManager(false);
-                                setDashboardView('map');
-                                showToast('Projeto criado com sucesso!');
-                            }}
-                            onProjectStartImport={handleImportKMZ}
-                        />
-                    )}
+                    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
+                        {toolMode === 'view' && t('tooltip_view')}
+                        {toolMode === 'move_node' && t('tooltip_move')}
+                        {toolMode === 'add_cto' && t('tooltip_add_cto')}
+                        {toolMode === 'add_pop' && t('tooltip_add_pop')}
+                        {toolMode === 'add_pole' && t('tooltip_add_pole')}
+                        {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
+                        {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
+                    </div>
 
-                    {showUpgradeModal && (
-                        <UpgradePlanModal
-                            isOpen={showUpgradeModal}
-                            onClose={() => {
-                                setShowUpgradeModal(false);
-                                setUpgradeModalDetails(undefined);
-                            }}
-                            currentPlanId={userPlanId || ''}
-                            errorDetails={upgradeModalDetails}
-                        />
-                    )}
+                    {
+                        toolMode === 'draw_cable' && drawingPath.length > 0 && (
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                                <button
+                                    onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                                >
+                                    <CheckCircle2 className="w-5 h-5" />
+                                    {t('finish_cable')}
+                                </button>
+                                <button
+                                    onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                                    className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                                >
+                                    <X className="w-5 h-5" />
+                                    {t('cancel')}
+                                </button>
+                            </div>
+                        )
+                    }
 
-                    <AccountSettingsModal
-                        isOpen={isAccountSettingsOpen}
-                        onClose={() => setIsAccountSettingsOpen(false)}
-                    />
-
-                    {/* Legacy KML Import Modal */}
-                    <KmlImportModal
-                        isOpen={isKmlImportOpen}
-                        onClose={() => setIsKmlImportOpen(false)}
-                        onImport={async (coordinates, poleTypeId) => {
-                            handleImportPoles(coordinates, poleTypeId);
-                        }}
-                    />
-
-                    {/* Advanced Import Modal */}
-                    <AdvancedImportModal
-                        isOpen={isAdvancedImportOpen}
-                        onClose={() => {
-                            setIsAdvancedImportOpen(false);
-                            setPreviewImportData(null);
-                        }}
-                        onPreview={(data) => setPreviewImportData(data)}
-                        onImport={async (data) => {
-                            if (!currentProjectId) return;
-                            if (!data) return;
-                            setIsLoadingProjects(true);
-                            try {
-                                const updated = { ...getCurrentNetwork() };
-                                if (data.cables && data.cables.length > 0) {
-                                    const newCables: CableData[] = data.cables.map((c: any, idx: number) => ({
-                                        id: crypto.randomUUID(),
-                                        name: c.originalName || `Cabo ${idx + 1}`,
-                                        status: c.status || 'DEPLOYED',
-                                        fiberCount: c.type?.fiberCount || 1,
-                                        looseTubeCount: c.type?.looseTubeCount || 1,
-                                        color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9',
-                                        colorStandard: 'ABNT',
-                                        coordinates: (Array.isArray(c.coordinates) ? c.coordinates : [])
-                                            .filter((pt: any) => Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]))
-                                            .map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
-                                        fromNodeId: null,
-                                        toNodeId: null,
-                                        catalogId: c.type?.id
-                                    }));
-                                    updated.cables = [...(updated.cables || []), ...newCables.filter(c => c.coordinates.length >= 2)];
-                                }
-                                if (data.ctos && data.ctos.length > 0) {
-                                    const newCTOs: CTOData[] = data.ctos.map((c: any, idx: number) => ({
-                                        id: crypto.randomUUID(),
-                                        name: c.originalName || `CTO ${idx + 1}`,
-                                        status: c.status || 'DEPLOYED',
-                                        type: 'CTO',
-                                        coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
-                                        catalogId: c.type?.id,
-                                        splitters: [],
-                                        fusions: [],
-                                        connections: [],
-                                        inputCableIds: [],
-                                        clientCount: 0
-                                    }));
-                                    updated.ctos = [...(updated.ctos || []), ...newCTOs];
-                                }
-                                if (data.ceos && data.ceos.length > 0) {
-                                    const newCEOs: CTOData[] = data.ceos.map((c: any, idx: number) => ({
-                                        id: crypto.randomUUID(),
-                                        name: c.originalName || `CEO ${idx + 1}`,
-                                        status: c.status || 'DEPLOYED',
-                                        type: 'CEO',
-                                        coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
-                                        catalogId: c.type?.id,
-                                        splitters: [],
-                                        fusions: [],
-                                        connections: [],
-                                        inputCableIds: [],
-                                        clientCount: 0
-                                    }));
-                                    updated.ctos = [...(updated.ctos || []), ...newCEOs];
-                                }
-                                if (data.poles && data.poles.length > 0) {
-                                    const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
-                                        id: crypto.randomUUID(),
-                                        name: p.originalName || `Poste ${idx + 1}`,
-                                        status: p.status || 'PLANNED',
-                                        coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
-                                        catalogId: p.type?.id,
-                                        type: p.type?.name,
-                                        height: p.type?.height
-                                    }));
-                                    updated.poles = [...(updated.poles || []), ...newPoles];
-                                }
-
-                                await projectService.syncProject(currentProjectId, updated);
-                                setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
-                                showToast('ImportaÃ§Ã£o realizada com sucesso!', 'success');
-                                setIsAdvancedImportOpen(false);
-                                setPreviewImportData(null);
-                            } catch (error: any) {
-                                console.error("Import failed", error);
-                                if (error.response && error.response.status === 403) {
-                                    const errorMsg = error.response.data?.error || error.response.data?.details || 'Acesso negado';
-                                    setUpgradeModalDetails(errorMsg);
-                                    setShowUpgradeModal(true);
-                                } else {
-                                    showToast('Failed to import data', 'error');
-                                }
-                            } finally {
-                                setIsLoadingProjects(false);
-                            }
-                        }}
-                    />
-
-                    {/* Toast Notification */}
-                    {toast && (
-                        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 z-[2000] font-bold ${toast.type === 'error' ? 'bg-red-500 text-white' :
-                            toast.type === 'info' ? 'bg-slate-800 text-white' :
-                                'bg-emerald-500 text-white'
-                            }`}>
-                            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
-                            {toast.type === 'error' && <X className="w-5 h-5" />}
-                            {toast.type === 'info' && <BaseIcon className="w-5 h-5" />}
-                            {toast.msg}
-                        </div>
-                    )}
-
-                </React.Suspense>
+                </main >
             )}
-        </div>
+
+            {/* Editors */}
+            {
+                editingPOP && (
+                    <POPEditor
+                        pop={editingPOP}
+                        incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
+                        litPorts={litNetwork.litPorts}
+                        vflSource={vflSource}
+                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                        onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
+                        onSave={handleSavePOP}
+                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onEditCable={setEditingCable}
+                        onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
+                    />
+                )
+            }
+            {
+                editingCTO && (
+                    <CTOEditor
+                        cto={editingCTO}
+                        projectName={currentProject?.name || ''}
+                        incomingCables={getCurrentNetwork().cables.filter(c =>
+                            c.fromNodeId === editingCTO.id ||
+                            c.toNodeId === editingCTO.id ||
+                            editingCTO.inputCableIds?.includes(c.id)
+                        )}
+                        litPorts={litNetwork.litPorts}
+                        vflSource={vflSource}
+                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                        onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
+                        onSave={handleSaveCTO}
+                        onEditCable={setEditingCable}
+                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onDisconnectCable={handleDisconnectCableFromBox}
+                        onSelectNextNode={handleSelectNextNode}
+                        onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
+
+                        // Auth / Protection Props
+                        userPlan={userPlan}
+                        subscriptionExpiresAt={subscriptionExpiresAt}
+                        onShowUpgrade={() => {
+                            setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
+                            setShowUpgradeModal(true);
+                        }}
+                        network={getCurrentNetwork()}
+                    />
+                )
+            }
+
+            {/* ... */}
+
+            {/* Legacy KML Import Modal (Poles Only - via Toolbar) */}
+            <KmlImportModal
+                isOpen={isKmlImportOpen}
+                onClose={() => setIsKmlImportOpen(false)}
+                onImport={async (coordinates, poleTypeId) => {
+                    handleImportPoles(coordinates, poleTypeId); // Ensure this legacy handler exists or is recreated
+                }}
+            />
+
+            {/* Advanced Import Modal (Sidebar) */}
+            <AdvancedImportModal
+                isOpen={isAdvancedImportOpen}
+                onClose={() => {
+                    setIsAdvancedImportOpen(false);
+                    setPreviewImportData(null);
+                }}
+                onPreview={(data) => setPreviewImportData(data)}
+                onImport={async (data) => {
+                    if (!currentProjectId) return;
+                    if (!data) return;
+
+                    setIsLoadingProjects(true);
+
+                    try {
+                        const updated = { ...getCurrentNetwork() };
+
+                        // 1. Process Cables
+                        if (data.cables && data.cables.length > 0) {
+                            const newCables: CableData[] = data.cables.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `Cabo ${idx + 1}`,
+                                status: c.status || 'DEPLOYED', // Use imported status or default
+                                fiberCount: c.type?.fiberCount || 1, // Fallback
+                                looseTubeCount: c.type?.looseTubeCount || 1,
+                                color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9', // Use catalog color
+                                colorStandard: 'ABNT',
+                                // Transform [[lng, lat]] -> [{lat, lng}]
+                                // VALIDATION: Ensure we only map valid points
+                                coordinates: (Array.isArray(c.coordinates) ? c.coordinates : [])
+                                    .filter((pt: any) => Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]))
+                                    .map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
+                                fromNodeId: null,
+                                toNodeId: null,
+                                catalogId: c.type?.id
+                            }));
+                            // DOUBLE CHECK: Remove cables with too few points
+                            updated.cables = [...(updated.cables || []), ...newCables.filter(c => c.coordinates.length >= 2)];
+                        }
+
+                        // 2. Process CTOs
+                        if (data.ctos && data.ctos.length > 0) {
+                            const newCTOs: CTOData[] = data.ctos.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `CTO ${idx + 1}`,
+                                status: c.status || 'DEPLOYED', // Use imported status
+                                type: 'CTO',
+                                coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                catalogId: c.type?.id,
+                                splitters: [],
+                                fusions: [],
+                                connections: [],
+                                inputCableIds: [],
+                                clientCount: 0
+                            }));
+                            updated.ctos = [...(updated.ctos || []), ...newCTOs];
+                        }
+
+                        // 3. Process CEOs (Boxes)
+                        if (data.ceos && data.ceos.length > 0) {
+                            const newCEOs: CTOData[] = data.ceos.map((c: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: c.originalName || `CEO ${idx + 1}`,
+                                status: c.status || 'DEPLOYED',
+                                type: 'CEO',
+                                coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                catalogId: c.type?.id,
+                                splitters: [],
+                                fusions: [],
+                                connections: [],
+                                inputCableIds: [],
+                                clientCount: 0
+                            }));
+                            updated.ctos = [...(updated.ctos || []), ...newCEOs];
+                        }
+
+                        // 4. Process Poles
+                        if (data.poles && data.poles.length > 0) {
+                            const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
+                                id: crypto.randomUUID(),
+                                name: p.originalName || `Poste ${idx + 1}`,
+                                status: p.status || 'PLANNED', // Poles default to PLANNED usually
+                                coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
+                                catalogId: p.type?.id,
+                                type: p.type?.name,
+                                height: p.type?.height
+                            }));
+                            updated.poles = [...(updated.poles || []), ...newPoles];
+                        }
+
+                        // SAVE TO BACKEND
+                        await projectService.syncProject(currentProjectId, updated);
+                        setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+                        showToast('Importação realizada com sucesso!', 'success');
+                        setIsAdvancedImportOpen(false);
+                        setPreviewImportData(null);
+                    } catch (error: any) {
+                        console.error("Import failed", error);
+
+                        // Limit Check Handler
+                        if (error.response && error.response.status === 403) {
+                            const errorMsg = error.response.data?.error || error.response.data?.details || 'Acesso negado';
+                            setUpgradeModalDetails(errorMsg);
+                            setShowUpgradeModal(true);
+                            // Do not show generic error toast if it's a limit issue
+                        } else {
+                            showToast('Erro ao importar.', 'error');
+                        }
+                    } finally {
+                        setIsLoadingProjects(false);
+                    }
+                }}
+            />
+
+
+            {/* Detail Panels (Mini-Editors/Actions) */}
+            {
+                selectedId && !editingCTO && toolMode === 'view' && getCurrentNetwork().ctos.find(c => c.id === selectedId) && (
+                    <CTODetailsPanel
+                        cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
+                        poles={getCurrentNetwork().poles || []}
+                        onRename={handleRenameCTO}
+                        onUpdateStatus={handleUpdateCTOStatus}
+                        onUpdate={(updates) => {
+                            updateCurrentNetwork(prev => ({
+                                ...prev,
+                                ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, ...updates } : c)
+                            }));
+                        }}
+                        onOpenSplicing={() => { setEditingCTO(getCurrentNetwork().ctos.find(c => c.id === selectedId)!); setSelectedId(null); }}
+                        onDelete={handleDeleteCTO}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
+
+            {
+                selectedId && !editingPOP && toolMode === 'view' && getCurrentNetwork().pops?.find(p => p.id === selectedId) && (
+                    <POPDetailsPanel
+                        pop={getCurrentNetwork().pops?.find(p => p.id === selectedId)!}
+                        poles={getCurrentNetwork().poles || []}
+                        onRename={handleRenamePOP}
+                        onUpdateStatus={handleUpdatePOPStatus}
+                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
+                        onDelete={handleDeletePOP}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
+
+            {
+                selectedId && toolMode === 'view' && getCurrentNetwork().poles?.find(p => p.id === selectedId) && (
+                    <PoleDetailsPanel
+                        pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
+                        cables={getCurrentNetwork().cables}
+                        onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
+                        onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
+                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onDelete={(id) => {
+                            updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.filter(p => p.id !== id) }));
+                            setSelectedId(null);
+                            showToast('Poste removido', 'success');
+                        }}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )
+            }
+
+            {
+                editingCable && (
+                    <CableEditor
+                        cable={editingCable}
+                        onClose={() => { setEditingCable(null); setHighlightedCableId(null); }} // Fix: Clear highlight on close
+                        onSave={handleSaveCable}
+                        onDelete={handleDeleteCable}
+                    />
+                )
+            }
+            {
+                showProjectManager && (
+                    <ProjectManager
+                        projects={projects}
+                        currentProjectId={currentProjectId!}
+                        onSelectProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
+                        onDeleteProject={(id) => setProjects(p => p.filter(x => x.id !== id))}
+                        onImportKMZ={handleImportKMZ}
+                        onClose={() => setShowProjectManager(false)}
+                    />
+                )
+            }
+
+            {/* --- UPGRADE MODAL --- */}
+            <AccountSettingsModal
+                isOpen={isAccountSettingsOpen}
+                onClose={() => setIsAccountSettingsOpen(false)}
+                onManagePlan={() => { setIsAccountSettingsOpen(false); setShowUpgradeModal(true); }}
+                userData={{
+                    username: user || 'Usuário',
+                    email: userEmail || undefined,
+                    plan: userPlan,
+                    planType: userPlanType,
+                    expiresAt: subscriptionExpiresAt,
+                    companyId: companyId || 'N/A'
+                }}
+                hasActiveSubscription={hasActiveSubscription}
+            />
+
+            <UpgradePlanModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                currentPlanName={userPlan}
+                limitDetails={upgradeModalDetails}
+                companyId={companyId || undefined}
+                email={userEmail || undefined}
+            />
+
+            <PoleSelectionModal
+                isOpen={isPoleModalOpen}
+                onClose={() => setIsPoleModalOpen(false)}
+                onSelect={(catalogItem) => {
+                    if (pendingPoleLocation) {
+                        const newPole: PoleData = {
+                            id: `pole-${Date.now()}`,
+                            name: catalogItem.name,
+                            status: 'PLANNED', // Default
+                            coordinates: pendingPoleLocation,
+                            catalogId: catalogItem.id,
+                            type: catalogItem.type,
+                            height: catalogItem.height
+                        };
+                        updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
+                        showToast(t('toast_pole_added'));
+                        setIsPoleModalOpen(false);
+                        setPendingPoleLocation(null);
+                        setToolMode('view');
+                    }
+                }}
+            />
+
+            {/* --- SYSTEM SETTINGS MODAL --- */}
+            {
+                showSettingsModal && (
+                    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
+                        <div
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="h-12 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                    <Settings className="w-4 h-4" /> {t('system_settings')}
+                                </h3>
+                                <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-white" /></button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                        <Ruler className="w-3 h-3" /> {t('snap_distance_lbl')}
+                                    </label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="200"
+                                            value={systemSettings.snapDistance}
+                                            onChange={(e) => {
+                                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                setSystemSettings(prev => ({ ...prev, snapDistance: val }));
+                                                setSettingsSaved(true);
+                                                if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
+                                                settingsTimeoutRef.current = setTimeout(() => setSettingsSaved(false), 2000);
+                                            }}
+                                            className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+                                        />
+                                        <span className="text-sm text-slate-500">{t('meters')}</span>
+                                        {settingsSaved && (
+                                            <span className="flex items-center gap-1 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-left-2">
+                                                <Check className="w-3 h-3" /> {t('saved')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        {t('snap_distance_help')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        performAutoSnap(systemSettings.snapDistance);
+                                        setShowSettingsModal(false);
+                                    }}
+                                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold transition"
+                                >
+                                    {t('done')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+
+            {/* Account Settings Modal */}
+            <AccountSettingsModal
+                isOpen={isAccountSettingsOpen}
+                onClose={() => setIsAccountSettingsOpen(false)}
+                onManagePlan={() => {
+                    setIsAccountSettingsOpen(false);
+                    setUpgradeModalDetails(undefined);
+                    setShowUpgradeModal(true);
+                }}
+                userData={{
+                    username: user!,
+                    email: userEmail || undefined,
+                    plan: userPlan,
+                    planType: userPlanType,
+                    expiresAt: subscriptionExpiresAt,
+                    companyId: companyId || 'UNKNOWN'
+                }}
+            />
+
+            {/* Upgrade Modal (Moved to bottom to ensure z-index over other modals) */}
+            <UpgradePlanModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                limitDetails={upgradeModalDetails}
+                companyId={companyId || undefined}
+                email={userEmail || undefined}
+                currentPlanName={userPlan}
+                currentPlanId={userPlanId || undefined}
+            />
+
+
+        </div >
     );
 }
-
-// Dummy Icon for Info Toast
-const BaseIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-);

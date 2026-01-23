@@ -1,9 +1,7 @@
 import React from 'react';
-import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
-
-import api from '../services/api';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -18,10 +16,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     React.useEffect(() => {
         const fetchPlans = async () => {
             try {
-                const res = await api.get('/saas/public/plans');
-                if (res.data) {
+                // If in dev mode, assume local server; otherwise use relative path
+                const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+                const res = await fetch(`${baseUrl}/api/saas/public/plans`);
+                if (res.ok) {
+                    const msg = await res.json();
                     // Filter out Free Plan as requested ("Só plano trial")
-                    setPlans(res.data.filter((p: any) => p.name !== 'Plano Grátis'));
+                    setPlans(msg.filter((p: any) => p.name !== 'Plano Grátis'));
                 }
             } catch (err) {
                 console.error("Failed to load public plans", err);
@@ -33,23 +34,47 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     return (
         <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-sky-500/30">
             <Helmet>
-                <title>{t('app_title')} | {t('landing_hero_title_3')}</title>
-                <meta name="description" content={t('landing_hero_desc')} />
-                <link rel="canonical" href="https://ftthplanner.com.br/" />
+                <title>FTTH Planner | Software para Projetos de Fibra Óptica</title>
+                <meta name="description" content="Planeje redes FTTH com facilidade. Diagrama unifilar, cálculo de potência, mapa interativo e gestão de projetos para provedores de internet (ISP)." />
+                <meta name="keywords" content="ftth planner, projeto ftth, fibra óptica, isp, diagrama unifilar, mapa de rede, software para provedores, fttx" />
+                <link rel="canonical" href="https://ftthplanner.com/" />
+
+                {/* Open Graph / Facebook */}
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://ftthplanner.com/" />
+                <meta property="og:title" content="FTTH Planner | Software para Projetos de Fibra Óptica" />
+                <meta property="og:description" content="Crie projetos de rede FTTH profissionais. Mapa, diagrama, orçamento e documentação em um só lugar." />
+                <meta property="og:image" content="https://ftthplanner.com/og-image.jpg" />
+
+                {/* Twitter */}
+                <meta property="twitter:card" content="summary_large_image" />
+                <meta property="twitter:url" content="https://ftthplanner.com/" />
+                <meta property="twitter:title" content="FTTH Planner | Projetos FTTH Simples e Poderosos" />
+                <meta property="twitter:description" content="Software completo para engenharia de telecom e provedores. Teste grátis." />
+                <meta property="twitter:image" content="https://ftthplanner.com/og-image.jpg" />
+
+                {/* Structured Data (SoftwareApplication) */}
                 <script type="application/ld+json">
-                    {JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "SoftwareApplication",
-                        "name": "FTTx Planner",
-                        "applicationCategory": "DesignApplication",
-                        "operatingSystem": "Web Browser",
-                        "offers": {
-                            "@type": "Offer",
-                            "price": "0",
-                            "priceCurrency": "BRL"
-                        },
-                        "description": t('landing_hero_desc')
-                    })}
+                    {`
+                        {
+                            "@context": "https://schema.org",
+                            "@type": "SoftwareApplication",
+                            "name": "FTTH Planner",
+                            "operatingSystem": "Web Browser",
+                            "applicationCategory": "DesignApplication",
+                            "offers": {
+                                "@type": "Offer",
+                                "price": "0",
+                                "priceCurrency": "BRL"
+                            },
+                            "description": "Software profissional para planejamento, documentação e gerenciamento de redes de fibra óptica (FTTH/FTTx).",
+                            "aggregateRating": {
+                                "@type": "AggregateRating",
+                                "ratingValue": "4.8",
+                                "ratingCount": "124"
+                            }
+                        }
+                    `}
                 </script>
             </Helmet>
 

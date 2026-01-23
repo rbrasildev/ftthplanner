@@ -629,7 +629,7 @@ const translations = {
     'landing_hero_title_1': 'A Plataforma Definitiva',
     'landing_hero_title_2': 'de Rede FTTx',
     'landing_hero_title_3': 'Gestão e Projetos',
-    'landing_hero_desc': 'O software definitivo para projeto de rede FTTH e diagrama unifilar. Documente fusões, cálculo de potência e gerencie sua rede de fibra óptica com mapas interativos.',
+    'landing_hero_desc': 'Projete, documente e gerencie sua rede de fibra com mapas interativos de alta performance. Feito para provedores que exigem precisão e escala.',
     'landing_start_trial': 'Teste Grátis',
     'landing_live_demo': 'Ver Demo',
     'landing_map_engine': 'Motor de Mapa',
@@ -637,7 +637,7 @@ const translations = {
 
     'landing_problem_title': 'Pare de Gerenciar Redes com',
     'landing_problem_highlight': 'Planilhas',
-    'landing_problem_desc': 'Métodos obsoletos geram erros no seu projeto óptico. Tenha controle total da topologia, documentação de caixas e viabilidade técnica em uma única plataforma.',
+    'landing_problem_desc': 'Métodos tradicionais como Google Earth + Excel são propensos a erros, não atualizam em tempo real e ficam incontroláveis quando a rede cresce. Você precisa de um sistema que entenda fibra óptica, perda de sinal e topologia.',
     'landing_problem_1': 'Sem visibilidade de portas livres',
     'landing_problem_2': 'Documentação manual sempre desatualizada',
     'landing_problem_3': 'Difícil rastrear perda de sinal e fusões',
