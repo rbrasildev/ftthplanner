@@ -1,5 +1,6 @@
 import React from 'react';
 import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { useLanguage } from '../LanguageContext';
 
 interface LandingPageProps {
@@ -32,6 +33,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
     return (
         <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-sky-500/30">
+            <Helmet>
+                <title>{t('app_title')} | {t('landing_hero_title_3')}</title>
+                <meta name="description" content={t('landing_hero_desc')} />
+                <link rel="canonical" href="https://ftthplanner.com.br/" />
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": "FTTx Planner",
+                        "applicationCategory": "DesignApplication",
+                        "operatingSystem": "Web Browser",
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "BRL"
+                        },
+                        "description": t('landing_hero_desc')
+                    })}
+                </script>
+            </Helmet>
 
             {/* --- NAVBAR --- */}
             <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 transition-all duration-300">
