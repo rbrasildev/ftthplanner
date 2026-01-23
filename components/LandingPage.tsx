@@ -3,6 +3,8 @@ import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, M
 import { Helmet } from 'react-helmet-async';
 import { useLanguage } from '../LanguageContext';
 
+import api from '../services/api';
+
 interface LandingPageProps {
     onLoginClick: () => void;
     onRegisterClick: (planName?: string) => void;
@@ -16,13 +18,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     React.useEffect(() => {
         const fetchPlans = async () => {
             try {
-                // If in dev mode, assume local server; otherwise use relative path
-                const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-                const res = await fetch(`${baseUrl}/api/saas/public/plans`);
-                if (res.ok) {
-                    const msg = await res.json();
+                const res = await api.get('/saas/public/plans');
+                if (res.data) {
                     // Filter out Free Plan as requested ("Só plano trial")
-                    setPlans(msg.filter((p: any) => p.name !== 'Plano Grátis'));
+                    setPlans(res.data.filter((p: any) => p.name !== 'Plano Grátis'));
                 }
             } catch (err) {
                 console.error("Failed to load public plans", err);

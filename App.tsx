@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider } from 'react-helmet-async'; // Removed since it's in index.tsx now, but import can stay or be removed. Removing it.
 
 // Lazy Load Heavy Components for Performance (LCP)
 const MapView = React.lazy(() => import('./components/MapView').then(module => ({ default: module.MapView })));
@@ -1658,658 +1658,656 @@ export default function App() {
     };
 
     return (
-        <HelmetProvider>
-            <div className={`h-screen w-screen relative overflow-hidden flex flex-col ${theme}`}>
-                {/* Auth Views */}
-                {!token && (
-                    <React.Suspense fallback={
-                        <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
-                            <div className="flex flex-col items-center gap-4">
-                                <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
-                                <p className="text-slate-500 font-medium">Carregando...</p>
-                            </div>
+        <div className={`h-screen w-screen relative overflow-hidden flex flex-col ${theme}`}>
+            {/* Auth Views */}
+            {!token && (
+                <React.Suspense fallback={
+                    <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
+                            <p className="text-slate-500 font-medium">Carregando...</p>
                         </div>
-                    }>
-                        {authView === 'landing' && (
-                            <LandingPage
-                                onLoginClick={() => setAuthView('login')}
-                                onRegisterClick={(planName) => {
-                                    if (planName) setSelectedRegisterPlan(planName);
-                                    setAuthView('register');
-                                }}
-                            />
-                        )}
-                        {authView === 'login' && (
-                            <LoginPage
-                                onLogin={handleLogin}
-                                onRegisterClick={() => setAuthView('register')}
-                                onBack={() => setAuthView('landing')}
-                                error={undefined}
-                                isLoading={false}
-                            />
-                        )}
-                        {authView === 'register' && (
-                            <RegisterPage
-                                onRegister={handleRegister}
-                                onLoginClick={() => setAuthView('login')}
-                                onBack={() => setAuthView('landing')}
-                                initialPlan={selectedRegisterPlan}
-                            />
-                        )}
-                    </React.Suspense>
-                )}
+                    </div>
+                }>
+                    {authView === 'landing' && (
+                        <LandingPage
+                            onLoginClick={() => setAuthView('login')}
+                            onRegisterClick={(planName) => {
+                                if (planName) setSelectedRegisterPlan(planName);
+                                setAuthView('register');
+                            }}
+                        />
+                    )}
+                    {authView === 'login' && (
+                        <LoginPage
+                            onLogin={handleLogin}
+                            onRegisterClick={() => setAuthView('register')}
+                            onBack={() => setAuthView('landing')}
+                            error={undefined}
+                            isLoading={false}
+                        />
+                    )}
+                    {authView === 'register' && (
+                        <RegisterPage
+                            onRegister={handleRegister}
+                            onLoginClick={() => setAuthView('login')}
+                            onBack={() => setAuthView('landing')}
+                            initialPlan={selectedRegisterPlan}
+                        />
+                    )}
+                </React.Suspense>
+            )}
 
-                {/* Main App (Protected) */}
-                {token && (
-                    <React.Suspense fallback={
-                        <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
-                            <div className="flex flex-col items-center gap-4">
-                                <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
-                                <p className="text-slate-500 font-medium">Carregando sistema...</p>
-                            </div>
+            {/* Main App (Protected) */}
+            {token && (
+                <React.Suspense fallback={
+                    <div className="flex items-center justify-center h-screen w-screen bg-slate-50 dark:bg-slate-900">
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin" />
+                            <p className="text-slate-500 font-medium">Carregando sistema...</p>
                         </div>
-                    }>
-                        {/* Header */}
-                        <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-40 shrink-0 shadow-sm relative">
-                            <div className="flex items-center gap-3">
-                                {isMobile && (
-                                    <button
-                                        onClick={() => setIsMobileMenuOpen(true)}
-                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                    >
-                                        <MapIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                                    </button>
+                    </div>
+                }>
+                    {/* Header */}
+                    <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-40 shrink-0 shadow-sm relative">
+                        <div className="flex items-center gap-3">
+                            {isMobile && (
+                                <button
+                                    onClick={() => setIsMobileMenuOpen(true)}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                >
+                                    <MapIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                </button>
+                            )}
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => {
+                                if (userRole === 'SUPER_ADMIN') {
+                                    window.location.reload();
+                                } else {
+                                    setCurrentProjectId(null);
+                                    setDashboardView('projects');
+                                }
+                            }}>
+                                <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg" />
+                                {!isSidebarCollapsed && (
+                                    <div className="hidden md:flex flex-col">
+                                        <h1 className="text-lg font-bold text-slate-800 dark:text-white leading-none tracking-tight">
+                                            {t('app_title')}
+                                        </h1>
+                                        <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider">Planner Pro</span>
+                                    </div>
                                 )}
-                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => {
-                                    if (userRole === 'SUPER_ADMIN') {
-                                        window.location.reload();
-                                    } else {
-                                        setCurrentProjectId(null);
-                                        setDashboardView('projects');
-                                    }
-                                }}>
-                                    <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-                                    {!isSidebarCollapsed && (
-                                        <div className="hidden md:flex flex-col">
-                                            <h1 className="text-lg font-bold text-slate-800 dark:text-white leading-none tracking-tight">
-                                                {t('app_title')}
-                                            </h1>
-                                            <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase tracking-wider">Planner Pro</span>
-                                        </div>
-                                    )}
-                                </div>
+                            </div>
+                        </div>
+
+                        {/* Search and User Controls */}
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <SearchBox
+                                onResultClick={handleSearchResultClick}
+                                searchResults={searchResults}
+                            // onSearch={handleMainSearch} // If needed
+                            />
+
+                            <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setLanguage('pt')}
+                                    className={`px-2 py-1 text-xs font-bold rounded ${language === 'pt' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                                >
+                                    PT
+                                </button>
+                                <button
+                                    onClick={() => setLanguage('en')}
+                                    className={`px-2 py-1 text-xs font-bold rounded ${language === 'en' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                                >
+                                    EN
+                                </button>
                             </div>
 
-                            {/* Search and User Controls */}
-                            <div className="flex items-center gap-2 md:gap-4">
-                                <SearchBox
-                                    onResultClick={handleSearchResultClick}
-                                    searchResults={searchResults}
-                                // onSearch={handleMainSearch} // If needed
-                                />
+                            <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300">
+                                {theme === 'dark' ? <Zap className="w-5 h-5 fill-yellow-400 text-yellow-400" /> : <Zap className="w-5 h-5" />}
+                            </button>
 
-                                <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                                    <button
-                                        onClick={() => setLanguage('pt')}
-                                        className={`px-2 py-1 text-xs font-bold rounded ${language === 'pt' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                    >
-                                        PT
-                                    </button>
-                                    <button
-                                        onClick={() => setLanguage('en')}
-                                        className={`px-2 py-1 text-xs font-bold rounded ${language === 'en' ? 'bg-white dark:bg-slate-700 shadow text-sky-600 dark:text-sky-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-                                    >
-                                        EN
-                                    </button>
-                                </div>
-
-                                <button onClick={toggleTheme} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-300">
-                                    {theme === 'dark' ? <Zap className="w-5 h-5 fill-yellow-400 text-yellow-400" /> : <Zap className="w-5 h-5" />}
+                            {/* User Menu */}
+                            <div className="relative group">
+                                <button className="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors">
+                                    <div className="w-8 h-8 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 rounded-full flex items-center justify-center font-bold border border-sky-200 dark:border-sky-800">
+                                        {user?.charAt(0).toUpperCase()}
+                                    </div>
                                 </button>
 
-                                {/* User Menu */}
-                                <div className="relative group">
-                                    <button className="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors">
-                                        <div className="w-8 h-8 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 rounded-full flex items-center justify-center font-bold border border-sky-200 dark:border-sky-800">
-                                            {user?.charAt(0).toUpperCase()}
+                                {/* Dropdown */}
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 hidden group-hover:block p-2 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                                        <p className="font-bold text-slate-900 dark:text-white truncate">{user}</p>
+                                        <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${userPlan === 'Plano GrÃ¡tis' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-100 text-indigo-700'}`}>
+                                                {userPlan}
+                                            </span>
                                         </div>
-                                    </button>
-
-                                    {/* Dropdown */}
-                                    <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 hidden group-hover:block p-2 animate-in fade-in zoom-in-95 duration-200">
-                                        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
-                                            <p className="font-bold text-slate-900 dark:text-white truncate">{user}</p>
-                                            <p className="text-xs text-slate-500 truncate">{userEmail}</p>
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${userPlan === 'Plano GrÃ¡tis' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-100 text-indigo-700'}`}>
-                                                    {userPlan}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <button onClick={() => setIsAccountSettingsOpen(true)} className="w-full text-left px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2">
-                                            <Settings className="w-4 h-4" /> Conta
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setToken(null);
-                                                setUser(null);
-                                                window.location.reload();
-                                            }}
-                                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2"
-                                        >
-                                            <Unplug className="w-4 h-4" /> Sair
-                                        </button>
                                     </div>
+
+                                    <button onClick={() => setIsAccountSettingsOpen(true)} className="w-full text-left px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2">
+                                        <Settings className="w-4 h-4" /> Conta
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setToken(null);
+                                            setUser(null);
+                                            window.location.reload();
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2"
+                                    >
+                                        <Unplug className="w-4 h-4" /> Sair
+                                    </button>
                                 </div>
                             </div>
-                        </header>
+                        </div>
+                    </header>
 
-                        {/* Content Area */}
-                        {userRole === 'SUPER_ADMIN' ? (
-                            <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />
-                        ) : (
-                            <div className="flex-1 flex overflow-hidden relative">
-                                <Sidebar
-                                    isCollapsed={isSidebarCollapsed}
-                                    onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                    activeView={dashboardView}
-                                    onViewChange={setDashboardView}
-                                    currentProjectId={currentProjectId}
-                                    onProjectSelect={setCurrentProjectId}
-                                    projects={projects}
-                                    onCreateProject={() => setShowProjectManager(true)}
-                                    userPlan={userPlan}
-                                    userRole={userRole}
-                                    onUpgradeClick={() => setShowUpgradeModal(true)}
-                                    isMobileOpen={isMobileMenuOpen}
-                                    onCloseMobile={() => setIsMobileMenuOpen(false)}
-                                    // Missing props but essential
-                                    vflSource={vflSource}
-                                    setVflSource={setVflSource}
-                                    searchResults={searchResults}
-                                    onSearch={(term) => setDebouncedSearchTerm(term)}
-                                    onResultClick={handleSearchResultClick}
-                                    onLogout={() => { setUser(null); setToken(null); }}
-                                    setShowProjectManager={setShowProjectManager}
-                                    onImportClick={() => setIsAdvancedImportOpen(true)}
-                                    currentDashboardView={dashboardView}
-                                    onDashboardViewChange={setDashboardView}
-                                    isHydrated={isHydrated}
-                                />
+                    {/* Content Area */}
+                    {userRole === 'SUPER_ADMIN' ? (
+                        <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />
+                    ) : (
+                        <div className="flex-1 flex overflow-hidden relative">
+                            <Sidebar
+                                isCollapsed={isSidebarCollapsed}
+                                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                                activeView={dashboardView}
+                                onViewChange={setDashboardView}
+                                currentProjectId={currentProjectId}
+                                onProjectSelect={setCurrentProjectId}
+                                projects={projects}
+                                onCreateProject={() => setShowProjectManager(true)}
+                                userPlan={userPlan}
+                                userRole={userRole}
+                                onUpgradeClick={() => setShowUpgradeModal(true)}
+                                isMobileOpen={isMobileMenuOpen}
+                                onCloseMobile={() => setIsMobileMenuOpen(false)}
+                                // Missing props but essential
+                                vflSource={vflSource}
+                                setVflSource={setVflSource}
+                                searchResults={searchResults}
+                                onSearch={(term) => setDebouncedSearchTerm(term)}
+                                onResultClick={handleSearchResultClick}
+                                onLogout={() => { setUser(null); setToken(null); }}
+                                setShowProjectManager={setShowProjectManager}
+                                onImportClick={() => setIsAdvancedImportOpen(true)}
+                                currentDashboardView={dashboardView}
+                                onDashboardViewChange={setDashboardView}
+                                isHydrated={isHydrated}
+                            />
 
-                                <main className="flex-1 relative flex flex-col overflow-hidden bg-slate-50 dark:bg-black transition-all duration-300">
-                                    {dashboardView === 'map' && currentProjectId ? (
-                                        <>
-                                            <MapToolbar
-                                                toolMode={toolMode}
-                                                setToolMode={setToolMode}
-                                                onUndo={() => { }}
-                                                onRedo={() => { }}
-                                                canUndo={false}
-                                                canRedo={false}
-                                                currentProjectId={currentProjectId}
-                                                activeMenuId={activeMenuId}
-                                                setActiveMenuId={setActiveMenuId}
-                                                onImportKml={() => setIsKmlImportOpen(true)}
-                                                onConnectClick={() => {
-                                                    previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
-                                                    setToolMode('connect_cable');
-                                                    setSelectedId(null);
+                            <main className="flex-1 relative flex flex-col overflow-hidden bg-slate-50 dark:bg-black transition-all duration-300">
+                                {dashboardView === 'map' && currentProjectId ? (
+                                    <>
+                                        <MapToolbar
+                                            toolMode={toolMode}
+                                            setToolMode={setToolMode}
+                                            onUndo={() => { }}
+                                            onRedo={() => { }}
+                                            canUndo={false}
+                                            canRedo={false}
+                                            currentProjectId={currentProjectId}
+                                            activeMenuId={activeMenuId}
+                                            setActiveMenuId={setActiveMenuId}
+                                            onImportKml={() => setIsKmlImportOpen(true)}
+                                            onConnectClick={() => {
+                                                previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
+                                                setToolMode('connect_cable');
+                                                setSelectedId(null);
+                                            }}
+                                        />
+
+                                        <div className="flex-1 relative">
+                                            <MapView
+                                                ctos={getCurrentNetwork().ctos}
+                                                pops={getCurrentNetwork().pops || []}
+                                                poles={getCurrentNetwork().poles || []}
+                                                cables={getCurrentNetwork().cables}
+                                                mode={toolMode}
+                                                selectedId={selectedId}
+                                                mapBounds={mapBounds}
+                                                showLabels={showLabels}
+                                                litCableIds={litNetwork.litCables}
+                                                highlightedCableId={highlightedCableId}
+                                                drawingPath={drawingPath}
+                                                snapDistance={systemSettings.snapDistance}
+
+                                                viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
+                                                initialCenter={savedMapState?.center || currentProject?.mapState?.center}
+                                                initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
+                                                onMapMoveEnd={handleMapMoveEnd}
+                                                onToggleLabels={() => setShowLabels(!showLabels)}
+
+                                                onAddPoint={handleAddPoint}
+                                                onNodeClick={(id, type) => {
+                                                    setSelectedId(id);
+                                                    if (type === 'CTO') {
+                                                        const cto = getCurrentNetwork().ctos.find(c => c.id === id);
+                                                        if (cto) setEditingCTO(cto);
+                                                    } else if (type === 'POP') {
+                                                        const pop = getCurrentNetwork().pops.find(p => p.id === id);
+                                                        if (pop) setEditingPOP(pop);
+                                                    }
                                                 }}
+                                                onMoveNode={(id, lat, lng) => {
+                                                    // Simplified move handler
+                                                    updateCurrentNetwork(prev => {
+                                                        return {
+                                                            ...prev,
+                                                            ctos: prev.ctos.map(c => c.id === id ? { ...c, coordinates: { lat, lng } } : c),
+                                                            pops: prev.pops.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p),
+                                                            poles: prev.poles?.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p)
+                                                        };
+                                                    });
+                                                }}
+                                                onEditNode={(id, type) => {
+                                                    setSelectedId(id); // Select triggers editor via Effect or direct check
+                                                }}
+                                                onDeleteNode={(id) => {
+                                                    // Implement delete logic or stub
+                                                    updateCurrentNetwork(prev => ({
+                                                        ...prev,
+                                                        ctos: prev.ctos.filter(c => c.id !== id),
+                                                        pops: prev.pops.filter(p => p.id !== id),
+                                                        poles: prev.poles?.filter(p => p.id !== id),
+                                                        cables: prev.cables.filter(c => c.fromNodeId !== id && c.toNodeId !== id)
+                                                    }));
+                                                }}
+                                                onCableStart={() => { }} // Stub
+                                                onCableEnd={() => { }}   // Stub
+                                                onConnectCable={(cableId, targetId) => {
+                                                    // Logic moved to internal MapView or separate handler?
+                                                    // Implementing stub to fix TS error
+                                                    handleSelectNextNode(cableId);
+                                                }}
+                                                onUpdateCableGeometry={(id, coords) => {
+                                                    updateCurrentNetwork(prev => ({
+                                                        ...prev,
+                                                        cables: prev.cables.map(c => c.id === id ? { ...c, coordinates: coords } : c)
+                                                    }));
+                                                }}
+                                                multiConnectionIds={multiConnectionIds}
+
+                                                previewImportData={previewImportData}
+                                                onCableClick={(id) => {
+                                                    setSelectedId(id);
+                                                    setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
+                                                }}
+                                                onEditCableGeometry={(id) => {
+                                                    setSelectedId(id);
+                                                    setToolMode('edit_cable');
+                                                }}
+                                                onEditCable={(id) => {
+                                                    setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
+                                                }}
+                                                onDeleteCable={(id) => {
+                                                    updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) }));
+                                                }}
+                                                onInitConnection={(id) => {
+                                                    setPendingConnectionCableId(id);
+                                                    setToolMode('connect_cable');
+                                                }}
+                                                otdrResult={otdrResult}
+                                                pinnedLocation={pinnedLocation}
+                                                onConvertPin={() => { }} // Stub
+                                                onClearPin={() => setPinnedLocation(null)}
                                             />
 
-                                            <div className="flex-1 relative">
-                                                <MapView
-                                                    ctos={getCurrentNetwork().ctos}
-                                                    pops={getCurrentNetwork().pops || []}
-                                                    poles={getCurrentNetwork().poles || []}
-                                                    cables={getCurrentNetwork().cables}
-                                                    mode={toolMode}
-                                                    selectedId={selectedId}
-                                                    mapBounds={mapBounds}
-                                                    showLabels={showLabels}
-                                                    litCableIds={litNetwork.litCables}
-                                                    highlightedCableId={highlightedCableId}
-                                                    drawingPath={drawingPath}
-                                                    snapDistance={systemSettings.snapDistance}
+                                            {/* Floating Panels */}
+                                            {editingCTO && (
+                                                <div className="absolute top-4 right-4 z-[1000] w-96 max-h-[calc(100vh-8rem)]">
+                                                    <CTOEditor
+                                                        cto={editingCTO}
+                                                        projectName={currentProject?.name || ''}
+                                                        incomingCables={getCurrentNetwork().cables.filter(c =>
+                                                            c.fromNodeId === editingCTO.id ||
+                                                            c.toNodeId === editingCTO.id ||
+                                                            editingCTO.inputCableIds?.includes(c.id)
+                                                        )}
+                                                        litPorts={litNetwork.litPorts}
+                                                        vflSource={vflSource}
+                                                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                                                        onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
+                                                        onSave={(updated) => {
+                                                            updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updated.id ? updated : c) }));
+                                                            setEditingCTO(updated);
+                                                        }}
+                                                        onEditCable={setEditingCable}
+                                                        onHoverCable={(id) => setHighlightedCableId(id)}
+                                                        onDisconnectCable={() => { }} // Stub
+                                                        onSelectNextNode={handleSelectNextNode}
+                                                        onOtdrTrace={() => { }} // Stub
 
-                                                    viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
-                                                    initialCenter={savedMapState?.center || currentProject?.mapState?.center}
-                                                    initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
-                                                    onMapMoveEnd={handleMapMoveEnd}
-                                                    onToggleLabels={() => setShowLabels(!showLabels)}
-
-                                                    onAddPoint={handleAddPoint}
-                                                    onNodeClick={(id, type) => {
-                                                        setSelectedId(id);
-                                                        if (type === 'CTO') {
-                                                            const cto = getCurrentNetwork().ctos.find(c => c.id === id);
-                                                            if (cto) setEditingCTO(cto);
-                                                        } else if (type === 'POP') {
-                                                            const pop = getCurrentNetwork().pops.find(p => p.id === id);
-                                                            if (pop) setEditingPOP(pop);
-                                                        }
-                                                    }}
-                                                    onMoveNode={(id, lat, lng) => {
-                                                        // Simplified move handler
-                                                        updateCurrentNetwork(prev => {
-                                                            return {
-                                                                ...prev,
-                                                                ctos: prev.ctos.map(c => c.id === id ? { ...c, coordinates: { lat, lng } } : c),
-                                                                pops: prev.pops.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p),
-                                                                poles: prev.poles?.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p)
-                                                            };
-                                                        });
-                                                    }}
-                                                    onEditNode={(id, type) => {
-                                                        setSelectedId(id); // Select triggers editor via Effect or direct check
-                                                    }}
-                                                    onDeleteNode={(id) => {
-                                                        // Implement delete logic or stub
-                                                        updateCurrentNetwork(prev => ({
-                                                            ...prev,
-                                                            ctos: prev.ctos.filter(c => c.id !== id),
-                                                            pops: prev.pops.filter(p => p.id !== id),
-                                                            poles: prev.poles?.filter(p => p.id !== id),
-                                                            cables: prev.cables.filter(c => c.fromNodeId !== id && c.toNodeId !== id)
-                                                        }));
-                                                    }}
-                                                    onCableStart={() => { }} // Stub
-                                                    onCableEnd={() => { }}   // Stub
-                                                    onConnectCable={(cableId, targetId) => {
-                                                        // Logic moved to internal MapView or separate handler?
-                                                        // Implementing stub to fix TS error
-                                                        handleSelectNextNode(cableId);
-                                                    }}
-                                                    onUpdateCableGeometry={(id, coords) => {
-                                                        updateCurrentNetwork(prev => ({
-                                                            ...prev,
-                                                            cables: prev.cables.map(c => c.id === id ? { ...c, coordinates: coords } : c)
-                                                        }));
-                                                    }}
-                                                    multiConnectionIds={multiConnectionIds}
-
-                                                    previewImportData={previewImportData}
-                                                    onCableClick={(id) => {
-                                                        setSelectedId(id);
-                                                        setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
-                                                    }}
-                                                    onEditCableGeometry={(id) => {
-                                                        setSelectedId(id);
-                                                        setToolMode('edit_cable');
-                                                    }}
-                                                    onEditCable={(id) => {
-                                                        setEditingCable(getCurrentNetwork().cables.find(c => c.id === id) || null);
-                                                    }}
-                                                    onDeleteCable={(id) => {
-                                                        updateCurrentNetwork(prev => ({ ...prev, cables: prev.cables.filter(c => c.id !== id) }));
-                                                    }}
-                                                    onInitConnection={(id) => {
-                                                        setPendingConnectionCableId(id);
-                                                        setToolMode('connect_cable');
-                                                    }}
-                                                    otdrResult={otdrResult}
-                                                    pinnedLocation={pinnedLocation}
-                                                    onConvertPin={() => { }} // Stub
-                                                    onClearPin={() => setPinnedLocation(null)}
-                                                />
-
-                                                {/* Floating Panels */}
-                                                {editingCTO && (
-                                                    <div className="absolute top-4 right-4 z-[1000] w-96 max-h-[calc(100vh-8rem)]">
-                                                        <CTOEditor
-                                                            cto={editingCTO}
-                                                            projectName={currentProject?.name || ''}
-                                                            incomingCables={getCurrentNetwork().cables.filter(c =>
-                                                                c.fromNodeId === editingCTO.id ||
-                                                                c.toNodeId === editingCTO.id ||
-                                                                editingCTO.inputCableIds?.includes(c.id)
-                                                            )}
-                                                            litPorts={litNetwork.litPorts}
-                                                            vflSource={vflSource}
-                                                            onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                                                            onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
-                                                            onSave={(updated) => {
-                                                                updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updated.id ? updated : c) }));
-                                                                setEditingCTO(updated);
-                                                            }}
-                                                            onEditCable={setEditingCable}
-                                                            onHoverCable={(id) => setHighlightedCableId(id)}
-                                                            onDisconnectCable={() => { }} // Stub
-                                                            onSelectNextNode={handleSelectNextNode}
-                                                            onOtdrTrace={() => { }} // Stub
-
-                                                            // Auth / Protection Props
-                                                            userPlan={userPlan}
-                                                            subscriptionExpiresAt={subscriptionExpiresAt}
-                                                            onShowUpgrade={() => setShowUpgradeModal(true)}
-                                                            network={getCurrentNetwork()}
-                                                        />
-                                                    </div>
-                                                )}
-                                                {
-                                                    editingPOP && (
-                                                        <POPEditor
-                                                            pop={editingPOP}
-                                                            incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
-                                                            litPorts={litNetwork.litPorts}
-                                                            vflSource={vflSource}
-                                                            onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                                                            onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
-                                                            onSave={(updated) => {
-                                                                updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === updated.id ? updated : p) }));
-                                                                setEditingPOP(updated);
-                                                            }}
-                                                            onHoverCable={(id) => setHighlightedCableId(id)}
-                                                            onEditCable={setEditingCable}
-                                                            onOtdrTrace={() => { }} // Stub
-                                                        />
-                                                    )
-                                                }
-
-                                                {/* Save/Cancel Toolbar for Cable Edit */}
-                                                {
-                                                    toolMode === 'edit_cable' && (
-                                                        <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
-                                                            <div className="flex items-center gap-3 px-3">
-                                                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                                                    {t('editing_cable')}
-                                                                </span>
-                                                                <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setToolMode('view');
-                                                                        setHighlightedCableId(null);
-                                                                        setSelectedId(null);
-                                                                        previousNetworkState.current = null;
-                                                                        showToast(t('changes_saved'), 'success');
-                                                                    }}
-                                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
-                                                                >
-                                                                    {t('save_changes')}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        // CANCEL (Revert changes)
-                                                                        if (previousNetworkState.current) {
-                                                                            const backup = previousNetworkState.current; // Capture ref value
-                                                                            updateCurrentNetwork(() => backup); // Return backup as new state
-                                                                            previousNetworkState.current = null;
-                                                                            setEditingCTO(null);
-                                                                            setEditingPOP(null);
-                                                                        }
-                                                                        setToolMode('view');
-                                                                        setMultiConnectionIds(new Set());
-                                                                        setSelectedId(null);
-                                                                        setHighlightedCableId(null);
-                                                                        showToast(t('connection_cancelled') || "ConexÃ£o Cancelada", 'info');
-                                                                    }}
-                                                                    className="text-slate-500 hover:text-red-500 transition-colors p-1"
-                                                                >
-                                                                    <X className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                }
-
-                                                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
-                                                    {toolMode === 'view' && t('tooltip_view')}
-                                                    {toolMode === 'move_node' && t('tooltip_move')}
-                                                    {toolMode === 'add_cto' && t('tooltip_add_cto')}
-                                                    {toolMode === 'add_pop' && t('tooltip_add_pop')}
-                                                    {toolMode === 'add_pole' && t('tooltip_add_pole')}
-                                                    {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
-                                                    {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
+                                                        // Auth / Protection Props
+                                                        userPlan={userPlan}
+                                                        subscriptionExpiresAt={subscriptionExpiresAt}
+                                                        onShowUpgrade={() => setShowUpgradeModal(true)}
+                                                        network={getCurrentNetwork()}
+                                                    />
                                                 </div>
+                                            )}
+                                            {
+                                                editingPOP && (
+                                                    <POPEditor
+                                                        pop={editingPOP}
+                                                        incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
+                                                        litPorts={litNetwork.litPorts}
+                                                        vflSource={vflSource}
+                                                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
+                                                        onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
+                                                        onSave={(updated) => {
+                                                            updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === updated.id ? updated : p) }));
+                                                            setEditingPOP(updated);
+                                                        }}
+                                                        onHoverCable={(id) => setHighlightedCableId(id)}
+                                                        onEditCable={setEditingCable}
+                                                        onOtdrTrace={() => { }} // Stub
+                                                    />
+                                                )
+                                            }
 
-                                                {
-                                                    toolMode === 'draw_cable' && drawingPath.length > 0 && (
-                                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                                            {/* Save/Cancel Toolbar for Cable Edit */}
+                                            {
+                                                toolMode === 'edit_cable' && (
+                                                    <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 flex gap-2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+                                                        <div className="flex items-center gap-3 px-3">
+                                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                                                {t('editing_cable')}
+                                                            </span>
+                                                            <div className="h-4 w-[1px] bg-slate-300 dark:bg-slate-600"></div>
                                                             <button
-                                                                onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
-                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                                                                onClick={() => {
+                                                                    setToolMode('view');
+                                                                    setHighlightedCableId(null);
+                                                                    setSelectedId(null);
+                                                                    previousNetworkState.current = null;
+                                                                    showToast(t('changes_saved'), 'success');
+                                                                }}
+                                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-lg shadow-emerald-900/20"
                                                             >
-                                                                <CheckCircle2 className="w-5 h-5" />
-                                                                {t('finish_cable')}
+                                                                {t('save_changes')}
                                                             </button>
                                                             <button
-                                                                onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
-                                                                className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                                onClick={() => {
+                                                                    // CANCEL (Revert changes)
+                                                                    if (previousNetworkState.current) {
+                                                                        const backup = previousNetworkState.current; // Capture ref value
+                                                                        updateCurrentNetwork(() => backup); // Return backup as new state
+                                                                        previousNetworkState.current = null;
+                                                                        setEditingCTO(null);
+                                                                        setEditingPOP(null);
+                                                                    }
+                                                                    setToolMode('view');
+                                                                    setMultiConnectionIds(new Set());
+                                                                    setSelectedId(null);
+                                                                    setHighlightedCableId(null);
+                                                                    showToast(t('connection_cancelled') || "ConexÃ£o Cancelada", 'info');
+                                                                }}
+                                                                className="text-slate-500 hover:text-red-500 transition-colors p-1"
                                                             >
-                                                                <X className="w-5 h-5" />
-                                                                {t('cancel')}
+                                                                <X className="w-4 h-4" />
                                                             </button>
                                                         </div>
-                                                    )
-                                                }
+                                                    </div>
+                                                )
+                                            }
+
+                                            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
+                                                {toolMode === 'view' && t('tooltip_view')}
+                                                {toolMode === 'move_node' && t('tooltip_move')}
+                                                {toolMode === 'add_cto' && t('tooltip_add_cto')}
+                                                {toolMode === 'add_pop' && t('tooltip_add_pop')}
+                                                {toolMode === 'add_pole' && t('tooltip_add_pole')}
+                                                {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
+                                                {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
                                             </div>
-                                        </>
-                                    ) : (
-                                        <DashboardPage
-                                            username={user!}
-                                            userRole={userRole || 'MEMBER'}
-                                            userPlan={userPlan}
-                                            userPlanType={userPlanId}
-                                            subscriptionExpiresAt={subscriptionExpiresAt}
-                                            cancelAtPeriodEnd={cancelAtPeriodEnd}
-                                            projects={projects}
-                                            currentView={dashboardView}
-                                            onViewChange={setDashboardView}
-                                            onOpenProject={(id) => {
-                                                if (companyStatus === 'SUSPENDED') {
-                                                    setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para acessar os projetos.");
+
+                                            {
+                                                toolMode === 'draw_cable' && drawingPath.length > 0 && (
+                                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                                                        <button
+                                                            onClick={() => finalizeCableCreation(drawingPath, drawingFromId)}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                                                        >
+                                                            <CheckCircle2 className="w-5 h-5" />
+                                                            {t('finish_cable')}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                                                            className="bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                        >
+                                                            <X className="w-5 h-5" />
+                                                            {t('cancel')}
+                                                        </button>
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+                                    </>
+                                ) : (
+                                    <DashboardPage
+                                        username={user!}
+                                        userRole={userRole || 'MEMBER'}
+                                        userPlan={userPlan}
+                                        userPlanType={userPlanId}
+                                        subscriptionExpiresAt={subscriptionExpiresAt}
+                                        cancelAtPeriodEnd={cancelAtPeriodEnd}
+                                        projects={projects}
+                                        currentView={dashboardView}
+                                        onViewChange={setDashboardView}
+                                        onOpenProject={(id) => {
+                                            if (companyStatus === 'SUSPENDED') {
+                                                setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para acessar os projetos.");
+                                                setShowUpgradeModal(true);
+                                                return;
+                                            }
+                                            setCurrentProjectId(id);
+                                            setShowProjectManager(false);
+                                        }}
+                                        onCreateProject={async (name, center) => {
+                                            if (companyStatus === 'SUSPENDED') {
+                                                setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para criar novos projetos.");
+                                                setShowUpgradeModal(true);
+                                                return;
+                                            }
+                                            if (!token) return;
+                                            try {
+                                                const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
+                                                setProjects(prev => [newProject, ...prev]);
+                                                setCurrentProjectId(newProject.id);
+                                                showToast(t('toast_project_created'), 'success');
+                                            } catch (e: any) {
+                                                if (e.response && e.response.status === 403) {
+                                                    setUpgradeModalDetails(e.response.data?.details || "VocÃª atingiu o limite de projetos do seu plano.");
                                                     setShowUpgradeModal(true);
-                                                    return;
+                                                } else {
+                                                    showToast('Failed to create project', 'info');
                                                 }
-                                                setCurrentProjectId(id);
-                                                setShowProjectManager(false);
-                                            }}
-                                            onCreateProject={async (name, center) => {
-                                                if (companyStatus === 'SUSPENDED') {
-                                                    setUpgradeModalDetails("Sua conta estÃ¡ suspensa. Renove sua assinatura para criar novos projetos.");
-                                                    setShowUpgradeModal(true);
-                                                    return;
-                                                }
-                                                if (!token) return;
-                                                try {
-                                                    const newProject = await projectService.createProject(name, center || { lat: -23.5505, lng: -46.6333 });
-                                                    setProjects(prev => [newProject, ...prev]);
-                                                    setCurrentProjectId(newProject.id);
-                                                    showToast(t('toast_project_created'), 'success');
-                                                } catch (e: any) {
-                                                    if (e.response && e.response.status === 403) {
-                                                        setUpgradeModalDetails(e.response.data?.details || "VocÃª atingiu o limite de projetos do seu plano.");
-                                                        setShowUpgradeModal(true);
-                                                    } else {
-                                                        showToast('Failed to create project', 'info');
-                                                    }
-                                                }
-                                            }}
-                                            onDeleteProject={async (id) => {
-                                                try {
-                                                    await projectService.deleteProject(id);
-                                                    setProjects(prev => prev.filter(p => p.id !== id));
-                                                    showToast(t('toast_project_deleted'));
-                                                } catch (e) {
-                                                    showToast(t('error_project_delete'), 'info');
-                                                }
-                                            }}
-                                            onUpdateProject={async (id, name, center) => {
-                                                try {
-                                                    const updated = await projectService.updateProject(id, name, center);
-                                                    setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
-                                                    showToast(t('project_updated'), 'success');
-                                                } catch (e) {
-                                                    showToast(t('error_project_update'), 'info');
-                                                }
-                                            }}
-                                            isLoading={isLoadingProjects}
-                                            onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
-                                            onUpgradeClick={() => setIsAccountSettingsOpen(true)}
-                                        />
-                                    )}
-                                </main>
-                            </div>
-                        )}
+                                            }
+                                        }}
+                                        onDeleteProject={async (id) => {
+                                            try {
+                                                await projectService.deleteProject(id);
+                                                setProjects(prev => prev.filter(p => p.id !== id));
+                                                showToast(t('toast_project_deleted'));
+                                            } catch (e) {
+                                                showToast(t('error_project_delete'), 'info');
+                                            }
+                                        }}
+                                        onUpdateProject={async (id, name, center) => {
+                                            try {
+                                                const updated = await projectService.updateProject(id, name, center);
+                                                setProjects(prev => prev.map(p => p.id === id ? { ...p, name: updated.name, mapState: updated.mapState, updatedAt: updated.updatedAt } : p));
+                                                showToast(t('project_updated'), 'success');
+                                            } catch (e) {
+                                                showToast(t('error_project_update'), 'info');
+                                            }
+                                        }}
+                                        isLoading={isLoadingProjects}
+                                        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                                        onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                                    />
+                                )}
+                            </main>
+                        </div>
+                    )}
 
-                        {/* Modals outside main layout */}
-                        {showProjectManager && (
-                            <ProjectManager
-                                isOpen={showProjectManager}
-                                onClose={() => setShowProjectManager(false)}
-                                onProjectCreated={(p) => {
-                                    setProjects(prev => [p, ...prev]);
-                                    setCurrentProjectId(p.id);
-                                    setShowProjectManager(false);
-                                    setDashboardView('map');
-                                    showToast('Projeto criado com sucesso!');
-                                }}
-                                onProjectStartImport={handleImportKMZ}
-                            />
-                        )}
-
-                        {showUpgradeModal && (
-                            <UpgradePlanModal
-                                isOpen={showUpgradeModal}
-                                onClose={() => {
-                                    setShowUpgradeModal(false);
-                                    setUpgradeModalDetails(undefined);
-                                }}
-                                currentPlanId={userPlanId || ''}
-                                errorDetails={upgradeModalDetails}
-                            />
-                        )}
-
-                        <AccountSettingsModal
-                            isOpen={isAccountSettingsOpen}
-                            onClose={() => setIsAccountSettingsOpen(false)}
-                        />
-
-                        {/* Legacy KML Import Modal */}
-                        <KmlImportModal
-                            isOpen={isKmlImportOpen}
-                            onClose={() => setIsKmlImportOpen(false)}
-                            onImport={async (coordinates, poleTypeId) => {
-                                handleImportPoles(coordinates, poleTypeId);
+                    {/* Modals outside main layout */}
+                    {showProjectManager && (
+                        <ProjectManager
+                            isOpen={showProjectManager}
+                            onClose={() => setShowProjectManager(false)}
+                            onProjectCreated={(p) => {
+                                setProjects(prev => [p, ...prev]);
+                                setCurrentProjectId(p.id);
+                                setShowProjectManager(false);
+                                setDashboardView('map');
+                                showToast('Projeto criado com sucesso!');
                             }}
+                            onProjectStartImport={handleImportKMZ}
                         />
+                    )}
 
-                        {/* Advanced Import Modal */}
-                        <AdvancedImportModal
-                            isOpen={isAdvancedImportOpen}
+                    {showUpgradeModal && (
+                        <UpgradePlanModal
+                            isOpen={showUpgradeModal}
                             onClose={() => {
+                                setShowUpgradeModal(false);
+                                setUpgradeModalDetails(undefined);
+                            }}
+                            currentPlanId={userPlanId || ''}
+                            errorDetails={upgradeModalDetails}
+                        />
+                    )}
+
+                    <AccountSettingsModal
+                        isOpen={isAccountSettingsOpen}
+                        onClose={() => setIsAccountSettingsOpen(false)}
+                    />
+
+                    {/* Legacy KML Import Modal */}
+                    <KmlImportModal
+                        isOpen={isKmlImportOpen}
+                        onClose={() => setIsKmlImportOpen(false)}
+                        onImport={async (coordinates, poleTypeId) => {
+                            handleImportPoles(coordinates, poleTypeId);
+                        }}
+                    />
+
+                    {/* Advanced Import Modal */}
+                    <AdvancedImportModal
+                        isOpen={isAdvancedImportOpen}
+                        onClose={() => {
+                            setIsAdvancedImportOpen(false);
+                            setPreviewImportData(null);
+                        }}
+                        onPreview={(data) => setPreviewImportData(data)}
+                        onImport={async (data) => {
+                            if (!currentProjectId) return;
+                            if (!data) return;
+                            setIsLoadingProjects(true);
+                            try {
+                                const updated = { ...getCurrentNetwork() };
+                                if (data.cables && data.cables.length > 0) {
+                                    const newCables: CableData[] = data.cables.map((c: any, idx: number) => ({
+                                        id: crypto.randomUUID(),
+                                        name: c.originalName || `Cabo ${idx + 1}`,
+                                        status: c.status || 'DEPLOYED',
+                                        fiberCount: c.type?.fiberCount || 1,
+                                        looseTubeCount: c.type?.looseTubeCount || 1,
+                                        color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9',
+                                        colorStandard: 'ABNT',
+                                        coordinates: (Array.isArray(c.coordinates) ? c.coordinates : [])
+                                            .filter((pt: any) => Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]))
+                                            .map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
+                                        fromNodeId: null,
+                                        toNodeId: null,
+                                        catalogId: c.type?.id
+                                    }));
+                                    updated.cables = [...(updated.cables || []), ...newCables.filter(c => c.coordinates.length >= 2)];
+                                }
+                                if (data.ctos && data.ctos.length > 0) {
+                                    const newCTOs: CTOData[] = data.ctos.map((c: any, idx: number) => ({
+                                        id: crypto.randomUUID(),
+                                        name: c.originalName || `CTO ${idx + 1}`,
+                                        status: c.status || 'DEPLOYED',
+                                        type: 'CTO',
+                                        coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                        catalogId: c.type?.id,
+                                        splitters: [],
+                                        fusions: [],
+                                        connections: [],
+                                        inputCableIds: [],
+                                        clientCount: 0
+                                    }));
+                                    updated.ctos = [...(updated.ctos || []), ...newCTOs];
+                                }
+                                if (data.ceos && data.ceos.length > 0) {
+                                    const newCEOs: CTOData[] = data.ceos.map((c: any, idx: number) => ({
+                                        id: crypto.randomUUID(),
+                                        name: c.originalName || `CEO ${idx + 1}`,
+                                        status: c.status || 'DEPLOYED',
+                                        type: 'CEO',
+                                        coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
+                                        catalogId: c.type?.id,
+                                        splitters: [],
+                                        fusions: [],
+                                        connections: [],
+                                        inputCableIds: [],
+                                        clientCount: 0
+                                    }));
+                                    updated.ctos = [...(updated.ctos || []), ...newCEOs];
+                                }
+                                if (data.poles && data.poles.length > 0) {
+                                    const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
+                                        id: crypto.randomUUID(),
+                                        name: p.originalName || `Poste ${idx + 1}`,
+                                        status: p.status || 'PLANNED',
+                                        coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
+                                        catalogId: p.type?.id,
+                                        type: p.type?.name,
+                                        height: p.type?.height
+                                    }));
+                                    updated.poles = [...(updated.poles || []), ...newPoles];
+                                }
+
+                                await projectService.syncProject(currentProjectId, updated);
+                                setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+                                showToast('ImportaÃ§Ã£o realizada com sucesso!', 'success');
                                 setIsAdvancedImportOpen(false);
                                 setPreviewImportData(null);
-                            }}
-                            onPreview={(data) => setPreviewImportData(data)}
-                            onImport={async (data) => {
-                                if (!currentProjectId) return;
-                                if (!data) return;
-                                setIsLoadingProjects(true);
-                                try {
-                                    const updated = { ...getCurrentNetwork() };
-                                    if (data.cables && data.cables.length > 0) {
-                                        const newCables: CableData[] = data.cables.map((c: any, idx: number) => ({
-                                            id: crypto.randomUUID(),
-                                            name: c.originalName || `Cabo ${idx + 1}`,
-                                            status: c.status || 'DEPLOYED',
-                                            fiberCount: c.type?.fiberCount || 1,
-                                            looseTubeCount: c.type?.looseTubeCount || 1,
-                                            color: c.type?.deployedSpec?.color || c.type?.plannedSpec?.color || '#0ea5e9',
-                                            colorStandard: 'ABNT',
-                                            coordinates: (Array.isArray(c.coordinates) ? c.coordinates : [])
-                                                .filter((pt: any) => Array.isArray(pt) && pt.length >= 2 && !isNaN(pt[0]) && !isNaN(pt[1]))
-                                                .map((pt: any) => ({ lat: pt[1], lng: pt[0] })),
-                                            fromNodeId: null,
-                                            toNodeId: null,
-                                            catalogId: c.type?.id
-                                        }));
-                                        updated.cables = [...(updated.cables || []), ...newCables.filter(c => c.coordinates.length >= 2)];
-                                    }
-                                    if (data.ctos && data.ctos.length > 0) {
-                                        const newCTOs: CTOData[] = data.ctos.map((c: any, idx: number) => ({
-                                            id: crypto.randomUUID(),
-                                            name: c.originalName || `CTO ${idx + 1}`,
-                                            status: c.status || 'DEPLOYED',
-                                            type: 'CTO',
-                                            coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
-                                            catalogId: c.type?.id,
-                                            splitters: [],
-                                            fusions: [],
-                                            connections: [],
-                                            inputCableIds: [],
-                                            clientCount: 0
-                                        }));
-                                        updated.ctos = [...(updated.ctos || []), ...newCTOs];
-                                    }
-                                    if (data.ceos && data.ceos.length > 0) {
-                                        const newCEOs: CTOData[] = data.ceos.map((c: any, idx: number) => ({
-                                            id: crypto.randomUUID(),
-                                            name: c.originalName || `CEO ${idx + 1}`,
-                                            status: c.status || 'DEPLOYED',
-                                            type: 'CEO',
-                                            coordinates: { lat: c.coordinates[1], lng: c.coordinates[0] },
-                                            catalogId: c.type?.id,
-                                            splitters: [],
-                                            fusions: [],
-                                            connections: [],
-                                            inputCableIds: [],
-                                            clientCount: 0
-                                        }));
-                                        updated.ctos = [...(updated.ctos || []), ...newCEOs];
-                                    }
-                                    if (data.poles && data.poles.length > 0) {
-                                        const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
-                                            id: crypto.randomUUID(),
-                                            name: p.originalName || `Poste ${idx + 1}`,
-                                            status: p.status || 'PLANNED',
-                                            coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
-                                            catalogId: p.type?.id,
-                                            type: p.type?.name,
-                                            height: p.type?.height
-                                        }));
-                                        updated.poles = [...(updated.poles || []), ...newPoles];
-                                    }
-
-                                    await projectService.syncProject(currentProjectId, updated);
-                                    setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
-                                    showToast('ImportaÃ§Ã£o realizada com sucesso!', 'success');
-                                    setIsAdvancedImportOpen(false);
-                                    setPreviewImportData(null);
-                                } catch (error: any) {
-                                    console.error("Import failed", error);
-                                    if (error.response && error.response.status === 403) {
-                                        const errorMsg = error.response.data?.error || error.response.data?.details || 'Acesso negado';
-                                        setUpgradeModalDetails(errorMsg);
-                                        setShowUpgradeModal(true);
-                                    } else {
-                                        showToast('Failed to import data', 'error');
-                                    }
-                                } finally {
-                                    setIsLoadingProjects(false);
+                            } catch (error: any) {
+                                console.error("Import failed", error);
+                                if (error.response && error.response.status === 403) {
+                                    const errorMsg = error.response.data?.error || error.response.data?.details || 'Acesso negado';
+                                    setUpgradeModalDetails(errorMsg);
+                                    setShowUpgradeModal(true);
+                                } else {
+                                    showToast('Failed to import data', 'error');
                                 }
-                            }}
-                        />
+                            } finally {
+                                setIsLoadingProjects(false);
+                            }
+                        }}
+                    />
 
-                        {/* Toast Notification */}
-                        {toast && (
-                            <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 z-[2000] font-bold ${toast.type === 'error' ? 'bg-red-500 text-white' :
-                                toast.type === 'info' ? 'bg-slate-800 text-white' :
-                                    'bg-emerald-500 text-white'
-                                }`}>
-                                {toast.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
-                                {toast.type === 'error' && <X className="w-5 h-5" />}
-                                {toast.type === 'info' && <BaseIcon className="w-5 h-5" />}
-                                {toast.msg}
-                            </div>
-                        )}
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 z-[2000] font-bold ${toast.type === 'error' ? 'bg-red-500 text-white' :
+                            toast.type === 'info' ? 'bg-slate-800 text-white' :
+                                'bg-emerald-500 text-white'
+                            }`}>
+                            {toast.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
+                            {toast.type === 'error' && <X className="w-5 h-5" />}
+                            {toast.type === 'info' && <BaseIcon className="w-5 h-5" />}
+                            {toast.msg}
+                        </div>
+                    )}
 
-                    </React.Suspense>
-                )}
-            </div>
-        </HelmetProvider>
+                </React.Suspense>
+            )}
+        </div>
     );
 }
 

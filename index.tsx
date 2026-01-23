@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { LanguageProvider } from './LanguageContext';
 import { ThemeProvider } from './ThemeContext';
+import { HelmetProvider } from 'react-helmet-async';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
@@ -15,11 +16,13 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <LanguageProvider>
-        <App />
-      </LanguageProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <App />
+        </LanguageProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   </React.StrictMode>
 );
 // Register Service Worker for Map Caching
