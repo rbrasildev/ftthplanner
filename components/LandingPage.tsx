@@ -16,9 +16,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     React.useEffect(() => {
         const fetchPlans = async () => {
             try {
-                // If in dev mode, assume local server; otherwise use relative path
-                const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-                const res = await fetch(`${baseUrl}/api/saas/public/plans`);
+                // Use relative path to allow Vite proxy to handle the request in dev (avoiding Mixed Content)
+                // and same-origin in production.
+                const res = await fetch(`/api/saas/public/plans`);
                 if (res.ok) {
                     const msg = await res.json();
                     // Filter out Free Plan as requested ("Só plano trial")
