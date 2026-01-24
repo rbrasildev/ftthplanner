@@ -1400,14 +1400,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (isVflToolActive || isOtdrToolActive) return;
 
         setLocalCTO(prev => {
-            const existingLayout = prev.layout?.[id];
-            if (!existingLayout) return prev; // Safety check
+            let layout = prev.layout?.[id];
+
+            // FALLBACK: If layout is missing (unsaved new cable), recover from DOM
+            if (!layout) {
+                const domEl = document.getElementById(id);
+                if (domEl) {
+                    const style = window.getComputedStyle(domEl);
+                    const matrix = new WebKitCSSMatrix(style.transform);
+                    const currentRot = Math.round(Math.atan2(matrix.m12, matrix.m11) * (180 / Math.PI));
+                    layout = {
+                        x: matrix.m41,
+                        y: matrix.m42,
+                        rotation: currentRot,
+                        mirrored: false
+                    };
+                } else {
+                    return prev;
+                }
+            }
 
             return {
                 ...prev,
                 layout: {
                     ...prev.layout,
-                    [id]: { ...existingLayout, mirrored: !existingLayout.mirrored }
+                    [id]: { ...layout, mirrored: !layout.mirrored }
                 }
             };
         });
@@ -1502,16 +1519,32 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         setLocalCTO(prev => {
-            const existingLayout = prev.layout?.[id];
-            if (!existingLayout) return prev;
+            let layout = prev.layout?.[id];
 
-            const currentRot = existingLayout.rotation || 0;
+            // FALLBACK: If layout is missing (unsaved new cable), recover from DOM
+            if (!layout) {
+                const domEl = document.getElementById(id);
+                if (domEl) {
+                    const style = window.getComputedStyle(domEl);
+                    const matrix = new WebKitCSSMatrix(style.transform);
+                    const currentRot = Math.round(Math.atan2(matrix.m12, matrix.m11) * (180 / Math.PI));
+                    layout = {
+                        x: matrix.m41,
+                        y: matrix.m42,
+                        rotation: currentRot
+                    };
+                } else {
+                    return prev;
+                }
+            }
+
+            const currentRot = layout.rotation || 0;
             const newRot = (currentRot + 90) % 360;
             return {
                 ...prev,
                 layout: {
                     ...prev.layout,
-                    [id]: { ...(prev.layout?.[id] || { x: 0, y: 0, rotation: 0 }), rotation: newRot }
+                    [id]: { ...layout, rotation: newRot }
                 }
             };
         });
@@ -1654,11 +1687,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const deltaY = newY - (localCTORef.current.layout?.[dragState.targetId!]?.y || dragState.initialLayout.y);
 
             localCTORef.current.connections.forEach(conn => {
-                const sourceIsOnEl = conn.sourceId.startsWith(dragState.targetId! + '-') || conn.sourceId === dragState.targetId! || (getPortCenter(conn.sourceId) !== null);
-                // ^ Simple check doesn't work well because IDs vary.
-                // Better: Check if getPortCenter for the source is inside the element's box?
-                // Or stick to known naming conventions: `${element.id}-...`
-
+                // STRICT CHECK: Only move connections that are explicitly attached to the moving element
                 const targetIsEl = conn.targetId === dragState.targetId! || conn.targetId.startsWith(dragState.targetId! + '-');
                 const sourceIsEl = conn.sourceId === dragState.targetId! || conn.sourceId.startsWith(dragState.targetId! + '-');
 
@@ -2993,8 +3022,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     ? savedLayout
                                     : emergencyPos;
 
-                                // Advance Y for the next iteration
-                                currentEmergencyY = layout.y + totalHeight + 10;
+                                // Advance Y for the next iteration INDEPENDENTLY of whether this cable was moved
+                                // This prevents "magnetic" behavior where dragging one cable pulls the uninitialized ones below it.
+                                currentEmergencyY += totalHeight + 10;
 
                                 return (
                                     <FiberCableNode
