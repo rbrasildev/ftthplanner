@@ -1055,6 +1055,10 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableContextMenu = useCallback((e: any, cable: CableData) => {
         // e.containerPoint comes from D3 layer or needs to be calculated
         // Use clientX/Y directly for fixed position menu if using Portal or fixed overlay
+        const domEvent = e.originalEvent || e;
+        L.DomEvent.stopPropagation(domEvent);
+        setMapContextMenu(null); // Close map menu if open
+
         const clientX = e.originalEvent.clientX;
         const clientY = e.originalEvent.clientY;
 
@@ -1062,6 +1066,8 @@ export const MapView: React.FC<MapViewProps> = ({
     }, []);
 
     const handleNodeContextMenu = useCallback((e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        L.DomEvent.stopPropagation(e.originalEvent || e); // Ensure propagation stops
+        setMapContextMenu(null); // Close map menu if open
         const clientX = e.originalEvent.clientX;
         const clientY = e.originalEvent.clientY;
         setContextMenu({ x: clientX, y: clientY, id: id, type: type });
@@ -1225,6 +1231,13 @@ export const MapView: React.FC<MapViewProps> = ({
                     onMapMoveEnd={onMapMoveEnd}
                     onContextMenu={(e) => {
                         L.DomEvent.preventDefault(e as any);
+
+                        // Toggle behavior: If map menu is already open, close it and return
+                        if (mapContextMenu) {
+                            setMapContextMenu(null);
+                            return;
+                        }
+
                         setContextMenu(null); // Close other menus
                         setMapContextMenu({
                             x: e.originalEvent.clientX,
@@ -1233,6 +1246,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             lng: e.latlng.lng
                         });
                     }}
+
                 />
 
                 <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />

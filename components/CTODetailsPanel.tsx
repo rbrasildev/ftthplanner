@@ -140,7 +140,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
+      className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div
@@ -163,7 +163,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
         </div>
       </div>
 
-      <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+      <div className="p-6 space-y-5 flex-1 overflow-y-auto min-h-0">
         <div>
           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
             <Type className="w-3 h-3" /> {t('name')}
@@ -298,49 +298,50 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
           </div>
         </div>
 
-        <div className="pt-2 flex flex-col gap-3">
-          <button
-            onClick={onOpenSplicing}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/20"
-          >
-            <Settings2 className="w-4 h-4" />
-            {t('manage_splicing')}
-          </button>
+      </div>
 
-          {showDeleteConfirm ? (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
-                <p className="text-xs font-medium leading-tight">
-                  {t('confirm_delete_cto_msg', { name: cto.name })}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCancelDelete}
-                  className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold transition shadow-lg shadow-red-900/20"
-                >
-                  {t('confirm_delete')}
-                </button>
-              </div>
+      <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 shrink-0 flex flex-col gap-3">
+        <button
+          onClick={onOpenSplicing}
+          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/20"
+        >
+          <Settings2 className="w-4 h-4" />
+          {t('manage_splicing')}
+        </button>
+
+        {showDeleteConfirm ? (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <p className="text-xs font-medium leading-tight">
+                {t('confirm_delete_cto_msg', { name: cto.name })}
+              </p>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleDeleteClick}
-              className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center justify-center gap-2 transition text-sm font-medium cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              {t('delete_cto_btn')}
-            </button>
-          )}
-        </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelDelete}
+                className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold transition shadow-lg shadow-red-900/20"
+              >
+                {t('confirm_delete')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center justify-center gap-2 transition text-sm font-medium cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('delete_cto_btn')}
+          </button>
+        )}
       </div>
     </div>
   );
