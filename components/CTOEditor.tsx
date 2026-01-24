@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings, Check } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -105,7 +105,7 @@ interface CTOEditorProps {
     projectName: string;
     incomingCables: CableData[];
     onClose: () => void;
-    onSave: (updatedCTO: CTOData) => void;
+    onSave: (updatedCTO: CTOData) => Promise<void> | void;
     onEditCable: (cable: CableData) => void;
 
     // VFL Props
@@ -136,7 +136,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     userPlan, subscriptionExpiresAt, onShowUpgrade, network
 }) => {
     const { t } = useLanguage();
-    const [isApplying, setIsApplying] = useState(false);
+    const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
@@ -592,8 +592,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const [, setForceUpdate] = useState(0);
     useLayoutEffect(() => {
+        portCenterCache.current = {};
+        containerRectCache.current = null;
         setForceUpdate(n => n + 1);
-    }, [viewState]);
+    }, [viewState, localCTO.layout, localCTO.connections, isMaximized]);
 
     // FIX: Force re-calculation after mount to ensure getBoundingClientRect is correct
     // The Modal animation (zoom-in) causes initial rects to be invalid.
@@ -953,12 +955,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handleApply = async () => {
-        setIsApplying(true);
-        const finalCTO = { ...localCTO, viewState: viewState };
-        onSave(finalCTO);
-        // Fake delay for visual feedback
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setIsApplying(false);
+        setSavingAction('apply');
+        try {
+            const finalCTO = { ...localCTO, viewState: viewState };
+            await onSave(finalCTO);
+        } catch (e) {
+            console.error("Apply failed", e);
+        } finally {
+            setSavingAction('idle');
+        }
     };
 
     const handleCloseRequest = () => {
@@ -977,20 +982,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setViewState(getInitialViewState(localCTO));
     };
 
-    const handleSaveAndClose = () => {
-        const finalCTO = { ...localCTO, viewState: viewState };
+    const handleSaveAndClose = async () => {
+        setSavingAction('save_close');
+        try {
+            const finalCTO = { ...localCTO, viewState: viewState };
 
-        // SAFEGUARD: Ensure all fusions have a layout entry before saving
-        // This prevents "reset to defaults" on next load if valid positions were somehow missing
-        if (!finalCTO.layout) finalCTO.layout = {};
-        finalCTO.fusions.forEach((f, idx) => {
-            if (!finalCTO.layout![f.id]) {
-                finalCTO.layout![f.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-            }
-        });
+            // SAFEGUARD: Ensure all fusions have a layout entry before saving
+            // This prevents "reset to defaults" on next load if valid positions were somehow missing
+            if (!finalCTO.layout) finalCTO.layout = {};
+            finalCTO.fusions.forEach((f, idx) => {
+                if (!finalCTO.layout![f.id]) {
+                    finalCTO.layout![f.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
+                }
+            });
 
-        onSave(finalCTO);
-        onClose();
+            await onSave(finalCTO);
+            onClose();
+        } catch (e) {
+            console.error("SaveAndClose failed", e);
+        } finally {
+            setSavingAction('idle');
+        }
     };
 
     // --- Auto Pass-Through Logic ---
@@ -2867,9 +2879,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                     {/* Grid Pattern - Adapts to Theme */}
                     <div
-                        className="absolute inset-0 pointer-events-none bg-[radial-gradient(#64748b_1px,transparent_1px)] dark:bg-[radial-gradient(#475569_1px,transparent_1px)] opacity-30"
+                        className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] opacity-40"
                         style={{
-                            backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
+                            backgroundSize: `${(GRID_SIZE * 5) * viewState.zoom}px ${(GRID_SIZE * 5) * viewState.zoom}px`,
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
                         }}
                     />
@@ -3104,17 +3116,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleApply}
-                            disabled={isApplying}
-                            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
+                            disabled={savingAction !== 'idle'}
+                            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
                         >
-                            {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : ""}
-                            {t('apply') || 'Aplicar'}
+                            {savingAction === 'apply' ? (
+                                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                            ) : (
+                                <Check className="w-4 h-4 shrink-0" />
+                            )}
+                            <span>{t('apply') || 'Aplicar'}</span>
                         </button>
                         <button
                             onClick={handleCloseRequest}
-                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
+                            disabled={savingAction !== 'idle'}
+                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[150px] justify-center"
                         >
-                            <Save className="w-4 h-4" /> {t('save_or_done') || 'Salvar / Sair'}
+                            {savingAction === 'save_close' ? (
+                                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                            ) : (
+                                <Save className="w-4 h-4 shrink-0" />
+                            )}
+                            <span className="whitespace-nowrap">{t('save_or_done') || 'Salvar / Sair'}</span>
                         </button>
                     </div>
                 </div>
@@ -3137,13 +3159,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <div className="flex flex-row gap-2 mt-6">
                                 <button
                                     onClick={handleSaveAndClose}
-                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all"
+                                    disabled={savingAction !== 'idle'}
+                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
+                                    {savingAction === 'save_close' && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {t('save_and_close')}
                                 </button>
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all"
+                                    disabled={savingAction !== 'idle'}
+                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {t('discard')}
                                 </button>

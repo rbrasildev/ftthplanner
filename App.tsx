@@ -397,7 +397,7 @@ export default function App() {
                         }
                     }
                 });
-        }, 3000); // 3 seconds debounce for safety with large data
+        }, 1000); // Reduced delay for better safety (was 3000)
         return () => clearTimeout(timer);
     }, [currentProject, token]);
 
@@ -1135,10 +1135,33 @@ export default function App() {
         });
     }, [updateCurrentNetwork, t]);
 
-    const handleSaveCTO = (updatedCTO: CTOData) => {
+    const handleSaveCTO = async (updatedCTO: CTOData) => {
+        // 1. Update React State
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
         setEditingCTO(updatedCTO); // Sync state to avoid "unsaved changes" on close
-        // setHighlightedCableId(null); // Keep highlight
+
+        // 2. FORCE IMMEDIATE SYNC (Critical for persistence reliability)
+        if (currentProject) {
+            // Construct the pending network state manually since updateCurrentNetwork is async/batched
+            const prevNet = projectRef.current?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
+            const newNetwork = {
+                ...prevNet,
+                ctos: prevNet.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c)
+            };
+
+            setIsSaving(true);
+            try {
+                // Call API directly for immediate save
+                await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
+                console.log("[Force Sync] CTO Saved successfully.");
+            } catch (e) {
+                console.error("[Force Sync] Failed to save CTO immediately", e);
+                // We don't block UI here, the debounced sync might catch it or user will see error eventually
+            } finally {
+                setIsSaving(false);
+            }
+        }
+
         showToast(t('toast_cto_splicing_saved'));
     };
     const handleRenameCTO = (id: string, name: string) => updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === id ? { ...c, name } : c) }));
@@ -2017,6 +2040,7 @@ export default function App() {
             {
                 editingCTO && (
                     <CTOEditor
+                        key={editingCTO.id}
                         cto={editingCTO}
                         projectName={currentProject?.name || ''}
                         incomingCables={getCurrentNetwork().cables.filter(c =>
