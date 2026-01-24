@@ -1,5 +1,11 @@
 import api from './api';
 
+// Public Plans
+export const getPublicPlans = async () => {
+    const response = await api.get('/saas/public/plans');
+    return response.data;
+};
+
 export const getPlans = async () => {
     const response = await api.get('/saas/plans');
     return response.data;

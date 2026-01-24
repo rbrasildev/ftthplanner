@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
+import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
 
 interface LandingPageProps {
@@ -16,13 +18,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     React.useEffect(() => {
         const fetchPlans = async () => {
             try {
-                // Use relative path to allow Vite proxy to handle the request in dev (avoiding Mixed Content)
-                // and same-origin in production.
-                const res = await fetch(`/api/saas/public/plans`);
-                if (res.ok) {
-                    const msg = await res.json();
+                const plansData = await getPublicPlans();
+                if (plansData) {
                     // Filter out Free Plan as requested ("Só plano trial")
-                    setPlans(msg.filter((p: any) => p.name !== 'Plano Grátis'));
+                    setPlans(plansData.filter((p: any) => p.name !== 'Plano Grátis'));
                 }
             } catch (err) {
                 console.error("Failed to load public plans", err);
@@ -37,44 +36,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 <title>FTTH Planner | Software para Projetos de Fibra Óptica</title>
                 <meta name="description" content="Planeje redes FTTH com facilidade. Diagrama unifilar, cálculo de potência, mapa interativo e gestão de projetos para provedores de internet (ISP)." />
                 <meta name="keywords" content="ftth planner, projeto ftth, fibra óptica, isp, diagrama unifilar, mapa de rede, software para provedores, fttx" />
-                <link rel="canonical" href="https://ftthplanner.com/" />
+                <link rel="canonical" href="https://ftthplanner.com.br/" />
 
                 {/* Open Graph / Facebook */}
                 <meta property="og:type" content="website" />
-                <meta property="og:url" content="https://ftthplanner.com/" />
+                <meta property="og:url" content="https://ftthplanner.com.br/" />
                 <meta property="og:title" content="FTTH Planner | Software para Projetos de Fibra Óptica" />
                 <meta property="og:description" content="Crie projetos de rede FTTH profissionais. Mapa, diagrama, orçamento e documentação em um só lugar." />
-                <meta property="og:image" content="https://ftthplanner.com/og-image.jpg" />
+                <meta property="og:image" content="https://ftthplanner.com.br/og-image.jpg" />
 
                 {/* Twitter */}
                 <meta property="twitter:card" content="summary_large_image" />
-                <meta property="twitter:url" content="https://ftthplanner.com/" />
+                <meta property="twitter:url" content="https://ftthplanner.com.br/" />
                 <meta property="twitter:title" content="FTTH Planner | Projetos FTTH Simples e Poderosos" />
                 <meta property="twitter:description" content="Software completo para engenharia de telecom e provedores. Teste grátis." />
-                <meta property="twitter:image" content="https://ftthplanner.com/og-image.jpg" />
+                <meta property="twitter:image" content="https://ftthplanner.com.br/og-image.jpg" />
 
                 {/* Structured Data (SoftwareApplication) */}
                 <script type="application/ld+json">
                     {`
-                        {
-                            "@context": "https://schema.org",
-                            "@type": "SoftwareApplication",
-                            "name": "FTTH Planner",
-                            "operatingSystem": "Web Browser",
-                            "applicationCategory": "DesignApplication",
-                            "offers": {
-                                "@type": "Offer",
-                                "price": "0",
-                                "priceCurrency": "BRL"
-                            },
-                            "description": "Software profissional para planejamento, documentação e gerenciamento de redes de fibra óptica (FTTH/FTTx).",
-                            "aggregateRating": {
-                                "@type": "AggregateRating",
-                                "ratingValue": "4.8",
-                                "ratingCount": "124"
-                            }
-                        }
-                    `}
+{
+    "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+            "name": "FTTH Planner",
+                "operatingSystem": "Web Browser",
+                    "applicationCategory": "DesignApplication",
+                        "offers": {
+        "@type": "Offer",
+            "price": "0",
+                "priceCurrency": "BRL"
+    },
+    "description": "Software profissional para planejamento, documentação e gerenciamento de redes de fibra óptica (FTTH/FTTx).",
+        "aggregateRating": {
+        "@type": "AggregateRating",
+            "ratingValue": "4.8",
+                "ratingCount": "124"
+    }
+}
+`}
                 </script>
             </Helmet>
 
@@ -309,7 +308,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             }
                         ].map((feature, idx) => (
                             <div key={idx} className="group p-8 bg-slate-900 rounded-3xl border border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
+                                <div className={`w - 14 h - 14 ${feature.color} rounded - 2xl flex items - center justify - center shadow - lg mb - 6 group - hover: scale - 110 transition - transform`}>
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
@@ -334,7 +333,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {plans.length > 0 ? plans.map((plan, idx) => (
-                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'}`}>
+                            <div key={idx} className={`bg - slate - 900 rounded - 3xl border p - 8 flex flex - col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'} `}>
                                 {plan.isRecommended && (
                                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                         {t('most_popular')}
@@ -369,7 +368,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={() => onRegisterClick(plan.name)} className={`w-full py-3 rounded-xl font-bold transition-all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+                                <button onClick={() => onRegisterClick(plan.name)} className={`w - full py - 3 rounded - xl font - bold transition - all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'} `}>
                                     {t('plan_cta')}
                                 </button>
                             </div>
