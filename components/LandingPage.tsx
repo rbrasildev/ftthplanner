@@ -308,7 +308,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             }
                         ].map((feature, idx) => (
                             <div key={idx} className="group p-8 bg-slate-900 rounded-3xl border border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                <div className={`w - 14 h - 14 ${feature.color} rounded - 2xl flex items - center justify - center shadow - lg mb - 6 group - hover: scale - 110 transition - transform`}>
+                                <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
@@ -320,7 +320,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- PRICING SECTION --- */}
-            <section id="pricing" className="py-24 bg-slate-900 border-y border-slate-800 relative">
+            <section id="pricing" className="py-24 bg-slate-900 border-y border-slate-800 relative" >
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                     <div className="text-center max-w-3xl mx-auto mb-20">
@@ -333,7 +333,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {plans.length > 0 ? plans.map((plan, idx) => (
-                            <div key={idx} className={`bg - slate - 900 rounded - 3xl border p - 8 flex flex - col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'} `}>
+                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'}`}>
                                 {plan.isRecommended && (
                                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                         {t('most_popular')}
@@ -368,7 +368,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={() => onRegisterClick(plan.name)} className={`w - full py - 3 rounded - xl font - bold transition - all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'} `}>
+                                <button onClick={() => onRegisterClick(plan.name)} className={`w-full py-3 rounded-xl font-bold transition-all ${plan.isRecommended ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg hover:shadow-indigo-600/25' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
                                     {t('plan_cta')}
                                 </button>
                             </div>
@@ -382,7 +382,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- PERFORMANCE SECTION --- */}
-            <section id="performance" className="py-24 bg-slate-900 text-white relative overflow-hidden">
+            <section id="performance" className="py-24 bg-slate-900 text-white relative overflow-hidden" >
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
                 <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-sky-600/20 blur-[100px] rounded-full"></div>
 
@@ -444,7 +444,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- SECURITY --- */}
-            <section className="py-24 bg-slate-950">
+            <section className="py-24 bg-slate-950" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-sky-600">
                         <Shield className="w-8 h-8" />
@@ -470,7 +470,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- HOW IT WORKS --- */}
-            <section id="how-it-works" className="py-24 bg-slate-900 border-t border-slate-800">
+            <section id="how-it-works" className="py-24 bg-slate-900 border-t border-slate-800" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold text-white mb-4">{t('landing_steps_title')}</h2>
@@ -500,7 +500,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- CTA SECTION --- */}
-            <section className="py-24 relative overflow-hidden">
+            <section className="py-24 relative overflow-hidden" >
                 <div className="absolute inset-0 bg-sky-600"></div>
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
@@ -524,7 +524,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             </section>
 
             {/* --- FOOTER --- */}
-            <footer className="bg-slate-950 border-t border-slate-800 pt-16 pb-8">
+            <footer className="bg-slate-950 border-t border-slate-800 pt-16 pb-8" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-1 md:col-span-2">
