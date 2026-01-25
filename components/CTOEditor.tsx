@@ -3156,25 +3156,29 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex flex-row gap-2 mt-6">
+                            <div className="flex flex-row gap-3 mt-6">
                                 <button
                                     onClick={handleSaveAndClose}
                                     disabled={savingAction !== 'idle'}
-                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95"
                                 >
-                                    {savingAction === 'save_close' && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {savingAction === 'save_close' ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Save className="w-4 h-4" />
+                                    )}
                                     {t('save_and_close')}
                                 </button>
                                 <button
                                     onClick={onClose}
                                     disabled={savingAction !== 'idle'}
-                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                     {t('discard')}
                                 </button>
                                 <button
                                     onClick={() => setShowCloseConfirm(false)}
-                                    className="flex-1 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium transition-colors"
+                                    className="px-3 py-2.5 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium transition-colors whitespace-nowrap"
                                 >
                                     {t('cancel')}
                                 </button>

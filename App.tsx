@@ -401,6 +401,19 @@ export default function App() {
         return () => clearTimeout(timer);
     }, [currentProject, token]);
 
+    // PROTECT AGAINST DATA LOSS (Refreshes/Closes while Saving)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isSaving) {
+                e.preventDefault();
+                e.returnValue = ''; // Standard for Chrome/Firefox to show warning
+                return '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isSaving]);
+
     // Helper to trigger snap and notify
     const performAutoSnap = (overrideDistance?: number) => {
         if (!currentProjectId) return;
@@ -1140,9 +1153,10 @@ export default function App() {
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
         setEditingCTO(updatedCTO); // Sync state to avoid "unsaved changes" on close
 
-        // 2. FORCE IMMEDIATE SYNC (Critical for persistence reliability)
+        // 2. FIRE-AND-FORGET SYNC (Immediate but Non-Blocking)
+        // We start the request immediately so it races the background sync (which is fine, debounce handles it)
+        // But we DO NOT await it, so the UI is instant.
         if (currentProject) {
-            // Construct the pending network state manually since updateCurrentNetwork is async/batched
             const prevNet = projectRef.current?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
             const newNetwork = {
                 ...prevNet,
@@ -1150,16 +1164,10 @@ export default function App() {
             };
 
             setIsSaving(true);
-            try {
-                // Call API directly for immediate save
-                await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
-                console.log("[Force Sync] CTO Saved successfully.");
-            } catch (e) {
-                console.error("[Force Sync] Failed to save CTO immediately", e);
-                // We don't block UI here, the debounced sync might catch it or user will see error eventually
-            } finally {
-                setIsSaving(false);
-            }
+            projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings)
+                .then(() => console.log("[Instant Sync] Background save success"))
+                .catch(e => console.error("[Instant Sync] Background save failed", e))
+                .finally(() => setIsSaving(false));
         }
 
         showToast(t('toast_cto_splicing_saved'));
