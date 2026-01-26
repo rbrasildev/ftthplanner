@@ -153,7 +153,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
         <>
             {showAddOLT && (
                 <DraggableModal
-                    title={t('add_olt') || "Add Active Equipment (OLT)"}
+                    title={t('modal_add_olt_title')}
                     icon={<Server className="w-5 h-5 text-indigo-200" />}
                     initialPos={oltModalPos}
                     onClose={onCloseOLT}
@@ -163,15 +163,15 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                         {/* Catalog Selection */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
-                                <Server className="w-3.5 h-3.5" /> {t('model') || "Model"}
+                                <Server className="w-3.5 h-3.5" /> {t('model')}
                             </label>
                             <select
                                 className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500"
                                 onChange={handleOltPresetChange}
                                 defaultValue="custom"
                             >
-                                <option value="custom">Custom Configuration</option>
-                                {catalogOLTs.length > 0 && <optgroup label="Catalog">
+                                <option value="custom">{t('custom_configuration')}</option>
+                                {catalogOLTs.length > 0 && <optgroup label={t('catalog_label')}>
                                     {catalogOLTs.map(olt => (
                                         <option key={olt.id} value={olt.id}>
                                             {olt.name} ({olt.slots || 1}x{olt.portsPerSlot || 16})
@@ -183,11 +183,11 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
-                                <Layers className="w-3.5 h-3.5" /> {t('chassis_config') || "Chassis Configuration"}
+                                <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <span className="text-[10px] text-slate-400 block mb-1">{t('total_slots') || "Total Slots"}</span>
+                                    <span className="text-[10px] text-slate-400 block mb-1">{t('total_slots')}</span>
                                     <input
                                         type="number"
                                         min="1"
@@ -198,7 +198,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                     />
                                 </div>
                                 <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <span className="text-[10px] text-slate-400 block mb-1">{t('ports_per_slot') || "Ports / Slot"}</span>
+                                    <span className="text-[10px] text-slate-400 block mb-1">{t('ports_per_slot')}</span>
                                     <input
                                         type="number"
                                         min="8"
@@ -217,13 +217,13 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                 <PlayCircle className="w-4 h-4 text-indigo-400" />
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-indigo-300">{t('preview') || "Preview"}</h4>
+                                <h4 className="text-xs font-bold text-indigo-300">{t('preview')}</h4>
                                 <p className="text-[11px] text-indigo-200/70 leading-tight">
                                     {t('olt_preview_msg', {
                                         total: newOLTConfig.slots * newOLTConfig.portsPerSlot,
                                         slots: newOLTConfig.slots,
                                         ports: newOLTConfig.portsPerSlot
-                                    }) || `This will create a ${newOLTConfig.slots * newOLTConfig.portsPerSlot} port OLT (${newOLTConfig.slots} slots × ${newOLTConfig.portsPerSlot} ports).`}
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -232,7 +232,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             onClick={onAddOLT}
                             className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
                         >
-                            <Server className="w-4 h-4" /> {t('create_device') || "Create Device"}
+                            <Server className="w-4 h-4" /> {t('create_device')}
                         </button>
                     </div>
                 </DraggableModal>
@@ -240,7 +240,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
             {showAddDIO && (
                 <DraggableModal
-                    title={t('add_dio') || "Add Passive Equipment (DIO)"}
+                    title={t('modal_add_dio_title')}
                     icon={<Box className="w-5 h-5 text-emerald-200" />}
                     initialPos={dioModalPos}
                     onClose={onCloseDIO}
@@ -249,7 +249,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
-                                <Settings2 className="w-3.5 h-3.5" /> {t('specifications') || "Specifications"}
+                                <Settings2 className="w-3.5 h-3.5" /> {t('specifications')}
                             </label>
                             <div className="relative">
                                 <select
@@ -257,12 +257,12 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                     onChange={e => setNewDIOConfig({ ...newDIOConfig, ports: parseInt(e.target.value) })}
                                     className="w-full h-12 bg-slate-800 border-2 border-slate-700 rounded-lg px-3 text-white font-bold appearance-none hover:border-emerald-500/50 focus:border-emerald-500 transition-colors cursor-pointer"
                                 >
-                                    <option value="12">12 {t('ports') || "Ports"} (1 {t('tray') || "Tray"})</option>
-                                    <option value="24">24 {t('ports') || "Ports"} (2 {t('trays') || "Trays"})</option>
-                                    <option value="36">36 {t('ports') || "Ports"} (3 {t('trays') || "Trays"})</option>
-                                    <option value="48">48 {t('ports') || "Ports"} (4 {t('trays') || "Trays"})</option>
-                                    <option value="72">72 {t('ports') || "Ports"} (6 {t('trays') || "Trays"})</option>
-                                    <option value="144">144 {t('ports') || "Ports"} (12 {t('trays') || "Trays"})</option>
+                                    <option value="12">12 {t('ports_label')} (1 {t('tray')})</option>
+                                    <option value="24">24 {t('ports_label')} (2 {t('trays')})</option>
+                                    <option value="36">36 {t('ports_label')} (3 {t('trays')})</option>
+                                    <option value="48">48 {t('ports_label')} (4 {t('trays')})</option>
+                                    <option value="72">72 {t('ports_label')} (6 {t('trays')})</option>
+                                    <option value="144">144 {t('ports_label')} (12 {t('trays')})</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <Settings2 className="w-4 h-4" />
@@ -275,12 +275,12 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                 <PlayCircle className="w-4 h-4 text-emerald-400" />
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-emerald-300">{t('preview') || "Preview"}</h4>
+                                <h4 className="text-xs font-bold text-emerald-300">{t('preview')}</h4>
                                 <p className="text-[11px] text-emerald-200/70 leading-tight">
                                     {t('dio_preview_msg', {
                                         ports: newDIOConfig.ports,
                                         trays: Math.ceil(newDIOConfig.ports / 12)
-                                    }) || `Creates a Rack-mountable DIO with ${newDIOConfig.ports} splice capacity organized in ${Math.ceil(newDIOConfig.ports / 12)} trays.`}
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -289,7 +289,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             onClick={onAddDIO}
                             className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
                         >
-                            <Box className="w-4 h-4" /> {t('create_device') || "Create Device"}
+                            <Box className="w-4 h-4" /> {t('create_device')}
                         </button>
                     </div>
                 </DraggableModal>

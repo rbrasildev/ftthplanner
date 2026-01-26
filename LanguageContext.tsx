@@ -437,6 +437,20 @@ const translations = {
     'dio_ports': 'Ports',
     'rack_view': 'Rack View',
 
+    // OLT/DIO Modal
+    'modal_add_olt_title': 'Add Active Equipment (OLT)',
+    'modal_add_dio_title': 'Add Passive Equipment (DIO)',
+    'custom_configuration': 'Custom Configuration',
+    'catalog_label': 'Catalog',
+    'chassis_config': 'Chassis Configuration',
+    'total_slots': 'Total Slots',
+    'preview': 'Preview',
+    'olt_preview_msg': 'This will create a {total} port OLT ({slots} slots × {ports} ports).',
+    'create_device': 'Create Device',
+    'specifications': 'Specifications',
+    'dio_preview_msg': 'Creates a Rack-mountable DIO with {ports} splice capacity organized in {trays} trays.',
+    'ports_label': 'Ports',
+
     // Map Layers
     'map_street': 'Street',
     'map_satellite': 'Satellite',
@@ -1165,10 +1179,24 @@ const translations = {
 
     // POP Editor
     'pop_editor_title': 'Gerenciamento POP: {name}',
-    'add_dio': 'Add DIO',
+    'add_dio': 'Adicionar DIO',
     'olt_ports': 'Portas PON',
     'dio_ports': 'Portas',
     'rack_view': 'Visão do Rack',
+
+    // OLT/DIO Modal
+    'modal_add_olt_title': 'Adicionar Equipamento Ativo (OLT)',
+    'modal_add_dio_title': 'Adicionar Equipamento Passivo (DIO)',
+    'custom_configuration': 'Configuração Personalizada',
+    'catalog_label': 'Catálogo',
+    'chassis_config': 'Configuração do Chassi',
+    'total_slots': 'Total de Slots',
+    'preview': 'Pré-visualização',
+    'olt_preview_msg': 'Isso criará uma OLT de {total} portas ({slots} slots × {ports} portas).',
+    'create_device': 'Criar Dispositivo',
+    'specifications': 'Especificações',
+    'dio_preview_msg': 'Cria um DIO de rack com capacidade de {ports} fusões organizado em {trays} bandejas.',
+    'ports_label': 'Portas',
 
     // Users Module
     'users': 'Usuários',
