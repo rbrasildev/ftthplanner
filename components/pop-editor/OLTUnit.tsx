@@ -70,7 +70,8 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                 {/* Body (Slots) */}
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/50 space-y-2.5">
                     {Array.from({ length: slots }).map((_, sIdx) => {
-                        const slotColor = getFiberColor(sIdx, 'ABNT'); // Reusing user's color logic
+                        // Using a neutral color (Indigo/Blueish) for OLT PON ports to avoid confusion with fiber colors
+                        const slotColor = '#6366f1'; // Indigo-500
                         return (
                             <div key={sIdx} className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded border border-slate-200 dark:border-slate-800 shadow-sm">
                                 <div

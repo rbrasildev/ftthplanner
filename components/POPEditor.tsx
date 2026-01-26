@@ -309,11 +309,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     const handleConnectPort = (targetDioPortId: string) => {
         if (!configuringOltPortId) return;
 
-        let slotColor = '#facc15';
-        const slotMatch = configuringOltPortId.match(/-s(\d+)-/);
-        if (slotMatch) {
-            const slotIndex = parseInt(slotMatch[1]) - 1;
-            slotColor = getFiberColor(slotIndex, 'ABNT');
+        // User requested color based on DIO Tray sequence
+        const targetDio = localPOP.dios.find((d: any) => d.portIds.includes(targetDioPortId));
+        let slotColor = '#22c55e'; // Default Green (Tray 1)
+        if (targetDio) {
+            const portIndex = targetDio.portIds.indexOf(targetDioPortId);
+            const trayIndex = Math.floor(portIndex / 12);
+            slotColor = getFiberColor(trayIndex, 'ABNT');
         }
 
         let cleanedConnections = localPOP.connections.filter(c =>

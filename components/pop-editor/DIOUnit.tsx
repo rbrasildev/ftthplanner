@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Server, Link2, Plug, Pencil, Trash2 } from 'lucide-react';
+import { Server, Link2, Plug, Pencil, Trash2, Layers } from 'lucide-react';
+import { useLanguage } from '../../LanguageContext';
+import { getFiberColor } from '../../types';
 
 interface DIOUnitProps {
     dio: any;
@@ -30,6 +32,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     onDelete,
     onHoverPort
 }) => {
+    const { t } = useLanguage();
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
 
     const handlePortEnter = (pid: string) => {
@@ -133,29 +136,47 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                             }
 
                             const portColor = patchConn ? patchConn.color : null;
+                            const isTrayStart = idx % 12 === 0;
+                            const trayIndex = Math.floor(idx / 12);
+                            const trayColor = getFiberColor(trayIndex, 'ABNT');
 
                             return (
-                                <div
-                                    key={pid}
-                                    id={pid}
-                                    onMouseEnter={() => handlePortEnter(pid)}
-                                    onMouseLeave={handlePortLeave}
-                                    className={`
-                                        aspect-square rounded-full border flex items-center justify-center text-[8px] font-mono transition-all select-none
-                                        ${highlightForActiveOLT ? 'ring-2 ring-indigo-500 scale-125 z-50 shadow-lg' : ''}
-                                        ${hoveredPortId === pid ? 'scale-125 border-slate-400 z-10 shadow' : ''}
-                                        ${!isConnected ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-300' : ''}
-                                    `}
-                                    style={isConnected ? {
-                                        backgroundColor: portColor || '#cbd5e1',
-                                        borderColor: portColor ? 'transparent' : '#94a3b8',
-                                        color: '#000', // Port number color on connected port? Maybe white if dark color?
-                                        boxShadow: highlightForActiveOLT ? `0 0 10px ${portColor}` : `0 0 2px ${portColor}80`
-                                    } : {}}
-                                    title={`Port ${idx + 1}`}
-                                >
-                                    {idx + 1}
-                                </div>
+                                <React.Fragment key={pid}>
+                                    {isTrayStart && (
+                                        <div className="col-span-12 flex items-center gap-2 mt-2 mb-1">
+                                            <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                                                <Layers className="w-2.5 h-2.5" />
+                                                {t('tray')} {Math.floor(idx / 12) + 1}
+                                            </span>
+                                            <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
+                                        </div>
+                                    )}
+                                    <div
+                                        id={pid}
+                                        onMouseEnter={() => handlePortEnter(pid)}
+                                        onMouseLeave={handlePortLeave}
+                                        className={`
+                                            aspect-square rounded-full border-2 flex items-center justify-center text-[8px] font-mono transition-all select-none font-bold
+                                            ${highlightForActiveOLT ? 'ring-2 ring-indigo-500 scale-125 z-50 shadow-lg' : ''}
+                                            ${hoveredPortId === pid ? 'scale-125 border-slate-400 z-10 shadow' : ''}
+                                            ${!isConnected ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700' : ''}
+                                        `}
+                                        style={isConnected ? {
+                                            backgroundColor: portColor || '#cbd5e1',
+                                            borderColor: trayColor, // Ring color based on TRAY index
+                                            color: '#000',
+                                            boxShadow: highlightForActiveOLT ? `0 0 10px ${portColor}` : `0 0 2px ${portColor}80`
+                                        } : {
+                                            borderColor: trayColor,
+                                            color: trayColor,
+                                            backgroundColor: `${trayColor}15` // Very light tint of tray color
+                                        }}
+                                        title={`Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})`}
+                                    >
+                                        {(idx % 12) + 1}
+                                    </div>
+                                </React.Fragment>
                             );
                         })}
                     </div>

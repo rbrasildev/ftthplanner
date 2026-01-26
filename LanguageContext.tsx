@@ -393,7 +393,6 @@ const translations = {
     'click_to_connect': 'Click to Connect',
     'splice_trays': 'Splice Trays',
 
-    // New Translations for Trays
     'tray': 'Tray',
     'trays': 'Trays',
 
@@ -450,6 +449,11 @@ const translations = {
     'specifications': 'Specifications',
     'dio_preview_msg': 'Creates a Rack-mountable DIO with {ports} splice capacity organized in {trays} trays.',
     'ports_label': 'Ports',
+    'connection_slot_port': 'Connection for Slot/Port',
+    'select_dio_port': 'Select DIO Port',
+    'connected': 'Connected',
+    'not_connected': 'Not Connected',
+    'disconnect': 'Disconnect',
 
     // Map Layers
     'map_street': 'Street',
@@ -1197,6 +1201,11 @@ const translations = {
     'specifications': 'Especificações',
     'dio_preview_msg': 'Cria um DIO de rack com capacidade de {ports} fusões organizado em {trays} bandejas.',
     'ports_label': 'Portas',
+    'connection_slot_port': 'Conexão para Slot/Porta',
+    'select_dio_port': 'Selecione a Porta do DIO',
+    'connected': 'Conectado',
+    'not_connected': 'Não Conectado',
+    'disconnect': 'Desconectar',
 
     // Users Module
     'users': 'Usuários',
@@ -1253,6 +1262,9 @@ const translations = {
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
     'apply': 'Aplicar',
     'maximize': 'Maximizar',
+    'tray': 'Bandeja',
+    'trays': 'Bandejas',
+    'splice_trays': 'Bandejas de Fusão',
   }
 };
 

@@ -715,7 +715,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                         {/* --- RIGHT SIDE: DIO Back View --- */}
                         <div
-                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[340px] flex flex-col max-h-[85vh] ring-1 ring-black/50 overflow-hidden"
+                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[600px] flex flex-col max-h-[85vh] ring-1 ring-black/50 overflow-hidden"
                             style={{ transform: `translate(${trayPanelOffset.x}px, ${trayPanelOffset.y}px)` }}
                         >
                             <div
@@ -741,13 +741,13 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                         <div key={trayId} className="bg-slate-950/50 border border-white/5 rounded-xl p-3 shadow-inner">
                                             <div className="flex items-center justify-between mb-3 px-1">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                    Tray {trayIndex + 1}
+                                                    {t('tray')} {trayIndex + 1}
                                                 </span>
                                                 <span className="text-[9px] text-slate-600 font-mono bg-slate-900 px-1.5 py-0.5 rounded border border-white/5">
                                                     {startIdx + 1}-{Math.min(startIdx + PORTS_PER_TRAY, dio.portIds.length)}
                                                 </span>
                                             </div>
-                                            <div className="grid grid-cols-6 gap-y-4 gap-x-2">
+                                            <div className="grid grid-cols-12 gap-y-4 gap-x-2">
                                                 {trayPorts.map((pid, idx) => {
                                                     const absoluteIndex = startIdx + idx;
                                                     const connectedOltInfo = getConnectedOltInfo(pid);
@@ -800,7 +800,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                                 )}
                                                             </div>
                                                             <span className={`text-[9px] font-mono leading-none select-none ${isLit ? 'text-red-400 font-bold' : (isActive ? 'text-emerald-400 font-bold' : 'text-slate-500')}`}>
-                                                                {absoluteIndex + 1}
+                                                                {(absoluteIndex % 12) + 1}
                                                             </span>
                                                         </div>
                                                     );
@@ -872,7 +872,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                 {/* --- SELECT DIO PORT MODAL (Click-to-Connect) --- */}
                 {configuringFiberId && (
                     <div className="absolute inset-0 z-[2300] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setConfiguringFiberId(null)}>
-                        <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[900px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
                             {/* Modal Header */}
                             <div className="h-16 bg-gradient-to-r from-slate-900 to-slate-800 px-6 flex items-center justify-between border-b border-white/5">
                                 <div className="flex items-center gap-3">
@@ -935,7 +935,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                     );
                                 })()}
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 gap-4">
                                     {Array.from({ length: totalTrays }).map((_, trayIndex) => {
                                         const startIdx = trayIndex * PORTS_PER_TRAY;
                                         const trayPorts = dio.portIds.slice(startIdx, startIdx + PORTS_PER_TRAY);
@@ -946,7 +946,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                     <span>{t('tray')} {trayIndex + 1}</span>
                                                     <Layers className="w-3 h-3 opacity-50" />
                                                 </div>
-                                                <div className="grid grid-cols-6 gap-2">
+                                                <div className="grid grid-cols-12 gap-2">
                                                     {trayPorts.map((pid, idx) => {
                                                         const absoluteIndex = startIdx + idx;
 
@@ -986,7 +986,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                             `}
                                                                 title={occupiedByOtherFiber ? t('port_occupied_splice') : (occupiedByOLT ? t('port_has_patch_cord') : t('port_available'))}
                                                             >
-                                                                {absoluteIndex + 1}
+                                                                {(absoluteIndex % 12) + 1}
                                                                 {occupiedByOLT && <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-sky-500 rounded-full" />}
                                                             </button>
                                                         );
