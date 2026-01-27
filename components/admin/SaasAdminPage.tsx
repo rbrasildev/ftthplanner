@@ -553,12 +553,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
-                                            <th className="px-6 py-4">Company Name</th>
-                                            <th className="px-6 py-4">Current Plan</th>
-                                            <th className="px-6 py-4 text-center">Projects</th>
-                                            <th className="px-6 py-4 text-center">Users</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
+                                            <th className="px-6 py-4">{t('company_name') || 'Company Name'}</th>
+                                            <th className="px-6 py-4">{t('current_plan') || 'Current Plan'}</th>
+                                            <th className="px-6 py-4 text-center">{t('admin_col_phone')}</th>
+                                            <th className="px-6 py-4 text-center">{t('admin_col_infrastructure')}</th>
+                                            <th className="px-6 py-4">{t('status')}</th>
+                                            <th className="px-6 py-4 text-right">{t('actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -582,8 +582,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         ))}
                                                     </select>
                                                 </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                        {company.phone || <span className="text-slate-400 italic">{t('admin_no_phone')}</span>}
+                                                    </div>
+                                                </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="w-48 space-y-2">
+                                                    <div className="w-48 space-y-2 mx-auto">
                                                         <UsageBar
                                                             label="Projects"
                                                             current={company._count.projects}
@@ -599,16 +604,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="w-32">
-                                                        <UsageBar
-                                                            label="Users"
-                                                            current={company._count.users}
-                                                            max={company.plan?.limits?.maxUsers}
-                                                            color="bg-emerald-500"
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm ${company.status === 'ACTIVE'
                                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                                                         : company.status === 'TRIAL'
@@ -620,36 +615,37 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    {company.status === 'ACTIVE' ? (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {company.status === 'ACTIVE' ? (
+                                                            <button
+                                                                onClick={() => handleCompanyUpdate(company.id, { status: 'SUSPENDED' })}
+                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                                                            >
+                                                                Suspend Access
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleCompanyUpdate(company.id, { status: 'ACTIVE' })}
+                                                                className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
+                                                            >
+                                                                Reactivate
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            onClick={() => handleCompanyUpdate(company.id, { status: 'SUSPENDED' })}
-                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                                                            onClick={() => setSelectedCompany(company)}
+                                                            className="text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
+                                                            title="Quick View"
                                                         >
-                                                            Suspend Access
+                                                            <Eye className="w-4 h-4" />
                                                         </button>
-                                                    ) : (
                                                         <button
-                                                            onClick={() => handleCompanyUpdate(company.id, { status: 'ACTIVE' })}
-                                                            className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
+                                                            onClick={() => handleCompanyDelete(company)}
+                                                            className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
+                                                            title="Delete Company"
                                                         >
-                                                            Reactivate
+                                                            <Trash2 className="w-4 h-4" />
                                                         </button>
-
-                                                    )}
-                                                    <button
-                                                        onClick={() => setSelectedCompany(company)}
-                                                        className="ml-2 text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
-                                                        title="Quick View"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleCompanyDelete(company)}
-                                                        className="ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
-                                                        title="Delete Company"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -657,251 +653,277 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </table>
                             </div>
                         </div>
-                    )}
+                    )
+                    }
 
-                    {activeView === 'plans' && (
-                        <div>
-                            <div className="flex justify-end mb-6">
-                                <button
-                                    onClick={() => openPlanModal()}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
-                                >
-                                    <CreditCard className="w-4 h-4" />
-                                    Create New Plan
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {plans.map(plan => (
-                                    <div key={plan.id} className={`bg-white dark:bg-slate-900 rounded-3xl p-8 border hover:shadow-2xl transition-all relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/10 scale-105 shadow-xl' : 'border-slate-200 dark:border-slate-800'}`}>
-                                        {plan.isRecommended && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
-                                                Most Popular
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                                                <div className="mt-2 flex items-baseline gap-1">
-                                                    <span className="text-4xl font-extrabold text-slate-900 dark:text-white">${plan.price}</span>
-                                                    <span className="text-sm font-medium text-slate-500">/month</span>
+                    {
+                        activeView === 'plans' && (
+                            <div>
+                                <div className="flex justify-end mb-6">
+                                    <button
+                                        onClick={() => openPlanModal()}
+                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                                    >
+                                        <CreditCard className="w-4 h-4" />
+                                        Create New Plan
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {plans.map(plan => (
+                                        <div key={plan.id} className={`bg-white dark:bg-slate-900 rounded-3xl p-8 border hover:shadow-2xl transition-all relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/10 scale-105 shadow-xl' : 'border-slate-200 dark:border-slate-800'}`}>
+                                            {plan.isRecommended && (
+                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+                                                    Most Popular
                                                 </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
-                                                    <Settings className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4 mb-8">
-                                            <div className="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl space-y-3">
-                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                                                    <LayoutDashboard className="w-4 h-4 text-indigo-500" />
-                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxProjects || 0) >= 999999 ? '∞' : plan.limits?.maxProjects || '∞'}</span> Max Projects
+                                            )}
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
+                                                    <div className="mt-2 flex items-baseline gap-1">
+                                                        <span className="text-4xl font-extrabold text-slate-900 dark:text-white">${plan.price}</span>
+                                                        <span className="text-sm font-medium text-slate-500">/month</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                                                    <Users className="w-4 h-4 text-emerald-500" />
-                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxUsers || 0) >= 999999 ? '∞' : plan.limits?.maxUsers || '∞'}</span> Max Users
-                                                </div>
-                                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                                                    <Network className="w-4 h-4 text-blue-500" />
-                                                    <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxCTOs || 0) >= 999999 ? '∞' : plan.limits?.maxCTOs || '∞'}</span> CTOs & POPs
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                                                        <Settings className="w-5 h-5" />
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            {/* Features List */}
-                                            {/* Features List */}
-                                            {(() => {
-                                                let featuresList = plan.features;
-                                                if (typeof featuresList === 'string') {
-                                                    try {
-                                                        featuresList = JSON.parse(featuresList);
-                                                    } catch (e) {
-                                                        featuresList = [];
+                                            <div className="space-y-4 mb-8">
+                                                <div className="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl space-y-3">
+                                                    <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                        <LayoutDashboard className="w-4 h-4 text-indigo-500" />
+                                                        <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxProjects || 0) >= 999999 ? '∞' : plan.limits?.maxProjects || '∞'}</span> Max Projects
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                        <Users className="w-4 h-4 text-emerald-500" />
+                                                        <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxUsers || 0) >= 999999 ? '∞' : plan.limits?.maxUsers || '∞'}</span> Max Users
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                        <Network className="w-4 h-4 text-blue-500" />
+                                                        <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxCTOs || 0) >= 999999 ? '∞' : plan.limits?.maxCTOs || '∞'}</span> CTOs & POPs
+                                                    </div>
+                                                </div>
+
+                                                {/* Features List */}
+                                                {/* Features List */}
+                                                {(() => {
+                                                    let featuresList = plan.features;
+                                                    if (typeof featuresList === 'string') {
+                                                        try {
+                                                            featuresList = JSON.parse(featuresList);
+                                                        } catch (e) {
+                                                            featuresList = [];
+                                                        }
                                                     }
-                                                }
 
-                                                if (!Array.isArray(featuresList)) featuresList = [];
+                                                    if (!Array.isArray(featuresList)) featuresList = [];
 
-                                                if (featuresList.length > 0) {
-                                                    return (
-                                                        <div className="space-y-2">
-                                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Included Features:</p>
-                                                            {featuresList.map((feature: string, idx: number) => (
-                                                                <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                                                                    <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                                                    <span>{feature}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
+                                                    if (featuresList.length > 0) {
+                                                        return (
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Included Features:</p>
+                                                                {featuresList.map((feature: string, idx: number) => (
+                                                                    <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                                                        <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                                                        <span>{feature}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
+
+                                            <button className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${plan.isRecommended
+                                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
+                                                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500'
+                                                }`}>
+                                                Assign Plan
+                                            </button>
                                         </div>
-
-                                        <button className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${plan.isRecommended
-                                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
-                                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500'
-                                            }`}>
-                                            Assign Plan
-                                        </button>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
-                    {activeView === 'audit' && (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-                                <h3 className="font-bold text-lg">System Audit Log</h3>
-                                <p className="text-sm text-slate-500">Immutable record of all administrative actions.</p>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Time</th>
-                                            <th className="px-6 py-4">User</th>
-                                            <th className="px-6 py-4">Action</th>
-                                            <th className="px-6 py-4">Entity</th>
-                                            <th className="px-6 py-4">Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {auditLogs.map(log => (
-                                            <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                <td className="px-6 py-4 text-slate-500 font-mono text-xs">
-                                                    {new Date(log.createdAt).toLocaleString()}
-                                                </td>
-                                                <td className="px-6 py-4 font-medium">
-                                                    {log.user?.username || 'System'}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                        {log.action}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-500">
-                                                    {log.entity} <span className="text-xs opacity-50">#{log.entityId.slice(0, 6)}</span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-950 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800 block w-full max-w-[200px] truncate">
-                                                        {JSON.stringify(log.details)}
-                                                    </code>
-                                                </td>
+                    {
+                        activeView === 'audit' && (
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
+                                    <h3 className="font-bold text-lg">System Audit Log</h3>
+                                    <p className="text-sm text-slate-500">Immutable record of all administrative actions.</p>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                            <tr>
+                                                <th className="px-6 py-4">Time</th>
+                                                <th className="px-6 py-4">User</th>
+                                                <th className="px-6 py-4">Action</th>
+                                                <th className="px-6 py-4">Entity</th>
+                                                <th className="px-6 py-4">Details</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {auditLogs.map(log => (
+                                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">
+                                                        {new Date(log.createdAt).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-medium">
+                                                        {log.user?.username || 'System'}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                            {log.action}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500">
+                                                        {log.entity} <span className="text-xs opacity-50">#{log.entityId.slice(0, 6)}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-950 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800 block w-full max-w-[200px] truncate">
+                                                            {JSON.stringify(log.details)}
+                                                        </code>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
 
-                    {activeView === 'users' && (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                <h3 className="font-bold text-lg">Platform Users</h3>
-                                <div className="text-sm text-slate-500">
-                                    Total: <span className="font-bold text-slate-900 dark:text-white">{users.length}</span>
+                    {
+                        activeView === 'users' && (
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                    <h3 className="font-bold text-lg">Platform Users</h3>
+                                    <div className="text-sm text-slate-500">
+                                        Total: <span className="font-bold text-slate-900 dark:text-white">{users.length}</span>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                            <tr>
+                                                <th className="px-6 py-4">{t('user') || 'User'}</th>
+                                                <th className="px-6 py-4">{t('company') || 'Company'}</th>
+                                                <th className="px-6 py-4">{t('role')}</th>
+                                                <th className="px-6 py-4">{t('admin_col_created')}</th>
+                                                <th className="px-6 py-4">{t('admin_col_last_access')}</th>
+                                                <th className="px-6 py-4">{t('status')}</th>
+                                                <th className="px-6 py-4 text-right">{t('actions')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {users.map(user => (
+                                                <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                                                                }`}>
+                                                                {user.username.slice(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium text-slate-900 dark:text-white">{user.username}</div>
+                                                                <div className="text-xs text-slate-500">{user.email}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {user.company ? (
+                                                            <div className="text-slate-700 dark:text-slate-300 font-medium text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block">
+                                                                {user.company.name}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-slate-400 italic">No Company</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <select
+                                                            value={user.role}
+                                                            onChange={(e) => handleUserUpdate(user.id, { role: e.target.value })}
+                                                            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs rounded py-1 px-2"
+                                                            disabled={user.role === 'SUPER_ADMIN'}
+                                                        >
+                                                            <option value="OWNER">Owner</option>
+                                                            <option value="ADMIN">Admin</option>
+                                                            <option value="EDITOR">Editor</option>
+                                                            <option value="VIEWER">Viewer</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                                                            {new Date(user.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                                            {user.lastLoginAt ? (
+                                                                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                                                    <Clock className="w-3 h-3" />
+                                                                    {new Date(user.lastLoginAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 italic">{t('admin_never')}</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.active
+                                                            ? 'bg-emerald-50 text-emerald-600'
+                                                            : 'bg-red-50 text-red-600'
+                                                            }`}>
+                                                            {user.active ? 'Active' : 'Blocked'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newPass = prompt("Enter new password for " + user.username);
+                                                                if (newPass) handleUserUpdate(user.id, { password: newPass });
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                            title="Reset Password"
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                        </button>
+                                                        {user.active ? (
+                                                            <button
+                                                                onClick={() => handleUserUpdate(user.id, { active: false })}
+                                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                                title="Block Access"
+                                                            >
+                                                                <Lock className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleUserUpdate(user.id, { active: true })}
+                                                                className="p-1.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                                                title="Unblock"
+                                                            >
+                                                                <Shield className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">User</th>
-                                            <th className="px-6 py-4">Company</th>
-                                            <th className="px-6 py-4">Role</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {users.map(user => (
-                                            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                                                            }`}>
-                                                            {user.username.slice(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium text-slate-900 dark:text-white">{user.username}</div>
-                                                            <div className="text-xs text-slate-500">ID: {user.id.slice(0, 8)}...</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {user.company ? (
-                                                        <div className="text-slate-700 dark:text-slate-300 font-medium text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded inline-block">
-                                                            {user.company.name}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-400 italic">No Company</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <select
-                                                        value={user.role}
-                                                        onChange={(e) => handleUserUpdate(user.id, { role: e.target.value })}
-                                                        className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs rounded py-1 px-2"
-                                                        disabled={user.role === 'SUPER_ADMIN'}
-                                                    >
-                                                        <option value="OWNER">Owner</option>
-                                                        <option value="ADMIN">Admin</option>
-                                                        <option value="EDITOR">Editor</option>
-                                                        <option value="VIEWER">Viewer</option>
-                                                    </select>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.active
-                                                        ? 'bg-emerald-50 text-emerald-600'
-                                                        : 'bg-red-50 text-red-600'
-                                                        }`}>
-                                                        {user.active ? 'Active' : 'Blocked'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            const newPass = prompt("Enter new password for " + user.username);
-                                                            if (newPass) handleUserUpdate(user.id, { password: newPass });
-                                                        }}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                                                        title="Reset Password"
-                                                    >
-                                                        <RotateCcw className="w-4 h-4" />
-                                                    </button>
-                                                    {user.active ? (
-                                                        <button
-                                                            onClick={() => handleUserUpdate(user.id, { active: false })}
-                                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                            title="Block Access"
-                                                        >
-                                                            <Lock className="w-4 h-4" />
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => handleUserUpdate(user.id, { active: true })}
-                                                            className="p-1.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                                                            title="Unblock"
-                                                        >
-                                                            <Shield className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )
+                    }
+                </div >
                 {isPlanModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
@@ -1153,13 +1175,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Billing Mode</p>
-                                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                                                        Manual
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Phone</p>
+                                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                        {selectedCompany.phone || 'N/A'}
                                                     </p>
                                                 </div>
                                             </div>
-
                                         </div>
 
                                         <div className="space-y-3 mt-4">
@@ -1269,7 +1290,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     isOpen={isPasswordModalOpen}
                     onClose={() => setIsPasswordModalOpen(false)}
                 />
-            </main >
+            </main>
             {/* Delete Confirmation Modal */}
             {
                 isDeleteModalOpen && companyToDelete && (
@@ -1314,6 +1335,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     </div>
                 )
             }
-        </div >
+        </div>
     );
 };

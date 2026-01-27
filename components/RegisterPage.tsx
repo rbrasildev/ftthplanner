@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
-import { KeyRound, ArrowLeft } from 'lucide-react';
+import { KeyRound, ArrowLeft, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface RegisterPageProps {
-    onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string) => void;
+    onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => void;
     onBackToLogin: () => void;
     onBackToLanding: () => void;
     initialPlan?: string;
+    isLoading?: boolean;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding, initialPlan }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackToLogin, onBackToLanding, initialPlan, isLoading }) => {
     const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [companyName, setCompanyName] = useState('');
+    const [phone, setPhone] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const generatedUsername = email.split('@')[0] || email;
 
-        if (!email.trim() || !password.trim() || !companyName.trim()) {
+        if (!email.trim() || !password.trim() || !companyName.trim() || !phone.trim()) {
             setError(t('register_error_empty'));
             return;
         }
@@ -30,7 +32,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
             return;
         }
         setError(null);
-        onRegister(generatedUsername, email, password, companyName, initialPlan);
+
+        // Get source from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const source = urlParams.get('utm_source') || 'direct';
+
+        onRegister(generatedUsername, email, password, companyName, initialPlan, phone, source);
     };
 
     return (
@@ -102,6 +109,20 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                 </div>
 
                                 <div className="space-y-1">
+                                    <label className="sr-only">{t('register_phone_placeholder')}</label>
+                                    <div className="relative">
+                                        <input
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            placeholder={t('register_phone_placeholder')}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
                                     <label className="sr-only">{t('login_email_placeholder')}</label>
                                     <div className="relative">
                                         <input
@@ -146,9 +167,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
 
                             <button
                                 type="submit"
-                                className="w-full text-white bg-emerald-600 hover:bg-emerald-500 focus:ring-4 focus:outline-none focus:ring-emerald-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                                disabled={isLoading}
+                                className="w-full text-white bg-emerald-600 hover:bg-emerald-500 focus:ring-4 focus:outline-none focus:ring-emerald-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {t('register_button')}
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>{t('loading') || 'Carregando...'}</span>
+                                    </>
+                                ) : (
+                                    t('register_button')
+                                )}
                             </button>
 
                             <div className="text-center pt-2">

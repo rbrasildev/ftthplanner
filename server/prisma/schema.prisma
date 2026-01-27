@@ -15,6 +15,8 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   companyId    String?   @map("company_id")
   role         UserRole  @default(OWNER)
+  lastLoginAt  DateTime? @map("last_login_at")
+  source       String?
   active       Boolean   @default(true)
   projects     Project[]
   company      Company?  @relation(fields: [companyId], references: [id])
@@ -34,6 +36,7 @@ model Company {
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   mercadopagoSubscriptionId String? @map("mercadopago_subscription_id")
   status                String    @default("ACTIVE")
+  phone                 String?
   // billingMode removed
   cables                Cable[]
   plan                  Plan?     @relation(fields: [planId], references: [id])

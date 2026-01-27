@@ -178,24 +178,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* 2. Project Context (Only in map/project mode) */}
                 {viewMode === 'project' && (
-                    <div className={`p-4 border-b border-slate-200/50 dark:border-slate-800/50 ${isCollapsed ? 'flex justify-center' : ''} flex-shrink-0`}>
+                    <div className={`p-4 border-b border-slate-200/50 dark:border-slate-800/50 ${isCollapsed ? 'flex justify-center' : ''} flex-shrink-0 space-y-2`}>
                         <button
                             onClick={onImportClick}
                             className={`group relative flex items-center transition-all duration-200 
                                 ${isCollapsed
-                                    ? 'w-10 h-10 justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
+                                    ? 'w-10 h-10 justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-emerald-500'
                                     : 'w-full gap-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 group-hover:bg-emerald-50/50'}`}
-                            title={isCollapsed ? currentProjectName : ''}
+                            title={isCollapsed ? t('import_kmz_label') : ''}
                         >
-                            <FolderOpen className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5 text-zinc-400 group-hover:text-emerald-500' : 'w-4 h-4 text-zinc-400 group-hover:text-emerald-500'}`} />
+                            <FileUp className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4 text-zinc-400 group-hover:text-emerald-500'}`} />
                             {!isCollapsed && (
                                 <div className="flex flex-col items-start overflow-hidden text-left">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider leading-none mb-1">{t('active_project')}</span>
-                                    <span className="truncate text-xs font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">{currentProjectName}</span>
+                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider leading-none mb-1">{t('import_kmz_label')}</span>
+                                    <span className="truncate text-[10px] font-medium text-zinc-500 dark:text-zinc-400 leading-tight">{t('import_kmz_desc')}</span>
                                 </div>
                             )}
                             {!isCollapsed && <Upload className="w-3.5 h-3.5 text-zinc-300 ml-auto group-hover:text-emerald-500" />}
                         </button>
+
+                        <NavButton
+                            icon={<FolderOpen className="w-5 h-5" />}
+                            label={currentProjectName}
+                            onClick={() => setShowProjectManager(true)}
+                            isCollapsed={isCollapsed}
+                            variant="zinc"
+                        />
                     </div>
                 )}
 

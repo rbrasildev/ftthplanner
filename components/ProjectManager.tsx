@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Project } from '../types';
-import { FileUp, FolderOpen, Trash2, X } from 'lucide-react';
+import { FolderOpen, X, Trash2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface ProjectManagerProps {
@@ -9,7 +9,7 @@ interface ProjectManagerProps {
   currentProjectId: string;
   onSelectProject: (id: string) => void;
   onDeleteProject: (id: string) => void;
-  onImportKMZ: (file: File) => void;
+  onImportKMZ: (file: File) => void; // Keep for interface compatibility but won't use
   onClose: () => void;
 }
 
@@ -18,19 +18,9 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
   currentProjectId,
   onSelectProject,
   onDeleteProject,
-  onImportKMZ,
   onClose
 }) => {
   const { t } = useLanguage();
-  const [isImporting, setIsImporting] = useState(false);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setIsImporting(true);
-      await onImportKMZ(e.target.files[0]);
-      setIsImporting(false);
-    }
-  };
 
   // Draggable Logic - Optimized with Refs for smoothness
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -54,12 +44,9 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current.isDragging || !panelRef.current) return;
-
       e.preventDefault();
-
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-
       panelRef.current.style.left = `${dragRef.current.initialLeft + dx}px`;
       panelRef.current.style.top = `${dragRef.current.initialTop + dy}px`;
     };
@@ -71,7 +58,6 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -83,21 +69,18 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
     dragRef.current.isDragging = true;
     dragRef.current.startX = e.clientX;
     dragRef.current.startY = e.clientY;
-
     const rect = panelRef.current.getBoundingClientRect();
     dragRef.current.initialLeft = rect.left;
     dragRef.current.initialTop = rect.top;
-
     document.body.style.userSelect = 'none';
   };
 
   return (
     <div
       ref={panelRef}
-      className="fixed z-50 w-full max-w-[600px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden"
+      className="fixed z-50 w-full max-w-[500px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
-
       {/* Header - Draggable Handle */}
       <div
         onMouseDown={handleMouseDown}
@@ -113,56 +96,53 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
       </div>
 
       <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">{t('your_projects')}</h3>
 
-        {/* Import KMZ Area */}
-        <div className="mb-8 p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/30 text-center">
-          <label className="cursor-pointer block">
-            <div className="flex flex-col items-center gap-2 text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors">
-              <FileUp className="w-8 h-8" />
-              <span className="text-sm font-medium">
-                {isImporting ? t('processing') : t('import_kmz_title')}
-              </span>
-              <span className="text-xs text-slate-500">{t('import_kmz_desc')}</span>
-            </div>
-            <input
-              type="file"
-              accept=".kmz,.kml"
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={isImporting}
-            />
-          </label>
-        </div>
-
-        {/* Current Project Info */}
-        <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t('current_project')}</h3>
-        <div className="space-y-2">
-          {(() => {
-            const currentProject = projects.find(p => p.id === currentProjectId);
-            if (!currentProject) return null;
-
+        <div className="space-y-3">
+          {projects.map(project => {
+            const isActive = project.id === currentProjectId;
             return (
               <div
-                className="flex items-center justify-between p-3 rounded-lg border transition-all bg-sky-50 dark:bg-sky-900/20 border-sky-500 dark:border-sky-600 shadow-md"
+                key={project.id}
+                onClick={() => onSelectProject(project.id)}
+                className={`group flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer
+                  ${isActive
+                    ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-500 dark:border-sky-600 shadow-md ring-1 ring-sky-500/20'
+                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-sm'}`}
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-2 h-2 rounded-full shrink-0 bg-sky-500" />
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-sky-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
                   <div className="overflow-hidden">
-                    <h4 className="text-sm font-bold truncate text-sky-700 dark:text-white">
-                      {currentProject.name}
+                    <h4 className={`text-sm font-bold truncate ${isActive ? 'text-sky-700 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
+                      {project.name}
                     </h4>
-                    <p className="text-[10px] text-slate-500">
-                      {t('items_count', { ctos: currentProject.network.ctos.length, cables: currentProject.network.cables.length })}
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      {t('items_count', { ctos: project.network?.ctos?.length || 0, cables: project.network?.cables?.length || 0 })}
                     </p>
                   </div>
                 </div>
 
-                {/* No actions for now, as delete/switch is handled in Dashboard */}
+                {!isActive && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(t('confirm_delete_project') || 'Deletar projeto?')) {
+                        onDeleteProject(project.id);
+                      }
+                    }}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+
+                {isActive && (
+                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest">{t('active') || 'Ativo'}</span>
+                )}
               </div>
             );
-          })()}
+          })}
         </div>
-
       </div>
     </div>
   );

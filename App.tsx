@@ -125,6 +125,9 @@ export default function App() {
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
     const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -1483,8 +1486,7 @@ export default function App() {
     };
 
 
-    const [loginError, setLoginError] = useState<string | null>(null);
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    // --- LOGIN LOGIC ---
 
     // --- UPGRADE MODAL STATE REMOVED (Duplicate) ---
 
@@ -1499,6 +1501,8 @@ export default function App() {
             // Fetch Plan Name
             if (data.user.company?.plan?.name) {
                 setUserPlan(data.user.company.plan.name);
+                setUserPlanType(data.user.company.plan.type || 'STANDARD');
+                setUserPlanId(data.user.company.plan.id);
             }
             if (data.user.company?.subscriptionExpiresAt) {
                 setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
@@ -1517,16 +1521,27 @@ export default function App() {
         }
     };
 
-    const handleRegister = async (username: string, email: string, password?: string, companyName?: string, planName?: string) => {
+    const handleRegister = async (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => {
+        setIsRegistering(true);
         try {
             // Re-using the logic from authService if we had a separate register, 
             // but authService.login already has a silent register.
             // However, we want to be explicit here.
-            await api.post('/auth/register', { username, email, password: password || "123456", companyName, planName });
+            await api.post('/auth/register', {
+                username,
+                email,
+                password: password || "123456",
+                companyName,
+                planName,
+                phone,
+                source: source || 'direct'
+            });
             showToast(t('registration_success'), 'success');
             setAuthView('login');
         } catch (e) {
             showToast(t('registration_failed'), 'info');
+        } finally {
+            setIsRegistering(false);
         }
     };
 
@@ -1559,6 +1574,7 @@ export default function App() {
                     onBackToLogin={() => setAuthView('login')}
                     onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
                     initialPlan={selectedRegisterPlan}
+                    isLoading={isRegistering}
                 />
             );
         }
@@ -1630,19 +1646,22 @@ export default function App() {
             if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                 // Determine valid coordinate range
                 if (currentProject) {
-                    // Update project center state (transient) to force View update
+                    // Update project center state (transient) for consistency
                     setCurrentProject(prev => prev ? {
                         ...prev,
                         mapState: {
                             ...prev.mapState,
                             center: { lat, lng },
-                            zoom: 18 // Auto zoom in
+                            zoom: 18
                         }
                     } : null);
 
-                    // Force MapComponent update
-                    setMapForceUpdateKey(Date.now().toString());
-                    setMapBounds(null); // Fix: Clear previous bounds to prevent jumping to old location
+                    // Move map smoothly using bounds instead of forcing a view reset
+                    const offset = 0.002;
+                    setMapBounds([
+                        [lat - offset, lng - offset],
+                        [lat + offset, lng + offset]
+                    ]);
 
 
                     // Viability Check
@@ -2275,7 +2294,15 @@ export default function App() {
                         projects={projects}
                         currentProjectId={currentProjectId!}
                         onSelectProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
-                        onDeleteProject={(id) => setProjects(p => p.filter(x => x.id !== id))}
+                        onDeleteProject={async (id) => {
+                            try {
+                                await projectService.deleteProject(id);
+                                setProjects(prev => prev.filter(x => x.id !== id));
+                                showToast(t('toast_project_deleted'));
+                            } catch (e) {
+                                showToast(t('error_project_delete') || 'Erro ao deletar projeto', 'info');
+                            }
+                        }}
                         onImportKMZ={handleImportKMZ}
                         onClose={() => setShowProjectManager(false)}
                     />

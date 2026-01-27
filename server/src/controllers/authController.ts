@@ -13,20 +13,20 @@ async function getPlanByName(name: string) {
 }
 
 export const register = async (req: Request, res: Response) => {
-    const { username, email, password, companyName, planName } = req.body;
+    const { username, email, password, companyName, planName, phone, source } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Determine Initial Plan
-        let initialPlanName = 'Plano Ilimitado'; // Default to Trial of Unlimited
+        let initialPlanName = 'Plano Trial'; // Default to 7-day Trial
         if (planName && typeof planName === 'string') {
             initialPlanName = planName;
         }
 
         let selectedPlan = await getPlanByName(initialPlanName);
         if (!selectedPlan) {
-            console.warn(`Plan ${initialPlanName} not found, falling back to Unlimited`);
-            selectedPlan = await getPlanByName('Plano Ilimitado');
+            console.warn(`Plan ${initialPlanName} not found, falling back to Trial`);
+            selectedPlan = await getPlanByName('Plano Trial');
         }
 
         // Calculate Expiration
@@ -48,8 +48,9 @@ export const register = async (req: Request, res: Response) => {
                     username,
                     email,
                     passwordHash: hashedPassword,
-                    role: 'OWNER'
-                },
+                    role: 'OWNER',
+                    source: source || null
+                } as any,
             });
 
             const company = await tx.company.create({
@@ -58,8 +59,9 @@ export const register = async (req: Request, res: Response) => {
                     users: { connect: { id: user.id } },
                     planId: selectedPlan?.id,
                     subscriptionExpiresAt: expiresAt,
-                    status: 'ACTIVE'
-                }
+                    status: 'ACTIVE',
+                    phone: phone || null
+                } as any
             });
 
             const updatedUser = await tx.user.update({
@@ -71,7 +73,7 @@ export const register = async (req: Request, res: Response) => {
         });
 
         // Clone default templates to the new company
-        await cloneTemplatesToCompany(result.company.id);
+        await cloneTemplatesToCompany(result.company.id, prisma);
 
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
     } catch (error) {
@@ -131,6 +133,12 @@ export const login = async (req: Request, res: Response) => {
                     }
                 }
             }
+
+            // Update Last Login
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { lastLoginAt: new Date() }
+            });
 
             const token = jwt.sign(
                 {

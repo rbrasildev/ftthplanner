@@ -128,7 +128,7 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
             include: {
                 plan: true,
                 users: {
-                    select: { id: true, username: true, role: true }
+                    select: { id: true, username: true, role: true, lastLoginAt: true, createdAt: true }
                 },
                 _count: {
                     select: { projects: true, users: true, ctos: true, pops: true }

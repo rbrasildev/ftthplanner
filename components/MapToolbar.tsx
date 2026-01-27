@@ -103,7 +103,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                             >
                                 <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md"><FileUp className="w-3.5 h-3.5" /></div>
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-bold">Importar KMZ</span>
+                                    <span className="text-xs font-bold">{t('import_kmz_label')}</span>
                                     <span className="text-[9px] opacity-60">Google Earth</span>
                                 </div>
                             </button>
