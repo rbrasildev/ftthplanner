@@ -35,7 +35,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
 
     // Draggable Panels State
-    const [cablePanelOffset, setCablePanelOffset] = useState({ x: 0, y: 0 });
+    const [cablePanelOffsets, setCablePanelOffsets] = useState<Record<string, { x: number, y: number }>>(dio.cableLayout || {});
     const [trayPanelOffset, setTrayPanelOffset] = useState({ x: 0, y: 0 });
 
     // State for internal "Link Cables" modal
@@ -67,6 +67,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
         currentMouseX?: number;
         currentMouseY?: number;
         initialPanelOffset?: { x: number, y: number }; // For panel dragging
+        panelId?: string; // For independent cable dragging
     } | null>(null);
 
     // Force re-render for SVG lines
@@ -232,13 +233,22 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     };
 
     // --- Panel Dragging Helpers ---
-    const handlePanelDragStart = (e: React.MouseEvent, mode: 'cablePanel' | 'trayPanel') => {
+    const handlePanelDragStart = (e: React.MouseEvent, mode: 'cablePanel' | 'trayPanel', panelId?: string) => {
         e.stopPropagation();
+
+        let initial = { x: 0, y: 0 };
+        if (mode === 'cablePanel' && panelId) {
+            initial = cablePanelOffsets[panelId] || { x: 0, y: 0 };
+        } else if (mode === 'trayPanel') {
+            initial = trayPanelOffset;
+        }
+
         setDragState({
             mode,
             startX: e.clientX,
             startY: e.clientY,
-            initialPanelOffset: mode === 'cablePanel' ? cablePanelOffset : trayPanelOffset
+            initialPanelOffset: initial,
+            panelId
         });
     };
 
@@ -308,8 +318,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
             const dy = e.clientY - dragState.startY;
             const initial = dragState.initialPanelOffset || { x: 0, y: 0 };
 
-            if (dragState.mode === 'cablePanel') {
-                setCablePanelOffset({ x: initial.x + dx, y: initial.y + dy });
+            if (dragState.mode === 'cablePanel' && dragState.panelId) {
+                setCablePanelOffsets(prev => ({
+                    ...prev,
+                    [dragState.panelId!]: { x: initial.x + dx, y: initial.y + dy }
+                }));
             } else {
                 setTrayPanelOffset({ x: initial.x + dx, y: initial.y + dy });
             }
@@ -358,6 +371,15 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
             if (!hoveredPortId) {
                 setCurrentConnections(prev => prev.filter(c => c.id !== dragState.connectionId));
             }
+        } else if (dragState?.mode === 'cablePanel' && dragState.panelId && onUpdateDio) {
+            // Persist cable position on drag end
+            onUpdateDio({
+                ...dio,
+                cableLayout: {
+                    ...dio.cableLayout,
+                    ...cablePanelOffsets
+                }
+            });
         }
         setDragState(null);
     };
@@ -574,11 +596,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         {/* --- LEFT SIDE: Incoming Cables (Filtered by Assignment) --- */}
                         <div
                             className="absolute top-20 left-20 flex flex-col gap-10 pb-40"
-                            style={{ transform: `translate(${cablePanelOffset.x}px, ${cablePanelOffset.y}px)` }}
                         >
                             <div
                                 className="absolute -top-8 left-0 right-0 h-8 flex items-center justify-center cursor-move opacity-0 hover:opacity-100 transition-opacity"
-                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel')}
+                            // Removed global cable drag
                             >
                                 <div className="w-12 h-1 bg-white/20 rounded-full" />
                             </div>
@@ -603,13 +624,18 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                 relevantCables.map((cable, cIdx) => {
                                     const looseTubeCount = cable.looseTubeCount || 1;
                                     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
+                                    const offset = cablePanelOffsets[cable.id] || { x: 0, y: 0 };
 
                                     return (
-                                        <div key={cable.id} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl w-[220px] z-20 flex flex-col overflow-hidden ring-1 ring-black/50">
+                                        <div
+                                            key={cable.id}
+                                            className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl w-[220px] z-20 flex flex-col overflow-hidden ring-1 ring-black/50"
+                                            style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+                                        >
                                             {/* Cable Header */}
                                             <div
                                                 className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-3 px-4 flex items-center justify-between cursor-move"
-                                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel')}
+                                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel', cable.id)}
                                             >
                                                 <div className="min-w-0">
                                                     <span className="text-xs font-bold text-slate-400 block uppercase tracking-wider mb-0.5">{t('cable')}</span>
@@ -715,7 +741,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                         {/* --- RIGHT SIDE: DIO Back View --- */}
                         <div
-                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[600px] flex flex-col max-h-[85vh] ring-1 ring-black/50 overflow-hidden"
+                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[600px] flex flex-col ring-1 ring-black/50"
                             style={{ transform: `translate(${trayPanelOffset.x}px, ${trayPanelOffset.y}px)` }}
                         >
                             <div
@@ -731,7 +757,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                 </div>
                             </div>
 
-                            <div className="p-4 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+                            <div className="p-4 space-y-4">
                                 {Array.from({ length: totalTrays }).map((_, trayIndex) => {
                                     const startIdx = trayIndex * PORTS_PER_TRAY;
                                     const trayPorts = dio.portIds.slice(startIdx, startIdx + PORTS_PER_TRAY);

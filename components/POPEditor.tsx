@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
-import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save } from 'lucide-react';
+import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
 
@@ -131,33 +131,30 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [incomingCables.length, localPOP.olts.length, localPOP.dios.length]);
 
-    // Initial Center View Effect (Robust Bounding Box)
-    const hasCentered = useRef(false);
-    useEffect(() => {
-        if (hasCentered.current) return;
+    // --- Deduplicate Incoming Cables (Protect against state errors) ---
+    const uniqueIncomingCables = useMemo(() => {
+        const seen = new Set();
+        return incomingCables.filter(c => {
+            if (seen.has(c.id)) return false;
+            seen.add(c.id);
+            return true;
+        });
+    }, [incomingCables]);
 
-        // Ensure container is ready
+    // --- View Centering Logic ---
+    const handleCenterView = useCallback(() => {
         if (!containerRef.current) return;
-
-        // Check if data is ready (if items exist, layout must exist)
-        const hasItems = localPOP.olts.length > 0 || localPOP.dios.length > 0;
-        const hasLayout = localPOP.layout && Object.keys(localPOP.layout).length > 0;
-
-        if (hasItems && !hasLayout) {
-            // Wait for internal layout initialization effect to run
-            return;
-        }
 
         const containerW = containerRef.current.clientWidth;
         const containerH = containerRef.current.clientHeight;
-        if (containerW === 0 || containerH === 0) return; // Wait for layout
+        if (containerW === 0 || containerH === 0) return;
 
         // Calculate Bounding Box of all content
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         let count = 0;
 
         // Helper to expand bounds
-        const expand = (id: string, width = EQUIPMENT_WIDTH, height = 200) => {
+        const expand = (id: string, width = EQUIPMENT_WIDTH, height = 150) => {
             const l = localPOP.layout?.[id];
             if (l) {
                 if (l.x < minX) minX = l.x;
@@ -171,48 +168,58 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         localPOP.olts.forEach(o => expand(o.id));
         localPOP.dios.forEach(d => expand(d.id));
 
-        // If no content or bounds invalid, default to center of screen for x=400
-        let targetX = 0;
-        let targetY = 0;
+        // Also include cables in non-rack mode for better centering
+        if (!isRackMode) {
+            uniqueIncomingCables.forEach(c => expand(c.id, 112, 60));
+        }
 
         if (count > 0 && minX !== Infinity) {
+            const PADDING = 60;
             const contentCenterX = (minX + maxX) / 2;
             const contentCenterY = (minY + maxY) / 2;
 
-            // Center content in container
-            targetX = (containerW / 2) - contentCenterX;
-            // Place top of content slightly down from top (e.g. 50px padding)
-            // targetY = 50 - minY; 
-            // OR Center Vertically:
-            targetY = (containerH / 2) - contentCenterY;
+            const contentW = maxX - minX + (PADDING * 2);
+            const contentH = maxY - minY + (PADDING * 2);
 
-            // Prefer top-alignment if content is tall? 
-            // Let's stick to vertical centering but clamp top
-            if (maxY - minY > containerH) {
-                targetY = 20 - minY; // Start at top if too tall
-            }
+            // Fit to viewport zoom
+            const zoomW = containerW / contentW;
+            const zoomH = containerH / contentH;
+            const targetZoom = Math.max(0.2, Math.min(zoomW, zoomH, 1));
+
+            setViewState({
+                x: (containerW / 2) - (contentCenterX * targetZoom),
+                y: (containerH / 2) - (contentCenterY * targetZoom),
+                zoom: targetZoom
+            });
         } else {
             // Default Fallback
-            const centerX = 400 + (EQUIPMENT_WIDTH / 2);
-            targetX = (containerW / 2) - centerX;
-            targetY = 50;
+            setViewState({ x: 50, y: 50, zoom: 1 });
+        }
+    }, [localPOP.layout, localPOP.olts, localPOP.dios, isRackMode, uniqueIncomingCables]);
+
+    // Initial Center View Effect
+    const hasCentered = useRef(false);
+    useEffect(() => {
+        if (hasCentered.current) return;
+
+        // Wait until we have some layout elements initialized
+        const hasItems = localPOP.olts.length > 0 || localPOP.dios.length > 0;
+        const hasLayout = localPOP.layout && Object.keys(localPOP.layout).length >= (localPOP.olts.length + localPOP.dios.length);
+
+        if (hasItems && hasLayout && containerRef.current) {
+            // Small delay to ensure browser layout is stable
+            const timer = setTimeout(() => {
+                handleCenterView();
+                hasCentered.current = true;
+            }, 100);
+            return () => clearTimeout(timer);
         }
 
-        setViewState({ x: targetX, y: targetY, zoom: 1 });
-        hasCentered.current = true;
-
-    }, [localPOP.layout, localPOP.olts.length, localPOP.dios.length]);
-
-
-    // --- Deduplicate Incoming Cables (Protect against state errors) ---
-    const uniqueIncomingCables = useMemo(() => {
-        const seen = new Set();
-        return incomingCables.filter(c => {
-            if (seen.has(c.id)) return false;
-            seen.add(c.id);
-            return true;
-        });
-    }, [incomingCables]);
+        // If no items, consider it "centered" (empty)
+        if (!hasItems && containerRef.current) {
+            hasCentered.current = true;
+        }
+    }, [localPOP.layout, localPOP.olts.length, localPOP.dios.length, handleCenterView]);
 
     // --- Helpers ---
     const getLayout = (id: string) => localPOP.layout?.[id] || { x: 0, y: 0, rotation: 0 };
@@ -618,11 +625,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     // --- View Helpers ---
-    const handleCenterView = () => {
-        // Calculate bounds of content
-        // Simple default: Reset to initial
-        setViewState({ x: 0, y: 0, zoom: 1 });
-    };
+    // handleCenterView is now defined above with Bounding Box logic
 
     const handleWheel = (e: React.WheelEvent) => {
         const scale = e.deltaY > 0 ? 0.9 : 1.1;
@@ -877,11 +880,46 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     </div>
 
                     {/* Footer (Floating) */}
-                    <div className="absolute bottom-6 right-6 flex gap-3 z-50">
+                    {/* Floating Navigation Controls */}
+                    <div className="absolute bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
+
+                        {/* Zoom & Center Panel */}
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2 pointer-events-auto">
+                            <button
+                                onClick={() => setViewState(s => ({ ...s, zoom: Math.min(4, s.zoom + 0.1) }))}
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('zoom_in')}
+                            >
+                                <ZoomIn className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('zoom_out')}
+                            >
+                                <ZoomOut className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={handleCenterView}
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('show_all')}
+                            >
+                                <Box className="w-5 h-5" />
+                            </button>
+                            <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                            <button
+                                onClick={() => setViewState({ x: 50, y: 50, zoom: 1 })}
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                title={t('center_view')}
+                            >
+                                <Maximize className="w-5 h-5" />
+                            </button>
+                        </div>
+
                         {/* Save Button */}
                         <button
                             onClick={handleSaveAndClose}
-                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
+                            className="px-6 py-2 pointer-events-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
                         >
                             <Save className="w-4 h-4" /> {t('save_or_done') || 'Concluir'}
                         </button>

@@ -64,6 +64,10 @@ const translations = {
     'settings': 'Settings',
     'system_settings': 'Settings',
     'view_options': 'View Options',
+    'zoom_in': 'Zoom In',
+    'zoom_out': 'Zoom Out',
+    'center_view': 'Center View',
+    'show_all': 'Show All Items',
     'toggle_labels': 'Labels',
     'sidebar_collapse': 'Collapse Menu',
     'sidebar_expand': 'Expand Menu',
@@ -803,6 +807,10 @@ const translations = {
     'settings': 'Configurações',
     'system_settings': 'Configurações',
     'view_options': 'Opções de Visualização',
+    'zoom_in': 'Aproximar',
+    'zoom_out': 'Afastar',
+    'center_view': 'Centralizar Vista',
+    'show_all': 'Mostrar Todos os Itens',
     'toggle_labels': 'Nomes',
     'sidebar_collapse': 'Recolher Menu',
     'sidebar_expand': 'Expandir Menu',
@@ -1262,9 +1270,6 @@ const translations = {
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
     'apply': 'Aplicar',
     'maximize': 'Maximizar',
-    'tray': 'Bandeja',
-    'trays': 'Bandejas',
-    'splice_trays': 'Bandejas de Fusão',
   }
 };
 

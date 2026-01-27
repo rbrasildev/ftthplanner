@@ -86,6 +86,7 @@ export interface DIO {
   portIds: string[];
   status?: CTOStatus;
   inputCableIds?: string[]; // Array of Cable IDs linked to this DIO
+  cableLayout?: Record<string, { x: number; y: number }>; // Saved visual position of cables
 }
 
 export interface POPData {
