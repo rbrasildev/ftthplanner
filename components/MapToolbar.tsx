@@ -1,9 +1,9 @@
 import React from 'react';
-import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug } from 'lucide-react';
+import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug, Ruler } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable';
+    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
@@ -115,6 +115,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {/* Group 3: Cabling */}
             <div className="flex items-center gap-1 pl-2">
                 <ToolButton mode="draw_cable" icon={Waypoints} label="Cabo" />
+                <ToolButton mode="ruler" icon={Ruler} label={t('mode_ruler') || "Régua"} />
             </div>
 
         </div>

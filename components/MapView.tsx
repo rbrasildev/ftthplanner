@@ -298,7 +298,7 @@ const CTOMarker = React.memo(({
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
-            L.DomEvent.stopPropagation(e);
+            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
             if (mode === 'draw_cable') {
                 if (!isSelected && !cableStartPoint) onCableStart(cto.id);
                 else onCableEnd(cto.id);
@@ -360,7 +360,7 @@ const POPMarker = React.memo(({
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
-            L.DomEvent.stopPropagation(e);
+            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
             if (mode === 'draw_cable') {
                 if (!isSelected && !cableStartPoint) onCableStart(pop.id);
                 else onCableEnd(pop.id);
@@ -419,7 +419,7 @@ const PoleMarker = React.memo(({
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
-            L.DomEvent.stopPropagation(e);
+            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
             if (mode === 'view' || mode === 'move_node') {
                 onNodeClick(pole.id, 'Pole');
             }
@@ -691,7 +691,7 @@ const MapEvents: React.FC<{
 }> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint }) => {
     useMapEvents({
         contextmenu(e) {
-            if (mode === 'draw_cable') {
+            if (mode === 'draw_cable' || mode === 'ruler') {
                 L.DomEvent.preventDefault(e as any);
                 if (onUndoDrawingPoint) {
                     onUndoDrawingPoint();
@@ -704,7 +704,7 @@ const MapEvents: React.FC<{
             }
         },
         click(e) {
-            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable') {
+            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
                 onClearSelection();
@@ -843,6 +843,8 @@ interface MapViewProps {
     onClearPin?: () => void;
     onUndoDrawingPoint?: () => void;
     pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
+    rulerPoints?: Coordinates[];
+    onRulerPointsChange?: (points: Coordinates[]) => void;
 }
 
 const noOp = () => { };
@@ -853,7 +855,8 @@ export const MapView: React.FC<MapViewProps> = ({
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
-    pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint
+    pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint,
+    rulerPoints = [], onRulerPointsChange
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1039,7 +1042,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableClickInternal = useCallback((e: any, cable: CableData) => {
         // Fix propagation: Use originalEvent if available (Leaflet), otherwise e (DOM/D3)
         const domEvent = e.originalEvent || e;
-        L.DomEvent.stopPropagation(domEvent);
+        if (mode !== 'ruler') L.DomEvent.stopPropagation(domEvent);
 
         // Single click: Only for selection/view/otdr
         if (mode === 'connect_cable') {
@@ -1221,13 +1224,27 @@ export const MapView: React.FC<MapViewProps> = ({
                     mode={mode}
                     onMapClick={(lat, lng) => {
                         setMapContextMenu(null); // Close map menu on click
-                        onAddPoint(lat, lng);
+                        if (mode === 'ruler') {
+                            if (onRulerPointsChange) {
+                                onRulerPointsChange([...rulerPoints, { lat, lng }]);
+                            }
+                        } else {
+                            onAddPoint(lat, lng);
+                        }
                     }}
                     onClearSelection={() => {
                         setActiveCableId(null);
                         setMapContextMenu(null);
                     }}
-                    onUndoDrawingPoint={onUndoDrawingPoint}
+                    onUndoDrawingPoint={() => {
+                        if (mode === 'ruler') {
+                            if (onRulerPointsChange && rulerPoints.length > 0) {
+                                onRulerPointsChange(rulerPoints.slice(0, -1));
+                            }
+                        } else if (onUndoDrawingPoint) {
+                            onUndoDrawingPoint();
+                        }
+                    }}
                     onMapMoveEnd={onMapMoveEnd}
                     onContextMenu={(e) => {
                         L.DomEvent.preventDefault(e as any);
@@ -1261,6 +1278,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     onClick={handleCableClickInternal}
                     onDoubleClick={handleCableDoubleClickInternal}
                     onContextMenu={handleCableContextMenu}
+                    mode={mode}
                 />
 
                 {/* Render ONLY active cable with React-Leaflet for editing interactions (drag handles) */}
@@ -1318,6 +1336,28 @@ export const MapView: React.FC<MapViewProps> = ({
                         pathOptions={{ color: '#fbbf24', weight: 2, dashArray: '5, 5', opacity: 0.8 }}
                     />
                 ))}
+
+                {/* RULER LAYER */}
+                {mode === 'ruler' && rulerPoints.length > 0 && (
+                    <>
+                        <Polyline
+                            positions={rulerPoints.map(p => [p.lat, p.lng])}
+                            pathOptions={{ color: '#ec4899', weight: 4, dashArray: '1, 10', lineCap: 'round', opacity: 0.8 }}
+                        />
+                        {rulerPoints.map((p, idx) => (
+                            <Marker
+                                key={`ruler-pt-${idx}`}
+                                position={[p.lat, p.lng]}
+                                icon={L.divIcon({
+                                    className: 'ruler-dot',
+                                    html: `<div style="width: 10px; height: 10px; background: #ec4899; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+                                    iconSize: [10, 10],
+                                    iconAnchor: [5, 5]
+                                })}
+                            />
+                        ))}
+                    </>
+                )}
 
                 {mode === 'draw_cable' && drawingPath.length > 0 && (
                     <Marker position={[drawingPath[0].lat, drawingPath[0].lng]} icon={startPointIcon} />

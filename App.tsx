@@ -134,7 +134,7 @@ export default function App() {
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -176,6 +176,9 @@ export default function App() {
 
     // --- OTDR State ---
     const [otdrResult, setOtdrResult] = useState<Coordinates | null>(null);
+
+    // --- Ruler State ---
+    const [rulerPoints, setRulerPoints] = useState<Coordinates[]>([]);
 
     // --- Pinned Location State ---
     const [pinnedLocation, setPinnedLocation] = useState<(Coordinates & { viability?: { active: boolean, distance: number } }) | null>(null);
@@ -323,6 +326,7 @@ export default function App() {
             setIsPoleModalOpen(false);
             setShowSettingsModal(false);
             setOtdrResult(null);
+            setRulerPoints([]);
         }
     }, [currentProjectId]);
 
@@ -1911,6 +1915,8 @@ export default function App() {
                         pinnedLocation={pinnedLocation}
                         onConvertPin={handleConvertPinToNode}
                         onClearPin={() => setPinnedLocation(null)}
+                        rulerPoints={rulerPoints}
+                        onRulerPointsChange={setRulerPoints}
                     />
 
 
@@ -2019,9 +2025,46 @@ export default function App() {
                         {toolMode === 'add_cto' && t('tooltip_add_cto')}
                         {toolMode === 'add_pop' && t('tooltip_add_pop')}
                         {toolMode === 'add_pole' && t('tooltip_add_pole')}
+                        {toolMode === 'ruler' && t('tooltip_ruler')}
                         {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
                         {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
                     </div>
+
+                    {/* Ruler Toolbar */}
+                    {toolMode === 'ruler' && rulerPoints.length > 0 && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-3 border border-slate-200 dark:border-slate-700">
+                                <Ruler className="w-5 h-5 text-pink-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-slate-500 uppercase leading-none">{t('ruler_total')}</span>
+                                    <span className="text-sm text-pink-600 dark:text-pink-400">
+                                        {rulerPoints.reduce((acc, curr, idx) => {
+                                            if (idx === 0) return 0;
+                                            return acc + L.latLng(rulerPoints[idx - 1]).distanceTo(L.latLng(curr));
+                                        }, 0).toFixed(1)}m
+                                    </span>
+                                </div>
+                                <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                                <button
+                                    onClick={() => setRulerPoints([])}
+                                    className="text-slate-500 hover:text-red-500 transition-colors text-xs flex items-center gap-1"
+                                >
+                                    <X className="w-4 h-4" />
+                                    {t('ruler_clear')}
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setToolMode('view');
+                                    setRulerPoints([]);
+                                }}
+                                className="bg-slate-900 dark:bg-slate-700 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all hover:bg-slate-800 dark:hover:bg-slate-600"
+                            >
+                                <Check className="w-4 h-4" />
+                                {t('finish')}
+                            </button>
+                        </div>
+                    )}
 
                     {
                         toolMode === 'draw_cable' && drawingPath.length > 0 && (

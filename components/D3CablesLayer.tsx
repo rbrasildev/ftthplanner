@@ -13,6 +13,7 @@ interface D3CablesLayerProps {
     onClick: (e: any, cable: CableData) => void;
     onDoubleClick?: (e: any, cable: CableData) => void;
     onContextMenu?: (e: any, cable: CableData) => void;
+    mode?: string;
 }
 
 // LOD Thresholds
@@ -26,7 +27,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     visible,
     onClick,
     onDoubleClick,
-    onContextMenu
+    onContextMenu,
+    mode
 }) => {
     const map = useMap();
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -137,7 +139,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
 
             // --- VISUAL LAYER ---
             const paths = g.selectAll<SVGPathElement, CableData>('path.cable-path')
-                .data(cables, (d) => d.id);
+                .data(cables, (d: any) => d.id);
 
             // EXIT
             paths.exit().remove();
@@ -155,33 +157,33 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
 
             pathsEnter.merge(paths)
                 // Geometry - Re-calculate based on LOD
-                .attr('d', d => localPathGenerator(getRenderCoordinates(d) as any))
+                .attr('d', (d: any) => localPathGenerator(getRenderCoordinates(d) as any))
                 // Styling - Dynamic
-                .attr('stroke', d => {
+                .attr('stroke', (d: any) => {
                     if (litCableIds.has(d.id)) return '#ef4444';
                     if (highlightedCableId === d.id) return '#22c55e';
                     if (d.status === 'NOT_DEPLOYED') return CABLE_STATUS_COLORS['NOT_DEPLOYED'];
                     return d.color || CABLE_STATUS_COLORS['DEPLOYED'];
                 })
-                .attr('stroke-width', d => {
+                .attr('stroke-width', (d: any) => {
                     if (litCableIds.has(d.id)) return 4;
                     if (highlightedCableId === d.id) return 5;
                     // Make thinner at lower zooms to reduce clutter
                     return currentZoom < 12 ? 2 : 3;
                 })
-                .attr('stroke-dasharray', d => {
+                .attr('stroke-dasharray', (d: any) => {
                     if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null; // Simplify rendering
                     if (d.status === 'NOT_DEPLOYED') return '5, 5';
                     return null;
                 })
-                .attr('opacity', d => {
+                .attr('opacity', (d: any) => {
                     if (litCableIds.has(d.id)) return 1;
                     return 0.8;
                 });
 
             // --- HIT AREA LAYER (Transparent, wider) ---
             const hitPaths = g.selectAll<SVGPathElement, CableData>('path.cable-hit')
-                .data(cables, (d) => d.id);
+                .data(cables, (d: any) => d.id);
 
             hitPaths.exit().remove();
 
@@ -199,8 +201,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             // Better to re-attach merge to ensure closure freshness? 
             // Yes, overhead is low for event binding.
             hitPathsEnter.merge(hitPaths)
-                .attr('d', d => localPathGenerator(getRenderCoordinates(d) as any))
-                .on("dblclick", (event, d) => {
+                .attr('d', (d: any) => localPathGenerator(getRenderCoordinates(d) as any))
+                .on("dblclick", (event, d: any) => {
                     if (onDoubleClick) {
                         const latlng = map.mouseEventToLatLng(event);
                         const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
@@ -212,7 +214,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     const latlng = map.mouseEventToLatLng(event);
                     const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
                     onClick(leafletEvent, d);
-                    L.DomEvent.stopPropagation(event);
+                    if (mode !== 'ruler') L.DomEvent.stopPropagation(event);
                 })
                 .on("contextmenu", (event, d) => {
                     // Prevent default browser context menu
@@ -227,7 +229,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                             containerPoint: map.mouseEventToContainerPoint(event)
                         };
                         onContextMenu(leafletEvent, d);
-                        L.DomEvent.stopPropagation(event);
+                        if (mode !== 'ruler') L.DomEvent.stopPropagation(event);
                     }
                 });
         };
@@ -254,7 +256,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             map.off('viewreset', handleUpdate);
         };
 
-    }, [map, cables, litCableIds, highlightedCableId, visible, onClick, onDoubleClick]);
+    }, [map, cables, litCableIds, highlightedCableId, visible, onClick, onDoubleClick, mode]);
 
     return null;
 };
