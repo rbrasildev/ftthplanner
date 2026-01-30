@@ -183,11 +183,34 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
+                                <Settings2 className="w-3.5 h-3.5" /> {t('equipment_type')}
+                            </label>
+                            <select
+                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                                value={newOLTConfig.type || 'OLT'}
+                                onChange={e => setNewOLTConfig({ ...newOLTConfig, type: e.target.value })}
+                            >
+                                <option value="OLT">{t('type_olt')}</option>
+                                <option value="SWITCH">{t('type_switch')}</option>
+                                <option value="ROUTER">{t('type_router')}</option>
+                                <option value="SERVER">{t('type_server')}</option>
+                                <option value="OTHER">{t('type_other')}</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
                                 <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 items-end mb-2">
+                                {/* Row 1: Labels */}
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('total_slots')}</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">
+                                    {newOLTConfig.type === 'OLT' ? t('olt_ports') : t('active_ports')}
+                                </span>
+
+                                {/* Row 2: Inputs */}
                                 <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <span className="text-[10px] text-slate-400 block mb-1">{t('total_slots')}</span>
                                     <input
                                         type="number"
                                         min="1"
@@ -198,7 +221,6 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                     />
                                 </div>
                                 <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <span className="text-[10px] text-slate-400 block mb-1">{t('ports_per_slot')}</span>
                                     <input
                                         type="number"
                                         min="8"
@@ -219,7 +241,8 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             <div>
                                 <h4 className="text-xs font-bold text-indigo-300">{t('preview')}</h4>
                                 <p className="text-[11px] text-indigo-200/70 leading-tight">
-                                    {t('olt_preview_msg', {
+                                    {t('equipment_preview_msg', {
+                                        type: t(`type_${(newOLTConfig.type || 'OLT').toLowerCase()}`),
                                         total: newOLTConfig.slots * newOLTConfig.portsPerSlot,
                                         slots: newOLTConfig.slots,
                                         ports: newOLTConfig.portsPerSlot

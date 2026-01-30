@@ -163,6 +163,7 @@ export const deleteFusion = async (id: string): Promise<void> => {
 export interface OLTCatalogItem {
     id: string;
     name: string;
+    type?: string;
     outputPower: number; // dBm
     slots?: number;
     portsPerSlot?: number;

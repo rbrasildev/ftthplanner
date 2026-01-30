@@ -409,6 +409,7 @@ model TemplateFusion {
 model CatalogOLT {
   id           String   @id @default(uuid())
   name         String
+  type         String   @default("OLT")
   outputPower  Float    @default(3.0) @map("output_power")
   slots        Int      @default(1)
   portsPerSlot Int      @default(16) @map("ports_per_slot")
@@ -425,6 +426,7 @@ model CatalogOLT {
 model TemplateOLT {
   id           String   @id @default(uuid())
   name         String
+  type         String   @default("OLT")
   outputPower  Float    @default(3.0) @map("output_power")
   slots        Int      @default(1)
   portsPerSlot Int      @default(16) @map("ports_per_slot")

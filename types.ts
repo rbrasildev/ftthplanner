@@ -65,6 +65,11 @@ export interface ElementLayout {
   mirrored?: boolean; // Controls left/right orientation (flipping)
 }
 
+export interface SlotConfig {
+  active: boolean;
+  portCount: number;
+}
+
 // --- NEW EQUIPMENT TYPES ---
 
 export interface OLT {
@@ -73,9 +78,11 @@ export interface OLT {
   ports: number; // Total ports
   portIds: string[];
   status?: CTOStatus;
+  type?: 'OLT' | 'SWITCH' | 'ROUTER' | 'SERVER' | 'OTHER';
   structure?: {
     slots: number;
     portsPerSlot: number;
+    slotsConfig?: SlotConfig[];
   };
 }
 

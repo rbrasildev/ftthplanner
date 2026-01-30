@@ -27,7 +27,7 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                         onClick={onAddOLT}
                         className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow hover:border-indigo-500/30 active:scale-95"
                     >
-                        <Router className="w-3.5 h-3.5 text-indigo-500" /> {t('add_olt')}
+                        <Zap className="w-3.5 h-3.5 text-indigo-500" /> {t('add_active_equipment')}
                     </button>
                     <button
                         onClick={onAddDIO}
@@ -42,8 +42,8 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                     <button
                         onClick={onToggleRackMode}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 border transition-all active:scale-95 ${isRackMode
-                                ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20'
-                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                     >
                         <AlignJustify className="w-3.5 h-3.5" /> {t('rack_view')}

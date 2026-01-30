@@ -48,7 +48,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     return (
         <div
             style={{ transform: `translate(${position.x}px, ${position.y}px)`, width }}
-            className="absolute z-20 flex flex-col group clickable-element transition-transform duration-75"
+            className="absolute z-20 flex flex-col group clickable-element transition-transform duration-75 select-none"
         >
             {/* Card Container */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10">

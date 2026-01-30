@@ -48,14 +48,14 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
     const [oltModalPos, setOltModalPos] = useState({ x: 100, y: 100 });
-    const [newOLTConfig, setNewOLTConfig] = useState({ slots: 1, portsPerSlot: 8 });
+    const [newOLTConfig, setNewOLTConfig] = useState({ slots: 1, portsPerSlot: 8, type: 'SWITCH' as any });
 
     const [showAddDIOModal, setShowAddDIOModal] = useState(false);
     const [dioModalPos, setDioModalPos] = useState({ x: 150, y: 150 });
     const [newDIOConfig, setNewDIOConfig] = useState({ ports: 24 });
 
     // Equipment EDITING State
-    const [editingOLT, setEditingOLT] = useState<{ id: string, name: string, slots: number, portsPerSlot: number } | null>(null);
+    const [editingOLT, setEditingOLT] = useState<OLT | null>(null);
     const [editingDIO, setEditingDIO] = useState<{ id: string, name: string, ports: number } | null>(null);
 
     // Deletion State
@@ -477,26 +477,57 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     // --- Equipment Management ---
+    const handleOpenAddOLT = () => {
+        const w = 320;
+        const h = 480; // Estimated OLT modal height with catalog list
+        const containerW = containerRef.current?.clientWidth || window.innerWidth;
+        const containerH = containerRef.current?.clientHeight || window.innerHeight;
+        setOltModalPos({ x: (containerW - w) / 2, y: (containerH - h) / 2 });
+        setShowAddOLTModal(true);
+    };
+
+    const handleOpenAddDIO = () => {
+        const w = 320;
+        const h = 250; // Estimated DIO modal height
+        const containerW = containerRef.current?.clientWidth || window.innerWidth;
+        const containerH = containerRef.current?.clientHeight || window.innerHeight;
+        setDioModalPos({ x: (containerW - w) / 2, y: (containerH - h) / 2 });
+        setShowAddDIOModal(true);
+    };
 
     const handleAddOLT = () => {
         const id = `olt-${Date.now()}`;
-        const { slots, portsPerSlot } = newOLTConfig;
-        const totalPorts = slots * portsPerSlot;
+        const { slots, portsPerSlot, type } = newOLTConfig;
+        const defaultSlotsConfig = Array.from({ length: slots || 1 }).map(() => ({
+            active: true,
+            portCount: portsPerSlot || 16
+        }));
+
+        let totalPorts = 0;
         const portIds: string[] = [];
-        for (let s = 1; s <= slots; s++) {
-            for (let p = 1; p <= portsPerSlot; p++) {
-                portIds.push(`${id}-s${s}-p${p}`);
+        defaultSlotsConfig.forEach((slot, sIdx) => {
+            if (slot.active) {
+                for (let p = 1; p <= slot.portCount; p++) {
+                    portIds.push(`${id}-s${sIdx + 1}-p${p}`);
+                    totalPorts++;
+                }
             }
-        }
+        });
+
         const newOLT: OLT = {
             id,
             name: (newOLTConfig as any).modelName
                 ? `${(newOLTConfig as any).modelName} ${localPOP.olts.length + 1}`
-                : `OLT ${localPOP.olts.length + 1}`,
+                : `${t(`type_${type?.toLowerCase() || 'olt'}`)} ${localPOP.olts.length + 1}`,
             ports: totalPorts,
             portIds,
             status: 'PLANNED',
-            structure: { slots, portsPerSlot }
+            type: type || 'OLT',
+            structure: {
+                slots: slots || 1,
+                portsPerSlot: portsPerSlot || 16,
+                slotsConfig: defaultSlotsConfig
+            }
         };
 
         // Calculate Safe Position
@@ -525,14 +556,28 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleSaveEditedOLT = () => {
         if (!editingOLT) return;
+        const { id, name, type, structure } = editingOLT as OLT;
+        const slots = structure?.slots || 1;
+        const portsPerSlot = structure?.portsPerSlot || 16;
 
-        const { id, name, slots, portsPerSlot } = editingOLT;
-        const totalPorts = slots * portsPerSlot;
+        let newPortIds: string[] = [];
+        let totalPorts = 0;
 
-        const newPortIds: string[] = [];
-        for (let s = 1; s <= slots; s++) {
-            for (let p = 1; p <= portsPerSlot; p++) {
-                newPortIds.push(`${id}-s${s}-p${p}`);
+        if (structure?.slotsConfig && (type === 'OLT' || type === undefined)) {
+            structure.slotsConfig.forEach((slot, sIdx) => {
+                if (slot.active) {
+                    for (let p = 1; p <= slot.portCount; p++) {
+                        newPortIds.push(`${id}-s${sIdx + 1}-p${p}`);
+                        totalPorts++;
+                    }
+                }
+            });
+        } else {
+            totalPorts = slots * portsPerSlot;
+            for (let s = 1; s <= slots; s++) {
+                for (let p = 1; p <= portsPerSlot; p++) {
+                    newPortIds.push(`${id}-s${s}-p${p}`);
+                }
             }
         }
 
@@ -542,7 +587,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 name,
                 ports: totalPorts,
                 portIds: newPortIds,
-                structure: { slots, portsPerSlot }
+                type: type || 'OLT',
+                structure: { ...structure, slots, portsPerSlot } as any
             } : o);
 
             const updatedConnections = prev.connections.filter(c => {
@@ -689,8 +735,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                 {/* 2. SECONDARY TOOLBAR */}
                 <PopToolbar
-                    onAddOLT={() => setShowAddOLTModal(true)}
-                    onAddDIO={() => setShowAddDIOModal(true)}
+                    onAddOLT={handleOpenAddOLT}
+                    onAddDIO={handleOpenAddDIO}
                     onToggleRackMode={organizeRackLayout}
                     isRackMode={isRackMode}
                     onClearAll={() => setShowClearConfirm(true)} // Reusing boolean for confirmation dialog
@@ -797,7 +843,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 <div
                                     key={cable.id}
                                     style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
-                                    className="absolute w-28 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-20 flex flex-col opacity-50 hover:opacity-100 transition-opacity clickable-element"
+                                    className="absolute w-28 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-20 flex flex-col opacity-50 hover:opacity-100 transition-opacity clickable-element select-none"
                                     onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
                                     onMouseLeave={() => onHoverCable && onHoverCable(null)}
                                     onDoubleClick={(e) => {
@@ -844,7 +890,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                     configuringOltPortId={configuringOltPortId}
                                     hoveredPortId={hoveredPortId}
                                     onDragStart={handleElementDragStart}
-                                    onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT({ id: olt.id, name: olt.name, slots: olt.structure?.slots || 1, portsPerSlot: olt.structure?.portsPerSlot || 8 }); }}
+                                    onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT(JSON.parse(JSON.stringify(olt))); }}
                                     onDelete={(e, olt) => { e.stopPropagation(); setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name }); }}
                                     onPortClick={(e, portId) => handleOltPortClick(e, portId)}
                                     onPortHover={setHoveredPortId}

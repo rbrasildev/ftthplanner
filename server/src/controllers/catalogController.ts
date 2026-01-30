@@ -448,11 +448,12 @@ export const createOLT = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, outputPower, slots, portsPerSlot, description } = req.body;
+        const { name, type, outputPower, slots, portsPerSlot, description } = req.body;
         const olt = await prisma.catalogOLT.create({
             data: {
                 companyId: user.companyId,
                 name,
+                type: type || 'OLT',
                 outputPower: Number(outputPower),
                 slots: Number(slots) || 1,
                 portsPerSlot: Number(portsPerSlot),
@@ -471,7 +472,7 @@ export const updateOLT = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, outputPower, slots, portsPerSlot, description } = req.body;
+        const { name, type, outputPower, slots, portsPerSlot, description } = req.body;
 
         const exists = await prisma.catalogOLT.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "OLT not found" });
@@ -480,6 +481,7 @@ export const updateOLT = async (req: Request, res: Response) => {
             where: { id },
             data: {
                 name,
+                type,
                 outputPower: Number(outputPower),
                 slots: Number(slots) || 1,
                 portsPerSlot: Number(portsPerSlot),
