@@ -28,9 +28,8 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
-    const getLabel = (action: string) => {
-        const typeLabel = type === 'CTO' ? 'CTO' : type === 'POP' ? 'POP' : 'Poste';
-        return `${action} ${typeLabel}`;
+    const getLabel = (actionKey: string) => {
+        return t(actionKey);
     };
 
     return (
@@ -52,7 +51,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
                     <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-md group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
                         <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <span className="text-sm font-medium">{getLabel('Editar')}</span>
+                    <span className="text-sm font-medium">{getLabel('edit_node_short')}</span>
                 </button>
             )}
 
@@ -68,7 +67,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
                     <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
                         <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <span className="text-sm font-medium">Propriedades</span>
+                    <span className="text-sm font-medium">{t('properties')}</span>
                 </button>
             )}
 
@@ -84,7 +83,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
                     <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
                         <Move className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     </div>
-                    <span className="text-sm font-medium">{getLabel('Mover')}</span>
+                    <span className="text-sm font-medium">{getLabel('move_node_short')}</span>
                 </button>
             )}
 
@@ -131,7 +130,7 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
                     <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors">
                         <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                     </div>
-                    <span className="text-sm font-medium">{getLabel('Excluir')}</span>
+                    <span className="text-sm font-medium">{getLabel('delete_node_short')}</span>
                 </button>
             )}
         </div>

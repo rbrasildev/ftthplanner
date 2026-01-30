@@ -179,10 +179,14 @@ export const getProject = async (req: Request, res: Response) => {
                 fiberCount: c.fiberCount,
                 looseTubeCount: c.looseTubeCount,
                 color: c.color,
+                colorStandard: c.colorStandard,
                 coordinates: c.coordinates, // Json
                 fromNodeId: c.fromNodeId,
                 toNodeId: c.toNodeId,
-                catalogId: c.catalogId
+                catalogId: c.catalogId,
+                technicalReserve: c.technicalReserve,
+                reserveLocation: c.reserveLocation,
+                showReserveLabel: c.showReserveLabel
             })),
             poles: project.poles.map((p: any) => ({
                 id: p.id,
@@ -601,10 +605,14 @@ export const syncProject = async (req: Request, res: Response) => {
                             fiberCount: c.fiberCount,
                             looseTubeCount: c.looseTubeCount || 1,
                             color: c.color,
+                            colorStandard: c.colorStandard || 'ABNT',
                             coordinates: c.coordinates,
                             fromNodeId: c.fromNodeId,
                             toNodeId: c.toNodeId,
-                            catalogId: c.catalogId
+                            catalogId: c.catalogId,
+                            technicalReserve: c.technicalReserve || 0,
+                            reserveLocation: c.reserveLocation || null,
+                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
                         }))
                     });
                 }

@@ -691,7 +691,7 @@ const MapEvents: React.FC<{
 }> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint }) => {
     useMapEvents({
         contextmenu(e) {
-            if (mode === 'draw_cable' || mode === 'ruler') {
+            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 L.DomEvent.preventDefault(e as any);
                 if (onUndoDrawingPoint) {
                     onUndoDrawingPoint();
@@ -704,7 +704,7 @@ const MapEvents: React.FC<{
             }
         },
         click(e) {
-            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler') {
+            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
                 onClearSelection();
@@ -835,6 +835,11 @@ interface MapViewProps {
     onEditCableGeometry?: (cableId: string) => void;
     onDeleteCable?: (cableId: string) => void;
     onInitConnection?: (cableId: string) => void;
+
+    onToggleReserveCable?: (id: string) => void;
+    onPositionReserveCable?: (id: string) => void;
+    onReservePositionSet?: (lat: number, lng: number) => void;
+
     onEditNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
@@ -856,7 +861,7 @@ export const MapView: React.FC<MapViewProps> = ({
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
     pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint,
-    rulerPoints = [], onRulerPointsChange
+    rulerPoints = [], onRulerPointsChange, onToggleReserveCable, onPositionReserveCable, onReservePositionSet
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1100,7 +1105,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
     return (
-        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable'].includes(mode) ? 'drawing-cursor' : ''}`}>
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-end gap-3">
                 {/* Map Type Switcher - Segmented Control Style */}
                 <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row gap-1.5">
@@ -1228,6 +1233,8 @@ export const MapView: React.FC<MapViewProps> = ({
                             if (onRulerPointsChange) {
                                 onRulerPointsChange([...rulerPoints, { lat, lng }]);
                             }
+                        } else if (mode === 'position_reserve') {
+                            if (onReservePositionSet) onReservePositionSet(lat, lng);
                         } else {
                             onAddPoint(lat, lng);
                         }
@@ -1279,6 +1286,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     onDoubleClick={handleCableDoubleClickInternal}
                     onContextMenu={handleCableContextMenu}
                     mode={mode}
+                    showLabels={effectiveShowLabels}
                 />
 
                 {/* Render ONLY active cable with React-Leaflet for editing interactions (drag handles) */}
@@ -1598,6 +1606,9 @@ export const MapView: React.FC<MapViewProps> = ({
                             setContextMenu(null);
                         }}
                         onClose={() => setContextMenu(null)}
+                        showReserveLabel={cables.find(c => c.id === contextMenu.id)?.showReserveLabel}
+                        onToggleReserve={() => onToggleReserveCable && onToggleReserveCable(contextMenu.id)}
+                        onPositionReserve={() => onPositionReserveCable && onPositionReserveCable(contextMenu.id)}
                     />
                 )
             }

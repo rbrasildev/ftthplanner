@@ -117,7 +117,11 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                       {project.name}
                     </h4>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                      {t('items_count', { ctos: project.network?.ctos?.length || 0, cables: project.network?.cables?.length || 0 })}
+                      {t('items_count', {
+                        ceos: project.network?.ctos?.filter((c: any) => c.type === 'CEO').length || 0,
+                        ctos: project.network?.ctos?.filter((c: any) => c.type !== 'CEO').length || 0,
+                        cables: project.network?.cables?.length || 0
+                      })}
                     </p>
                   </div>
                 </div>

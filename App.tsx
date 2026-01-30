@@ -134,7 +134,7 @@ export default function App() {
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -179,6 +179,9 @@ export default function App() {
 
     // --- Ruler State ---
     const [rulerPoints, setRulerPoints] = useState<Coordinates[]>([]);
+
+    // --- Technical Reserve State ---
+    const [pendingReserveCableId, setPendingReserveCableId] = useState<string | null>(null);
 
     // --- Pinned Location State ---
     const [pinnedLocation, setPinnedLocation] = useState<(Coordinates & { viability?: { active: boolean, distance: number } }) | null>(null);
@@ -435,6 +438,35 @@ export default function App() {
             showToast(t('toast_auto_snap_success', { count, distance }), 'success');
         }
     };
+
+    const handleToggleReserveCable = useCallback((id: string) => {
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            cables: prev.cables.map(c => c.id === id ? { ...c, showReserveLabel: !c.showReserveLabel } : c)
+        }));
+    }, [updateCurrentNetwork]);
+
+    const handlePositionReserveCable = useCallback((id: string) => {
+        const cable = getCurrentNetwork().cables.find(c => c.id === id);
+        if (!cable || (cable.technicalReserve || 0) <= 0) {
+            showToast(t('technical_reserve') + " <= 0", 'info');
+            return;
+        }
+        setPendingReserveCableId(id);
+        setToolMode('position_reserve');
+        showToast(t('tooltip_position_reserve'), 'info');
+    }, [getCurrentNetwork, t]);
+
+    const handleReservePositionSet = useCallback((lat: number, lng: number) => {
+        if (!pendingReserveCableId) return;
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            cables: prev.cables.map(c => c.id === pendingReserveCableId ? { ...c, reserveLocation: { lat, lng }, showReserveLabel: true } : c)
+        }));
+        setToolMode('view');
+        setPendingReserveCableId(null);
+        showToast(t('toast_reserve_positioned'), 'success');
+    }, [pendingReserveCableId, updateCurrentNetwork, t]);
 
     // --- TRIGGER AUTO SNAP WHEN SETTINGS CHANGE AUTOMATICALLY ---
     // Using a timeout to debounce slightly if the user is typing fast, but ensuring it runs.
@@ -969,6 +1001,12 @@ export default function App() {
     }, [toolMode, getCurrentNetwork]);
 
     const handleUndoDrawingPoint = useCallback(() => {
+        if (toolMode === 'position_reserve') {
+            setToolMode('view');
+            setPendingReserveCableId(null);
+            showToast(t('connection_cancelled') || "Ação Cancelada", 'info');
+            return;
+        }
         setDrawingPath(prev => {
             if (prev.length <= 1) {
                 setDrawingFromId(null);
@@ -976,7 +1014,7 @@ export default function App() {
             }
             return prev.slice(0, -1);
         });
-    }, []);
+    }, [toolMode, t]);
 
     const handleInitConnection = useCallback((id: string) => {
         setToolMode('connect_cable');
@@ -1351,6 +1389,19 @@ export default function App() {
             } else {
                 showToast(t('otdr_conn_mismatch'), "info");
                 return;
+            }
+
+            // --- CABLE TECHNICAL RESERVE ---
+            if (cable.technicalReserve && cable.technicalReserve > 0) {
+                if (remainingDist <= cable.technicalReserve) {
+                    // Event is within the reserve of this cable at the entry point
+                    const entryPoint = path[0];
+                    setOtdrResult(entryPoint);
+                    setMapBounds([[entryPoint.lat, entryPoint.lng], [entryPoint.lat, entryPoint.lng]]);
+                    showToast(`${t('otdr_result')}: ${t('technical_reserve')} (${cable.name})`);
+                    return;
+                }
+                remainingDist -= cable.technicalReserve;
             }
 
             let eventPoint: Coordinates | null = null;
@@ -1917,6 +1968,10 @@ export default function App() {
                         onClearPin={() => setPinnedLocation(null)}
                         rulerPoints={rulerPoints}
                         onRulerPointsChange={setRulerPoints}
+
+                        onToggleReserveCable={handleToggleReserveCable}
+                        onPositionReserveCable={handlePositionReserveCable}
+                        onReservePositionSet={handleReservePositionSet}
                     />
 
 
@@ -2028,6 +2083,7 @@ export default function App() {
                         {toolMode === 'ruler' && t('tooltip_ruler')}
                         {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
                         {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
+                        {toolMode === 'position_reserve' && t('tooltip_position_reserve')}
                     </div>
 
                     {/* Ruler Toolbar */}

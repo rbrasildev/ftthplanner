@@ -145,6 +145,9 @@ export interface CableData {
   fromNodeId?: string | null; // Optional/Null for free-floating cables
   toNodeId?: string | null;   // Optional/Null for free-floating cables
   catalogId?: string; // Reference to CatalogCable
+  technicalReserve?: number; // Comprimento em metros de reserva técnica
+  reserveLocation?: Coordinates; // Localização específica para a label de reserva
+  showReserveLabel?: boolean; // Toggle individual para mostrar/ocultar a label
 }
 
 

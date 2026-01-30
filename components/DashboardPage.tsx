@@ -507,7 +507,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                       <div className="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                         <div>
-                          <span className="block font-bold text-slate-700 dark:text-slate-200">{deployedCTOs}/{totalCTOs}</span>
+                          <span className="block font-bold text-slate-700 dark:text-slate-200">
+                            {project.network.ctos.filter((c: any) => c.type === 'CEO').length}
+                          </span>
+                          <span className="text-slate-500 dark:text-slate-600">CEOs</span>
+                        </div>
+                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
+                        <div>
+                          <span className="block font-bold text-slate-700 dark:text-slate-200">
+                            {project.network.ctos.filter((c: any) => c.type !== 'CEO' && (c.status === 'DEPLOYED' || c.status === 'CERTIFIED')).length}/
+                            {project.network.ctos.filter((c: any) => c.type !== 'CEO').length}
+                          </span>
                           <span className="text-slate-500 dark:text-slate-600">CTOs</span>
                         </div>
                         <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>

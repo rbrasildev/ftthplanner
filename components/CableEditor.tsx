@@ -36,7 +36,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   const [formData, setFormData] = useState<CableData>({
     ...cable,
     status: cable.status || 'DEPLOYED', // Default fallback
-    looseTubeCount: cable.looseTubeCount || 1 // Default to 1 loose tube if undefined
+    looseTubeCount: cable.looseTubeCount || 1, // Default to 1 loose tube if undefined
+    technicalReserve: cable.technicalReserve || 0
   });
 
   const [catalogCables, setCatalogCables] = useState<CableCatalogItem[]>([]);
@@ -199,13 +200,13 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           {/* Catalog Selection */}
           <div className="bg-sky-50 dark:bg-sky-900/10 p-3 rounded-lg border border-sky-100 dark:border-sky-800/30 min-h-[76px]">
             <label className="block text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase mb-1 flex items-center gap-1">
-              <BookOpen className="w-3 h-3" /> Usar Modelo do Catálogo
+              <BookOpen className="w-3 h-3" /> {t('use_catalog_model')}
             </label>
 
             {isLoadingCatalog ? (
               <div className="w-full flex items-center justify-center gap-2 py-2 text-sky-600 dark:text-sky-400 text-xs font-medium bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg opacity-70 cursor-wait">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Carregando catálogo...</span>
+                <span>{t('loading_catalog')}</span>
               </div>
             ) : (
               <select
@@ -214,7 +215,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
                 disabled={isLoadingCatalog}
               >
-                <option value="">-- Selecione um Modelo --</option>
+                <option value="">{t('select_model')}</option>
                 {catalogCables.map(c => (
                   <option key={c.id} value={c.id}>{c.name} ({c.fiberCount}FO)</option>
                 ))}
@@ -266,14 +267,29 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
+              <Ruler className="w-3 h-3" /> {t('technical_reserve')} (m)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={formData.technicalReserve}
+              onChange={(e) => setFormData({ ...formData, technicalReserve: parseFloat(e.target.value) || 0 })}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+              placeholder="Ex: 10"
+            />
+          </div>
+
           {/* Color Standard Selection - Display Only */}
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
               {t('fiber_color_standard') || "Padrão de Cores"}
             </label>
             <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-              <span>{formData.colorStandard === 'EIA598' ? 'EIA-598-A (Intl)' : 'ABNT (Brasil)'}</span>
-              <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">Definido no Catálogo</span>
+              <span>{formData.colorStandard === 'EIA598' ? t('standard_eia') : t('standard_abnt')}</span>
+              <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">{t('catalog_defined')}</span>
             </div>
 
             {/* Small Preview of first 12 fibers */}
@@ -292,13 +308,24 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           {/* Length Display */}
           <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
-              <Ruler className="w-3 h-3" /> {t('estimated_length')}
+              <Ruler className="w-3 h-3" /> {t('estimated_length')} (Total)
             </label>
-            <div className="text-slate-900 dark:text-white font-mono text-sm">
-              {Math.round(calculatedLength).toLocaleString()} m
-              <span className="text-slate-500 ml-2 text-xs">
-                ({(calculatedLength / 1000).toFixed(3)} km)
-              </span>
+            <div className="text-slate-900 dark:text-white font-mono text-sm space-y-1">
+              <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
+                <span className="text-[10px] text-slate-400">{t('geometric_length') || 'Geométrico'}:</span>
+                <span>{Math.round(calculatedLength).toLocaleString()} m</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
+                <span className="text-[10px] text-slate-400">{t('technical_reserve')}:</span>
+                <span>{formData.technicalReserve?.toLocaleString()} m</span>
+              </div>
+              <div className="flex justify-between pt-1 font-bold text-sky-600 dark:text-sky-400">
+                <span className="text-[10px] uppercase">Total:</span>
+                <span>{(Math.round(calculatedLength) + (formData.technicalReserve || 0)).toLocaleString()} m</span>
+              </div>
+              <div className="text-right text-[10px] text-slate-500 mt-1">
+                ({((Math.round(calculatedLength) + (formData.technicalReserve || 0)) / 1000).toFixed(3)} km)
+              </div>
             </div>
           </div>
 
@@ -313,7 +340,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 style={{ backgroundColor: formData.color }}
               />
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Cor definida pelo status <strong>{formData.status === 'DEPLOYED' ? 'Implantado' : 'Não Implantado'}</strong> do catálogo.
+                {t('color_selection_info')}
               </span>
             </div>
           </div>
