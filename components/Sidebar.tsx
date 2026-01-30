@@ -178,12 +178,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* 2. Project Context (Only in map/project mode) */}
                 {viewMode === 'project' && (
-                    <div className={`p-4 border-b border-slate-200/50 dark:border-slate-800/50 ${isCollapsed ? 'flex justify-center' : ''} flex-shrink-0 space-y-2`}>
+                    <div className={`p-4 border-b border-slate-200/50 dark:border-slate-800/50 ${isCollapsed ? 'flex flex-col items-center justify-center' : ''} flex-shrink-0 space-y-2`}>
                         <button
                             onClick={onImportClick}
                             className={`group relative flex items-center transition-all duration-200 
                                 ${isCollapsed
-                                    ? 'w-10 h-10 justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-emerald-500'
+                                    ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-emerald-500'
                                     : 'w-full gap-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 group-hover:bg-emerald-50/50'}`}
                             title={isCollapsed ? t('import_kmz_label') : ''}
                         >
@@ -402,8 +402,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
                     {isCollapsed && (
                         <div className="flex flex-col gap-4 items-center">
-                            <FooterButton icon={theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />} onClick={toggleTheme} />
-                            <FooterButton icon={<LogOut className="w-4 h-4" />} onClick={onLogout} danger />
+                            <FooterButton
+                                icon={theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                                onClick={toggleTheme}
+                                className="w-10 h-10 px-0 flex-none"
+                            />
+                            <FooterButton
+                                icon={<LogOut className="w-4 h-4" />}
+                                onClick={onLogout}
+                                danger
+                                className="w-10 h-10 px-0 flex-none"
+                            />
                         </div>
                     )}
                 </div>
@@ -458,11 +467,11 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed
     );
 };
 
-const FooterButton: React.FC<{ icon: React.ReactNode; title?: string; onClick: () => void; danger?: boolean }> = ({ icon, title, onClick, danger }) => (
+const FooterButton: React.FC<{ icon: React.ReactNode; title?: string; onClick: () => void; danger?: boolean; className?: string }> = ({ icon, title, onClick, danger, className = "" }) => (
     <button
         onClick={onClick}
         title={title}
-        className={`h-9 flex items-center justify-center rounded-xl border transition-all duration-200 flex-1 px-2
+        className={`h-9 flex items-center justify-center rounded-xl border transition-all duration-200 flex-1 px-2 ${className}
             ${danger
                 ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30 text-rose-500 hover:bg-rose-500 hover:text-white'
                 : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:border-emerald-500 hover:text-emerald-500 shadow-sm'}`}
