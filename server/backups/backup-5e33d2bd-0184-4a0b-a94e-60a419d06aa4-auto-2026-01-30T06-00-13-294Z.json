@@ -1,0 +1,5057 @@
+{
+  "meta": {
+    "createdAt": "2026-01-30T06:00:13.295Z",
+    "version": "1.0",
+    "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+  },
+  "projects": [
+    {
+      "id": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "userId": "bb320d49-0197-4068-91d8-a9dd275b25d7",
+      "name": "PROJETO FTTX-VILA AMAZONIA/AM",
+      "centerLat": -2.675458,
+      "centerLng": -56.764002,
+      "zoom": 18,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-27T13:44:52.767Z",
+      "updatedAt": "2026-01-30T03:37:52.176Z",
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "63e13db3-b65f-47bf-9624-28612dbb6d19",
+      "userId": "bb320d49-0197-4068-91d8-a9dd275b25d7",
+      "name": "PROJETO-FTTX-PARINTINS/AM",
+      "centerLat": -2.6329,
+      "centerLng": -56.7408,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-27T14:04:14.176Z",
+      "updatedAt": "2026-01-27T14:04:14.176Z",
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "d2c84b37-778a-488b-b375-4c5ae3efc409",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "POP VILA AMAZONIA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609820738793137,
+      "lng": -56.65815796432311,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "026fd717-1a42-423d-9930-f19f5071e1bd",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0101",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610549608886386,
+      "lng": -56.65934227165087,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "8930003d-ede9-423b-ab4c-f7ecbbf48c93",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0102",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609448392158577,
+      "lng": -56.65948277672006,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "df65e7f1-61fa-4561-947f-e37f59e7c2ad"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3a98228b-5761-4a9e-867b-ce83447466a2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0103",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610103505797194,
+      "lng": -56.6602132915397,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0be7af81-8779-43e3-a17d-bf5544d06a40",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0104",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610420184331869,
+      "lng": -56.66103815164042,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "59e03e7d-1dd7-4938-99d2-9ac2b70ceabe",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0105",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611187915636496,
+      "lng": -56.66013390068351,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "893dd28f-8310-430d-9022-2bca6111f7e3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0106",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612020354180209,
+      "lng": -56.66067856242578,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "8310bd55-a81a-4c77-897b-2afc7e0349af",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0107",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611961921103061,
+      "lng": -56.66203002004249,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7af3dde5-4c2e-4cbb-8fdd-7176d192ec9e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0108",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611218565609501,
+      "lng": -56.66162546661904,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1cc56eca-883c-4934-a309-aae2e98d7d01",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0201",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610738746833956,
+      "lng": -56.65767715286501,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1d4dcab0-7149-4cc7-a4f5-d71191de58d7",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0202",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611276841581289,
+      "lng": -56.65846386670447,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0a46c85e-20a7-4165-97cb-585ace1bc9be",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0203",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611396607121648,
+      "lng": -56.65687765854027,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b0d2e719-df86-4c88-801c-2d88c0104415",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0204",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610229032110961,
+      "lng": -56.65694756782464,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3e0c5b5a-50b5-4bf5-bc00-207cd66eaf7f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0205",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610905872412669,
+      "lng": -56.65608346718035,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0e42772d-9ee3-411a-b497-164605879a17",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0206",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609978222998607,
+      "lng": -56.65852916361834,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "2658adf6-a078-4612-894a-ca9e24195fe4",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0207",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609229868342842,
+      "lng": -56.65766798836925,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "72246cd3-dad9-4eb6-b7fa-62fc000ae0ee",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0208",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609330847232314,
+      "lng": -56.65692803519895,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "958dcc54-a8f4-41cf-8f54-75b2b0850f0b",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0301",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612310670382008,
+      "lng": -56.65774117808618,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0aa0bb53-1bca-4b9e-aed4-d8de617ea562",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0302",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613094363436394,
+      "lng": -56.65741630574093,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7fcffd22-22dc-4462-acea-59ef9384708f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0303",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612497548709425,
+      "lng": -56.65616002120834,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5248e14b-8ec0-4ea0-bf16-cd0c03288ed6",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0304",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612145475889944,
+      "lng": -56.65907636525443,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "18054e6c-dbe4-410e-b44c-ce3284d26167",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0305",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613222147459154,
+      "lng": -56.65835030822166,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b63df481-ec4a-468d-ac2c-99648f6e1208",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0306",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614123943550157,
+      "lng": -56.65762617919989,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "9786f29a-37c2-4341-92a8-1fb89e1b683a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0307",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613023029609757,
+      "lng": -56.65947130993608,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1a471d91-55f1-4c92-a210-14ff28ec2b3e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0308",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614062550749333,
+      "lng": -56.65872446616163,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "bcdd33ac-256f-4f99-9b02-c358e8627194",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0401",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61268490587852,
+      "lng": -56.6616297547376,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "a89f0d5b-f467-4618-a2fd-0bb6ab77e091",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0402",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613705170715683,
+      "lng": -56.66196787783634,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5d4da4c6-53c7-4cc6-b1ab-bbd433fb6419",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0403",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615088161161837,
+      "lng": -56.66109664559726,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d263e25e-6a89-452a-8665-7e7ee8a556b9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0404",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.6138111743669,
+      "lng": -56.66094405959844,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "83e2b197-057d-4b52-891c-fc06a74e9704",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0405",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614881315105856,
+      "lng": -56.66027921482412,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b5fd73c6-516b-4df2-b38e-454f39a4a92d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0406",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612812592803981,
+      "lng": -56.6606081585089,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "9c95f908-2727-4240-aeef-039aeb4176a5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0407",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613889493828407,
+      "lng": -56.65989419752051,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "df54a267-2dc5-4632-96ab-bbb00a8765c5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0408",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614975503748214,
+      "lng": -56.65922965656329,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "37838f44-196e-4466-8dbe-e0d999195712",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0501",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613554187205695,
+      "lng": -56.6630544759967,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "f069ac23-1c6e-4bee-b045-091b0ae64c8a"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d615789d-0430-4d74-a459-bb4d2a2ddb1b",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0502",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614395394581983,
+      "lng": -56.66435631512821,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "616a5049-0672-4e58-8f8d-364807728e9a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0503",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613321162825755,
+      "lng": -56.6641599683382,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "49f783c1-e21b-4763-8d00-dd793d3ed678",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0504",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614132528832125,
+      "lng": -56.66547819651824,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b0b7c017-515b-40ea-96ef-dc0da107cbc5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0505",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615038442189307,
+      "lng": -56.66217669517475,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "9a012548-879a-4874-acaf-4df4dc87b2b9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0506",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616196199517104,
+      "lng": -56.6613947289493,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "36bcb224-5316-441f-9b23-e7dba49b7e04",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0507",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616033394017395,
+      "lng": -56.66250707492091,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "84a1778a-c9c9-4a90-9bb9-9ca74f709c08",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0508",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614656873015747,
+      "lng": -56.66334250329781,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "8eb52c8f-4dbf-4568-86c7-f3d1be8ab7c3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0601",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61554042722461,
+      "lng": -56.66463827849759,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d10b1d57-4a56-45f5-9a00-026c0b1a8f4f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0602",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615789783336988,
+      "lng": -56.66353895814906,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "36007e9c-b1e1-47e4-bf8b-c1a0f7332a49",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0603",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616658822492585,
+      "lng": -56.6648844251076,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d0d3f5db-719d-4c52-92a8-ff75529d415e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0604",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617812562499976,
+      "lng": -56.66513375415381,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "70371d5a-a424-4232-abcd-1ff076204983",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0605",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616909712227003,
+      "lng": -56.66379507897197,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "233f6c5f-8f56-4de4-88f2-c7b97084fb0f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0606",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.618022257878875,
+      "lng": -56.66401443974252,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5465032f-751a-490b-b458-c62e98db60c6",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0607",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617161442923594,
+      "lng": -56.66270088375843,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "323dfee6-cc6a-4356-98a7-c4d2dde01792",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0608",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61720694543608,
+      "lng": -56.66173244860188,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5a7a1179-b715-42a1-bdd1-557add7100e8",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0701",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61527587048732,
+      "lng": -56.66574786976036,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "63ea795f-8ade-48e3-9393-549eeba1e0d4",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0702",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614126593455202,
+      "lng": -56.66646172416449,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "4b820d1c-9e17-46eb-852c-21742772c0b7",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0703",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616401142361021,
+      "lng": -56.66595841694622,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "6b74d923-6ae3-4307-abcb-70318f11dbcf",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0704",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615295859437483,
+      "lng": -56.6668266747712,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1ee4b971-5f6f-4943-b3c8-5eb6e15d3de2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0705",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616100480549266,
+      "lng": -56.66810759958595,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7ab887ff-11c0-4f96-b199-2b429ab6d70e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0706",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616420366667296,
+      "lng": -56.66727354079998,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d935f022-c9e7-4079-8793-645740ceec5a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0707",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617017856385599,
+      "lng": -56.66822442527049,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "9807ea4f-75cc-4c7f-bdbd-597f5006548d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0708",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616724002273846,
+      "lng": -56.66910492574459,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "155d074a-dada-4041-918e-c68d7c677013",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0801",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614730415691199,
+      "lng": -56.66898159649179,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "42cf67af-92c7-45a8-9f8f-17b2b6215cf2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0802",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615455427142225,
+      "lng": -56.66956783106517,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "95ee52f3-e6f7-4c8c-8768-c7b3ad81f589",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0803",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615716588832524,
+      "lng": -56.66903864918318,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "58851024-8d94-4a63-a72b-6c88286e2108",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0804",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615124099580033,
+      "lng": -56.66808379545845,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "686f4384-32ed-4f22-8801-2a5209ee1ed4",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0805",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613916906021979,
+      "lng": -56.66768091265377,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "51506755-219b-4872-9284-7ed2b3b39c6d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0806",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612619336136563,
+      "lng": -56.66832344132128,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "cd1fd4da-6947-46d3-ae83-e52ad5a97b76",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0807",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61171781550796,
+      "lng": -56.66794272027547,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "a12dadef-c1a9-4e7f-9575-579812df41aa",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0808",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612719874232666,
+      "lng": -56.66732067622824,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "cde744c3-5427-4522-a580-68cfe566110c",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0901",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61298842776417,
+      "lng": -56.66619992674367,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "bdcb6694-bb8f-4212-b254-ab00ac986ab5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0902",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611997285226427,
+      "lng": -56.6661805734084,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "8ed8aaf0-9923-4110-9351-6cd891d835e3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0903",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611371401784119,
+      "lng": -56.66519651151015,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "972d1066-a2da-4e10-a5e9-7b0c1e6dc5a6",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0904",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611750611095683,
+      "lng": -56.66693667731763,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "63d108d9-f005-4a74-8aa9-3c92a30711c5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0905",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610835183712997,
+      "lng": -56.66666263378891,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3df0d70c-b752-43b8-bbcd-b17bd4e634c9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0906",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612275673793723,
+      "lng": -56.66368082814273,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c11f359e-62d2-4034-a0e5-3a9bb7cb07bd",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0907",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612466562491617,
+      "lng": -56.66534550138561,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1980de1e-9070-4694-9358-5dffcccc64ca",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-0908",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611813416691928,
+      "lng": -56.66427137384219,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c89c47be-d8a4-4e9e-881a-6b303f73feff",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1001",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.607133860739617,
+      "lng": -56.66145821905472,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "fafcebf4-19e0-45e9-aa78-54068590886a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1002",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.608141853526156,
+      "lng": -56.66025122063001,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f21631fd-3d18-40ae-96c6-56e1955ecdb0",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1003",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.608356190537718,
+      "lng": -56.65848652206228,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "df65e7f1-61fa-4561-947f-e37f59e7c2ad"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3fe0cb73-2849-49be-8903-2b08845b63de",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1004",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.606726785185672,
+      "lng": -56.66038718801376,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "fd1fa54d-81ed-41e5-926d-1a44f1afe91b",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1005",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.605721661452221,
+      "lng": -56.66069255911319,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c4cb25d3-cb8a-419a-922a-f439e16a2f5d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1006",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.608360320122107,
+      "lng": -56.66269275857427,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "03ef406f-d041-4965-95b7-35ec53675aee",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1007",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609783172395736,
+      "lng": -56.66312343835659,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1b0100b2-423b-42d3-aade-4c916231db6e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1008",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610811601268362,
+      "lng": -56.662595959882,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c1b3849f-911b-4f5e-b4d1-a9046aa9f856",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1101",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.607199544448322,
+      "lng": -56.65742442625839,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d42b1fe6-d454-4b67-9d3f-f2a6531b89e3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1102",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.60583940248902,
+      "lng": -56.65866807987511,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0ac26d5b-d35b-49ca-b406-e66aad4f0502",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1103",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.604503141338305,
+      "lng": -56.65977571793916,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "6c9ec141-85d5-43f1-963b-fc4c17158d76",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1104",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.605622938601106,
+      "lng": -56.65767671978757,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "cc14d5b0-e511-4638-9d1a-f549f1e2fc0e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1105",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.604354229105611,
+      "lng": -56.65846035739736,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d530fce5-71d4-445a-8aff-0b0aa24f2ae3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1106",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.605795795277747,
+      "lng": -56.65599134129781,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "4e29735d-79a0-4c32-9046-472731c31ec9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1107",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.604279819056828,
+      "lng": -56.65452140236625,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "96ab143b-9afb-4bc0-93e2-6414924a4d25",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1108",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.602716150542292,
+      "lng": -56.65301785749561,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f87122e6-c3a4-4d7b-9721-c321fef58cd7",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1201",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612567759866483,
+      "lng": -56.65521862825668,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b00e95e8-3ff1-4f3c-804b-2f774d2a38b2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1202",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613087271163782,
+      "lng": -56.6558790839301,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "36ed8d7b-511f-4a7a-8751-b5f33e8a46d8",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1203",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613290758974252,
+      "lng": -56.6546152892725,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7b1ce67c-835b-49f2-96fc-edcc32f15d09",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1204",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612661691158915,
+      "lng": -56.65394603522988,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d5c75c7f-60fa-4266-9b0a-4f0d5cd0822e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1205",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.612102922061188,
+      "lng": -56.65552398348896,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "9dd6c159-7afc-45c2-9494-7882ce667516",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1206",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611238668969692,
+      "lng": -56.65497663321129,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "bd540a77-b158-4800-8941-611cb5035342",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1207",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610455461531183,
+      "lng": -56.65438068082642,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "436828e3-a147-4958-8706-33d5499bd190",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1208",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609844760405007,
+      "lng": -56.65359648977321,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7413c9b8-8c15-4016-b236-7cf7e71448f8",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1301",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614048150706119,
+      "lng": -56.65234642426254,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5ad18b11-5bef-4189-b5b8-2f9a4405d2a8",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1302",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61273516831341,
+      "lng": -56.65097090591533,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f7ba771b-3ffb-474f-94b8-2497d857d36d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1303",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615025346294545,
+      "lng": -56.65358153241027,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "59fe3342-0f37-4e28-94ae-2b736df336fe",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1304",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.615863407060135,
+      "lng": -56.65322415249253,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "4aad777b-fcc8-4adc-b0f5-5bf53fa7ffc1",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1305",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.613912534533993,
+      "lng": -56.65371551973263,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "31e2cbf5-35a2-4087-ac8d-7f4c0cb511be",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1306",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611887857274489,
+      "lng": -56.65222938186628,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3e623c6b-09a7-419c-801a-b2e9bd625c2c",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1307",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.611283757903709,
+      "lng": -56.65054971930416,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "74757261-b785-41ad-94ab-7587dce7a152",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1308",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.610603729559276,
+      "lng": -56.6489145362102,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "183656f6-7714-483f-9217-6bba10bf5b7c",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1401",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.614857254936955,
+      "lng": -56.65177719830825,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "affa6ab2-dc5c-4863-935e-25efab0cdce9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1402",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616274605064747,
+      "lng": -56.65074254098866,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d06bd5aa-e5b4-4d95-b3f7-7e0bd54b55da",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1403",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617545966594019,
+      "lng": -56.6498184857659,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c0918b3d-cd99-443b-915d-b0dac751c0c2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1404",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.616932535514023,
+      "lng": -56.64837337230522,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "929a89b6-498c-472c-b77a-1d0a3eacf33e",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1405",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617042663224967,
+      "lng": -56.65334250038494,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "ce5d0dc2-5c59-42cb-a69d-56010291e9c6",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1406",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.61646293478979,
+      "lng": -56.65218354454426,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "3f1fc8f3-00be-49dd-9e61-0c0f5b034dc0",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1407",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.617708775576753,
+      "lng": -56.65133443770602,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "af62f86c-4a75-48dd-aa78-a4ebad5a560a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1408",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.619022528203638,
+      "lng": -56.65048381046877,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "55948b7d-50d6-4698-935b-acaf5e5d4d35",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1501",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.620629481634772,
+      "lng": -56.64762631409063,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f1d2215d-bf0e-4ce7-a996-2d1a30b16cb0",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1502",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.619255279654424,
+      "lng": -56.64859061663145,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "d47f5c0e-8203-4ace-acca-340043ab50db",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1503",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.618208540734507,
+      "lng": -56.6468177236479,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "4b8ea117-918f-47b2-8703-85ba75d98266",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1504",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.622127116777296,
+      "lng": -56.64651662997532,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1d46ec5d-a689-444f-b762-3c404bf7b70d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1505",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.623264856608537,
+      "lng": -56.64794588724128,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c9a9ab2e-fa05-4a15-910b-e1ea856ed9a7",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1506",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.621490337200903,
+      "lng": -56.65077021590033,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "90eaaf86-960b-4ec5-a80a-dce1035e2fe5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1507",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.622503163510567,
+      "lng": -56.65094272856723,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1e26f876-8817-484d-b220-75d272ab765a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "PAR-BA-1508",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.623301719010365,
+      "lng": -56.65117886791535,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "83f08bd3-5d32-41dd-b278-56bef45ec781",
+      "type": "CTO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "dc6ca70f-92de-47ac-9e14-9b7c8abf1aec",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "CEO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.609983726951801,
+      "lng": -56.6577189614903,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "8f5b47f9-d002-415c-bb3a-72944b682670",
+      "type": "CEO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "84d833ff-8fff-4d95-8146-31b769518179",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "CEO",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.60993193930297,
+      "lng": -56.65940358636757,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "catalogId": "8f5b47f9-d002-415c-bb3a-72944b682670",
+      "type": "CEO",
+      "color": null,
+      "reserveLoopLength": null,
+      "poleId": null,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    }
+  ],
+  "pops": [],
+  "cables": [
+    {
+      "id": "add525b0-da86-4822-a0cf-259d9e3b31ff",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610550343893791,
+          "lng": -56.65934296573231
+        },
+        {
+          "lat": -2.610507384351216,
+          "lng": -56.6602388070879
+        },
+        {
+          "lat": -2.61042128757509,
+          "lng": -56.66103796716897
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "72778511-07e2-4e14-9da5-9ce61d4dd2cd",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610550363769215,
+          "lng": -56.65934255326678
+        },
+        {
+          "lat": -2.61052002409758,
+          "lng": -56.659372753832
+        },
+        {
+          "lat": -2.610481638509731,
+          "lng": -56.66020972665865
+        },
+        {
+          "lat": -2.610103486223461,
+          "lng": -56.66021370226936
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "14b36e25-10a7-4834-8c0a-e42d9321e057",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609978884159959,
+          "lng": -56.658529075181
+        },
+        {
+          "lat": -2.609982702679675,
+          "lng": -56.65771803806813
+        },
+        {
+          "lat": -2.610702518267996,
+          "lng": -56.65771553319432
+        },
+        {
+          "lat": -2.610740605064467,
+          "lng": -56.65767767814501
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "e1090c7b-26d9-4472-864a-4870496fd668",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610739523757383,
+          "lng": -56.65767761681508
+        },
+        {
+          "lat": -2.610783994331209,
+          "lng": -56.65771638840612
+        },
+        {
+          "lat": -2.611335425822049,
+          "lng": -56.65774425728551
+        },
+        {
+          "lat": -2.611277796143058,
+          "lng": -56.65846393385614
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0e3b2f56-b819-4b29-9343-288bffb0d77b",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610739013420477,
+          "lng": -56.65767704622799
+        },
+        {
+          "lat": -2.610785019865173,
+          "lng": -56.65764012015141
+        },
+        {
+          "lat": -2.611346453357827,
+          "lng": -56.65767054681544
+        },
+        {
+          "lat": -2.611397596280165,
+          "lng": -56.65687724646953
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c84cd3f6-d96f-49e5-a8c0-99ee28742147",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610738123658921,
+          "lng": -56.65767985519962
+        },
+        {
+          "lat": -2.610907270881538,
+          "lng": -56.6560837177206
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "61ae2b3f-c0a4-4c40-bf34-26a85f43b43c",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.61022981996115,
+          "lng": -56.65694843106664
+        },
+        {
+          "lat": -2.610771712700479,
+          "lng": -56.65694921415466
+        },
+        {
+          "lat": -2.610701030241115,
+          "lng": -56.65763327511782
+        },
+        {
+          "lat": -2.610740094782454,
+          "lng": -56.65767710757873
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "a93a90b0-1c46-4a9e-9bdb-2227dd69b98d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609983140268754,
+          "lng": -56.65771917009307
+        },
+        {
+          "lat": -2.609231879977594,
+          "lng": -56.65766784264843
+        },
+        {
+          "lat": -2.608435572821825,
+          "lng": -56.65768886027582
+        },
+        {
+          "lat": -2.607535922029303,
+          "lng": -56.65770153869884
+        },
+        {
+          "lat": -2.607200471458218,
+          "lng": -56.65742377260429
+        },
+        {
+          "lat": -2.60579716301609,
+          "lng": -56.6559902946225
+        },
+        {
+          "lat": -2.604280719895031,
+          "lng": -56.65452063166521
+        },
+        {
+          "lat": -2.602716157787427,
+          "lng": -56.65301710736509
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "88ffd04d-3f8b-4809-aec0-190ae51697ae",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609231226992094,
+          "lng": -56.65766725401113
+        },
+        {
+          "lat": -2.609216778319314,
+          "lng": -56.65764481238878
+        },
+        {
+          "lat": -2.608833541034701,
+          "lng": -56.65765608214007
+        },
+        {
+          "lat": -2.608837119404313,
+          "lng": -56.65699014815517
+        },
+        {
+          "lat": -2.609332638475261,
+          "lng": -56.65692773666667
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "56a13092-d218-43d2-a3fd-a276e97538dd",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612310833364597,
+          "lng": -56.65774111533869
+        },
+        {
+          "lat": -2.612344065098402,
+          "lng": -56.65772444882768
+        },
+        {
+          "lat": -2.612362809923519,
+          "lng": -56.65760069876026
+        },
+        {
+          "lat": -2.612684117709292,
+          "lng": -56.65759121657932
+        },
+        {
+          "lat": -2.612895421845629,
+          "lng": -56.65755517284319
+        },
+        {
+          "lat": -2.613095252339547,
+          "lng": -56.6574173438458
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "11dd7ffc-3181-4ea7-9a33-c78f55cdf256",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612311984514927,
+          "lng": -56.65774131734992
+        },
+        {
+          "lat": -2.61214656668068,
+          "lng": -56.65907709629158
+        },
+        {
+          "lat": -2.612773311020668,
+          "lng": -56.65865227497233
+        },
+        {
+          "lat": -2.613222931293313,
+          "lng": -56.65835103752071
+        },
+        {
+          "lat": -2.614032952399148,
+          "lng": -56.65780732527931
+        },
+        {
+          "lat": -2.614090126885297,
+          "lng": -56.65775802857679
+        },
+        {
+          "lat": -2.614123705690755,
+          "lng": -56.65770287942685
+        },
+        {
+          "lat": -2.614133129315062,
+          "lng": -56.65765361973403
+        },
+        {
+          "lat": -2.614125300903368,
+          "lng": -56.65762643588238
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f0ed71ce-c157-4a1e-89f4-26bb82044037",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.613223348339383,
+          "lng": -56.65835087222825
+        },
+        {
+          "lat": -2.613218300424503,
+          "lng": -56.658385784883
+        },
+        {
+          "lat": -2.612795188098262,
+          "lng": -56.65867043822653
+        },
+        {
+          "lat": -2.613023935563873,
+          "lng": -56.65947189459106
+        },
+        {
+          "lat": -2.614064065288688,
+          "lng": -56.6587251552064
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c762de36-27d1-4a20-b2f0-62b91ae4fa8f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612685817111536,
+          "lng": -56.66163023995781
+        },
+        {
+          "lat": -2.613812802066915,
+          "lng": -56.6609439359716
+        },
+        {
+          "lat": -2.614882877647406,
+          "lng": -56.66027851821505
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "e117ba5d-11a3-4ff3-9123-295fea2c64b7",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612685934724965,
+          "lng": -56.66163003405952
+        },
+        {
+          "lat": -2.612697740475416,
+          "lng": -56.66158391528672
+        },
+        {
+          "lat": -2.612302561881612,
+          "lng": -56.66095265820882
+        },
+        {
+          "lat": -2.612813639017643,
+          "lng": -56.66060821638703
+        },
+        {
+          "lat": -2.613890792454987,
+          "lng": -56.65989343871459
+        },
+        {
+          "lat": -2.614976581848325,
+          "lng": -56.65922893018001
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1abd0e4a-26bd-4e9a-9c82-f71463647e54",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.61268527811556,
+          "lng": -56.66162890278646
+        },
+        {
+          "lat": -2.612730776456013,
+          "lng": -56.66163963412758
+        },
+        {
+          "lat": -2.613161460837583,
+          "lng": -56.662354567429
+        },
+        {
+          "lat": -2.613707452658981,
+          "lng": -56.66196727820601
+        },
+        {
+          "lat": -2.615088921849254,
+          "lng": -56.66109577351923
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f069ac23-1c6e-4bee-b045-091b0ae64c8a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.613554187205695,
+          "lng": -56.6630544759967
+        },
+        {
+          "lat": -2.615039845975004,
+          "lng": -56.66217588788918
+        },
+        {
+          "lat": -2.615567499865177,
+          "lng": -56.66184776352122
+        },
+        {
+          "lat": -2.616035091038111,
+          "lng": -56.66250642433773
+        },
+        {
+          "lat": -2.615390601280462,
+          "lng": -56.66292880251381
+        },
+        {
+          "lat": -2.614658337923792,
+          "lng": -56.66334202554194
+        }
+      ],
+      "fromNodeId": "37838f44-196e-4466-8dbe-e0d999195712",
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f91a6b35-4747-4c40-a8ef-6700b904c2d5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.615039793709251,
+          "lng": -56.66217572585115
+        },
+        {
+          "lat": -2.615037721024441,
+          "lng": -56.66214250628233
+        },
+        {
+          "lat": -2.616197454949944,
+          "lng": -56.66139403378676
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0bd29e41-1ed6-4ef8-b5c7-6b924180ec8d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.613555723381032,
+          "lng": -56.66305369355031
+        },
+        {
+          "lat": -2.613542303093369,
+          "lng": -56.66307970139821
+        },
+        {
+          "lat": -2.613991350641901,
+          "lng": -56.6637464187718
+        },
+        {
+          "lat": -2.613322337518255,
+          "lng": -56.66415966346401
+        },
+        {
+          "lat": -2.614133897245112,
+          "lng": -56.66547762777103
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "cf8bb642-4560-4f44-bc3a-63b99bbf7ca6",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.615277032975335,
+          "lng": -56.66574785292796
+        },
+        {
+          "lat": -2.61597978259743,
+          "lng": -56.66531372417425
+        },
+        {
+          "lat": -2.615541347834331,
+          "lng": -56.66463825380589
+        },
+        {
+          "lat": -2.616910919340272,
+          "lng": -56.66379513086605
+        },
+        {
+          "lat": -2.617354014879115,
+          "lng": -56.66445428717535
+        },
+        {
+          "lat": -2.618023737166391,
+          "lng": -56.66401377567986
+        },
+        {
+          "lat": -2.617162473860128,
+          "lng": -56.66270052885191
+        },
+        {
+          "lat": -2.616743896127768,
+          "lng": -56.66205290346659
+        },
+        {
+          "lat": -2.617208179611386,
+          "lng": -56.66173266628214
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "162722d3-2683-40f7-bf8f-d43f0405836f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.615541599012854,
+          "lng": -56.6646387277893
+        },
+        {
+          "lat": -2.615581029129676,
+          "lng": -56.66464334098636
+        },
+        {
+          "lat": -2.616243104085408,
+          "lng": -56.66424359528575
+        },
+        {
+          "lat": -2.616659422387174,
+          "lng": -56.6648834092281
+        },
+        {
+          "lat": -2.617107887996388,
+          "lng": -56.665549652404
+        },
+        {
+          "lat": -2.6178139512968,
+          "lng": -56.66513313875533
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "93e6bef0-5234-4cf1-be3b-5c9460cb0320",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.615541570482702,
+          "lng": -56.66463752912426
+        },
+        {
+          "lat": -2.615551764208876,
+          "lng": -56.66460176521803
+        },
+        {
+          "lat": -2.616207719276083,
+          "lng": -56.66419037482797
+        },
+        {
+          "lat": -2.615790909006475,
+          "lng": -56.6635382894767
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0945e423-79dd-491d-abc7-f789fbcc1b71",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.616402362373647,
+          "lng": -56.66595864300552
+        },
+        {
+          "lat": -2.617081809430525,
+          "lng": -56.66556683158698
+        },
+        {
+          "lat": -2.616648989628399,
+          "lng": -56.6649095374617
+        },
+        {
+          "lat": -2.616659422387174,
+          "lng": -56.6648834092281
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "0fe26bdd-5c82-4c2f-9246-cfe7854b59b1",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.616726016133081,
+          "lng": -56.66910456009713
+        },
+        {
+          "lat": -2.616413291409076,
+          "lng": -56.66861219565555
+        },
+        {
+          "lat": -2.617018436837905,
+          "lng": -56.66822409795991
+        },
+        {
+          "lat": -2.61642157256327,
+          "lng": -56.66727285831314
+        },
+        {
+          "lat": -2.615815480479178,
+          "lng": -56.66764116624169
+        },
+        {
+          "lat": -2.615297242915444,
+          "lng": -56.66682615520605
+        },
+        {
+          "lat": -2.614838063490244,
+          "lng": -56.66605899404541
+        },
+        {
+          "lat": -2.615279598014243,
+          "lng": -56.66577965557052
+        },
+        {
+          "lat": -2.615276905843743,
+          "lng": -56.6657475156828
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "4041a678-b9c4-4d67-982b-04e8a5cf4393",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.614126801671888,
+          "lng": -56.66646144419039
+        },
+        {
+          "lat": -2.615124558048507,
+          "lng": -56.66808366527638
+        },
+        {
+          "lat": -2.615717324573851,
+          "lng": -56.66903843553409
+        },
+        {
+          "lat": -2.615876727807317,
+          "lng": -56.66929214424149
+        },
+        {
+          "lat": -2.615886851938848,
+          "lng": -56.66944613609331
+        },
+        {
+          "lat": -2.615853119041308,
+          "lng": -56.66957556276257
+        },
+        {
+          "lat": -2.615456267043399,
+          "lng": -56.6695673706807
+        },
+        {
+          "lat": -2.615198885695952,
+          "lng": -56.66956779162904
+        },
+        {
+          "lat": -2.615074499408147,
+          "lng": -56.66950737037518
+        },
+        {
+          "lat": -2.614731128305241,
+          "lng": -56.66898115219611
+        },
+        {
+          "lat": -2.613917822389296,
+          "lng": -56.66768060290986
+        },
+        {
+          "lat": -2.613853718776752,
+          "lng": -56.66757655770889
+        },
+        {
+          "lat": -2.613175554043099,
+          "lng": -56.66798911819782
+        },
+        {
+          "lat": -2.612620366578715,
+          "lng": -56.66832301080619
+        },
+        {
+          "lat": -2.612434754004361,
+          "lng": -56.6684249661364
+        },
+        {
+          "lat": -2.612216345384073,
+          "lng": -56.66855554326439
+        },
+        {
+          "lat": -2.612130652197822,
+          "lng": -56.66847477003296
+        },
+        {
+          "lat": -2.612021684476909,
+          "lng": -56.66834442025532
+        },
+        {
+          "lat": -2.611918801956203,
+          "lng": -56.66822214123572
+        },
+        {
+          "lat": -2.611719076559584,
+          "lng": -56.66794264843049
+        },
+        {
+          "lat": -2.612721523050106,
+          "lng": -56.66732081509924
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f2734461-4f70-47af-adf5-fea1e85f4d97",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612466985312256,
+          "lng": -56.66534540886148
+        },
+        {
+          "lat": -2.611814314076406,
+          "lng": -56.66427111423865
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5d266798-d4c1-465c-8e92-60ccd1be1451",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612989899549127,
+          "lng": -56.66619914275338
+        },
+        {
+          "lat": -2.612312457049804,
+          "lng": -56.66660974804006
+        },
+        {
+          "lat": -2.611751784779206,
+          "lng": -56.66693633129173
+        },
+        {
+          "lat": -2.61123327705726,
+          "lng": -56.6672289266914
+        },
+        {
+          "lat": -2.610835344366806,
+          "lng": -56.66666239818831
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "ad3a698f-8c54-41e8-a19a-1eaac1369d1f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612989899549127,
+          "lng": -56.66619914275338
+        },
+        {
+          "lat": -2.612958506459807,
+          "lng": -56.66619430473267
+        },
+        {
+          "lat": -2.61229668368726,
+          "lng": -56.66658873173354
+        },
+        {
+          "lat": -2.611998621305651,
+          "lng": -56.66618013905818
+        },
+        {
+          "lat": -2.611829869124299,
+          "lng": -56.66592959765927
+        },
+        {
+          "lat": -2.611467060988691,
+          "lng": -56.66534775965226
+        },
+        {
+          "lat": -2.611372507543438,
+          "lng": -56.66519608305891
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f4611c34-a397-4e5a-aae2-c6c493c144ba",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.607135027404123,
+          "lng": -56.66145692979561
+        },
+        {
+          "lat": -2.606991279348562,
+          "lng": -56.66137170857289
+        },
+        {
+          "lat": -2.606284643970923,
+          "lng": -56.66097618724181
+        },
+        {
+          "lat": -2.605722050969506,
+          "lng": -56.6606915614911
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c332d848-d0ef-4183-b480-a4d25272fd8a",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610812822454128,
+          "lng": -56.66259582472377
+        },
+        {
+          "lat": -2.609783436022565,
+          "lng": -56.66312290018545
+        },
+        {
+          "lat": -2.60930575556631,
+          "lng": -56.66338974883813
+        },
+        {
+          "lat": -2.609152959737378,
+          "lng": -56.66345951771768
+        },
+        {
+          "lat": -2.609020654237874,
+          "lng": -56.66344274104026
+        },
+        {
+          "lat": -2.608845879520618,
+          "lng": -56.66328225952194
+        },
+        {
+          "lat": -2.608617701733627,
+          "lng": -56.66301554831155
+        },
+        {
+          "lat": -2.608361091814155,
+          "lng": -56.66269198266485
+        },
+        {
+          "lat": -2.608047629320308,
+          "lng": -56.66227270878254
+        },
+        {
+          "lat": -2.607712401376901,
+          "lng": -56.66187693182141
+        },
+        {
+          "lat": -2.607559753234085,
+          "lng": -56.66172703195056
+        },
+        {
+          "lat": -2.607134492929829,
+          "lng": -56.66145720333291
+        },
+        {
+          "lat": -2.608143677474243,
+          "lng": -56.66025166938374
+        },
+        {
+          "lat": -2.608771646155387,
+          "lng": -56.65985094245028
+        },
+        {
+          "lat": -2.609449563947154,
+          "lng": -56.65948245570381
+        },
+        {
+          "lat": -2.609932269692954,
+          "lng": -56.65940365460926
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "df65e7f1-61fa-4561-947f-e37f59e7c2ad",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609448392158577,
+          "lng": -56.65948277672006
+        },
+        {
+          "lat": -2.609208927565608,
+          "lng": -56.65926486253739
+        },
+        {
+          "lat": -2.60892758756502,
+          "lng": -56.65899395942689
+        },
+        {
+          "lat": -2.608356190537718,
+          "lng": -56.65848652206228
+        }
+      ],
+      "fromNodeId": "8930003d-ede9-423b-ab4c-f7ecbbf48c93",
+      "toNodeId": "f21631fd-3d18-40ae-96c6-56e1955ecdb0",
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "257d348e-8e3e-42af-8962-8675dc7df7aa",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.607135258238953,
+          "lng": -56.66145748138684
+        },
+        {
+          "lat": -2.607130852676282,
+          "lng": -56.66142245210327
+        },
+        {
+          "lat": -2.60631182600495,
+          "lng": -56.6609599016391
+        },
+        {
+          "lat": -2.606728716707368,
+          "lng": -56.66038136183334
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "c1ef40d5-352b-4150-8e19-db016613e657",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.607201029114443,
+          "lng": -56.65742323471068
+        },
+        {
+          "lat": -2.605840111953354,
+          "lng": -56.65866760055645
+        },
+        {
+          "lat": -2.604503813529005,
+          "lng": -56.65977583851606
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "48c18a6c-dd71-408a-83e1-22da58de1218",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.607200342137509,
+          "lng": -56.65742380180471
+        },
+        {
+          "lat": -2.607183427159326,
+          "lng": -56.657423212857
+        },
+        {
+          "lat": -2.606538569885418,
+          "lng": -56.65677968428557
+        },
+        {
+          "lat": -2.605623623220185,
+          "lng": -56.65767617137144
+        },
+        {
+          "lat": -2.605137895296016,
+          "lng": -56.65821616853906
+        },
+        {
+          "lat": -2.604934997020801,
+          "lng": -56.65834284109026
+        },
+        {
+          "lat": -2.604743077465444,
+          "lng": -56.65834987505638
+        },
+        {
+          "lat": -2.604579510151314,
+          "lng": -56.65835090045174
+        },
+        {
+          "lat": -2.604355151200178,
+          "lng": -56.65845997851728
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "b3a3ec02-c684-4082-86f8-6f1678e148a9",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612568288460007,
+          "lng": -56.65521878643829
+        },
+        {
+          "lat": -2.612549226221602,
+          "lng": -56.65522643394771
+        },
+        {
+          "lat": -2.612508720670131,
+          "lng": -56.65569237160368
+        },
+        {
+          "lat": -2.612103880407775,
+          "lng": -56.65552412499738
+        },
+        {
+          "lat": -2.611884786382881,
+          "lng": -56.65540476833544
+        },
+        {
+          "lat": -2.611472191534723,
+          "lng": -56.65513428791966
+        },
+        {
+          "lat": -2.611239948734991,
+          "lng": -56.65497722973626
+        },
+        {
+          "lat": -2.610880338848567,
+          "lng": -56.65473807292429
+        },
+        {
+          "lat": -2.610694521374592,
+          "lng": -56.65461002675843
+        },
+        {
+          "lat": -2.610534203060054,
+          "lng": -56.65450298219736
+        },
+        {
+          "lat": -2.610456361903823,
+          "lng": -56.65438056884729
+        },
+        {
+          "lat": -2.610356596716862,
+          "lng": -56.65410768176459
+        },
+        {
+          "lat": -2.610302710988379,
+          "lng": -56.65394425231344
+        },
+        {
+          "lat": -2.610214912241426,
+          "lng": -56.6538602640385
+        },
+        {
+          "lat": -2.610033302442593,
+          "lng": -56.65373616508009
+        },
+        {
+          "lat": -2.609845359208827,
+          "lng": -56.65359667218468
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "2688e926-14c8-4cf1-86c4-1db43b90c961",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612568279105365,
+          "lng": -56.6552189404492
+        },
+        {
+          "lat": -2.6125862748827,
+          "lng": -56.65523029322561
+        },
+        {
+          "lat": -2.612542176733182,
+          "lng": -56.655824719333
+        },
+        {
+          "lat": -2.613088086232415,
+          "lng": -56.65587889295193
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "18b3d544-439d-4633-a6c2-3dfebbe1bcbb",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612568227888697,
+          "lng": -56.65521899263187
+        },
+        {
+          "lat": -2.612586817766991,
+          "lng": -56.65520956699258
+        },
+        {
+          "lat": -2.612624769484057,
+          "lng": -56.65465064587358
+        },
+        {
+          "lat": -2.613291280056335,
+          "lng": -56.6546152723257
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "263db644-c305-4f68-bb79-f0572be6a1e5",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612661461672801,
+          "lng": -56.65394559629725
+        },
+        {
+          "lat": -2.612645714727294,
+          "lng": -56.65393283274493
+        },
+        {
+          "lat": -2.612672816291421,
+          "lng": -56.65353895514534
+        },
+        {
+          "lat": -2.6122893545213,
+          "lng": -56.65301974534764
+        },
+        {
+          "lat": -2.612042348680075,
+          "lng": -56.65272350333208
+        },
+        {
+          "lat": -2.612000752302321,
+          "lng": -56.65263783081568
+        },
+        {
+          "lat": -2.611997666904883,
+          "lng": -56.65248191950371
+        },
+        {
+          "lat": -2.611963143275157,
+          "lng": -56.65235977341883
+        },
+        {
+          "lat": -2.611888881500823,
+          "lng": -56.65222967789343
+        },
+        {
+          "lat": -2.611749852184697,
+          "lng": -56.6519024386437
+        },
+        {
+          "lat": -2.611669974269986,
+          "lng": -56.65159645180639
+        },
+        {
+          "lat": -2.611665725010922,
+          "lng": -56.65145668775406
+        },
+        {
+          "lat": -2.611626930732208,
+          "lng": -56.65134910072842
+        },
+        {
+          "lat": -2.611564317948431,
+          "lng": -56.65126962774963
+        },
+        {
+          "lat": -2.611555691864023,
+          "lng": -56.65118037071761
+        },
+        {
+          "lat": -2.611485508443481,
+          "lng": -56.65105773943705
+        },
+        {
+          "lat": -2.611285174030433,
+          "lng": -56.65055078753575
+        },
+        {
+          "lat": -2.610871081101502,
+          "lng": -56.64953453890947
+        },
+        {
+          "lat": -2.610604187047868,
+          "lng": -56.64891483303332
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7b77c385-272d-41be-9874-961ee02f5a91",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612662214633014,
+          "lng": -56.65394628726099
+        },
+        {
+          "lat": -2.613914611581132,
+          "lng": -56.65371526508817
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "996caaa8-ddc0-4556-85d5-174e283bdff3",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.614048312948551,
+          "lng": -56.65234870697315
+        },
+        {
+          "lat": -2.615025391847938,
+          "lng": -56.65358218441445
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "32475354-14a6-4335-ad89-003849188f9f",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.614857349650149,
+          "lng": -56.65177790872492
+        },
+        {
+          "lat": -2.615459291854473,
+          "lng": -56.65266859940871
+        },
+        {
+          "lat": -2.615863695342924,
+          "lng": -56.65322539954077
+        },
+        {
+          "lat": -2.61619375425393,
+          "lng": -56.65384266911752
+        },
+        {
+          "lat": -2.617043578985789,
+          "lng": -56.65334334198062
+        },
+        {
+          "lat": -2.616463158126671,
+          "lng": -56.65218477880234
+        },
+        {
+          "lat": -2.617708926305912,
+          "lng": -56.65133589166855
+        },
+        {
+          "lat": -2.619022854927382,
+          "lng": -56.65048481481164
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 40,
+      "reserveLocation": {
+        "lat": -2.616953958586576,
+        "lng": -56.6518477164209
+      },
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "e33d0169-a15a-4a4f-8156-fff8c9a31f43",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.61404863009087,
+          "lng": -56.65234730530771
+        },
+        {
+          "lat": -2.614049541695068,
+          "lng": -56.65232534510068
+        },
+        {
+          "lat": -2.614112964912947,
+          "lng": -56.65228177446629
+        },
+        {
+          "lat": -2.61364082225666,
+          "lng": -56.65152926823103
+        },
+        {
+          "lat": -2.613204020093065,
+          "lng": -56.65091908346202
+        },
+        {
+          "lat": -2.613123783282556,
+          "lng": -56.65087687240684
+        },
+        {
+          "lat": -2.613025465346575,
+          "lng": -56.65088722074259
+        },
+        {
+          "lat": -2.612941510578218,
+          "lng": -56.65095451659846
+        },
+        {
+          "lat": -2.612857429861609,
+          "lng": -56.65099606967043
+        },
+        {
+          "lat": -2.61278081472,
+          "lng": -56.65100933437982
+        },
+        {
+          "lat": -2.612736168882398,
+          "lng": -56.6509717892848
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1ff791b1-21e1-421d-81b9-55572aca31a2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.617546476758343,
+          "lng": -56.64982076941341
+        },
+        {
+          "lat": -2.616933678048997,
+          "lng": -56.64837597118343
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "71559b1b-b1b5-4ea6-95b5-7496f8caaa0d",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.618208771919755,
+          "lng": -56.6468193471588
+        },
+        {
+          "lat": -2.618316343233773,
+          "lng": -56.64700740869066
+        },
+        {
+          "lat": -2.618422843715481,
+          "lng": -56.64719658839808
+        },
+        {
+          "lat": -2.6185074752079,
+          "lng": -56.64733082070389
+        },
+        {
+          "lat": -2.618574312861618,
+          "lng": -56.64748323128675
+        },
+        {
+          "lat": -2.618626248226125,
+          "lng": -56.64759972349551
+        },
+        {
+          "lat": -2.618835628450755,
+          "lng": -56.64791534683641
+        },
+        {
+          "lat": -2.618990312090268,
+          "lng": -56.64812803432427
+        },
+        {
+          "lat": -2.619035489160341,
+          "lng": -56.64821955064475
+        },
+        {
+          "lat": -2.619134037106897,
+          "lng": -56.64835200492624
+        },
+        {
+          "lat": -2.619211068430079,
+          "lng": -56.64849055713835
+        },
+        {
+          "lat": -2.619256088286343,
+          "lng": -56.64859186848286
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "6cb59de4-90a0-4093-857f-9d4c44582e01",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.620629950625401,
+          "lng": -56.64762739220473
+        },
+        {
+          "lat": -2.620791960658342,
+          "lng": -56.64810608654097
+        },
+        {
+          "lat": -2.620857895741225,
+          "lng": -56.64830030727791
+        },
+        {
+          "lat": -2.620885338924184,
+          "lng": -56.64842805855431
+        },
+        {
+          "lat": -2.6209077062527,
+          "lng": -56.64851830873308
+        },
+        {
+          "lat": -2.62093789827255,
+          "lng": -56.64863104795262
+        },
+        {
+          "lat": -2.62095756761457,
+          "lng": -56.64869756761512
+        },
+        {
+          "lat": -2.620973190374433,
+          "lng": -56.64877818658999
+        },
+        {
+          "lat": -2.620987838679934,
+          "lng": -56.64886420113053
+        },
+        {
+          "lat": -2.621002748255533,
+          "lng": -56.64893316497736
+        },
+        {
+          "lat": -2.621030729419704,
+          "lng": -56.64902311812247
+        },
+        {
+          "lat": -2.621089742908294,
+          "lng": -56.64920802919111
+        },
+        {
+          "lat": -2.621135510879816,
+          "lng": -56.64937337612457
+        },
+        {
+          "lat": -2.621174239704966,
+          "lng": -56.64950262779473
+        },
+        {
+          "lat": -2.621228714714824,
+          "lng": -56.64969804738859
+        },
+        {
+          "lat": -2.621251732352993,
+          "lng": -56.649817519972
+        },
+        {
+          "lat": -2.621270775050978,
+          "lng": -56.64990237760917
+        },
+        {
+          "lat": -2.621283515782723,
+          "lng": -56.64995503810788
+        },
+        {
+          "lat": -2.621303165417271,
+          "lng": -56.65004022411948
+        },
+        {
+          "lat": -2.621346908596357,
+          "lng": -56.65021630831399
+        },
+        {
+          "lat": -2.621384356940474,
+          "lng": -56.65034350970166
+        },
+        {
+          "lat": -2.621413186959042,
+          "lng": -56.65047616541114
+        },
+        {
+          "lat": -2.621430693619487,
+          "lng": -56.65058047854116
+        },
+        {
+          "lat": -2.62146533200368,
+          "lng": -56.65070365611679
+        },
+        {
+          "lat": -2.621489381078002,
+          "lng": -56.65077212952662
+        },
+        {
+          "lat": -2.621589241713196,
+          "lng": -56.65073812923836
+        },
+        {
+          "lat": -2.621689614433151,
+          "lng": -56.65068762461659
+        },
+        {
+          "lat": -2.621853367430915,
+          "lng": -56.65060954433598
+        },
+        {
+          "lat": -2.622018136056933,
+          "lng": -56.65052914732949
+        },
+        {
+          "lat": -2.622149753606695,
+          "lng": -56.65047160579013
+        },
+        {
+          "lat": -2.62230677318771,
+          "lng": -56.6507062416412
+        },
+        {
+          "lat": -2.622503635863474,
+          "lng": -56.65094512303818
+        },
+        {
+          "lat": -2.622860010413252,
+          "lng": -56.65148943782486
+        },
+        {
+          "lat": -2.623304095521586,
+          "lng": -56.65118027830295
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7fe572e6-4b9c-4391-a75c-598e0895be27",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.622127172350206,
+          "lng": -56.64651821526406
+        },
+        {
+          "lat": -2.623264703804616,
+          "lng": -56.6479466153171
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "97dd5b14-9709-4824-9256-3adc9cd43db2",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.610551122062608,
+          "lng": -56.65934251514351
+        },
+        {
+          "lat": -2.610583444887662,
+          "lng": -56.65936826419948
+        },
+        {
+          "lat": -2.611229181350468,
+          "lng": -56.65929761202111
+        },
+        {
+          "lat": -2.611196664653296,
+          "lng": -56.65972894746325
+        },
+        {
+          "lat": -2.611189322573808,
+          "lng": -56.66013499873365
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "169274a1-a945-4c71-a0d4-d16b4a95df37",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.612021278315205,
+          "lng": -56.66067771420578
+        },
+        {
+          "lat": -2.611988947335293,
+          "lng": -56.66132775058135
+        },
+        {
+          "lat": -2.611970426156113,
+          "lng": -56.66167271497007
+        },
+        {
+          "lat": -2.611962843124292,
+          "lng": -56.66202980171419
+        },
+        {
+          "lat": -2.611997207797084,
+          "lng": -56.66241008650105
+        },
+        {
+          "lat": -2.612059523728554,
+          "lng": -56.66267956829612
+        },
+        {
+          "lat": -2.612108906689724,
+          "lng": -56.66289925309746
+        },
+        {
+          "lat": -2.612177893299242,
+          "lng": -56.66312896612878
+        },
+        {
+          "lat": -2.612245802164988,
+          "lng": -56.66340800305204
+        },
+        {
+          "lat": -2.612276787145048,
+          "lng": -56.66368107651813
+        },
+        {
+          "lat": -2.612280748810127,
+          "lng": -56.66438243876375
+        },
+        {
+          "lat": -2.612276374783419,
+          "lng": -56.66479576378694
+        },
+        {
+          "lat": -2.612300444424911,
+          "lng": -56.66495659972228
+        },
+        {
+          "lat": -2.61238184377232,
+          "lng": -56.66513055236506
+        },
+        {
+          "lat": -2.612487348918966,
+          "lng": -56.6653088285241
+        },
+        {
+          "lat": -2.612467880795207,
+          "lng": -56.66534487621058
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "1b7ce8bc-a243-4b85-8bc2-94b0d5c937dc",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.61202126642319,
+          "lng": -56.66067843621758
+        },
+        {
+          "lat": -2.611985931460113,
+          "lng": -56.66069070315076
+        },
+        {
+          "lat": -2.611962627200111,
+          "lng": -56.66120294979786
+        },
+        {
+          "lat": -2.611220266428231,
+          "lng": -56.66162546288069
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "7c6392eb-e070-4c29-80c3-645cd1c99586",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "Caminho sem título",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.616101789096656,
+          "lng": -56.66810763873073
+        },
+        {
+          "lat": -2.615836195140355,
+          "lng": -56.66766680903826
+        },
+        {
+          "lat": -2.616411610656448,
+          "lng": -56.66731020278564
+        },
+        {
+          "lat": -2.616421991079365,
+          "lng": -56.66727346167639
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "f6acbf1b-fc01-4775-8b2f-ac5f998b9b97",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "TRONCO 1",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609811806318749,
+          "lng": -56.65816474625685
+        },
+        {
+          "lat": -2.609941991260421,
+          "lng": -56.65815936382526
+        },
+        {
+          "lat": -2.609938400629289,
+          "lng": -56.65851973733666
+        },
+        {
+          "lat": -2.609930799148986,
+          "lng": -56.6594044653387
+        },
+        {
+          "lat": -2.61055078321745,
+          "lng": -56.65934256217245
+        },
+        {
+          "lat": -2.611247209390809,
+          "lng": -56.65926260695822
+        },
+        {
+          "lat": -2.612136190884607,
+          "lng": -56.65914347377893
+        },
+        {
+          "lat": -2.612089586415066,
+          "lng": -56.65964401352808
+        },
+        {
+          "lat": -2.612046569600097,
+          "lng": -56.6601150065896
+        },
+        {
+          "lat": -2.612021582426089,
+          "lng": -56.66067915982717
+        },
+        {
+          "lat": -2.612184144708389,
+          "lng": -56.66083142041428
+        },
+        {
+          "lat": -2.612289467328201,
+          "lng": -56.66099103984321
+        },
+        {
+          "lat": -2.612686249516711,
+          "lng": -56.66163016720164
+        },
+        {
+          "lat": -2.613129729318499,
+          "lng": -56.66236459077947
+        },
+        {
+          "lat": -2.613555613817213,
+          "lng": -56.66305405815376
+        },
+        {
+          "lat": -2.614020496011239,
+          "lng": -56.66374268236697
+        },
+        {
+          "lat": -2.614396909432963,
+          "lng": -56.66435667535741
+        },
+        {
+          "lat": -2.614842800183441,
+          "lng": -56.66505858164604
+        },
+        {
+          "lat": -2.615277962229931,
+          "lng": -56.665746967381
+        },
+        {
+          "lat": -2.614810849983293,
+          "lng": -56.66603776897263
+        },
+        {
+          "lat": -2.614127264302522,
+          "lng": -56.6664613933721
+        },
+        {
+          "lat": -2.61342633927533,
+          "lng": -56.66689440857831
+        },
+        {
+          "lat": -2.612989506696356,
+          "lng": -56.66619937429042
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    },
+    {
+      "id": "5161224f-0462-4f9a-aea0-20bc238a6a73",
+      "projectId": "fc74a11f-bf30-46fe-a9d4-a925dee2e91e",
+      "name": "TRONCO 2",
+      "status": "NOT_DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#e9017d",
+      "colorStandard": "ABNT",
+      "coordinates": [
+        {
+          "lat": -2.609811544594616,
+          "lng": -56.658151605761
+        },
+        {
+          "lat": -2.609941928035228,
+          "lng": -56.65814226501062
+        },
+        {
+          "lat": -2.609936683980774,
+          "lng": -56.65767584698556
+        },
+        {
+          "lat": -2.610739294339816,
+          "lng": -56.657677245942
+        },
+        {
+          "lat": -2.611359257594634,
+          "lng": -56.65770557872385
+        },
+        {
+          "lat": -2.612311984514927,
+          "lng": -56.65774131734992
+        },
+        {
+          "lat": -2.612407505771003,
+          "lng": -56.65712630638592
+        },
+        {
+          "lat": -2.612463261658042,
+          "lng": -56.65663900193813
+        },
+        {
+          "lat": -2.612498023509021,
+          "lng": -56.65616011980957
+        },
+        {
+          "lat": -2.612534512048596,
+          "lng": -56.65568128827192
+        },
+        {
+          "lat": -2.612568240475221,
+          "lng": -56.65521872014883
+        },
+        {
+          "lat": -2.612611163222418,
+          "lng": -56.65461293924342
+        },
+        {
+          "lat": -2.612662370641107,
+          "lng": -56.65394623714028
+        },
+        {
+          "lat": -2.612688444220866,
+          "lng": -56.65357011942083
+        },
+        {
+          "lat": -2.612724470958656,
+          "lng": -56.65338191630283
+        },
+        {
+          "lat": -2.612833073852211,
+          "lng": -56.65323249735081
+        },
+        {
+          "lat": -2.612957570960102,
+          "lng": -56.65311268173377
+        },
+        {
+          "lat": -2.613309751480527,
+          "lng": -56.65287864047414
+        },
+        {
+          "lat": -2.613665524713402,
+          "lng": -56.65262822606559
+        },
+        {
+          "lat": -2.614048864841477,
+          "lng": -56.65234831897368
+        },
+        {
+          "lat": -2.614456513863578,
+          "lng": -56.65207188034266
+        },
+        {
+          "lat": -2.614857957652158,
+          "lng": -56.65177747215274
+        },
+        {
+          "lat": -2.615590429141956,
+          "lng": -56.65125565255873
+        },
+        {
+          "lat": -2.615959702428946,
+          "lng": -56.65096777568787
+        },
+        {
+          "lat": -2.616275319576894,
+          "lng": -56.65074257641324
+        },
+        {
+          "lat": -2.616945083178405,
+          "lng": -56.65025323997641
+        },
+        {
+          "lat": -2.617546651568441,
+          "lng": -56.64981977138752
+        },
+        {
+          "lat": -2.618484327460394,
+          "lng": -56.64915937925741
+        },
+        {
+          "lat": -2.619255545125025,
+          "lng": -56.64859224773739
+        },
+        {
+          "lat": -2.620004593678015,
+          "lng": -56.64808203227978
+        },
+        {
+          "lat": -2.620630252215858,
+          "lng": -56.64762791584295
+        },
+        {
+          "lat": -2.621390826919544,
+          "lng": -56.64708238104004
+        },
+        {
+          "lat": -2.622128069460075,
+          "lng": -56.64651667720511
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "catalogId": "eb289159-7f48-49db-b373-c2be3c374506",
+      "technicalReserve": 0,
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "companyId": "5e33d2bd-0184-4a0b-a94e-60a419d06aa4"
+    }
+  ],
+  "poles": []
+}

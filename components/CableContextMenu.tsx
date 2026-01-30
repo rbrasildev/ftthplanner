@@ -111,7 +111,7 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
                 <div className="p-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-md group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
                     <Unplug className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <span className="text-sm font-medium">{t('connect')}</span>
+                <span className="text-sm font-medium">{t('connect_to_box')}</span>
             </button>
 
             {showDeleteConfirm ? (
