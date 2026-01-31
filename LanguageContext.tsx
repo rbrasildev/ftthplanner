@@ -57,6 +57,7 @@ const translations = {
     'toast_project_deleted': 'Project deleted successfully!',
     'error_project_update': 'Failed to update project.',
     'error_project_delete': 'Failed to delete project.',
+    'error_saving_changes': 'Error saving changes. Please try again.',
 
     // App / Sidebar
     'app_title': 'FTTx Planner',
@@ -851,6 +852,7 @@ const translations = {
     'toast_project_deleted': 'Projeto excluído com sucesso!',
     'error_project_update': 'Falha ao atualizar projeto.',
     'error_project_delete': 'Falha ao excluir projeto.',
+    'error_saving_changes': 'Erro ao salvar as alterações. Tente novamente.',
 
     // App / Sidebar
     'app_title': 'Planejador FTTx',

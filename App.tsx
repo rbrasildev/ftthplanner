@@ -1196,11 +1196,9 @@ export default function App() {
     const handleSaveCTO = async (updatedCTO: CTOData) => {
         // 1. Update React State
         updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
-        setEditingCTO(updatedCTO); // Sync state to avoid "unsaved changes" on close
+        setEditingCTO(updatedCTO);
 
-        // 2. FIRE-AND-FORGET SYNC (Immediate but Non-Blocking)
-        // We start the request immediately so it races the background sync (which is fine, debounce handles it)
-        // But we DO NOT await it, so the UI is instant.
+        // 2. BLOCKING SYNC (Wait for confirmation to ensure data integrity)
         if (currentProject) {
             const prevNet = projectRef.current?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
             const newNetwork = {
@@ -1209,13 +1207,19 @@ export default function App() {
             };
 
             setIsSaving(true);
-            projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings)
-                .then(() => console.log("[Instant Sync] Background save success"))
-                .catch(e => console.error("[Instant Sync] Background save failed", e))
-                .finally(() => setIsSaving(false));
+            try {
+                // We await here to ensure this critical change is saved before anything else can happen
+                await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
+                console.log("[Manual Sync] CTO save success");
+                showToast(t('toast_cto_splicing_saved'));
+            } catch (e) {
+                console.error("[Manual Sync] CTO save failed", e);
+                showToast(t('error_saving_changes'), 'error');
+                throw e; // Rethrow so CTOEditor can potentially keep the modal open or show an alert
+            } finally {
+                setIsSaving(false);
+            }
         }
-
-        showToast(t('toast_cto_splicing_saved'));
     };
     const handleRenameCTO = (id: string, name: string) => updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === id ? { ...c, name } : c) }));
     const handleUpdateCTOStatus = (status: CTOStatus) => selectedId && updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, status } : c) }));

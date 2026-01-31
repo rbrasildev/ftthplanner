@@ -957,7 +957,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleApply = async () => {
         setSavingAction('apply');
         try {
-            const finalCTO = { ...localCTO, viewState: viewState };
+            // Use REF as source of truth for saving to avoid stale state from React async updates
+            const finalCTO = JSON.parse(JSON.stringify(localCTORef.current)) as CTOData;
+            finalCTO.viewState = viewState;
+
             await onSave(finalCTO);
         } catch (e) {
             console.error("Apply failed", e);
@@ -985,7 +988,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleSaveAndClose = async () => {
         setSavingAction('save_close');
         try {
-            const finalCTO = { ...localCTO, viewState: viewState };
+            // Use REF as source of truth for saving to avoid stale state from React async updates
+            const finalCTO = JSON.parse(JSON.stringify(localCTORef.current)) as CTOData;
+            finalCTO.viewState = viewState;
 
             // SAFEGUARD: Ensure all fusions have a layout entry before saving
             // This prevents "reset to defaults" on next load if valid positions were somehow missing
@@ -1810,28 +1815,32 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
             }
 
-            setLocalCTO(prev => ({
-                ...prev,
+            const updated = {
+                ...localCTORef.current,
                 layout: {
-                    ...prev.layout,
+                    ...localCTORef.current.layout,
                     [dragState.targetId!]: {
                         ...dragState.initialLayout!,
                         x: newX,
                         y: newY
                     }
                 }
-            }));
+            };
+            localCTORef.current = updated;
+            setLocalCTO(updated);
         } else if (dragState?.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
             const { x, y } = screenToCanvas(e.clientX, e.clientY);
-            setLocalCTO(prev => ({
-                ...prev,
-                connections: prev.connections.map(c => {
+            const updated = {
+                ...localCTORef.current,
+                connections: localCTORef.current.connections.map(c => {
                     if (c.id !== dragState.connectionId) return c;
                     const newPoints = [...(c.points || [])];
                     newPoints[dragState.pointIndex!] = { x, y };
                     return { ...c, points: newPoints };
                 })
-            }));
+            };
+            localCTORef.current = updated;
+            setLocalCTO(updated);
         }
 
         if (dragLineRef.current) {
