@@ -36,7 +36,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
     // Draggable Panels State
     const [cablePanelOffsets, setCablePanelOffsets] = useState<Record<string, { x: number, y: number }>>(dio.cableLayout || {});
-    const [trayPanelOffset, setTrayPanelOffset] = useState({ x: 0, y: 0 });
+    const [trayPanelOffset, setTrayPanelOffset] = useState(dio.trayLayout || { x: 0, y: 0 });
 
     // State for internal "Link Cables" modal
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -379,6 +379,12 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                     ...dio.cableLayout,
                     ...cablePanelOffsets
                 }
+            });
+        } else if (dragState?.mode === 'trayPanel' && onUpdateDio) {
+            // Persist tray position on drag end
+            onUpdateDio({
+                ...dio,
+                trayLayout: trayPanelOffset
             });
         }
         setDragState(null);
@@ -741,7 +747,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                         {/* --- RIGHT SIDE: DIO Back View --- */}
                         <div
-                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[600px] flex flex-col ring-1 ring-black/50"
+                            className="absolute top-20 right-40 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-20 w-[600px] flex flex-col ring-1 ring-black/50 overflow-hidden"
                             style={{ transform: `translate(${trayPanelOffset.x}px, ${trayPanelOffset.y}px)` }}
                         >
                             <div

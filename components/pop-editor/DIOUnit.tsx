@@ -102,7 +102,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                     {/* Linked Cables Chips */}
                     <div className="mb-3">
                         {linkedCables.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 select-none">
                                 {linkedCables.map(c => (
                                     <span key={c.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/40 dark:text-sky-300 dark:border-sky-800/50">
                                         {c.name}
@@ -139,13 +139,14 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                             const isTrayStart = idx % 12 === 0;
                             const trayIndex = Math.floor(idx / 12);
                             const trayColor = getFiberColor(trayIndex, 'ABNT');
+                            const isWhiteFiber = trayColor.toLowerCase() === '#ffffff';
 
                             return (
                                 <React.Fragment key={pid}>
                                     {isTrayStart && (
                                         <div className="col-span-12 flex items-center gap-2 mt-2 mb-1">
                                             <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1 select-none">
                                                 <Layers className="w-2.5 h-2.5" />
                                                 {t('tray')} {Math.floor(idx / 12) + 1}
                                             </span>
@@ -164,13 +165,13 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                         `}
                                         style={isConnected ? {
                                             backgroundColor: portColor || '#cbd5e1',
-                                            borderColor: trayColor, // Ring color based on TRAY index
+                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor, // Ensure visibility for white fibers
                                             color: '#000',
                                             boxShadow: highlightForActiveOLT ? `0 0 10px ${portColor}` : `0 0 2px ${portColor}80`
                                         } : {
-                                            borderColor: trayColor,
-                                            color: trayColor,
-                                            backgroundColor: `${trayColor}15` // Very light tint of tray color
+                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor,
+                                            color: isWhiteFiber ? '#475569' : trayColor, // Use darker text for white fiber
+                                            backgroundColor: isWhiteFiber ? '#f8fafc' : `${trayColor}15`
                                         }}
                                         title={`Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})`}
                                     >

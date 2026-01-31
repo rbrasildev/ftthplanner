@@ -830,7 +830,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                     ))}
                                 </div>
                                 {/* Header Label */}
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-500 font-bold text-xs bg-slate-900 px-2 py-1 rounded border border-slate-700">
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-500 font-bold text-xs bg-slate-900 px-2 py-1 rounded border border-slate-700 select-none">
                                     19" RACK
                                 </div>
                             </div>

@@ -94,6 +94,7 @@ export interface DIO {
   status?: CTOStatus;
   inputCableIds?: string[]; // Array of Cable IDs linked to this DIO
   cableLayout?: Record<string, { x: number; y: number }>; // Saved visual position of cables
+  trayLayout?: { x: number; y: number }; // Saved position of the splice tray panel
 }
 
 export interface POPData {

@@ -98,7 +98,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                         return (
                             <div key={sIdx} className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded border border-slate-200 dark:border-slate-800 shadow-sm">
                                 <div
-                                    className="w-8 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-100 dark:bg-black"
+                                    className="w-8 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-100 dark:bg-black select-none"
                                     style={{ color: slotColor, borderLeft: `2px solid ${slotColor}` }}
                                 >
                                     S{sIdx + 1}
@@ -141,7 +141,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                 </div>
 
                 {/* Footer/Meta (Model Info) */}
-                <div className="bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-[9px] text-slate-400 font-mono">
+                <div className="bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-[9px] text-slate-400 font-mono select-none">
                     <span>{slots} Slot{slots > 1 ? 's' : ''} {olt.type || 'OLT'}</span>
                     <span className="uppercase tracking-wider">
                         {olt.type === 'OLT' ? 'GPON' : 'ETHERNET'}
