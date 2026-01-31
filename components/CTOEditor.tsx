@@ -125,6 +125,7 @@ interface CTOEditorProps {
     userPlan?: string;
     subscriptionExpiresAt?: string | null;
     onShowUpgrade?: () => void;
+    userRole?: string | null;
     network: NetworkState;
 }
 
@@ -133,7 +134,7 @@ type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'win
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
     litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
-    userPlan, subscriptionExpiresAt, onShowUpgrade, network
+    userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole
 }) => {
     const { t } = useLanguage();
     const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
@@ -3123,29 +3124,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         <span>{t('general_help')}</span>
                     </div>
                     <div className="flex items-center gap-3">
+                        {userRole !== 'MEMBER' && (
+                            <button
+                                onClick={handleApply}
+                                disabled={savingAction !== 'idle'}
+                                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
+                            >
+                                {savingAction === 'apply' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                                ) : (
+                                    <Check className="w-4 h-4 shrink-0" />
+                                )}
+                                <span>{t('apply') || 'Aplicar'}</span>
+                            </button>
+                        )}
                         <button
-                            onClick={handleApply}
-                            disabled={savingAction !== 'idle'}
-                            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
-                        >
-                            {savingAction === 'apply' ? (
-                                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                            ) : (
-                                <Check className="w-4 h-4 shrink-0" />
-                            )}
-                            <span>{t('apply') || 'Aplicar'}</span>
-                        </button>
-                        <button
-                            onClick={handleCloseRequest}
+                            onClick={userRole === 'MEMBER' ? onClose : handleCloseRequest}
                             disabled={savingAction !== 'idle'}
                             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[150px] justify-center"
                         >
                             {savingAction === 'save_close' ? (
                                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                             ) : (
-                                <Save className="w-4 h-4 shrink-0" />
+                                userRole === 'MEMBER' ? <X className="w-4 h-4 shrink-0" /> : <Save className="w-4 h-4 shrink-0" />
                             )}
-                            <span className="whitespace-nowrap">{t('save_or_done') || 'Salvar / Sair'}</span>
+                            <span className="whitespace-nowrap">{userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Salvar / Sair')}</span>
                         </button>
                     </div>
                 </div>
@@ -3299,7 +3302,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         type="text"
                                         value={propertiesName}
                                         onChange={(e) => setPropertiesName(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        disabled={userRole === 'MEMBER'}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                                     />
                                 </div>
 
@@ -3320,7 +3324,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                                 };
                                             });
                                         }}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        disabled={userRole === 'MEMBER'}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         <option value="">{t('select_box_model') || 'Select Model...'}</option>
                                         {availableBoxes.map(box => (
@@ -3338,7 +3343,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <select
                                         value={propertiesStatus}
                                         onChange={(e) => setPropertiesStatus(e.target.value as CTOStatus)}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        disabled={userRole === 'MEMBER'}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         <option value="PLANNED">{t('status_PLANNED')}</option>
                                         <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
@@ -3353,14 +3359,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onClick={() => setShowPropertiesModal(false)}
                                     className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
                                 >
-                                    {t('cancel')}
+                                    {userRole === 'MEMBER' ? (t('done') || 'Sair') : t('cancel')}
                                 </button>
-                                <button
-                                    onClick={handleSaveProperties}
-                                    className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95"
-                                >
-                                    {t('save')}
-                                </button>
+                                {userRole !== 'MEMBER' && (
+                                    <button
+                                        onClick={handleSaveProperties}
+                                        className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95"
+                                    >
+                                        {t('save')}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

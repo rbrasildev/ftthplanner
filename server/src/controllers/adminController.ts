@@ -16,6 +16,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 username: true,
+                email: true,
                 role: true,
                 createdAt: true
             },
@@ -36,17 +37,22 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
-        if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+
+        // Use email as fallback for username if not provided, or vice-versa
+        const finalEmail = email;
+        const finalUsername = username || email.split('@')[0];
+
+        if (!finalEmail || !password) return res.status(400).json({ error: 'Email and password are required' });
 
         // Basic validation
         if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
-        // Check if username of email exists
+        // Check if email or username exists
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
-                    { username },
-                    { email: email || `${username}@placeholder.com` } // rudimentary check
+                    { username: finalUsername },
+                    { email: finalEmail }
                 ]
             }
         });
@@ -75,12 +81,10 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        const userEmail = email || `${username}@${company.name.replace(/\s+/g, '').toLowerCase()}.com`;
-
         const newUser = await prisma.user.create({
             data: {
-                username,
-                email: userEmail,
+                username: finalUsername,
+                email: finalEmail,
                 passwordHash,
                 role: role || 'MEMBER',
                 companyId
@@ -90,6 +94,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         res.status(201).json({
             id: newUser.id,
             username: newUser.username,
+            email: newUser.email,
             role: newUser.role,
             createdAt: newUser.createdAt
         });

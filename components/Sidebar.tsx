@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         // { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
-        if (item.id === 'users' || item.id === 'backup') {
+        if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
             return userRole === 'ADMIN' || userRole === 'OWNER';
         }
         return true;

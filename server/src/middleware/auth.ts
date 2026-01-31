@@ -30,3 +30,11 @@ export const requireSuperAdmin = (req: Request, res: Response, next: NextFunctio
     }
     next();
 };
+
+export const requireAdminOrOwner = (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as AuthRequest).user;
+    if (user?.role !== 'ADMIN' && user?.role !== 'OWNER' && user?.role !== 'SUPER_ADMIN') {
+        return res.sendStatus(403);
+    }
+    next();
+};

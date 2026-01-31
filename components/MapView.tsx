@@ -279,7 +279,7 @@ const pinIcon = L.divIcon({
 
 const CTOMarker = React.memo(({
     cto, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: {
     cto: CTOData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'CTO') => void,
@@ -290,7 +290,8 @@ const CTOMarker = React.memo(({
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
     onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'CTO') => void
+    onContextMenu: (e: any, id: string, type: 'CTO') => void,
+    userRole?: string | null
 }) => {
     const icon = useMemo(() =>
         createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color),
@@ -329,7 +330,7 @@ const CTOMarker = React.memo(({
         <Marker
             position={[cto.coordinates.lat, cto.coordinates.lng]}
             icon={icon}
-            draggable={mode === 'move_node'}
+            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
             eventHandlers={eventHandlers}
         >
             <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
@@ -341,7 +342,7 @@ const CTOMarker = React.memo(({
 
 const POPMarker = React.memo(({
     pop, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: {
     pop: POPData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'POP') => void,
@@ -352,7 +353,8 @@ const POPMarker = React.memo(({
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
     onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'POP') => void
+    onContextMenu: (e: any, id: string, type: 'POP') => void,
+    userRole?: string | null
 }) => {
     const icon = useMemo(() =>
         createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size),
@@ -391,7 +393,7 @@ const POPMarker = React.memo(({
         <Marker
             position={[pop.coordinates.lat, pop.coordinates.lng]}
             icon={icon}
-            draggable={mode === 'move_node'}
+            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
             eventHandlers={eventHandlers}
         >
             <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
@@ -403,7 +405,7 @@ const POPMarker = React.memo(({
 
 const PoleMarker = React.memo(({
     pole, isSelected, showLabels, mode, onNodeClick, onMoveNode,
-    onDragStart, onDrag, onDragEnd, onContextMenu
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: {
     pole: PoleData, isSelected: boolean, showLabels: boolean, mode: string,
     onNodeClick: (id: string, type: 'Pole') => void,
@@ -411,7 +413,8 @@ const PoleMarker = React.memo(({
     onDragStart: (id: string) => void,
     onDrag: (lat: number, lng: number) => void,
     onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => void
+    onContextMenu: (e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => void,
+    userRole?: string | null
 }) => {
     const icon = useMemo(() =>
         createPoleIcon(pole.name, isSelected, pole.status, showLabels),
@@ -447,7 +450,7 @@ const PoleMarker = React.memo(({
         <Marker
             position={[pole.coordinates.lat, pole.coordinates.lng]}
             icon={icon}
-            draggable={mode === 'move_node'}
+            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
             eventHandlers={eventHandlers}
         >
             <Tooltip direction="top" offset={[0, -8]} opacity={0.9}>
@@ -850,6 +853,7 @@ interface MapViewProps {
     pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
     rulerPoints?: Coordinates[];
     onRulerPointsChange?: (points: Coordinates[]) => void;
+    userRole?: string | null;
 }
 
 const noOp = () => { };
@@ -861,7 +865,8 @@ export const MapView: React.FC<MapViewProps> = ({
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
     pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint,
-    rulerPoints = [], onRulerPointsChange, onToggleReserveCable, onPositionReserveCable, onReservePositionSet
+    rulerPoints = [], onRulerPointsChange, onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
+    userRole
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1587,28 +1592,28 @@ export const MapView: React.FC<MapViewProps> = ({
                     <CableContextMenu
                         x={contextMenu.x}
                         y={contextMenu.y}
-                        onEdit={() => {
+                        onEdit={userRole !== 'MEMBER' ? () => {
                             // "Editar Cabo" -> Geometry Edit (Select ID)
                             if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
                             setContextMenu(null);
-                        }}
+                        } : undefined}
                         onProperties={() => {
                             // "Propriedades" -> Open Side Panel
                             if (onEditCable) onEditCable(contextMenu.id);
                             setContextMenu(null);
                         }}
-                        onDelete={() => {
+                        onDelete={userRole !== 'MEMBER' ? () => {
                             if (onDeleteCable) onDeleteCable(contextMenu.id);
                             setContextMenu(null);
-                        }}
-                        onConnect={() => {
+                        } : undefined}
+                        onConnect={userRole !== 'MEMBER' ? () => {
                             if (onInitConnection) onInitConnection(contextMenu.id);
                             setContextMenu(null);
-                        }}
+                        } : undefined}
                         onClose={() => setContextMenu(null)}
                         showReserveLabel={cables.find(c => c.id === contextMenu.id)?.showReserveLabel}
-                        onToggleReserve={() => onToggleReserveCable && onToggleReserveCable(contextMenu.id)}
-                        onPositionReserve={() => onPositionReserveCable && onPositionReserveCable(contextMenu.id)}
+                        onToggleReserve={userRole !== 'MEMBER' ? () => onToggleReserveCable && onToggleReserveCable(contextMenu.id) : undefined}
+                        onPositionReserve={userRole !== 'MEMBER' ? () => onPositionReserveCable && onPositionReserveCable(contextMenu.id) : undefined}
                     />
                 )
             }
@@ -1619,22 +1624,22 @@ export const MapView: React.FC<MapViewProps> = ({
                         x={contextMenu.x}
                         y={contextMenu.y}
                         type={contextMenu.type as 'CTO' | 'POP' | 'Pole'}
-                        onEdit={() => {
+                        onEdit={userRole !== 'MEMBER' ? () => {
                             if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
-                        }}
+                        } : undefined}
                         onProperties={onPropertiesNode ? () => {
                             onPropertiesNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
                         } : undefined}
-                        onDelete={() => {
+                        onDelete={userRole !== 'MEMBER' ? () => {
                             if (onDeleteNode) onDeleteNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
-                        }}
-                        onMove={() => {
+                        } : undefined}
+                        onMove={userRole !== 'MEMBER' ? () => {
                             if (onMoveNodeStart) onMoveNodeStart(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
-                        }}
+                        } : undefined}
                         onClose={() => setContextMenu(null)}
                     />
                 )

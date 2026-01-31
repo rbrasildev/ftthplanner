@@ -4,9 +4,10 @@ import { Box, X } from 'lucide-react';
 interface PopHeaderProps {
     title: string;
     onClose: () => void;
+    userRole?: string | null;
 }
 
-export const PopHeader: React.FC<PopHeaderProps> = ({ title, onClose }) => {
+export const PopHeader: React.FC<PopHeaderProps> = ({ title, onClose, userRole }) => {
     return (
         <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50">
             <div className="flex items-center gap-4 min-w-0 flex-1">

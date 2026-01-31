@@ -4,12 +4,14 @@ import { User } from '../types';
 export interface AdminUser {
     id: string;
     username: string;
+    email: string;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
     createdAt: string;
 }
 
 export interface CreateUserDto {
     username: string;
+    email: string;
     password?: string;
     role?: string;
 }

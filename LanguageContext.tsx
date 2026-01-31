@@ -58,6 +58,7 @@ const translations = {
     'error_project_update': 'Failed to update project.',
     'error_project_delete': 'Failed to delete project.',
     'error_saving_changes': 'Error saving changes. Please try again.',
+    'error_permission_denied': 'Access denied: you do not have permission to perform this action.',
 
     // App / Sidebar
     'app_title': 'FTTx Planner',
@@ -512,6 +513,7 @@ const translations = {
     'users_manage_desc': 'Manage team members and their roles.',
     'add_user': 'Add User',
     'username': 'Username',
+    'email': 'Email',
     'role': 'Role',
     'created_at': 'Created At',
     'actions': 'Actions',
@@ -522,16 +524,18 @@ const translations = {
     'password': 'Password',
     'edit_user': 'Edit User',
     'update': 'Update',
-    'confirm_delete_user_msg': 'Are you sure you want to delete user {username}?',
+    'confirm_delete_user_msg': 'Are you sure you want to delete user {username} ({email})?',
     'create': 'Create',
 
     // User Management Errors
-    'error_username_taken': 'Username is already taken.',
+    'error_username_taken': 'Username or email is already taken.',
+    'error_email_taken': 'Email is already taken.',
     'error_password_length': 'Password must be at least 6 characters long.',
     'error_cannot_delete_self': 'You cannot delete your own account.',
     'error_generic': 'An unexpected error occurred.',
     'error_create_user': 'Failed to create user.',
     'error_delete_user': 'Failed to delete user.',
+    'error_email_required': 'Email is required.',
 
     // --- LANDING PAGE ---
     'landing_features': 'Features',
@@ -1324,6 +1328,7 @@ const translations = {
     'users_manage_desc': 'Gerencie membros da equipe e seus cargos.',
     'add_user': 'Adicionar Usuário',
     'username': 'Usuário',
+    'email': 'E-mail',
     'role': 'Cargo',
     'created_at': 'Criado em',
     'actions': 'Ações',
@@ -1334,16 +1339,19 @@ const translations = {
     'password': 'Senha',
     'edit_user': 'Editar Usuário',
     'update': 'Atualizar',
-    'confirm_delete_user_msg': 'Tem certeza que deseja deletar o usuário {username}?',
+    'confirm_delete_user_msg': 'Tem certeza que deseja deletar o usuário {username} ({email})?',
     'create': 'Criar',
 
     // User Management Errors
-    'error_username_taken': 'Este nome de usuário já está em uso.',
+    'error_username_taken': 'Este nome de usuário ou e-mail já está em uso.',
+    'error_email_taken': 'Este e-mail já está em uso.',
     'error_password_length': 'A senha deve ter pelo menos 6 caracteres.',
     'error_cannot_delete_self': 'Você não pode deletar sua própria conta.',
     'error_generic': 'Ocorreu um erro inesperado.',
     'error_create_user': 'Falha ao criar usuário.',
     'error_delete_user': 'Falha ao deletar usuário.',
+    'error_email_required': 'O e-mail é obrigatório.',
+    'error_permission_denied': 'Acesso negado: você não tem permissão para realizar esta ação.',
 
     // Map Layers
     'map_street': 'Map rua',

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, requireAdminOrOwner } from '../middleware/auth';
 import {
     getProjects,
     createProject,
@@ -14,10 +14,10 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', getProjects);
-router.post('/', createProject);
+router.post('/', requireAdminOrOwner, createProject);
 router.get('/:id', getProject);
-router.put('/:id', updateProject);
-router.delete('/:id', deleteProject);
-router.post('/:id/sync', syncProject);
+router.put('/:id', requireAdminOrOwner, updateProject);
+router.delete('/:id', requireAdminOrOwner, deleteProject);
+router.post('/:id/sync', requireAdminOrOwner, syncProject);
 
 export default router;

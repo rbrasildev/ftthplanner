@@ -15,6 +15,7 @@ interface D3CablesLayerProps {
     onContextMenu?: (e: any, cable: CableData) => void;
     mode?: string;
     showLabels?: boolean;
+    userRole?: string | null;
 }
 
 // LOD Thresholds
@@ -30,7 +31,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     onDoubleClick,
     onContextMenu,
     mode,
-    showLabels
+    showLabels,
+    userRole
 }) => {
     const map = useMap();
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -328,7 +330,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             map.off('viewreset', handleUpdate);
         };
 
-    }, [map, cables, litCableIds, highlightedCableId, visible, onClick, onDoubleClick, mode, showLabels]);
+    }, [map, cables, litCableIds, highlightedCableId, visible, onClick, onDoubleClick, mode, showLabels, userRole]);
 
     return null;
 };

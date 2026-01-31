@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
-import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box } from 'lucide-react';
+import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
 
@@ -32,11 +32,12 @@ interface POPEditorProps {
     onHoverCable?: (cableId: string | null) => void;
     // Edit Cable
     onEditCable?: (cable: CableData) => void;
+    userRole?: string | null;
 }
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, userRole }) => {
     const { t } = useLanguage();
     const [localPOP, setLocalPOP] = useState<POPData>(JSON.parse(JSON.stringify(pop)));
 
@@ -730,7 +731,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 {/* 1. HEADER (Title + Close) */}
                 <PopHeader
                     title={t('pop_editor_title', { name: pop.name })}
-                    onClose={handleCloseRequest}
+                    onClose={userRole === 'MEMBER' ? onClose : handleCloseRequest}
+                    userRole={userRole}
                 />
 
                 {/* 2. SECONDARY TOOLBAR */}
@@ -741,6 +743,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     isRackMode={isRackMode}
                     onClearAll={() => setShowClearConfirm(true)} // Reusing boolean for confirmation dialog
                     t={t}
+                    userRole={userRole}
                 />
 
                 {/* Canvas */}
@@ -964,10 +967,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                         {/* Save Button */}
                         <button
-                            onClick={handleSaveAndClose}
+                            onClick={userRole === 'MEMBER' ? onClose : handleSaveAndClose}
                             className="px-6 py-2 pointer-events-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <Save className="w-4 h-4" /> {t('save_or_done') || 'Concluir'}
+                            {userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                            {userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Concluir')}
                         </button>
                     </div>
 

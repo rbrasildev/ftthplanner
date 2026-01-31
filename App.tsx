@@ -392,6 +392,12 @@ export default function App() {
                         const errorMsg = e.response.data?.error || e.response.data?.details || 'Limite atingido ou acesso negado';
                         console.log('Sync 403:', errorMsg);
 
+                        // If user is MEMBER, it's strictly a permission issue, NOT a plan limit
+                        if (userRole === 'MEMBER') {
+                            showToast(t('error_permission_denied'), 'error');
+                            return;
+                        }
+
                         setUpgradeModalDetails(errorMsg);
                         setShowUpgradeModal(true);
                         return; // Exit early
@@ -1894,6 +1900,7 @@ export default function App() {
                                 activeMenuId={activeMenuId}
                                 setActiveMenuId={setActiveMenuId}
                                 onImportKml={() => setIsKmlImportOpen(true)}
+                                userRole={userRole}
                                 onConnectClick={() => {
                                     previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
                                     setToolMode('connect_cable');
@@ -1931,6 +1938,7 @@ export default function App() {
                         poles={getCurrentNetwork().poles || []}
                         cables={getCurrentNetwork().cables}
                         mode={toolMode}
+                        userRole={userRole}
                         selectedId={selectedId}
                         mapBounds={mapBounds}
                         showLabels={showLabels}
@@ -2162,6 +2170,7 @@ export default function App() {
                         onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
                         onSave={handleSavePOP}
                         onHoverCable={(id) => setHighlightedCableId(id)}
+                        userRole={userRole}
                         onEditCable={setEditingCable}
                         onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
                     />
@@ -2190,6 +2199,7 @@ export default function App() {
                         onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
 
                         // Auth / Protection Props
+                        userRole={userRole}
                         userPlan={userPlan}
                         subscriptionExpiresAt={subscriptionExpiresAt}
                         onShowUpgrade={() => {
@@ -2388,6 +2398,7 @@ export default function App() {
                         onClose={() => { setEditingCable(null); setHighlightedCableId(null); }} // Fix: Clear highlight on close
                         onSave={handleSaveCable}
                         onDelete={handleDeleteCable}
+                        userRole={userRole}
                     />
                 )
             }

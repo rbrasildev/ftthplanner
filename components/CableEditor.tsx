@@ -11,6 +11,7 @@ interface CableEditorProps {
   onClose: () => void;
   onSave: (updatedCable: CableData) => void;
   onDelete: (cableId: string) => void;
+  userRole?: string | null;
 }
 
 const FIBER_COUNTS = [1, 2, 4, 6, 12, 24, 36, 48, 72, 96, 144, 288];
@@ -31,7 +32,7 @@ const CABLE_MAP_COLORS = [
   '#06b6d4', // 12. Aqua
 ];
 
-export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave, onDelete }) => {
+export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave, onDelete, userRole }) => {
   const { t } = useLanguage();
   const [formData, setFormData] = useState<CableData>({
     ...cable,
@@ -212,8 +213,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               <select
                 value={selectedCatalogId}
                 onChange={handleCatalogSelect}
-                className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
-                disabled={isLoadingCatalog}
+                className="w-full bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-800/50 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={isLoadingCatalog || userRole === 'MEMBER'}
               >
                 <option value="">{t('select_model')}</option>
                 {catalogCables.map(c => (
@@ -229,7 +230,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+              disabled={userRole === 'MEMBER'}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               placeholder="e.g. Backbone Route A"
             />
           </div>
@@ -259,7 +261,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as CableStatus })}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors"
+                disabled={userRole === 'MEMBER'}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
                 <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
@@ -277,7 +280,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               step="1"
               value={formData.technicalReserve}
               onChange={(e) => setFormData({ ...formData, technicalReserve: parseFloat(e.target.value) || 0 })}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+              disabled={userRole === 'MEMBER'}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               placeholder="Ex: 10"
             />
           </div>
@@ -375,19 +379,30 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
             </div>
           ) : (
             <div className="flex items-center justify-between gap-4">
-              <button
-                type="button"
-                onClick={handleDeleteClick}
-                className="px-4 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center gap-2 transition cursor-pointer active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" /> {t('delete')}
-              </button>
+              {userRole !== 'MEMBER' && (
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  className="px-4 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center gap-2 transition cursor-pointer active:scale-95"
+                >
+                  <Trash2 className="w-4 h-4" /> {t('delete')}
+                </button>
+              )}
 
               <button
-                type="submit"
+                type={userRole === 'MEMBER' ? 'button' : 'submit'}
+                onClick={userRole === 'MEMBER' ? onClose : undefined}
                 className="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center gap-2 font-bold transition shadow-lg shadow-sky-900/20 active:scale-95"
               >
-                <Save className="w-4 h-4" /> {t('save_changes')}
+                {userRole === 'MEMBER' ? (
+                  <>
+                    <X className="w-4 h-4" /> {t('done') || 'Sair'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" /> {t('save_changes')}
+                  </>
+                )}
               </button>
             </div>
           )}

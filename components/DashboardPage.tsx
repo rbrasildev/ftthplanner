@@ -154,7 +154,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<adminService.AdminUser | null>(null); // New state for editing
-  const [userFormData, setUserFormData] = useState({ username: '', password: '', role: 'MEMBER' });
+  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', role: 'MEMBER' });
   const [userToDelete, setUserToDelete] = useState<adminService.AdminUser | null>(null);
 
   // Fetch users when view changes to 'users'
@@ -174,14 +174,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       const newUser = await adminService.createUser(userFormData);
       setUsersList(prev => [newUser, ...prev]);
       setIsUserModalOpen(false);
-      setUserFormData({ username: '', password: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
     } catch (error: any) {
       console.error("Failed to create user", error);
       const backendMsg = error.response?.data?.error || "";
       let errorKey = 'error_create_user';
 
-      if (backendMsg.includes('Username already taken')) errorKey = 'error_username_taken';
+      if (backendMsg.includes('Username already taken') || backendMsg.includes('Email already taken')) errorKey = 'error_username_taken';
       else if (backendMsg.includes('Password must be at least 6 characters')) errorKey = 'error_password_length';
+      else if (backendMsg.includes('Email and password are required') || backendMsg.includes('Email is required')) errorKey = 'error_email_required';
       else if (backendMsg) console.warn("Unmapped backend error:", backendMsg);
 
       alert(t(errorKey));
@@ -190,7 +191,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const handleEditUserClick = (user: adminService.AdminUser) => {
     setEditingUser(user);
-    setUserFormData({ username: user.username, password: '', role: user.role }); // Password empty means no change
+    setUserFormData({ username: user.username, email: user.email, password: '', role: user.role }); // Password empty means no change
     setIsUserModalOpen(true);
   };
 
@@ -204,7 +205,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       setUsersList(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
       setIsUserModalOpen(false);
       setEditingUser(null);
-      setUserFormData({ username: '', password: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
     } catch (error: any) {
       console.error("Failed to update user", error);
       const backendMsg = error.response?.data?.error || "";
@@ -326,8 +327,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
     { id: 'backup', label: t('backup') || 'Backup', icon: Database },
   ].filter(item => {
-    // Only show Users and Backup to ADMIN or OWNER
-    if (item.id === 'users' || item.id === 'backup') {
+    // Only show Users, Backup and Registrations to ADMIN or OWNER
+    if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
       return userRole === 'ADMIN' || userRole === 'OWNER';
     }
     return true;
@@ -432,12 +433,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                   />
                 </div>
-                <button
-                  onClick={() => setIsCreating(true)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4" /> {t('create_new_project_btn')}
-                </button>
+                {(userRole === 'ADMIN' || userRole === 'OWNER') && (
+                  <button
+                    onClick={() => setIsCreating(true)}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4" /> {t('create_new_project_btn')}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -478,23 +481,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-50 dark:group-hover:bg-sky-900/30 rounded-lg flex items-center justify-center transition-colors">
                           <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
                         </div>
-                        <div className="flex items-center gap-1 relative z-20">
-                          {/* EDIT BUTTON */}
-                          <button
-                            onClick={(e) => handleEditClick(e, project)}
-                            className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
-                            title={t('edit_project')}
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, project)}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                            title={t('delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {(userRole === 'ADMIN' || userRole === 'OWNER') && (
+                          <div className="flex items-center gap-1 relative z-20">
+                            {/* EDIT BUTTON */}
+                            <button
+                              onClick={(e) => handleEditClick(e, project)}
+                              className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
+                              title={t('edit_project')}
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, project)}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                              title={t('delete')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
@@ -637,7 +642,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => {
                   setEditingUser(null);
-                  setUserFormData({ username: '', password: '', role: 'MEMBER' });
+                  setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
                   setIsUserModalOpen(true);
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
@@ -654,6 +659,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                     <tr>
                       <th className="px-6 py-4">{t('username')}</th>
+                      <th className="px-6 py-4">{t('email')}</th>
                       <th className="px-6 py-4">{t('role')}</th>
                       <th className="px-6 py-4">{t('created_at')}</th>
                       <th className="px-6 py-4 text-right">{t('actions')}</th>
@@ -663,6 +669,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     {usersList.map(user => (
                       <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{user.username}</td>
+                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{user.email}</td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                              ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
@@ -719,7 +726,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('username')}</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('email')}</label>
+                <input
+                  type="email"
+                  value={userFormData.email}
+                  onChange={e => setUserFormData({ ...userFormData, email: e.target.value })}
+                  placeholder="exemplo@isp.com.br"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('username')} ({t('optional') || 'Opcional'})</label>
                 <input
                   type="text"
                   value={userFormData.username}
@@ -776,7 +793,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('confirm_delete')}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {t('confirm_delete_user_msg', { username: userToDelete.username })}
+                  {t('confirm_delete_user_msg', { username: userToDelete.username, email: userToDelete.email })}
                 </p>
               </div>
             </div>
