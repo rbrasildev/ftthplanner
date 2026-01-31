@@ -414,7 +414,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
                                 <Split className="w-6 h-6 text-orange-500" />
                             </div>
-                            <div>
+                            <div className="select-none">
                                 <h2 className="font-bold text-white text-lg leading-none mb-1">{dio.name}</h2>
                                 <p className="text-xs text-slate-400 font-medium">{t('manage_splicing')}</p>
                             </div>
@@ -427,7 +427,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         {onUpdateDio && (
                             <button
                                 onClick={() => setIsLinkModalOpen(true)}
-                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-sky-600/20 hover:border-sky-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center gap-2 border border-white/10 transition-all"
+                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-sky-600/20 hover:border-sky-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center gap-2 border border-white/10 transition-all select-none"
                             >
                                 <Link2 className="w-3.5 h-3.5" />
                                 {t('link_cables')}
@@ -441,7 +441,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         <div className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-white/5">
                             <button
                                 onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); }}
-                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all ${isVflToolActive ? 'bg-red-500/20 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all select-none ${isVflToolActive ? 'bg-red-500/20 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 title={t('tool_vfl')}
                             >
                                 <Flashlight className={`w-3.5 h-3.5 ${isVflToolActive ? 'fill-current' : ''}`} /> VFL
@@ -449,7 +449,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             <div className="w-[1px] h-4 bg-white/10 mx-1"></div>
                             <button
                                 onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); }}
-                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all ${isOtdrToolActive ? 'bg-indigo-500/20 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-xs font-bold transition-all select-none ${isOtdrToolActive ? 'bg-indigo-500/20 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                 title="OTDR"
                             >
                                 <Ruler className="w-3.5 h-3.5" /> OTDR
@@ -465,7 +465,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                         {/* Actions */}
                         <button
                             onClick={() => onSave(currentConnections)}
-                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 flex items-center gap-2 text-sm transition-all transform hover:scale-105 active:scale-95"
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 flex items-center gap-2 text-sm transition-all transform hover:scale-105 active:scale-95 select-none"
                         >
                             <Save className="w-4 h-4" /> {t('save')}
                         </button>
@@ -490,7 +490,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                 >
                     {/* VFL Info Banner */}
                     {isVflToolActive && (
-                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/10 backdrop-blur-md text-red-200 px-6 py-2.5 rounded-full border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300">
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-red-500/10 backdrop-blur-md text-red-200 px-6 py-2.5 rounded-full border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300 select-none">
                             <div className="relative">
                                 <Flashlight className="w-4 h-4 text-red-500 relative z-10" />
                                 <div className="absolute inset-0 bg-red-500 blur-sm opacity-50 animate-pulse"></div>
@@ -501,7 +501,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                     {/* OTDR Info Banner */}
                     {isOtdrToolActive && (
-                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-indigo-500/10 backdrop-blur-md text-indigo-200 px-6 py-2.5 rounded-full border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300">
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-indigo-500/10 backdrop-blur-md text-indigo-200 px-6 py-2.5 rounded-full border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)] z-50 text-sm font-bold flex items-center gap-3 pointer-events-none animate-in slide-in-from-top-4 duration-300 select-none">
                             <Ruler className="w-4 h-4 text-indigo-400" />
                             {t('otdr_instruction_banner')}
                         </div>
@@ -611,7 +611,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             </div>
 
                             {relevantCables.length === 0 ? (
-                                <div className="w-[300px] h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center group">
+                                <div className="w-[300px] h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center group select-none">
                                     <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                                         <Unplug className="w-8 h-8 text-slate-600 group-hover:text-slate-400 transition-colors" />
                                     </div>
@@ -643,7 +643,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                 className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-3 px-4 flex items-center justify-between cursor-move"
                                                 onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel', cable.id)}
                                             >
-                                                <div className="min-w-0">
+                                                <div className="min-w-0 select-none">
                                                     <span className="text-xs font-bold text-slate-400 block uppercase tracking-wider mb-0.5">{t('cable')}</span>
                                                     <span className="text-sm font-bold text-white truncate block" title={cable.name}>{cable.name}</span>
                                                 </div>
@@ -755,11 +755,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                 onMouseDown={(e) => handlePanelDragStart(e, 'trayPanel')}
                             >
                                 <div>
-                                    <h3 className="font-bold text-white text-base leading-tight flex items-center gap-2">
+                                    <h3 className="font-bold text-white text-base leading-tight flex items-center gap-2 select-none">
                                         <Layers className="w-4 h-4 text-sky-400" />
                                         {t('splice_trays')}
                                     </h3>
-                                    <div className="text-xs text-slate-400 mt-0.5">{totalTrays} {t('trays', { count: totalTrays })} • {dio.portIds.length} {t('dio_ports')}</div>
+                                    <div className="text-xs text-slate-400 mt-0.5 select-none">{totalTrays} {t('trays', { count: totalTrays })} • {dio.portIds.length} {t('dio_ports')}</div>
                                 </div>
                             </div>
 
@@ -771,7 +771,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                                     return (
                                         <div key={trayId} className="bg-slate-950/50 border border-white/5 rounded-xl p-3 shadow-inner">
-                                            <div className="flex items-center justify-between mb-3 px-1">
+                                            <div className="flex items-center justify-between mb-3 px-1 select-none">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                                     {t('tray')} {trayIndex + 1}
                                                 </span>
@@ -846,7 +846,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                         {/* Legend / Helper */}
                         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-none">
-                            <div className="bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full border border-white/10 shadow-lg flex items-center gap-3">
+                            <div className="bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full border border-white/10 shadow-lg flex items-center gap-3 select-none">
                                 <div className="flex items-center gap-1.5">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]"></div>
                                     <span className="text-[10px] uppercase font-bold text-slate-300">{t('legend_active_signal')}</span>
@@ -870,7 +870,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                 <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center border border-indigo-500/30">
                                     <Ruler className="w-6 h-6 text-indigo-400" />
                                 </div>
-                                <div>
+                                <div className="select-none">
                                     <h3 className="text-white font-bold text-lg leading-tight">{t('otdr_title')}</h3>
                                     <p className="text-xs text-slate-400 mt-1">{t('otdr_trace_msg')}</p>
                                 </div>
@@ -878,7 +878,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">{t('otdr_distance_lbl')} (m)</label>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1 select-none">{t('otdr_distance_lbl')} (m)</label>
                                     <div className="relative">
                                         <input
                                             type="number"
