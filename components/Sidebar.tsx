@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]
         },
         { id: 'users', label: t('users') || 'Usuários', icon: Users },
-        { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
+        // { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
         if (item.id === 'users' || item.id === 'backup') {
