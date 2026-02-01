@@ -13,16 +13,55 @@ export const getProjects = async (req: Request, res: Response) => {
 
     try {
         console.log(`[getProjects] Fetching projects for company ${user.companyId}...`);
+
+        // Fetch projects summaries
         const projects = await prisma.project.findMany({
             where: { companyId: user.companyId },
             orderBy: { updatedAt: 'desc' },
-            include: {
-                ctos: true,
-                cables: true,
-                pops: true,
-                poles: true
+            select: {
+                id: true,
+                name: true,
+                updatedAt: true,
+                createdAt: true,
+                centerLat: true,
+                centerLng: true,
+                zoom: true,
+                settings: true,
+                _count: {
+                    select: {
+                        ctos: true,
+                        cables: true,
+                        pops: true,
+                        poles: true
+                    }
+                }
             }
         });
+
+        // Fetch deployed counts efficiently in aggregate
+        const ctoCounts = await prisma.cto.groupBy({
+            by: ['projectId', 'status'],
+            where: { companyId: user.companyId, status: { in: ['DEPLOYED', 'CERTIFIED'] } },
+            _count: { id: true }
+        });
+
+        const cableCounts = await prisma.cable.groupBy({
+            by: ['projectId', 'status'],
+            where: { companyId: user.companyId, status: 'DEPLOYED' },
+            _count: { id: true }
+        });
+
+        // Map counts for easy access
+        const deployedMap: any = {};
+        ctoCounts.forEach(c => {
+            if (!deployedMap[c.projectId]) deployedMap[c.projectId] = { ctos: 0, cables: 0 };
+            deployedMap[c.projectId].ctos += c._count.id;
+        });
+        cableCounts.forEach(c => {
+            if (!deployedMap[c.projectId]) deployedMap[c.projectId] = { ctos: 0, cables: 0 };
+            deployedMap[c.projectId].cables += c._count.id;
+        });
+
         console.log(`[getProjects] Found ${projects.length} projects.`);
 
         res.json(projects.map((p: any) => ({
@@ -30,30 +69,13 @@ export const getProjects = async (req: Request, res: Response) => {
             name: p.name,
             updatedAt: p.updatedAt ? p.updatedAt.getTime() : Date.now(),
             createdAt: p.createdAt ? p.createdAt.getTime() : Date.now(),
-            network: {
-                ctos: p.ctos.map((c: any) => ({
-                    ...c,
-                    coordinates: { lat: c.lat, lng: c.lng },
-                    splitters: c.splitters || [],
-                    fusions: c.fusions || [],
-                    connections: c.connections || []
-                })),
-                pops: p.pops.map((pop: any) => ({
-                    ...pop,
-                    coordinates: { lat: pop.lat, lng: pop.lng },
-                    olts: pop.olts || [],
-                    dios: pop.dios || [],
-                    fusions: pop.fusions || [],
-                    connections: pop.connections || []
-                })),
-                cables: p.cables.map((cab: any) => ({
-                    ...cab,
-                    coordinates: cab.coordinates || []
-                })),
-                poles: (p.poles || []).map((pole: any) => ({
-                    ...pole,
-                    coordinates: { lat: pole.lat, lng: pole.lng }
-                }))
+            counts: {
+                ctos: p._count.ctos,
+                pops: p._count.pops,
+                cables: p._count.cables,
+                poles: p._count.poles,
+                deployedCtos: deployedMap[p.id]?.ctos || 0,
+                deployedCables: deployedMap[p.id]?.cables || 0
             },
             mapState: {
                 center: { lat: p.centerLat, lng: p.centerLng },

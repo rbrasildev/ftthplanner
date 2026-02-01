@@ -461,15 +461,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols3 xl:grid-cols-3 gap-6">
                 {filteredProjects.map((project: any) => {
-                  const totalCTOs = project.network.ctos.length;
-                  const deployedCTOs = project.network.ctos.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length;
+                  const counts = project.counts || { ctos: 0, pops: 0, cables: 0, poles: 0, deployedCtos: 0, deployedCables: 0 };
+                  const totalCTOs = project.network?.ctos?.length || counts.ctos || 0;
+                  const totalCables = project.network?.cables?.length || counts.cables || 0;
+                  const totalPOPs = project.network?.pops?.length || counts.pops || 0;
 
-                  const totalCables = project.network.cables.length;
-                  const deployedCables = project.network.cables.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length;
+                  // Use network data if available (detailed), otherwise use optimized counts from summary
+                  const deployedCTOs = project.network
+                    ? project.network.ctos.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length
+                    : (counts.deployedCtos || 0);
 
-                  const totalItems = totalCTOs + totalCables;
-                  const deployedItems = deployedCTOs + deployedCables;
+                  const deployedCables = project.network
+                    ? project.network.cables.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length
+                    : (counts.deployedCables || 0);
+
+                  const totalItems = totalCTOs + totalCables + totalPOPs;
+                  const deployedItems = deployedCTOs + deployedCables + totalPOPs;
                   const progress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
+                  const hasNetworkData = !!project.network;
 
                   return (
                     <div
@@ -513,21 +522,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <div className="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">
-                            {project.network.ctos.filter((c: any) => c.type === 'CEO').length}
+                            {hasNetworkData ? project.network.ctos.filter((c: any) => c.type === 'CEO').length : '...'}
                           </span>
                           <span className="text-slate-500 dark:text-slate-600">CEOs</span>
                         </div>
                         <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">
-                            {project.network.ctos.filter((c: any) => c.type !== 'CEO' && (c.status === 'DEPLOYED' || c.status === 'CERTIFIED')).length}/
-                            {project.network.ctos.filter((c: any) => c.type !== 'CEO').length}
+                            {hasNetworkData ? `${deployedCTOs}/${totalCTOs}` : totalCTOs}
                           </span>
                           <span className="text-slate-500 dark:text-slate-600">CTOs</span>
                         </div>
                         <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
                         <div>
-                          <span className="block font-bold text-slate-700 dark:text-slate-200">{deployedCables}/{totalCables}</span>
+                          <span className="block font-bold text-slate-700 dark:text-slate-200">
+                            {hasNetworkData ? `${deployedCables}/${totalCables}` : totalCables}
+                          </span>
                           <span className="text-slate-500 dark:text-slate-600">{t('cables')}</span>
                         </div>
                       </div>
