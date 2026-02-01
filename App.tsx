@@ -631,6 +631,58 @@ export default function App() {
         return { litPorts, litCables, litConnections };
     }, [vflSource, projects, currentProjectId]);
 
+    // OMNI-RE-RENDER PROTECTION: Memoized props for CTOEditor to prevent jitter/tremor
+    const editingCTOIncomingCables = useMemo(() => {
+        if (!editingCTO) return [];
+        const net = projectRef.current?.network;
+        if (!net) return [];
+        return net.cables.filter(c =>
+            c.fromNodeId === editingCTO.id ||
+            c.toNodeId === editingCTO.id ||
+            editingCTO.inputCableIds?.includes(c.id)
+        );
+    }, [editingCTO, currentProject]);
+
+    const editingCTONetwork = useMemo(() => getCurrentNetwork(), [currentProject]);
+
+    const handleCTOHoverCable = useCallback((id: string | null) => {
+        setHighlightedCableId(id);
+    }, []);
+
+    const handleCTOClose = useCallback(() => {
+        setEditingCTO(null);
+        setHighlightedCableId(null);
+    }, []);
+
+    const handleCTOToggleVfl = useCallback((portId: string) => {
+        setVflSource(prev => prev === portId ? null : portId);
+    }, []);
+
+    const handleCTOShowUpgrade = useCallback(() => {
+        setUpgradeModalDetails(t('upgrade_exclusive_msg'));
+        setShowUpgradeModal(true);
+    }, [t]);
+
+    const editingPOPIncomingCables = useMemo(() => {
+        if (!editingPOP) return [];
+        const net = projectRef.current?.network;
+        if (!net) return [];
+        return net.cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id);
+    }, [editingPOP, currentProject]);
+
+    const handlePOPHoverCable = useCallback((id: string | null) => {
+        setHighlightedCableId(id);
+    }, []);
+
+    const handlePOPClose = useCallback(() => {
+        setEditingPOP(null);
+        setHighlightedCableId(null);
+    }, []);
+
+    const handlePOPToggleVfl = useCallback((portId: string) => {
+        setVflSource(prev => prev === portId ? null : portId);
+    }, []);
+
     // ... (handleImportKMZ logic unchanged) ...
     const handleImportKMZ = async (file: File) => {
         try {
@@ -2171,13 +2223,13 @@ export default function App() {
                 editingPOP && (
                     <POPEditor
                         pop={editingPOP}
-                        incomingCables={getCurrentNetwork().cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id)}
+                        incomingCables={editingPOPIncomingCables}
                         litPorts={litNetwork.litPorts}
                         vflSource={vflSource}
-                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                        onClose={() => { setEditingPOP(null); setHighlightedCableId(null); }}
+                        onToggleVfl={handlePOPToggleVfl}
+                        onClose={handlePOPClose}
                         onSave={handleSavePOP}
-                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onHoverCable={handlePOPHoverCable}
                         userRole={userRole}
                         onEditCable={setEditingCable}
                         onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
@@ -2190,18 +2242,14 @@ export default function App() {
                         key={editingCTO.id}
                         cto={editingCTO}
                         projectName={currentProject?.name || ''}
-                        incomingCables={getCurrentNetwork().cables.filter(c =>
-                            c.fromNodeId === editingCTO.id ||
-                            c.toNodeId === editingCTO.id ||
-                            editingCTO.inputCableIds?.includes(c.id)
-                        )}
+                        incomingCables={editingCTOIncomingCables}
                         litPorts={litNetwork.litPorts}
                         vflSource={vflSource}
-                        onToggleVfl={(portId) => setVflSource(prev => prev === portId ? null : portId)}
-                        onClose={() => { setEditingCTO(null); setHighlightedCableId(null); }}
+                        onToggleVfl={handleCTOToggleVfl}
+                        onClose={handleCTOClose}
                         onSave={handleSaveCTO}
                         onEditCable={setEditingCable}
-                        onHoverCable={(id) => setHighlightedCableId(id)}
+                        onHoverCable={handleCTOHoverCable}
                         onDisconnectCable={handleDisconnectCableFromBox}
                         onSelectNextNode={handleSelectNextNode}
                         onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
@@ -2210,11 +2258,8 @@ export default function App() {
                         userRole={userRole}
                         userPlan={userPlan}
                         subscriptionExpiresAt={subscriptionExpiresAt}
-                        onShowUpgrade={() => {
-                            setUpgradeModalDetails("Este recurso é exclusivo para assinantes. Seus dados estão seguros, mas para exportar é necessário um plano ativo.");
-                            setShowUpgradeModal(true);
-                        }}
-                        network={getCurrentNetwork()}
+                        onShowUpgrade={handleCTOShowUpgrade}
+                        network={editingCTONetwork}
                     />
                 )
             }

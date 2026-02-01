@@ -190,7 +190,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
                                         w-2.5 h-2.5 rounded-full border border-black dark:border-white cursor-pointer select-none
-                                        hover:scale-125 transition-transform z-30
+                                        hover:scale-125 z-30
                                         absolute ${isMirrored ? '-left-[3px]' : '-right-[3px]'} shadow-sm ${textColor} text-[7px] font-bold leading-none pb-[0.5px]
                                         flex items-center justify-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
