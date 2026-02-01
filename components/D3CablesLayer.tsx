@@ -88,10 +88,14 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         }
 
         // Simplify: Keep first, last, and every Nth point
-        // Heuristic: For very low zoom, skip more points.
-        const step = currentZoom < 10 ? 5 : 2;
+        // Heuristic: For very low zoom, skip many more points to reduce CPU/GPU load.
+        let step = 1;
+        if (currentZoom < 10) step = 15;
+        else if (currentZoom < 12) step = 8;
+        else if (currentZoom < 14) step = 3;
+
         const coords = cable.coordinates;
-        if (coords.length <= 2) return coords;
+        if (coords.length <= 2 || step === 1) return coords;
 
         const simplified = [coords[0]];
         for (let i = 1; i < coords.length - 1; i += step) {

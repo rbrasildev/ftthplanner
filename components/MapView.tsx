@@ -1380,8 +1380,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 {enableClustering ? (
                     <MarkerClusterGroup
                         chunkedLoading
-                        maxClusterRadius={50} // Reduced from 50 to 30 to group less aggressively (items must be closer)
-                        disableClusteringAtZoom={17} // Disable clustering sooner (at zoom 16+) to show individual items
+                        maxClusterRadius={90} // Increased from 50 to 90 to group more aggressively (better performance/less clutter)
+                        disableClusteringAtZoom={16} // Disable clustering later (at zoom 18+) to keep markers grouped longer on weak hardware
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                     >
@@ -1401,6 +1401,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
                                 onContextMenu={handleNodeContextMenu}
+                                userRole={userRole}
                             />
                         ))}
 
@@ -1420,6 +1421,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
                                 onContextMenu={handleNodeContextMenu}
+                                userRole={userRole}
                             />
                         ))}
                         {visiblePoles.map(pole => (
@@ -1456,6 +1458,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
                                 onContextMenu={handleNodeContextMenu}
+                                userRole={userRole}
                             />
                         ))}
 
@@ -1475,6 +1478,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
                                 onContextMenu={handleNodeContextMenu}
+                                userRole={userRole}
                             />
                         ))}
                         {visiblePoles.map(pole => (
