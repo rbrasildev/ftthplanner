@@ -10,6 +10,7 @@ interface D3CablesLayerProps {
     litCableIds: Set<string>;
     highlightedCableId: string | null;
     visible: boolean;
+    boxIds: Set<string>;
     onClick: (e: any, cable: CableData) => void;
     onDoubleClick?: (e: any, cable: CableData) => void;
     onContextMenu?: (e: any, cable: CableData) => void;
@@ -27,6 +28,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     litCableIds,
     highlightedCableId,
     visible,
+    boxIds,
     onClick,
     onDoubleClick,
     onContextMenu,
@@ -138,8 +140,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
 
             // 2. Path Generator
             const localPathGenerator = d3.line<any>()
-                .x(d => projectPoint(d.lat, d.lng).x - mapTopLeft.x)
-                .y(d => projectPoint(d.lat, d.lng).y - mapTopLeft.y)
+                .x(d => d.x - mapTopLeft.x)
+                .y(d => d.y - mapTopLeft.y)
                 .curve(d3.curveLinear); // Linear is faster than basis/cardinal
 
             // 3. Data Join - Visual Paths
@@ -164,8 +166,47 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             // but D3 merge chains them. We trust D3 is fast enough for 1000s nodes if attrs are minimal.
 
             pathsEnter.merge(paths)
-                // Geometry - Re-calculate based on LOD
-                .attr('d', (d: any) => localPathGenerator(getRenderCoordinates(d) as any))
+                // Geometry - Re-calculate based on LOD + Smart Clipping
+                .attr('d', (d: CableData) => {
+                    const coords = getRenderCoordinates(d);
+                    if (!coords || coords.length < 2) return null;
+
+                    let points = coords.map(c => projectPoint(c.lat, c.lng));
+
+                    // Smart Clipping: Shorten line slightly if connected to a Box (CTO/POP)
+                    // This creates the "plugged in" look without overlapping the marker's center.
+                    const radius = 10; // Box radius in px
+
+                    // Start point clipping
+                    if (d.fromNodeId && boxIds.has(d.fromNodeId)) {
+                        const p1 = points[0];
+                        const p2 = points[1];
+                        const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                        if (dist > radius) {
+                            const ratio = radius / dist;
+                            points[0] = {
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio
+                            } as any;
+                        }
+                    }
+
+                    // End point clipping
+                    if (d.toNodeId && boxIds.has(d.toNodeId)) {
+                        const p1 = points[points.length - 1];
+                        const p2 = points[points.length - 2];
+                        const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                        if (dist > radius) {
+                            const ratio = radius / dist;
+                            points[points.length - 1] = {
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio
+                            } as any;
+                        }
+                    }
+
+                    return localPathGenerator(points);
+                })
                 // Styling - Dynamic
                 .attr('stroke', (d: any) => {
                     if (litCableIds.has(d.id)) return '#ef4444';

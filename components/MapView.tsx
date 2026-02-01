@@ -51,9 +51,8 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
       ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
-        background-color: ${color};
-        opacity: 0.85;
-        border: 2px solid ${isSelected ? '#22c55e' : '#ffffff'};
+        background-color: ${color}99; /* Translucent fill (around 60%) */
+        border: 3px solid ${isSelected ? '#22c55e' : color}; /* Solid thick border, green when selected */
         border-radius: 50%;
         width: 20px;
         height: 20px;
@@ -1043,6 +1042,13 @@ export const MapView: React.FC<MapViewProps> = ({
         return poles.filter(p => paddedBounds.contains(p.coordinates));
     }, [showPoles, poles, mapBoundsState]);
 
+    const boxIds = useMemo(() => {
+        const ids = new Set<string>();
+        ctos.forEach(c => ids.add(c.id));
+        pops.forEach(p => ids.add(p.id));
+        return ids;
+    }, [ctos, pops]);
+
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
 
@@ -1285,6 +1291,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <D3CablesLayer
                     cables={d3Cables}
+                    boxIds={boxIds}
                     litCableIds={litCableIds}
                     highlightedCableId={highlightedCableId}
                     visible={showCables}
