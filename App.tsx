@@ -1691,7 +1691,15 @@ export default function App() {
         setPinnedLocation(null);
     };
 
-    const deploymentProgress = Math.round(((getCurrentNetwork().ctos.filter(c => c.status === 'DEPLOYED').length + (getCurrentNetwork().pops?.length || 0)) / (getCurrentNetwork().ctos.length + (getCurrentNetwork().pops?.length || 1))) * 100) || 0;
+    const network = getCurrentNetwork();
+    const deployedCTOs = network.ctos.filter(c => c.status === 'DEPLOYED').length;
+    const deployedCables = network.cables.filter(c => c.status === 'DEPLOYED').length;
+    const totalPOPs = network.pops?.length || 0;
+
+    const totalItems = network.ctos.length + totalPOPs + network.cables.length;
+    const deployedItems = deployedCTOs + totalPOPs + deployedCables;
+
+    const deploymentProgress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
 
     const handleMainSearch = (term: string) => {
         if (!term || term.trim() === '') {
