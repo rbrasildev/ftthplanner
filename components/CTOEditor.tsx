@@ -1557,12 +1557,29 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
 
             const currentRot = layout.rotation || 0;
-            const newRot = (currentRot + 90) % 360;
+            let newRot = (currentRot + 90) % 360;
+            let mirrored = layout.mirrored || false;
+
+            // Auto-orientation for cables:
+            // Ensures F1 is always UP (horizontal casing) or RIGHT (vertical casing)
+            // and text is never upside down (avoiding 180 and 270 degrees).
+            // Logic: 0(Std) -> 90(Std) -> 0(Mir) -> 90(Mir) -> loop
+            const isCable = incomingCables.some(c => c.id === id);
+            if (isCable) {
+                if (newRot === 180) { // Step 3: Becomes 0(Mir)
+                    newRot = 0;
+                    mirrored = !mirrored;
+                } else if (newRot === 270) { // Step 4: Becomes 90(Mir)
+                    newRot = 90;
+                    mirrored = !mirrored;
+                }
+            }
+
             return {
                 ...prev,
                 layout: {
                     ...prev.layout,
-                    [id]: { ...layout, rotation: newRot }
+                    [id]: { ...layout, rotation: newRot, mirrored }
                 }
             };
         });

@@ -141,7 +141,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                             {cable.name}
                         </span>
                         <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-1 uppercase tracking-wider select-none pointer-events-none">
-                            {cable.fiberCount} FIBRAS
+                            {cable.fiberCount} {t('unit_fibers')}
                         </span>
                     </div>
                 </div>
