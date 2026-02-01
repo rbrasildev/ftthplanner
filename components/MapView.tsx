@@ -52,6 +52,7 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
       <div style="
         position: relative;
         background-color: ${color};
+        opacity: 0.85;
         border: 2px solid ${isSelected ? '#22c55e' : '#ffffff'};
         border-radius: 50%;
         width: 20px;
