@@ -1212,10 +1212,14 @@ export const MapView: React.FC<MapViewProps> = ({
                 center={initialCenter ? [initialCenter.lat, initialCenter.lng] : [-23.5505, -46.6333]}
                 zoom={initialZoom || 15}
                 maxZoom={24}
-                style={{ height: '100%', width: '100%', backgroundColor: '#e2e8f0' }}
+                style={{ height: '100%', width: '100%' }}
                 className="z-0"
-                preferCanvas={true} /* KEY PERFORMANCE OPTIMIZATION */
+                preferCanvas={true}
                 zoomControl={false}
+                zoomAnimation={true}
+                fadeAnimation={true}
+                markerZoomAnimation={true}
+                transform3DLimit={1024}
             >
                 <ZoomControl position="bottomright" />
 
@@ -1227,6 +1231,9 @@ export const MapView: React.FC<MapViewProps> = ({
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         maxNativeZoom={19}
                         maxZoom={24}
+                        keepBuffer={8}
+                        updateWhenIdle={false}
+                        updateInterval={50}
                     />
                 ) : (
                     <TileLayer
@@ -1234,6 +1241,9 @@ export const MapView: React.FC<MapViewProps> = ({
                         url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                         maxNativeZoom={20}
                         maxZoom={24}
+                        keepBuffer={8}
+                        updateWhenIdle={false}
+                        updateInterval={50}
                     />
                 )}
 
