@@ -144,6 +144,48 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 .y(d => d.y - mapTopLeft.y)
                 .curve(d3.curveLinear); // Linear is faster than basis/cardinal
 
+            // Helper to get projected points with clipping
+            const getProjectedPoints = (d: CableData) => {
+                const coords = getRenderCoordinates(d);
+                if (!coords || coords.length < 2) return null;
+
+                let points = coords.map(c => projectPoint(c.lat, c.lng));
+
+                // Smart Clipping: Shorten line slightly if connected to a Box (CTO/POP)
+                // This creates the "plugged in" look without overlapping the marker's center.
+                const radius = 10; // Box radius in px
+
+                // Start point clipping
+                if (d.fromNodeId && boxIds.has(d.fromNodeId)) {
+                    const p1 = points[0];
+                    const p2 = points[1];
+                    const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                    if (dist > radius) {
+                        const ratio = radius / dist;
+                        points[0] = {
+                            x: p1.x + (p2.x - p1.x) * ratio,
+                            y: p1.y + (p2.y - p1.y) * ratio
+                        } as any;
+                    }
+                }
+
+                // End point clipping
+                if (d.toNodeId && boxIds.has(d.toNodeId)) {
+                    const p1 = points[points.length - 1];
+                    const p2 = points[points.length - 2];
+                    const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                    if (dist > radius) {
+                        const ratio = radius / dist;
+                        points[points.length - 1] = {
+                            x: p1.x + (p2.x - p1.x) * ratio,
+                            y: p1.y + (p2.y - p1.y) * ratio
+                        } as any;
+                    }
+                }
+
+                return points;
+            };
+
             // 3. Data Join - Visual Paths
             // We separate Visuals (Stroke) from Interaction (Hit Area) for layering
 
@@ -168,44 +210,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             pathsEnter.merge(paths)
                 // Geometry - Re-calculate based on LOD + Smart Clipping
                 .attr('d', (d: CableData) => {
-                    const coords = getRenderCoordinates(d);
-                    if (!coords || coords.length < 2) return null;
-
-                    let points = coords.map(c => projectPoint(c.lat, c.lng));
-
-                    // Smart Clipping: Shorten line slightly if connected to a Box (CTO/POP)
-                    // This creates the "plugged in" look without overlapping the marker's center.
-                    const radius = 10; // Box radius in px
-
-                    // Start point clipping
-                    if (d.fromNodeId && boxIds.has(d.fromNodeId)) {
-                        const p1 = points[0];
-                        const p2 = points[1];
-                        const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                        if (dist > radius) {
-                            const ratio = radius / dist;
-                            points[0] = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            } as any;
-                        }
-                    }
-
-                    // End point clipping
-                    if (d.toNodeId && boxIds.has(d.toNodeId)) {
-                        const p1 = points[points.length - 1];
-                        const p2 = points[points.length - 2];
-                        const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                        if (dist > radius) {
-                            const ratio = radius / dist;
-                            points[points.length - 1] = {
-                                x: p1.x + (p2.x - p1.x) * ratio,
-                                y: p1.y + (p2.y - p1.y) * ratio
-                            } as any;
-                        }
-                    }
-
-                    return localPathGenerator(points);
+                    const points = getProjectedPoints(d);
+                    return points ? localPathGenerator(points) : null;
                 })
                 // Styling - Dynamic
                 .attr('stroke', (d: any) => {
@@ -215,10 +221,17 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     return d.color || CABLE_STATUS_COLORS['DEPLOYED'];
                 })
                 .attr('stroke-width', (d: any) => {
-                    if (litCableIds.has(d.id)) return 4;
-                    if (highlightedCableId === d.id) return 5;
-                    // Make thinner at lower zooms to reduce clutter
-                    return currentZoom < 12 ? 2 : 3;
+                    const isLit = litCableIds.has(d.id);
+                    const isHigh = highlightedCableId === d.id;
+
+                    if (isLit) return currentZoom < 14 ? 2.5 : 4;
+                    if (isHigh) return currentZoom < 14 ? 3 : 5;
+
+                    // More aggressive thinning to match street lines
+                    if (currentZoom < 12) return 1;
+                    if (currentZoom < 14) return 1.5;
+                    if (currentZoom < 16) return 2;
+                    return 2.5; // New thinner standard for better elegance
                 })
                 .attr('stroke-dasharray', (d: any) => {
                     if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null; // Simplify rendering
@@ -320,7 +333,10 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             // Better to re-attach merge to ensure closure freshness? 
             // Yes, overhead is low for event binding.
             hitPathsEnter.merge(hitPaths)
-                .attr('d', (d: any) => localPathGenerator(getRenderCoordinates(d) as any))
+                .attr('d', (d: CableData) => {
+                    const points = getProjectedPoints(d);
+                    return points ? localPathGenerator(points) : null;
+                })
                 .on("dblclick", (event, d: any) => {
                     if (onDoubleClick) {
                         const latlng = map.mouseEventToLatLng(event);
