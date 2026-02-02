@@ -51,7 +51,7 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
       ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
-        background-color: ${color.substring(0, 7)}e6; /* Very solid fill (90% opacity) */
+        background-color: ${color.substring(0, 7)}cc; /* Less transparent fill (80% opacity) */
         border: 3px solid ${isSelected ? '#22c55e' : color.substring(0, 7)}; /* Solid thick border, green when selected */
         border-radius: 50%;
         width: 20px;
