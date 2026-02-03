@@ -497,6 +497,9 @@ export default function App() {
         setIsLoadingProjects(true);
 
         try {
+            // Clear auto-sync
+            if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
             const newPoles: PoleData[] = points.map((pt, idx) => ({
                 id: crypto.randomUUID(),
                 name: `Poste ${idx + 1}`,
@@ -511,7 +514,7 @@ export default function App() {
             await projectService.syncProject(currentProjectId, updated);
 
             // Update Local
-            setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+            setCurrentProject(prev => prev ? { ...prev, network: updated, updatedAt: Date.now() } : null);
             showToast(t('toast_poles_imported', { count: newPoles.length }), 'success');
             setIsKmlImportOpen(false); // Close legacy modal
 
@@ -1136,14 +1139,39 @@ export default function App() {
         });
     }, [updateCurrentNetwork]);
 
-    const handleSavePOP = (updatedPOP: POPData) => {
-        updateCurrentNetwork(prev => ({
-            ...prev,
-            pops: prev.pops.map(p => p.id === updatedPOP.id ? updatedPOP : p)
-        }));
+    const handleSavePOP = async (updatedPOP: POPData) => {
+        if (!currentProject) return;
+
+        // 1. Clear any pending automatic sync
+        if (syncTimeoutRef.current) {
+            clearTimeout(syncTimeoutRef.current);
+            syncTimeoutRef.current = null;
+        }
+
+        // 2. Derive new network
+        const newNetwork: NetworkState = {
+            ...currentProject.network,
+            pops: (currentProject.network.pops || []).map(p => p.id === updatedPOP.id ? updatedPOP : p)
+        };
+
+        // 3. Update React State
+        setCurrentProject(prev => prev ? { ...prev, network: newNetwork, updatedAt: Date.now() } : null);
         setEditingPOP(null);
         setHighlightedCableId(null);
-        showToast(t('toast_pop_saved'));
+
+        // 4. BLOCKING SYNC
+        setIsSaving(true);
+        try {
+            await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
+            console.log("[Manual Sync] POP save success");
+            showToast(t('toast_pop_saved'));
+        } catch (e) {
+            console.error("[Manual Sync] POP save failed", e);
+            showToast(t('error_saving_changes'), 'error');
+            throw e;
+        } finally {
+            setIsSaving(false);
+        }
     };
     const handleRenamePOP = (id: string, name: string) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, name } : p) }));
     const handleUpdatePOPStatus = (status: CTOStatus) => selectedId && updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === selectedId ? { ...p, status } : p) }));
@@ -1255,31 +1283,38 @@ export default function App() {
     }, [updateCurrentNetwork, t]);
 
     const handleSaveCTO = async (updatedCTO: CTOData) => {
-        // 1. Update React State
-        updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c) }));
+        if (!currentProject) return;
+
+        // 1. Clear any pending automatic sync to avoid conflicts
+        if (syncTimeoutRef.current) {
+            clearTimeout(syncTimeoutRef.current);
+            syncTimeoutRef.current = null;
+        }
+
+        // 2. Derive the NEW network using the most up-to-date state (currentProject.network)
+        // instead of projectRef which might be stale during this async cycle.
+        const newNetwork: NetworkState = {
+            ...currentProject.network,
+            ctos: currentProject.network.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c)
+        };
+
+        // 3. Update React State (UI)
+        setCurrentProject(prev => prev ? { ...prev, network: newNetwork, updatedAt: Date.now() } : null);
         setEditingCTO(updatedCTO);
 
-        // 2. BLOCKING SYNC (Wait for confirmation to ensure data integrity)
-        if (currentProject) {
-            const prevNet = projectRef.current?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
-            const newNetwork = {
-                ...prevNet,
-                ctos: prevNet.ctos.map(c => c.id === updatedCTO.id ? updatedCTO : c)
-            };
-
-            setIsSaving(true);
-            try {
-                // We await here to ensure this critical change is saved before anything else can happen
-                await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
-                console.log("[Manual Sync] CTO save success");
-                showToast(t('toast_cto_splicing_saved'));
-            } catch (e) {
-                console.error("[Manual Sync] CTO save failed", e);
-                showToast(t('error_saving_changes'), 'error');
-                throw e; // Rethrow so CTOEditor can potentially keep the modal open or show an alert
-            } finally {
-                setIsSaving(false);
-            }
+        // 4. BLOCKING SYNC (Wait for confirmation to ensure data integrity)
+        setIsSaving(true);
+        try {
+            // We await here to ensure this critical change is saved before anything else can happen
+            await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
+            console.log("[Manual Sync] CTO save success");
+            showToast(t('toast_cto_splicing_saved'));
+        } catch (e) {
+            console.error("[Manual Sync] CTO save failed", e);
+            showToast(t('error_saving_changes'), 'error');
+            throw e; // Rethrow so CTOEditor can potentially keep the modal open or show an alert
+        } finally {
+            setIsSaving(false);
         }
     };
     const handleRenameCTO = (id: string, name: string) => updateCurrentNetwork(prev => ({ ...prev, ctos: prev.ctos.map(c => c.id === id ? { ...c, name } : c) }));
@@ -2370,8 +2405,9 @@ export default function App() {
                         }
 
                         // SAVE TO BACKEND
+                        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
                         await projectService.syncProject(currentProjectId, updated);
-                        setCurrentProject(prev => prev ? { ...prev, network: updated } : null);
+                        setCurrentProject(prev => prev ? { ...prev, network: updated, updatedAt: Date.now() } : null);
                         showToast('Importação realizada com sucesso!', 'success');
                         setIsAdvancedImportOpen(false);
                         setPreviewImportData(null);
