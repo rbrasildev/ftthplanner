@@ -345,9 +345,10 @@ export default function App() {
     }, []);
 
     const totalFusionsCount = useMemo(() => {
-        const net = getCurrentNetwork();
+        if (!currentProject) return 0;
+        const net = currentProject.network;
         const ctoFusions = net.ctos.reduce((acc, c) => acc + (c.fusions?.length || 0), 0);
-        const popFusions = net.pops.reduce((acc, p) => acc + (p.fusions?.length || 0), 0);
+        const popFusions = (net.pops || []).reduce((acc, p) => acc + (p.fusions?.length || 0), 0);
         return ctoFusions + popFusions;
     }, [currentProject]); // Re-calc when project changes
 
@@ -572,7 +573,8 @@ export default function App() {
 
     // ... (litNetwork logic unchanged) ...
     const litNetwork = useMemo(() => {
-        const network = getCurrentNetwork();
+        if (!currentProject) return { litPorts: new Set<string>(), litCables: new Set<string>(), litConnections: new Set<string>() };
+        const network = currentProject.network;
         const litPorts = new Set<string>();
         const litCables = new Set<string>();
         const litConnections = new Set<string>();
@@ -629,13 +631,12 @@ export default function App() {
             }
         }
         return { litPorts, litCables, litConnections };
-    }, [vflSource, projects, currentProjectId]);
+    }, [vflSource, currentProject]);
 
     // OMNI-RE-RENDER PROTECTION: Memoized props for CTOEditor to prevent jitter/tremor
     const editingCTOIncomingCables = useMemo(() => {
-        if (!editingCTO) return [];
-        const net = projectRef.current?.network;
-        if (!net) return [];
+        if (!editingCTO || !currentProject) return [];
+        const net = currentProject.network;
         return net.cables.filter(c =>
             c.fromNodeId === editingCTO.id ||
             c.toNodeId === editingCTO.id ||
@@ -643,7 +644,7 @@ export default function App() {
         );
     }, [editingCTO, currentProject]);
 
-    const editingCTONetwork = useMemo(() => getCurrentNetwork(), [currentProject]);
+    const editingCTONetwork = useMemo(() => currentProject?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] }, [currentProject]);
 
     const handleCTOHoverCable = useCallback((id: string | null) => {
         setHighlightedCableId(id);
@@ -664,9 +665,8 @@ export default function App() {
     }, [t]);
 
     const editingPOPIncomingCables = useMemo(() => {
-        if (!editingPOP) return [];
-        const net = projectRef.current?.network;
-        if (!net) return [];
+        if (!editingPOP || !currentProject) return [];
+        const net = currentProject.network;
         return net.cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id);
     }, [editingPOP, currentProject]);
 
