@@ -437,13 +437,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setShowPropertiesModal(true);
     };
 
-    const handleSaveProperties = () => {
-        setLocalCTO(prev => ({
-            ...prev,
+    const handleSaveProperties = async () => {
+        const updatedCTO = {
+            ...localCTO,
             name: propertiesName,
             status: propertiesStatus
-        }));
+        };
+
+        // 1. Update local state for immediate UI feedback
+        setLocalCTO(updatedCTO);
+
+        // 2. Hide properties modal
         setShowPropertiesModal(false);
+
+        // 3. PERSIST GLOBALLY (This fixes the 'dirty check' and 'unsaved changes' warning)
+        try {
+            await onSave(updatedCTO);
+        } catch (e) {
+            console.error("Failed to save properties globally", e);
+        }
     };
 
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
@@ -3332,14 +3344,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         value={localCTO.catalogId || ''}
                                         onChange={(e) => {
                                             const selectedId = e.target.value;
-                                            setLocalCTO(prev => {
-                                                const box = availableBoxes.find(b => b.id === selectedId);
-                                                return {
-                                                    ...prev,
-                                                    catalogId: selectedId,
-                                                    type: box?.type || prev.type // Update type (CTO/CEO)
-                                                };
-                                            });
+                                            const box = availableBoxes.find(b => b.id === selectedId);
+                                            setLocalCTO(prev => ({
+                                                ...prev,
+                                                catalogId: selectedId,
+                                                type: box?.type || prev.type
+                                            }));
                                         }}
                                         disabled={userRole === 'MEMBER'}
                                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
