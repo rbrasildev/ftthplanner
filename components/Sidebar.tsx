@@ -3,7 +3,7 @@ import {
     Network, Settings2, FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, ChevronLeft, ChevronRight, Menu, Map as MapIcon, Boxes,
     Layers, Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings
+    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText
 } from 'lucide-react';
 import { SearchBox } from './SearchBox';
 import { useLanguage } from '../LanguageContext';
@@ -44,6 +44,7 @@ interface SidebarProps {
     onToggleCollapse: () => void;
     isMobileOpen: boolean;
     onCloseMobile: () => void;
+    onReportClick?: () => void;
     isHydrated?: boolean;
     currentDashboardView?: DashboardView;
     onDashboardViewChange?: (view: DashboardView) => void;
@@ -74,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onToggleCollapse,
     isMobileOpen,
     onCloseMobile,
+    onReportClick,
     isHydrated,
     currentDashboardView = 'projects',
     onDashboardViewChange
@@ -204,6 +206,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             isCollapsed={isCollapsed}
                             variant="zinc"
                         />
+
+                        <NavButton
+                            icon={<Activity className="w-5 h-5" />}
+                            label={`${t('deployment_progress')}: ${deploymentProgress}%`}
+                            onClick={() => { }}
+                            isCollapsed={isCollapsed}
+                            variant="emerald"
+                            progress={deploymentProgress}
+                        />
                     </div>
                 )}
 
@@ -249,12 +260,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 />
 
                                 <NavButton
-                                    icon={<Activity className="w-5 h-5" />}
-                                    label={`${t('deployment_progress')}: ${deploymentProgress}%`}
-                                    onClick={() => { }}
+                                    icon={<FileText className="w-5 h-5" />}
+                                    label={t('report_analyze')}
+                                    onClick={() => { onReportClick?.(); onCloseMobile(); }}
                                     isCollapsed={isCollapsed}
-                                    variant="emerald"
-                                    progress={deploymentProgress}
+                                    variant="zinc"
                                 />
                             </div>
 

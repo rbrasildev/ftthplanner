@@ -38,6 +38,7 @@ const STORAGE_KEY_USER = 'ftth_planner_user_v1';
 import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
 import { KmlImportModal } from './components/modals/KmlImportModal';
 import { AdvancedImportModal } from './components/modals/AdvancedImportModal';
+import { ProjectReportModal } from './components/modals/ProjectReportModal';
 import { FusionModule } from './components/FusionModule';
 
 import { PoleData, FusionType } from './types';
@@ -301,6 +302,8 @@ export default function App() {
             if (!currentProjectId && prevProjectIdRef.current) setCurrentProject(null);
         }
     }, [currentProjectId, token]);
+
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     // Ref to hold latest project for event handlers to avoid dependency cycles
     const projectRef = useRef<Project | null>(null);
@@ -1869,6 +1872,7 @@ export default function App() {
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
+                onReportClick={() => setIsReportModalOpen(true)}
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 isMobileOpen={isMobileMenuOpen}
@@ -2617,6 +2621,12 @@ export default function App() {
                 currentPlanId={userPlanId || undefined}
             />
 
+            <ProjectReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                network={currentProject?.network || { ctos: [], pops: [], cables: [], poles: [] }}
+                projectName={currentProject?.name || ''}
+            />
 
         </div >
     );

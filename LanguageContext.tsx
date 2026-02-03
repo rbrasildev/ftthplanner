@@ -685,6 +685,26 @@ const translations = {
     'admin_col_last_access': 'Last Access',
     'admin_never': 'Never',
     'admin_no_phone': 'No phone',
+
+    // Report / Network Analysis
+    'report_title': 'Project Report',
+    'report_analyze': 'Network Analysis',
+    'report_summary': 'Summary',
+    'report_infrastructure': 'Infrastructure',
+    'report_cables': 'Cables & Fibers',
+    'report_qty': 'Qty',
+    'report_total_ctos': 'Total CTOs',
+    'report_total_ceos': 'Total CEOs (Splice Boxes)',
+    'report_total_pops': 'Total POPs',
+    'report_total_poles': 'Total Poles',
+    'report_cable_type': 'Fiber Type',
+    'report_cable_count_active': 'Active Cables',
+    'report_total_meters': 'Total Meters',
+    'report_total_meters_active': 'Total Deployment (m)',
+    'report_total_meters_planned': 'Total Planned (m)',
+    'report_no_data': 'No data available for analysis.',
+    'report_export_csv': 'Export CSV',
+    'report_estimated': 'Estimated',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -1396,6 +1416,26 @@ const translations = {
     'admin_col_last_access': 'Último Acesso',
     'admin_never': 'Nunca',
     'admin_no_phone': 'Sem telefone',
+
+    // Report / Network Analysis
+    'report_title': 'Relatório do Projeto',
+    'report_analyze': 'Análise de Rede',
+    'report_summary': 'Resumo',
+    'report_infrastructure': 'Infraestrutura',
+    'report_cables': 'Cabos e Fibras',
+    'report_qty': 'Qtd',
+    'report_total_ctos': 'Total de CTOs',
+    'report_total_ceos': 'Total de CEOs (Emenda)',
+    'report_total_pops': 'Total de POPs (Centrais)',
+    'report_total_poles': 'Total de Postes',
+    'report_cable_type': 'Tipo de Fibra',
+    'report_cable_count_active': 'Cabos Ativos',
+    'report_total_meters': 'Metragem Total',
+    'report_total_meters_active': 'Total Implantado (m)',
+    'report_total_meters_planned': 'Total Projetado (m)',
+    'report_no_data': 'Nenhum dado disponível para análise.',
+    'report_export_csv': 'Exportar CSV',
+    'report_estimated': 'Estimado',
   }
 };
 
