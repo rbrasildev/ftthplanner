@@ -40,6 +40,12 @@
     "react-router-dom": "^7.11.0",
     "simplify-js": "^1.2.4"
   },
+  "overrides": {
+    "react-helmet-async": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-basic-ssl": "^2.1.4",
