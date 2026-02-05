@@ -247,6 +247,9 @@ const translations = {
     'cancel': 'Cancel',
     'delete': 'Delete',
     'confirm': 'Confirm',
+    'edit_node_short': 'Edit',
+    'move_node_short': 'Move',
+    'delete_node_short': 'Delete',
 
     'name': 'Name',
     'status': 'Status',
