@@ -19,9 +19,9 @@ export type CTOStatus = 'PLANNED' | 'NOT_DEPLOYED' | 'DEPLOYED' | 'CERTIFIED';
 export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 
 export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
-  'PLANNED': '#f59e0b', // Amber/Orange (Em projeto)
+  'PLANNED': '#ffff00', // Amber/Orange (Em projeto)
   'NOT_DEPLOYED': '#ef4444', // Red (Não implantado)
-  'DEPLOYED': '#30b15f', // Greenish-Blue (Implantado)
+  'DEPLOYED': '#00ff00', // Greenish-Blue (Implantado)
   'CERTIFIED': '#22c55e', // Green (Certificado)
 };
 
@@ -221,7 +221,7 @@ export const ABNT_COLORS = [
   '#22c55e', // 1 - Green (Verde)
   '#eab308', // 2 - Yellow (Amarelo)
   '#ffffff', // 3 - White (Branco)
-  '#3b82f6', // 4 - Blue (Azul)
+  '#0000FF', // 4 - Blue (Azul)
   '#ef4444', // 5 - Red (Vermelho)
   '#a855f7', // 6 - Violet (Violeta)
   '#78350f', // 7 - Brown (Marrom)
@@ -233,7 +233,7 @@ export const ABNT_COLORS = [
 ];
 
 export const EIA_COLORS = [
-  '#3b82f6', // 1 - Blue
+  '#0000FF', // 1 - Blue
   '#f97316', // 2 - Orange
   '#22c55e', // 3 - Green
   '#78350f', // 4 - Brown

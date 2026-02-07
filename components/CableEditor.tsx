@@ -289,7 +289,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
           {/* Color Standard Selection - Display Only */}
           <div>
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
-              {t('fiber_color_standard') || "Padrão de Cores"}
+              {t('fiber_color_standard')}
             </label>
             <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
               <span>{formData.colorStandard === 'EIA598' ? t('standard_eia') : t('standard_abnt')}</span>
@@ -303,7 +303,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 :
                 ['#22c55e', '#eab308', '#ffffff', '#3b82f6', '#ef4444', '#a855f7', '#78350f', '#ec4899', '#000000', '#9ca3af', '#f97316', '#22d3ee']
               ).map((c, i) => (
-                <div key={i} title={`Fibra ${i + 1}`} className="w-3 h-3 rounded-full border border-slate-200 dark:border-slate-700 shrink-0" style={{ backgroundColor: c }} />
+                <div key={i} title={t('unit_fiber_label', { n: i + 1 })} className="w-3 h-3 rounded-full border border-slate-200 dark:border-slate-700 shrink-0" style={{ backgroundColor: c }} />
               ))}
               <span className="text-[9px] text-slate-400 ml-1">...</span>
             </div>
@@ -316,7 +316,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
             </label>
             <div className="text-slate-900 dark:text-white font-mono text-sm space-y-1">
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
-                <span className="text-[10px] text-slate-400">{t('geometric_length') || 'Geométrico'}:</span>
+                <span className="text-[10px] text-slate-400">{t('geometric_length')}:</span>
                 <span>{Math.round(calculatedLength).toLocaleString()} m</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">

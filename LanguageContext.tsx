@@ -323,6 +323,7 @@ const translations = {
     'cable_name': 'Cable Name',
     'fiber_count': 'Fiber Count',
     'unit_fibers': 'FIBERS',
+    'unit_fiber_label': 'Fiber {n}',
     'loose_tubes': 'Loose Tubes',
     'tube': 'Tube',
     'technical_reserve': 'Technical Reserve',
@@ -342,6 +343,12 @@ const translations = {
     'color_standard': 'Color Standard',
     'standard_abnt': 'ABNT (Brazil)',
     'standard_eia': 'EIA-598-A (Intl)',
+    'use_catalog_model': 'Use catalog model',
+    'loading_catalog': 'Loading catalog...',
+    'select_model': '-- Select a model --',
+    'fiber_color_standard': 'Fiber Color Standard',
+    'catalog_defined': 'Catalog Defined',
+    'color_selection_info': 'Color defined by catalog according to status.',
 
     // Project Manager / Create Modal
     'project_manager': 'Project Manager',
@@ -1165,6 +1172,7 @@ const translations = {
     'cable_name': 'Nome do cabo',
     'fiber_count': 'Qtd. de fibras',
     'unit_fibers': 'FIBRAS',
+    'unit_fiber_label': 'Fibra {n}',
     'use_catalog_model': 'Usar modelo do catálogo',
     'loading_catalog': 'Carregando catálogo...',
     'select_model': '-- Selecione um modelo --',
@@ -1190,6 +1198,7 @@ const translations = {
     'color_standard': 'Padrão de cores',
     'standard_abnt': 'ABNT (Brasil)',
     'standard_eia': 'EIA-598-A (Intl)',
+    'fiber_color_standard': 'Padrão de Cores',
     'toast_mode_move_node': 'Modo mover ativado',
 
     'project_manager': 'Gerenciador de projetos',
