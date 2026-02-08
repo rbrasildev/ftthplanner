@@ -8,7 +8,7 @@ import path from 'path';
 const prisma = new PrismaClient();
 
 // Ensure uploads directory exists
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads', 'logos');
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'logos');
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -75,6 +75,14 @@ export const uploadCompanyLogo = async (req: AuthRequest, res: Response) => {
         const extension = matches[1];
         const buffer = Buffer.from(matches[2], 'base64');
         const fileName = `logo_${companyId}_${Date.now()}.${extension}`;
+
+        console.log(`[Logo Upload Debug]
+            CWD: ${process.cwd()}
+            UPLOADS_DIR: ${UPLOADS_DIR}
+            FileName: ${fileName}
+            Full Path: ${path.join(UPLOADS_DIR, fileName)}
+        `);
+
         const filePath = path.join(UPLOADS_DIR, fileName);
 
         // Delete old logo if it exists
