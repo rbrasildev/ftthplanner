@@ -15,6 +15,7 @@ import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { LandingPage } from './components/LandingPage';
 import { DashboardPage } from './components/DashboardPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SearchBox } from './components/SearchBox';
 import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOStatus, SystemSettings } from './types';
 import { useLanguage } from './LanguageContext';
@@ -78,7 +79,7 @@ export default function App() {
         }
     }, [token]);
 
-    const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+    const [authView, setAuthView] = useState<'landing' | 'login' | 'register' | 'reset-password'>('landing');
     const [selectedRegisterPlan, setSelectedRegisterPlan] = useState<string | undefined>(undefined);
 
     // Projects List (Summaries)
@@ -130,6 +131,13 @@ export default function App() {
     const [isRegistering, setIsRegistering] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
+
+    // Initial Route Check for Password Reset
+    useEffect(() => {
+        if (window.location.pathname === '/reset-password') {
+            setAuthView('reset-password');
+        }
+    }, []);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
@@ -1730,6 +1738,16 @@ export default function App() {
                     onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
                     initialPlan={selectedRegisterPlan}
                     isLoading={isRegistering}
+                />
+            );
+        }
+        if (authView === 'reset-password') {
+            return (
+                <ResetPasswordPage
+                    onBackToLogin={() => {
+                        window.history.pushState({}, '', '/');
+                        setAuthView('login');
+                    }}
                 />
             );
         }

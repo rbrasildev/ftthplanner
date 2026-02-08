@@ -18,6 +18,8 @@ model User {
   lastLoginAt  DateTime? @map("last_login_at")
   source       String?
   active       Boolean   @default(true)
+  resetToken   String?   @map("reset_token")
+  resetTokenExpires DateTime? @map("reset_token_expires")
   projects     Project[]
   company      Company?  @relation(fields: [companyId], references: [id])
   auditLogs    AuditLog[]

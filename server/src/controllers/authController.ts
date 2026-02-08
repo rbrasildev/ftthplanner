@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -283,3 +284,74 @@ export const changePassword = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to update password' });
     }
 };
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    const { email } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            // We return 200 even if user doesn't exist for security (don't reveal registered emails)
+            return res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = new Date();
+        expires.setHours(expires.getHours() + 1); // 1 hour expiration
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                resetToken: token,
+                resetTokenExpires: expires
+            }
+        });
+
+        const resetUrl = `${process.env.FRONTEND_URL || 'https://ftthplanner.com.br'}/reset-password?token=${token}`;
+
+        console.log(`[ForgotPassword] Sending reset email to ${email}`);
+
+        await sendEmail('password-reset', email, {
+            username: user.username,
+            reset_url: resetUrl,
+            company_name: 'FTTH Planner'
+        });
+
+        res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });
+    } catch (error) {
+        console.error('[ForgotPassword] Error:', error);
+        res.status(500).json({ error: 'Erro ao processar recuperação de senha' });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    try {
+        const user = await prisma.user.findFirst({
+            where: {
+                resetToken: token,
+                resetTokenExpires: { gt: new Date() }
+            }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Token inválido ou expirado' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                passwordHash: hashedPassword,
+                resetToken: null,
+                resetTokenExpires: null
+            }
+        });
+
+        res.json({ message: 'Senha atualizada com sucesso!' });
+    } catch (error) {
+        console.error('[ResetPassword] Error:', error);
+        res.status(500).json({ error: 'Erro ao redefinir senha' });
+    }
+};
+

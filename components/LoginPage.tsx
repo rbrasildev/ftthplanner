@@ -15,14 +15,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    // Forgot Password State
+    const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+    const [forgotError, setForgotError] = useState<string | null>(null);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onLogin(email, password);
     };
 
+    const handleForgotSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setForgotLoading(true);
+        setForgotError(null);
+        setForgotMessage(null);
+        try {
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: forgotEmail })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setForgotMessage(data.message || t('forgot_password_success_default'));
+            } else {
+                setForgotError(data.error || 'Erro ao enviar e-mail');
+            }
+        } catch (err) {
+            setForgotError('Erro de conexão com o servidor');
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-0 relative overflow-hidden bg-slate-950 dark">
-
             {/* 1. Page Background (Blurred Map) - HIDDEN ON MOBILE */}
             <div
                 className="hidden lg:block absolute inset-0 z-0 bg-cover bg-center"
@@ -93,6 +123,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                             required
                                         />
                                     </div>
+                                    <div className="flex justify-end pt-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsForgotModalOpen(true)}
+                                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                        >
+                                            {t('forgot_password')}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -146,6 +185,69 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                 </div>
 
             </div>
+
+            {/* Forgot Password Modal */}
+            {isForgotModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="text-center space-y-2 mb-8">
+                                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{t('forgot_password_title')}</h2>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+                                    {t('forgot_password_subtitle')}
+                                </p>
+                            </div>
+
+                            {forgotMessage ? (
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-emerald-600 dark:text-emerald-300 text-sm font-medium text-center">
+                                        {forgotMessage}
+                                    </div>
+                                    <button
+                                        onClick={() => setIsForgotModalOpen(false)}
+                                        className="w-full text-white bg-zinc-900 dark:bg-white dark:text-black font-bold rounded-xl text-sm px-5 py-4 text-center transition-all hover:opacity-90 active:scale-[0.98]"
+                                    >
+                                        {t('back_to_login')}
+                                    </button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleForgotSubmit} className="space-y-6">
+                                    <div className="space-y-1">
+                                        <input
+                                            type="email"
+                                            value={forgotEmail}
+                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 outline-none font-medium transition-all"
+                                            placeholder={t('login_email_placeholder')}
+                                            required
+                                            disabled={forgotLoading}
+                                        />
+                                        {forgotError && <p className="text-xs text-red-500 mt-2 font-medium">{forgotError}</p>}
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsForgotModalOpen(false)}
+                                            className="flex-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold rounded-xl text-sm px-5 py-4 text-center transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98]"
+                                            disabled={forgotLoading}
+                                        >
+                                            {t('cancel')}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={forgotLoading}
+                                            className="flex-[2] text-white bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                                        >
+                                            {forgotLoading ? t('loading') : t('forgot_password_send')}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
