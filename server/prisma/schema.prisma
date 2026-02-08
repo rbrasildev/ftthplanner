@@ -436,3 +436,46 @@ model TemplateOLT {
 
   @@map("template_olts")
 }
+
+model DemoVideo {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  url         String   // URL do embed do vídeo
+  icon        String   @default("Monitor") // Nome do ícone do lucide-react
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("demo_videos")
+}
+
+model SmtpConfig {
+  id        String   @id @default("global") @map("id")
+  host      String
+  port      Int
+  user      String
+  pass      String
+  secure    Boolean  @default(true)
+  fromEmail String   @map("from_email")
+  fromName  String   @map("from_name")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("smtp_configs")
+}
+
+model EmailTemplate {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  subject     String
+  body        String   @db.Text
+  variables   Json     @default("[]") // List of available variables e.g. ["username", "plan_name"]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("email_templates")
+}
+
+

@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
 import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
+import { VideoDemoModal } from './modals/VideoDemoModal';
 
 interface LandingPageProps {
     onLoginClick: () => void;
@@ -13,6 +14,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [plans, setPlans] = React.useState<any[]>([]);
+    const [isDemoModalOpen, setIsDemoModalOpen] = React.useState(false);
     const { language, setLanguage, t } = useLanguage();
 
     React.useEffect(() => {
@@ -182,6 +184,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <ChevronRight className="w-5 h-5" />
                         </button>
                         <button
+                            onClick={() => setIsDemoModalOpen(true)}
                             className="w-full sm:w-auto px-8 py-4 bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
                         >
                             <span className="relative flex h-3 w-3 mr-1">
@@ -574,6 +577,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     </div>
                 </div>
             </footer>
+
+            <VideoDemoModal
+                isOpen={isDemoModalOpen}
+                onClose={() => setIsDemoModalOpen(false)}
+            />
         </div>
     );
 };

@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 import { cloneTemplatesToCompany } from '../services/templateService';
+import { sendEmail } from '../services/emailService';
+
 
 // Helper to get Plans
 async function getPlanByName(name: string) {
@@ -75,7 +77,18 @@ export const register = async (req: Request, res: Response) => {
         // Clone default templates to the new company
         await cloneTemplatesToCompany(result.company.id, prisma);
 
+        // Send Welcome Email (Fail silently to not break registration)
+        console.log(`[Registration] Triggering welcome email for ${email} with slug welcome-email`);
+        sendEmail('welcome-email', email, {
+            username: username,
+            company_name: result.company.name,
+            login_url: process.env.FRONTEND_URL || 'https://ftthplanner.com.br'
+        }).then(info => console.log(`[Registration] Email sent:`, info.messageId))
+            .catch(err => console.error('[Registration] Welcome email failed:', err));
+
+
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
+
     } catch (error) {
         console.error(error);
         res.status(400).json({ error: 'Username or Email already exists or invalid data' });

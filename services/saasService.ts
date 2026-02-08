@@ -54,3 +54,74 @@ export const updateUser = async (id: string, data: any) => {
     const response = await api.put(`/saas/users/${id}`, data);
     return response.data;
 };
+
+// Demo Videos
+export const getPublicDemoVideos = async () => {
+    const response = await api.get('/saas/public/videos');
+    return response.data;
+};
+
+export const getDemoVideos = async () => {
+    const response = await api.get('/saas/videos');
+    return response.data;
+};
+
+export const createDemoVideo = async (data: any) => {
+    const response = await api.post('/saas/videos', data);
+    return response.data;
+};
+
+export const updateDemoVideo = async (id: string, data: any) => {
+    const response = await api.put(`/saas/videos/${id}`, data);
+    return response.data;
+};
+
+export const deleteDemoVideo = async (id: string) => {
+    const response = await api.delete(`/saas/videos/${id}`);
+    return response.data;
+};
+
+// Email Settings
+export const getSmtpConfig = async () => {
+    const response = await api.get('/saas/email/smtp');
+    return response.data;
+};
+
+export const updateSmtpConfig = async (data: any) => {
+    const response = await api.post('/saas/email/smtp', data);
+    return response.data;
+};
+
+export const testSmtp = async (data: any) => {
+    const response = await api.post('/saas/email/smtp/test', data);
+    return response.data;
+};
+
+// Email Templates
+export const getEmailTemplates = async () => {
+    const response = await api.get('/saas/email/templates');
+    return response.data;
+};
+
+export const createEmailTemplate = async (data: any) => {
+    const response = await api.post('/saas/email/templates', data);
+    return response.data;
+};
+
+export const updateEmailTemplate = async (id: string, data: any) => {
+    const response = await api.put(`/saas/email/templates/${id}`, data);
+    return response.data;
+};
+
+export const deleteEmailTemplate = async (id: string) => {
+    const response = await api.delete(`/saas/email/templates/${id}`);
+    return response.data;
+};
+
+export const broadcastTemplate = async (id: string) => {
+    const response = await api.post(`/saas/email/templates/${id}/broadcast`);
+    return response.data;
+};
+
+
+

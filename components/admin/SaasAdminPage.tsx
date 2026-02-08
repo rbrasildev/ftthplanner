@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
@@ -62,8 +62,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users' | 'videos' | 'email'>('dashboard');
     const [plans, setPlans] = useState<any[]>([]);
+    const [videos, setVideos] = useState<any[]>([]);
+    const [smtpConfig, setSmtpConfig] = useState<any>({});
+    const [templates, setTemplates] = useState<any[]>([]);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -73,6 +76,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [planFilter, setPlanFilter] = useState('ALL');
 
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [editingVideo, setEditingVideo] = useState<any>(null);
+    const [editingTemplate, setEditingTemplate] = useState<any>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Delete Modal State
@@ -121,6 +128,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         { id: 'companies', label: 'Companies', icon: <Building2 className="w-5 h-5" /> },
         { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
         { id: 'plans', label: 'SaaS Plans', icon: <CreditCard className="w-5 h-5" /> },
+        { id: 'videos', label: 'Demo Videos', icon: <Play className="w-5 h-5" /> },
+        { id: 'email', label: 'Email Settings', icon: <Mail className="w-5 h-5" /> },
         { id: 'audit', label: 'Audit Logs', icon: <Settings className="w-5 h-5" /> },
     ];
     const [editingPlan, setEditingPlan] = useState<any>(null);
@@ -137,6 +146,16 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             } else if (activeView === 'users') {
                 const usersData = await saasService.getUsers();
                 setUsers(usersData);
+            } else if (activeView === 'videos') {
+                const videosData = await saasService.getDemoVideos();
+                setVideos(videosData);
+            } else if (activeView === 'email') {
+                const [smtp, temps] = await Promise.all([
+                    saasService.getSmtpConfig(),
+                    saasService.getEmailTemplates()
+                ]);
+                setSmtpConfig(smtp);
+                setTemplates(temps);
             } else {
                 const promises: Promise<any>[] = [
                     saasService.getCompanies(),
@@ -247,6 +266,137 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         } catch (error) {
             alert('Failed to save plan');
         }
+    };
+
+    const handleSaveVideo = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const videoData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            url: formData.get('url'),
+            icon: formData.get('icon'),
+            order: parseInt(formData.get('order') as string) || 0,
+            active: formData.get('active') === 'on'
+        };
+
+        try {
+            if (editingVideo?.id) {
+                await saasService.updateDemoVideo(editingVideo.id, videoData);
+            } else {
+                await saasService.createDemoVideo(videoData);
+            }
+            await loadData();
+            setIsVideoModalOpen(false);
+            setEditingVideo(null);
+        } catch (error) {
+            alert('Failed to save video');
+        }
+    };
+
+    const handleSaveSmtp = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            host: formData.get('host'),
+            port: formData.get('port'),
+            user: formData.get('user'),
+            pass: formData.get('pass'),
+            fromEmail: formData.get('fromEmail'),
+            fromName: formData.get('fromName'),
+            secure: formData.get('secure') === 'on'
+        };
+        try {
+            await saasService.updateSmtpConfig(data);
+            alert('SMTP settings saved successfully');
+        } catch (error) {
+            alert('Failed to save SMTP settings');
+        }
+    };
+
+    const handleTestSmtp = async () => {
+        const form = document.getElementById('smtp-form') as HTMLFormElement;
+        const formData = new FormData(form);
+        const data = {
+            host: formData.get('host'),
+            port: formData.get('port'),
+            user: formData.get('user'),
+            pass: formData.get('pass'),
+            fromEmail: formData.get('fromEmail'),
+            fromName: formData.get('fromName'),
+            secure: formData.get('secure') === 'on'
+        };
+        try {
+            const res = await saasService.testSmtp(data);
+            alert(res.message);
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'SMTP test failed');
+        }
+    };
+
+    const handleSaveTemplate = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            name: formData.get('name'),
+            slug: formData.get('slug'),
+            subject: formData.get('subject'),
+            body: formData.get('body'),
+            variables: (formData.get('variables') as string).split(',').map(v => v.trim()).filter(v => v)
+        };
+        try {
+            if (editingTemplate?.id) {
+                await saasService.updateEmailTemplate(editingTemplate.id, data);
+            } else {
+                await saasService.createEmailTemplate(data);
+            }
+            await loadData();
+            setIsTemplateModalOpen(false);
+            setEditingTemplate(null);
+        } catch (error) {
+            alert('Failed to save template');
+        }
+    };
+
+    const handleDeleteTemplate = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this template?')) return;
+        try {
+            await saasService.deleteEmailTemplate(id);
+            await loadData();
+        } catch (error) {
+            alert('Failed to delete template');
+        }
+    };
+
+    const openTemplateModal = (template?: any) => {
+        setEditingTemplate(template || null);
+        setIsTemplateModalOpen(true);
+    };
+
+    const handleBroadcast = async (template: any) => {
+        if (!confirm(`Deseja disparar o e-mail "${template.name}" para TODOS os usuários ativos?`)) return;
+        try {
+            const res = await saasService.broadcastTemplate(template.id);
+            alert(res.message);
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Erro ao realizar disparo');
+        }
+    };
+
+
+    const handleDeleteVideo = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this video?')) return;
+        try {
+            await saasService.deleteDemoVideo(id);
+            await loadData();
+        } catch (error) {
+            alert('Failed to delete video');
+        }
+    };
+
+    const openVideoModal = (video?: any) => {
+        setEditingVideo(video || null);
+        setIsVideoModalOpen(true);
     };
 
     const openPlanModal = (plan?: any) => {
@@ -923,7 +1073,187 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </div>
                         )
                     }
-                </div >
+
+                    {activeView === 'videos' && (
+                        <div className="space-y-6">
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => openVideoModal()}
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                                >
+                                    <Play className="w-4 h-4" />
+                                    Add New Video
+                                </button>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">Video</th>
+                                            <th className="px-6 py-4">Order</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {videos.map(video => (
+                                            <tr key={video.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                                            <Monitor className="w-5 h-5 text-indigo-500" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold">{video.title}</div>
+                                                            <div className="text-xs text-slate-500 truncate max-w-xs">{video.url}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 font-mono text-xs">{video.order}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${video.active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                                        {video.active ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => openVideoModal(video)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                                            <Settings className="w-4 h-4" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteVideo(video.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeView === 'email' && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* SMTP Config */}
+                                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
+                                            <Server className="w-5 h-5" />
+                                        </div>
+                                        <h2 className="text-lg font-bold">SMTP Configuration</h2>
+                                    </div>
+
+                                    <form id="smtp-form" onSubmit={handleSaveSmtp} className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Host</label>
+                                                <input name="host" defaultValue={smtpConfig?.host} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="smtp.example.com" required />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Port</label>
+                                                <input name="port" type="number" defaultValue={smtpConfig?.port} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="587" required />
+                                            </div>
+                                            <div className="flex items-end pb-2">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" name="secure" defaultChecked={smtpConfig?.secure} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                                    <span className="text-sm font-medium">SSL/TLS (Secure)</span>
+                                                </label>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Username / E-mail</label>
+                                                <input name="user" defaultValue={smtpConfig?.user} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="user@example.com" required />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Password</label>
+                                                <input name="pass" type="password" defaultValue={smtpConfig?.pass} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="••••••••" required />
+                                            </div>
+                                            <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sender E-mail</label>
+                                                <input name="fromEmail" defaultValue={smtpConfig?.fromEmail} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="noreply@ftthplanner.com" required />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sender Name</label>
+                                                <input name="fromName" defaultValue={smtpConfig?.fromName} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="FTTH Planner Pro" required />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3 pt-4">
+                                            <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all">
+                                                Save Settings
+                                            </button>
+                                            <button type="button" onClick={handleTestSmtp} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg font-bold text-sm transition-all">
+                                                Test Connection
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {/* Email Templates */}
+                                <div className="space-y-6">
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl">
+                                                    <Mail className="w-5 h-5" />
+                                                </div>
+                                                <h2 className="text-lg font-bold">Email Templates</h2>
+                                            </div>
+                                            <button onClick={() => openTemplateModal()} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                                <Zap className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {templates.map(template => (
+                                                <div key={template.id} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+                                                    <div>
+                                                        <div className="font-bold text-sm">{template.name}</div>
+                                                        <div className="text-xs text-slate-500 font-mono">{template.slug}</div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleBroadcast(template)}
+                                                            className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                                                            title="Disparar para todos"
+                                                        >
+                                                            <Zap className="w-4 h-4" />
+                                                        </button>
+                                                        <button onClick={() => openTemplateModal(template)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                                            <Settings className="w-4 h-4" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteTemplate(template.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+
+                                                </div>
+                                            ))}
+                                            {templates.length === 0 && (
+                                                <div className="text-center py-8 text-slate-400 text-sm italic">
+                                                    No templates created yet.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Help Box */}
+                                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-6">
+                                        <div className="flex items-center gap-2 text-amber-600 mb-2">
+                                            <AlertTriangle className="w-5 h-5" />
+                                            <h3 className="font-bold text-sm">Template Variables</h3>
+                                        </div>
+                                        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                            Use <code>{"{{variable_name}}"}</code> in the subject or body to inject dynamic content.
+                                            Example: <code>{"Olá {{username}}!"}</code>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 {isPlanModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
@@ -1126,6 +1456,53 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </form>
                         </div>
                     </div >
+                )}
+
+                {isVideoModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+                            <form onSubmit={handleSaveVideo}>
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                        {editingVideo ? 'Edit Video' : 'Add New Video'}
+                                    </h3>
+                                    <button type="button" onClick={() => setIsVideoModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Title</label>
+                                        <input name="title" defaultValue={editingVideo?.title} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Description</label>
+                                        <textarea name="description" defaultValue={editingVideo?.description} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Embed URL (YouTube/Vimeo)</label>
+                                        <input name="url" defaultValue={editingVideo?.url} required placeholder="https://www.youtube.com/embed/..." className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Icon Name (Lucide)</label>
+                                            <input name="icon" defaultValue={editingVideo?.icon || 'Monitor'} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Order</label>
+                                            <input name="order" type="number" defaultValue={editingVideo?.order || 0} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                        </div>
+                                    </div>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="active" defaultChecked={editingVideo?.active ?? true} className="w-4 h-4 rounded" />
+                                        <span className="text-sm">Active</span>
+                                    </label>
+                                </div>
+                                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                                    <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
+                                    <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 )}
                 {/* Company Quick View Drawer */}
                 {
@@ -1335,6 +1712,51 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     </div>
                 )
             }
+
+            {isTemplateModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+                        <form onSubmit={handleSaveTemplate} className="flex flex-col h-full overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                <h3 className="text-lg font-bold">
+                                    {editingTemplate ? 'Edit Template' : 'Create Template'}
+                                </h3>
+                                <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
+                                        <input name="name" defaultValue={editingTemplate?.name} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome Email" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Slug (Identifier)</label>
+                                        <input name="slug" defaultValue={editingTemplate?.slug} required disabled={!!editingTemplate} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg disabled:opacity-50" placeholder="welcome-email" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Subject</label>
+                                    <input name="subject" defaultValue={editingTemplate?.subject} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome to FTTH Planner, {{username}}!" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Available Variables (comma-separated)</label>
+                                    <input name="variables" defaultValue={editingTemplate?.variables?.join(', ')} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="username, company_name, login_url" />
+                                </div>
+                                <div className="flex-1 flex flex-col min-h-[300px]">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Body (HTML)</label>
+                                    <textarea name="body" defaultValue={editingTemplate?.body} required className="flex-1 w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs resize-none" placeholder="<h1>Olá {{username}}!</h1>..." />
+                                </div>
+                            </div>
+                            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                                <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="px-6 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">Cancel</button>
+                                <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20">Save Template</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
