@@ -1,4 +1,4 @@
-﻿
+
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
@@ -8,7 +8,7 @@ import path from 'path';
 const prisma = new PrismaClient();
 
 // Ensure uploads directory exists
-const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'logos');
+const UPLOADS_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'logos');
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }

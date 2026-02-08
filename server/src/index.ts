@@ -46,9 +46,27 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'live', time: new Date().toISOString() });
 });
 
+// Rota temporÃ¡ria de diagnÃ³stico para verificar caminhos em produÃ§Ã£o
+app.get('/api/debug-paths', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const debugInfo = {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        uploadsPath: path.resolve(__dirname, '..', 'uploads'),
+        exists: fs.existsSync(path.resolve(__dirname, '..', 'uploads')),
+        logos: fs.existsSync(path.resolve(__dirname, '..', 'uploads', 'logos'))
+            ? fs.readdirSync(path.resolve(__dirname, '..', 'uploads', 'logos'))
+            : 'logos folder not found'
+    };
+    res.json(debugInfo);
+});
 
-// Servir arquivos estÃ¡ticos de uploads dentro do prefixo /api para facilitar o proxy em produÃ§Ã£o
-app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// Servir arquivos estáticos de uploads dentro do prefixo /api para facilitar o proxy em produção
+const uploadsPath = path.resolve(__dirname, '..', 'uploads');
+app.use('/api/uploads', express.static(uploadsPath));
+console.log(`[Static] Serving uploads from: ${uploadsPath}`);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
