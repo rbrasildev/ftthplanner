@@ -118,8 +118,8 @@ export const deleteEmailTemplate = async (id: string) => {
     return response.data;
 };
 
-export const broadcastTemplate = async (id: string) => {
-    const response = await api.post(`/saas/email/templates/${id}/broadcast`);
+export const sendTemplate = async (data: { templateId: string, targetType: string, targetId?: string }) => {
+    const response = await api.post('/saas/email/send', data);
     return response.data;
 };
 

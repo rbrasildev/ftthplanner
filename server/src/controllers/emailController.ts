@@ -153,43 +153,66 @@ export const deleteEmailTemplate = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const broadcastTemplate = async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+export const sendTemplate = async (req: AuthRequest, res: Response) => {
+    const { templateId, targetType, targetId } = req.body;
+
     try {
-        const template = await prisma.emailTemplate.findUnique({ where: { id } });
+        const template = await prisma.emailTemplate.findUnique({ where: { id: templateId } });
         if (!template) return res.status(404).json({ error: 'Template not found' });
 
-        const users = await prisma.user.findMany({
-            where: { active: true, email: { not: '' } },
-            select: {
-                email: true,
-                username: true,
-                company: {
-                    select: { name: true }
-                }
-            }
-        });
+        let users: any[] = [];
 
+        if (targetType === 'ALL') {
+            users = await prisma.user.findMany({
+                where: { active: true, email: { not: '' } },
+                select: { email: true, username: true, company: { select: { name: true } } }
+            });
+        } else if (targetType === 'COMPANY') {
+            if (!targetId) return res.status(400).json({ error: 'targetId is required for COMPANY target' });
+            users = await prisma.user.findMany({
+                where: { companyId: targetId, active: true, email: { not: '' } },
+                select: { email: true, username: true, company: { select: { name: true } } }
+            });
+        } else if (targetType === 'USER') {
+            if (!targetId) return res.status(400).json({ error: 'targetId is required for USER target' });
+            const user = await prisma.user.findUnique({
+                where: { id: targetId },
+                select: { email: true, username: true, company: { select: { name: true } } }
+            });
+            if (user && user.email) users = [user];
+        } else {
+            return res.status(400).json({ error: 'Invalid targetType' });
+        }
+
+        if (users.length === 0) {
+            return res.status(400).json({ error: 'No recipients found for the selected target' });
+        }
 
         const loginUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
 
-        // Send emails in background
+        // Send emails
         const sendPromises = users.map(user =>
             sendEmail(template.slug, user.email, {
                 username: user.username,
                 company_name: user.company?.name || '',
                 login_url: loginUrl
-            }).catch((err: Error) => console.error(`Failed to send broadcast to ${user.email}:`, err))
+            }).catch((err: Error) => console.error(`Failed to send targeted email to ${user.email}:`, err))
         );
-
 
         res.json({
             success: true,
-            message: `Broadcast started for ${users.length} users`,
+            message: `Disparo iniciado para ${users.length} destinatários`,
             recipientCount: users.length
         });
+
+        // Optional: Audit log the event
+        if (req.user?.id) {
+            const { logAudit } = require('./auditController');
+            await logAudit(req.user.id, 'SEND_EMAIL_TEMPLATE', 'EmailTemplate', templateId, { targetType, targetId, count: users.length }, req.ip);
+        }
+
     } catch (error) {
-        console.error('Broadcast failed:', error);
-        res.status(500).json({ error: 'Failed to start broadcast' });
+        console.error('Send template failed:', error);
+        res.status(500).json({ error: 'Failed to send template' });
     }
 };

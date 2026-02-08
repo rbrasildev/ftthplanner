@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
+import { SendTemplateModal } from './modals/SendTemplateModal';
 
 interface Company {
     id: string;
@@ -80,6 +81,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [editingVideo, setEditingVideo] = useState<any>(null);
     const [editingTemplate, setEditingTemplate] = useState<any>(null);
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+    const [templateToSend, setTemplateToSend] = useState<any>(null);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     // Delete Modal State
@@ -373,14 +376,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         setIsTemplateModalOpen(true);
     };
 
-    const handleBroadcast = async (template: any) => {
-        if (!confirm(`Deseja disparar o e-mail "${template.name}" para TODOS os usuários ativos?`)) return;
-        try {
-            const res = await saasService.broadcastTemplate(template.id);
-            alert(res.message);
-        } catch (error: any) {
-            alert(error.response?.data?.error || 'Erro ao realizar disparo');
-        }
+    const handleOpenSendModal = (template: any) => {
+        setTemplateToSend(template);
+        setIsSendModalOpen(true);
     };
 
 
@@ -1214,11 +1212,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <button
-                                                            onClick={() => handleBroadcast(template)}
+                                                            onClick={() => handleOpenSendModal(template)}
                                                             className="p-2 text-slate-400 hover:text-emerald-600 transition-colors"
-                                                            title="Disparar para todos"
+                                                            title="Disparar e-mail"
                                                         >
-                                                            <Zap className="w-4 h-4" />
+                                                            <Send className="w-4 h-4" />
                                                         </button>
                                                         <button onClick={() => openTemplateModal(template)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
                                                             <Settings className="w-4 h-4" />
@@ -1756,6 +1754,16 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         </form>
                     </div>
                 </div>
+            )}
+            {isSendModalOpen && templateToSend && (
+                <SendTemplateModal
+                    isOpen={isSendModalOpen}
+                    template={templateToSend}
+                    onClose={() => {
+                        setIsSendModalOpen(false);
+                        setTemplateToSend(null);
+                    }}
+                />
             )}
         </div>
     );

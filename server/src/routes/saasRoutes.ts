@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 import { getPlans, createPlan, updatePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans } from '../controllers/saasController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
-import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, broadcastTemplate } from '../controllers/emailController';
+import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
 
 const router = express.Router();
 
@@ -45,7 +45,7 @@ router.get('/email/templates', authenticateToken, requireSuperAdmin, getEmailTem
 router.post('/email/templates', authenticateToken, requireSuperAdmin, createEmailTemplate);
 router.put('/email/templates/:id', authenticateToken, requireSuperAdmin, updateEmailTemplate);
 router.delete('/email/templates/:id', authenticateToken, requireSuperAdmin, deleteEmailTemplate);
-router.post('/email/templates/:id/broadcast', authenticateToken, requireSuperAdmin, broadcastTemplate);
+router.post('/email/send', authenticateToken, requireSuperAdmin, sendTemplate);
 
 
 export default router;
