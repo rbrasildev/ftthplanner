@@ -55,11 +55,20 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
         });
 
 
+        // Generate a simple text version by stripping tags (very basic)
+        const textBody = renderedBody.replace(/<[^>]*>?/gm, '').trim();
+
+        // Add a hidden unique fingerprint to prevent Gmail from folding/clipping content
+        // if multiple similar emails are sent in the same thread.
+        const fingerprint = `<div style="display:none !important; font-size:1px; color:transparent; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden;">[ref:${Date.now()}-${Math.random().toString(36).substring(7)}]</div>`;
+        const htmlBody = renderedBody + fingerprint;
+
         const info = await transporter.sendMail({
             from: `"${smtpConfig.fromName}" <${smtpConfig.fromEmail}>`,
             to,
             subject: renderedSubject,
-            html: renderedBody
+            text: textBody,
+            html: htmlBody
         });
 
         return info;
