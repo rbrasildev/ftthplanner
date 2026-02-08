@@ -40,12 +40,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
             });
             const data = await response.json();
             if (response.ok) {
-                setForgotMessage(data.message || t('forgot_password_success_default'));
+                setForgotMessage(data.message || t('forgot_password_success'));
             } else {
-                setForgotError(data.error || 'Erro ao enviar e-mail');
+                setForgotError(data.error || t('forgot_password_error_generic'));
             }
         } catch (err) {
-            setForgotError('Erro de conexão com o servidor');
+            setForgotError(t('forgot_password_error_connection'));
         } finally {
             setForgotLoading(false);
         }

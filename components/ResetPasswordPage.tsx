@@ -28,11 +28,11 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            setError(t('register_error_match'));
+            setError(t('reset_password_error_mismatch'));
             return;
         }
         if (password.length < 6) {
-            setError(t('error_password_length'));
+            setError(t('reset_password_error_length'));
             return;
         }
 
@@ -51,7 +51,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                 setError(data.error || t('reset_password_error'));
             }
         } catch (err) {
-            setError('Erro de conexão com o servidor');
+            setError(t('reset_password_error_connection'));
         } finally {
             setIsLoading(false);
         }
@@ -73,7 +73,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                             {success ? t('reset_password_success') : t('reset_password_title')}
                         </h1>
                         <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
-                            {success ? 'Sua nova senha foi salva.' : t('reset_password_subtitle')}
+                            {success ? t('reset_password_success_redirect') : t('reset_password_subtitle')}
                         </p>
                     </div>
 
