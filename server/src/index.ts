@@ -65,8 +65,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 app.use(express.json({ limit: '100mb' }));
 
-// Servir arquivos estÃ¡ticos de uploads
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Servir arquivos estÃ¡ticos de uploads dentro do prefixo /api para facilitar o proxy em produÃ§Ã£o
+app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);

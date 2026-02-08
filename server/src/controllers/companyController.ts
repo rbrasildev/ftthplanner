@@ -89,7 +89,7 @@ export const uploadCompanyLogo = async (req: AuthRequest, res: Response) => {
 
         fs.writeFileSync(filePath, buffer);
 
-        const logoUrl = `/uploads/logos/${fileName}`;
+        const logoUrl = `/api/uploads/logos/${fileName}`;
         await prisma.company.update({
             where: { id: companyId },
             data: { logoUrl }
