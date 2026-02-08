@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -14,25 +14,25 @@ export const seedDefaultPlans = async () => {
                 type: 'TRIAL',
                 trialDurationDays: 7,
                 limits: { maxProjects: 1, maxUsers: 1, maxCTOs: 500, maxPOPs: 1 },
-                features: ['1 Projeto', '1 Usuário', 'Mapas Básicos'],
+                features: ['1 Projeto', '1 UsuÃ¡rio', 'Mapas BÃ¡sicos'],
                 isRecommended: false,
             },
             {
-                name: 'Plano Básico',
+                name: 'Plano BÃ¡sico',
                 price: 99.90,
                 priceYearly: 999.00,
                 type: 'STANDARD',
                 limits: { maxProjects: 50, maxUsers: 10, maxCTOs: 5, maxPOPs: 10 },
-                features: ['50 Projetos', '10 Usuários', 'Suporte por Email'],
+                features: ['50 Projetos', '10 UsuÃ¡rios', 'Suporte por Email'],
                 isRecommended: false,
             },
             {
-                name: 'Plano Intermediário',
+                name: 'Plano IntermediÃ¡rio',
                 price: 199.90,
                 priceYearly: 1999.00,
                 type: 'STANDARD',
                 limits: { maxProjects: 10, maxUsers: 10, maxCTOs: 2000, maxPOPs: 10 },
-                features: ['10 Projetos', '10 Usuários', 'Suporte Prioritário'],
+                features: ['10 Projetos', '10 UsuÃ¡rios', 'Suporte PrioritÃ¡rio'],
                 isRecommended: true,
             },
             {
@@ -41,7 +41,7 @@ export const seedDefaultPlans = async () => {
                 priceYearly: 3999.00,
                 type: 'ENTERPRISE',
                 limits: { maxProjects: 999999, maxUsers: 999999, maxCTOs: 999999, maxPOPs: 999999 },
-                features: ['Tudo Ilimitado', 'Suporte Dedicado', 'Backup Automático'],
+                features: ['Tudo Ilimitado', 'Suporte Dedicado', 'Backup AutomÃ¡tico'],
                 isRecommended: false,
             }
         ];

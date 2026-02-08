@@ -23,9 +23,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 interface VideoDemoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    supportPhone?: string | null;
 }
 
-export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose }) => {
+export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose, supportPhone }) => {
     const [videos, setVideos] = React.useState<Video[]>([]);
     const [selectedVideo, setSelectedVideo] = React.useState<Video | null>(null);
     const [loading, setLoading] = React.useState(true);
@@ -72,7 +73,7 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose 
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {loading ? (
                             <div className="flex items-center justify-center h-40">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
                             </div>
                         ) : videos.length > 0 ? (
                             videos.map((video) => (
@@ -80,11 +81,11 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose 
                                     key={video.id}
                                     onClick={() => setSelectedVideo(video)}
                                     className={`w-full p-4 rounded-2xl flex items-start gap-4 transition-all text-left ${selectedVideo?.id === video.id
-                                        ? 'bg-sky-500/10 border border-sky-500/50 text-sky-400'
+                                        ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-400'
                                         : 'hover:bg-slate-900 border border-transparent text-slate-400 hover:text-slate-300'
                                         }`}
                                 >
-                                    <div className={`p-2 rounded-lg ${selectedVideo?.id === video.id ? 'bg-sky-500 text-white' : 'bg-slate-800'}`}>
+                                    <div className={`p-2 rounded-lg ${selectedVideo?.id === video.id ? 'bg-emerald-500 text-white' : 'bg-slate-800'}`}>
                                         {ICON_MAP[video.icon] || <VideoIcon className="w-5 h-5" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -134,7 +135,7 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose 
                         <div className="w-full mt-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                                    <Play className="w-6 h-6 text-sky-500 fill-sky-500" />
+                                    <Play className="w-6 h-6 text-emerald-500 fill-emerald-500" />
                                     {selectedVideo?.title || 'Selecione um vídeo'}
                                 </h1>
                                 <p className="text-slate-400 mt-2 max-w-2xl">
@@ -143,8 +144,12 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose 
                             </div>
 
                             <button
-                                className="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-600/20 whitespace-nowrap"
-                                onClick={() => window.open('https://api.whatsapp.com/send?phone=55XXXXXXXXXXX&text=Olá, vi o vídeo de demonstração e gostaria de saber mais!', '_blank')}
+                                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-600/20 whitespace-nowrap"
+                                onClick={() => {
+                                    const rawPhone = supportPhone || '55XXXXXXXXXXX';
+                                    const sanitizedPhone = rawPhone.replace(/\D/g, '');
+                                    window.open(`https://api.whatsapp.com/send?phone=${sanitizedPhone}&text=Olá, vi o vídeo de demonstração e gostaria de saber mais!`, '_blank');
+                                }}
                             >
                                 Falar com Consultor
                             </button>

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { login, register, getMe, changePassword, forgotPassword, resetPassword } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 

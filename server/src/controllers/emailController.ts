@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 import { Request, Response } from 'express';
 
 import { PrismaClient } from '@prisma/client';
@@ -57,12 +57,12 @@ export const testSmtp = async (req: AuthRequest, res: Response) => {
         await transporter.sendMail({
             from: `"${config.fromName}" <${config.fromEmail}>`,
             to: config.user,
-            subject: 'Teste de Configuração SMTP - FTTH Planner',
-            text: 'Se você recebeu este e-mail, sua configuração de SMTP está 100% correta!'
+            subject: 'Teste de ConfiguraÃ§Ã£o SMTP - FTTH Planner',
+            text: 'Se vocÃª recebeu este e-mail, sua configuraÃ§Ã£o de SMTP estÃ¡ 100% correta!'
         });
 
 
-        res.json({ success: true, message: 'Conexão e e-mail de teste enviados com sucesso!' });
+        res.json({ success: true, message: 'ConexÃ£o e e-mail de teste enviados com sucesso!' });
     } catch (error) {
         console.error('SMTP test error:', error);
         res.status(400).json({
@@ -118,7 +118,7 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
 
         if (Object.keys(updateData).length === 0) {
             console.warn('[EmailController] No valid fields provided for update');
-            return res.status(400).json({ error: 'Nenhum dado válido fornecido para atualização' });
+            return res.status(400).json({ error: 'Nenhum dado vÃ¡lido fornecido para atualizaÃ§Ã£o' });
         }
 
         const template = await prisma.emailTemplate.update({
@@ -130,7 +130,7 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         console.error('[EmailController] Update template error:', error);
         if (error.code === 'P2002') {
-            return res.status(400).json({ error: 'Slug já está em uso por outro template' });
+            return res.status(400).json({ error: 'Slug jÃ¡ estÃ¡ em uso por outro template' });
         }
         res.status(500).json({
             error: 'Failed to update template',
@@ -201,7 +201,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
 
         res.json({
             success: true,
-            message: `Disparo iniciado para ${users.length} destinatários`,
+            message: `Disparo iniciado para ${users.length} destinatÃ¡rios`,
             recipientCount: users.length
         });
 

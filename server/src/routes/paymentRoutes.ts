@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { processPayment, subscribe, handleWebhook, cancelSubscription } from '../controllers/paymentController';
 
 import { authenticateToken } from '../middleware/auth';

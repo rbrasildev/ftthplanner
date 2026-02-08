@@ -16,8 +16,9 @@ import { RegisterPage } from './components/RegisterPage';
 import { LandingPage } from './components/LandingPage';
 import { DashboardPage } from './components/DashboardPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { CompanySettings } from './components/settings/CompanySettings';
 import { SearchBox } from './components/SearchBox';
-import { CTOData, POPData, CableData, NetworkState, Project, Coordinates, CTOStatus, SystemSettings } from './types';
+import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
@@ -28,6 +29,7 @@ import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
 import L from 'leaflet';
 import * as projectService from './services/projectService';
+import * as saasService from './services/saasService';
 import * as authService from './services/authService';
 import * as catalogService from './services/catalogService';
 import api from './services/api';
@@ -42,7 +44,6 @@ import { AdvancedImportModal } from './components/modals/AdvancedImportModal';
 import { ProjectReportModal } from './components/modals/ProjectReportModal';
 import { FusionModule } from './components/FusionModule';
 
-import { PoleData, FusionType } from './types';
 
 
 
@@ -127,16 +128,21 @@ export default function App() {
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
     const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
+    const [companyName, setCompanyName] = useState<string | null>(null);
+    const [companyLogo, setCompanyLogo] = useState<string | null>(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
+    const [saasConfig, setSaasConfig] = useState<SaaSConfig | null>(null);
 
     // Initial Route Check for Password Reset
     useEffect(() => {
         if (window.location.pathname === '/reset-password') {
             setAuthView('reset-password');
         }
+        // Load Global SaaS Config
+        saasService.getSaaSConfig().then(setSaasConfig).catch(console.error);
     }, []);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -267,9 +273,16 @@ export default function App() {
                     if (data.user.email) {
                         setUserEmail(data.user.email);
                     }
-                    if (data.user.company?.status) {
-                        setCompanyStatus(data.user.company.status);
+                    if (data.user.company?.id) {
+                        setCompanyId(data.user.company.id);
                     }
+                    if (data.user.company?.name) {
+                        setCompanyName(data.user.company.name);
+                    }
+                    if (data.user.company?.logoUrl) {
+                        setCompanyLogo(data.user.company.logoUrl);
+                    }
+                    setCompanyStatus(data.user.company?.status || 'ACTIVE');
                     if (data.user.company?.mercadopagoSubscriptionId) {
                         setHasActiveSubscription(true);
                     } else {
@@ -1728,7 +1741,14 @@ export default function App() {
 
     if (!user) {
         if (authView === 'landing') {
-            return <LandingPage onLoginClick={() => setAuthView('login')} onRegisterClick={(planName) => { setSelectedRegisterPlan(planName); setAuthView('register'); }} />;
+            return <LandingPage
+                onLoginClick={() => setAuthView('login')}
+                onRegisterClick={(planName) => {
+                    setAuthView('register');
+                    setSelectedRegisterPlan(planName || null);
+                }}
+                saasConfig={saasConfig}
+            />;
         }
         if (authView === 'register') {
             return (
@@ -1889,8 +1909,8 @@ export default function App() {
             {/* Mobile TopBar */}
             <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
-                    <img src="/logo.png" alt="Logo" className="w-7 h-7" />
-                    <span className="font-bold text-sm tracking-tight">{t('app_title')}</span>
+                    <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="w-7 h-7" />
+                    <span className="font-bold text-sm tracking-tight">{saasConfig?.appName || t('app_title')}</span>
                 </div>
                 <button
                     onClick={() => setIsMobileMenuOpen(true)}
@@ -1933,6 +1953,10 @@ export default function App() {
                 currentDashboardView={dashboardView}
                 onDashboardViewChange={setDashboardView}
                 isHydrated={isHydrated}
+                companyLogo={companyLogo}
+                companyName={companyName}
+                saasName={saasConfig?.appName}
+                saasLogo={saasConfig?.appLogoUrl}
             />
 
             {!currentProjectId ? (

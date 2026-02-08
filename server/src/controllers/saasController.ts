@@ -1,4 +1,4 @@
-import { logAudit } from './auditController';
+﻿import { logAudit } from './auditController';
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -151,29 +151,51 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
 export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { status, planId } = req.body;
+        const {
+            status,
+            planId,
+            name,
+            phone,
+            logoUrl,
+            cnpj,
+            address,
+            city,
+            state,
+            zipCode,
+            businessEmail,
+            website,
+            subscriptionExpiresAt
+        } = req.body;
 
         const data: any = {};
         if (status) data.status = status;
         if (planId) data.planId = planId;
+        if (name) data.name = name;
+        if (phone !== undefined) data.phone = phone;
+        if (logoUrl !== undefined) data.logoUrl = logoUrl;
+        if (cnpj !== undefined) data.cnpj = cnpj;
+        if (address !== undefined) data.address = address;
+        if (city !== undefined) data.city = city;
+        if (state !== undefined) data.state = state;
+        if (zipCode !== undefined) data.zipCode = zipCode;
+        if (businessEmail !== undefined) data.businessEmail = businessEmail;
+        if (website !== undefined) data.website = website;
 
         // --- NEW LOGIC: RENEW EXPIRATION ON MANUAL ACTIVATION/PLAN CHANGE ---
-        // If we are activating or changing a plan manually,
-        // we give the user a long expiration to prevent the auto-downgrade logic.
         if (status === 'ACTIVE' || planId) {
             const nextYear = new Date();
             nextYear.setFullYear(nextYear.getFullYear() + 1);
             data.subscriptionExpiresAt = nextYear;
             console.log(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()}`);
+        } else if (subscriptionExpiresAt) {
+            data.subscriptionExpiresAt = new Date(subscriptionExpiresAt);
         }
-
-        // Stripe logic removed
 
         const company = await prisma.company.update({
             where: { id },
             data
         });
-        console.log(`[saasController] ✅ Company ${id} updated successfully`);
+        console.log(`[saasController] âœ… Company ${id} updated successfully`);
         res.json(company);
     } catch (error: any) {
         console.error("Critical Update Company Error:", {

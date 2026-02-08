@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -36,7 +36,7 @@ export const register = async (req: Request, res: Response) => {
         let expiresAt: Date | null = null;
 
         // If it's NOT the Free plan, it's a Trial (with expiration)
-        if (selectedPlan?.name !== 'Plano Grátis') {
+        if (selectedPlan?.name !== 'Plano GrÃ¡tis') {
             // User requested to use trial_duration_days from DB
             const trialDays = selectedPlan?.trialDurationDays || 7;
             expiresAt = new Date();
@@ -127,10 +127,10 @@ export const login = async (req: Request, res: Response) => {
                 // CHECK TRIAL / SUBSCRIPTION EXPIRATION
                 if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
                     // Expired! Downgrade if not already Free
-                    if (user.company.plan?.name !== 'Plano Grátis') {
+                    if (user.company.plan?.name !== 'Plano GrÃ¡tis') {
                         console.log(`Subscription/Trial for ${user.company.name} expired. Downgrading to Free.`);
 
-                        const freePlan = await getPlanByName('Plano Grátis');
+                        const freePlan = await getPlanByName('Plano GrÃ¡tis');
                         if (freePlan) {
                             await prisma.company.update({
                                 where: { id: user.company.id },
@@ -210,9 +210,9 @@ export const getMe = async (req: Request, res: Response) => {
         // --- REPEAT EXPIRATION CHECK LOGIC ---
         if (user.company) {
             if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                if (user.company.plan?.name !== 'Plano Grátis') {
+                if (user.company.plan?.name !== 'Plano GrÃ¡tis') {
                     console.log(`[getMe] Subscription/Trial for ${user.company.name} expired. Downgrading to Free.`);
-                    const freePlan = await getPlanByName('Plano Grátis');
+                    const freePlan = await getPlanByName('Plano GrÃ¡tis');
                     if (freePlan) {
                         await prisma.company.update({
                             where: { id: user.company.id },
@@ -291,7 +291,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             // We return 200 even if user doesn't exist for security (don't reveal registered emails)
-            return res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });
+            return res.json({ message: 'Se este e-mail estiver cadastrado, vocÃª receberÃ¡ um link de recuperaÃ§Ã£o.' });
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -316,10 +316,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
             company_name: 'FTTH Planner'
         });
 
-        res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });
+        res.json({ message: 'Se este e-mail estiver cadastrado, vocÃª receberÃ¡ um link de recuperaÃ§Ã£o.' });
     } catch (error) {
         console.error('[ForgotPassword] Error:', error);
-        res.status(500).json({ error: 'Erro ao processar recuperação de senha' });
+        res.status(500).json({ error: 'Erro ao processar recuperaÃ§Ã£o de senha' });
     }
 };
 
@@ -334,7 +334,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(400).json({ error: 'Token inválido ou expirado' });
+            return res.status(400).json({ error: 'Token invÃ¡lido ou expirado' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);

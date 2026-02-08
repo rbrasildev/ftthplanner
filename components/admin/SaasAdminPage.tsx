@@ -23,11 +23,19 @@ interface Company {
             maxPOPs?: number;
         }
     };
+    planId?: string;
     _count: { projects: number; users: number; ctos?: number; pops?: number };
     createdAt: string;
-    users: { id: string; username: string; role: string }[];
-    projects: { id: string; name: string }[];
     subscriptionExpiresAt?: string;
+    phone?: string;
+    logoUrl?: string;
+    cnpj?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    businessEmail?: string;
+    website?: string;
 }
 
 interface Plan {
@@ -57,19 +65,30 @@ interface User {
     createdAt: string;
 }
 
+interface SaaSConfig {
+    id: string;
+    appName: string;
+    appLogoUrl: string | null;
+    faviconUrl: string | null;
+    supportEmail: string | null;
+    supportPhone: string | null;
+    websiteUrl: string | null;
+}
+
 export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users' | 'videos' | 'email'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users' | 'videos' | 'email' | 'config'>('dashboard');
     const [plans, setPlans] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
     const [smtpConfig, setSmtpConfig] = useState<any>({});
     const [templates, setTemplates] = useState<any[]>([]);
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [saasConfig, setSaasConfig] = useState<SaaSConfig | null>(null);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -134,6 +153,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         { id: 'videos', label: 'Demo Videos', icon: <Play className="w-5 h-5" /> },
         { id: 'email', label: 'Email Settings', icon: <Mail className="w-5 h-5" /> },
         { id: 'audit', label: 'Audit Logs', icon: <Settings className="w-5 h-5" /> },
+        { id: 'config', label: 'SaaS Config', icon: <Shield className="w-5 h-5" /> },
     ];
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
@@ -159,6 +179,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 ]);
                 setSmtpConfig(smtp);
                 setTemplates(temps);
+            } else if (activeView === 'config') {
+                const config = await saasService.getSaaSConfig();
+                setSaasConfig(config);
             } else {
                 const promises: Promise<any>[] = [
                     saasService.getCompanies(),
@@ -183,7 +206,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         }
     };
 
-    const handleCompanyUpdate = async (id: string, updates: { status?: string; planId?: string; billingMode?: string }) => {
+    const handleCompanyUpdate = async (id: string, updates: Partial<Company>) => {
         try {
             const updatedCompany = await saasService.updateCompany(id, updates);
             loadData(); // Re-fetch to update UI list
@@ -191,11 +214,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             // If the updated company is the one currently selected, sync the detail view
             if (selectedCompany && selectedCompany.id === id) {
                 // We merge carefully to avoid losing _count or other nested data not returned by basic update
-                setSelectedCompany(prev => prev ? { ...prev, ...updatedCompany } : null);
+                setSelectedCompany(prev => prev ? { ...prev, ...updates } : null);
             }
         } catch (error) {
-            console.error('Update attempt failed:', error);
+            console.error('Failed to update company', error);
             alert('Failed to update company');
+        }
+    };
+
+    const handleSaaSConfigUpdate = async (updates: Partial<SaaSConfig>) => {
+        try {
+            await saasService.updateSaaSConfig(updates);
+            setSaasConfig(prev => prev ? { ...prev, ...updates } : null);
+        } catch (error) {
+            console.error('Failed to update SaaS config', error);
         }
     };
 
@@ -1251,6 +1283,231 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </div>
                         </div>
                     )}
+
+                    {activeView === 'config' && (
+                        <div className="space-y-6 max-w-4xl">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-8">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
+                                        <Shield className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold">Configurações Globais da Plataforma</h2>
+                                        <p className="text-sm text-slate-500">Defina a identidade visual e contatos mestres do seu SaaS</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    {/* Branding Section */}
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            Branding & Identidade
+                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Nome da Plataforma</label>
+                                                    <input
+                                                        defaultValue={saasConfig?.appName}
+                                                        onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
+                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                        placeholder="Ex: FTTH Planner Pro"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Website Principal</label>
+                                                    <input
+                                                        defaultValue={saasConfig?.websiteUrl || ''}
+                                                        onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
+                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                        placeholder="https://suaplataforma.com"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                    <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                                        {saasConfig?.appLogoUrl ? (
+                                                            <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                                                        ) : (
+                                                            <Monitor className="w-8 h-8 text-slate-300" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo Master (Base64)</label>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = async () => {
+                                                                        const base64 = reader.result as string;
+                                                                        await handleSaaSConfigUpdate({ appLogoUrl: base64 });
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            }}
+                                                            className="text-[10px] w-full"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Support Section */}
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            Suporte & Contato
+                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">E-mail de Suporte</label>
+                                                <input
+                                                    defaultValue={saasConfig?.supportEmail || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="suporte@suaplataforma.com"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Telefone de Suporte</label>
+                                                <input
+                                                    defaultValue={saasConfig?.supportPhone || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="+55 (00) 00000-0000"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Website Principal</label>
+                                                <input
+                                                    defaultValue={saasConfig?.websiteUrl || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="https://seusite.com.br"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* SEO Section */}
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            SEO & Metatags
+                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        </h3>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Descrição Curta (SEO)</label>
+                                                <textarea
+                                                    defaultValue={saasConfig?.appDescription || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                                    placeholder="Planeje redes FTTH com facilidade..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Palavras-chave (Keywords)</label>
+                                                <input
+                                                    defaultValue={saasConfig?.appKeywords || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="ftth, projetos, fibra óptica, telecall"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Image URL (Social Share)</label>
+                                                <input
+                                                    defaultValue={saasConfig?.ogImageUrl || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Social Media Section */}
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            Redes Sociais
+                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {['Facebook', 'Twitter', 'Instagram', 'Linkedin', 'Youtube'].map((social) => (
+                                                <div key={social}>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{social} URL</label>
+                                                    <input
+                                                        defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
+                                                        onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
+                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                        placeholder={`https://${social.toLowerCase()}.com/perfil`}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Content & Layout Section */}
+                                    <div className="space-y-6">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            Conteúdo da Landing Page
+                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        </h3>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Hero Preview Image (URL)</label>
+                                                <input
+                                                    defaultValue={saasConfig?.heroPreviewUrl || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="/dashboard-preview.png"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">CTA Background Image (URL)</label>
+                                                <input
+                                                    defaultValue={saasConfig?.ctaBgImageUrl || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ ctaBgImageUrl: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="URL da imagem de fundo"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Texto do Rodapé (Descrição)</label>
+                                                <textarea
+                                                    defaultValue={saasConfig?.footerDesc || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ footerDesc: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                                    placeholder="Software profissional para planejamento..."
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Texto de Direitos Autorais</label>
+                                                <input
+                                                    defaultValue={saasConfig?.copyrightText || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ copyrightText: e.target.value })}
+                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="© 2024 Todos os direitos reservados."
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {isPlanModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -1517,7 +1774,131 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </button>
                                 </div>
 
-                                <div className="space-y-6">
+                                <div className="space-y-6 pb-20">
+                                    {/* Edit Institutional Info */}
+                                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <Building2 className="w-4 h-4 text-indigo-500" />
+                                            Perfil Institucional
+                                        </h3>
+
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-950 rounded-lg">
+                                                <div className="w-16 h-16 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {selectedCompany.logoUrl ? (
+                                                        <img src={selectedCompany.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <Building2 className="w-6 h-6 text-slate-300" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo (Base64)</label>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = async () => {
+                                                                    const base64 = reader.result as string;
+                                                                    await handleCompanyUpdate(selectedCompany.id, { logoUrl: base64 });
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }}
+                                                        className="text-[10px] w-full"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome da Empresa</label>
+                                                    <input
+                                                        className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                        defaultValue={selectedCompany.name}
+                                                        onBlur={(e) => {
+                                                            if (e.target.value !== selectedCompany.name) {
+                                                                handleCompanyUpdate(selectedCompany.id, { name: e.target.value });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CNPJ</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                            defaultValue={selectedCompany.cnpj || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { cnpj: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Telefone</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                            defaultValue={selectedCompany.phone || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { phone: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">E-mail Comercial</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-mono"
+                                                            defaultValue={selectedCompany.businessEmail || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { businessEmail: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Website</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-mono"
+                                                            defaultValue={selectedCompany.website || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { website: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Endereço Completo</label>
+                                                    <input
+                                                        className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                        defaultValue={selectedCompany.address || ''}
+                                                        onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { address: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cidade</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                            defaultValue={selectedCompany.city || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { city: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Estado</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                            defaultValue={selectedCompany.state || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { state: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CEP</label>
+                                                        <input
+                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
+                                                            defaultValue={selectedCompany.zipCode || ''}
+                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { zipCode: e.target.value })}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Summary Card */}
                                     <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Health & Usage</h3>

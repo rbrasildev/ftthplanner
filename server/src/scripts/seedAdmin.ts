@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+﻿import { PrismaClient, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -29,8 +29,8 @@ async function main() {
         }
     }
 
-    // 2. Criar ou Atualizar Usuário Admin
-    // Verificamos pelo e-mail que é um campo único obrigatório
+    // 2. Criar ou Atualizar UsuÃ¡rio Admin
+    // Verificamos pelo e-mail que Ã© um campo Ãºnico obrigatÃ³rio
     const user = await prisma.user.upsert({
         where: { email: adminEmail },
         update: {
@@ -51,17 +51,17 @@ async function main() {
     });
 
     console.log(`
-    ✅ Super Admin configurado com sucesso!
+    âœ… Super Admin configurado com sucesso!
     Login (E-mail): ${user.email}
     Senha: ${adminPassword}
-    Nome de Usuário: ${user.username}
+    Nome de UsuÃ¡rio: ${user.username}
     Role: ${user.role}
     `);
 }
 
 main()
     .catch((e) => {
-        console.error('❌ Erro no seed:', e);
+        console.error('âŒ Erro no seed:', e);
         process.exit(1);
     })
     .finally(async () => {

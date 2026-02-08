@@ -9,13 +9,19 @@ import { VideoDemoModal } from './modals/VideoDemoModal';
 interface LandingPageProps {
     onLoginClick: () => void;
     onRegisterClick: (planName?: string) => void;
+    saasConfig?: any | null;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick, saasConfig }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const [plans, setPlans] = React.useState<any[]>([]);
     const [isDemoModalOpen, setIsDemoModalOpen] = React.useState(false);
     const { language, setLanguage, t } = useLanguage();
+
+    const appTitle = saasConfig?.appName || "FTTH Planner";
+    const appDesc = saasConfig?.appDescription || "Planeje redes FTTH com facilidade. Diagrama unifilar, cálculo de potência, mapa interativo e gestão de projetos para provedores de internet (ISP).";
+    const appKeywords = saasConfig?.appKeywords || "ftth planner, projeto ftth, fibra óptica, isp, diagrama unifilar, mapa de rede, software para provedores, fttx";
+    const ogImg = saasConfig?.ogImageUrl || "https://ftthplanner.com.br/og-image.jpg";
 
     React.useEffect(() => {
         const fetchPlans = async () => {
@@ -35,24 +41,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     return (
         <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-sky-500/30">
             <Helmet>
-                <title>FTTH Planner | Software para Projetos de Fibra Óptica</title>
-                <meta name="description" content="Planeje redes FTTH com facilidade. Diagrama unifilar, cálculo de potência, mapa interativo e gestão de projetos para provedores de internet (ISP)." />
-                <meta name="keywords" content="ftth planner, projeto ftth, fibra óptica, isp, diagrama unifilar, mapa de rede, software para provedores, fttx" />
-                <link rel="canonical" href="https://ftthplanner.com.br/" />
+                <title>{appTitle} | Software para Projetos de Fibra Óptica</title>
+                <meta name="description" content={appDesc} />
+                <meta name="keywords" content={appKeywords} />
+                <link rel="canonical" href={saasConfig?.websiteUrl || "https://ftthplanner.com.br/"} />
 
                 {/* Open Graph / Facebook */}
                 <meta property="og:type" content="website" />
-                <meta property="og:url" content="https://ftthplanner.com.br/" />
-                <meta property="og:title" content="FTTH Planner | Software para Projetos de Fibra Óptica" />
-                <meta property="og:description" content="Crie projetos de rede FTTH profissionais. Mapa, diagrama, orçamento e documentação em um só lugar." />
-                <meta property="og:image" content="https://ftthplanner.com.br/og-image.jpg" />
+                <meta property="og:url" content={saasConfig?.websiteUrl || "https://ftthplanner.com.br/"} />
+                <meta property="og:title" content={`${appTitle} | Software para Projetos de Fibra Óptica`} />
+                <meta property="og:description" content={appDesc} />
+                <meta property="og:image" content={ogImg} />
 
                 {/* Twitter */}
                 <meta property="twitter:card" content="summary_large_image" />
-                <meta property="twitter:url" content="https://ftthplanner.com.br/" />
-                <meta property="twitter:title" content="FTTH Planner | Projetos FTTH Simples e Poderosos" />
-                <meta property="twitter:description" content="Software completo para engenharia de telecom e provedores. Teste grátis." />
-                <meta property="twitter:image" content="https://ftthplanner.com.br/og-image.jpg" />
+                <meta property="twitter:url" content={saasConfig?.websiteUrl || "https://ftthplanner.com.br/"} />
+                <meta property="twitter:title" content={`${appTitle} | Projetos FTTH Simples e Poderosos`} />
+                <meta property="twitter:description" content={appDesc} />
+                <meta property="twitter:image" content={ogImg} />
 
                 {/* Structured Data (SoftwareApplication) */}
                 <script type="application/ld+json">
@@ -60,7 +66,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 {
     "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-            "name": "FTTH Planner",
+            "name": "${appTitle}",
                 "operatingSystem": "Web Browser",
                     "applicationCategory": "DesignApplication",
                         "offers": {
@@ -85,9 +91,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="flex justify-between items-center h-20">
                         {/* Logo */}
                         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                            <img src="/logo.png" alt="FTTH Planner Logo" className="h-10 w-auto object-contain rounded-lg" />
+                            <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="h-10 w-auto object-contain rounded-lg" />
                             <div className="flex flex-col">
-                                <span className="font-bold text-xl tracking-tight leading-none text-white">{t('app_title')}</span>
+                                <span className="font-bold text-xl tracking-tight leading-none text-white">{saasConfig?.appName || t('app_title')}</span>
                                 <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest">Planner Pro</span>
                             </div>
                         </div>
@@ -198,7 +204,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     {/* Dashboard Preview */}
                     <div className="relative w-full max-w-6xl mx-auto animate-in slide-in-from-bottom-20 fade-in duration-1000 delay-200">
                         <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900">
-                            <img src="/dashboard-preview.png" alt="FTTH Planner Dashboard" className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-700" />
+                            <img src={saasConfig?.heroPreviewUrl || "/dashboard-preview.png"} alt="FTTH Planner Dashboard" className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-700" />
                             {/* Overlay Gradient */}
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-20"></div>
                         </div>
@@ -505,7 +511,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             {/* --- CTA SECTION --- */}
             <section className="py-24 relative overflow-hidden" >
                 <div className="absolute inset-0 bg-sky-600"></div>
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${saasConfig?.ctaBgImageUrl || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop'})` }}></div>
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-900/40 rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2"></div>
 
@@ -532,19 +538,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="grid md:grid-cols-4 gap-12 mb-16">
                         <div className="col-span-1 md:col-span-2">
                             <div className="flex items-center gap-2 mb-6">
-                                <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
-                                <span className="font-bold text-xl text-white">{t('app_title')}</span>
+                                <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="h-8 w-auto object-contain" />
+                                <span className="font-bold text-xl text-white">{saasConfig?.appName || t('app_title')}</span>
                             </div>
                             <p className="text-slate-400 max-w-sm mb-6">
-                                {t('landing_footer_desc')}
+                                {saasConfig?.footerDesc || t('landing_footer_desc')}
                             </p>
                             <div className="flex gap-4">
-                                <a href="#" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
-                                    <Globe className="w-5 h-5" />
-                                </a>
-                                <a href="#" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
-                                    <Network className="w-5 h-5" />
-                                </a>
+                                {saasConfig?.socialFacebook && (
+                                    <a href={saasConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                                        <Globe className="w-5 h-5" />
+                                    </a>
+                                )}
+                                {saasConfig?.socialInstagram && (
+                                    <a href={saasConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                                        <Network className="w-5 h-5" />
+                                    </a>
+                                )}
                             </div>
                         </div>
 
@@ -568,7 +578,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                     <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-sm text-slate-400">
-                            {t('landing_footer_rights')}
+                            {saasConfig?.copyrightText || t('landing_footer_rights')}
                         </p>
                         <div className="flex items-center gap-2 text-sm text-slate-400">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -581,6 +591,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             <VideoDemoModal
                 isOpen={isDemoModalOpen}
                 onClose={() => setIsDemoModalOpen(false)}
+                supportPhone={saasConfig?.supportPhone}
             />
         </div>
     );

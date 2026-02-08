@@ -48,6 +48,10 @@ interface SidebarProps {
     isHydrated?: boolean;
     currentDashboardView?: DashboardView;
     onDashboardViewChange?: (view: DashboardView) => void;
+    companyLogo?: string | null;
+    companyName?: string | null;
+    saasName?: string | null;
+    saasLogo?: string | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -78,7 +82,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onReportClick,
     isHydrated,
     currentDashboardView = 'projects',
-    onDashboardViewChange
+    onDashboardViewChange,
+    companyLogo,
+    companyName,
+    saasName,
+    saasLogo
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -108,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]
         },
         { id: 'users', label: t('users') || 'Usuários', icon: Users },
-        // { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
+        { id: 'settings', label: t('company_settings_title') || 'Configurações', icon: Settings },
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
         if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
@@ -152,16 +160,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {!isCollapsed && (
                         <div className="flex items-center gap-2.5 overflow-hidden animate-in fade-in duration-300">
                             <div className="w-8 h-8 flex-shrink-0">
-                                <img src="/logo.png" alt="FTTH" className="w-full h-full object-contain" />
+                                <img src={saasLogo || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
                             </div>
                             <div className="flex flex-col">
-                                <h1 className="font-extrabold text-sm tracking-tighter text-zinc-900 dark:text-zinc-50 leading-none">FTTH PLANNER</h1>
+                                <h1 className="font-extrabold text-sm tracking-tighter text-zinc-900 dark:text-zinc-50 leading-none uppercase">
+                                    {saasName || "FTTH PLANNER"}
+                                </h1>
                                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none mt-1">{t('professional') || 'PRO'}</span>
                             </div>
                         </div>
                     )}
                     {isCollapsed && (
-                        <img src="/logo.png" alt="FTTH" className="w-8 h-8 object-contain animate-in fade-in duration-300" />
+                        <img src={saasLogo || "/logo.png"} alt="Logo" className="w-8 h-8 object-contain animate-in fade-in duration-300" />
                     )}
 
                     <button
@@ -355,11 +365,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className={`p-4 border-t border-slate-200/50 dark:border-slate-800/50 ${isCollapsed ? 'items-center' : ''} flex flex-col gap-3 flex-shrink-0`}>
                     {!isCollapsed && user && (
                         <div className="flex items-center gap-3 px-2 mb-2">
-                            <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
-                                {user.substring(0, 2).toUpperCase()}
+                            <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden shrink-0">
+                                {companyLogo ? (
+                                    <img src={companyLogo} alt="Company" className="w-full h-full object-contain" />
+                                ) : (
+                                    user.substring(0, 2).toUpperCase()
+                                )}
                             </div>
                             <div className="flex flex-col overflow-hidden">
-                                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">{user}</span>
+                                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">{companyName || user}</span>
+                                <span className="text-[9px] text-zinc-400 truncate">{user}</span>
                                 {isHydrated ? (
                                     <>
                                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{userPlan || 'Plano Grátis'}</span>

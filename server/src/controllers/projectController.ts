@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 
@@ -112,7 +112,7 @@ export const createProject = async (req: Request, res: Response) => {
             if (limits.maxProjects && company._count.projects >= limits.maxProjects) {
                 return res.status(403).json({
                     error: 'Limite de projetos atingido para seu plano',
-                    details: `Máximo de projetos: ${limits.maxProjects}`
+                    details: `MÃ¡ximo de projetos: ${limits.maxProjects}`
                 });
             }
         }
@@ -396,7 +396,7 @@ export const syncProject = async (req: Request, res: Response) => {
 
             if (deltaCTO > 0 && maxCTOs > 0 && (totalGlobalCTOs + deltaCTO) > maxCTOs) {
                 console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${maxCTOs}`);
-                return res.status(403).json({ error: `Limite de CTOs excedido. Máximo: ${maxCTOs}. Você tem: ${totalGlobalCTOs}. Tentando adicionar: ${deltaCTO}.` });
+                return res.status(403).json({ error: `Limite de CTOs excedido. MÃ¡ximo: ${maxCTOs}. VocÃª tem: ${totalGlobalCTOs}. Tentando adicionar: ${deltaCTO}.` });
             }
 
             if (deltaPOP > 0 && maxPOPs > 0 && (totalGlobalPOPs + deltaPOP) > maxPOPs) {

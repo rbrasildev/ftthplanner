@@ -1,4 +1,4 @@
-
+﻿
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -17,14 +17,14 @@ async function fix() {
                     subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
                 }
             });
-            console.log('✅ FIXED HRB LACERDA:', updated.name, 'Status:', updated.status);
+            console.log('âœ… FIXED HRB LACERDA:', updated.name, 'Status:', updated.status);
         } else {
-            console.log('❌ HRB LACERDA not found.');
+            console.log('âŒ HRB LACERDA not found.');
             const all = await prisma.company.findMany({ select: { name: true } });
             console.log('All companies:', all.map(c => c.name));
         }
     } catch (err) {
-        console.error('❌ Failed to fix:', err);
+        console.error('âŒ Failed to fix:', err);
     } finally {
         await prisma.$disconnect();
     }

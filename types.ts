@@ -20,7 +20,7 @@ export type CableStatus = 'NOT_DEPLOYED' | 'DEPLOYED';
 
 export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
   'PLANNED': '#ffff00', // Amber/Orange (Em projeto)
-  'NOT_DEPLOYED': '#ef4444', // Red (Não implantado)
+  'NOT_DEPLOYED': '#ef4444', // Red (NÃ£o implantado)
   'DEPLOYED': '#00ff00', // Greenish-Blue (Implantado)
   'CERTIFIED': '#22c55e', // Green (Certificado)
 };
@@ -153,8 +153,8 @@ export interface CableData {
   fromNodeId?: string | null; // Optional/Null for free-floating cables
   toNodeId?: string | null;   // Optional/Null for free-floating cables
   catalogId?: string; // Reference to CatalogCable
-  technicalReserve?: number; // Comprimento em metros de reserva técnica
-  reserveLocation?: Coordinates; // Localização específica para a label de reserva
+  technicalReserve?: number; // Comprimento em metros de reserva tÃ©cnica
+  reserveLocation?: Coordinates; // LocalizaÃ§Ã£o especÃ­fica para a label de reserva
   showReserveLabel?: boolean; // Toggle individual para mostrar/ocultar a label
 }
 
@@ -163,7 +163,7 @@ export type PoleStatus = 'PLANNED' | 'ANALYSING' | 'LICENSED';
 
 export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
   'PLANNED': '#1b1b1bff', // Black (Em projeto)
-  'ANALYSING': '#eab308', // Yellow (Em análise)
+  'ANALYSING': '#eab308', // Yellow (Em anÃ¡lise)
   'LICENSED': '#22c55e', // Green (Licenciado)
 };
 
@@ -190,7 +190,7 @@ export interface NetworkState {
   pops: POPData[];
   cables: CableData[];
   poles: PoleData[]; // Added Poles
-  fusionTypes?: FusionType[]; // Modules de Fusão
+  fusionTypes?: FusionType[]; // Modules de FusÃ£o
 }
 
 export interface ProjectSettings {
@@ -254,3 +254,33 @@ export const getFiberColor = (index: number, standard: 'ABNT' | 'EIA598' = 'ABNT
   const palette = standard === 'EIA598' ? EIA_COLORS : ABNT_COLORS;
   return palette[index % palette.length];
 };
+// --- SAAS CONFIG ---
+export interface SaaSConfig {
+  id: string;
+  appName: string;
+  appLogoUrl?: string | null;
+  faviconUrl?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+  websiteUrl?: string | null;
+
+  // SEO
+  appDescription?: string | null;
+  appKeywords?: string | null;
+  ogImageUrl?: string | null;
+
+  // Social
+  socialFacebook?: string | null;
+  socialTwitter?: string | null;
+  socialInstagram?: string | null;
+  socialLinkedin?: string | null;
+  socialYoutube?: string | null;
+
+  // Layout & Content
+  heroPreviewUrl?: string | null;
+  ctaBgImageUrl?: string | null;
+  footerDesc?: string | null;
+  copyrightText?: string | null;
+
+  updatedAt: string;
+}

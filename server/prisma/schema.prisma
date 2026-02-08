@@ -39,6 +39,14 @@ model Company {
   mercadopagoSubscriptionId String? @map("mercadopago_subscription_id")
   status                String    @default("ACTIVE")
   phone                 String?
+  logoUrl               String?   @map("logo_url")
+  cnpj                  String?
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?   @map("zip_code")
+  businessEmail         String?   @map("business_email")
+  website               String?
   // billingMode removed
   cables                Cable[]
   plan                  Plan?     @relation(fields: [planId], references: [id])
@@ -251,20 +259,20 @@ model TemplateSplitter {
 
 model CatalogCable {
   id             String   @id @default(uuid())
-  name           String   // Código
+  name           String   // CÃ³digo
   brand          String?  // Marca
   model          String?  // Modelo
-  defaultLevel   String?  // Nível Padrão (DISTRIBUICAO, TRONCO, etc)
-  fiberCount     Int      // Número total de fibras
-  looseTubeCount Int      // Número de looses
+  defaultLevel   String?  // NÃ­vel PadrÃ£o (DISTRIBUICAO, TRONCO, etc)
+  fiberCount     Int      // NÃºmero total de fibras
+  looseTubeCount Int      // NÃºmero de looses
   fibersPerTube  Int      // Fibras por loose
-  attenuation    Float?   // Atenuação por Km (dB)
+  attenuation    Float?   // AtenuaÃ§Ã£o por Km (dB)
   fiberProfile   String?  // Perfil de fibra (ABNT)
-  description    String?  // Descrição
+  description    String?  // DescriÃ§Ã£o
   
   // Visual Specs
   deployedSpec   Json?    @default("{\"color\": \"#10b981\", \"width\": 3}") // Cor/Espessura Implantado
-  plannedSpec    Json?    @default("{\"color\": \"#86efac\", \"width\": 3}") // Cor/Espessura Não Implantado
+  plannedSpec    Json?    @default("{\"color\": \"#86efac\", \"width\": 3}") // Cor/Espessura NÃ£o Implantado
 
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
@@ -301,7 +309,7 @@ model CatalogBox {
   brand             String?  // Marca
   model             String?  // Modelo
   type              String   // CTO, CEO
-  reserveLoopLength Float?   // Reserva Técnica (m)
+  reserveLoopLength Float?   // Reserva TÃ©cnica (m)
   color             String?  @default("#64748b") // Visual Color
   description       String?
 
@@ -334,7 +342,7 @@ model CatalogPole {
   name        String
   type        String   // Concreto, Madeira, Metal, etc.
   height      Float    // em metros
-  strength    Float    // em daN (Resistência)
+  strength    Float    // em daN (ResistÃªncia)
   shape       String   // Circular, Duplo T, Quadrado, etc.
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
@@ -443,8 +451,8 @@ model DemoVideo {
   id          String   @id @default(uuid())
   title       String
   description String?
-  url         String   // URL do embed do vídeo
-  icon        String   @default("Monitor") // Nome do ícone do lucide-react
+  url         String   // URL do embed do vÃ­deo
+  icon        String   @default("Monitor") // Nome do Ã­cone do lucide-react
   order       Int      @default(0)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -478,6 +486,38 @@ model EmailTemplate {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("email_templates")
+}
+
+model SaaSConfig {
+  id            String   @id @default("global") @map("id")
+  appName       String   @default("FTTH Planner") @map("app_name")
+  appLogoUrl    String?  @map("app_logo_url")
+  faviconUrl    String?  @map("favicon_url")
+  supportEmail  String?  @map("support_email")
+  supportPhone  String?  @map("support_phone")
+  websiteUrl    String?  @map("website_url")
+  
+  // SEO
+  appDescription String? @map("app_description")
+  appKeywords    String? @map("app_keywords")
+  ogImageUrl     String? @map("og_image_url")
+
+  // Social
+  socialFacebook  String? @map("social_facebook")
+  socialTwitter   String? @map("social_twitter")
+  socialInstagram String? @map("social_instagram")
+  socialLinkedin  String? @map("social_linkedin")
+  socialYoutube   String? @map("social_youtube")
+
+  // Layout & Content
+  heroPreviewUrl  String? @map("hero_preview_url")
+  ctaBgImageUrl   String? @map("cta_bg_image_url")
+  footerDesc      String? @map("footer_desc")
+  copyrightText   String? @map("copyright_text")
+
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("saas_configs")
 }
 
 

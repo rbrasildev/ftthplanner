@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -14,7 +14,7 @@ const plans = [
         }
     },
     {
-        name: 'Plano Básico',
+        name: 'Plano BÃ¡sico',
         price: 99.90,
         limits: {
             maxProjects: 50,
@@ -24,7 +24,7 @@ const plans = [
         }
     },
     {
-        name: 'Plano Intermediário',
+        name: 'Plano IntermediÃ¡rio',
         price: 199.90,
         limits: {
             maxProjects: 10,

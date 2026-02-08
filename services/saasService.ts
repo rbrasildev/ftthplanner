@@ -123,5 +123,16 @@ export const sendTemplate = async (data: { templateId: string, targetType: strin
     return response.data;
 };
 
+// SaaS Global Config
+export const getSaaSConfig = async () => {
+    const response = await api.get('/saas/config');
+    return response.data;
+};
+
+export const updateSaaSConfig = async (data: any) => {
+    const response = await api.put('/saas/config', data);
+    return response.data;
+};
+
 
 

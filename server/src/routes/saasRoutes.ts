@@ -1,12 +1,17 @@
-import express from 'express';
+﻿import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 import { getPlans, createPlan, updatePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans } from '../controllers/saasController';
+import { getSaaSConfig, updateSaaSConfig } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
 
 const router = express.Router();
 
 
+
+// SaaS Config
+router.get('/config', getSaaSConfig);
+router.put('/config', authenticateToken, requireSuperAdmin, updateSaaSConfig);
 
 // Plans
 // Public pricing access

@@ -1,4 +1,4 @@
-
+﻿
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -22,13 +22,13 @@ async function checkDatabase() {
         console.log('Prisma Sample Company:', sample ? { id: sample.id, name: sample.name, billingMode: (sample as any).billingMode } : 'No companies found');
 
         if (columns.length === 0) {
-            console.error('❌ COLUMN billing_mode MISSING IN DATABASE!');
+            console.error('âŒ COLUMN billing_mode MISSING IN DATABASE!');
         } else {
-            console.log('✅ Column exists in database.');
+            console.log('âœ… Column exists in database.');
         }
 
     } catch (err) {
-        console.error('❌ Diagnostic failed:', err);
+        console.error('âŒ Diagnostic failed:', err);
     } finally {
         await prisma.$disconnect();
     }

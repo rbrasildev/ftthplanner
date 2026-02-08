@@ -10,6 +10,7 @@ import saasRoutes from './routes/saasRoutes';
 import auditRoutes from './routes/auditRoutes';
 import catalogRoutes from './routes/catalogRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import companyRoutes from './routes/companyRoutes';
 
 
 // Tratamento de erros globais para debug em produção
@@ -23,14 +24,7 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware de log ultra-simples no topo (REMOVED for cleanup)
-// app.use((req, res, next) => {
-//     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
-//     next();
-// });
-
-
-// CORS mais permissivo possível para teste
+// CORS
 app.use(cors({
     origin: [
         'http://localhost:3000',
@@ -77,6 +71,7 @@ app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/companies', companyRoutes);
 
 
 // Import Backup Service and Routes

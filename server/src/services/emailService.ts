@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -44,6 +44,20 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
 
         let renderedBody = template.body;
         let renderedSubject = template.subject;
+
+        // Auto-inject company branding if not provided
+        if (!variables.company_logo || !variables.company_name) {
+            const company = await prisma.company.findFirst({
+                where: { users: { some: { email: to } } }
+            });
+
+            if (company) {
+                variables.company_name = variables.company_name || company.name || '';
+                variables.company_logo = variables.company_logo || (company.logoUrl ? `${process.env.FRONTEND_URL || 'https://ftthplanner.com.br'}${company.logoUrl}` : '');
+                variables.company_phone = variables.company_phone || company.phone || '';
+                variables.company_address = variables.company_address || company.address || '';
+            }
+        }
 
         // Replace variables with support for {{key}} and {{ key }}
         Object.entries(variables).forEach(([key, value]) => {

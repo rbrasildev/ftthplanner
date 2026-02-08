@@ -8,6 +8,7 @@ import { FusionRegistration } from './registrations/FusionRegistration';
 import { SplitterRegistration } from './registrations/SplitterRegistration';
 import CableRegistration from './registrations/CableRegistration';
 import BoxRegistration from './registrations/BoxRegistration';
+import { CompanySettings } from './settings/CompanySettings';
 
 
 import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server } from 'lucide-react';
@@ -565,13 +566,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         )}
 
+        {/* --- COMPANY SETTINGS --- */}
+        {currentView === 'settings' && (
+          <CompanySettings />
+        )}
+
         {/* Placeholders for other views */}
-        {currentView !== 'projects' && currentView !== 'users' && currentView !== 'backup' && !currentView.startsWith('reg_') && (
+        {currentView !== 'projects' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
-              {currentView === 'settings' && <Settings className="w-10 h-10 text-slate-400" />}
-
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 capitalize">
               {menuItems.find(m => m.id === currentView)?.label}
