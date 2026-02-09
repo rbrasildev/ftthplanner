@@ -84,14 +84,23 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
             variables.company_logo = formatUrl(variables.company_logo);
         }
 
-        // Replace variables with support for {{key}} and {{ key }}
+        // Consolidate all variables and normalize keys to lowercase
+        const allVariables: Record<string, string> = {};
         Object.entries(variables).forEach(([key, value]) => {
-            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Just in case
-            const regex = new RegExp(`\\{\\{\\s*${escapedKey}\\s*\\}\\}`, 'g');
-            const safeValue = value || '';
-            renderedBody = renderedBody.replace(regex, safeValue);
-            renderedSubject = renderedSubject.replace(regex, safeValue);
+            allVariables[key.toLowerCase()] = value || '';
         });
+
+        const replaceTags = (text: string) => {
+            if (!text) return '';
+            // Regex to find {{tag_name}} or {{ tag_name }} case-insensitive
+            return text.replace(/\{\{\s*([\w_]+)\s*\}\}/gi, (match, tag) => {
+                const tagLower = tag.toLowerCase();
+                return allVariables[tagLower] !== undefined ? allVariables[tagLower] : match;
+            });
+        };
+
+        renderedBody = replaceTags(renderedBody);
+        renderedSubject = replaceTags(renderedSubject);
 
 
         // Generate a simple text version by stripping tags (very basic)

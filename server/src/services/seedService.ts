@@ -8,31 +8,31 @@ export const seedDefaultPlans = async () => {
 
         const plans = [
             {
-                name: 'Plano Trial',
+                name: 'Plano Grátis',
                 price: 0,
                 priceYearly: 0,
                 type: 'TRIAL',
                 trialDurationDays: 7,
                 limits: { maxProjects: 1, maxUsers: 1, maxCTOs: 500, maxPOPs: 1 },
-                features: ['1 Projeto', '1 UsuÃ¡rio', 'Mapas BÃ¡sicos'],
+                features: ['1 Projeto', '1 Usuário', 'Mapas Básicos'],
                 isRecommended: false,
             },
             {
-                name: 'Plano BÃ¡sico',
+                name: 'Plano Básico',
                 price: 99.90,
                 priceYearly: 999.00,
                 type: 'STANDARD',
                 limits: { maxProjects: 50, maxUsers: 10, maxCTOs: 5, maxPOPs: 10 },
-                features: ['50 Projetos', '10 UsuÃ¡rios', 'Suporte por Email'],
+                features: ['50 Projetos', '10 Usuários', 'Suporte por Email'],
                 isRecommended: false,
             },
             {
-                name: 'Plano IntermediÃ¡rio',
+                name: 'Plano Intermediário',
                 price: 199.90,
                 priceYearly: 1999.00,
                 type: 'STANDARD',
                 limits: { maxProjects: 10, maxUsers: 10, maxCTOs: 2000, maxPOPs: 10 },
-                features: ['10 Projetos', '10 UsuÃ¡rios', 'Suporte PrioritÃ¡rio'],
+                features: ['10 Projetos', '10 Usuários', 'Suporte Prioritário'],
                 isRecommended: true,
             },
             {
@@ -41,7 +41,7 @@ export const seedDefaultPlans = async () => {
                 priceYearly: 3999.00,
                 type: 'ENTERPRISE',
                 limits: { maxProjects: 999999, maxUsers: 999999, maxCTOs: 999999, maxPOPs: 999999 },
-                features: ['Tudo Ilimitado', 'Suporte Dedicado', 'Backup AutomÃ¡tico'],
+                features: ['Tudo Ilimitado', 'Suporte Dedicado', 'Backup Automático'],
                 isRecommended: false,
             }
         ];
