@@ -4,9 +4,10 @@ import { useLanguage } from '../LanguageContext';
 
 interface ResetPasswordPageProps {
     onBackToLogin: () => void;
+    logoUrl?: string | null;
 }
 
-export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLogin }) => {
+export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLogin, logoUrl }) => {
     const { t } = useLanguage();
     const [token, setToken] = useState<string | null>(null);
     const [password, setPassword] = useState('');
@@ -67,7 +68,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                 <div className="p-8 sm:p-12">
                     <div className="text-center space-y-2 mb-8">
                         <div className="flex justify-center mb-6">
-                            <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain" />
+                            <img src={logoUrl || "/logo.png"} alt="Logo" className="h-20 w-auto object-contain" />
                         </div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                             {success ? t('reset_password_success') : t('reset_password_title')}

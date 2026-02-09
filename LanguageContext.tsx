@@ -587,6 +587,7 @@ const translations = {
     // --- LANDING PAGE ---
     'landing_features': 'Features',
     'landing_performance': 'Performance',
+    'landing_pricing': 'Pricing',
     'landing_how_it_works': 'How it Works',
     'landing_login': 'Log in',
     'landing_get_started': 'Get Started',

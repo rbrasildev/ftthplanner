@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
 import { autoSnapNetwork, calculateDistance } from './utils/geometryUtils';
@@ -1768,6 +1769,7 @@ export default function App() {
                         window.history.pushState({}, '', '/');
                         setAuthView('login');
                     }}
+                    logoUrl={saasConfig?.appLogoUrl}
                 />
             );
         }
@@ -1778,6 +1780,7 @@ export default function App() {
                 error={loginError}
                 isLoading={isLoggingIn}
                 onBackToLanding={() => setAuthView('landing')} // Assuming you'll add this prop
+                logoUrl={saasConfig?.appLogoUrl}
             />
         );
     }
@@ -1898,6 +1901,10 @@ export default function App() {
 
     return (
         <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+            <Helmet>
+                <title>{saasConfig?.appName || t('app_title')}</title>
+                <link rel="icon" href={saasConfig?.faviconUrl || saasConfig?.appLogoUrl || "/logo.png"} type="image/png" />
+            </Helmet>
             {toast && (
                 <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-5">
                     <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : toast.type === 'error' ? 'bg-red-100 dark:bg-red-900/90 border-red-500 text-red-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>

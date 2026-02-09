@@ -8,9 +8,10 @@ interface LoginPageProps {
     error?: string | null;
     isLoading?: boolean;
     onBackToLanding: () => void;
+    logoUrl?: string | null;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading, onBackToLanding }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, error, isLoading, onBackToLanding, logoUrl }) => {
     const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -79,7 +80,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                     <div className="max-w-sm mx-auto w-full space-y-8">
                         <div className="text-center space-y-2">
                             <div className="flex justify-center mb-6">
-                                <img src="/logo.png" alt="Logo" className="h-24 w-auto object-contain" />
+                                <img src={logoUrl || "/logo.png"} alt="Logo" className="h-24 w-auto object-contain" />
                             </div>
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{t('login_title')}</h1>
                             <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
