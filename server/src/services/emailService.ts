@@ -5,12 +5,13 @@ const prisma = new PrismaClient();
 
 export const sendEmail = async (templateSlug: string, to: string, variables: Record<string, string>) => {
     try {
+        console.log(`[EmailService] Starting sendEmail to ${to} for template ${templateSlug}`);
         const smtpConfig = await prisma.smtpConfig.findUnique({
             where: { id: 'global' }
         });
 
         if (!smtpConfig) {
-            throw new Error('SMTP configuration not found');
+            throw new Error('Configuração SMTP não encontrada');
         }
 
         const template = await prisma.emailTemplate.findUnique({
@@ -18,7 +19,7 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
         });
 
         if (!template) {
-            throw new Error(`Email template ${templateSlug} not found`);
+            throw new Error(`Template de email ${templateSlug} não encontrado`);
         }
 
         let host = smtpConfig.host;
@@ -35,37 +36,37 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
                 pass: smtpConfig.pass
             },
             tls: {
-                // Do not fail on invalid certs
                 rejectUnauthorized: false
             }
         });
 
-
-
         let renderedBody = template.body;
         let renderedSubject = template.subject;
 
-        const baseUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
+        const baseUrl = (process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
+
         const formatUrl = (url: string | null) => {
             if (!url) return '';
             if (url.startsWith('http')) return url;
             if (url.startsWith('data:')) return url;
-            // Ensure relative path starts with /
-            const path = url.startsWith('/') ? url : `/${url}`;
-            return `${baseUrl}${path}`;
+            const cleanPath = url.startsWith('/') ? url : `/${url}`;
+            return `${baseUrl}${cleanPath}`;
         };
 
-        // Auto-inject global SaaS branding
+        // Get SaaS Global Config
         const saasConfig = await prisma.saaSConfig.findUnique({
             where: { id: 'global' }
         });
 
-        variables.app_name = variables.app_name || saasConfig?.appName || 'FTTH Planner';
-        variables.app_logo = formatUrl(variables.app_logo || saasConfig?.appLogoUrl || '/logo.png');
-        variables.app_url = variables.app_url || saasConfig?.websiteUrl || baseUrl;
+        // Prepare FINAL variables object to avoid reference issues
+        const finalVars: Record<string, string> = { ...variables };
 
-        // Auto-inject company branding if not provided
-        if (!variables.company_logo || !variables.company_name) {
+        finalVars.app_name = finalVars.app_name || saasConfig?.appName || 'FTTH Planner';
+        finalVars.app_logo = formatUrl(finalVars.app_logo || saasConfig?.appLogoUrl || '/logo.png');
+        finalVars.app_url = finalVars.app_url || saasConfig?.websiteUrl || baseUrl;
+
+        // Auto-inject company branding if missing
+        if (!finalVars.company_logo || !finalVars.company_name) {
             const userWithCompany = await prisma.user.findUnique({
                 where: { email: to },
                 include: { company: true }
@@ -73,41 +74,41 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
 
             if (userWithCompany?.company) {
                 const company = userWithCompany.company;
-                variables.company_name = variables.company_name || company.name || '';
-                variables.company_logo = formatUrl(variables.company_logo || company.logoUrl);
-                variables.company_phone = variables.company_phone || company.phone || '';
-                variables.company_address = variables.company_address || company.address || '';
-                variables.company_url = variables.company_url || company.website || '';
+                finalVars.company_name = finalVars.company_name || company.name || '';
+                finalVars.company_logo = formatUrl(finalVars.company_logo || company.logoUrl);
+                finalVars.company_phone = finalVars.company_phone || company.phone || '';
+                finalVars.company_address = finalVars.company_address || company.address || '';
+                finalVars.company_url = finalVars.company_url || company.website || '';
             }
         } else {
-            // Also ensure manually passed logos are formatted
-            variables.company_logo = formatUrl(variables.company_logo);
+            finalVars.company_logo = formatUrl(finalVars.company_logo);
         }
 
-        // Consolidate all variables and normalize keys to lowercase
-        const allVariables: Record<string, string> = {};
-        Object.entries(variables).forEach(([key, value]) => {
-            allVariables[key.toLowerCase()] = value || '';
+        // Normalize ALL keys to lowercase for case-insensitive replacement
+        const normalizedVars: Record<string, string> = {};
+        Object.entries(finalVars).forEach(([key, val]) => {
+            normalizedVars[key.toLowerCase()] = val || '';
         });
+
+        console.log('[EmailService] Final variables for substitution:', Object.keys(normalizedVars));
 
         const replaceTags = (text: string) => {
             if (!text) return '';
-            // Regex to find {{tag_name}} or {{ tag_name }} case-insensitive
-            return text.replace(/\{\{\s*([\w_]+)\s*\}\}/gi, (match, tag) => {
-                const tagLower = tag.toLowerCase();
-                return allVariables[tagLower] !== undefined ? allVariables[tagLower] : match;
+            // Match {{tag}} or {{ tag }} case-insensitive
+            return text.replace(/\{\{\s*([\w_-]+)\s*\}\}/gi, (match, tag) => {
+                const tagLower = tag.toLowerCase().replace(/-/g, '_'); // support both app-logo and app_logo
+                if (normalizedVars[tagLower] !== undefined) {
+                    return normalizedVars[tagLower];
+                }
+                console.warn(`[EmailService] Warning: Tag {{${tag}}} not found in variables.`);
+                return match;
             });
         };
 
         renderedBody = replaceTags(renderedBody);
         renderedSubject = replaceTags(renderedSubject);
 
-
-        // Generate a simple text version by stripping tags (very basic)
         const textBody = renderedBody.replace(/<[^>]*>?/gm, '').trim();
-
-        // Add a hidden unique fingerprint to prevent Gmail from folding/clipping content
-        // if multiple similar emails are sent in the same thread.
         const fingerprint = `<div style="display:none !important; font-size:1px; color:transparent; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden;">[ref:${Date.now()}-${Math.random().toString(36).substring(7)}]</div>`;
         const htmlBody = renderedBody + fingerprint;
 
@@ -119,18 +120,19 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
             html: htmlBody
         });
 
+        console.log(`[EmailService] Email sent successfully to ${to}`);
         return info;
     } catch (error) {
-        console.error('Email sending error:', error);
+        console.error('[EmailService] Fatal sending error:', error);
         throw error;
     }
 };
 
 export const testSmtpConnection = async (config: any) => {
     const transporter = nodemailer.createTransport({
-        host: config.host,
-        port: config.port,
-        secure: config.secure,
+        host: (config.host || '').replace(/\/$/, ''),
+        port: parseInt(config.port),
+        secure: !!config.secure,
         auth: {
             user: config.user,
             pass: config.pass
@@ -139,7 +141,6 @@ export const testSmtpConnection = async (config: any) => {
             rejectUnauthorized: false
         }
     });
-
 
     try {
         await transporter.verify();

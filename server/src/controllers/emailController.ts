@@ -102,11 +102,9 @@ export const createEmailTemplate = async (req: AuthRequest, res: Response) => {
 
 export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    console.log(`[EmailController] Updating template ${id}`, req.body);
     try {
         const { name, subject, body, variables, slug } = req.body;
 
-        // Build data object dynamically with only valid fields
         const updateData: any = {};
         if (name) updateData.name = name;
         if (subject) updateData.subject = subject;
@@ -114,10 +112,7 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
         if (slug) updateData.slug = slug;
         if (variables && Array.isArray(variables)) updateData.variables = variables;
 
-        console.log('[EmailController] Calculated updateData:', updateData);
-
         if (Object.keys(updateData).length === 0) {
-            console.warn('[EmailController] No valid fields provided for update');
             return res.status(400).json({ error: 'Nenhum dado válido fornecido para atualização' });
         }
 
@@ -125,7 +120,6 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
             where: { id },
             data: updateData
         });
-        console.log('[EmailController] Template updated successfully:', template.id);
         res.json(template);
     } catch (error: any) {
         console.error('[EmailController] Update template error:', error);
@@ -138,9 +132,6 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
         });
     }
 };
-
-
-
 
 export const deleteEmailTemplate = async (req: AuthRequest, res: Response) => {
     try {
@@ -158,7 +149,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
 
     try {
         const template = await prisma.emailTemplate.findUnique({ where: { id: templateId } });
-        if (!template) return res.status(404).json({ error: 'Template not found' });
+        if (!template) return res.status(404).json({ error: 'Template não encontrado' });
 
         let users: any[] = [];
 
@@ -168,37 +159,38 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
                 select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'COMPANY') {
-            if (!targetId) return res.status(400).json({ error: 'targetId is required for COMPANY target' });
+            if (!targetId) return res.status(400).json({ error: 'targetId é obrigatório para o tipo COMPANY' });
             users = await prisma.user.findMany({
                 where: { companyId: targetId, active: true, email: { not: '' } },
                 select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'USER') {
-            if (!targetId) return res.status(400).json({ error: 'targetId is required for USER target' });
+            if (!targetId) return res.status(400).json({ error: 'targetId é obrigatório para o tipo USER' });
             const user = await prisma.user.findUnique({
                 where: { id: targetId },
                 select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
             if (user && user.email) users = [user];
         } else {
-            return res.status(400).json({ error: 'Invalid targetType' });
+            return res.status(400).json({ error: 'Tipo de alvo inválido' });
         }
 
         if (users.length === 0) {
-            return res.status(400).json({ error: 'No recipients found for the selected target' });
+            return res.status(400).json({ error: 'Nenhum destinatário encontrado para o alvo selecionado' });
         }
 
-        const loginUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
+        const loginUrl = (process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
 
         // Send emails
-        const sendPromises = users.map(user =>
+        await Promise.all(users.map(user =>
             sendEmail(template.slug, user.email, {
                 username: user.username,
                 company_name: user.company?.name || '',
                 company_logo: user.company?.logoUrl || '',
-                login_url: loginUrl
+                login_url: loginUrl,
+                app_url: loginUrl
             }).catch((err: Error) => console.error(`Failed to send targeted email to ${user.email}:`, err))
-        );
+        ));
 
         res.json({
             success: true,
@@ -206,7 +198,6 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
             recipientCount: users.length
         });
 
-        // Optional: Audit log the event
         if (req.user?.id) {
             const { logAudit } = require('./auditController');
             await logAudit(req.user.id, 'SEND_EMAIL_TEMPLATE', 'EmailTemplate', templateId, { targetType, targetId, count: users.length }, req.ip);
@@ -214,6 +205,6 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
 
     } catch (error) {
         console.error('Send template failed:', error);
-        res.status(500).json({ error: 'Failed to send template' });
+        res.status(500).json({ error: 'Falha ao processar o envio do template' });
     }
 };
