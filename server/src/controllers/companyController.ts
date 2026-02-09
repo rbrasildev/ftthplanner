@@ -76,13 +76,6 @@ export const uploadCompanyLogo = async (req: AuthRequest, res: Response) => {
         const buffer = Buffer.from(matches[2], 'base64');
         const fileName = `logo_${companyId}_${Date.now()}.${extension}`;
 
-        console.log(`[Logo Upload Debug]
-            CWD: ${process.cwd()}
-            UPLOADS_DIR: ${UPLOADS_DIR}
-            FileName: ${fileName}
-            Full Path: ${path.join(UPLOADS_DIR, fileName)}
-        `);
-
         const filePath = path.join(UPLOADS_DIR, fileName);
 
         // Delete old logo if it exists
