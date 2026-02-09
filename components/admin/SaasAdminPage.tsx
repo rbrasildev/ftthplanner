@@ -1353,7 +1353,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo Master (Base64)</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo Master (Servidor)</label>
                                                         <input
                                                             type="file"
                                                             accept="image/*"
@@ -1363,7 +1363,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                     const reader = new FileReader();
                                                                     reader.onloadend = async () => {
                                                                         const base64 = reader.result as string;
-                                                                        await handleSaaSConfigUpdate({ appLogoUrl: base64 });
+                                                                        try {
+                                                                            const result = await saasService.uploadSaaSLogo(base64);
+                                                                            if (result.success) {
+                                                                                setSaasConfig(prev => prev ? { ...prev, appLogoUrl: result.logoUrl } : null);
+                                                                            }
+                                                                        } catch (err) {
+                                                                            console.error('Failed to upload SaaS logo:', err);
+                                                                        }
                                                                     };
                                                                     reader.readAsDataURL(file);
                                                                 }

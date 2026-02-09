@@ -14,7 +14,7 @@ const plans = [
         }
     },
     {
-        name: 'Plano BÃ¡sico',
+        name: 'Plano Básico',
         price: 99.90,
         limits: {
             maxProjects: 50,
@@ -24,7 +24,7 @@ const plans = [
         }
     },
     {
-        name: 'Plano IntermediÃ¡rio',
+        name: 'Plano Intermediário',
         price: 199.90,
         limits: {
             maxProjects: 10,

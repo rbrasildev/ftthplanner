@@ -134,5 +134,10 @@ export const updateSaaSConfig = async (data: any) => {
     return response.data;
 };
 
+export const uploadSaaSLogo = async (logoBase64: string) => {
+    const response = await api.post('/saas/config/logo', { logoBase64 });
+    return response.data;
+};
+
 
 
