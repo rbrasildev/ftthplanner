@@ -73,6 +73,18 @@ interface SaaSConfig {
     supportEmail: string | null;
     supportPhone: string | null;
     websiteUrl: string | null;
+    appDescription?: string | null;
+    appKeywords?: string | null;
+    copyrightText?: string | null;
+    ctaBgImageUrl?: string | null;
+    footerDesc?: string | null;
+    heroPreviewUrl?: string | null;
+    ogImageUrl?: string | null;
+    socialFacebook?: string | null;
+    socialInstagram?: string | null;
+    socialLinkedin?: string | null;
+    socialTwitter?: string | null;
+    socialYoutube?: string | null;
 }
 
 export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
@@ -1274,10 +1286,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <AlertTriangle className="w-5 h-5" />
                                             <h3 className="font-bold text-sm">Template Variables</h3>
                                         </div>
-                                        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                        <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed mb-2">
                                             Use <code>{"{{variable_name}}"}</code> in the subject or body to inject dynamic content.
-                                            Example: <code>{"Olá {{username}}!"}</code>.
                                         </p>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] font-mono text-amber-800 dark:text-amber-500">
+                                            <div>Global: app_name, app_logo, app_url</div>
+                                            <div>User: username, login_url</div>
+                                            <div>Company: company_name, company_logo, company_url</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2121,7 +2137,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Available Variables (comma-separated)</label>
-                                    <input name="variables" defaultValue={editingTemplate?.variables?.join(', ')} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="username, company_name, login_url" />
+                                    <input name="variables" defaultValue={editingTemplate?.variables?.join(', ')} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="p.ex: username, app_name, app_logo, company_name" />
                                 </div>
                                 <div className="flex-1 flex flex-col min-h-[300px]">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Body (HTML)</label>

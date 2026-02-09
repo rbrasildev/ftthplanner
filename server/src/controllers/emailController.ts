@@ -165,19 +165,19 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
         if (targetType === 'ALL') {
             users = await prisma.user.findMany({
                 where: { active: true, email: { not: '' } },
-                select: { email: true, username: true, company: { select: { name: true } } }
+                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'COMPANY') {
             if (!targetId) return res.status(400).json({ error: 'targetId is required for COMPANY target' });
             users = await prisma.user.findMany({
                 where: { companyId: targetId, active: true, email: { not: '' } },
-                select: { email: true, username: true, company: { select: { name: true } } }
+                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'USER') {
             if (!targetId) return res.status(400).json({ error: 'targetId is required for USER target' });
             const user = await prisma.user.findUnique({
                 where: { id: targetId },
-                select: { email: true, username: true, company: { select: { name: true } } }
+                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
             });
             if (user && user.email) users = [user];
         } else {
@@ -195,6 +195,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
             sendEmail(template.slug, user.email, {
                 username: user.username,
                 company_name: user.company?.name || '',
+                company_logo: user.company?.logoUrl || '',
                 login_url: loginUrl
             }).catch((err: Error) => console.error(`Failed to send targeted email to ${user.email}:`, err))
         );

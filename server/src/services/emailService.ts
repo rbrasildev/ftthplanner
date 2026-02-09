@@ -45,43 +45,45 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
         let renderedBody = template.body;
         let renderedSubject = template.subject;
 
+        const baseUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
+        const formatUrl = (url: string | null) => {
+            if (!url) return '';
+            if (url.startsWith('http')) return url;
+            if (url.startsWith('data:')) return url;
+            // Ensure relative path starts with /
+            const path = url.startsWith('/') ? url : `/${url}`;
+            return `${baseUrl}${path}`;
+        };
+
         // Auto-inject global SaaS branding
         const saasConfig = await prisma.saaSConfig.findUnique({
             where: { id: 'global' }
         });
 
         if (saasConfig) {
-            const baseUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
-            const formatUrl = (url: string | null) => {
-                if (!url) return '';
-                if (url.startsWith('http')) return url;
-                return `${baseUrl}${url}`;
-            };
-
             variables.app_name = variables.app_name || saasConfig.appName || 'FTTH Planner';
-            variables.app_logo = variables.app_logo || formatUrl(saasConfig.appLogoUrl);
+            variables.app_logo = formatUrl(variables.app_logo || saasConfig.appLogoUrl);
             variables.app_url = variables.app_url || saasConfig.websiteUrl || baseUrl;
         }
 
         // Auto-inject company branding if not provided
         if (!variables.company_logo || !variables.company_name) {
-            const company = await prisma.company.findFirst({
-                where: { users: { some: { email: to } } }
+            const userWithCompany = await prisma.user.findUnique({
+                where: { email: to },
+                include: { company: true }
             });
 
-            if (company) {
-                const baseUrl = process.env.FRONTEND_URL || 'https://ftthplanner.com.br';
-                const formatUrl = (url: string | null) => {
-                    if (!url) return '';
-                    if (url.startsWith('http')) return url;
-                    return `${baseUrl}${url}`;
-                };
-
+            if (userWithCompany?.company) {
+                const company = userWithCompany.company;
                 variables.company_name = variables.company_name || company.name || '';
-                variables.company_logo = variables.company_logo || formatUrl(company.logoUrl);
+                variables.company_logo = formatUrl(variables.company_logo || company.logoUrl);
                 variables.company_phone = variables.company_phone || company.phone || '';
                 variables.company_address = variables.company_address || company.address || '';
+                variables.company_url = variables.company_url || company.website || '';
             }
+        } else {
+            // Also ensure manually passed logos are formatted
+            variables.company_logo = formatUrl(variables.company_logo);
         }
 
         // Replace variables with support for {{key}} and {{ key }}
