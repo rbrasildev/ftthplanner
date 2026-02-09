@@ -60,11 +60,9 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
             where: { id: 'global' }
         });
 
-        if (saasConfig) {
-            variables.app_name = variables.app_name || saasConfig.appName || 'FTTH Planner';
-            variables.app_logo = formatUrl(variables.app_logo || saasConfig.appLogoUrl);
-            variables.app_url = variables.app_url || saasConfig.websiteUrl || baseUrl;
-        }
+        variables.app_name = variables.app_name || saasConfig?.appName || 'FTTH Planner';
+        variables.app_logo = formatUrl(variables.app_logo || saasConfig?.appLogoUrl || '/logo.png');
+        variables.app_url = variables.app_url || saasConfig?.websiteUrl || baseUrl;
 
         // Auto-inject company branding if not provided
         if (!variables.company_logo || !variables.company_name) {
