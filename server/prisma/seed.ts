@@ -111,6 +111,13 @@ async function main() {
             subject: 'Novo Cliente Cadastrado: {{company}}',
             body: 'Um novo cliente se cadastrou no sistema.<br><br><b>Detalhes:</b><br><ul><li><b>Usuário:</b> {{username}}</li><li><b>Empresa:</b> {{company}}</li><li><b>E-mail:</b> {{email}}</li><li><b>Telefone:</b> {{phone}}</li><li><b>Plano:</b> {{plan}}</li><li><b>Origem:</b> {{source}}</li></ul>',
             variables: JSON.stringify(['username', 'company', 'email', 'phone', 'plan', 'source'])
+        },
+        {
+            slug: 'welcome-email',
+            name: 'Bem-vindo ao FTTx Planner',
+            subject: 'Bem vindo ao FTTx Planner, {{username}}',
+            body: '<div style="font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc;"><div style="text-align: center; padding: 20px 0;"><h1 style="color: #4f46e5; margin: 10px 0 0 0; font-size: 24px;">FTTH Planner Pro</h1></div><div style="background-color: #ffffff; padding: 40px; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;"><h2 style="color: #0f172a; margin-top: 0; font-size: 22px;">Olá, {{username}}! 👋</h2><p style="line-height: 1.6; font-size: 16px; color: #475569;">É um prazer ter você conosco! Sua conta na empresa <strong>{{company_name}}</strong> foi criada com sucesso no <strong>FTTH Planner Pro</strong>.</p><div style="text-align: center; margin: 35px 0;"><a href="{{login_url}}" style="background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block;">Acessar Meu Painel</a></div></div></div>',
+            variables: JSON.stringify(['username', 'company_name', 'login_url', 'company_logo'])
         }
     ];
 
