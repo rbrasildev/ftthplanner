@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Search, Server } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Search, Server, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getOLTs, createOLT, updateOLT, deleteOLT, OLTCatalogItem } from '../../services/catalogService';
 
@@ -10,6 +10,7 @@ export const OLTRegistration: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<OLTCatalogItem | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -87,13 +88,13 @@ export const OLTRegistration: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm(t('confirm_delete'))) {
-            try {
-                await deleteOLT(id);
-                loadOLTs();
-            } catch (error) {
-                console.error("Failed to delete", error);
-            }
+        try {
+            await deleteOLT(id);
+            loadOLTs();
+            setShowDeleteConfirm(null);
+        } catch (error) {
+            console.error("Failed to delete", error);
+            alert(t('error_delete') || 'Failed to delete');
         }
     };
 
@@ -198,7 +199,7 @@ export const OLTRegistration: React.FC = () => {
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(olt.id)}
+                                                onClick={() => setShowDeleteConfirm(olt.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -211,6 +212,31 @@ export const OLTRegistration: React.FC = () => {
                     </table>
                 )}
             </div>
+
+            {/* Delete Confirmation Overlay */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
+                            >
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {isModalOpen && (
@@ -234,7 +260,7 @@ export const OLTRegistration: React.FC = () => {
                                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="e.g., Huawei MA5608T, Cisco 2960..."
+                                        placeholder={t('equipment_name_placeholder') || 'e.g., Huawei MA5608T, Cisco 2960...'}
                                     />
                                 </div>
 

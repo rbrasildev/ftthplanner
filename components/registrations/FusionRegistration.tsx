@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
-import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save } from 'lucide-react';
+import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save, AlertTriangle } from 'lucide-react';
 
 export const FusionRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -13,6 +13,7 @@ export const FusionRegistration: React.FC = () => {
     // Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<FusionCatalogItem | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         attenuation: '0.01'
@@ -71,18 +72,18 @@ export const FusionRegistration: React.FC = () => {
             setIsModalOpen(false);
         } catch (error) {
             console.error("Failed to save fusion", error);
-            alert("Erro ao salvar fusão");
+            alert(t('error_save_fusion') || "Erro ao salvar fusão");
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('confirm_delete') || "Tem certeza?")) return;
         try {
             await deleteFusion(id);
             setFusions(prev => prev.filter(f => f.id !== id));
+            setShowDeleteConfirm(null);
         } catch (error) {
             console.error("Failed to delete fusion", error);
-            alert("Erro ao deletar fusão");
+            alert(t('error_delete_fusion') || "Erro ao deletar fusão");
         }
     };
 
@@ -133,7 +134,7 @@ export const FusionRegistration: React.FC = () => {
                     </div>
                 ) : filteredFusions.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        Nenhuma fusão encontrada.
+                        {t('no_fusions_found') || "Nenhuma fusão encontrada."}
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
@@ -166,7 +167,7 @@ export const FusionRegistration: React.FC = () => {
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(fusion.id)}
+                                                onClick={() => setShowDeleteConfirm(fusion.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                 title={t('delete')}
                                             >
@@ -180,6 +181,31 @@ export const FusionRegistration: React.FC = () => {
                     </table>
                 )}
             </div>
+
+            {/* Delete Confirmation Overlay */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
+                            >
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {isModalOpen && (
@@ -201,7 +227,7 @@ export const FusionRegistration: React.FC = () => {
                                     type="text"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Ex: Fusão Padrão"
+                                    placeholder={t('name_placeholder') || 'Ex: Fusão Padrão'}
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"
                                     autoFocus
                                 />

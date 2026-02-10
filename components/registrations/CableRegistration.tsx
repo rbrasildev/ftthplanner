@@ -3,15 +3,18 @@ import React, { useState, useEffect } from 'react';
 import {
     getCables, createCable, updateCable, deleteCable, CableCatalogItem
 } from '../../services/catalogService';
-import { Plus, Edit2, Trash2, Search, Cable } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Cable, AlertTriangle, X, Save } from 'lucide-react';
+import { useLanguage } from '../../LanguageContext';
 
 const SPEC_COLORS = ['#10b981', '#86efac', '#3b82f6', '#93c5fd', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5', '#8b5cf6', '#c4b5fd', '#ec4899', '#f9a8d4', '#6b7280', '#d1d5db'];
 
 const CableRegistration: React.FC = () => {
+    const { t } = useLanguage();
     const [cables, setCables] = useState<CableCatalogItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCable, setEditingCable] = useState<CableCatalogItem | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState<Partial<CableCatalogItem>>({
@@ -68,7 +71,7 @@ const CableRegistration: React.FC = () => {
 
     const handleSave = async () => {
         try {
-            if (!formData.name) return alert('Código é obrigatório');
+            if (!formData.name) return alert(t('name_required'));
 
             if (editingCable) {
                 await updateCable(editingCable.id, formData);
@@ -79,14 +82,17 @@ const CableRegistration: React.FC = () => {
             setIsModalOpen(false);
         } catch (error) {
             console.error("Failed to save cable", error);
-            alert("Erro ao salvar cabo");
+            alert(t('error_save_cable'));
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm("Tem certeza que deseja excluir este cabo?")) {
+        try {
             await deleteCable(id);
             loadCables();
+            setShowDeleteConfirm(null);
+        } catch (error) {
+            console.error("Failed to delete cable", error);
         }
     };
 
@@ -102,17 +108,17 @@ const CableRegistration: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Cable className="w-7 h-7 text-sky-500" />
-                        Catálogo de Cabos
+                        {t('cable_catalog')}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        Gerencie os modelos de cabos disponíveis para projetos
+                        {t('cable_catalog_desc')}
                     </p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
                     className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-sky-500/20"
                 >
-                    <Plus className="w-4 h-4" /> Novo Cabo
+                    <Plus className="w-4 h-4" /> {t('add_new')}
                 </button>
             </div>
 
@@ -124,7 +130,7 @@ const CableRegistration: React.FC = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Buscar por código ou marca..."
+                            placeholder={t('search_placeholder_cable')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
@@ -134,17 +140,17 @@ const CableRegistration: React.FC = () => {
 
                 {filteredCables.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        Nenhum cabo encontrado.
+                        {t('no_results')}
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
-                                <th className="px-6 py-4">Nome</th>
-                                <th className="px-6 py-4">Fibras</th>
-                                <th className="px-6 py-4">Nível</th>
-                                <th className="px-6 py-4 text-center">Cores (Imp/Proj)</th>
-                                <th className="px-6 py-4 text-right">Ações</th>
+                                <th className="px-6 py-4">{t('name')}</th>
+                                <th className="px-6 py-4">{t('brand')}</th>
+                                <th className="px-6 py-4">{t('model')}</th>
+                                <th className="px-6 py-4">{t('fiber_count')}</th>
+                                <th className="px-6 py-4 text-right">{t('actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -155,38 +161,27 @@ const CableRegistration: React.FC = () => {
                                         <div className="text-xs text-slate-500 font-normal">{cable.brand} - {cable.model}</div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {cable.fiberCount} ({cable.looseTubeCount}x{cable.fibersPerTube})
+                                        {cable.brand}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-bold text-slate-600 dark:text-slate-300">
-                                            {cable.defaultLevel}
-                                        </span>
+                                        {cable.model}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <div
-                                                className="w-4 h-4 rounded-full border border-slate-200 shadow-sm"
-                                                style={{ backgroundColor: cable.deployedSpec?.color }}
-                                                title="Cor Implantado"
-                                            ></div>
-                                            <div
-                                                className="w-4 h-4 rounded-full border border-dashed border-slate-300 shadow-sm"
-                                                style={{ backgroundColor: cable.plannedSpec?.color }}
-                                                title="Cor Projetado"
-                                            ></div>
-                                        </div>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                        {cable.fiberCount} ({cable.looseTubeCount}x{cable.fibersPerTube})
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenModal(cable)}
                                                 className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                title={t('edit')}
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(cable.id)}
+                                                onClick={() => setShowDeleteConfirm(cable.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                title={t('delete')}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -199,16 +194,41 @@ const CableRegistration: React.FC = () => {
                 )}
             </div>
 
+            {/* Delete Confirmation Overlay */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
+                            >
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 sticky top-0 z-10 backdrop-blur-md">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                                {editingCable ? 'Editar Cabo' : 'Novo Cabo'}
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                                {editingCable ? t('edit_cable') : t('new_cable')}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                ✕
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
 
@@ -216,37 +236,37 @@ const CableRegistration: React.FC = () => {
                             {/* Main Info */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="md:col-span-3">
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">Código (Nome)</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('name')}</label>
                                     <input
                                         type="text"
                                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
-                                        placeholder="Ex: Cabo 12F AS-80"
+                                        placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">Marca</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('brand')}</label>
                                     <input
                                         type="text"
-                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
-                                        placeholder="Marca do cabo"
                                         value={formData.brand}
                                         onChange={e => setFormData({ ...formData, brand: e.target.value })}
+                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                                        placeholder={t('brand_placeholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">Modelo</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('model')}</label>
                                     <input
                                         type="text"
-                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
-                                        placeholder="Modelo técnico"
                                         value={formData.model}
                                         onChange={e => setFormData({ ...formData, model: e.target.value })}
+                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                                        placeholder={t('model_placeholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">Nível Padrão</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('type')}</label>
                                     <select
                                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
                                         value={formData.defaultLevel}
@@ -261,19 +281,19 @@ const CableRegistration: React.FC = () => {
 
                             {/* Tech Specs */}
                             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Especificações Técnicas</h3>
+                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">{t('specifications')}</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Total de Fibras</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('fiber_count')}</label>
                                         <input
                                             type="number"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
                                             value={formData.fiberCount}
-                                            onChange={e => setFormData({ ...formData, fiberCount: Number(e.target.value) })}
+                                            onChange={e => setFormData({ ...formData, fiberCount: parseInt(e.target.value) })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nº de Looses</label>
+                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('loose_tubes')}</label>
                                         <input
                                             type="number"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
@@ -282,7 +302,7 @@ const CableRegistration: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Fibras por Loose</label>
+                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('fibers_per_tube') || 'Fibras por Tubo'}</label>
                                         <input
                                             type="number"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
@@ -291,7 +311,7 @@ const CableRegistration: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Atenuação/Km (dB)</label>
+                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('attenuation_db')}</label>
                                         <input
                                             type="number" step="0.01"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
@@ -301,19 +321,19 @@ const CableRegistration: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Padrão de Cores</label>
+                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">{t('fiber_color_standard')}</label>
                                     <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1 mb-3">
                                         <button
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'ABNT' })}
                                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'ABNT' || !formData.fiberProfile ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
                                         >
-                                            ABNT (Brasil)
+                                            {t('standard_abnt')}
                                         </button>
                                         <button
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'EIA' })}
                                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'EIA' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
                                         >
-                                            EIA-598-A (Intl)
+                                            {t('standard_eia')}
                                         </button>
                                     </div>
 
@@ -324,7 +344,7 @@ const CableRegistration: React.FC = () => {
                                             :
                                             ['#008000', '#FFFF00', '#FFFFFF', '#0000FF', '#FF0000', '#EE82EE', '#A52A2A', '#FFC0CB', '#000000', '#808080', '#FFA500', '#00FFFF']
                                         ).map((c, i) => (
-                                            <div key={i} className="w-4 h-4 rounded-full border border-slate-300 shadow-sm" style={{ backgroundColor: c }} title={`Fibra ${i + 1}`} />
+                                            <div key={i} className="w-4 h-4 rounded-full border border-slate-300 shadow-sm" style={{ backgroundColor: c }} title={`${t('unit_fiber_label').replace('{n}', (i + 1).toString())}`} />
                                         ))}
                                         <span className="text-slate-400 text-xs self-end ml-1">...</span>
                                     </div>
@@ -333,11 +353,11 @@ const CableRegistration: React.FC = () => {
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">Descrição</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('description')}</label>
                                 <textarea
                                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
                                     rows={3}
-                                    placeholder="Detalhes adicionais..."
+                                    placeholder={t('details_placeholder')}
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
@@ -347,7 +367,7 @@ const CableRegistration: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Deployed Specs */}
                                 <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Representação Implantado</h4>
+                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Implantado</h4>
                                     <div className="flex gap-4 items-center">
                                         <div className="flex-1">
                                             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cor</label>
@@ -382,7 +402,7 @@ const CableRegistration: React.FC = () => {
 
                                 {/* Planned Specs */}
                                 <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Representação Não Implantado</h4>
+                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Planejado</h4>
                                     <div className="flex gap-4 items-center">
                                         <div className="flex-1">
                                             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cor</label>
@@ -421,15 +441,16 @@ const CableRegistration: React.FC = () => {
                         <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/80 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                                Cancelar
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-6 py-2.5 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 shadow-sm hover:shadow-md transition-all transform active:scale-95"
+                                className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
                             >
-                                Salvar Cabo
+                                <Save className="w-4 h-4" />
+                                {t('save')}
                             </button>
                         </div>
                     </div>

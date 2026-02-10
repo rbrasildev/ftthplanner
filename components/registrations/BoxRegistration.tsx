@@ -203,8 +203,8 @@ const BoxRegistration: React.FC = () => {
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title') || 'Confirmar Exclusão'}</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message') || 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.'}</p>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowDeleteConfirm(null)}
@@ -246,7 +246,7 @@ const BoxRegistration: React.FC = () => {
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-                                    placeholder="Ex: CTO-PRECON"
+                                    placeholder={t('name_placeholder') || 'Ex: CTO-PRECON'}
                                 />
                             </div>
 
@@ -258,7 +258,7 @@ const BoxRegistration: React.FC = () => {
                                         value={formData.brand}
                                         onChange={e => setFormData({ ...formData, brand: e.target.value })}
                                         className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                                        placeholder="Marca"
+                                        placeholder={t('brand')}
                                     />
                                 </div>
                                 <div>
@@ -268,7 +268,7 @@ const BoxRegistration: React.FC = () => {
                                         value={formData.model}
                                         onChange={e => setFormData({ ...formData, model: e.target.value })}
                                         className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                                        placeholder="Modelo"
+                                        placeholder={t('model')}
                                     />
                                 </div>
                             </div>

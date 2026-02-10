@@ -84,8 +84,27 @@ export const register = async (req: Request, res: Response) => {
             username: username,
             company_name: result.company.name,
             login_url: process.env.FRONTEND_URL || 'https://ftthplanner.com.br'
-        }).then(info => console.log(`[Registration] Email sent:`, info.messageId))
-            .catch(err => console.error('[Registration] Welcome email failed:', err));
+        }).then(info => console.log(`[Registration] Welcome email sent successfully to ${email}. MessageId: ${info?.messageId || 'N/A'}`))
+            .catch(err => console.error(`[Registration] Welcome email failed for ${email}:`, err));
+
+        // Send Admin Notification (Fail silently)
+        console.log(`[Registration] Fetching SaaS config for admin notification...`);
+        prisma.saaSConfig.findUnique({ where: { id: 'global' } }).then(saasConfig => {
+            if (saasConfig?.supportEmail) {
+                console.log(`[Registration] Admin support email found: ${saasConfig.supportEmail}. Triggering notification...`);
+                sendEmail('admin-new-client-notification', saasConfig.supportEmail, {
+                    username: username,
+                    company: result.company.name,
+                    email: email,
+                    phone: phone || 'N/A',
+                    plan: selectedPlan?.name || 'Trial',
+                    source: source || 'Direct'
+                }).then(info => console.log(`[Registration] Admin notification sent successfully to ${saasConfig.supportEmail}. MessageId: ${info?.messageId || 'N/A'}`))
+                    .catch(err => console.error(`[Registration] Admin notification failed for ${saasConfig.supportEmail}:`, err));
+            } else {
+                console.warn(`[Registration] No support email configured in SaaSConfig. Admin notification skipped.`);
+            }
+        }).catch(err => console.error('[Registration] Failed to fetch SaaS config for admin notification:', err));
 
 
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });

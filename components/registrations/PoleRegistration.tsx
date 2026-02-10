@@ -11,6 +11,7 @@ export const PoleRegistration: React.FC = () => {
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPole, setEditingPole] = useState<PoleCatalogItem | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
     const [formData, setFormData] = useState<Partial<PoleCatalogItem>>({
         type: 'Concreto',
         shape: 'Circular',
@@ -51,20 +52,20 @@ export const PoleRegistration: React.FC = () => {
             setFormData({ type: 'Concreto', shape: 'Circular', height: 10, strength: 600 });
         } catch (error) {
             console.error(error);
-            alert('Failed to save pole');
+            alert(t('error_save') || 'Failed to save pole');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('confirm_delete') || 'Are you sure?')) return;
         try {
             await deletePole(id);
             setPoles(prev => prev.filter(p => p.id !== id));
+            setShowDeleteConfirm(null);
         } catch (error) {
             console.error(error);
-            alert('Failed to delete');
+            alert(t('error_delete') || 'Failed to delete');
         }
     };
 
@@ -151,7 +152,7 @@ export const PoleRegistration: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.type}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.height} m</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.height}m</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.strength} daN</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{pole.shape}</td>
                                     <td className="px-6 py-4 text-right">
@@ -164,7 +165,7 @@ export const PoleRegistration: React.FC = () => {
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(pole.id)}
+                                                onClick={() => setShowDeleteConfirm(pole.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                 title={t('delete')}
                                             >
@@ -178,6 +179,31 @@ export const PoleRegistration: React.FC = () => {
                     </table>
                 )}
             </div>
+
+            {/* Delete Confirmation Overlay */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
+                            >
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {isModalOpen && (
@@ -201,7 +227,7 @@ export const PoleRegistration: React.FC = () => {
                                     value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
-                                    placeholder="Ex: Poste Concreto 10m 600daN"
+                                    placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
                                 />
                             </div>
 
@@ -213,10 +239,10 @@ export const PoleRegistration: React.FC = () => {
                                         onChange={e => setFormData({ ...formData, type: e.target.value })}
                                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     >
-                                        <option value="Concreto">Concreto</option>
-                                        <option value="Madeira">Madeira</option>
-                                        <option value="Metal">Metal</option>
-                                        <option value="Fibra">Fibra</option>
+                                        <option value="Concreto">{t('concrete') || 'Concreto'}</option>
+                                        <option value="Madeira">{t('wood') || 'Madeira'}</option>
+                                        <option value="Metal">{t('metal') || 'Metal'}</option>
+                                        <option value="Fibra">{t('fiber') || 'Fibra'}</option>
                                     </select>
                                 </div>
                                 <div>
@@ -226,9 +252,9 @@ export const PoleRegistration: React.FC = () => {
                                         onChange={e => setFormData({ ...formData, shape: e.target.value })}
                                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     >
-                                        <option value="Circular">Circular</option>
-                                        <option value="Duplo T">Duplo T</option>
-                                        <option value="Quadrado">Quadrado</option>
+                                        <option value="Circular">{t('shape_circular')}</option>
+                                        <option value="Duplo T">{t('shape_duplot')}</option>
+                                        <option value="Quadrado">{t('shape_square')}</option>
                                     </select>
                                 </div>
                             </div>
@@ -265,7 +291,7 @@ export const PoleRegistration: React.FC = () => {
                                     value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none resize-none dark:text-white"
-                                    placeholder="Detalhes adicionais..."
+                                    placeholder={t('details_placeholder')}
                                 />
                             </div>
 

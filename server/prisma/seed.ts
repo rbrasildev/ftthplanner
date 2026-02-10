@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -64,8 +65,8 @@ async function main() {
 
     // 3. Template Boxes
     const boxes = [
-        { name: 'CTO 16 Portas', type: 'CTO', model: 'Padrão', color: '#64748b' },
-        { name: 'CEO 48 Fibras', type: 'CEO', model: 'Padrão', color: '#334155' },
+        { name: 'CTO', type: 'CTO', model: 'Padrão', color: '#64748b' },
+        { name: 'CEO', type: 'CEO', model: 'Padrão', color: '#334155' },
     ];
     for (const b of boxes) {
         const exists = await prisma.templateBox.findFirst({ where: { name: b.name } });
@@ -100,6 +101,29 @@ async function main() {
     }
 
     console.log('Templates seeded successfully.');
+
+    // 7. Email Templates
+    console.log('Seeding Email Templates...');
+    const emailTemplates = [
+        {
+            slug: 'admin-new-client-notification',
+            name: 'Notificação de Novo Cliente (Admin)',
+            subject: 'Novo Cliente Cadastrado: {{company}}',
+            body: 'Um novo cliente se cadastrou no sistema.<br><br><b>Detalhes:</b><br><ul><li><b>Usuário:</b> {{username}}</li><li><b>Empresa:</b> {{company}}</li><li><b>E-mail:</b> {{email}}</li><li><b>Telefone:</b> {{phone}}</li><li><b>Plano:</b> {{plan}}</li><li><b>Origem:</b> {{source}}</li></ul>',
+            variables: JSON.stringify(['username', 'company', 'email', 'phone', 'plan', 'source'])
+        }
+    ];
+
+    for (const t of emailTemplates) {
+        const exists = await prisma.emailTemplate.findUnique({ where: { slug: t.slug } });
+        if (!exists) {
+            await prisma.emailTemplate.create({ data: t as any });
+            console.log(`Created email template: ${t.slug}`);
+        } else {
+            await prisma.emailTemplate.update({ where: { slug: t.slug }, data: t as any });
+            console.log(`Updated email template: ${t.slug}`);
+        }
+    }
 
     console.log('Seeding finished.');
 }
