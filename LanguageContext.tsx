@@ -743,6 +743,33 @@ const translations = {
     'report_estimated': 'Estimated',
     'email_admin_new_client_subject': 'New Client Registered: {company}',
     'email_admin_new_client_body': 'A new client has registered in the system.<br><br><b>Details:</b><br><ul><li><b>Username:</b> {username}</li><li><b>Company:</b> {company}</li><li><b>Email:</b> {email}</li><li><b>Phone:</b> {phone}</li><li><b>Plan:</b> {plan}</li><li><b>Source:</b> {source}</li></ul>',
+
+    // Optical Power Modal
+    'optical_budget': 'Optical Budget',
+    'optical_path_for': 'Optical path for',
+    'no_signal': 'No Signal (Disconnected)',
+    'final_power': 'Final Power',
+    'status_ok': 'OK (Ideal)',
+    'status_marginal': 'Marginal (Warning)',
+    'status_fail': 'Fail (Critical)',
+    'origin_olt': 'Origin (OLT)',
+    'output_power_short': 'Output Power',
+    'total_loss': 'Total Loss',
+    'path_elements': 'Path elements',
+    'path_details': 'Path Details',
+    'type_CABLE': 'Cable',
+    'type_SPLITTER': 'Splitter',
+    'type_FUSION': 'Fusion',
+    'type_CONNECTOR': 'Connector / DIO',
+    'type_OLT': 'OLT',
+
+    // Map Layers
+    'map_street': 'Map',
+    'map_satellite': 'Satellite',
+    'map_layers': 'Layers',
+    'layer_cables': 'Cables',
+    'layer_ctos': 'CTOs',
+    'layer_pops': 'POPs',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -1118,14 +1145,19 @@ const translations = {
     'otdr_instruction_banner': 'Clique em uma porta de fibra para medir a distância.',
     'otdr_event_tooltip': 'Evento OTDR',
 
-    // Splitter Power Modal
+    // Modal de Potência Óptica
     'optical_budget': 'Orçamento Óptico',
     'optical_path_for': 'Caminho óptico para',
     'no_signal': 'Sem Sinal (Desconectado)',
+    'final_power': 'Potência Final',
     'status_ok': 'OK (Ideal)',
     'status_marginal': 'Marginal (Alerta)',
     'status_fail': 'Falha (Crítico)',
-
+    'origin_olt': 'Origem (OLT)',
+    'output_power_short': 'Potência de Saída',
+    'total_loss': 'Perda Total',
+    'path_elements': 'Elementos no caminho',
+    'path_details': 'Detalhes do Percurso',
     'type_CABLE': 'Cabo',
     'type_SPLITTER': 'Splitter',
     'type_FUSION': 'Fusão',
@@ -1424,7 +1456,7 @@ const translations = {
     'error_permission_denied': 'Acesso negado: você não tem permissão para realizar esta ação.',
 
     // Map Layers
-    'map_street': 'Map rua',
+    'map_street': 'MAP',
     'map_satellite': 'Satélite',
     'map_layers': 'Camadas',
     'layer_cables': 'Cabos',
@@ -1484,6 +1516,7 @@ const translations = {
     'report_estimated': 'Estimado',
     'email_admin_new_client_subject': 'Novo Cliente Cadastrado: {company}',
     'email_admin_new_client_body': 'Um novo cliente se cadastrou no sistema.<br><br><b>Detalhes:</b><br><ul><li><b>Usuário:</b> {username}</li><li><b>Empresa:</b> {company}</li><li><b>E-mail:</b> {email}</li><li><b>Telefone:</b> {phone}</li><li><b>Plano:</b> {plan}</li><li><b>Origem:</b> {source}</li></ul>',
+
   }
 };
 

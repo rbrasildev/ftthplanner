@@ -64,12 +64,12 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                         <div className="flex items-center gap-4">
                             {getStatusIcon(result.status)}
                             <div>
-                                <div className="text-sm font-semibold opacity-80 uppercase tracking-wide">Potência Final</div>
+                                <div className="text-sm font-semibold opacity-80 uppercase tracking-wide">{t('final_power')}</div>
                                 <div className="text-3xl font-bold font-mono tracking-tight">{result.finalPower.toFixed(2)} dBm</div>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-sm font-semibold opacity-80 uppercase tracking-wide">Status</div>
+                            <div className="text-sm font-semibold opacity-80 uppercase tracking-wide">{t('status')}</div>
                             <div className="text-xl font-bold">
                                 {result.status === 'OK' && t('status_ok')}
                                 {result.status === 'MARGINAL' && t('status_marginal')}
@@ -82,33 +82,33 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                     {/* Metadata Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">Origem (OLT)</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">{t('origin_olt')}</div>
                             <div className="text-slate-900 dark:text-white font-semibold flex items-center gap-2">
                                 <Network className="w-4 h-4 text-sky-500" />
                                 {result.oltDetails?.name || (result.sourceName === 'NO_SIGNAL' ? t('no_signal') : result.sourceName)}
                             </div>
                             {result.oltDetails ? (
                                 <div className="text-xs text-slate-500 mt-1 flex gap-2">
-                                    <span>{t('slot') || 'Slot'}: <strong>{result.oltDetails.slot || '?'}</strong></span>
-                                    <span>{t('pon') || 'PON'}: <strong>{result.oltDetails.port || '?'}</strong></span>
+                                    <span>{t('slot')}: <strong>{result.oltDetails.slot || '?'}</strong></span>
+                                    <span>{t('pon')}: <strong>{result.oltDetails.port || '?'}</strong></span>
                                 </div>
                             ) : (
-                                <div className="text-xs text-slate-500 mt-1">Potência de Saída: <strong>{result.oltPower} dBm</strong></div>
+                                <div className="text-xs text-slate-500 mt-1">{t('output_power_short')}: <strong>{result.oltPower} dBm</strong></div>
                             )}
                         </div>
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">Perda Total</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">{t('total_loss')}</div>
                             <div className="text-slate-900 dark:text-white font-semibold flex items-center gap-2">
                                 <ArrowDown className="w-4 h-4 text-rose-500" />
                                 {result.totalLoss.toFixed(2)} dB
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">Elementos no caminho: <strong>{result.path.length}</strong></div>
+                            <div className="text-xs text-slate-500 mt-1">{t('path_elements')}: <strong>{result.path.length}</strong></div>
                         </div>
                     </div>
 
                     {/* Path Table */}
                     <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-2">Detalhes do Percurso</h3>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-2">{t('path_details')}</h3>
                         <div className="relative">
                             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700 z-0"></div>
                             <div className="space-y-6 relative z-10">

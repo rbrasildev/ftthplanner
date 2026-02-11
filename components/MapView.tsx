@@ -1119,25 +1119,34 @@ export const MapView: React.FC<MapViewProps> = ({
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-end gap-3">
-                {/* Map Type Switcher - Segmented Control Style */}
-                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row gap-1.5">
-                    <button
-                        onClick={() => setMapType('street')}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'street' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                        title={t('map_street')}
-                    >
-                        <MapIcon className="w-4 h-4" />
-                        <span className="hidden lg:inline">{t('map_street')}</span>
-                    </button>
-                    <button
-                        onClick={() => setMapType('satellite')}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${mapType === 'satellite' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                        title={t('map_satellite')}
-                    >
-                        <Globe className="w-4 h-4" />
-                        <span className="hidden lg:inline">{t('map_satellite')}</span>
-                    </button>
-                </div>
+                {/* Map Type Switcher - Google Maps Style */}
+                <button
+                    onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+                    className="group relative w-16 h-16 rounded-xl overflow-hidden shadow-2xl border-2 border-white dark:border-slate-700 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none z-[1000] bg-white dark:bg-slate-800"
+                    title={mapType === 'street' ? t('map_satellite') : t('map_street')}
+                >
+                    {/* Thumbnail Preview */}
+                    <div className="absolute inset-0 transition-transform duration-500 ease-in-out">
+                        {mapType === 'street' ? (
+                            <div className="absolute inset-0 bg-[url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0')] bg-cover bg-center" />
+                        ) : (
+                            <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                <MapIcon className="w-8 h-8 text-sky-600 opacity-60" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/10" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Interaction Overlay (Darkens on hover) */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+
+                    {/* Label at the bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-[2px] py-1">
+                        <span className="text-[10px] font-black text-white uppercase tracking-tighter block text-center leading-none">
+                            {mapType === 'street' ? t('map_satellite') : t('map_street')}
+                        </span>
+                    </div>
+                </button>
 
                 {/* Compact Layer Visibility Panel */}
                 <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2.5">
