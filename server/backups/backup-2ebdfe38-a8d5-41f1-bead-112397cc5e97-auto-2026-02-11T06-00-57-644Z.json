@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "createdAt": "2026-02-11T06:00:57.645Z",
+    "version": "1.0",
+    "companyId": "2ebdfe38-a8d5-41f1-bead-112397cc5e97"
+  },
+  "projects": [
+    {
+      "id": "d1420fd0-7d83-4cf2-866d-053711008da7",
+      "userId": "1bd35dd9-07b7-48dc-8754-bd6df878c9aa",
+      "name": "TESTE",
+      "centerLat": -2.6329,
+      "centerLng": -56.7408,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-02-11T00:00:05.641Z",
+      "updatedAt": "2026-02-11T00:00:05.641Z",
+      "companyId": "2ebdfe38-a8d5-41f1-bead-112397cc5e97"
+    }
+  ],
+  "ctos": [],
+  "pops": [],
+  "cables": [],
+  "poles": []
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Play, Monitor, Layers, Map as MapIcon, Database, Video as VideoIcon } from 'lucide-react';
 import * as saasService from '../../services/saasService';
+import { useLanguage } from '../../LanguageContext';
 
 interface Video {
     id: string;
@@ -27,6 +28,7 @@ interface VideoDemoModalProps {
 }
 
 export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose, supportPhone }) => {
+    const { t } = useLanguage();
     const [videos, setVideos] = React.useState<Video[]>([]);
     const [selectedVideo, setSelectedVideo] = React.useState<Video | null>(null);
     const [loading, setLoading] = React.useState(true);
@@ -62,8 +64,8 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose,
                 <div className="w-full md:w-80 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col overflow-hidden">
                     <div className="p-6 border-b border-slate-800 flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-bold text-white">Demonstração</h2>
-                            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">FTTH Planner Pro</p>
+                            <h2 className="text-xl font-bold text-white">{t('demo_modal_title')}</h2>
+                            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">{t('demo_modal_subtitle')}</p>
                         </div>
                         <button onClick={onClose} className="md:hidden p-2 hover:bg-slate-900 rounded-xl text-slate-400">
                             <X className="w-6 h-6" />
@@ -95,13 +97,13 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose,
                                 </button>
                             ))
                         ) : (
-                            <p className="text-center text-slate-500 mt-10">Nenhum vídeo disponível.</p>
+                            <p className="text-center text-slate-500 mt-10">{t('demo_modal_no_videos')}</p>
                         )}
                     </div>
 
                     <div className="p-6 bg-slate-950 border-t border-slate-800 hidden md:block">
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold text-center">
-                            Selecione um vídeo para assistir
+                            {t('demo_modal_footer')}
                         </p>
                     </div>
                 </div>
@@ -127,7 +129,7 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose,
                                 ></iframe>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-slate-500">
-                                    Selecione um vídeo para assistir
+                                    {t('demo_modal_select_msg')}
                                 </div>
                             )}
                         </div>
@@ -136,7 +138,7 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose,
                             <div>
                                 <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                                     <Play className="w-6 h-6 text-emerald-500 fill-emerald-500" />
-                                    {selectedVideo?.title || 'Selecione um vídeo'}
+                                    {selectedVideo?.title || t('demo_modal_select_msg')}
                                 </h1>
                                 <p className="text-slate-400 mt-2 max-w-2xl">
                                     {selectedVideo?.description}
@@ -151,7 +153,7 @@ export const VideoDemoModal: React.FC<VideoDemoModalProps> = ({ isOpen, onClose,
                                     window.open(`https://api.whatsapp.com/send?phone=${sanitizedPhone}&text=Olá, vi o vídeo de demonstração e gostaria de saber mais!`, '_blank');
                                 }}
                             >
-                                Falar com Consultor
+                                {t('demo_modal_cta')}
                             </button>
                         </div>
                     </div>

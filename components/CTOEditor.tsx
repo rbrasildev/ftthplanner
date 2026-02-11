@@ -137,16 +137,109 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole
 }) => {
     const { t } = useLanguage();
+    // --- PERSISTENCE FIX REUSABLE LOGIC ---
+    const reconcileOrphans = (data: CTOData) => {
+        if (!data.layout) data.layout = {};
+
+        // 1. Reconcile Fusions
+        // Backend uses UUIDs while client may have Temp IDs (fus-...)
+        const fusionLayoutKeys = Object.keys(data.layout).filter(k => k.includes('fus-'));
+        const fusionsWithoutLayout = data.fusions.filter(f => !data.layout![f.id]);
+        const orphanFusionKeys = fusionLayoutKeys.filter(k => !data.fusions.some(f => f.id === k));
+
+        if (fusionsWithoutLayout.length > 0 && orphanFusionKeys.length > 0) {
+            fusionsWithoutLayout.forEach((fusion, idx) => {
+                if (idx < orphanFusionKeys.length) {
+                    const orphanKey = orphanFusionKeys[idx];
+                    data.layout![fusion.id] = data.layout![orphanKey];
+                    // Update connections using this fusion as source/target
+                    data.connections = data.connections.map(conn => {
+                        let nextConn = { ...conn };
+                        if (conn.sourceId === orphanKey) nextConn.sourceId = fusion.id;
+                        if (conn.targetId === orphanKey) nextConn.targetId = fusion.id;
+                        return nextConn;
+                    });
+                    delete data.layout![orphanKey];
+                    console.log(`[Layout Repair] Restored fusion position & connections: ${orphanKey} -> ${fusion.id}`);
+                }
+            });
+        }
+
+        // 2. Reconcile Splitters
+        const splitterLayoutKeys = Object.keys(data.layout).filter(k => k.includes('spl-'));
+        const splittersWithoutLayout = data.splitters.filter(s => !data.layout![s.id]);
+        const orphanSplitterKeys = splitterLayoutKeys.filter(k => !data.splitters.some(s => s.id === k));
+
+        if (splittersWithoutLayout.length > 0 && orphanSplitterKeys.length > 0) {
+            splittersWithoutLayout.forEach((split, idx) => {
+                if (idx < orphanSplitterKeys.length) {
+                    const orphanKey = orphanSplitterKeys[idx];
+                    data.layout![split.id] = data.layout![orphanKey];
+
+                    // Repair splitter port connections
+                    data.connections = data.connections.map(conn => {
+                        let nextConn = { ...conn };
+                        // Repair Splitter Input Input
+                        if (conn.sourceId === `${orphanKey}-in`) nextConn.sourceId = `${split.id}-in`;
+                        if (conn.targetId === `${orphanKey}-in`) nextConn.targetId = `${split.id}-in`;
+                        // Repair Splitter Outputs
+                        if (conn.sourceId.startsWith(`${orphanKey}-out-`)) {
+                            nextConn.sourceId = conn.sourceId.replace(`${orphanKey}-out-`, `${split.id}-out-`);
+                        }
+                        if (conn.targetId.startsWith(`${orphanKey}-out-`)) {
+                            nextConn.targetId = conn.targetId.replace(`${orphanKey}-out-`, `${split.id}-out-`);
+                        }
+                        return nextConn;
+                    });
+
+                    delete data.layout![orphanKey];
+                    console.log(`[Layout Repair] Restored splitter position & connections: ${orphanKey} -> ${split.id}`);
+                }
+            });
+        }
+
+        // 3. Reconcile Cables (Fallback for ID shifts)
+        const cableLayoutKeys = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
+        const cablesWithoutLayout = incomingCables.filter(c => !data.layout![c.id]);
+        const orphanCableKeys = cableLayoutKeys.filter(k => !incomingCables.some(c => c.id === k));
+
+        if (cablesWithoutLayout.length > 0 && orphanCableKeys.length > 0) {
+            cablesWithoutLayout.forEach((cable, idx) => {
+                if (idx < orphanCableKeys.length) {
+                    const orphanKey = orphanCableKeys[idx];
+                    data.layout![cable.id] = data.layout![orphanKey];
+
+                    // Repair fiber connections
+                    data.connections = data.connections.map(conn => {
+                        let nextConn = { ...conn };
+                        if (conn.sourceId.startsWith(`${orphanKey}-fiber-`)) {
+                            nextConn.sourceId = conn.sourceId.replace(`${orphanKey}-fiber-`, `${cable.id}-fiber-`);
+                        }
+                        if (conn.targetId.startsWith(`${orphanKey}-fiber-`)) {
+                            nextConn.targetId = conn.targetId.replace(`${orphanKey}-fiber-`, `${cable.id}-fiber-`);
+                        }
+                        return nextConn;
+                    });
+
+                    delete data.layout![orphanKey];
+                    console.log(`[Layout Repair] Restored cable position & fibers: ${orphanKey} -> ${cable.id}`);
+                }
+            });
+        }
+    };
+
     const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
 
+        // Run reconciler first to recover positions from any ID shifts
+        reconcileOrphans(next);
+
         // Position Incoming Cables on the Left if missing (Stacking with 10px gap)
         let currentCableY = 42;
         incomingCables.forEach((cable) => {
             const looseTubeCount = cable.looseTubeCount || 1;
-            const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
             const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12); // Base height approx
             const remainder = fibersHeight % 24;
             const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
@@ -154,60 +247,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (!next.layout![cable.id]) {
                 next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
             }
-            // Update currentCableY for the NEXT cable in the iteration
             const finalLayout = next.layout![cable.id];
             currentCableY = Math.max(currentCableY, finalLayout.y + totalHeight + 10);
         });
 
-        // Position Existing Splitters if missing
+        // Position Existing Splitters if missing (Fallback)
         next.splitters.forEach((split, idx) => {
             if (!next.layout![split.id]) {
                 next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
             }
         });
-
-        // --- FIX PERSISTENCE BUG: RECONCILE ORPHAN LAYOUTS ---
-        // When saving, backend replaces Temp IDs with UUIDs, but Layout keys might remain as Temp IDs.
-        // We must map these orphans to the new IDs to restore position.
-
-        // 1. Reconcile Fusions
-        const fusionLayoutKeys = Object.keys(next.layout).filter(k => k.includes('fusion-'));
-        const fusionsWithoutLayout = next.fusions.filter(f => !next.layout![f.id]);
-
-        // Find orphan keys (layout entries that don't match any current fusion ID)
-        const orphanFusionKeys = fusionLayoutKeys.filter(k => !next.fusions.some(f => f.id === k));
-
-        if (fusionsWithoutLayout.length > 0 && orphanFusionKeys.length > 0) {
-            // Simple Heuristic: If counts match (or even if not), try to map sequentially?
-            // Better: If we have orphans, assign them to missing fusions. 
-            // Since we can't be 100% sure of mapping, we map by index if counts are small, or just take first available.
-            // Given the bug description (single fusion jumping), 1:1 mapping is the most common case.
-
-            fusionsWithoutLayout.forEach((fusion, idx) => {
-                if (idx < orphanFusionKeys.length) {
-                    const orphanKey = orphanFusionKeys[idx];
-                    next.layout![fusion.id] = next.layout![orphanKey];
-                    delete next.layout![orphanKey]; // Remove orphan
-                    console.log(`[Layout Repair] Restored fusion position: ${orphanKey} -> ${fusion.id}`);
-                }
-            });
-        }
-
-        // 2. Reconcile Splitters (Same logic)
-        const splitterLayoutKeys = Object.keys(next.layout).filter(k => k.includes('splitter-'));
-        const splittersWithoutLayout = next.splitters.filter(s => !next.layout![s.id]);
-        const orphanSplitterKeys = splitterLayoutKeys.filter(k => !next.splitters.some(s => s.id === k));
-
-        if (splittersWithoutLayout.length > 0 && orphanSplitterKeys.length > 0) {
-            splittersWithoutLayout.forEach((split, idx) => {
-                if (idx < orphanSplitterKeys.length) {
-                    const orphanKey = orphanSplitterKeys[idx];
-                    next.layout![split.id] = next.layout![orphanKey];
-                    delete next.layout![orphanKey];
-                    console.log(`[Layout Repair] Restored splitter position: ${orphanKey} -> ${split.id}`);
-                }
-            });
-        }
 
         // Position Existing Fusions if missing (Fallback)
         next.fusions.forEach((fusion, idx) => {
@@ -222,15 +271,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // SYNC LOCAL STATE WHEN PROP UPDATES (e.g. after Save)
     useEffect(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
-
-        // Preserve layout if missing in new prop (though save should have persisted it)
         if (!next.layout) next.layout = {};
 
+        // APPLY REPAIR ON UPDATE to bridge ID shifts (Temp -> UUID)
+        reconcileOrphans(next);
+
         // RE-APPLY DEFAULTS to ensure consistency
-        incomingCables.forEach((cable, idx) => {
+        let currentCableY = 42;
+        incomingCables.forEach((cable) => {
+            const looseTubeCount = cable.looseTubeCount || 1;
+            const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+            const remainder = fibersHeight % 24;
+            const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+
             if (!next.layout![cable.id]) {
-                next.layout![cable.id] = { x: 42, y: 42 + (idx * 204), rotation: 0 };
+                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
             }
+            currentCableY = Math.max(currentCableY, next.layout![cable.id].y + totalHeight + 10);
         });
         next.splitters.forEach((split, idx) => {
             if (!next.layout![split.id]) {
@@ -243,12 +300,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         });
 
-        // Only update if actually different to avoid render loops (though JSON stringify is heavy, it's safe here)
         setLocalCTO(prev => {
             if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
             return prev;
         });
     }, [cto]);
+
 
     // SYNC REF for performance-critical handlers
     const localCTORef = useRef(localCTO);
