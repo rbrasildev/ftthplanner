@@ -589,6 +589,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     }, [incomingCables]);
 
     useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsAutoSpliceOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (splitterDropdownRef.current && !splitterDropdownRef.current.contains(event.target as Node)) {
                 setShowSplitterDropdown(false);
@@ -2781,14 +2791,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                    title={t('rotate_mode') || "Rotate Mode"}
+                                    title={t('rotate_mode')}
                                 >
                                     <RotateCw className={`w-4 h-4 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
                                 </button>
                                 <button
                                     onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isDeleteMode ? 'bg-red-500 border-red-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                    title="Delete Mode"
+                                    title={t('delete_mode')}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -2806,7 +2816,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={handleAddFusion}
                                     title={t('add_fusion')}
-                                    className={`p-1.5 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                    className={`p-1 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                 >
                                     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
@@ -2861,7 +2871,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                                     onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
                                     className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                    title="OTDR Trace"
+                                    title={t('otdr_trace_tool')}
                                 >
                                     <Ruler className="w-4 h-4" />
                                 </button>
@@ -2872,7 +2882,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={() => setIsSnapping(!isSnapping)}
                                     className={`p-1.5 rounded border transition ${isSnapping ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
-                                    title="Snap to Grid"
+                                    title={t('snap_grid')}
                                 >
                                     <Magnet className="w-4 h-4" />
                                 </button>
@@ -3463,14 +3473,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsAutoSpliceOpen(false)}>
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-96 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 bg-sky-600 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <ArrowRightLeft className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="text-slate-900 dark:text-white font-bold text-lg">{t('auto_splice')}</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Select cables to connect fiber-to-fiber (1-1, 2-2...).</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('auto_splice_help')}</p>
                                 </div>
                             </div>
+
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4 leading-normal">
+                                {t('auto_splice_desc')}
+                            </p>
 
                             <div className="space-y-4 mb-6">
                                 <div>
@@ -3478,9 +3492,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <select
                                         value={autoSourceId}
                                         onChange={(e) => setAutoSourceId(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-sky-500 focus:outline-none transition-colors"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors cursor-pointer"
                                     >
-                                        <option value="">Select Cable...</option>
+                                        <option value="">{t('select_cable')}</option>
                                         {incomingCables.map(c => (
                                             <option key={c.id} value={c.id}>{c.name} ({c.fiberCount} FO)</option>
                                         ))}
@@ -3492,9 +3506,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <select
                                         value={autoTargetId}
                                         onChange={(e) => setAutoTargetId(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-sky-500 focus:outline-none transition-colors"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors cursor-pointer"
                                     >
-                                        <option value="">Select Cable...</option>
+                                        <option value="">{t('select_cable')}</option>
                                         {incomingCables.map(c => (
                                             <option key={c.id} value={c.id}>{c.name} ({c.fiberCount} FO)</option>
                                         ))}
@@ -3507,7 +3521,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={performAutoSplice}
                                     disabled={!autoSourceId || !autoTargetId || autoSourceId === autoTargetId}
-                                    className="flex-1 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition"
+                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition"
                                 >
                                     {t('perform_splice')}
                                 </button>

@@ -176,21 +176,6 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                             }
                         </p>
 
-                        {/* Billing Toggle (Hide in Payment Mode) */}
-                        {!selectedPlanForBilling && (
-                            <div className="flex items-center justify-center gap-4 mt-8">
-                                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Mensal</span>
-                                <button
-                                    onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-                                    className="w-14 h-7 bg-slate-200 dark:bg-slate-700 rounded-full relative transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                >
-                                    <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${billingCycle === 'yearly' ? 'translate-x-7' : ''}`} />
-                                </button>
-                                <span className={`text-sm font-bold ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
-                                    Anual <span className="text-green-500 text-xs ml-1">-20% OFF</span>
-                                </span>
-                            </div>
-                        )}
                     </div>
 
                     {/* Content Area */}
@@ -261,12 +246,6 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                         </span>
                                                     )}
                                                 </div>
-                                                {/* Show savings if yearly */}
-                                                {billingCycle === 'yearly' && plan.priceYearlyRaw && plan.priceRaw > 0 && (
-                                                    <div className="text-xs text-green-600 font-bold mt-1">
-                                                        Economize R$ {(plan.priceRaw * 12 - plan.priceYearlyRaw).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/ano
-                                                    </div>
-                                                )}
                                             </div>
 
                                             <ul className="space-y-3 mb-8 flex-1">

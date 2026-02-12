@@ -76,12 +76,6 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             </span>
                         </div>
 
-                        <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium">Ciclo de Cobrança</span>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                                {isFree ? '-' : 'Mensal'} {/* Hardcoded for now, can be passed if yearly */}
-                            </span>
-                        </div>
 
                         <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                             <span className="text-slate-500 dark:text-slate-400 font-medium">Vencimento / Renovação</span>
