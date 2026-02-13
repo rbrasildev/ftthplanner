@@ -114,9 +114,47 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                         <input
                                             type="tel"
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
+                                            onChange={(e) => {
+                                                let value = e.target.value;
+
+                                                // If empty or just +, set to empty and return
+                                                if (!value || value === '+') {
+                                                    setPhone('');
+                                                    return;
+                                                }
+
+                                                // Ensure it starts with +
+                                                if (!value.startsWith('+')) {
+                                                    value = '+' + value.replace(/\D/g, '');
+                                                }
+
+                                                // Clean everything except + and digits
+                                                const cleanValue = '+' + value.substring(1).replace(/\D/g, '');
+                                                const digits = cleanValue.substring(1); // digits without +
+
+                                                // If it's Brazil (+55), apply special mask
+                                                if (digits.startsWith('55')) {
+                                                    const brDigits = digits.substring(2); // digits without 55
+                                                    let formatted = '+55';
+
+                                                    if (brDigits.length > 0) {
+                                                        formatted += ' (' + brDigits.substring(0, 2);
+                                                    }
+                                                    if (brDigits.length > 2) {
+                                                        formatted += ') ' + brDigits.substring(2, 7);
+                                                    }
+                                                    if (brDigits.length > 7) {
+                                                        formatted += '-' + brDigits.substring(7, 11);
+                                                    }
+                                                    setPhone(formatted);
+                                                } else {
+                                                    // For other countries, just keep the + and digits
+                                                    // Optionally add basic spacing for readability
+                                                    setPhone(cleanValue);
+                                                }
+                                            }}
                                             className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder={t('register_phone_placeholder')}
+                                            placeholder="+55 (00) 00000-0000"
                                             required
                                         />
                                     </div>

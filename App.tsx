@@ -892,7 +892,6 @@ export default function App() {
                 return { ...prev, ctos: [...prev.ctos, newCTO] };
             });
             showToast(t('toast_cto_added'));
-            setToolMode('view');
         } else if (toolMode === 'add_pop') {
             updateCurrentNetwork(prev => {
                 const newPOP: POPData = {
@@ -905,8 +904,6 @@ export default function App() {
                 return { ...prev, pops: [...(prev.pops || []), newPOP] };
             });
             showToast(t('toast_pop_added'));
-            setToolMode('view');
-
         } else if (toolMode === 'add_pole') {
             setPendingPoleLocation({ lat, lng });
             setIsPoleModalOpen(true);
@@ -2608,7 +2605,6 @@ export default function App() {
                         showToast(t('toast_pole_added'));
                         setIsPoleModalOpen(false);
                         setPendingPoleLocation(null);
-                        setToolMode('view');
                     }
                 }}
             />

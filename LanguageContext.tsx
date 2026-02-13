@@ -340,6 +340,8 @@ const translations = {
     'status_ANALYSING': 'Em análise',
     'status_LICENSED': 'Licenciado',
     'pole_properties': 'Pole Properties',
+    'select_pole': 'Select Pole',
+    'search_pole': 'Search pole model...',
     'selection_pole_type': 'Pole Type',
     'pole_height_placeholder': 'Ex: 10',
     'confirm_delete_pole_msg': 'Are you sure you want to delete this pole?',
@@ -1210,6 +1212,7 @@ const translations = {
     'saved': 'Salvo',
     'done': 'Concluir',
     'clear_all': 'Limpar tudo',
+    'confirm_delete': 'Tem certeza?',
     'confirm_delete_equip_msg': 'Tem certeza que deseja deletar {name}?',
     'delete_warning_msg': 'Aviso: Todas as conexões associadas a este {type} serão removidas permanentemente.',
 
@@ -1224,6 +1227,8 @@ const translations = {
     // Pole Details
     'edit_pole': 'Editar poste',
     'pole_properties': 'Propriedades do poste',
+    'select_pole': 'Selecionar Poste',
+    'search_pole': 'Buscar modelo de poste...',
     'pole_type': 'Tipo de poste',
     'selection_pole_type': 'Tipo de poste',
     'pole_height_placeholder': 'Ex: 10',
