@@ -12,7 +12,7 @@ async function main() {
         data: [
             {
                 name: "Cabo Drop Flat 1FO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "Drop Flat",
                 defaultLevel: "Acesso",
                 fiberCount: 1,
@@ -26,35 +26,35 @@ async function main() {
             },
             {
                 name: "Cabo 6FO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "AS-80",
-                defaultLevel: "DistribuiÃ§Ã£o",
+                defaultLevel: "Distribuição",
                 fiberCount: 6,
                 looseTubeCount: 1, // Ex: 1 tubo de 6
                 fibersPerTube: 6,
                 attenuation: 0.35,
                 fiberProfile: "G.652D",
-                description: "Cabo de distribuiÃ§Ã£o 6 fibras",
+                description: "Cabo de distribuição 6 fibras",
                 deployedSpec: { color: "#ff00ff", width: 4 }, // Orange
                 plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
                 name: "Cabo 12FO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "AS-80",
-                defaultLevel: "DistribuiÃ§Ã£o",
+                defaultLevel: "Distribuição",
                 fiberCount: 12,
                 looseTubeCount: 1, // Ex: 1 tubo de 12
                 fibersPerTube: 12,
                 attenuation: 0.35,
                 fiberProfile: "G.652D",
-                description: "Cabo de distribuiÃ§Ã£o 12 fibras",
+                description: "Cabo de distribuição 12 fibras",
                 deployedSpec: { color: "#0000ff", width: 4 }, // Orange
                 plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
                 name: "Cabo 36FO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "AS-120",
                 defaultLevel: "Troncal",
                 fiberCount: 36,
@@ -68,7 +68,7 @@ async function main() {
             },
             {
                 name: "Cabo 48FO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "AS-120",
                 defaultLevel: "Troncal",
                 fiberCount: 48,
@@ -102,21 +102,21 @@ async function main() {
         data: [
             {
                 name: "CTO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "NAP-16",
                 type: "CTO",
                 reserveLoopLength: 30,
                 color: "#00FF00",
-                description: "Caixa Terminal Ã“ptica para 16 assinantes (equipada 1:8)"
+                description: "Caixa Terminal Óptica para 16 assinantes (equipada 1:8)"
             },
             {
                 name: "CEO",
-                brand: "GenÃ©rico",
+                brand: "Genérico",
                 model: "Domo 144",
                 type: "CEO",
                 reserveLoopLength: 50,
                 color: "#00ffff",
-                description: "Caixa de Emenda Ã“ptica tipo Domo"
+                description: "Caixa de Emenda Óptica tipo Domo"
             }
         ]
     });
@@ -136,7 +136,7 @@ async function main() {
     await prisma.templateFusion.deleteMany();
     await prisma.templateFusion.createMany({
         data: [
-            { name: "FusÃ£o PadrÃ£o", attenuation: 0.02 },
+            { name: "Fusão Padrão", attenuation: 0.02 },
             { name: "Conector APC", attenuation: 0.5 },
             { name: "Conector UPC", attenuation: 0.3 }
         ]
@@ -149,7 +149,7 @@ async function main() {
         data: [
             { name: "OLT Huawei MA5608T", outputPower: 3, slots: 2, portsPerSlot: 16, description: "OLT Chassis 2 Slots" },
             { name: "OLT ZTE C320", outputPower: 4, slots: 2, portsPerSlot: 16, description: "OLT Compacta" },
-            { name: "OLT V-Sol 8 Portas", outputPower: 5, slots: 1, portsPerSlot: 8, description: "Pizza Box 8 Portas" }
+            { name: "OLT V-Sol 8 Portas", outputPower: 5, slots: 1, portsPerSlot: 8, description: "Box 8 Portas" }
         ]
     });
 

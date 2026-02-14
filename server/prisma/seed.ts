@@ -39,66 +39,150 @@ async function main() {
     console.log('Seeding templates...');
 
     // 1. Template Cables
-    const cables = [
-        { name: 'Cabo AS 6F', fiberCount: 6, looseTubeCount: 1, fibersPerTube: 6, deployedSpec: { color: '#ff00ff', width: 3 }, defaultLevel: 'DISTRIBUICAO' },
-        { name: 'Cabo AS 12F', fiberCount: 12, looseTubeCount: 1, fibersPerTube: 12, deployedSpec: { color: '#0000ff', width: 3 }, defaultLevel: 'TRONCO' },
-        { name: 'Cabo AS 24F', fiberCount: 24, looseTubeCount: 4, fibersPerTube: 6, deployedSpec: { color: '#ffff00', width: 3 }, defaultLevel: 'TRONCO' },
-        { name: 'Cabo AS 36F', fiberCount: 36, looseTubeCount: 6, fibersPerTube: 6, deployedSpec: { color: '#aa00ff', width: 3 }, defaultLevel: 'TRONCO' },
-        { name: 'Cabo AS 48F', fiberCount: 48, looseTubeCount: 4, fibersPerTube: 6, deployedSpec: { color: '#55aa00', width: 3 }, defaultLevel: 'TRONCO' },
-        { name: 'Cabo AS 72F', fiberCount: 72, looseTubeCount: 6, fibersPerTube: 12, deployedSpec: { color: '#6366f1', width: 3 }, defaultLevel: 'TRONCO' },
-    ];
-    for (const c of cables) {
-        const exists = await prisma.templateCable.findFirst({ where: { name: c.name } });
-        if (!exists) await prisma.templateCable.create({ data: c as any });
-    }
+    console.log('Clearing and seeding template cables...');
+    await prisma.templateCable.deleteMany();
+    await prisma.templateCable.createMany({
+        data: [
+            {
+                name: "Cabo Drop Flat 1FO",
+                brand: "Genérico",
+                model: "Drop Flat",
+                defaultLevel: "Acesso",
+                fiberCount: 1,
+                looseTubeCount: 1,
+                fibersPerTube: 1,
+                attenuation: 0.3,
+                fiberProfile: "G.657A2",
+                description: "Cabo Drop para assinante",
+                deployedSpec: { color: "#000000", width: 2 },
+                plannedSpec: { color: "#999999", width: 2 }
+            },
+            {
+                name: "Cabo 6FO AS-80",
+                brand: "Genérico",
+                model: "AS-80",
+                defaultLevel: "DISTRIBUICAO",
+                fiberCount: 6,
+                looseTubeCount: 1,
+                fibersPerTube: 6,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo de distribuição 6 fibras",
+                deployedSpec: { color: "#ff00ff", width: 4 },
+                plannedSpec: { color: "#f1f1f154", width: 4 }
+            },
+            {
+                name: "Cabo 12FO AS-80",
+                brand: "Genérico",
+                model: "AS-80",
+                defaultLevel: "DISTRIBUICAO",
+                fiberCount: 12,
+                looseTubeCount: 1,
+                fibersPerTube: 12,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo de distribuição 12 fibras",
+                deployedSpec: { color: "#0000ff", width: 4 },
+                plannedSpec: { color: "#f1f1f154", width: 4 }
+            },
+            {
+                name: "Cabo 36FO AS-120",
+                brand: "Genérico",
+                model: "AS-120",
+                defaultLevel: "TRONCO",
+                fiberCount: 36,
+                looseTubeCount: 6,
+                fibersPerTube: 6,
+                attenuation: 0.354,
+                fiberProfile: "G.652D",
+                description: "Cabo troncal 36 fibras",
+                deployedSpec: { color: "#aa00ff", width: 6 },
+                plannedSpec: { color: "#f1f1f154", width: 6 }
+            },
+            {
+                name: "Cabo 48FO AS-120",
+                brand: "Genérico",
+                model: "AS-120",
+                defaultLevel: "TRONCO",
+                fiberCount: 48,
+                looseTubeCount: 4,
+                fibersPerTube: 12,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo troncal 48 fibras",
+                deployedSpec: { color: "#0000FF", width: 6 },
+                plannedSpec: { color: "#87CEFA", width: 6 }
+            },
+            {
+                name: "Cabo 72FO AS-120",
+                brand: "Genérico",
+                model: "AS-120",
+                defaultLevel: "TRONCO",
+                fiberCount: 72,
+                looseTubeCount: 6,
+                fibersPerTube: 12,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo troncal 72 fibras",
+                deployedSpec: { color: "#6366f1", width: 6 },
+                plannedSpec: { color: "#a5b4fc", width: 6 }
+            }
+        ]
+    });
 
     // 2. Template Splitters
-    const splitters = [
-        { name: 'Splitter 1:8 PLC', type: 'PLC', mode: 'Balanced', outputs: 8, attenuation: { loss: 10.5 } },
-        { name: 'Splitter 1:16 PLC', type: 'PLC', mode: 'Balanced', outputs: 16, attenuation: { loss: 13.8 } },
-        { name: 'Splitter 10/90 FBT', type: 'FBT', mode: 'Unbalanced', outputs: 2, attenuation: { ports: { "1": 10.5, "2": 0.5 } } },
-    ];
-    for (const s of splitters) {
-        const exists = await prisma.templateSplitter.findFirst({ where: { name: s.name } });
-        if (!exists) await prisma.templateSplitter.create({ data: s as any });
-    }
+    console.log('Clearing and seeding template splitters...');
+    await prisma.templateSplitter.deleteMany();
+    await prisma.templateSplitter.createMany({
+        data: [
+            { name: "Splitter 1:2", type: "PLC", mode: "Balanced", inputs: 1, outputs: 2, attenuation: { "1": 3.7, "2": 3.7 }, description: "Divisor Balanceado 1:2" },
+            { name: "Splitter 1:4", type: "PLC", mode: "Balanced", inputs: 1, outputs: 4, attenuation: { "x": 7.3 }, description: "Divisor Balanceado 1:4" },
+            { name: "Splitter 1:8", type: "PLC", mode: "Balanced", inputs: 1, outputs: 8, attenuation: { "x": 10.5 }, description: "Divisor Balanceado 1:8" },
+            { name: "Splitter 1:16", type: "PLC", mode: "Balanced", inputs: 1, outputs: 16, attenuation: { "x": 13.7 }, description: "Divisor Balanceado 1:16" },
+            { name: "Splitter 10/90 FBT", type: "FBT", mode: "Unbalanced", inputs: 1, outputs: 2, attenuation: { "1": 10.5, "2": 0.5 }, description: "Divisor Desbalanceado 10/90" }
+        ]
+    });
 
     // 3. Template Boxes
-    const boxes = [
-        { name: 'CTO', type: 'CTO', model: 'Padrão', color: '#64748b' },
-        { name: 'CEO', type: 'CEO', model: 'Padrão', color: '#334155' },
-    ];
-    for (const b of boxes) {
-        const exists = await prisma.templateBox.findFirst({ where: { name: b.name } });
-        if (!exists) await prisma.templateBox.create({ data: b as any });
-    }
+    console.log('Clearing and seeding template boxes...');
+    await prisma.templateBox.deleteMany();
+    await prisma.templateBox.createMany({
+        data: [
+            { name: "CTO NAP-16", brand: "Genérico", model: "NAP-16", type: "CTO", reserveLoopLength: 30, color: "#00FF00", description: "Caixa Terminal Óptica para 16 assinantes" },
+            { name: "CEO Domo 144", brand: "Genérico", model: "Domo 144", type: "CEO", reserveLoopLength: 50, color: "#00ffff", description: "Caixa de Emenda Óptica tipo Domo" }
+        ]
+    });
 
     // 4. Template Poles
-    const poles = [
-        { name: 'Poste Concreto Circular 11m/300daN', type: 'Concreto', height: 11, strength: 300, shape: 'Circular' },
-    ];
-    for (const p of poles) {
-        const exists = await prisma.templatePole.findFirst({ where: { name: p.name } });
-        if (!exists) await prisma.templatePole.create({ data: p });
-    }
+    console.log('Clearing and seeding template poles...');
+    await prisma.templatePole.deleteMany();
+    await prisma.templatePole.createMany({
+        data: [
+            { name: "Poste DT 09/300", type: "Concreto", height: 9, strength: 300, shape: "Duplo T", description: "Poste padrão distribuição" },
+            { name: "Poste Circular 11/600", type: "Concreto", height: 11, strength: 600, shape: "Circular", description: "Poste reforçado" }
+        ]
+    });
 
     // 5. Template Fusions
-    const fusions = [
-        { name: 'Fusão Padrão', attenuation: 0.05 },
-    ];
-    for (const f of fusions) {
-        const exists = await prisma.templateFusion.findFirst({ where: { name: f.name } });
-        if (!exists) await prisma.templateFusion.create({ data: f });
-    }
+    console.log('Clearing and seeding template fusions...');
+    await prisma.templateFusion.deleteMany();
+    await prisma.templateFusion.createMany({
+        data: [
+            { name: "Fusão Padrão", attenuation: 0.02 },
+            { name: "Conector APC", attenuation: 0.5 },
+            { name: "Conector UPC", attenuation: 0.3 }
+        ]
+    });
 
     // 6. Template OLTs
-    const olts = [
-        { name: 'OLT GPON 16 Portas', slots: 1, portsPerSlot: 16, outputPower: 3.0 },
-    ];
-    for (const o of olts) {
-        const exists = await prisma.templateOLT.findFirst({ where: { name: o.name } });
-        if (!exists) await prisma.templateOLT.create({ data: o });
-    }
+    console.log('Clearing and seeding template olts...');
+    await prisma.templateOLT.deleteMany();
+    await prisma.templateOLT.createMany({
+        data: [
+            { name: "OLT Chassis High-End", outputPower: 3, slots: 2, portsPerSlot: 16, description: "OLT Chassis 2 Slots" },
+            { name: "OLT Pizza Box 8 Portas", outputPower: 5, slots: 1, portsPerSlot: 8, description: "OLT Compacta 8 Portas" }
+        ]
+    });
 
     console.log('Templates seeded successfully.');
 
