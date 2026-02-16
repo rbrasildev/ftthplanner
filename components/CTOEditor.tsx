@@ -1037,8 +1037,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleApply = async () => {
         setSavingAction('apply');
         try {
-            // Use REF as source of truth for saving to avoid stale state from React async updates
-            const finalCTO = JSON.parse(JSON.stringify(localCTORef.current)) as CTOData;
+            // FIX: Use localCTO (React state) directly to ensure we save the most recent changes
+            // This prevents race conditions where the ref hasn't been synchronized yet
+            const finalCTO = JSON.parse(JSON.stringify(localCTO)) as CTOData;
             finalCTO.viewState = viewState;
 
             await onSave(finalCTO);
@@ -1068,8 +1069,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleSaveAndClose = async () => {
         setSavingAction('save_close');
         try {
-            // Use REF as source of truth for saving to avoid stale state from React async updates
-            const finalCTO = JSON.parse(JSON.stringify(localCTORef.current)) as CTOData;
+            // FIX: Use localCTO (React state) directly to ensure we save the most recent changes
+            // This prevents race conditions where the ref hasn't been synchronized yet
+            const finalCTO = JSON.parse(JSON.stringify(localCTO)) as CTOData;
             finalCTO.viewState = viewState;
 
             // SAFEGUARD: Ensure all fusions have a layout entry before saving
