@@ -306,44 +306,90 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return next;
     });
 
-    // SYNC LOCAL STATE WHEN PROP UPDATES (e.g. after Save)
+    // SYNC LOCAL STATE WHEN PROP UPDATES (e.g. after Save or External Change)
     useEffect(() => {
-        const next = JSON.parse(JSON.stringify(cto)) as CTOData;
-        if (!next.layout) next.layout = {};
-
-        // APPLY REPAIR ON UPDATE to bridge ID shifts (Temp -> UUID)
-        reconcileOrphans(next, incomingCables);
-
-        // RE-APPLY DEFAULTS only for missing layouts
-        // FIX: Only calculate positions for new cables, never recalculate existing layouts
-        let currentCableY = 42;
-        incomingCables.forEach((cable) => {
-            if (!next.layout![cable.id]) {
-                // Calculate height only for new cables
-                const looseTubeCount = cable.looseTubeCount || 1;
-                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-                const remainder = fibersHeight % 24;
-                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-
-                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
-                currentCableY += totalHeight + 10;
-            }
-            // Do NOT recalculate currentCableY based on existing layouts
-            // This preserves saved positions unconditionally
-        });
-        next.splitters.forEach((split, idx) => {
-            if (!next.layout![split.id]) {
-                next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
-            }
-        });
-        next.fusions.forEach((fusion, idx) => {
-            if (!next.layout![fusion.id]) {
-                next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-            }
-        });
-
         setLocalCTO(prev => {
-            if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
+            const next = JSON.parse(JSON.stringify(cto)) as CTOData;
+
+            // 1. If CTO ID Changed, full reset (New Context)
+            if (prev.id !== next.id) {
+                // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
+                const migratedConnections = next.connections?.map(c => {
+                    if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
+                        return { ...c, color: '#0f172a' };
+                    }
+                    return c;
+                }) || [];
+                next.connections = migratedConnections;
+
+                if (!next.layout) next.layout = {};
+
+                // Ensure we initialize viewState if saved, or calc default
+                let vs = next.viewState;
+                if (!vs) {
+                    vs = getInitialViewState(next);
+                }
+                next.viewState = vs;
+                setViewState(vs); // SYNC VIEW STATE
+
+                reconcileOrphans(next, incomingCables);
+
+                // Defaults Logic (Inline)
+                let currentCableY = 42;
+                incomingCables.forEach((cable) => {
+                    if (!next.layout![cable.id]) {
+                        const looseTubeCount = cable.looseTubeCount || 1;
+                        const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                        const remainder = fibersHeight % 24;
+                        const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+                        next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
+                        currentCableY += totalHeight + 10;
+                    }
+                    // Do NOT recalculate currentCableY based on existing layouts
+                });
+                next.splitters.forEach((split, idx) => {
+                    if (!next.layout![split.id]) next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
+                });
+                next.fusions.forEach((fusion, idx) => {
+                    if (!next.layout![fusion.id]) next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
+                });
+
+                return next;
+            }
+
+            // 2. SAME CTO - SMART MERGE (Preserve Unsaved Work)
+            const merged = { ...next }; // Start with fresh structure
+
+            // Preserve Unsaved Layout & Connections from Prev
+            if (prev.layout) merged.layout = JSON.parse(JSON.stringify(prev.layout));
+            else merged.layout = {};
+
+            if (prev.connections) merged.connections = JSON.parse(JSON.stringify(prev.connections));
+            if (prev.viewState) merged.viewState = prev.viewState;
+
+            // Run Reconciler on MERGED state (Fixes ID shifts while keeping positions)
+            reconcileOrphans(merged, incomingCables);
+
+            // Apply Defaults ONLY for NEW items
+            let currentCableY = 42;
+            incomingCables.forEach((cable) => {
+                if (!merged.layout![cable.id]) {
+                    const looseTubeCount = cable.looseTubeCount || 1;
+                    const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                    const remainder = fibersHeight % 24;
+                    const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+                    merged.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
+                    currentCableY += totalHeight + 10;
+                }
+            });
+            merged.splitters.forEach((split, idx) => {
+                if (!merged.layout![split.id]) merged.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
+            });
+            merged.fusions.forEach((fusion, idx) => {
+                if (!merged.layout![fusion.id]) merged.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
+            });
+
+            if (JSON.stringify(prev) !== JSON.stringify(merged)) return merged;
             return prev;
         });
     }, [cto, incomingCables, reconcileOrphans]);
@@ -2382,29 +2428,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, [dragState, isFusionToolActive, handleMouseMove, handleMouseUp]);
 
-    // Initialize local state from prop
-    useEffect(() => {
-        // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
-        const migratedConnections = cto.connections.map(c => {
-            if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
-                return { ...c, color: '#0f172a' };
-            }
-            return c;
-        });
 
-        // Ensure we initialize viewState if saved, or calc default
-        let vs = cto.viewState;
-        if (!vs) {
-            vs = getInitialViewState({ ...cto, connections: migratedConnections });
-        }
-
-        setLocalCTO({
-            ...cto,
-            connections: migratedConnections,
-            viewState: vs
-        });
-        setViewState(vs);
-    }, [cto]);
 
     const removePoint = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
