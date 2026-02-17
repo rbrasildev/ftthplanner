@@ -464,6 +464,7 @@ const translations = {
     'perform_splice': 'Fuse All Fibers',
     'splice_success': 'Successfully fused {count} fibers.',
     'smart_align': 'Smart Align',
+    'select_splitter': 'Select Splitter',
     'select_fusion_type': 'Select Fusion Type',
     'fusion_tool_active': 'Fusion Mode: Click to add fusion point',
 
@@ -1192,6 +1193,10 @@ const translations = {
     'otdr_trace_msg': 'Rastrear a partir da fibra selecionada',
     'otdr_instruction_banner': 'Clique em uma porta de fibra para medir a distância.',
     'otdr_event_tooltip': 'Evento OTDR',
+
+    // CTO Editor Modals
+    'select_splitter': 'Selecionar Splitter',
+    'select_fusion_type': 'Selecionar Tipo de Fusão',
 
     // Modal de Potência Óptica
     'optical_budget': 'Orçamento Óptico',

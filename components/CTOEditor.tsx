@@ -138,7 +138,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 }) => {
     const { t } = useLanguage();
     // --- PERSISTENCE FIX REUSABLE LOGIC ---
-    const reconcileOrphans = (data: CTOData) => {
+    const reconcileOrphans = (data: CTOData, incomingCables: CableData[]) => {
         if (!data.layout) data.layout = {};
 
         // 1. Reconcile Fusions
@@ -160,7 +160,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         return nextConn;
                     });
                     delete data.layout![orphanKey];
-                    console.log(`[Layout Repair] Restored fusion position & connections: ${orphanKey} -> ${fusion.id}`);
                 }
             });
         }
@@ -193,20 +192,34 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     });
 
                     delete data.layout![orphanKey];
-                    console.log(`[Layout Repair] Restored splitter position & connections: ${orphanKey} -> ${split.id}`);
                 }
             });
         }
 
-        // 3. Reconcile Cables (Fallback for ID shifts)
+
+        // 3. Reconcile Cables - INTELLIGENT MAPPING (Temp IDs -> Real UUIDs)
+        // When a CTO is opened for the first time, cables get temporary IDs like "cable-XXX-split"
+        // After saving, these IDs should be replaced with real UUIDs from incomingCables
+        // This reconciliation maps old temp IDs to current real IDs
         const cableLayoutKeys = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
         const cablesWithoutLayout = incomingCables.filter(c => !data.layout![c.id]);
+
+        // Find orphan keys (layouts with IDs that don't match current cables)
         const orphanCableKeys = cableLayoutKeys.filter(k => !incomingCables.some(c => c.id === k));
 
-        if (cablesWithoutLayout.length > 0 && orphanCableKeys.length > 0) {
+        // INTELLIGENT RECONCILIATION: Only map if:
+        // 1. There are cables without layouts AND orphan layouts
+        // 2. Orphan keys look like temp IDs (contain "cable-" and "-split")
+        // 3. Counts match (to avoid mapping wrong cables)
+        const tempIdOrphans = orphanCableKeys.filter(k => k.includes('cable-') && k.includes('-split'));
+
+        if (cablesWithoutLayout.length > 0 && tempIdOrphans.length > 0) {
+            console.log('[Reconcile] Found temp ID orphans:', tempIdOrphans);
+            console.log('[Reconcile] Cables without layout:', cablesWithoutLayout.map(c => c.id));
+
             cablesWithoutLayout.forEach((cable, idx) => {
-                if (idx < orphanCableKeys.length) {
-                    const orphanKey = orphanCableKeys[idx];
+                if (idx < tempIdOrphans.length) {
+                    const orphanKey = tempIdOrphans[idx];
                     data.layout![cable.id] = data.layout![orphanKey];
 
                     // Repair fiber connections
@@ -222,10 +235,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     });
 
                     delete data.layout![orphanKey];
-                    console.log(`[Layout Repair] Restored cable position & fibers: ${orphanKey} -> ${cable.id}`);
                 }
             });
         }
+
+        // 4. CLEANUP - Remove orphan cable layouts (cables that are no longer connected)
+        // This prevents old cable layouts from interfering with new cables
+        const currentCableIds = incomingCables.map(c => c.id);
+        const cableLayoutsToCheck = Object.keys(data.layout).filter(k =>
+            !k.includes('fus-') && !k.includes('spl-')
+        );
+
+        cableLayoutsToCheck.forEach(layoutKey => {
+            if (!currentCableIds.includes(layoutKey)) {
+                delete data.layout![layoutKey];
+            }
+        });
     };
 
     const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
@@ -234,21 +259,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (!next.layout) next.layout = {};
 
         // Run reconciler first to recover positions from any ID shifts
-        reconcileOrphans(next);
+        reconcileOrphans(next, incomingCables);
 
         // Position Incoming Cables on the Left if missing (Stacking with 10px gap)
+        // FIX: Only calculate positions for new cables, never recalculate existing layouts
         let currentCableY = 42;
         incomingCables.forEach((cable) => {
-            const looseTubeCount = cable.looseTubeCount || 1;
-            const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12); // Base height approx
-            const remainder = fibersHeight % 24;
-            const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-
             if (!next.layout![cable.id]) {
+                // Calculate height only for new cables
+                const looseTubeCount = cable.looseTubeCount || 1;
+                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                const remainder = fibersHeight % 24;
+                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+
                 next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
+                currentCableY += totalHeight + 10;
             }
-            const finalLayout = next.layout![cable.id];
-            currentCableY = Math.max(currentCableY, finalLayout.y + totalHeight + 10);
+            // Do NOT recalculate currentCableY based on existing layouts
+            // This preserves saved positions unconditionally
         });
 
         // Position Existing Splitters if missing (Fallback)
@@ -272,22 +300,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     useEffect(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
-
         // APPLY REPAIR ON UPDATE to bridge ID shifts (Temp -> UUID)
-        reconcileOrphans(next);
+        reconcileOrphans(next, incomingCables);
 
-        // RE-APPLY DEFAULTS to ensure consistency
+        // RE-APPLY DEFAULTS only for missing layouts
+        // FIX: Only calculate positions for new cables, never recalculate existing layouts
         let currentCableY = 42;
         incomingCables.forEach((cable) => {
-            const looseTubeCount = cable.looseTubeCount || 1;
-            const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-            const remainder = fibersHeight % 24;
-            const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-
             if (!next.layout![cable.id]) {
+                // Calculate height only for new cables
+                const looseTubeCount = cable.looseTubeCount || 1;
+                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                const remainder = fibersHeight % 24;
+                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+
                 next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
+                currentCableY += totalHeight + 10;
             }
-            currentCableY = Math.max(currentCableY, next.layout![cable.id].y + totalHeight + 10);
+            // Do NOT recalculate currentCableY based on existing layouts
+            // This preserves saved positions unconditionally
         });
         next.splitters.forEach((split, idx) => {
             if (!next.layout![split.id]) {
@@ -1041,7 +1072,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // This prevents race conditions where the ref hasn't been synchronized yet
             const finalCTO = JSON.parse(JSON.stringify(localCTO)) as CTOData;
             finalCTO.viewState = viewState;
-
             await onSave(finalCTO);
         } catch (e) {
             console.error("Apply failed", e);

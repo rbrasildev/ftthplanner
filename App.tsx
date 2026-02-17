@@ -1277,7 +1277,7 @@ export default function App() {
             const coordSegment2 = cable.coordinates.slice(pointIndex);
             coordSegment1[coordSegment1.length - 1] = node.coordinates;
             coordSegment2[0] = node.coordinates;
-            const newCableId = `cable-${Date.now()}-split`;
+            const newCableId = crypto.randomUUID(); // Real UUID instead of temp ID
 
             const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)`, looseTubeCount: cable.looseTubeCount };
             const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
