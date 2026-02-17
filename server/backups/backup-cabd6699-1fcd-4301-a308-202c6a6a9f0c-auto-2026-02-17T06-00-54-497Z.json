@@ -1,0 +1,3889 @@
+{
+  "meta": {
+    "createdAt": "2026-02-17T06:00:54.497Z",
+    "version": "1.0",
+    "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c"
+  },
+  "projects": [
+    {
+      "id": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "userId": "dc01bfeb-7242-401a-a675-947fac14939c",
+      "name": "FTTX OTYS FIBRA",
+      "centerLat": -16.62642461137822,
+      "centerLng": -49.29037676394965,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-29T22:08:12.527Z",
+      "updatedAt": "2026-01-30T00:24:24.184Z",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "d2b58d39-3851-4f70-9184-18ffcdbf2659",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 02",
+      "status": "DEPLOYED",
+      "lat": -16.62657364799415,
+      "lng": -49.29004043340684,
+      "splitters": [],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-pass-1769731889404-0",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 432,
+              "y": 306
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-0",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-0"
+        },
+        {
+          "id": "conn-pass-1769731889404-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 420,
+              "y": 318
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-1",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-1"
+        },
+        {
+          "id": "conn-pass-1769731889404-2",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 408,
+              "y": 330
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-2",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-2"
+        },
+        {
+          "id": "conn-pass-1769731889404-3",
+          "color": "#3b82f6",
+          "points": [
+            {
+              "x": 396,
+              "y": 342
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-3",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-3"
+        },
+        {
+          "id": "conn-pass-1769731889404-4",
+          "color": "#ef4444",
+          "points": [
+            {
+              "x": 384,
+              "y": 354
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-4",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-4"
+        },
+        {
+          "id": "conn-pass-1769731889404-5",
+          "color": "#a855f7",
+          "points": [
+            {
+              "x": 372,
+              "y": 366
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-5",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-5"
+        },
+        {
+          "id": "conn-pass-1769731889404-6",
+          "color": "#78350f",
+          "points": [
+            {
+              "x": 360,
+              "y": 378
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-6",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-6"
+        },
+        {
+          "id": "conn-pass-1769731889404-7",
+          "color": "#ec4899",
+          "points": [
+            {
+              "x": 348,
+              "y": 390
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-7",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-7"
+        },
+        {
+          "id": "conn-pass-1769731889404-8",
+          "color": "#000000",
+          "points": [
+            {
+              "x": 336,
+              "y": 402
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-8",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-8"
+        },
+        {
+          "id": "conn-pass-1769731889404-9",
+          "color": "#9ca3af",
+          "points": [
+            {
+              "x": 324,
+              "y": 414
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-9",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-9"
+        },
+        {
+          "id": "conn-pass-1769731889404-10",
+          "color": "#f97316",
+          "points": [
+            {
+              "x": 312,
+              "y": 426
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-10",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-10"
+        },
+        {
+          "id": "conn-pass-1769731889404-11",
+          "color": "#22d3ee",
+          "points": [
+            {
+              "x": 300,
+              "y": 438
+            }
+          ],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-11",
+          "targetId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-11"
+        },
+        {
+          "id": "conn-pass-1769731928641-0",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 684,
+              "y": 294
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-0",
+          "targetId": "cable-1769726589590-split-fiber-0"
+        },
+        {
+          "id": "conn-pass-1769731928641-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 672,
+              "y": 306
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-1",
+          "targetId": "cable-1769726589590-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1769731928641-2",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 660,
+              "y": 318
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-2",
+          "targetId": "cable-1769726589590-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1769731928641-3",
+          "color": "#3b82f6",
+          "points": [
+            {
+              "x": 648,
+              "y": 330
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-3",
+          "targetId": "cable-1769726589590-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1769731928641-4",
+          "color": "#ef4444",
+          "points": [
+            {
+              "x": 636,
+              "y": 342
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-4",
+          "targetId": "cable-1769726589590-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1769731928641-5",
+          "color": "#a855f7",
+          "points": [
+            {
+              "x": 624,
+              "y": 354
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-5",
+          "targetId": "cable-1769726589590-split-fiber-5"
+        },
+        {
+          "id": "conn-pass-1769731928641-6",
+          "color": "#78350f",
+          "points": [
+            {
+              "x": 612,
+              "y": 366
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-6",
+          "targetId": "cable-1769726589590-split-fiber-6"
+        },
+        {
+          "id": "conn-pass-1769731928641-7",
+          "color": "#ec4899",
+          "points": [
+            {
+              "x": 600,
+              "y": 378
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-7",
+          "targetId": "cable-1769726589590-split-fiber-7"
+        },
+        {
+          "id": "conn-pass-1769731928641-8",
+          "color": "#000000",
+          "points": [
+            {
+              "x": 588,
+              "y": 390
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-8",
+          "targetId": "cable-1769726589590-split-fiber-8"
+        },
+        {
+          "id": "conn-pass-1769731928641-9",
+          "color": "#9ca3af",
+          "points": [
+            {
+              "x": 576,
+              "y": 402
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-9",
+          "targetId": "cable-1769726589590-split-fiber-9"
+        },
+        {
+          "id": "conn-pass-1769731928641-10",
+          "color": "#f97316",
+          "points": [
+            {
+              "x": 564,
+              "y": 414
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-10",
+          "targetId": "cable-1769726589590-split-fiber-10"
+        },
+        {
+          "id": "conn-pass-1769731928641-11",
+          "color": "#22d3ee",
+          "points": [
+            {
+              "x": 552,
+              "y": 426
+            }
+          ],
+          "sourceId": "cable-1769726514065-fiber-11",
+          "targetId": "cable-1769726589590-split-fiber-11"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769726514065",
+        "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d",
+        "b853b4ae-9d24-4101-bc16-e5af68f39943"
+      ],
+      "layout": {
+        "cable-1769726514065": {
+          "x": 522,
+          "y": -36,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1769726931351-nsm0r": {
+          "x": 731.8028006193049,
+          "y": 285.0926548532325,
+          "rotation": 270
+        },
+        "fus-1769726932641-e0fbh": {
+          "x": 756,
+          "y": 192,
+          "rotation": 0
+        },
+        "fus-1769726933260-nv23z": {
+          "x": 756,
+          "y": 276,
+          "rotation": 0
+        },
+        "fus-1769726954621-9tmt4": {
+          "x": 744,
+          "y": 150,
+          "rotation": 0
+        },
+        "fus-1769726955841-lfj46": {
+          "x": 756,
+          "y": 150,
+          "rotation": 0
+        },
+        "fus-1769726956857-0cmpi": {
+          "x": 864,
+          "y": 156,
+          "rotation": 0
+        },
+        "fus-1769727118969-ari2p": {
+          "x": 426,
+          "y": 294,
+          "rotation": 0
+        },
+        "fus-1769727124666-0zlmd": {
+          "x": 510,
+          "y": 306,
+          "rotation": 0
+        },
+        "fus-1769727131358-77n27": {
+          "x": 216,
+          "y": 432,
+          "rotation": 180
+        },
+        "fus-1769727545962-zw10h": {
+          "x": 582,
+          "y": 408,
+          "rotation": 0
+        },
+        "cable-1769726589590-split": {
+          "x": 774,
+          "y": 276,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "b853b4ae-9d24-4101-bc16-e5af68f39943": {
+          "x": 270,
+          "y": -36,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d": {
+          "x": 36,
+          "y": 288,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "7ca834e4-8010-47f5-b3f2-31412951d76f",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 27",
+      "status": "DEPLOYED",
+      "lat": -16.62855387308588,
+      "lng": -49.27296280860755,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "19371f29-d00e-4b9a-ad68-bfc0deb40347",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 28",
+      "status": "DEPLOYED",
+      "lat": -16.62621754412282,
+      "lng": -49.26164869424352,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "88ed0dfc-a4fe-4adc-8173-1b6ddb46eae0",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 29P",
+      "status": "DEPLOYED",
+      "lat": -16.62564035396178,
+      "lng": -49.25822141005936,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9daafce5-40fe-40c8-afb9-ede54ee108c3",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 03",
+      "status": "DEPLOYED",
+      "lat": -16.62306196346388,
+      "lng": -49.29714114740949,
+      "splitters": [
+        {
+          "id": "spl-1769732183780",
+          "name": "1",
+          "type": "Splitter 1:2",
+          "inputPortId": "spl-1769732183780-in",
+          "outputPortIds": [
+            "spl-1769732183780-out-0",
+            "spl-1769732183780-out-1"
+          ]
+        },
+        {
+          "id": "spl-1769732309468",
+          "name": "2",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1769732309468-in",
+          "outputPortIds": [
+            "spl-1769732309468-out-0",
+            "spl-1769732309468-out-1",
+            "spl-1769732309468-out-2",
+            "spl-1769732309468-out-3",
+            "spl-1769732309468-out-4",
+            "spl-1769732309468-out-5",
+            "spl-1769732309468-out-6",
+            "spl-1769732309468-out-7"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1769732217161-s0kjz",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "dfda75a1-210f-4195-a61d-733b4c85c9c1"
+        },
+        {
+          "id": "fus-1769732265927-xnca2",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "dfda75a1-210f-4195-a61d-733b4c85c9c1"
+        },
+        {
+          "id": "fus-1769732334180-gxox5",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "dfda75a1-210f-4195-a61d-733b4c85c9c1"
+        },
+        {
+          "id": "fus-1769732457581-07iaq",
+          "name": "F-4",
+          "type": "generic",
+          "catalogId": "dfda75a1-210f-4195-a61d-733b4c85c9c1"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1769731507395-0",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-0",
+          "targetId": "cable-1769731464987-split-fiber-0"
+        },
+        {
+          "id": "conn-pass-1769731507395-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-1",
+          "targetId": "cable-1769731464987-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1769731507395-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-2",
+          "targetId": "cable-1769731464987-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1769731507395-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-4",
+          "targetId": "cable-1769731464987-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1769731507395-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-5",
+          "targetId": "cable-1769731464987-split-fiber-5"
+        },
+        {
+          "id": "conn-pass-1769731507395-6",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-6",
+          "targetId": "cable-1769731464987-split-fiber-6"
+        },
+        {
+          "id": "conn-pass-1769731507395-7",
+          "color": "#ec4899",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-7",
+          "targetId": "cable-1769731464987-split-fiber-7"
+        },
+        {
+          "id": "conn-pass-1769731507395-8",
+          "color": "#000000",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-8",
+          "targetId": "cable-1769731464987-split-fiber-8"
+        },
+        {
+          "id": "conn-pass-1769731507395-10",
+          "color": "#f97316",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-10",
+          "targetId": "cable-1769731464987-split-fiber-10"
+        },
+        {
+          "id": "conn-pass-1769731507395-11",
+          "color": "#22d3ee",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-11",
+          "targetId": "cable-1769731464987-split-fiber-11"
+        },
+        {
+          "id": "conn-1769732127735",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-3",
+          "targetId": "cable-1769731464987-split-fiber-3"
+        },
+        {
+          "id": "conn-1769732217161-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1769732183780-in",
+          "targetId": "fus-1769732217161-s0kjz-a"
+        },
+        {
+          "id": "conn-1769732217161-2",
+          "color": "#9ca3af",
+          "points": [
+            {
+              "x": 336,
+              "y": 174
+            }
+          ],
+          "sourceId": "fus-1769732217161-s0kjz-b",
+          "targetId": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d-fiber-9"
+        },
+        {
+          "id": "conn-1769732265927-1",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 264.5917953486568,
+              "y": 219.3810709555606
+            }
+          ],
+          "sourceId": "spl-1769732183780-out-1",
+          "targetId": "fus-1769732265927-xnca2-a"
+        },
+        {
+          "id": "conn-1769732265927-2",
+          "color": "#9ca3af",
+          "points": [
+            {
+              "x": 336,
+              "y": 270
+            }
+          ],
+          "sourceId": "fus-1769732265927-xnca2-b",
+          "targetId": "cable-1769731464987-split-fiber-9"
+        },
+        {
+          "id": "conn-1769732334181-1",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 222,
+              "y": 360
+            }
+          ],
+          "sourceId": "spl-1769732183780-out-0",
+          "targetId": "fus-1769732334180-gxox5-a"
+        },
+        {
+          "id": "conn-1769732334181-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1769732334180-gxox5-b",
+          "targetId": "spl-1769732309468-in"
+        },
+        {
+          "id": "conn-1769732457581-1",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769732431803-fiber-0",
+          "targetId": "fus-1769732457581-07iaq-a"
+        },
+        {
+          "id": "conn-1769732457581-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1769732457581-07iaq-b",
+          "targetId": "spl-1769732309468-out-4"
+        }
+      ],
+      "inputCableIds": [
+        "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d",
+        "cable-1769732431803"
+      ],
+      "layout": {
+        "spl-1769732183780": {
+          "x": 186,
+          "y": 162,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "spl-1769732309468": {
+          "x": 84,
+          "y": 306,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "cable-1769732431803": {
+          "x": -204,
+          "y": 354,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "fus-1769732217161-s0kjz": {
+          "x": 253.9061871606589,
+          "y": 167.9999947265565,
+          "rotation": 0
+        },
+        "fus-1769732265927-xnca2": {
+          "x": 253.9061871606589,
+          "y": 258.92331298052,
+          "rotation": 90
+        },
+        "fus-1769732334180-gxox5": {
+          "x": 174,
+          "y": 354,
+          "rotation": 180
+        },
+        "fus-1769732457581-07iaq": {
+          "x": 27.230281586099,
+          "y": 359.9999877810742,
+          "rotation": 0
+        },
+        "cable-1769731464987-split": {
+          "x": 282,
+          "y": 342,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d": {
+          "x": 282,
+          "y": -90,
+          "mirrored": false,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "6342c00b-1545-40d5-a6fe-0eff41aa7dd3",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 04",
+      "status": "DEPLOYED",
+      "lat": -16.62272847982943,
+      "lng": -49.30337902940753,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9c4859c3-b455-4285-b280-ea69cf9cfbf0",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 05",
+      "status": "DEPLOYED",
+      "lat": -16.61924058966566,
+      "lng": -49.30668789346947,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "c8d9a774-e94e-4921-8cdc-15ac08cec61f",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 06 P (Passagem)",
+      "status": "DEPLOYED",
+      "lat": -16.61773415755526,
+      "lng": -49.30799556516155,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "93001b60-fc9e-4de8-812d-79313704d080",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 07 P (Passagem)",
+      "status": "DEPLOYED",
+      "lat": -16.61783394847378,
+      "lng": -49.30827951572959,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "97370c41-96ff-474c-970b-f8e5570ee19e",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 08 P (Passagem)",
+      "status": "DEPLOYED",
+      "lat": -16.61733038857387,
+      "lng": -49.30880353850298,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "76f71c3e-bc77-4b05-aa71-c5940ec63ce2",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 09 P (Passagem)",
+      "status": "DEPLOYED",
+      "lat": -16.61598200404403,
+      "lng": -49.31015495353135,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "a6b5e069-d0d7-407c-8784-46502f3639cf",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 10 P (Passagem)",
+      "status": "DEPLOYED",
+      "lat": -16.6154372152886,
+      "lng": -49.31068883527226,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "d1e30b7d-56c7-4121-9ff6-b4bf20f67a4e",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 11",
+      "status": "DEPLOYED",
+      "lat": -16.61264326389381,
+      "lng": -49.31195039517972,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "99356a13-25b1-481b-8b83-e6e9cb788759",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 12",
+      "status": "DEPLOYED",
+      "lat": -16.61371904850197,
+      "lng": -49.31231495119034,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "44020270-dd8c-46a3-92d4-f3e7d57dc306",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 13",
+      "status": "DEPLOYED",
+      "lat": -16.61441537006676,
+      "lng": -49.31454739626382,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "53e6afca-dc29-41a9-aeb4-376758cacac5",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 14",
+      "status": "DEPLOYED",
+      "lat": -16.61339579293163,
+      "lng": -49.31654735461098,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "e5714b66-026a-4676-b1ff-70306036502c",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 15",
+      "status": "DEPLOYED",
+      "lat": -16.61758367890369,
+      "lng": -49.31873092799935,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "290c488a-dd14-44ba-9216-b70af6bde51b",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 16",
+      "status": "DEPLOYED",
+      "lat": -16.61947643299928,
+      "lng": -49.3211967161421,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "91b0f49f-78ce-4067-9104-ddaca78051c6",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 17",
+      "status": "DEPLOYED",
+      "lat": -16.61309061962967,
+      "lng": -49.31060974183014,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "cc817e6b-c1f6-4a98-86a8-cae4c9d16ae2",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 18",
+      "status": "DEPLOYED",
+      "lat": -16.61138870776377,
+      "lng": -49.31553666914488,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "644a7591-3a29-4d11-a8b7-9f4806d7d485",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 19",
+      "status": "DEPLOYED",
+      "lat": -16.6070971037724,
+      "lng": -49.31022903025017,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "6f24f5c3-ea47-4395-ab3e-7d46d1b3c9f2",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 20 - Res. Acácia (Campo)",
+      "status": "DEPLOYED",
+      "lat": -16.6253126344852,
+      "lng": -49.2965526581399,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "ebe62876-c457-4c96-a376-e763e57d8a1a",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 21 - Rua FL-17 (Pq. das Flores, Baixo)",
+      "status": "DEPLOYED",
+      "lat": -16.62959776507673,
+      "lng": -49.29003849183697,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "417a2727-9f88-4518-8833-5a14711071ee",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 22",
+      "status": "DEPLOYED",
+      "lat": -16.62873591178479,
+      "lng": -49.28516224927669,
+      "splitters": [],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-pass-1769730498851-0",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-0",
+          "targetId": "cable-1769730457743-split-fiber-0"
+        },
+        {
+          "id": "conn-pass-1769730498851-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-1",
+          "targetId": "cable-1769730457743-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1769730498851-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-2",
+          "targetId": "cable-1769730457743-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1769730498851-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-3",
+          "targetId": "cable-1769730457743-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1769730498851-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-4",
+          "targetId": "cable-1769730457743-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1769730498851-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-5",
+          "targetId": "cable-1769730457743-split-fiber-5"
+        },
+        {
+          "id": "conn-pass-1769730498851-6",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-6",
+          "targetId": "cable-1769730457743-split-fiber-6"
+        },
+        {
+          "id": "conn-pass-1769730498851-7",
+          "color": "#ec4899",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-7",
+          "targetId": "cable-1769730457743-split-fiber-7"
+        },
+        {
+          "id": "conn-pass-1769730498851-8",
+          "color": "#000000",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-8",
+          "targetId": "cable-1769730457743-split-fiber-8"
+        },
+        {
+          "id": "conn-pass-1769730498851-9",
+          "color": "#9ca3af",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-9",
+          "targetId": "cable-1769730457743-split-fiber-9"
+        },
+        {
+          "id": "conn-pass-1769730498851-10",
+          "color": "#f97316",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-10",
+          "targetId": "cable-1769730457743-split-fiber-10"
+        },
+        {
+          "id": "conn-pass-1769730498851-11",
+          "color": "#22d3ee",
+          "points": [],
+          "sourceId": "cable-1769726589590-split-fiber-11",
+          "targetId": "cable-1769730457743-split-fiber-11"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769726589590-split"
+      ],
+      "layout": {
+        "cable-1769730457743-split": {
+          "x": 480,
+          "y": 42,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "abbf0866-6f5b-43b4-ab08-66a97d40e91c",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 23",
+      "status": "DEPLOYED",
+      "lat": -16.62640542827888,
+      "lng": -49.2820717701595,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "a5d42024-0926-43cf-8783-230c92e7798f",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 24",
+      "status": "DEPLOYED",
+      "lat": -16.62489597946751,
+      "lng": -49.27887473633698,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "f37ddd42-19e1-4e18-94ff-016af95c4003",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 25",
+      "status": "DEPLOYED",
+      "lat": -16.62367918464649,
+      "lng": -49.27943975295078,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "c4f28183-9fb7-4e32-be26-9fef57a351e4",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 26",
+      "status": "DEPLOYED",
+      "lat": -16.62264721510495,
+      "lng": -49.27720313688309,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "df51d49d-f9bb-4e49-931e-36d50917a9cd",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 30 (Espelho)",
+      "status": "DEPLOYED",
+      "lat": -16.62467999559355,
+      "lng": -49.25505244250866,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "ad453b77-2f38-460d-a900-e14874264496",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 31 (Espelho)",
+      "status": "DEPLOYED",
+      "lat": -16.62348038623911,
+      "lng": -49.25512255098291,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "2ebf0425-ce74-4db4-97d0-9edd40317306",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 32 S",
+      "status": "DEPLOYED",
+      "lat": -16.62382064518049,
+      "lng": -49.25496126692141,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "4a2ec979-7de2-4dc8-9f2d-6633898b0a02",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 33S (P17)",
+      "status": "DEPLOYED",
+      "lat": -16.62425908022677,
+      "lng": -49.25476813339728,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "884a7c9f-2c2f-45ae-a88a-4d08e07ffac2",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 34 (Mirante do Sol)",
+      "status": "DEPLOYED",
+      "lat": -16.62317716822865,
+      "lng": -49.2536500286908,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "4ae7b78c-646e-4111-a64c-7b69ae75f31f",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 35",
+      "status": "DEPLOYED",
+      "lat": -16.62245103094445,
+      "lng": -49.25061093065018,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9e5d67c0-63e0-45d6-9d15-c46767444f7e",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 36",
+      "status": "DEPLOYED",
+      "lat": -16.61955000839393,
+      "lng": -49.25119901882582,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "1c073b7a-6086-4970-a8db-30ad9e0265ff",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 37",
+      "status": "DEPLOYED",
+      "lat": -16.61934146808165,
+      "lng": -49.24906478285421,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "61c63dff-999f-4f4f-820e-e8d310e85130",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 38",
+      "status": "DEPLOYED",
+      "lat": -16.61862983485528,
+      "lng": -49.24545844912702,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "25bafc4b-527e-48c9-bf9b-b8f915ad494b",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 39",
+      "status": "DEPLOYED",
+      "lat": -16.6189456680907,
+      "lng": -49.2438174624606,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "bde3f21d-4d25-4ec3-9641-f97767eb6828",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 40 (P20A)",
+      "status": "DEPLOYED",
+      "lat": -16.61585729466347,
+      "lng": -49.25181403565494,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "3f6e62d5-9375-4fd8-b9ec-07e004b8afa0",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 41 - Mirante do Sol",
+      "status": "DEPLOYED",
+      "lat": -16.62374972153277,
+      "lng": -49.25367225004683,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "f7c6de10-78d0-45b3-acd4-1ee0be93f644",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 42",
+      "status": "DEPLOYED",
+      "lat": -16.62032886600027,
+      "lng": -49.25602584947632,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "ea452b3a-e3b6-424b-a9c3-6923b6235fe6",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 43",
+      "status": "DEPLOYED",
+      "lat": -16.61729581723779,
+      "lng": -49.25565696562104,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "1bb3854b-1f93-4c6a-8281-6f29b30805b3",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 44",
+      "status": "DEPLOYED",
+      "lat": -16.61580806754696,
+      "lng": -49.25530896623359,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "5e5e99fe-1563-4056-bba3-8627db92263d",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 45",
+      "status": "DEPLOYED",
+      "lat": -16.62105589765095,
+      "lng": -49.25820397250918,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9b4123bd-91f6-4737-865a-4fc384e55ddf",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 46 (P24A)",
+      "status": "DEPLOYED",
+      "lat": -16.62221235214411,
+      "lng": -49.26367163889226,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "559f934b-dd8b-4b83-b9c3-363cab9a43ec",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 47 (P16)",
+      "status": "DEPLOYED",
+      "lat": -16.61577123320972,
+      "lng": -49.26825160042092,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "b1be9857-8e6c-44d2-a764-fd6853f2d913",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CEO 48P",
+      "status": "DEPLOYED",
+      "lat": -16.61558753882201,
+      "lng": -49.26844358114354,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1769729581270",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CTO-27",
+      "status": "CERTIFIED",
+      "lat": -16.62856867319707,
+      "lng": -49.27297621973224,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1769729613814"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "0e2458d1-61c0-4302-9539-d9ed4a7d7b0d",
+      "color": "#59ff00",
+      "reserveLoopLength": 30,
+      "type": "CEO",
+      "poleId": null
+    }
+  ],
+  "pops": [
+    {
+      "id": "pop-1769724518838",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "POP-1",
+      "status": "PLANNED",
+      "lat": -16.62619714426488,
+      "lng": -49.2904306948185,
+      "olts": [
+        {
+          "id": "olt-1769724630554",
+          "name": "OLT ZTE C300 1",
+          "ports": 240,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1769724630554-s1-p1",
+            "olt-1769724630554-s1-p2",
+            "olt-1769724630554-s1-p3",
+            "olt-1769724630554-s1-p4",
+            "olt-1769724630554-s1-p5",
+            "olt-1769724630554-s1-p6",
+            "olt-1769724630554-s1-p7",
+            "olt-1769724630554-s1-p8",
+            "olt-1769724630554-s1-p9",
+            "olt-1769724630554-s1-p10",
+            "olt-1769724630554-s1-p11",
+            "olt-1769724630554-s1-p12",
+            "olt-1769724630554-s1-p13",
+            "olt-1769724630554-s1-p14",
+            "olt-1769724630554-s1-p15",
+            "olt-1769724630554-s1-p16",
+            "olt-1769724630554-s2-p1",
+            "olt-1769724630554-s2-p2",
+            "olt-1769724630554-s2-p3",
+            "olt-1769724630554-s2-p4",
+            "olt-1769724630554-s2-p5",
+            "olt-1769724630554-s2-p6",
+            "olt-1769724630554-s2-p7",
+            "olt-1769724630554-s2-p8",
+            "olt-1769724630554-s2-p9",
+            "olt-1769724630554-s2-p10",
+            "olt-1769724630554-s2-p11",
+            "olt-1769724630554-s2-p12",
+            "olt-1769724630554-s2-p13",
+            "olt-1769724630554-s2-p14",
+            "olt-1769724630554-s2-p15",
+            "olt-1769724630554-s2-p16",
+            "olt-1769724630554-s3-p1",
+            "olt-1769724630554-s3-p2",
+            "olt-1769724630554-s3-p3",
+            "olt-1769724630554-s3-p4",
+            "olt-1769724630554-s3-p5",
+            "olt-1769724630554-s3-p6",
+            "olt-1769724630554-s3-p7",
+            "olt-1769724630554-s3-p8",
+            "olt-1769724630554-s3-p9",
+            "olt-1769724630554-s3-p10",
+            "olt-1769724630554-s3-p11",
+            "olt-1769724630554-s3-p12",
+            "olt-1769724630554-s3-p13",
+            "olt-1769724630554-s3-p14",
+            "olt-1769724630554-s3-p15",
+            "olt-1769724630554-s3-p16",
+            "olt-1769724630554-s4-p1",
+            "olt-1769724630554-s4-p2",
+            "olt-1769724630554-s4-p3",
+            "olt-1769724630554-s4-p4",
+            "olt-1769724630554-s4-p5",
+            "olt-1769724630554-s4-p6",
+            "olt-1769724630554-s4-p7",
+            "olt-1769724630554-s4-p8",
+            "olt-1769724630554-s4-p9",
+            "olt-1769724630554-s4-p10",
+            "olt-1769724630554-s4-p11",
+            "olt-1769724630554-s4-p12",
+            "olt-1769724630554-s4-p13",
+            "olt-1769724630554-s4-p14",
+            "olt-1769724630554-s4-p15",
+            "olt-1769724630554-s4-p16",
+            "olt-1769724630554-s5-p1",
+            "olt-1769724630554-s5-p2",
+            "olt-1769724630554-s5-p3",
+            "olt-1769724630554-s5-p4",
+            "olt-1769724630554-s5-p5",
+            "olt-1769724630554-s5-p6",
+            "olt-1769724630554-s5-p7",
+            "olt-1769724630554-s5-p8",
+            "olt-1769724630554-s5-p9",
+            "olt-1769724630554-s5-p10",
+            "olt-1769724630554-s5-p11",
+            "olt-1769724630554-s5-p12",
+            "olt-1769724630554-s5-p13",
+            "olt-1769724630554-s5-p14",
+            "olt-1769724630554-s5-p15",
+            "olt-1769724630554-s5-p16",
+            "olt-1769724630554-s6-p1",
+            "olt-1769724630554-s6-p2",
+            "olt-1769724630554-s6-p3",
+            "olt-1769724630554-s6-p4",
+            "olt-1769724630554-s6-p5",
+            "olt-1769724630554-s6-p6",
+            "olt-1769724630554-s6-p7",
+            "olt-1769724630554-s6-p8",
+            "olt-1769724630554-s6-p9",
+            "olt-1769724630554-s6-p10",
+            "olt-1769724630554-s6-p11",
+            "olt-1769724630554-s6-p12",
+            "olt-1769724630554-s6-p13",
+            "olt-1769724630554-s6-p14",
+            "olt-1769724630554-s6-p15",
+            "olt-1769724630554-s6-p16",
+            "olt-1769724630554-s7-p1",
+            "olt-1769724630554-s7-p2",
+            "olt-1769724630554-s7-p3",
+            "olt-1769724630554-s7-p4",
+            "olt-1769724630554-s7-p5",
+            "olt-1769724630554-s7-p6",
+            "olt-1769724630554-s7-p7",
+            "olt-1769724630554-s7-p8",
+            "olt-1769724630554-s7-p9",
+            "olt-1769724630554-s7-p10",
+            "olt-1769724630554-s7-p11",
+            "olt-1769724630554-s7-p12",
+            "olt-1769724630554-s7-p13",
+            "olt-1769724630554-s7-p14",
+            "olt-1769724630554-s7-p15",
+            "olt-1769724630554-s7-p16",
+            "olt-1769724630554-s8-p1",
+            "olt-1769724630554-s8-p2",
+            "olt-1769724630554-s8-p3",
+            "olt-1769724630554-s8-p4",
+            "olt-1769724630554-s8-p5",
+            "olt-1769724630554-s8-p6",
+            "olt-1769724630554-s8-p7",
+            "olt-1769724630554-s8-p8",
+            "olt-1769724630554-s8-p9",
+            "olt-1769724630554-s8-p10",
+            "olt-1769724630554-s8-p11",
+            "olt-1769724630554-s8-p12",
+            "olt-1769724630554-s8-p13",
+            "olt-1769724630554-s8-p14",
+            "olt-1769724630554-s8-p15",
+            "olt-1769724630554-s8-p16",
+            "olt-1769724630554-s9-p1",
+            "olt-1769724630554-s9-p2",
+            "olt-1769724630554-s9-p3",
+            "olt-1769724630554-s9-p4",
+            "olt-1769724630554-s9-p5",
+            "olt-1769724630554-s9-p6",
+            "olt-1769724630554-s9-p7",
+            "olt-1769724630554-s9-p8",
+            "olt-1769724630554-s9-p9",
+            "olt-1769724630554-s9-p10",
+            "olt-1769724630554-s9-p11",
+            "olt-1769724630554-s9-p12",
+            "olt-1769724630554-s9-p13",
+            "olt-1769724630554-s9-p14",
+            "olt-1769724630554-s9-p15",
+            "olt-1769724630554-s9-p16",
+            "olt-1769724630554-s10-p1",
+            "olt-1769724630554-s10-p2",
+            "olt-1769724630554-s10-p3",
+            "olt-1769724630554-s10-p4",
+            "olt-1769724630554-s10-p5",
+            "olt-1769724630554-s10-p6",
+            "olt-1769724630554-s10-p7",
+            "olt-1769724630554-s10-p8",
+            "olt-1769724630554-s10-p9",
+            "olt-1769724630554-s10-p10",
+            "olt-1769724630554-s10-p11",
+            "olt-1769724630554-s10-p12",
+            "olt-1769724630554-s10-p13",
+            "olt-1769724630554-s10-p14",
+            "olt-1769724630554-s10-p15",
+            "olt-1769724630554-s10-p16",
+            "olt-1769724630554-s11-p1",
+            "olt-1769724630554-s11-p2",
+            "olt-1769724630554-s11-p3",
+            "olt-1769724630554-s11-p4",
+            "olt-1769724630554-s11-p5",
+            "olt-1769724630554-s11-p6",
+            "olt-1769724630554-s11-p7",
+            "olt-1769724630554-s11-p8",
+            "olt-1769724630554-s11-p9",
+            "olt-1769724630554-s11-p10",
+            "olt-1769724630554-s11-p11",
+            "olt-1769724630554-s11-p12",
+            "olt-1769724630554-s11-p13",
+            "olt-1769724630554-s11-p14",
+            "olt-1769724630554-s11-p15",
+            "olt-1769724630554-s11-p16",
+            "olt-1769724630554-s12-p1",
+            "olt-1769724630554-s12-p2",
+            "olt-1769724630554-s12-p3",
+            "olt-1769724630554-s12-p4",
+            "olt-1769724630554-s12-p5",
+            "olt-1769724630554-s12-p6",
+            "olt-1769724630554-s12-p7",
+            "olt-1769724630554-s12-p8",
+            "olt-1769724630554-s12-p9",
+            "olt-1769724630554-s12-p10",
+            "olt-1769724630554-s12-p11",
+            "olt-1769724630554-s12-p12",
+            "olt-1769724630554-s12-p13",
+            "olt-1769724630554-s12-p14",
+            "olt-1769724630554-s12-p15",
+            "olt-1769724630554-s12-p16",
+            "olt-1769724630554-s13-p1",
+            "olt-1769724630554-s13-p2",
+            "olt-1769724630554-s13-p3",
+            "olt-1769724630554-s13-p4",
+            "olt-1769724630554-s13-p5",
+            "olt-1769724630554-s13-p6",
+            "olt-1769724630554-s13-p7",
+            "olt-1769724630554-s13-p8",
+            "olt-1769724630554-s13-p9",
+            "olt-1769724630554-s13-p10",
+            "olt-1769724630554-s13-p11",
+            "olt-1769724630554-s13-p12",
+            "olt-1769724630554-s13-p13",
+            "olt-1769724630554-s13-p14",
+            "olt-1769724630554-s13-p15",
+            "olt-1769724630554-s13-p16",
+            "olt-1769724630554-s14-p1",
+            "olt-1769724630554-s14-p2",
+            "olt-1769724630554-s14-p3",
+            "olt-1769724630554-s14-p4",
+            "olt-1769724630554-s14-p5",
+            "olt-1769724630554-s14-p6",
+            "olt-1769724630554-s14-p7",
+            "olt-1769724630554-s14-p8",
+            "olt-1769724630554-s14-p9",
+            "olt-1769724630554-s14-p10",
+            "olt-1769724630554-s14-p11",
+            "olt-1769724630554-s14-p12",
+            "olt-1769724630554-s14-p13",
+            "olt-1769724630554-s14-p14",
+            "olt-1769724630554-s14-p15",
+            "olt-1769724630554-s14-p16",
+            "olt-1769724630554-s15-p1",
+            "olt-1769724630554-s15-p2",
+            "olt-1769724630554-s15-p3",
+            "olt-1769724630554-s15-p4",
+            "olt-1769724630554-s15-p5",
+            "olt-1769724630554-s15-p6",
+            "olt-1769724630554-s15-p7",
+            "olt-1769724630554-s15-p8",
+            "olt-1769724630554-s15-p9",
+            "olt-1769724630554-s15-p10",
+            "olt-1769724630554-s15-p11",
+            "olt-1769724630554-s15-p12",
+            "olt-1769724630554-s15-p13",
+            "olt-1769724630554-s15-p14",
+            "olt-1769724630554-s15-p15",
+            "olt-1769724630554-s15-p16"
+          ],
+          "structure": {
+            "slots": 15,
+            "portsPerSlot": 16
+          }
+        }
+      ],
+      "dios": [
+        {
+          "id": "dio-1769724539451",
+          "name": "DIO 01",
+          "ports": 24,
+          "status": "PLANNED",
+          "portIds": [
+            "dio-1769724539451-p-0",
+            "dio-1769724539451-p-1",
+            "dio-1769724539451-p-2",
+            "dio-1769724539451-p-3",
+            "dio-1769724539451-p-4",
+            "dio-1769724539451-p-5",
+            "dio-1769724539451-p-6",
+            "dio-1769724539451-p-7",
+            "dio-1769724539451-p-8",
+            "dio-1769724539451-p-9",
+            "dio-1769724539451-p-10",
+            "dio-1769724539451-p-11",
+            "dio-1769724539451-p-12",
+            "dio-1769724539451-p-13",
+            "dio-1769724539451-p-14",
+            "dio-1769724539451-p-15",
+            "dio-1769724539451-p-16",
+            "dio-1769724539451-p-17",
+            "dio-1769724539451-p-18",
+            "dio-1769724539451-p-19",
+            "dio-1769724539451-p-20",
+            "dio-1769724539451-p-21",
+            "dio-1769724539451-p-22",
+            "dio-1769724539451-p-23"
+          ],
+          "cableLayout": {
+            "cable-1769726514065": {
+              "x": 291,
+              "y": -486
+            },
+            "cable-1769727930697": {
+              "x": 143,
+              "y": 34
+            },
+            "b853b4ae-9d24-4101-bc16-e5af68f39943": {
+              "x": 629,
+              "y": 31
+            }
+          },
+          "inputCableIds": [
+            "cable-1769727930697",
+            "b853b4ae-9d24-4101-bc16-e5af68f39943",
+            "cable-1769726514065"
+          ]
+        },
+        {
+          "id": "dio-1769724553905",
+          "name": "DIO 02",
+          "ports": 48,
+          "status": "PLANNED",
+          "portIds": [
+            "dio-1769724553905-p-0",
+            "dio-1769724553905-p-1",
+            "dio-1769724553905-p-2",
+            "dio-1769724553905-p-3",
+            "dio-1769724553905-p-4",
+            "dio-1769724553905-p-5",
+            "dio-1769724553905-p-6",
+            "dio-1769724553905-p-7",
+            "dio-1769724553905-p-8",
+            "dio-1769724553905-p-9",
+            "dio-1769724553905-p-10",
+            "dio-1769724553905-p-11",
+            "dio-1769724553905-p-12",
+            "dio-1769724553905-p-13",
+            "dio-1769724553905-p-14",
+            "dio-1769724553905-p-15",
+            "dio-1769724553905-p-16",
+            "dio-1769724553905-p-17",
+            "dio-1769724553905-p-18",
+            "dio-1769724553905-p-19",
+            "dio-1769724553905-p-20",
+            "dio-1769724553905-p-21",
+            "dio-1769724553905-p-22",
+            "dio-1769724553905-p-23",
+            "dio-1769724553905-p-24",
+            "dio-1769724553905-p-25",
+            "dio-1769724553905-p-26",
+            "dio-1769724553905-p-27",
+            "dio-1769724553905-p-28",
+            "dio-1769724553905-p-29",
+            "dio-1769724553905-p-30",
+            "dio-1769724553905-p-31",
+            "dio-1769724553905-p-32",
+            "dio-1769724553905-p-33",
+            "dio-1769724553905-p-34",
+            "dio-1769724553905-p-35",
+            "dio-1769724553905-p-36",
+            "dio-1769724553905-p-37",
+            "dio-1769724553905-p-38",
+            "dio-1769724553905-p-39",
+            "dio-1769724553905-p-40",
+            "dio-1769724553905-p-41",
+            "dio-1769724553905-p-42",
+            "dio-1769724553905-p-43",
+            "dio-1769724553905-p-44",
+            "dio-1769724553905-p-45",
+            "dio-1769724553905-p-46",
+            "dio-1769724553905-p-47"
+          ],
+          "inputCableIds": []
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "patch-1769724981113",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p16",
+          "targetId": "dio-1769724539451-p-2"
+        },
+        {
+          "id": "patch-1769725057289",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p12",
+          "targetId": "dio-1769724539451-p-5"
+        },
+        {
+          "id": "patch-1769725125574",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p7",
+          "targetId": "dio-1769724539451-p-9"
+        },
+        {
+          "id": "patch-1769725913901",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p4",
+          "targetId": "dio-1769724553905-p-46"
+        },
+        {
+          "id": "patch-1769725969934",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p11",
+          "targetId": "dio-1769724539451-p-12"
+        },
+        {
+          "id": "patch-1769726007340",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p3",
+          "targetId": "dio-1769724539451-p-13"
+        },
+        {
+          "id": "patch-1769726018805",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p10",
+          "targetId": "dio-1769724539451-p-14"
+        },
+        {
+          "id": "patch-1769726029418",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p5",
+          "targetId": "dio-1769724539451-p-15"
+        },
+        {
+          "id": "patch-1769726084856",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p9",
+          "targetId": "dio-1769724539451-p-0"
+        },
+        {
+          "id": "patch-1769726094401",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p1",
+          "targetId": "dio-1769724539451-p-16"
+        },
+        {
+          "id": "patch-1769726114994",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p2",
+          "targetId": "dio-1769724539451-p-19"
+        },
+        {
+          "id": "patch-1769726131418",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p8",
+          "targetId": "dio-1769724539451-p-20"
+        },
+        {
+          "id": "patch-1769726142797",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "olt-1769724630554-s9-p6",
+          "targetId": "dio-1769724539451-p-21"
+        },
+        {
+          "id": "fusion-1769728426555",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-0",
+          "targetId": "dio-1769724539451-p-0"
+        },
+        {
+          "id": "fusion-1769728432985",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-1",
+          "targetId": "dio-1769724539451-p-1"
+        },
+        {
+          "id": "fusion-1769728435713",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-2",
+          "targetId": "dio-1769724539451-p-2"
+        },
+        {
+          "id": "fusion-1769728443384",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-3",
+          "targetId": "dio-1769724539451-p-3"
+        },
+        {
+          "id": "fusion-1769728446254",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-4",
+          "targetId": "dio-1769724539451-p-4"
+        },
+        {
+          "id": "fusion-1769728449505",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-5",
+          "targetId": "dio-1769724539451-p-5"
+        },
+        {
+          "id": "fusion-1769728452426",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-6",
+          "targetId": "dio-1769724539451-p-6"
+        },
+        {
+          "id": "fusion-1769728454724",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-7",
+          "targetId": "dio-1769724539451-p-7"
+        },
+        {
+          "id": "fusion-1769728457837",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-8",
+          "targetId": "dio-1769724539451-p-8"
+        },
+        {
+          "id": "fusion-1769728460041",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-9",
+          "targetId": "dio-1769724539451-p-9"
+        },
+        {
+          "id": "fusion-1769728462967",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-10",
+          "targetId": "dio-1769724539451-p-10"
+        },
+        {
+          "id": "fusion-1769728466011",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769726514065-fiber-11",
+          "targetId": "dio-1769724539451-p-11"
+        },
+        {
+          "id": "fusion-1769731655140",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-0",
+          "targetId": "dio-1769724539451-p-12"
+        },
+        {
+          "id": "fusion-1769731657658",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-1",
+          "targetId": "dio-1769724539451-p-13"
+        },
+        {
+          "id": "fusion-1769731659959",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-2",
+          "targetId": "dio-1769724539451-p-14"
+        },
+        {
+          "id": "fusion-1769731662192",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-3",
+          "targetId": "dio-1769724539451-p-15"
+        },
+        {
+          "id": "fusion-1769731664366",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-4",
+          "targetId": "dio-1769724539451-p-16"
+        },
+        {
+          "id": "fusion-1769731671381",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-5",
+          "targetId": "dio-1769724539451-p-17"
+        },
+        {
+          "id": "fusion-1769731686543",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-6",
+          "targetId": "dio-1769724539451-p-18"
+        },
+        {
+          "id": "fusion-1769731688791",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-7",
+          "targetId": "dio-1769724539451-p-19"
+        },
+        {
+          "id": "fusion-1769731690851",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-8",
+          "targetId": "dio-1769724539451-p-20"
+        },
+        {
+          "id": "fusion-1769731692820",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-9",
+          "targetId": "dio-1769724539451-p-21"
+        },
+        {
+          "id": "fusion-1769731694950",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-10",
+          "targetId": "dio-1769724539451-p-22"
+        },
+        {
+          "id": "fusion-1769731696868",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "b853b4ae-9d24-4101-bc16-e5af68f39943-fiber-11",
+          "targetId": "dio-1769724539451-p-23"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769726358798",
+        "cable-1769726470950",
+        "cable-1769727930697",
+        "cable-1769726514065",
+        "b853b4ae-9d24-4101-bc16-e5af68f39943"
+      ],
+      "layout": {
+        "dio-1769724539451": {
+          "x": -1460,
+          "y": -200,
+          "rotation": 0
+        },
+        "dio-1769724553905": {
+          "x": -1080,
+          "y": -600,
+          "rotation": 0
+        },
+        "olt-1769724630554": {
+          "x": -780,
+          "y": -680,
+          "rotation": 0
+        },
+        "olt-1769730919131": {
+          "x": -1820,
+          "y": -600,
+          "rotation": 0
+        },
+        "olt-1769730953457": {
+          "x": -1540,
+          "y": -480,
+          "rotation": 0
+        },
+        "cable-1769726358798": {
+          "x": 40,
+          "y": 40,
+          "rotation": 0
+        },
+        "cable-1769726470950": {
+          "x": -80,
+          "y": -260,
+          "rotation": 0
+        },
+        "cable-1769726514065": {
+          "x": -1800,
+          "y": -300,
+          "rotation": 0
+        },
+        "cable-1769727930697": {
+          "x": -460,
+          "y": -360,
+          "rotation": 0
+        },
+        "b853b4ae-9d24-4101-bc16-e5af68f39943": {
+          "x": -1800,
+          "y": -180,
+          "rotation": 0
+        }
+      },
+      "color": "#6366f1",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "size": 24,
+      "poleId": null
+    }
+  ],
+  "cables": [
+    {
+      "id": "4d91bf94-8c8f-4c68-bb2c-da3b56a838d1",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone GO-080 (Projeto Village Toscana)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.61860609697125,
+          "lng": -49.2454557042111
+        },
+        {
+          "lat": -16.61866490682048,
+          "lng": -49.24523705205629
+        },
+        {
+          "lat": -16.61873235089175,
+          "lng": -49.24452527214571
+        },
+        {
+          "lat": -16.61876696739335,
+          "lng": -49.24424591786835
+        },
+        {
+          "lat": -16.6187008173836,
+          "lng": -49.24417601221906
+        },
+        {
+          "lat": -16.61822487572011,
+          "lng": -49.24413517987914
+        },
+        {
+          "lat": -16.61715174731029,
+          "lng": -49.24401531793644
+        },
+        {
+          "lat": -16.61579636562526,
+          "lng": -49.24382540010409
+        },
+        {
+          "lat": -16.61551039694769,
+          "lng": -49.24381555813481
+        },
+        {
+          "lat": -16.61495564834274,
+          "lng": -49.24375013240319
+        },
+        {
+          "lat": -16.61457041513812,
+          "lng": -49.24377569598103
+        },
+        {
+          "lat": -16.61411027253086,
+          "lng": -49.24378878473681
+        },
+        {
+          "lat": -16.61375870808945,
+          "lng": -49.24381174501227
+        },
+        {
+          "lat": -16.61360182479013,
+          "lng": -49.24392472610509
+        },
+        {
+          "lat": -16.61334013869812,
+          "lng": -49.2439305955055
+        },
+        {
+          "lat": -16.61290481532748,
+          "lng": -49.24381677631832
+        },
+        {
+          "lat": -16.6124449544969,
+          "lng": -49.24380527420395
+        },
+        {
+          "lat": -16.61213458141821,
+          "lng": -49.24380906110701
+        },
+        {
+          "lat": -16.61121880675036,
+          "lng": -49.24382460370801
+        },
+        {
+          "lat": -16.61056404500554,
+          "lng": -49.24384876525026
+        },
+        {
+          "lat": -16.6102436165007,
+          "lng": -49.24385899699323
+        },
+        {
+          "lat": -16.61000901168861,
+          "lng": -49.24393389550634
+        },
+        {
+          "lat": -16.60990120159563,
+          "lng": -49.24409985706136
+        },
+        {
+          "lat": -16.60977695624009,
+          "lng": -49.244328529
+        },
+        {
+          "lat": -16.60943561857541,
+          "lng": -49.24402856861769
+        },
+        {
+          "lat": -16.60905844841937,
+          "lng": -49.2438917106694
+        },
+        {
+          "lat": -16.60877205366249,
+          "lng": -49.24388915788445
+        },
+        {
+          "lat": -16.60827499543909,
+          "lng": -49.24391255226131
+        },
+        {
+          "lat": -16.6079383109303,
+          "lng": -49.24392003153388
+        },
+        {
+          "lat": -16.60762022448172,
+          "lng": -49.24395345411186
+        },
+        {
+          "lat": -16.60709107665813,
+          "lng": -49.2439863095689
+        },
+        {
+          "lat": -16.60602387412143,
+          "lng": -49.24398463869964
+        },
+        {
+          "lat": -16.6051020958962,
+          "lng": -49.24399943132565
+        },
+        {
+          "lat": -16.60512219657717,
+          "lng": -49.24454502586701
+        },
+        {
+          "lat": -16.60513627334337,
+          "lng": -49.24510938678765
+        },
+        {
+          "lat": -16.60512889149297,
+          "lng": -49.24538272897704
+        },
+        {
+          "lat": -16.60505663183823,
+          "lng": -49.24545910509525
+        },
+        {
+          "lat": -16.60491211272731,
+          "lng": -49.24546245598768
+        },
+        {
+          "lat": -16.604624937446,
+          "lng": -49.2454652301466
+        },
+        {
+          "lat": -16.60441945753312,
+          "lng": -49.24557347516843
+        },
+        {
+          "lat": -16.60421045090746,
+          "lng": -49.24575196406835
+        },
+        {
+          "lat": -16.60400315087375,
+          "lng": -49.24602199067836
+        },
+        {
+          "lat": -16.60382001161977,
+          "lng": -49.24621881504564
+        },
+        {
+          "lat": -16.60370106202355,
+          "lng": -49.24634259552199
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "f3d0f2fb-cb39-46c9-b9c0-6a40e8f8307d",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone Noroeste (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62657364799415,
+          "lng": -49.29004043340684
+        },
+        {
+          "lat": -16.62648428663565,
+          "lng": -49.29059305016196
+        },
+        {
+          "lat": -16.62634104358027,
+          "lng": -49.29115497396673
+        },
+        {
+          "lat": -16.62622469490614,
+          "lng": -49.29149608215006
+        },
+        {
+          "lat": -16.62600316668498,
+          "lng": -49.29178516751024
+        },
+        {
+          "lat": -16.62575652401653,
+          "lng": -49.29205245667391
+        },
+        {
+          "lat": -16.62549675205946,
+          "lng": -49.29231678459541
+        },
+        {
+          "lat": -16.62524027996584,
+          "lng": -49.29258687249924
+        },
+        {
+          "lat": -16.62499749678062,
+          "lng": -49.29284139934565
+        },
+        {
+          "lat": -16.6247480967579,
+          "lng": -49.29312135252719
+        },
+        {
+          "lat": -16.6245310654665,
+          "lng": -49.29340622750136
+        },
+        {
+          "lat": -16.62436677489767,
+          "lng": -49.29370251554649
+        },
+        {
+          "lat": -16.62407993357301,
+          "lng": -49.29436104744603
+        },
+        {
+          "lat": -16.62393600271632,
+          "lng": -49.2946778926849
+        },
+        {
+          "lat": -16.62363164361679,
+          "lng": -49.29534475903721
+        },
+        {
+          "lat": -16.62348167346339,
+          "lng": -49.29568981574206
+        },
+        {
+          "lat": -16.62318634852388,
+          "lng": -49.29633955762005
+        },
+        {
+          "lat": -16.62289666016492,
+          "lng": -49.29702531678161
+        },
+        {
+          "lat": -16.62306196346388,
+          "lng": -49.29714114740949
+        }
+      ],
+      "fromNodeId": "d2b58d39-3851-4f70-9184-18ffcdbf2659",
+      "toNodeId": "9daafce5-40fe-40c8-afb9-ede54ee108c3",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "2c681f2b-3c3e-4691-84c0-c085ef26316f",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone São Judas",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62349812495903,
+          "lng": -49.25512180641451
+        },
+        {
+          "lat": -16.62342739575411,
+          "lng": -49.2548155976062
+        },
+        {
+          "lat": -16.62330271812106,
+          "lng": -49.25424108140574
+        },
+        {
+          "lat": -16.62317856377658,
+          "lng": -49.25364581537644
+        },
+        {
+          "lat": -16.62301124909369,
+          "lng": -49.25343632702504
+        },
+        {
+          "lat": -16.62245347061092,
+          "lng": -49.25060828097623
+        },
+        {
+          "lat": -16.62241955320906,
+          "lng": -49.25072614649317
+        },
+        {
+          "lat": -16.61965279147573,
+          "lng": -49.25132135462588
+        },
+        {
+          "lat": -16.61955350753749,
+          "lng": -49.25120388227684
+        },
+        {
+          "lat": -16.61934133497903,
+          "lng": -49.24906827288043
+        },
+        {
+          "lat": -16.61907419054452,
+          "lng": -49.24898296237438
+        },
+        {
+          "lat": -16.6185456959831,
+          "lng": -49.24912942740746
+        },
+        {
+          "lat": -16.61835533395697,
+          "lng": -49.24910917400693
+        },
+        {
+          "lat": -16.61793815450361,
+          "lng": -49.24773975134602
+        },
+        {
+          "lat": -16.61799992789631,
+          "lng": -49.24747316611511
+        },
+        {
+          "lat": -16.6183907987945,
+          "lng": -49.24618781958303
+        },
+        {
+          "lat": -16.61862379388428,
+          "lng": -49.24545763212858
+        },
+        {
+          "lat": -16.61869409486268,
+          "lng": -49.24522864447813
+        },
+        {
+          "lat": -16.618790780368,
+          "lng": -49.24424918714138
+        },
+        {
+          "lat": -16.61882929324284,
+          "lng": -49.24388379800544
+        },
+        {
+          "lat": -16.6189448327111,
+          "lng": -49.24381701003162
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "b853b4ae-9d24-4101-bc16-e5af68f39943",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Noroeste",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62619714426488,
+          "lng": -49.2904306948185
+        },
+        {
+          "lat": -16.62618460426275,
+          "lng": -49.2902977578342
+        },
+        {
+          "lat": -16.62625351885866,
+          "lng": -49.28992205518657
+        },
+        {
+          "lat": -16.62635710362709,
+          "lng": -49.28987825972466
+        },
+        {
+          "lat": -16.6265039840304,
+          "lng": -49.28991966918723
+        },
+        {
+          "lat": -16.62657364799415,
+          "lng": -49.29004043340684
+        }
+      ],
+      "fromNodeId": "pop-1769724518838",
+      "toNodeId": "d2b58d39-3851-4f70-9184-18ffcdbf2659",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769726514065",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "GN2",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62619714426488,
+          "lng": -49.2904306948185
+        },
+        {
+          "lat": -16.62619569347029,
+          "lng": -49.29029256105424
+        },
+        {
+          "lat": -16.62626401692967,
+          "lng": -49.28992778062821
+        },
+        {
+          "lat": -16.62635846697607,
+          "lng": -49.289890229702
+        },
+        {
+          "lat": -16.62649596559998,
+          "lng": -49.28992778062821
+        },
+        {
+          "lat": -16.62657364799415,
+          "lng": -49.29004043340684
+        }
+      ],
+      "fromNodeId": "pop-1769724518838",
+      "toNodeId": "d2b58d39-3851-4f70-9184-18ffcdbf2659",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769726589590-split",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone GN2 (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62657364799415,
+          "lng": -49.29004043340684
+        },
+        {
+          "lat": -16.62662350747681,
+          "lng": -49.28976133850538
+        },
+        {
+          "lat": -16.62667863346745,
+          "lng": -49.28938744249887
+        },
+        {
+          "lat": -16.62683822551537,
+          "lng": -49.28878169766291
+        },
+        {
+          "lat": -16.62695722827856,
+          "lng": -49.28848502659448
+        },
+        {
+          "lat": -16.62711367979335,
+          "lng": -49.28819571714794
+        },
+        {
+          "lat": -16.62731478553435,
+          "lng": -49.28793796388818
+        },
+        {
+          "lat": -16.6274831658217,
+          "lng": -49.28772331446937
+        },
+        {
+          "lat": -16.62779457433073,
+          "lng": -49.28741244021563
+        },
+        {
+          "lat": -16.62804762190686,
+          "lng": -49.28714789846151
+        },
+        {
+          "lat": -16.62825066207048,
+          "lng": -49.28683520603509
+        },
+        {
+          "lat": -16.62839628613575,
+          "lng": -49.28655307846323
+        },
+        {
+          "lat": -16.62850672321308,
+          "lng": -49.28618808906932
+        },
+        {
+          "lat": -16.62858158761401,
+          "lng": -49.2858594217083
+        },
+        {
+          "lat": -16.62866835908583,
+          "lng": -49.28548835628986
+        },
+        {
+          "lat": -16.62873591178479,
+          "lng": -49.28516224927669
+        }
+      ],
+      "fromNodeId": "d2b58d39-3851-4f70-9184-18ffcdbf2659",
+      "toNodeId": "417a2727-9f88-4518-8833-5a14711071ee",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769729613814",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "CBL-9",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -16.6285436089912,
+          "lng": -49.27271001043997
+        },
+        {
+          "lat": -16.62858987301786,
+          "lng": -49.27295006813022
+        },
+        {
+          "lat": -16.62856867319707,
+          "lng": -49.27297621973224
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": "cto-1769729581270",
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": null,
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769730457743-split",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone GN2 (B) (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62873591178479,
+          "lng": -49.28516224927669
+        },
+        {
+          "lat": -16.62880515764595,
+          "lng": -49.2848761085726
+        },
+        {
+          "lat": -16.62890007933821,
+          "lng": -49.28491097086813
+        },
+        {
+          "lat": -16.62889530737395,
+          "lng": -49.28466005145588
+        },
+        {
+          "lat": -16.62861808394412,
+          "lng": -49.2844847031838
+        },
+        {
+          "lat": -16.62833978958819,
+          "lng": -49.28414090218273
+        },
+        {
+          "lat": -16.6281929152302,
+          "lng": -49.28399647343753
+        },
+        {
+          "lat": -16.62800786568425,
+          "lng": -49.28377297219442
+        },
+        {
+          "lat": -16.62779882942481,
+          "lng": -49.28355213682544
+        },
+        {
+          "lat": -16.62769172116537,
+          "lng": -49.28342562557845
+        },
+        {
+          "lat": -16.62748177497772,
+          "lng": -49.28317610749065
+        },
+        {
+          "lat": -16.62731088402666,
+          "lng": -49.28298587516474
+        },
+        {
+          "lat": -16.62713871855388,
+          "lng": -49.28279780705425
+        },
+        {
+          "lat": -16.62695487509158,
+          "lng": -49.28256952802723
+        },
+        {
+          "lat": -16.62679983264001,
+          "lng": -49.28241278496865
+        },
+        {
+          "lat": -16.62668858263099,
+          "lng": -49.28227031280557
+        },
+        {
+          "lat": -16.62658604258977,
+          "lng": -49.28214297768119
+        },
+        {
+          "lat": -16.62640477434051,
+          "lng": -49.28207405387452
+        },
+        {
+          "lat": -16.62639656159338,
+          "lng": -49.28182676598424
+        },
+        {
+          "lat": -16.62618500189223,
+          "lng": -49.2815609098795
+        },
+        {
+          "lat": -16.62609586494959,
+          "lng": -49.28135492702901
+        },
+        {
+          "lat": -16.62599777421607,
+          "lng": -49.28116902173032
+        },
+        {
+          "lat": -16.62585609473013,
+          "lng": -49.28086467912143
+        },
+        {
+          "lat": -16.6256938285783,
+          "lng": -49.28054496699971
+        },
+        {
+          "lat": -16.62552907585452,
+          "lng": -49.28020556477301
+        },
+        {
+          "lat": -16.62535449793092,
+          "lng": -49.27984829143879
+        },
+        {
+          "lat": -16.62517842596859,
+          "lng": -49.27950629318264
+        },
+        {
+          "lat": -16.62507911447797,
+          "lng": -49.27928493250142
+        },
+        {
+          "lat": -16.62501237783416,
+          "lng": -49.27914886115907
+        },
+        {
+          "lat": -16.62489591702929,
+          "lng": -49.27887790236161
+        },
+        {
+          "lat": -16.62483808996454,
+          "lng": -49.27906871686988
+        },
+        {
+          "lat": -16.6246136008853,
+          "lng": -49.27915622483145
+        },
+        {
+          "lat": -16.62441008027999,
+          "lng": -49.27925171374022
+        },
+        {
+          "lat": -16.62418583781213,
+          "lng": -49.27935504882859
+        },
+        {
+          "lat": -16.62384102411977,
+          "lng": -49.2795305490308
+        },
+        {
+          "lat": -16.62367774024747,
+          "lng": -49.27944143021844
+        },
+        {
+          "lat": -16.62335138103484,
+          "lng": -49.27956719604946
+        },
+        {
+          "lat": -16.62319264850927,
+          "lng": -49.2792396375896
+        },
+        {
+          "lat": -16.62304738807249,
+          "lng": -49.27891787475749
+        },
+        {
+          "lat": -16.62291818206913,
+          "lng": -49.27866156198786
+        },
+        {
+          "lat": -16.6227735271251,
+          "lng": -49.27828253117991
+        },
+        {
+          "lat": -16.62269836760555,
+          "lng": -49.27794412949599
+        },
+        {
+          "lat": -16.62265067721044,
+          "lng": -49.27755776395884
+        },
+        {
+          "lat": -16.62263177282349,
+          "lng": -49.27720988261098
+        },
+        {
+          "lat": -16.62267216936693,
+          "lng": -49.2768498920864
+        },
+        {
+          "lat": -16.62274293292552,
+          "lng": -49.27649506800798
+        },
+        {
+          "lat": -16.6228750278844,
+          "lng": -49.27613515493416
+        },
+        {
+          "lat": -16.62304689879175,
+          "lng": -49.27578954986161
+        },
+        {
+          "lat": -16.62324440923826,
+          "lng": -49.27548473117267
+        },
+        {
+          "lat": -16.62346887962497,
+          "lng": -49.27519523052104
+        },
+        {
+          "lat": -16.62372031663214,
+          "lng": -49.27494677126335
+        },
+        {
+          "lat": -16.62400683441354,
+          "lng": -49.27472069812657
+        },
+        {
+          "lat": -16.62429023799916,
+          "lng": -49.27455297231217
+        },
+        {
+          "lat": -16.62461316749634,
+          "lng": -49.27439978986829
+        },
+        {
+          "lat": -16.62492473839053,
+          "lng": -49.27430617044274
+        },
+        {
+          "lat": -16.6252666828073,
+          "lng": -49.27421505541803
+        },
+        {
+          "lat": -16.62558848954878,
+          "lng": -49.27413846957119
+        },
+        {
+          "lat": -16.62591972007206,
+          "lng": -49.27404223437688
+        },
+        {
+          "lat": -16.62626912199064,
+          "lng": -49.27394757741869
+        },
+        {
+          "lat": -16.62655223208607,
+          "lng": -49.27386985490717
+        },
+        {
+          "lat": -16.62684938630903,
+          "lng": -49.27380455312912
+        },
+        {
+          "lat": -16.62720223062445,
+          "lng": -49.27371037523786
+        },
+        {
+          "lat": -16.62757898975173,
+          "lng": -49.27361869636338
+        },
+        {
+          "lat": -16.62790061693149,
+          "lng": -49.27354030963389
+        },
+        {
+          "lat": -16.62812911198818,
+          "lng": -49.27348147033419
+        },
+        {
+          "lat": -16.62834021756399,
+          "lng": -49.2734242757751
+        },
+        {
+          "lat": -16.62855942163676,
+          "lng": -49.27319811683304
+        },
+        {
+          "lat": -16.62856775864272,
+          "lng": -49.27297699887978
+        },
+        {
+          "lat": -16.62852446434141,
+          "lng": -49.27269238920295
+        },
+        {
+          "lat": -16.62870261340503,
+          "lng": -49.27262732682531
+        },
+        {
+          "lat": -16.62862282470222,
+          "lng": -49.27221334271788
+        },
+        {
+          "lat": -16.62855353806698,
+          "lng": -49.27188059377109
+        },
+        {
+          "lat": -16.62846578773024,
+          "lng": -49.27150231428044
+        },
+        {
+          "lat": -16.6283690357666,
+          "lng": -49.27100917462172
+        },
+        {
+          "lat": -16.62826089743556,
+          "lng": -49.27048820226821
+        },
+        {
+          "lat": -16.62816031525776,
+          "lng": -49.26995724419168
+        },
+        {
+          "lat": -16.62809671422101,
+          "lng": -49.26957041157463
+        },
+        {
+          "lat": -16.62801124592235,
+          "lng": -49.26920912520858
+        },
+        {
+          "lat": -16.62794555933418,
+          "lng": -49.26883621705641
+        },
+        {
+          "lat": -16.62787407612229,
+          "lng": -49.26846332960956
+        },
+        {
+          "lat": -16.6278004660115,
+          "lng": -49.26810756398587
+        },
+        {
+          "lat": -16.62771676644165,
+          "lng": -49.26771868223364
+        },
+        {
+          "lat": -16.62765354840969,
+          "lng": -49.26734727956906
+        },
+        {
+          "lat": -16.62756675179909,
+          "lng": -49.26697937719644
+        },
+        {
+          "lat": -16.62751677128059,
+          "lng": -49.26668433045307
+        },
+        {
+          "lat": -16.6274728200626,
+          "lng": -49.26645130448415
+        },
+        {
+          "lat": -16.62739261959395,
+          "lng": -49.26599190139535
+        },
+        {
+          "lat": -16.62732349092303,
+          "lng": -49.26562879324853
+        },
+        {
+          "lat": -16.62725436408404,
+          "lng": -49.26525252273557
+        },
+        {
+          "lat": -16.62718703400845,
+          "lng": -49.26491176977142
+        },
+        {
+          "lat": -16.62709821757574,
+          "lng": -49.26451981184803
+        },
+        {
+          "lat": -16.62703918170298,
+          "lng": -49.26417634447256
+        },
+        {
+          "lat": -16.62694998606387,
+          "lng": -49.26377729037165
+        },
+        {
+          "lat": -16.62688964081302,
+          "lng": -49.26344202068611
+        },
+        {
+          "lat": -16.62681677060984,
+          "lng": -49.26305301996367
+        },
+        {
+          "lat": -16.62676300285052,
+          "lng": -49.26269357694643
+        },
+        {
+          "lat": -16.62667575217273,
+          "lng": -49.26233532041633
+        },
+        {
+          "lat": -16.62660380791451,
+          "lng": -49.26197332925547
+        },
+        {
+          "lat": -16.62657261325113,
+          "lng": -49.26180969885081
+        },
+        {
+          "lat": -16.62622332089007,
+          "lng": -49.26165683434346
+        },
+        {
+          "lat": -16.6262288457195,
+          "lng": -49.26133954932787
+        },
+        {
+          "lat": -16.62619161800317,
+          "lng": -49.26097241502959
+        },
+        {
+          "lat": -16.62610910852928,
+          "lng": -49.26044166118088
+        },
+        {
+          "lat": -16.62606388400147,
+          "lng": -49.26014492678323
+        },
+        {
+          "lat": -16.62600247899294,
+          "lng": -49.25981888926824
+        },
+        {
+          "lat": -16.62593093224856,
+          "lng": -49.25951021956506
+        },
+        {
+          "lat": -16.62587786889248,
+          "lng": -49.25932749475881
+        },
+        {
+          "lat": -16.6257995036324,
+          "lng": -49.25902136910808
+        },
+        {
+          "lat": -16.62575393082874,
+          "lng": -49.25876359817729
+        },
+        {
+          "lat": -16.62569910502113,
+          "lng": -49.25849852932036
+        },
+        {
+          "lat": -16.62564438395722,
+          "lng": -49.25823638417322
+        },
+        {
+          "lat": -16.62560215307266,
+          "lng": -49.25798198658784
+        },
+        {
+          "lat": -16.62554521204868,
+          "lng": -49.25764691898222
+        },
+        {
+          "lat": -16.62546873979943,
+          "lng": -49.25733936191479
+        },
+        {
+          "lat": -16.62540997614639,
+          "lng": -49.25703233560537
+        },
+        {
+          "lat": -16.62535030385047,
+          "lng": -49.25669877619286
+        },
+        {
+          "lat": -16.62527840194271,
+          "lng": -49.25637924280225
+        },
+        {
+          "lat": -16.62521399597839,
+          "lng": -49.25606288672144
+        },
+        {
+          "lat": -16.62514942415604,
+          "lng": -49.25571417347405
+        },
+        {
+          "lat": -16.62507903348524,
+          "lng": -49.25539218919476
+        },
+        {
+          "lat": -16.6250012842433,
+          "lng": -49.25504424812324
+        },
+        {
+          "lat": -16.6246797844252,
+          "lng": -49.25505853837015
+        }
+      ],
+      "fromNodeId": "417a2727-9f88-4518-8833-5a14711071ee",
+      "toNodeId": null,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769731464987-split",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "Backbone Noroeste (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -16.62306196346388,
+          "lng": -49.29714114740949
+        },
+        {
+          "lat": -16.62311914743657,
+          "lng": -49.29727172146667
+        },
+        {
+          "lat": -16.62330729279506,
+          "lng": -49.29736033016302
+        },
+        {
+          "lat": -16.62353624534846,
+          "lng": -49.2974668957694
+        },
+        {
+          "lat": -16.623611857941,
+          "lng": -49.29743192713647
+        },
+        {
+          "lat": -16.62343617476434,
+          "lng": -49.29780041103988
+        },
+        {
+          "lat": -16.62330066540404,
+          "lng": -49.2980532006679
+        },
+        {
+          "lat": -16.62314759245696,
+          "lng": -49.29833881776506
+        },
+        {
+          "lat": -16.62283833230462,
+          "lng": -49.29893360397471
+        },
+        {
+          "lat": -16.6226618856767,
+          "lng": -49.29927045972913
+        },
+        {
+          "lat": -16.62263895762798,
+          "lng": -49.29949980727309
+        },
+        {
+          "lat": -16.62256032197352,
+          "lng": -49.29979752773622
+        },
+        {
+          "lat": -16.62234121437864,
+          "lng": -49.30025664975738
+        },
+        {
+          "lat": -16.62248594094194,
+          "lng": -49.30050970376061
+        },
+        {
+          "lat": -16.62263170178198,
+          "lng": -49.30075665114375
+        },
+        {
+          "lat": -16.62274873401203,
+          "lng": -49.30095347827429
+        },
+        {
+          "lat": -16.62276079173396,
+          "lng": -49.30120172385702
+        },
+        {
+          "lat": -16.62267831022345,
+          "lng": -49.30151947327278
+        },
+        {
+          "lat": -16.62260910104755,
+          "lng": -49.30177082337451
+        },
+        {
+          "lat": -16.62253644912151,
+          "lng": -49.30203478271038
+        },
+        {
+          "lat": -16.62257521658442,
+          "lng": -49.30222244018921
+        },
+        {
+          "lat": -16.62263941371442,
+          "lng": -49.30252082486248
+        },
+        {
+          "lat": -16.62277795119799,
+          "lng": -49.30307913790237
+        },
+        {
+          "lat": -16.62273398686144,
+          "lng": -49.30338315956639
+        },
+        {
+          "lat": -16.62236094838531,
+          "lng": -49.3035579869556
+        },
+        {
+          "lat": -16.62198381296217,
+          "lng": -49.30375596478493
+        },
+        {
+          "lat": -16.62174343143154,
+          "lng": -49.30383034498038
+        },
+        {
+          "lat": -16.62140394435015,
+          "lng": -49.30391304250372
+        },
+        {
+          "lat": -16.6209783620517,
+          "lng": -49.30401880632274
+        },
+        {
+          "lat": -16.6205952540262,
+          "lng": -49.30410731238447
+        },
+        {
+          "lat": -16.62039409763044,
+          "lng": -49.30415411327662
+        },
+        {
+          "lat": -16.6204265359186,
+          "lng": -49.30454109384478
+        },
+        {
+          "lat": -16.62048099098486,
+          "lng": -49.30518012223143
+        },
+        {
+          "lat": -16.6205448214546,
+          "lng": -49.30579417524223
+        },
+        {
+          "lat": -16.62057474665761,
+          "lng": -49.30618952014915
+        },
+        {
+          "lat": -16.62055866751617,
+          "lng": -49.30633923932243
+        },
+        {
+          "lat": -16.62048201197031,
+          "lng": -49.30645194057993
+        },
+        {
+          "lat": -16.62025862598239,
+          "lng": -49.30651144582952
+        },
+        {
+          "lat": -16.61934007651438,
+          "lng": -49.30660282650329
+        },
+        {
+          "lat": -16.61924037636412,
+          "lng": -49.30668565112071
+        },
+        {
+          "lat": -16.61790923061096,
+          "lng": -49.30678979511923
+        },
+        {
+          "lat": -16.61769086782139,
+          "lng": -49.3069601321179
+        },
+        {
+          "lat": -16.6178847809585,
+          "lng": -49.30766334453048
+        },
+        {
+          "lat": -16.61781747491104,
+          "lng": -49.30784887481174
+        },
+        {
+          "lat": -16.61773724918188,
+          "lng": -49.30800902744204
+        },
+        {
+          "lat": -16.61784396589656,
+          "lng": -49.3082761200411
+        },
+        {
+          "lat": -16.61765706399208,
+          "lng": -49.30845325824979
+        },
+        {
+          "lat": -16.61715251675349,
+          "lng": -49.30898936960028
+        },
+        {
+          "lat": -16.61678080523748,
+          "lng": -49.30935851330447
+        },
+        {
+          "lat": -16.61653115032041,
+          "lng": -49.30960889979371
+        },
+        {
+          "lat": -16.61588701969389,
+          "lng": -49.31027495679979
+        },
+        {
+          "lat": -16.61560996956612,
+          "lng": -49.3105590165445
+        },
+        {
+          "lat": -16.61536360542974,
+          "lng": -49.31076974540945
+        },
+        {
+          "lat": -16.61521415432806,
+          "lng": -49.31086200568762
+        },
+        {
+          "lat": -16.61488998950053,
+          "lng": -49.31106027706288
+        },
+        {
+          "lat": -16.6145681873541,
+          "lng": -49.31120500599936
+        },
+        {
+          "lat": -16.61425771271125,
+          "lng": -49.31133669792171
+        },
+        {
+          "lat": -16.61357815057821,
+          "lng": -49.31157442052025
+        },
+        {
+          "lat": -16.61331424015998,
+          "lng": -49.31168003062949
+        },
+        {
+          "lat": -16.6130013519429,
+          "lng": -49.31181584485595
+        },
+        {
+          "lat": -16.61264780141232,
+          "lng": -49.31195816362774
+        },
+        {
+          "lat": -16.61268828232472,
+          "lng": -49.31195824750049
+        },
+        {
+          "lat": -16.61335565530139,
+          "lng": -49.31168374875277
+        },
+        {
+          "lat": -16.61344832107719,
+          "lng": -49.31154832953974
+        },
+        {
+          "lat": -16.61357527604908,
+          "lng": -49.31194694277448
+        },
+        {
+          "lat": -16.61378849619089,
+          "lng": -49.31247951727085
+        },
+        {
+          "lat": -16.61427397994552,
+          "lng": -49.3139088364298
+        },
+        {
+          "lat": -16.61441452806807,
+          "lng": -49.31426108365739
+        },
+        {
+          "lat": -16.61441704050631,
+          "lng": -49.31454635058418
+        },
+        {
+          "lat": -16.61412248615286,
+          "lng": -49.31504904058986
+        },
+        {
+          "lat": -16.61330730999938,
+          "lng": -49.31637613966356
+        },
+        {
+          "lat": -16.61339862217783,
+          "lng": -49.31655584841687
+        },
+        {
+          "lat": -16.61402882175722,
+          "lng": -49.31687167011602
+        },
+        {
+          "lat": -16.61514451951043,
+          "lng": -49.31745164501307
+        },
+        {
+          "lat": -16.61620620298199,
+          "lng": -49.31801148022982
+        },
+        {
+          "lat": -16.61770388776623,
+          "lng": -49.31879365683352
+        },
+        {
+          "lat": -16.61886450341613,
+          "lng": -49.31939927575844
+        },
+        {
+          "lat": -16.61975871703228,
+          "lng": -49.31987090251788
+        },
+        {
+          "lat": -16.61997039978034,
+          "lng": -49.31992832723592
+        },
+        {
+          "lat": -16.61979393919382,
+          "lng": -49.32032817128378
+        },
+        {
+          "lat": -16.61946349381483,
+          "lng": -49.32106514666549
+        },
+        {
+          "lat": -16.61941917447791,
+          "lng": -49.32118713685848
+        },
+        {
+          "lat": -16.61946952161223,
+          "lng": -49.3211965986584
+        }
+      ],
+      "fromNodeId": "9daafce5-40fe-40c8-afb9-ede54ee108c3",
+      "toNodeId": null,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "09b1f5bd-9b48-4b0f-b63d-53f0d176039e",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769732431803",
+      "projectId": "b5c2df9c-fc77-45bc-b889-3dbb568e5938",
+      "name": "700025",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -16.62306196346388,
+          "lng": -49.29714114740949
+        },
+        {
+          "lat": -16.62308860752746,
+          "lng": -49.29734710603154
+        }
+      ],
+      "fromNodeId": "9daafce5-40fe-40c8-afb9-ede54ee108c3",
+      "toNodeId": null,
+      "companyId": "cabd6699-1fcd-4301-a308-202c6a6a9f0c",
+      "catalogId": "b8a7b8c2-bc3f-4048-b4d7-b82270b85d9c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    }
+  ],
+  "poles": []
+}

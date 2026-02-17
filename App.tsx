@@ -64,6 +64,43 @@ const parseJwt = (token: string) => {
     }
 };
 
+// --- DATA MIGRATION HELPER (Fix for Cable Split Persistence) ---
+const migrateNodeData = (node: CTOData | POPData, oldCableId: string, newCableId: string): CTOData | POPData => {
+    // 1. Update Input IDs
+    const nextInputIds = (node.inputCableIds || []).map(id => id === oldCableId ? newCableId : id);
+
+    // 2. Migrate Layout
+    let nextLayout = node.layout ? { ...node.layout } : {};
+    if (nextLayout[oldCableId]) {
+        nextLayout[newCableId] = nextLayout[oldCableId];
+        delete nextLayout[oldCableId];
+    }
+
+    // 3. Migrate Connections
+    let nextConnections = (node.connections || []).map(conn => {
+        let nextConn = { ...conn };
+        // Replace in Source
+        if (conn.sourceId === oldCableId) nextConn.sourceId = newCableId;
+        else if (conn.sourceId.includes(`${oldCableId}-fiber-`)) {
+            nextConn.sourceId = conn.sourceId.replace(`${oldCableId}-fiber-`, `${newCableId}-fiber-`);
+        }
+
+        // Replace in Target
+        if (conn.targetId === oldCableId) nextConn.targetId = newCableId;
+        else if (conn.targetId.includes(`${oldCableId}-fiber-`)) {
+            nextConn.targetId = conn.targetId.replace(`${oldCableId}-fiber-`, `${newCableId}-fiber-`);
+        }
+        return nextConn;
+    });
+
+    return {
+        ...node,
+        inputCableIds: nextInputIds,
+        layout: nextLayout,
+        connections: nextConnections
+    };
+};
+
 export default function App() {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -1205,6 +1242,8 @@ export default function App() {
         updateCurrentNetwork(prev => {
             const cable = prev.cables.find(c => c.id === cableId);
             const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId) || (prev.poles || []).find(p => p.id === nodeId);
+
+
             if (!cable || !node) return prev;
 
             // --- CLEANUP: REMOVE CABLE FROM OLD NODE INPUT LISTS ---
@@ -1245,6 +1284,8 @@ export default function App() {
                     };
                 }
 
+
+
                 return {
                     ...prev,
                     cables: prev.cables.map(c => c.id === cableId ? {
@@ -1277,7 +1318,16 @@ export default function App() {
             const coordSegment2 = cable.coordinates.slice(pointIndex);
             coordSegment1[coordSegment1.length - 1] = node.coordinates;
             coordSegment2[0] = node.coordinates;
+
             const newCableId = crypto.randomUUID(); // Real UUID instead of temp ID
+
+            // --- STRUCTURAL FIX: MIGRATE DATA IN CONNECTED NODE ---
+            // The segment cable2 (newCableId) connects to cable.toNodeId (the original target)
+            // We MUST update that node to reference the new ID instead of the old one
+            if (cable.toNodeId) {
+                updatedCTOs = updatedCTOs.map(c => c.id === cable.toNodeId ? migrateNodeData(c, cableId, newCableId) as CTOData : c);
+                updatedPOPs = updatedPOPs.map(p => p.id === cable.toNodeId ? migrateNodeData(p, cableId, newCableId) as POPData : p);
+            }
 
             const cable1 = { ...cable, coordinates: coordSegment1, toNodeId: node.id, name: `${cable.name} (A)`, looseTubeCount: cable.looseTubeCount };
             const cable2 = { ...cable, id: newCableId, name: `${cable.name.replace(' (A)', '')} (B)`, fromNodeId: node.id, toNodeId: cable.toNodeId, coordinates: coordSegment2, looseTubeCount: cable.looseTubeCount };
@@ -1291,6 +1341,8 @@ export default function App() {
                 newSet.add(newCableId); // New part
                 return newSet;
             });
+
+
 
             return {
                 ...prev,

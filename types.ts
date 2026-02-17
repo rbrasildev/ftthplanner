@@ -41,6 +41,7 @@ export interface FiberConnection {
   targetId: string; // ID of the target (e.g., Splitter Input ID)
   color: string;
   points?: { x: number; y: number }[]; // Custom routing points
+  portIndex?: number; // Persisted visual index/slot
 }
 
 export interface Splitter {

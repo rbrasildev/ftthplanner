@@ -138,8 +138,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 }) => {
     const { t } = useLanguage();
     // --- PERSISTENCE FIX REUSABLE LOGIC ---
-    const reconcileOrphans = (data: CTOData, incomingCables: CableData[]) => {
+    const reconcileOrphans = useCallback((data: CTOData, incomingCables: CableData[]) => {
         if (!data.layout) data.layout = {};
+        if (!data.connections) data.connections = [];
 
         // 1. Reconcile Fusions
         // Backend uses UUIDs while client may have Temp IDs (fus-...)
@@ -155,6 +156,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     // Update connections using this fusion as source/target
                     data.connections = data.connections.map(conn => {
                         let nextConn = { ...conn };
+                        let changed = false;
                         if (conn.sourceId === orphanKey) nextConn.sourceId = fusion.id;
                         if (conn.targetId === orphanKey) nextConn.targetId = fusion.id;
                         return nextConn;
@@ -211,47 +213,55 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // 1. There are cables without layouts AND orphan layouts
         // 2. Orphan keys look like temp IDs (contain "cable-" and "-split")
         // 3. Counts match (to avoid mapping wrong cables)
-        const tempIdOrphans = orphanCableKeys.filter(k => k.includes('cable-') && k.includes('-split'));
+        if (cablesWithoutLayout.length > 0 && cableLayoutKeys.length > 0) {
+            const orphanLayouts = cableLayoutKeys.filter(k => !incomingCables.some(c => c.id === k));
 
-        if (cablesWithoutLayout.length > 0 && tempIdOrphans.length > 0) {
-            console.log('[Reconcile] Found temp ID orphans:', tempIdOrphans);
-            console.log('[Reconcile] Cables without layout:', cablesWithoutLayout.map(c => c.id));
+            if (orphanLayouts.length > 0) {
+                orphanLayouts.forEach((orphanId, index) => {
+                    const newCable = cablesWithoutLayout[index];
+                    if (newCable) {
 
-            cablesWithoutLayout.forEach((cable, idx) => {
-                if (idx < tempIdOrphans.length) {
-                    const orphanKey = tempIdOrphans[idx];
-                    data.layout![cable.id] = data.layout![orphanKey];
+                        // 1. Move Layout
+                        data.layout![newCable.id] = data.layout![orphanId];
+                        delete data.layout![orphanId];
 
-                    // Repair fiber connections
-                    data.connections = data.connections.map(conn => {
-                        let nextConn = { ...conn };
-                        if (conn.sourceId.startsWith(`${orphanKey}-fiber-`)) {
-                            nextConn.sourceId = conn.sourceId.replace(`${orphanKey}-fiber-`, `${cable.id}-fiber-`);
-                        }
-                        if (conn.targetId.startsWith(`${orphanKey}-fiber-`)) {
-                            nextConn.targetId = conn.targetId.replace(`${orphanKey}-fiber-`, `${cable.id}-fiber-`);
-                        }
-                        return nextConn;
-                    });
+                        // 2. Move Fiber Connections
+                        data.connections = data.connections.map(conn => {
+                            let nextConn = { ...conn };
 
-                    delete data.layout![orphanKey];
-                }
-            });
+                            // Replace Source
+                            if (conn.sourceId.startsWith(`${orphanId}-fiber-`)) {
+                                nextConn.sourceId = conn.sourceId.replace(`${orphanId}-fiber-`, `${newCable.id}-fiber-`);
+                            }
+                            // Replace Target
+                            if (conn.targetId.startsWith(`${orphanId}-fiber-`)) {
+                                nextConn.targetId = conn.targetId.replace(`${orphanId}-fiber-`, `${newCable.id}-fiber-`);
+                            }
+                            return nextConn;
+                        });
+                    }
+                });
+            }
         }
 
-        // 4. CLEANUP - Remove orphan cable layouts (cables that are no longer connected)
-        // This prevents old cable layouts from interfering with new cables
-        const currentCableIds = incomingCables.map(c => c.id);
-        const cableLayoutsToCheck = Object.keys(data.layout).filter(k =>
-            !k.includes('fus-') && !k.includes('spl-')
-        );
+        // 4. CLEANUP - Remove ONLY genuinely orphan cable layouts
+        const finalCableLayoutsToCheck = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
+        const finalCurrentCableIds = incomingCables.map(c => c.id);
 
-        cableLayoutsToCheck.forEach(layoutKey => {
-            if (!currentCableIds.includes(layoutKey)) {
-                delete data.layout![layoutKey];
-            }
+        // 5. Force Save Check
+        const prevJSON = JSON.stringify(cto);
+        const nextJSON = JSON.stringify(data);
+
+        // CLEANUP: Remove old layouts that are no longer in use
+        // Use loose comparison or trim to ensure match
+        const layoutKeysToRemove = finalCableLayoutsToCheck.filter(layoutKey => {
+            // Keep if it matches ANY current ID
+            const isKept = finalCurrentCableIds.some(id => id === layoutKey || id.trim() === layoutKey.trim());
+            return !isKept;
         });
-    };
+
+        layoutKeysToRemove.forEach(key => delete data.layout![key]);
+    }, []);
 
     const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
     const [localCTO, setLocalCTO] = useState<CTOData>(() => {
@@ -300,6 +310,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     useEffect(() => {
         const next = JSON.parse(JSON.stringify(cto)) as CTOData;
         if (!next.layout) next.layout = {};
+
         // APPLY REPAIR ON UPDATE to bridge ID shifts (Temp -> UUID)
         reconcileOrphans(next, incomingCables);
 
@@ -335,7 +346,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (JSON.stringify(prev) !== JSON.stringify(next)) return next;
             return prev;
         });
-    }, [cto]);
+    }, [cto, incomingCables, reconcileOrphans]);
 
 
     // SYNC REF for performance-critical handlers
@@ -594,30 +605,44 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         loadCatalogs();
     }, []);
 
-    // NEW: Clean up connections if a cable is removed from incomingCables
-    useEffect(() => {
-        setLocalCTO(prev => {
-            const currentCableIds = new Set(incomingCables.map(c => c.id));
-            const validConnections = prev.connections.filter(c => {
-                // Check Source
-                if (c.sourceId.includes('-fiber-')) {
-                    const cableId = c.sourceId.split('-fiber-')[0];
-                    if (!currentCableIds.has(cableId)) return false;
-                }
-                // Check Target
-                if (c.targetId.includes('-fiber-')) {
-                    const cableId = c.targetId.split('-fiber-')[0];
-                    if (!currentCableIds.has(cableId)) return false;
-                }
-                return true;
-            });
+    // FORCE RENDER & CACHE CLEAR
+    // Fixes "Ghost Connections" where SVG tries to draw lines before DOM elements exist
+    const [, forceUpdate] = useState(0);
 
-            if (validConnections.length !== prev.connections.length) {
-                return { ...prev, connections: validConnections };
-            }
-            return prev;
-        });
-    }, [incomingCables]);
+    useLayoutEffect(() => {
+        // Clear geometric caches whenever structure changes
+        portCenterCache.current = {};
+        containerRectCache.current = null;
+
+        // Force a re-render to ensure SVG lines are drawn based on the NEW DOM elements
+        forceUpdate(n => n + 1);
+    }, [incomingCables, localCTO.connections, viewState.zoom]);
+
+    // CONFLICT: This cleanup competes with reconcileOrphans. 
+    // If runs before migration, it deletes useful connections.
+    // useEffect(() => {
+    //     setLocalCTO(prev => {
+    //         const currentCableIds = new Set(incomingCables.map(c => c.id));
+    //         const validConnections = prev.connections.filter(c => {
+    //             // Check Source
+    //             if (c.sourceId.includes('-fiber-')) {
+    //                 const cableId = c.sourceId.split('-fiber-')[0];
+    //                 if (!currentCableIds.has(cableId)) return false;
+    //             }
+    //             // Check Target
+    //             if (c.targetId.includes('-fiber-')) {
+    //                 const cableId = c.targetId.split('-fiber-')[0];
+    //                 if (!currentCableIds.has(cableId)) return false;
+    //             }
+    //             return true;
+    //         });
+    //
+    //         if (validConnections.length !== prev.connections.length) {
+    //             return { ...prev, connections: validConnections };
+    //         }
+    //         return prev;
+    //     });
+    // }, [incomingCables]);
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -1995,12 +2020,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 else if (sourceColor) connColor = sourceColor;
                 else if (targetColor) connColor = targetColor;
 
+                // Helper to extract port index from ID (User Request: Persist Index)
+                const getPortIndex = (id: string): number | undefined => {
+                    if (id.includes('-fiber-')) {
+                        const parts = id.split('-fiber-');
+                        const idx = parseInt(parts[1]);
+                        return isNaN(idx) ? undefined : idx;
+                    }
+                    return undefined;
+                };
+
+                const portIndex = getPortIndex(source) ?? getPortIndex(target);
+
                 const newConn: FiberConnection = {
                     id: `conn-${Date.now()}`,
                     sourceId: source,
                     targetId: target,
                     color: connColor,
-                    points: []
+                    points: [],
+                    portIndex: portIndex // PERSISTED INDEX
                 };
 
                 const exists = localCTO.connections.find(c =>
@@ -2071,6 +2109,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             newMyConn.targetId = targetPort;
                         }
                         newMyConn.color = newColor;
+
+                        // UPDATE PORT INDEX (User Request)
+                        const getPortIndex = (id: string): number | undefined => {
+                            if (id.includes('-fiber-')) {
+                                const parts = id.split('-fiber-');
+                                const idx = parseInt(parts[1]);
+                                return isNaN(idx) ? undefined : idx;
+                            }
+                            return undefined;
+                        };
+                        newMyConn.portIndex = getPortIndex(newMyConn.sourceId) ?? getPortIndex(newMyConn.targetId);
 
                         return {
                             ...prev,
