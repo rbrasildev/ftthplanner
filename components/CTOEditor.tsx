@@ -137,6 +137,48 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole
 }) => {
     const { t } = useLanguage();
+
+    // --- HELPER: Normalize CTO with Defaults for Dirty Check ---
+    const withDefaults = (data: CTOData): CTOData => {
+        const next = JSON.parse(JSON.stringify(data)) as CTOData;
+        if (!next.layout) next.layout = {};
+
+        // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
+        // Must match useEffect logic to ensure comparison is fair
+        const migratedConnections = next.connections?.map(c => {
+            if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
+                return { ...c, color: '#0f172a' };
+            }
+            return c;
+        }) || [];
+        next.connections = migratedConnections;
+
+        // Apply Defaults (Mirroring useEffect logic)
+        let currentCableY = 42;
+        incomingCables.forEach((cable) => {
+            if (!next.layout![cable.id]) {
+                const looseTubeCount = cable.looseTubeCount || 1;
+                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
+                const remainder = fibersHeight % 24;
+                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
+                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
+                currentCableY += totalHeight + 10;
+            }
+            // Do NOT recalculate currentCableY based on existing layouts
+        });
+        next.splitters.forEach((split, idx) => {
+            if (!next.layout![split.id]) next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
+        });
+        next.fusions.forEach((fusion, idx) => {
+            if (!next.layout![fusion.id]) next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
+        });
+
+        // Sort connections to ensure order doesn't affect JSON.stringify
+        next.connections.sort((a, b) => a.id.localeCompare(b.id));
+
+        return next;
+    };
+
     // --- PERSISTENCE FIX REUSABLE LOGIC ---
     const reconcileOrphans = useCallback((data: CTOData, incomingCables: CableData[]) => {
         if (!data.layout) data.layout = {};
@@ -1155,9 +1197,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // Exclude viewState from dirty check
         const stripViewState = (data: CTOData) => {
             const { viewState, ...rest } = data;
+            // Sort connections for stable comparison
+            if (rest.connections) {
+                rest.connections = [...rest.connections].sort((a, b) => a.id.localeCompare(b.id));
+            }
             return rest;
         };
-        const hasChanges = JSON.stringify(stripViewState(localCTO)) !== JSON.stringify(stripViewState(cto));
+
+        // Compare Local State vs Normalized Prop (with defaults applied)
+        // This ensures that auto-generated layouts are NOT considered as user changes.
+        const normalizedLocal = stripViewState(localCTO);
+        const normalizedProp = stripViewState(withDefaults(cto));
+
+        const hasChanges = JSON.stringify(normalizedLocal) !== JSON.stringify(normalizedProp);
+
         if (hasChanges) setShowCloseConfirm(true);
         else onClose();
     };
