@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "createdAt": "2026-02-18T06:00:07.510Z",
+    "version": "1.0",
+    "companyId": "917e7e2a-8442-44f5-b8a3-2f518ada1e64"
+  },
+  "projects": [
+    {
+      "id": "ea9ef5b6-c025-4248-8913-964b4ed086c3",
+      "userId": "fc8a3e80-e784-4f24-b8cf-bb4209ca033c",
+      "name": "ghana",
+      "centerLat": 7.220799642710931,
+      "centerLng": 0.142822265625,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-02-01T05:25:39.094Z",
+      "updatedAt": "2026-02-01T05:36:07.066Z",
+      "companyId": "917e7e2a-8442-44f5-b8a3-2f518ada1e64"
+    }
+  ],
+  "ctos": [],
+  "pops": [],
+  "cables": [],
+  "poles": []
+}

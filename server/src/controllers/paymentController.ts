@@ -69,8 +69,14 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     payer_email: payer.email,
                     card_token_id: token, // Card token from frontend
                     status: 'authorized', // Auto-approve
-                    external_reference: companyId // To identify in webhooks
-                }
+                    external_reference: companyId, // To identify in webhooks
+                    // Enhanced data for anti-fraud
+                    payment_method_id: payment_method_id,
+                    payer: {
+                        email: payer.email,
+                        identification: payer.identification
+                    }
+                } as any // Cast to any because definitions might be missing these fields for PreApproval
             };
 
             try {
@@ -125,15 +131,26 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1); // 30 days subscription
 
-            await prisma.company.update({
-                where: { id: companyId },
-                data: {
-                    planId: plan.id,
-                    status: 'ACTIVE',
-                    subscriptionExpiresAt: nextMonth,
-                    mercadopagoSubscriptionId: isSubscription ? String(result.id) : undefined
-                }
-            });
+            if (isSubscription) {
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        planId: plan.id,
+                        status: 'PENDING', // Wait for webhook payment approval
+                        mercadopagoSubscriptionId: String(result.id)
+                    }
+                });
+            } else {
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        planId: plan.id,
+                        status: 'ACTIVE',
+                        subscriptionExpiresAt: nextMonth,
+                        mercadopagoSubscriptionId: undefined
+                    }
+                });
+            }
         }
 
         return res.status(200).json({
@@ -223,7 +240,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
         if (topic === 'payment') {
             const paymentInfo = await payment.get({ id: String(id) });
-            const companyId = paymentInfo.metadata?.company_id;
+            const companyId = paymentInfo.metadata?.company_id || paymentInfo.external_reference;
 
             if (companyId && paymentInfo.status === 'approved') {
                 const nextMonth = new Date();

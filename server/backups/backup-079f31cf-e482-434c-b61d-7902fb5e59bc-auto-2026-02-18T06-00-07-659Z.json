@@ -1,0 +1,5647 @@
+{
+  "meta": {
+    "createdAt": "2026-02-18T06:00:07.659Z",
+    "version": "1.0",
+    "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc"
+  },
+  "projects": [
+    {
+      "id": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "userId": "b029e08e-b412-4b17-9197-3cdf3e88ecb0",
+      "name": "PROJETO-FTTX-SOUZEL/PA",
+      "centerLat": -2.582757,
+      "centerLng": -51.948546,
+      "zoom": 18,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-13T12:10:15.724Z",
+      "updatedAt": "2026-01-20T18:30:01.956Z",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "8b6ef240-e1b6-469e-97c3-9484ca879de1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "SANGRIA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.5873981708931,
+      "lng": -51.93936891682633,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "36076f73-241e-4cc9-8af3-428e1fc942ba",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "SANGRIA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589119014243342,
+      "lng": -51.94713682499219,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "dee46e79-3a04-4710-99da-3d0075026c13",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "TorrePTP",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.599788568606686,
+      "lng": -51.95007078205235,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "3f5e7958-6b23-4f09-a3e3-e43f4475b838",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1601 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590379104685097,
+      "lng": -51.9536040701845,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "55e0597c-60c6-481f-b6ba-6f31969f7b3c",
+        "f6176ecb-07cf-4354-b02d-5a5e34d43be0"
+      ],
+      "layout": {
+        "55e0597c-60c6-481f-b6ba-6f31969f7b3c": {
+          "x": 276,
+          "y": 378,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "f6176ecb-07cf-4354-b02d-5a5e34d43be0": {
+          "x": 276,
+          "y": 30,
+          "mirrored": false,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "5233e2e3-8fee-493a-b932-48cc022bbeee",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1602 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589179037269208,
+      "lng": -51.95381194460498,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "f6176ecb-07cf-4354-b02d-5a5e34d43be0"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bfa31586-406f-4808-9349-e1855a52b594",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1603 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588134043226542,
+      "lng": -51.95398696292592,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768930793353-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1f913065-b183-4193-a409-649781bbc80a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1604 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588443187387244,
+      "lng": -51.95497467819979,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768930813722-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e4a95277-6a72-481c-8e8d-1b7b5c95c774",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1605 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589397414120534,
+      "lng": -51.95470947614,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768930825789-split"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f8b3ce14-99d0-4b1f-aa94-c1d528ea19f2",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1606 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590536858369139,
+      "lng": -51.95443388566388,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1768930841844-split",
+        "d872a86c-79b3-45a2-afd4-f50fb21593c3"
+      ],
+      "layout": {
+        "cable-1768930841844-split": {
+          "x": 312,
+          "y": 42,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "d872a86c-79b3-45a2-afd4-f50fb21593c3": {
+          "x": 552,
+          "y": 288,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e9d8ea9e-8243-41ce-86ac-2dbf700d5d3b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1607 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59215049332489,
+      "lng": -51.95415557371479,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0bb8cac0-ce86-4455-ab0d-4de729c26cfb",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1608 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591979760389965,
+      "lng": -51.9533253779633,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "2794823c-9518-451c-8cf3-0725bde1405b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Marcador de local sem título",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587527777777778,
+      "lng": -51.94025000000001,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e5869fb3-8c8c-4bbe-9821-97124ac69778",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0507 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593427539069759,
+      "lng": -51.95044014514146,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "50629d9d-a636-4a73-913d-4db3521af58a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0508 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594177337773899,
+      "lng": -51.9489223146577,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "67c2d0f8-0377-4ff3-b12b-5c4459d4889a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "P5AA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590914783544438,
+      "lng": -51.95033764765364,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "15c002b1-c893-40ba-970b-f05969f2badd",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1501 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.590100416758915,
+      "lng": -51.95198781640317,
+      "splitters": [
+        {
+          "id": "spl-1768595176257",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768595176257-in",
+          "outputPortIds": [
+            "spl-1768595176257-out-0",
+            "spl-1768595176257-out-1",
+            "spl-1768595176257-out-2",
+            "spl-1768595176257-out-3",
+            "spl-1768595176257-out-4",
+            "spl-1768595176257-out-5",
+            "spl-1768595176257-out-6",
+            "spl-1768595176257-out-7",
+            "spl-1768595176257-out-8",
+            "spl-1768595176257-out-9",
+            "spl-1768595176257-out-10",
+            "spl-1768595176257-out-11",
+            "spl-1768595176257-out-12",
+            "spl-1768595176257-out-13",
+            "spl-1768595176257-out-14",
+            "spl-1768595176257-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768594840757-0a3uw",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595193686-51blo",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768595109418",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "fus-1768594840757-0a3uw-a",
+          "targetId": "91c2e6c7-abd9-4d99-a220-18b95a558502-fiber-2"
+        },
+        {
+          "id": "conn-1768595193687-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595193686-51blo-b",
+          "targetId": "spl-1768595176257-in"
+        },
+        {
+          "id": "conn-1768595328090",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 270,
+              "y": 318
+            }
+          ],
+          "sourceId": "91c2e6c7-abd9-4d99-a220-18b95a558502-fiber-0",
+          "targetId": "cable-1768594370023-split-fiber-0"
+        },
+        {
+          "id": "conn-1768595329840",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 258,
+              "y": 330
+            }
+          ],
+          "sourceId": "91c2e6c7-abd9-4d99-a220-18b95a558502-fiber-1",
+          "targetId": "cable-1768594370023-split-fiber-1"
+        },
+        {
+          "id": "conn-1768595334163",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 82.57961705965249,
+              "y": 371.6082767684362
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-2",
+          "targetId": "fus-1768595193686-51blo-a"
+        },
+        {
+          "id": "conn-1768595338571",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 108,
+              "y": 342
+            }
+          ],
+          "sourceId": "fus-1768594840757-0a3uw-b",
+          "targetId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-0"
+        }
+      ],
+      "inputCableIds": [
+        "91c2e6c7-abd9-4d99-a220-18b95a558502",
+        "cable-1768594370023-split",
+        "1c170e4f-efd7-4307-9972-ed1cd72c173e"
+      ],
+      "layout": {
+        "spl-1768595176257": {
+          "x": -186,
+          "y": 270,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1768594840757-0a3uw": {
+          "x": 280.3047301391379,
+          "y": 336.0963864713691,
+          "rotation": 180
+        },
+        "fus-1768595193686-51blo": {
+          "x": -39.7538976548076,
+          "y": 365.6140072728645,
+          "rotation": 180
+        },
+        "cable-1768594370023-split": {
+          "x": 138,
+          "y": 96,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "1c170e4f-efd7-4307-9972-ed1cd72c173e": {
+          "x": -24,
+          "y": 96,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "91c2e6c7-abd9-4d99-a220-18b95a558502": {
+          "x": 366,
+          "y": 306,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "d872a86c-79b3-45a2-afd4-f50fb21593c3": {
+          "x": -264,
+          "y": 354,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "9f8598b2-deb5-44fe-a1a8-464e8864d369",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1503 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.589295259309799,
+      "lng": -51.95206581991267,
+      "splitters": [
+        {
+          "id": "spl-1768595494928",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768595494928-in",
+          "outputPortIds": [
+            "spl-1768595494928-out-0",
+            "spl-1768595494928-out-1",
+            "spl-1768595494928-out-2",
+            "spl-1768595494928-out-3",
+            "spl-1768595494928-out-4",
+            "spl-1768595494928-out-5",
+            "spl-1768595494928-out-6",
+            "spl-1768595494928-out-7",
+            "spl-1768595494928-out-8",
+            "spl-1768595494928-out-9",
+            "spl-1768595494928-out-10",
+            "spl-1768595494928-out-11",
+            "spl-1768595494928-out-12",
+            "spl-1768595494928-out-13",
+            "spl-1768595494928-out-14",
+            "spl-1768595494928-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768595520411-wler6",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768595488108-0",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 228,
+              "y": 114
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-0",
+          "targetId": "cable-1768595451077-split-fiber-0"
+        },
+        {
+          "id": "conn-pass-1768595488108-2",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 204,
+              "y": 114
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-2",
+          "targetId": "cable-1768595451077-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768595488108-3",
+          "color": "#3b82f6",
+          "points": [
+            {
+              "x": 192,
+              "y": 114
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-3",
+          "targetId": "cable-1768595451077-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768595488108-4",
+          "color": "#ef4444",
+          "points": [
+            {
+              "x": 180,
+              "y": 114
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-4",
+          "targetId": "cable-1768595451077-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768595488108-5",
+          "color": "#a855f7",
+          "points": [
+            {
+              "x": 168,
+              "y": 114
+            }
+          ],
+          "sourceId": "1c170e4f-efd7-4307-9972-ed1cd72c173e-fiber-5",
+          "targetId": "cable-1768595451077-split-fiber-5"
+        },
+        {
+          "id": "conn-1768595520413-1",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 216,
+              "y": 48
+            }
+          ],
+          "sourceId": "cable-1768595451077-split-fiber-1",
+          "targetId": "fus-1768595520411-wler6-a"
+        },
+        {
+          "id": "conn-1768595520413-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595520411-wler6-b",
+          "targetId": "spl-1768595494928-in"
+        }
+      ],
+      "inputCableIds": [
+        "1c170e4f-efd7-4307-9972-ed1cd72c173e"
+      ],
+      "layout": {
+        "spl-1768595494928": {
+          "x": 270,
+          "y": -42,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768595520411-wler6": {
+          "x": 283.5232125156587,
+          "y": 42.53093387534729,
+          "rotation": 0
+        },
+        "cable-1768595451077-split": {
+          "x": 96,
+          "y": -192,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "1c170e4f-efd7-4307-9972-ed1cd72c173e": {
+          "x": 96,
+          "y": 156,
+          "mirrored": true,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "6eb74eaa-2a85-433d-a54e-6f024aae3bac",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1504 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.588901214434055,
+      "lng": -51.95216854851301,
+      "splitters": [
+        {
+          "id": "spl-1768595616858",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1768595616858-in",
+          "outputPortIds": [
+            "spl-1768595616858-out-0",
+            "spl-1768595616858-out-1",
+            "spl-1768595616858-out-2",
+            "spl-1768595616858-out-3",
+            "spl-1768595616858-out-4",
+            "spl-1768595616858-out-5",
+            "spl-1768595616858-out-6",
+            "spl-1768595616858-out-7"
+          ]
+        },
+        {
+          "id": "spl-1768595920020",
+          "name": "2",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768595920020-in",
+          "outputPortIds": [
+            "spl-1768595920020-out-0",
+            "spl-1768595920020-out-1",
+            "spl-1768595920020-out-2",
+            "spl-1768595920020-out-3",
+            "spl-1768595920020-out-4",
+            "spl-1768595920020-out-5",
+            "spl-1768595920020-out-6",
+            "spl-1768595920020-out-7",
+            "spl-1768595920020-out-8",
+            "spl-1768595920020-out-9",
+            "spl-1768595920020-out-10",
+            "spl-1768595920020-out-11",
+            "spl-1768595920020-out-12",
+            "spl-1768595920020-out-13",
+            "spl-1768595920020-out-14",
+            "spl-1768595920020-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768595643810-r9s5d",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595728253-4pmx0",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595730225-cakv3",
+          "name": "F-3",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595790790-mkkfb",
+          "name": "F-4",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595791362-me9b0",
+          "name": "F-5",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595792103-o1ja3",
+          "name": "F-6",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595902934-jd2sb",
+          "name": "F-7",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768595941124-8xjpy",
+          "name": "F-8",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768596037563-f50q9",
+          "name": "F-9",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768595643811-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768595616858-in",
+          "targetId": "fus-1768595643810-r9s5d-a"
+        },
+        {
+          "id": "conn-1768595643811-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 552,
+              "y": 246
+            }
+          ],
+          "sourceId": "fus-1768595643810-r9s5d-b",
+          "targetId": "cable-1768595451077-split-fiber-0"
+        },
+        {
+          "id": "conn-1768595734060",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 528,
+              "y": 300
+            }
+          ],
+          "sourceId": "fus-1768595730225-cakv3-b",
+          "targetId": "cable-1768595451077-split-fiber-2"
+        },
+        {
+          "id": "conn-1768595736508",
+          "color": "#eab308",
+          "points": [
+            {
+              "x": 540,
+              "y": 288
+            }
+          ],
+          "sourceId": "fus-1768595728253-4pmx0-b",
+          "targetId": "cable-1768595451077-split-fiber-1"
+        },
+        {
+          "id": "conn-1768595742960",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768595616858-out-7",
+          "targetId": "fus-1768595728253-4pmx0-a"
+        },
+        {
+          "id": "conn-1768595744915",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 426,
+              "y": 300
+            },
+            {
+              "x": 426,
+              "y": 276
+            }
+          ],
+          "sourceId": "fus-1768595730225-cakv3-a",
+          "targetId": "spl-1768595616858-out-6"
+        },
+        {
+          "id": "conn-1768595790791-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595790790-mkkfb-b",
+          "targetId": "spl-1768595616858-out-3"
+        },
+        {
+          "id": "conn-1768595791363-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595791362-me9b0-b",
+          "targetId": "spl-1768595616858-out-4"
+        },
+        {
+          "id": "conn-1768595792103-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595792103-o1ja3-b",
+          "targetId": "spl-1768595616858-out-5"
+        },
+        {
+          "id": "conn-1768595905876",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768595902934-jd2sb-b",
+          "targetId": "spl-1768595616858-out-2"
+        },
+        {
+          "id": "conn-1768595907173",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-0",
+          "targetId": "fus-1768595902934-jd2sb-a"
+        },
+        {
+          "id": "conn-1768595909236",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-1",
+          "targetId": "fus-1768595790790-mkkfb-a"
+        },
+        {
+          "id": "conn-1768595910425",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-2",
+          "targetId": "fus-1768595791362-me9b0-a"
+        },
+        {
+          "id": "conn-1768595911706",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-3",
+          "targetId": "fus-1768595792103-o1ja3-a"
+        },
+        {
+          "id": "conn-1768595941124-2",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 311.5008742799232,
+              "y": 109.2232938417951
+            },
+            {
+              "x": 312.1608337593298,
+              "y": 217.4566484644803
+            }
+          ],
+          "sourceId": "fus-1768595941124-8xjpy-b",
+          "targetId": "spl-1768595616858-out-1"
+        },
+        {
+          "id": "conn-1768595972944",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 246,
+              "y": 108
+            }
+          ],
+          "sourceId": "spl-1768595920020-in",
+          "targetId": "fus-1768595941124-8xjpy-a"
+        },
+        {
+          "id": "conn-1768596037563-1",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1768595616858-out-0",
+          "targetId": "fus-1768596037563-f50q9-a"
+        },
+        {
+          "id": "conn-1768596037563-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 390,
+              "y": 204
+            }
+          ],
+          "sourceId": "fus-1768596037563-f50q9-b",
+          "targetId": "b314c0c4-6655-49f0-a3e3-3ba5567a14bc-fiber-0"
+        }
+      ],
+      "inputCableIds": [
+        "16371f21-1f1e-4159-8654-dd2fb61b82d4",
+        "b314c0c4-6655-49f0-a3e3-3ba5567a14bc"
+      ],
+      "layout": {
+        "spl-1768595616858": {
+          "x": 414,
+          "y": 192,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "spl-1768595920020": {
+          "x": 72,
+          "y": 6,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1768595643810-r9s5d": {
+          "x": 506.5251558426871,
+          "y": 240.1647869345885,
+          "rotation": 0
+        },
+        "fus-1768595669532-wnjdi": {
+          "x": 341.5089258922645,
+          "y": 197.9999989603103,
+          "rotation": 0
+        },
+        "fus-1768595670088-ubsja": {
+          "x": 341.5089258922645,
+          "y": 209.9999977618722,
+          "rotation": 0
+        },
+        "fus-1768595672068-59x8u": {
+          "x": 341.5089258922645,
+          "y": 221.9999965634342,
+          "rotation": 0
+        },
+        "fus-1768595698904-5hdzw": {
+          "x": 336.4036323883711,
+          "y": 258.0000008724012,
+          "rotation": 0
+        },
+        "fus-1768595699872-rg51j": {
+          "x": 336.4036323883711,
+          "y": 270.000002154453,
+          "rotation": 0
+        },
+        "fus-1768595700903-o6oqd": {
+          "x": 336.4036323883711,
+          "y": 282.0000034365048,
+          "rotation": 0
+        },
+        "fus-1768595728253-4pmx0": {
+          "x": 456,
+          "y": 282,
+          "rotation": 0
+        },
+        "fus-1768595730225-cakv3": {
+          "x": 456,
+          "y": 294,
+          "rotation": 0
+        },
+        "fus-1768595790790-mkkfb": {
+          "x": 340.1807106229603,
+          "y": 234.0000009351007,
+          "rotation": 0
+        },
+        "fus-1768595791362-me9b0": {
+          "x": 340.1807106229603,
+          "y": 245.9999967168945,
+          "rotation": 0
+        },
+        "fus-1768595792103-o1ja3": {
+          "x": 340.1807106229603,
+          "y": 258.0000157621133,
+          "rotation": 0
+        },
+        "fus-1768595902934-jd2sb": {
+          "x": 340.1807106229603,
+          "y": 222,
+          "rotation": 0
+        },
+        "fus-1768595941124-8xjpy": {
+          "x": 240,
+          "y": 102,
+          "rotation": 0
+        },
+        "fus-1768596037563-f50q9": {
+          "x": 396.6434781809301,
+          "y": 197.7353390565461,
+          "rotation": 180
+        },
+        "cable-1768595451077-split": {
+          "x": 420,
+          "y": 402,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "16371f21-1f1e-4159-8654-dd2fb61b82d4": {
+          "x": 126,
+          "y": 216,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "1c170e4f-efd7-4307-9972-ed1cd72c173e": {
+          "x": 234,
+          "y": 318,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "b314c0c4-6655-49f0-a3e3-3ba5567a14bc": {
+          "x": 258,
+          "y": -36,
+          "mirrored": false,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "45068cef-ad91-4649-accc-4dc8d69ed497",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0601 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589583398645618,
+      "lng": -51.94982702829145,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f3bef148-2b9a-42aa-a97d-21bc144770d9",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0602 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58942410994981,
+      "lng": -51.94915671022082,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a4b14201-1459-44dc-ab43-0460eda270fe",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1505 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.58769496359759,
+      "lng": -51.95240716186134,
+      "splitters": [
+        {
+          "id": "spl-1768596439902",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768596439902-in",
+          "outputPortIds": [
+            "spl-1768596439902-out-0",
+            "spl-1768596439902-out-1",
+            "spl-1768596439902-out-2",
+            "spl-1768596439902-out-3",
+            "spl-1768596439902-out-4",
+            "spl-1768596439902-out-5",
+            "spl-1768596439902-out-6",
+            "spl-1768596439902-out-7",
+            "spl-1768596439902-out-8",
+            "spl-1768596439902-out-9",
+            "spl-1768596439902-out-10",
+            "spl-1768596439902-out-11",
+            "spl-1768596439902-out-12",
+            "spl-1768596439902-out-13",
+            "spl-1768596439902-out-14",
+            "spl-1768596439902-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768596455866-hjnc6",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768596455866-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 126,
+              "y": -36
+            }
+          ],
+          "sourceId": "b314c0c4-6655-49f0-a3e3-3ba5567a14bc-fiber-0",
+          "targetId": "fus-1768596455866-hjnc6-a"
+        },
+        {
+          "id": "conn-1768596455866-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768596455866-hjnc6-b",
+          "targetId": "spl-1768596439902-in"
+        }
+      ],
+      "inputCableIds": [
+        "b314c0c4-6655-49f0-a3e3-3ba5567a14bc"
+      ],
+      "layout": {
+        "spl-1768596439902": {
+          "x": 114,
+          "y": -126,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768596455866-hjnc6": {
+          "x": 146.2838655683956,
+          "y": -42.00000166838537,
+          "rotation": 0
+        },
+        "b314c0c4-6655-49f0-a3e3-3ba5567a14bc": {
+          "x": 66,
+          "y": 186,
+          "mirrored": false,
+          "rotation": -90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "86c2c777-6d51-49f8-b055-05bb91c6dc49",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1508 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.584837515257819,
+      "lng": -51.95406126484806,
+      "splitters": [
+        {
+          "id": "spl-1768596514630",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768596514630-in",
+          "outputPortIds": [
+            "spl-1768596514630-out-0",
+            "spl-1768596514630-out-1",
+            "spl-1768596514630-out-2",
+            "spl-1768596514630-out-3",
+            "spl-1768596514630-out-4",
+            "spl-1768596514630-out-5",
+            "spl-1768596514630-out-6",
+            "spl-1768596514630-out-7",
+            "spl-1768596514630-out-8",
+            "spl-1768596514630-out-9",
+            "spl-1768596514630-out-10",
+            "spl-1768596514630-out-11",
+            "spl-1768596514630-out-12",
+            "spl-1768596514630-out-13",
+            "spl-1768596514630-out-14",
+            "spl-1768596514630-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768596524382-b7zdd",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768596524382-1",
+          "color": "#3b82f6",
+          "points": [
+            {
+              "x": 294,
+              "y": -120
+            }
+          ],
+          "sourceId": "cable-1768596251825-split-fiber-3",
+          "targetId": "fus-1768596524382-b7zdd-a"
+        },
+        {
+          "id": "conn-1768596524382-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768596524382-b7zdd-b",
+          "targetId": "spl-1768596514630-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768596251825-split"
+      ],
+      "layout": {
+        "spl-1768596514630": {
+          "x": 294,
+          "y": -210,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "fus-1768596524382-b7zdd": {
+          "x": 320.1885353738553,
+          "y": -126.3758357477171,
+          "rotation": 0
+        },
+        "cable-1768596251825-split": {
+          "x": 198,
+          "y": 108,
+          "mirrored": false,
+          "rotation": -90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "66956917-513d-4a7f-8d60-b8a49405f51b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1507 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.587980978321655,
+      "lng": -51.95335327890788,
+      "splitters": [
+        {
+          "id": "spl-1768596282546",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768596282546-in",
+          "outputPortIds": [
+            "spl-1768596282546-out-0",
+            "spl-1768596282546-out-1",
+            "spl-1768596282546-out-2",
+            "spl-1768596282546-out-3",
+            "spl-1768596282546-out-4",
+            "spl-1768596282546-out-5",
+            "spl-1768596282546-out-6",
+            "spl-1768596282546-out-7",
+            "spl-1768596282546-out-8",
+            "spl-1768596282546-out-9",
+            "spl-1768596282546-out-10",
+            "spl-1768596282546-out-11",
+            "spl-1768596282546-out-12",
+            "spl-1768596282546-out-13",
+            "spl-1768596282546-out-14",
+            "spl-1768596282546-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768596309958-igcii",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768596278497-0",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1768596073637-split-fiber-0",
+          "targetId": "cable-1768596251825-split-fiber-0"
+        },
+        {
+          "id": "conn-pass-1768596278497-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1768596073637-split-fiber-1",
+          "targetId": "cable-1768596251825-split-fiber-1"
+        },
+        {
+          "id": "conn-pass-1768596278497-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "cable-1768596073637-split-fiber-3",
+          "targetId": "cable-1768596251825-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768596278497-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1768596073637-split-fiber-4",
+          "targetId": "cable-1768596251825-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768596278497-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1768596073637-split-fiber-5",
+          "targetId": "cable-1768596251825-split-fiber-5"
+        },
+        {
+          "id": "conn-1768596309958-1",
+          "color": "#ffffff",
+          "points": [
+            {
+              "x": 78,
+              "y": 102
+            }
+          ],
+          "sourceId": "cable-1768596073637-split-fiber-2",
+          "targetId": "fus-1768596309958-igcii-a"
+        },
+        {
+          "id": "conn-1768596309958-2",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": -84,
+              "y": 102
+            }
+          ],
+          "sourceId": "fus-1768596309958-igcii-b",
+          "targetId": "spl-1768596282546-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768596073637-split"
+      ],
+      "layout": {
+        "spl-1768596282546": {
+          "x": -174,
+          "y": -48,
+          "mirrored": false,
+          "rotation": 180
+        },
+        "fus-1768596309958-igcii": {
+          "x": -55.35873748274129,
+          "y": 94.82952395127886,
+          "rotation": 180
+        },
+        "cable-1768596073637-split": {
+          "x": -30,
+          "y": 216,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "cable-1768596251825-split": {
+          "x": -30,
+          "y": -120,
+          "mirrored": false,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0bfab1a4-b4b0-453c-b7da-a686b28f4f54",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1506 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.589059838427374,
+      "lng": -51.95314842317784,
+      "splitters": [
+        {
+          "id": "spl-1768596127831",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768596127831-in",
+          "outputPortIds": [
+            "spl-1768596127831-out-0",
+            "spl-1768596127831-out-1",
+            "spl-1768596127831-out-2",
+            "spl-1768596127831-out-3",
+            "spl-1768596127831-out-4",
+            "spl-1768596127831-out-5",
+            "spl-1768596127831-out-6",
+            "spl-1768596127831-out-7",
+            "spl-1768596127831-out-8",
+            "spl-1768596127831-out-9",
+            "spl-1768596127831-out-10",
+            "spl-1768596127831-out-11",
+            "spl-1768596127831-out-12",
+            "spl-1768596127831-out-13",
+            "spl-1768596127831-out-14",
+            "spl-1768596127831-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768596158671-3m971",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        },
+        {
+          "id": "fus-1768596190035-wdsuf",
+          "name": "F-2",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-pass-1768596140407-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-2",
+          "targetId": "cable-1768596073637-split-fiber-2"
+        },
+        {
+          "id": "conn-pass-1768596140407-3",
+          "color": "#3b82f6",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-3",
+          "targetId": "cable-1768596073637-split-fiber-3"
+        },
+        {
+          "id": "conn-pass-1768596140408-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-4",
+          "targetId": "cable-1768596073637-split-fiber-4"
+        },
+        {
+          "id": "conn-pass-1768596140408-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-5",
+          "targetId": "cable-1768596073637-split-fiber-5"
+        },
+        {
+          "id": "conn-1768596158672-1",
+          "color": "#0f172a",
+          "points": [
+            {
+              "x": 234,
+              "y": -54
+            },
+            {
+              "x": 234,
+              "y": 60
+            }
+          ],
+          "sourceId": "spl-1768596127831-in",
+          "targetId": "fus-1768596158671-3m971-a"
+        },
+        {
+          "id": "conn-1768596158672-2",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "fus-1768596158671-3m971-b",
+          "targetId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-0"
+        },
+        {
+          "id": "conn-1768596190035-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "16371f21-1f1e-4159-8654-dd2fb61b82d4-fiber-1",
+          "targetId": "fus-1768596190035-wdsuf-a"
+        },
+        {
+          "id": "conn-1768596190035-2",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 276,
+              "y": 72
+            }
+          ],
+          "sourceId": "fus-1768596190035-wdsuf-b",
+          "targetId": "cable-1768595863105-fiber-0"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768595863105",
+        "16371f21-1f1e-4159-8654-dd2fb61b82d4"
+      ],
+      "layout": {
+        "spl-1768596127831": {
+          "x": 60,
+          "y": -156,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "cable-1768595863105": {
+          "x": 144,
+          "y": 270,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "fus-1768596158671-3m971": {
+          "x": 287.9736056919899,
+          "y": 53.24202432866652,
+          "rotation": 0
+        },
+        "fus-1768596190035-wdsuf": {
+          "x": 287.9736056919899,
+          "y": 66,
+          "rotation": 180
+        },
+        "cable-1768596073637-split": {
+          "x": -48,
+          "y": 48,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "16371f21-1f1e-4159-8654-dd2fb61b82d4": {
+          "x": 348,
+          "y": 48,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b539e859-6d23-4e90-80a5-ea0d2e6b2834",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0603 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588640157435695,
+      "lng": -51.9493379966322,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b1bc878e-c135-4245-8238-b8bd68a0b2fe",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0604 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588099099013764,
+      "lng": -51.94945150600525,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "056e8293-3606-4219-a3d7-32f422cf1eb0",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0605 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587196929349842,
+      "lng": -51.94961314902223,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a2e034f2-91b8-481f-9237-fffc37304465",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0606 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58616591689448,
+      "lng": -51.94980846461142,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "03512491-c6ef-41ad-abc0-2f055edc93c8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1502 (1:16)",
+      "status": "DEPLOYED",
+      "lat": -2.59022948736753,
+      "lng": -51.95296648002071,
+      "splitters": [
+        {
+          "id": "spl-1768596224785",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1768596224785-in",
+          "outputPortIds": [
+            "spl-1768596224785-out-0",
+            "spl-1768596224785-out-1",
+            "spl-1768596224785-out-2",
+            "spl-1768596224785-out-3",
+            "spl-1768596224785-out-4",
+            "spl-1768596224785-out-5",
+            "spl-1768596224785-out-6",
+            "spl-1768596224785-out-7",
+            "spl-1768596224785-out-8",
+            "spl-1768596224785-out-9",
+            "spl-1768596224785-out-10",
+            "spl-1768596224785-out-11",
+            "spl-1768596224785-out-12",
+            "spl-1768596224785-out-13",
+            "spl-1768596224785-out-14",
+            "spl-1768596224785-out-15"
+          ]
+        }
+      ],
+      "fusions": [
+        {
+          "id": "fus-1768596232986-s93yq",
+          "name": "F-1",
+          "type": "generic",
+          "catalogId": "f87efa8c-4ad0-4b78-a526-1a3e12c63775"
+        }
+      ],
+      "connections": [
+        {
+          "id": "conn-1768596232986-1",
+          "color": "#22c55e",
+          "points": [
+            {
+              "x": 12,
+              "y": 156
+            }
+          ],
+          "sourceId": "cable-1768595863105-fiber-0",
+          "targetId": "fus-1768596232986-s93yq-a"
+        },
+        {
+          "id": "conn-1768596232986-2",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "fus-1768596232986-s93yq-b",
+          "targetId": "spl-1768596224785-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1768595863105"
+      ],
+      "layout": {
+        "spl-1768596224785": {
+          "x": -12,
+          "y": 66,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1768595863105": {
+          "x": -120,
+          "y": -102,
+          "mirrored": false,
+          "rotation": 90
+        },
+        "fus-1768596232986-s93yq": {
+          "x": 23.00770432066632,
+          "y": 149.7449765747007,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "77b41ea9-5c22-49d6-bcea-6cebe5720cb8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "P3AA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591343251760631,
+      "lng": -51.95168688236684,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "2644a4b3-1fee-411a-a051-a19f4b62136c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0301 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591342288788968,
+      "lng": -51.95168813425752,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b069a1b4-1fae-4242-93a7-3688fd462890",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0302 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591828299379309,
+      "lng": -51.9515167897524,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "502dd805-5eff-4d49-98a2-edecf13a1cc5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0303 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594649548807802,
+      "lng": -51.95167690074419,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f183bd1f-991b-4501-b2dd-dfc937219dff",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0304 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592825234449567,
+      "lng": -51.95129935809676,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "9ed22b6c-0e68-4767-9757-0a740cc84392",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0305 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593468457773142,
+      "lng": -51.95116188103407,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e09d0064-c1dc-4855-be73-de416ab69921",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0306 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591901161014305,
+      "lng": -51.95266902406866,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "63b7d760-0189-4c0f-81d5-a4135fed9ecf",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0306 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593313831724925,
+      "lng": -51.95223874285605,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1c2b5185-daab-4b26-b0ce-effea738bfb6",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0308 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594141732147762,
+      "lng": -51.95207308104781,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "9ac45e06-a950-4d7e-bb0c-67564a0ae782",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "P1AA",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588757314003811,
+      "lng": -51.95150227993183,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b21e5a10-7ad4-4537-a578-ad3037780ba6",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0401 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589950337076265,
+      "lng": -51.95120158093972,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d7841c64-17ea-409c-9269-a001f453258d",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0402 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589804257947293,
+      "lng": -51.95051697808977,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1232f59a-524b-41fa-9ade-5becbb3ec084",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0403 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588554139305363,
+      "lng": -51.95074832985499,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "2ed4f6fb-c759-42db-84ce-f8199f615ffb",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0404 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587258999375983,
+      "lng": -51.95110314174887,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bb6ff10b-deaa-46ee-99ef-79b60616e568",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0405 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586574534774552,
+      "lng": -51.9512230525228,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d47acfd3-d757-40b7-9973-64abf72ed990",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0406 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586732301586285,
+      "lng": -51.95193733330472,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "292ee420-b94a-47ee-ab34-ae21959b8c84",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0407 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587447337404121,
+      "lng": -51.9517270243758,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d480be85-30cf-430c-a0b5-b4199f44c472",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0408 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588757314134199,
+      "lng": -51.95150047341276,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "7e96fbe8-6f82-4399-8df7-7860adf22cc8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0501 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590921970372656,
+      "lng": -51.95034508782597,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "4b2954f8-35a3-497e-aaee-5ccbcf58d912",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0502 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592577241326523,
+      "lng": -51.94919418931769,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b4430b77-dd3b-45cb-b4f0-71549ee73019",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0503 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594799361095076,
+      "lng": -51.95012704247647,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "79b1e37f-acd0-4918-b6a5-8028a91b2d86",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0504 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592400113939709,
+      "lng": -51.95003705339576,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a3ee3b95-6520-4ed0-9865-31ede47e75e8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0505 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594524126237034,
+      "lng": -51.94942353963161,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1ebf5f45-ceed-4031-83c9-2611ae6c40c1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0506 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591372677390578,
+      "lng": -51.94937941175544,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "5d11c902-ea4c-41aa-aa15-0c8076cf3f81",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0607 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587004283745573,
+      "lng": -51.95035506136191,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "62176701-c44b-45e4-b752-b86297fde67f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0608 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588308265936875,
+      "lng": -51.95007145587496,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c2eea587-63c7-4940-b400-52b6ba883a56",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591220414421109,
+      "lng": -51.94878162253567,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0adec6c3-ea31-47b6-b78e-28bd08b4bfae",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592463063875499,
+      "lng": -51.9485295605383,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "100b9d67-a7ff-4323-a4c8-32762a2c92f6",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.594028206397972,
+      "lng": -51.94818925793891,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f2ebbb7c-59d0-4e64-ac6f-7054f9de4574",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593872621609394,
+      "lng": -51.94757065346001,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "743050ea-96b0-417e-9257-fbe8cb05ba4e",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592325330337057,
+      "lng": -51.94787125392835,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "32827993-ca26-41f5-8cbb-52ed38696350",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591108018925326,
+      "lng": -51.9481077449225,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0f1e69f1-c5c6-4532-8f8a-464ed30e2aed",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.5910465498829,
+      "lng": -51.94740376734796,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "fd2f3845-627c-4793-a7af-20ab905d13a9",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0701 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592210892265197,
+      "lng": -51.94712964866169,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0d9fcd00-f1f1-46b9-b133-65b9be17ee99",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0801 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589338128893544,
+      "lng": -51.94847875605348,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e5ead21e-785e-4c86-a92a-2ce9bf17cb31",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0802 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588105153598196,
+      "lng": -51.94870231276759,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "661cc5a0-1f76-4a07-9106-bd7633a61340",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0803 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587042455933066,
+      "lng": -51.94892086230286,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c922dee5-59e1-4b01-a58a-fab5f22c3d45",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0804 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589167551944715,
+      "lng": -51.94775507790198,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "16c936e6-b691-41ea-9bb3-dc8c3d59b0ee",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0805 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586094034048858,
+      "lng": -51.94909962730477,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0fb1b3f3-33b5-4395-93fe-b2e27032bb82",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0806 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587947924476738,
+      "lng": -51.94797799060522,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ff0f3f8c-14b7-4fea-9a78-2b571df24e91",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0807 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586877150995502,
+      "lng": -51.94822730074032,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "738b12b9-2ddf-498f-ba81-d6c512ed36be",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0808 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58591549050341,
+      "lng": -51.94840076388968,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ea726293-68b6-4786-bec9-6a92a1efaf2c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0901 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586742973054298,
+      "lng": -51.9475904598055,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1bcd6379-71c3-4d68-8f8d-fd4a820d1cc4",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0902 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58661172770969,
+      "lng": -51.94690074792864,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "923d62a6-4326-46cf-aca8-d3d74c7e51b8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0903 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587818889308848,
+      "lng": -51.94733177860223,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f37565fc-e014-430d-92da-bc7c5c62c114",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0904 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587658996481593,
+      "lng": -51.94666913713142,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "799e667e-d532-44c6-800c-f05d56d405ad",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0905 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58895708385464,
+      "lng": -51.94710556497651,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "59574539-3a83-433e-8ba4-8de52e5fb529",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0906 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588880013326511,
+      "lng": -51.94639094574193,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "766e5ab1-a4c1-4e99-8dc2-00c28c063216",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0907 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586335930041497,
+      "lng": -51.94564544012751,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a6aee207-d59c-4320-b701-88000e27233f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-0908 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587298218766911,
+      "lng": -51.94530526262757,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bf16404a-ca6c-42ea-8e9e-12595fd7a807",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1001 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593699026580226,
+      "lng": -51.94682654140816,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "e098224d-755d-464d-847c-f4129885fa68",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1002 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593437071666612,
+      "lng": -51.94612965367346,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ce39dd48-7c99-4a0b-8a87-7ba4d10d57e5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1003 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592074215007232,
+      "lng": -51.94643510002059,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "3c35334a-8137-4d90-ba2b-c1c28e3835ac",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1004 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590867167968796,
+      "lng": -51.94670110943653,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d6dafc24-e0c4-4640-b416-095f82195b9b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1005 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590726120429216,
+      "lng": -51.9460658854774,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "8e953247-d4a1-4381-80d1-34b5b3f47abc",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1006 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591919567218882,
+      "lng": -51.94582417278706,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "61455ce9-161f-473b-adda-3d998b80df90",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1007 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593250591198054,
+      "lng": -51.94556741490071,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ca4c3fca-7ee0-4fd0-9e70-f9b0fdfcc512",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1008 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593032074812757,
+      "lng": -51.94486144416456,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f7af11f3-ae9e-4b92-a6ac-26b36dbcd7d5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1101 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591847193816924,
+      "lng": -51.94513846281041,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "5ad9ffc8-9302-46fc-bcef-d8ccd62a31c7",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1102 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590624887097136,
+      "lng": -51.9453710374418,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "55b19ed8-edb4-4d38-b156-ba1cfc333385",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1103 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588723241851861,
+      "lng": -51.94508844703444,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f57ce335-f7e3-4ac3-ad6d-17d27ccf17e1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1104 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590500870355117,
+      "lng": -51.94471691821484,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "2524a783-69b0-4572-81b6-d0b1f4d66da8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1105 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591748728835015,
+      "lng": -51.94443003254155,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "3045a718-7076-4382-b709-527b58d9b31f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1106 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592872136872602,
+      "lng": -51.94418383865897,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "fd070482-e3a7-40b7-9756-3b3ad51c1d5c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1107 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592655713089578,
+      "lng": -51.94369047825532,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "01c51329-f428-4aa6-baa8-5f83edb2b6dc",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1108 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591636512232039,
+      "lng": -51.94388486668146,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "fa41fbb9-6223-4c9b-b4c3-064fc0d3ac96",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1201 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588444226349153,
+      "lng": -51.94403256854264,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c063e041-2d23-435f-8d48-10ae25630b7b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1202 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590252665579793,
+      "lng": -51.9436564796548,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d2c8a934-22d3-4869-a4b3-f1ec4f91ed48",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1203 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591523002111173,
+      "lng": -51.94334538561733,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "556c353c-6e45-4284-864c-a62904fcd510",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1204 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592543918665272,
+      "lng": -51.9431241837752,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a467b351-f2c5-43b5-8e70-e880219d36bf",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1205 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593144974817785,
+      "lng": -51.94245616529659,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "fb57f5b6-395d-4561-9799-2d8e349f1a23",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1301 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59218471985557,
+      "lng": -51.94134207146264,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cb8f0a18-4c0b-4fe8-b8e5-2cd18e9af7c8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1302 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591234438931351,
+      "lng": -51.94176165422522,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b580cac3-8871-4846-af39-4b00a7746046",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1303 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588107669600626,
+      "lng": -51.94244626443654,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "55ffbf66-0740-4046-a531-d0371fc44f4a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1304 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590057627885803,
+      "lng": -51.94187802649661,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "507156d8-e064-40e1-9ce9-1188f371246b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1305 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59241216373106,
+      "lng": -51.94217469310167,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "1d348e4e-3050-44f7-a1b2-8d9482e4ffeb",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1306 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591405468957946,
+      "lng": -51.94240276721979,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "494c4bae-600a-46c5-8d25-e98bec90cbd9",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1307 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.5900716013244,
+      "lng": -51.94260710187046,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "15414110-c70d-4ee9-9b2e-b23e505343f1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1308 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588282143618046,
+      "lng": -51.94306445564446,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bd2b492e-345f-423c-930e-e29048d0fe4c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1401 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587902103099893,
+      "lng": -51.94130809060338,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b3380f81-2f79-44c3-bde2-9c12eef2ff56",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1402 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589727242541823,
+      "lng": -51.94088967726495,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c1b894f3-dd5e-43d2-bd35-cdf0330a209e",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1403 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591132016760981,
+      "lng": -51.94111519144903,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "7c116243-2889-4c39-9a61-b07e1573132f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1404 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589831020209884,
+      "lng": -51.94135916727647,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "080e7dff-c141-440e-9023-c4930aa51da5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1405 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588059523349243,
+      "lng": -51.94185000046045,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0a489d93-1d0d-4e34-9841-29787f4ca97d",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1406 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59203294304003,
+      "lng": -51.94039923097817,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "98087117-19aa-46cf-b269-5bc0e129c1a2",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1407 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592165634921167,
+      "lng": -51.94099084100441,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cc9d61fa-4cc9-4d32-a11c-557ae434d58d",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1408 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59098256763138,
+      "lng": -51.94057393513627,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "d62d4868-1c30-4514-a85f-e505f4817224",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1101 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587609869096722,
+      "lng": -51.9401997276566,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "6870acad-3e69-4f8c-9436-d8d33c29333a",
+        "48976431-bbbd-4e84-adad-4d5778a57670"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "16f72c79-d5ee-4ab2-9f1c-744cdd843c79",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1102 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58739269031974,
+      "lng": -51.93937015281787,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "216fb78d-eafd-4eca-a890-8fb576910582",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1103 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589513720813671,
+      "lng": -51.94015668525599,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cf68e0c1-d05a-40b1-99e0-65b8a3cc22f0",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1104 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590991324758708,
+      "lng": -51.94001824542017,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "db34ed07-f610-4730-9f40-6bbc54f2c84d",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1105 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591921649093833,
+      "lng": -51.93981071426851,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "b951abed-80c2-456f-a9e9-74a4cd8559db",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1108 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591769942261803,
+      "lng": -51.93933604654772,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c5646287-1536-4a60-a805-24f4b042047f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1106 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589483605795808,
+      "lng": -51.93967048195575,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "135a4408-efa7-4eae-a2f9-bd07eebe07bc",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1107 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590895265488402,
+      "lng": -51.93952940008182,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "5741d07f-9a59-4a4c-9c9d-251219472ba7",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1601 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589047185130875,
+      "lng": -51.93796515654124,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cfc42c8a-83ac-4152-9d30-9324a2b5ce8f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1602 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590498288605695,
+      "lng": -51.93773916823499,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "47d99bc4-fd42-4deb-ae1c-d8868006a8e5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1603 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591249766214798,
+      "lng": -51.93762457544856,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "beed1fea-3d65-4851-9a87-80d88229ac21",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1604 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.5913460840536,
+      "lng": -51.93810898216657,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "9f473e4d-8230-4a0c-acae-c6a91cd474ae",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1605 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587007474012942,
+      "lng": -51.93898687448814,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f79b287a-1d40-4445-8a1c-c5ba9a536ac7",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1606 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589307124722149,
+      "lng": -51.9390011956855,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "8ba20f36-1de9-4404-addb-93bc3a05e53d",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1607 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590608527132105,
+      "lng": -51.938963549702,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "43858778-74d3-4923-9539-24a436a881fc",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "NK-AA-1608 (1:16)",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591566393136546,
+      "lng": -51.9387691364577,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "4ec4e22f-0a21-4e68-9563-7a686eeae9fd",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590173564835835,
+      "lng": -51.93661322264047,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "54985be4-155c-46ee-a923-c7f4e065c07e",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590865504681096,
+      "lng": -51.93636541328701,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "32575e07-554c-47d9-93e9-4aca4caa9315",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.59100961150138,
+      "lng": -51.93696846980568,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ffa32100-f6a3-4dfb-9245-c76dc0f93af4",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590403186786042,
+      "lng": -51.93726039748936,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "ca58e4c5-f1cd-44df-b92e-8c7d2ace8e9a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589069756956196,
+      "lng": -51.93743514990345,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "6e44e9b3-647b-4a6d-bfc0-cf95eb3e5b42",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586490212372402,
+      "lng": -51.9379361923316,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f6c92b4d-5c86-4e33-8c89-c745f4b54522",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.58680598560819,
+      "lng": -51.93972858675932,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "4836ac3a-4017-44b7-a8d2-ac6595d69fe1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.587177229141234,
+      "lng": -51.93780018798333,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bdb2177b-b40c-4e4b-87e6-d75aafc52702",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.585937741385893,
+      "lng": -51.9364576758994,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "bc941f39-0948-43e2-a6db-5aa7c294ea2e",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586804135046832,
+      "lng": -51.93629558181215,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "543f3ef5-e61a-4ac5-85b1-f3e5abeef625",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.5886462667288,
+      "lng": -51.93582916040954,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c83dc8b8-21b7-4b4a-a488-f3070069b42c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589879189874725,
+      "lng": -51.93548025605249,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "858a520d-c213-4d33-bb1b-523d9830d3fa",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590668594876071,
+      "lng": -51.93581492643532,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "f9e8bebe-0b77-4a87-9856-30a7dce31afe",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590055679916044,
+      "lng": -51.93605176096479,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cc28a08c-377f-4c0f-93c3-b0907662d2a8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.586976176930159,
+      "lng": -51.93679656783131,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "9c546436-4902-47b9-bf03-556ab5fcb154",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "cto",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.588902433747353,
+      "lng": -51.93678511663928,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "7b6c04a5-8741-4189-b55e-8c23ce29a74b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592876872017231,
+      "lng": -51.94485274337856,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "a584762d-f870-4864-b23a-01e22de45b12",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.593233528393887,
+      "lng": -51.94475169770239,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "7b0e820f-4381-4165-a320-1d121976dfa6",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.592113851774352,
+      "lng": -51.94500647543592,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "5da2d4f6-7c88-4f43-b149-82470ffcc7b5",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.591626737514126,
+      "lng": -51.94513003011635,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0f3a1cfc-a2c8-4b27-84e9-c190e2864902",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590839262650366,
+      "lng": -51.94530545375658,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "c53e1339-cbc4-4835-83cd-eeabd53ae013",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": ".",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.590532650112689,
+      "lng": -51.94536622213062,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "0993f7e7-baf8-458f-a2d4-f7258411a2bf",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Marcador sem título",
+      "status": "NOT_DEPLOYED",
+      "lat": -2.589583333333334,
+      "lng": -51.94425,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "62e6a59b-412e-4765-9eaa-474d9618400a",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    }
+  ],
+  "pops": [
+    {
+      "id": "pop-1768594198897",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "POP-1",
+      "status": "PLANNED",
+      "lat": -2.590154699198361,
+      "lng": -51.95159974280877,
+      "olts": [],
+      "dios": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "color": "#ff6714",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "size": 44,
+      "poleId": null
+    }
+  ],
+  "cables": [
+    {
+      "id": "f6176ecb-07cf-4354-b02d-5a5e34d43be0",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.590379104685097,
+          "lng": -51.9536040701845
+        },
+        {
+          "lat": -2.589179037269208,
+          "lng": -51.95381194460498
+        }
+      ],
+      "fromNodeId": "3f5e7958-6b23-4f09-a3e3-e43f4475b838",
+      "toNodeId": "5233e2e3-8fee-493a-b932-48cc022bbeee",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "55e0597c-60c6-481f-b6ba-6f31969f7b3c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.590379104685097,
+          "lng": -51.9536040701845
+        },
+        {
+          "lat": -2.591975980540956,
+          "lng": -51.95332521986585
+        },
+        {
+          "lat": -2.592139396746249,
+          "lng": -51.95415543818763
+        }
+      ],
+      "fromNodeId": "3f5e7958-6b23-4f09-a3e3-e43f4475b838",
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "16371f21-1f1e-4159-8654-dd2fb61b82d4",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.588901214434055,
+          "lng": -51.95216854851301
+        },
+        {
+          "lat": -2.589059838427374,
+          "lng": -51.95314842317784
+        }
+      ],
+      "fromNodeId": "6eb74eaa-2a85-433d-a54e-6f024aae3bac",
+      "toNodeId": "0bfab1a4-b4b0-453c-b7da-a686b28f4f54",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "b314c0c4-6655-49f0-a3e3-3ba5567a14bc",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Caminho sem título",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.588901214434055,
+          "lng": -51.95216854851301
+        },
+        {
+          "lat": -2.58769496359759,
+          "lng": -51.95240716186134
+        }
+      ],
+      "fromNodeId": "6eb74eaa-2a85-433d-a54e-6f024aae3bac",
+      "toNodeId": "a4b14201-1459-44dc-ab43-0460eda270fe",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "1c170e4f-efd7-4307-9972-ed1cd72c173e",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Caminho sem título (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.590100416758915,
+          "lng": -51.95198781640317
+        },
+        {
+          "lat": -2.589949049956203,
+          "lng": -51.95192901437763
+        },
+        {
+          "lat": -2.589295259309799,
+          "lng": -51.95206581991267
+        }
+      ],
+      "fromNodeId": "15c002b1-c893-40ba-970b-f05969f2badd",
+      "toNodeId": "9f8598b2-deb5-44fe-a1a8-464e8864d369",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "91c2e6c7-abd9-4d99-a220-18b95a558502",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Caminho sem título (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589792575190401,
+          "lng": -51.95051351957197
+        },
+        {
+          "lat": -2.589934924754221,
+          "lng": -51.95120057046095
+        },
+        {
+          "lat": -2.590100416758915,
+          "lng": -51.95198781640317
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": "15c002b1-c893-40ba-970b-f05969f2badd",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "c8eee7b7-780b-4d60-93f5-e38be5237ff1",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589321312080181,
+          "lng": -51.94847412280997
+        },
+        {
+          "lat": -2.58805072785797,
+          "lng": -51.94872494416497
+        },
+        {
+          "lat": -2.587947348058957,
+          "lng": -51.94799900842796
+        },
+        {
+          "lat": -2.586869496859605,
+          "lng": -51.94824727899649
+        },
+        {
+          "lat": -2.585917730013945,
+          "lng": -51.94846949974536
+        },
+        {
+          "lat": -2.586069606645152,
+          "lng": -51.94914610590504
+        },
+        {
+          "lat": -2.587014716260407,
+          "lng": -51.94892036135502
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "9ceb9c09-b2ed-4bc5-86e1-cb07dbd627ff",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.591115675365057,
+          "lng": -51.94815255100092
+        },
+        {
+          "lat": -2.591234578667619,
+          "lng": -51.94880685345805
+        },
+        {
+          "lat": -2.592441993486024,
+          "lng": -51.94859842247269
+        },
+        {
+          "lat": -2.593990023784596,
+          "lng": -51.94826980295695
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "87f45f2c-8c13-47f6-8cee-5f313c572327",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.59113932303809,
+          "lng": -51.94818409765184
+        },
+        {
+          "lat": -2.592242812858249,
+          "lng": -51.94793720140061
+        },
+        {
+          "lat": -2.593794827248488,
+          "lng": -51.94764856848376
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "26334598-d71f-4db1-9997-bebc2ca48e50",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589496367070819,
+          "lng": -51.94016938693978
+        },
+        {
+          "lat": -2.58946141897358,
+          "lng": -51.93967946985403
+        },
+        {
+          "lat": -2.590805020966519,
+          "lng": -51.93955092830418
+        },
+        {
+          "lat": -2.591751676954845,
+          "lng": -51.93933599348358
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "c4afcee1-ec27-4d94-9ce1-b85ebec1e17c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589490013979757,
+          "lng": -51.94016771513297
+        },
+        {
+          "lat": -2.59097093839573,
+          "lng": -51.94002742035794
+        },
+        {
+          "lat": -2.591899953957091,
+          "lng": -51.93981596541457
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "6870acad-3e69-4f8c-9436-d8d33c29333a",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587609869096722,
+          "lng": -51.9401997276566
+        },
+        {
+          "lat": -2.588897666758827,
+          "lng": -51.94016894714448
+        },
+        {
+          "lat": -2.589500913203249,
+          "lng": -51.9401601258027
+        }
+      ],
+      "fromNodeId": "d62d4868-1c30-4514-a85f-e505f4817224",
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "48976431-bbbd-4e84-adad-4d5778a57670",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida da linha",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587609869096722,
+          "lng": -51.9401997276566
+        },
+        {
+          "lat": -2.587410671561523,
+          "lng": -51.93937895167294
+        }
+      ],
+      "fromNodeId": "d62d4868-1c30-4514-a85f-e505f4817224",
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "8d490d1c-d9a6-4c17-b46e-9aedefa69728",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.591031021998086,
+          "lng": -51.94739771480324
+        },
+        {
+          "lat": -2.590823368101934,
+          "lng": -51.94668136499737
+        },
+        {
+          "lat": -2.589078552395107,
+          "lng": -51.94712211065329
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "b7959377-f2d2-4d81-a43d-f08519537c0f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.592300069085791,
+          "lng": -51.94787134497839
+        },
+        {
+          "lat": -2.592176923895876,
+          "lng": -51.9471275321862
+        },
+        {
+          "lat": -2.591007192020476,
+          "lng": -51.9474045378338
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "78d051c2-98f7-416f-8ede-f235a30ab34f",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.591121261808013,
+          "lng": -51.94818407243169
+        },
+        {
+          "lat": -2.591032037848609,
+          "lng": -51.94737985781719
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "d88a392d-6cb2-456c-8d1e-452c10c4b28c",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587970153440193,
+          "lng": -51.94245252539511
+        },
+        {
+          "lat": -2.588075416383916,
+          "lng": -51.9431100805208
+        },
+        {
+          "lat": -2.589999013731644,
+          "lng": -51.94260700564443
+        },
+        {
+          "lat": -2.591371148102821,
+          "lng": -51.94238643785487
+        },
+        {
+          "lat": -2.592371512583468,
+          "lng": -51.94215935252711
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "172ce059-8a05-4e14-bf83-655194bcee54",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587263258560747,
+          "lng": -51.95108904393437
+        },
+        {
+          "lat": -2.587454430962365,
+          "lng": -51.9517260133462
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "eec6e4cc-50e1-40ca-a288-16ec4d7a7a89",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589802410046677,
+          "lng": -51.95051742924854
+        },
+        {
+          "lat": -2.591508970066278,
+          "lng": -51.95021587485128
+        },
+        {
+          "lat": -2.592397768493496,
+          "lng": -51.95003053778597
+        },
+        {
+          "lat": -2.592644675746352,
+          "lng": -51.95074269700265
+        },
+        {
+          "lat": -2.593370646451658,
+          "lng": -51.95044057297988
+        },
+        {
+          "lat": -2.594794628562566,
+          "lng": -51.9501335173336
+        },
+        {
+          "lat": -2.594511232133965,
+          "lng": -51.94942376654148
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cce8fa6b-c722-49d2-a9d8-56da75c4b722",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.59149641688413,
+          "lng": -51.95021764070666
+        },
+        {
+          "lat": -2.591511140049438,
+          "lng": -51.95014779912069
+        },
+        {
+          "lat": -2.591340953246983,
+          "lng": -51.94942229870743
+        },
+        {
+          "lat": -2.592467375408059,
+          "lng": -51.94921766746468
+        },
+        {
+          "lat": -2.594183344194865,
+          "lng": -51.94893309336211
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "482bc498-e0d5-4189-a64b-00c32e1cfc3b",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.590009160992035,
+          "lng": -51.95190850326141
+        },
+        {
+          "lat": -2.59133985221878,
+          "lng": -51.9516863347353
+        },
+        {
+          "lat": -2.591414785877371,
+          "lng": -51.95218873710252
+        },
+        {
+          "lat": -2.591718131492798,
+          "lng": -51.95219142275919
+        },
+        {
+          "lat": -2.591893009656595,
+          "lng": -51.95266847267342
+        },
+        {
+          "lat": -2.592729582750595,
+          "lng": -51.95246070059078
+        },
+        {
+          "lat": -2.593297560672843,
+          "lng": -51.95224506978806
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "0476c656-a779-42d5-8b3b-d2ec3c6d5a74",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.591312727458631,
+          "lng": -51.95169031514348
+        },
+        {
+          "lat": -2.591383503637914,
+          "lng": -51.95220379446139
+        },
+        {
+          "lat": -2.591714912747864,
+          "lng": -51.9521916557618
+        },
+        {
+          "lat": -2.593056455639143,
+          "lng": -51.9517605841253
+        },
+        {
+          "lat": -2.592824105964171,
+          "lng": -51.95130785596601
+        },
+        {
+          "lat": -2.593456886540299,
+          "lng": -51.95116088245489
+        },
+        {
+          "lat": -2.594137082230134,
+          "lng": -51.9520776959682
+        },
+        {
+          "lat": -2.594641159679658,
+          "lng": -51.95168005980776
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "87222235-acab-4017-8050-d2978ddfed39",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587984954633848,
+          "lng": -51.9424601744933
+        },
+        {
+          "lat": -2.589937556623187,
+          "lng": -51.94186329900294
+        },
+        {
+          "lat": -2.591102147054474,
+          "lng": -51.9417805274967
+        },
+        {
+          "lat": -2.59208978491488,
+          "lng": -51.94134254111409
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "95de8755-874c-49a6-9bb7-230f60c4cf07",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587984765239001,
+          "lng": -51.94244940771324
+        },
+        {
+          "lat": -2.587834461006134,
+          "lng": -51.94186575389986
+        },
+        {
+          "lat": -2.58969039138639,
+          "lng": -51.94135714443643
+        },
+        {
+          "lat": -2.591031480747737,
+          "lng": -51.94110796130214
+        },
+        {
+          "lat": -2.592105601713455,
+          "lng": -51.94095974733171
+        },
+        {
+          "lat": -2.591965193032441,
+          "lng": -51.94035428973283
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "507ce3c1-f829-48af-80df-1e8dd7c03ed2",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587852477474463,
+          "lng": -51.94187544753538
+        },
+        {
+          "lat": -2.587724122260145,
+          "lng": -51.94130110497063
+        },
+        {
+          "lat": -2.589618383377285,
+          "lng": -51.94086031767105
+        },
+        {
+          "lat": -2.59089531535123,
+          "lng": -51.94058213737728
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cbaf9ef5-c5df-4a50-baf6-a03f2c8e0cb6",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587438350976884,
+          "lng": -51.93936226509933
+        },
+        {
+          "lat": -2.589384717277838,
+          "lng": -51.93906557637651
+        },
+        {
+          "lat": -2.589137569935938,
+          "lng": -51.93789634651587
+        },
+        {
+          "lat": -2.591286321446185,
+          "lng": -51.93757890966544
+        },
+        {
+          "lat": -2.591402880271082,
+          "lng": -51.93811698907757
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "a85970f4-5fb9-4731-a5be-b63f36afc9c9",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587920091645373,
+          "lng": -51.94799761160223
+        },
+        {
+          "lat": -2.587792302321137,
+          "lng": -51.94732563045583
+        },
+        {
+          "lat": -2.587634270285454,
+          "lng": -51.9466803726436
+        },
+        {
+          "lat": -2.587455286767296,
+          "lng": -51.94599876238353
+        },
+        {
+          "lat": -2.587290208489815,
+          "lng": -51.94531491782287
+        },
+        {
+          "lat": -2.587300399757428,
+          "lng": -51.94533678985582
+        },
+        {
+          "lat": -2.58730425469526,
+          "lng": -51.94535919445885
+        },
+        {
+          "lat": -2.58730961772573,
+          "lng": -51.94535304158026
+        },
+        {
+          "lat": -2.58730672794848,
+          "lng": -51.94533624786821
+        },
+        {
+          "lat": -2.587298472627696,
+          "lng": -51.9453255884778
+        },
+        {
+          "lat": -2.586303102673304,
+          "lng": -51.94565286024071
+        },
+        {
+          "lat": -2.58651884907523,
+          "lng": -51.94620381953378
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "d872a86c-79b3-45a2-afd4-f50fb21593c3",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Cabo 12FO",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.590536858369139,
+          "lng": -51.95443388566388
+        },
+        {
+          "lat": -2.590026084692515,
+          "lng": -51.95169366285687
+        },
+        {
+          "lat": -2.590152689596805,
+          "lng": -51.9516003980439
+        }
+      ],
+      "fromNodeId": "f8b3ce14-99d0-4b1f-aa94-c1d528ea19f2",
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "3dd0261d-d5fc-497a-be13-9a5d289b04c5",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "afebc1b3-c0c4-4ff3-99c6-8d882e83ddf8",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Cabo 36FO",
+      "status": "DEPLOYED",
+      "fiberCount": 36,
+      "looseTubeCount": 6,
+      "color": "#aa00ff",
+      "coordinates": [
+        {
+          "lat": -2.590115643514395,
+          "lng": -51.95162128200873
+        },
+        {
+          "lat": -2.590025052678283,
+          "lng": -51.95163796300675
+        },
+        {
+          "lat": -2.587942525689692,
+          "lng": -51.94157256037204
+        },
+        {
+          "lat": -2.586877301591438,
+          "lng": -51.93681580720972
+        }
+      ],
+      "fromNodeId": null,
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "ab5023e3-7e5e-4532-bd34-58f9e874d613",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768594370023-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Caminho sem título (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.590100416758915,
+          "lng": -51.95198781640317
+        },
+        {
+          "lat": -2.589989241993113,
+          "lng": -51.95199609779541
+        },
+        {
+          "lat": -2.589319856035861,
+          "lng": -51.95209076818031
+        },
+        {
+          "lat": -2.588899135407067,
+          "lng": -51.95217035598226
+        },
+        {
+          "lat": -2.588843766323026,
+          "lng": -51.95214234446627
+        },
+        {
+          "lat": -2.58874533610673,
+          "lng": -51.95149901540861
+        },
+        {
+          "lat": -2.58860349075697,
+          "lng": -51.95084891207808
+        },
+        {
+          "lat": -2.588604060143266,
+          "lng": -51.95084674937794
+        }
+      ],
+      "fromNodeId": "15c002b1-c893-40ba-970b-f05969f2badd",
+      "toNodeId": null,
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768595451077-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Caminho sem título (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589295259309799,
+          "lng": -51.95206581991267
+        },
+        {
+          "lat": -2.588901214434055,
+          "lng": -51.95216854851301
+        }
+      ],
+      "fromNodeId": "9f8598b2-deb5-44fe-a1a8-464e8864d369",
+      "toNodeId": "6eb74eaa-2a85-433d-a54e-6f024aae3bac",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768595863105",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Cabo 6FO",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589059838427374,
+          "lng": -51.95314842317784
+        },
+        {
+          "lat": -2.59022948736753,
+          "lng": -51.95296648002071
+        }
+      ],
+      "fromNodeId": "0bfab1a4-b4b0-453c-b7da-a686b28f4f54",
+      "toNodeId": "03512491-c6ef-41ad-abc0-2f055edc93c8",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768596073637-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589059838427374,
+          "lng": -51.95314842317784
+        },
+        {
+          "lat": -2.587980978321655,
+          "lng": -51.95335327890788
+        }
+      ],
+      "fromNodeId": "0bfab1a4-b4b0-453c-b7da-a686b28f4f54",
+      "toNodeId": "66956917-513d-4a7f-8d60-b8a49405f51b",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768596251825-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Medida do caminho (B) (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.587980978321655,
+          "lng": -51.95335327890788
+        },
+        {
+          "lat": -2.587065441310559,
+          "lng": -51.9534905444276
+        },
+        {
+          "lat": -2.585758426161619,
+          "lng": -51.95375999552768
+        },
+        {
+          "lat": -2.584837515257819,
+          "lng": -51.95406126484806
+        }
+      ],
+      "fromNodeId": "66956917-513d-4a7f-8d60-b8a49405f51b",
+      "toNodeId": "86c2c777-6d51-49f8-b055-05bb91c6dc49",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768930793353-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589179037269208,
+          "lng": -51.95381194460498
+        },
+        {
+          "lat": -2.588134043226542,
+          "lng": -51.95398696292592
+        }
+      ],
+      "fromNodeId": "5233e2e3-8fee-493a-b932-48cc022bbeee",
+      "toNodeId": "bfa31586-406f-4808-9349-e1855a52b594",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768930813722-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.588134043226542,
+          "lng": -51.95398696292592
+        },
+        {
+          "lat": -2.588443187387244,
+          "lng": -51.95497467819979
+        }
+      ],
+      "fromNodeId": "bfa31586-406f-4808-9349-e1855a52b594",
+      "toNodeId": "1f913065-b183-4193-a409-649781bbc80a",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768930825789-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path (B) (B) (B) (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.588443187387244,
+          "lng": -51.95497467819979
+        },
+        {
+          "lat": -2.589397414120534,
+          "lng": -51.95470947614
+        }
+      ],
+      "fromNodeId": "1f913065-b183-4193-a409-649781bbc80a",
+      "toNodeId": "e4a95277-6a72-481c-8e8d-1b7b5c95c774",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1768930841844-split",
+      "projectId": "dec21a66-4fc8-469d-95c9-48379aa1a04a",
+      "name": "Untitled Path (B) (B) (B) (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.589397414120534,
+          "lng": -51.95470947614
+        },
+        {
+          "lat": -2.590536858369139,
+          "lng": -51.95443388566388
+        }
+      ],
+      "fromNodeId": "e4a95277-6a72-481c-8e8d-1b7b5c95c774",
+      "toNodeId": "f8b3ce14-99d0-4b1f-aa94-c1d528ea19f2",
+      "companyId": "079f31cf-e482-434c-b61d-7902fb5e59bc",
+      "catalogId": "77a6ce21-a6b9-41af-b3b8-0a85c581f468",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    }
+  ],
+  "poles": []
+}
