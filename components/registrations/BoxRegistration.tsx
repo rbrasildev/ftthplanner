@@ -109,7 +109,7 @@ const BoxRegistration: React.FC = () => {
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-sky-500/20"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || 'Adicionar Nova'}
                 </button>
