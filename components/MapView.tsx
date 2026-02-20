@@ -7,8 +7,18 @@ import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, 
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
-import { Layers, Map as MapIcon, Globe, Box, Building2, Share2, Tag, Diamond, UtilityPole, CheckCircle2, XCircle, LocateFixed } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Map as MapIcon, Globe, Building2, Diamond, CheckCircle2, XCircle, LocateFixed } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
+import { Customer } from '../types';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
+import { CustomersLayer } from './layers/CustomersLayer';
+import { DropsLayer } from './layers/DropsLayer';
+import { CustomerModal } from './modals/CustomerModal';
+import { CustomerDropDrawer } from './interactions/CustomerDropDrawer';
+import { ConnectCustomerModal } from './modals/ConnectCustomerModal';
+import { CTOMarker } from './markers/CTOMarker';
+import { POPMarker } from './markers/POPMarker';
+import { PoleMarker } from './markers/PoleMarker';
 
 
 
@@ -33,166 +43,6 @@ L.Icon.Default.mergeOptions({
 
 // Icon cache to prevent recreation
 const iconCache = new Map<string, L.DivIcon>();
-
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string) => {
-    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}`;
-
-    if (iconCache.has(cacheKey)) {
-        return iconCache.get(cacheKey)!;
-    }
-
-    // Prioritize custom catalog color if available, otherwise fallback to status color
-    // @ts-ignore
-    const color = customColor || CTO_STATUS_COLORS[status] || CTO_STATUS_COLORS['PLANNED'];
-
-    const icon = L.divIcon({
-        className: 'custom-icon',
-        html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
-      <div style="
-        position: relative;
-        background-color: ${color.substring(0, 7)}cc; /* 60% opacity */
-        border: 3px solid ${isSelected ? '#22c55e' : color.substring(0, 7)}; /* Solid thick border, green when selected */
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        transition: border-color 0.2s ease;
-        z-index: 10;
-      ">
-      </div>
-      <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: 22px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15, 23, 42, 0.9);
-        color: white;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 600;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
-      ">${name}</div>
-`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
-
-    iconCache.set(cacheKey, icon);
-    return icon;
-};
-
-const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', size: number = 24) => {
-    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${size}`;
-
-    if (iconCache.has(cacheKey)) {
-        return iconCache.get(cacheKey)!;
-    }
-
-    const iconRadius = size / 2;
-    const labelOffset = size - 2;
-
-    const icon = L.divIcon({
-        className: 'custom-icon',
-        html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${size * 2}px; height: ${size * 2}px; background: ${color}66; border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
-      <div style="
-        position: relative;
-        background-color: ${color};
-        border: 2px solid ${isSelected ? '#bef264' : '#ffffff'};
-        border-radius: 4px; /* Square for Building */
-        width: ${size}px;
-        height: ${size}px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-      ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="${size * 0.6}" height="${size * 0.6}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-      </div>
-      <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: ${size + 2}px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${color}E6;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
-      ">${name}</div>
-`,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2]
-    });
-
-    iconCache.set(cacheKey, icon);
-    return icon;
-};
-
-
-const createPoleIcon = (name: string, isSelected: boolean, status: PoleStatus | undefined, showLabels: boolean = true) => {
-    const cacheKey = `pole-${name}-${isSelected}-${status}-${showLabels}`;
-    if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
-
-    const size = 16;
-    const color = status ? (POLE_STATUS_COLORS[status] || '#78716c') : '#78716c';
-
-    const icon = L.divIcon({
-        className: 'custom-icon',
-        html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${size * 2}px; height: ${size * 2}px; background: ${color}66; border-radius: 50%; animation: pulse-gray 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
-      <div style="
-        position: relative;
-        background-color: ${color};
-        border: 2px solid ${isSelected ? '#fbbf24' : '#ffffff'};
-        border-radius: 50%;
-        width: ${size}px;
-        height: ${size}px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-      ">
-        <div style="width: 4px; height: 4px; background: white; border-radius: 50%;"></div>
-      </div>
-      <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: ${size + 2}px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #4b5563;
-        color: white;
-        padding: 1px 4px;
-        border-radius: 3px;
-        font-size: 9px;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
-      ">${name}</div>
-`,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2]
-    });
-
-    iconCache.set(cacheKey, icon);
-    return icon;
-};
 
 const otdrIcon = L.divIcon({
     className: 'otdr-icon',
@@ -276,190 +126,7 @@ const pinIcon = L.divIcon({
 });
 
 // --- SUB COMPONENTS (Memoized for Performance) ---
-
-const CTOMarker = React.memo(({
-    cto, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
-}: {
-    cto: CTOData, isSelected: boolean, showLabels: boolean, mode: string,
-    onNodeClick: (id: string, type: 'CTO') => void,
-    onCableStart: (id: string) => void,
-    onCableEnd: (id: string) => void,
-    onMoveNode: (id: string, lat: number, lng: number) => void,
-    cableStartPoint: any,
-    onDragStart: (id: string) => void,
-    onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'CTO') => void,
-    userRole?: string | null
-}) => {
-    const icon = useMemo(() =>
-        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color),
-        [cto.name, isSelected, cto.status, showLabels, cto.color]);
-
-    const eventHandlers = useMemo(() => ({
-        click: (e: any) => {
-            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
-            if (mode === 'draw_cable') {
-                if (!isSelected && !cableStartPoint) onCableStart(cto.id);
-                else onCableEnd(cto.id);
-            } else if (mode === 'view' || mode === 'move_node') {
-                onNodeClick(cto.id, 'CTO');
-            }
-        },
-        contextmenu: (e: any) => {
-            L.DomEvent.stopPropagation(e);
-            if (mode === 'view') {
-                onContextMenu(e, cto.id, 'CTO');
-            }
-        },
-        dragstart: () => onDragStart(cto.id),
-        drag: (e: any) => {
-            const pos = e.target.getLatLng();
-            onDrag(pos.lat, pos.lng);
-        },
-        dragend: (e: any) => {
-            onDragEnd();
-            const marker = e.target;
-            const position = marker.getLatLng();
-            onMoveNode(cto.id, position.lat, position.lng);
-        }
-    }), [mode, cto.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
-
-    return (
-        <Marker
-            position={[cto.coordinates.lat, cto.coordinates.lng]}
-            icon={icon}
-            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
-            eventHandlers={eventHandlers}
-        >
-            <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                <div className="text-xs font-bold">{cto.name}</div>
-            </Tooltip>
-        </Marker>
-    );
-});
-
-const POPMarker = React.memo(({
-    pop, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
-}: {
-    pop: POPData, isSelected: boolean, showLabels: boolean, mode: string,
-    onNodeClick: (id: string, type: 'POP') => void,
-    onCableStart: (id: string) => void,
-    onCableEnd: (id: string) => void,
-    onMoveNode: (id: string, lat: number, lng: number) => void,
-    cableStartPoint: any,
-    onDragStart: (id: string) => void,
-    onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'POP') => void,
-    userRole?: string | null
-}) => {
-    const icon = useMemo(() =>
-        createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size),
-        [pop.name, isSelected, showLabels, pop.color, pop.size]);
-
-    const eventHandlers = useMemo(() => ({
-        click: (e: any) => {
-            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
-            if (mode === 'draw_cable') {
-                if (!isSelected && !cableStartPoint) onCableStart(pop.id);
-                else onCableEnd(pop.id);
-            } else if (mode === 'view' || mode === 'move_node') {
-                onNodeClick(pop.id, 'POP');
-            }
-        },
-        contextmenu: (e: any) => {
-            L.DomEvent.stopPropagation(e);
-            if (mode === 'view') {
-                onContextMenu(e, pop.id, 'POP');
-            }
-        },
-        dragstart: () => onDragStart(pop.id),
-        drag: (e: any) => {
-            const pos = e.target.getLatLng();
-            onDrag(pos.lat, pos.lng);
-        },
-        dragend: (e: any) => {
-            onDragEnd();
-            const marker = e.target;
-            const position = marker.getLatLng();
-            onMoveNode(pop.id, position.lat, position.lng);
-        }
-    }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
-
-    return (
-        <Marker
-            position={[pop.coordinates.lat, pop.coordinates.lng]}
-            icon={icon}
-            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
-            eventHandlers={eventHandlers}
-        >
-            <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
-                <div className="text-xs font-bold">{pop.name}</div>
-            </Tooltip>
-        </Marker>
-    );
-});
-
-const PoleMarker = React.memo(({
-    pole, isSelected, showLabels, mode, onNodeClick, onMoveNode,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
-}: {
-    pole: PoleData, isSelected: boolean, showLabels: boolean, mode: string,
-    onNodeClick: (id: string, type: 'Pole') => void,
-    onMoveNode: (id: string, lat: number, lng: number) => void,
-    onDragStart: (id: string) => void,
-    onDrag: (lat: number, lng: number) => void,
-    onDragEnd: () => void,
-    onContextMenu: (e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => void,
-    userRole?: string | null
-}) => {
-    const icon = useMemo(() =>
-        createPoleIcon(pole.name, isSelected, pole.status, showLabels),
-        [pole.name, isSelected, pole.status, showLabels]);
-
-    const eventHandlers = useMemo(() => ({
-        click: (e: any) => {
-            if (mode !== 'ruler') L.DomEvent.stopPropagation(e);
-            if (mode === 'view' || mode === 'move_node') {
-                onNodeClick(pole.id, 'Pole');
-            }
-        },
-        contextmenu: (e: any) => {
-            L.DomEvent.stopPropagation(e);
-            if (mode === 'view') {
-                onContextMenu(e, pole.id, 'Pole');
-            }
-        },
-        dragstart: () => onDragStart(pole.id),
-        drag: (e: any) => {
-            const pos = e.target.getLatLng();
-            onDrag(pos.lat, pos.lng);
-        },
-        dragend: (e: any) => {
-            onDragEnd();
-            const marker = e.target;
-            const position = marker.getLatLng();
-            onMoveNode(pole.id, position.lat, position.lng);
-        }
-    }), [mode, pole.id, isSelected, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
-
-    return (
-        <Marker
-            position={[pole.coordinates.lat, pole.coordinates.lng]}
-            icon={icon}
-            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
-            eventHandlers={eventHandlers}
-        >
-            <Tooltip direction="top" offset={[0, -8]} opacity={0.9}>
-                <div className="text-[10px] font-bold">{pole.name}</div>
-                {pole.type && <div className="text-[9px] opacity-80">{pole.type}</div>}
-            </Tooltip>
-        </Marker>
-    );
-});
+// Markers are imported from ./markers/ folder
 
 
 interface CablePolylineProps {
@@ -690,11 +357,14 @@ const MapEvents: React.FC<{
     onClearSelection: () => void,
     onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void,
     onContextMenu?: (e: L.LeafletMouseEvent) => void,
-    onUndoDrawingPoint?: () => void
-}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint }) => {
+    onUndoDrawingPoint?: () => void,
+    isRepositioning?: boolean,
+    isDrawingDrop?: boolean
+}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint, isRepositioning, isDrawingDrop }) => {
     useMapEvents({
         contextmenu(e) {
-            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+            // Block context menu
+            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve' || isDrawingDrop) {
                 L.DomEvent.preventDefault(e as any);
                 if (onUndoDrawingPoint) {
                     onUndoDrawingPoint();
@@ -707,7 +377,12 @@ const MapEvents: React.FC<{
             }
         },
         click(e) {
-            if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+            if (isRepositioning) {
+                onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (mode === 'add_customer') {
+                onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+                onMapClick(e.latlng.lat, e.latlng.lng);
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
                 onClearSelection();
@@ -797,6 +472,24 @@ const BoundsUpdater = ({
     return null;
 };
 
+// --- MAP JUMP LOGIC (FOR LOCATE ON MAP) ---
+const MapJumpController = ({ viewKey }: { viewKey?: string }) => {
+    const map = useMap();
+    React.useEffect(() => {
+        const jumpCoords = localStorage.getItem('map_jump_to_coords');
+        if (jumpCoords) {
+            try {
+                const { lat, lng } = JSON.parse(jumpCoords);
+                map.flyTo([lat, lng], 18, { duration: 1.5 });
+                localStorage.removeItem('map_jump_to_coords');
+            } catch (e) {
+                console.error("Error parsing jump coords", e);
+            }
+        }
+    }, [map, viewKey]);
+    return null;
+};
+
 // --- MAIN COMPONENT ---
 
 interface MapViewProps {
@@ -804,7 +497,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable';
+    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -853,10 +546,12 @@ interface MapViewProps {
     pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
     rulerPoints?: Coordinates[];
     onRulerPointsChange?: (points: Coordinates[]) => void;
+    allCustomers?: Customer[];
     userRole?: string | null;
+    showToast: (msg: string, type: 'success' | 'info' | 'error') => void;
 }
 
-const noOp = () => { };
+const noOp = (..._args: any[]) => { };
 
 export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set<string>(),
@@ -864,12 +559,151 @@ export const MapView: React.FC<MapViewProps> = ({
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
-    pinnedLocation, onConvertPin, onClearPin, onUndoDrawingPoint,
-    rulerPoints = [], onRulerPointsChange, onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
-    userRole
+    onConvertPin, onClearPin, onUndoDrawingPoint = noOp,
+    pinnedLocation = null,
+    rulerPoints = [],
+    onRulerPointsChange = noOp,
+    allCustomers = [],
+    showToast,
+    onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
+    userRole = null
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
+
+    // Customer State
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [customerModalOpen, setCustomerModalOpen] = useState(false);
+    const [connectCustomerModalOpen, setConnectCustomerModalOpen] = useState(false);
+    const [pendingConnection, setPendingConnection] = useState<{ ctoId: string, dropPoints: L.LatLng[] } | null>(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | undefined>(undefined);
+    const [isCustomersVisible, setIsCustomersVisible] = useState(true);
+    const [drawingCustomerDrop, setDrawingCustomerDrop] = useState<{
+        customerId: string,
+        startLat: number,
+        startLng: number,
+        points: L.LatLng[]
+    } | null>(null);
+
+    // Performance optimizations state (Moved here)
+    const [mapBoundsState, setMapBoundsState] = useState<L.LatLngBounds | null>(null);
+    const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
+
+    // Fetch Customers
+    const fetchCustomers = useCallback(async (bounds?: L.LatLngBounds) => {
+        if (!bounds) return;
+        try {
+            // console.log("Fetching customers for bounds:", bounds.toBBoxString());
+            const data = await getCustomers({
+                minLat: bounds.getSouth(),
+                maxLat: bounds.getNorth(),
+                minLng: bounds.getWest(),
+                maxLng: bounds.getEast()
+            });
+            console.log(`[MapView] Fetched ${data.length} customers.`);
+            // DEBUG: Check for drops
+            const withDrops = data.filter(c => (c as any).drop).length;
+            console.log(`[MapView] Customers with drops: ${withDrops}`, withDrops > 0 ? (data.find(c => (c as any).drop) as any).drop : 'None');
+            setCustomers(data);
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        }
+    }, []);
+
+    // Update customers when map moves (debounced)
+    // Update customers when map moves (debounced)
+    useEffect(() => {
+        // Use mapBoundsState (from BoundsUpdater) if available, falling back to mapBounds prop
+        const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
+
+        if (currentBounds && isCustomersVisible) {
+            const timer = setTimeout(() => {
+                fetchCustomers(currentBounds);
+            }, 500); // 500ms debounce
+            return () => clearTimeout(timer);
+        }
+    }, [mapBounds, mapBoundsState, isCustomersVisible, fetchCustomers]);
+
+    // Customer Handlers
+    const handleCustomerClick = useCallback((customer: Customer) => {
+        setSelectedCustomer(customer);
+        setCustomerModalOpen(true);
+    }, []);
+
+    // --- CUSTOMER FLOW PART 1: PLACEMENT ---
+    const handleMapClickForCustomer = useCallback((lat: number, lng: number) => {
+        // Step 1: Place customer, open modal for basic info
+        setSelectedCustomer({ lat, lng });
+        setCustomerModalOpen(true);
+    }, []);
+
+    const handleSaveCustomer = async (customer: Partial<Customer>) => {
+        try {
+            const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
+            if (customer.id) {
+                // Determine logic for update vs new flow
+                // For now, simple update
+                await updateCustomer(customer.id, customer);
+                setCustomerModalOpen(false);
+                if (currentBounds) fetchCustomers(currentBounds);
+                setSelectedCustomer(null); // Clear placement marker
+            } else {
+                // CREATE NEW CUSTOMER
+                await createCustomer(customer);
+                setCustomerModalOpen(false);
+                if (currentBounds) fetchCustomers(currentBounds);
+                setSelectedCustomer(null); // Clear placement marker
+            }
+        } catch (error) {
+            console.error("Failed to save customer:", error);
+            throw error;
+        }
+    };
+
+    // Draw Drop Logic
+    const handleCustomerContextMenu = useCallback((e: L.LeafletMouseEvent, customer: Customer) => {
+        // Start drawing drop for this customer
+        setDrawingCustomerDrop({
+            customerId: customer.id,
+            startLat: customer.lat,
+            startLng: customer.lng,
+            points: []
+        });
+        setMapContextMenu(null); // Close map menu
+    }, []);
+
+    const handleStartDrawingDrop = useCallback((customerId: string, coords?: { lat: number, lng: number }) => {
+        const customer = allCustomers.find(c => c.id === customerId);
+        if (!customer && !coords) return;
+
+        setDrawingCustomerDrop({
+            customerId: customerId,
+            startLat: coords?.lat ?? customer?.lat ?? 0,
+            startLng: coords?.lng ?? customer?.lng ?? 0,
+            points: []
+        });
+        console.log("[MapView] Explicitly starting drop drawing for:", customerId, "at", coords || "stored coords");
+    }, [allCustomers]);
+
+
+    const handleConnectToCTO = useCallback((ctoId: string) => {
+        if (!drawingCustomerDrop) return;
+
+        const cto = ctos.find(c => c.id === ctoId);
+        if (!cto) return;
+
+        // Open Modal to select splitter/port
+        setPendingConnection({
+            ctoId: cto.id,
+            dropPoints: drawingCustomerDrop.points || [] // Pass the path drawn so far
+        });
+        setConnectCustomerModalOpen(true);
+
+        // Don't clear drawing state yet, wait for modal confirm/cancel
+    }, [drawingCustomerDrop, ctos]);
+
+    // Modify onMapClick to handle 'add_customer' mode
+    // (This requires finding the existing onMapClick definition and modifying it or injecting logic)
 
     // --- PERSISTENCE HELPERS ---
     const getSaved = <T,>(key: string, def: T): T => {
@@ -882,8 +716,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const [mapType, setMapType] = useState<'street' | 'satellite'>(() => getSaved('ftth_map_type', 'street'));
 
     // Performance optimizations state
-    const [mapBoundsState, setMapBoundsState] = useState<L.LatLngBounds | null>(null);
-    const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
+    // (Moved to top of component)
 
     // Visibility States
     const [showCables, setShowCables] = useState(() => getSaved('ftth_show_cables', true));
@@ -1002,6 +835,8 @@ export const MapView: React.FC<MapViewProps> = ({
         lat: number,
         lng: number
     } | null>(null);
+
+    const [repositioningCustomer, setRepositioningCustomer] = useState<{ id: string, name: string } | null>(null);
 
     // Close menus on interaction (escape key)
     useEffect(() => {
@@ -1214,6 +1049,18 @@ export const MapView: React.FC<MapViewProps> = ({
                         <Layers className="w-5 h-5" />
                         {!enableClustering && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
                     </button>
+
+                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
+
+                    {/* Customers Toggle */}
+                    <button
+                        onClick={() => setIsCustomersVisible(!isCustomersVisible)}
+                        title={t('layer_customers') || "Clientes"}
+                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${isCustomersVisible ? 'bg-green-600 text-white shadow-lg shadow-green-600/30 border-green-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+                    >
+                        <User className="w-5 h-5" />
+                        {!isCustomersVisible && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
+                    </button>
                 </div>
             </div>
 
@@ -1231,6 +1078,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 transform3DLimit={1024}
             >
                 <ZoomControl position="bottomright" />
+
+                <MapJumpController viewKey={viewKey} />
 
                 <MapResizeHandler />
 
@@ -1258,14 +1107,53 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <MapEvents
                     mode={mode}
+                    isRepositioning={!!repositioningCustomer}
+                    isDrawingDrop={!!drawingCustomerDrop}
                     onMapClick={(lat, lng) => {
                         setMapContextMenu(null); // Close map menu on click
                         if (mode === 'ruler') {
-                            if (onRulerPointsChange) {
-                                onRulerPointsChange([...rulerPoints, { lat, lng }]);
+                            onRulerPointsChange([...rulerPoints, { lat, lng }]);
+                        } else if (repositioningCustomer) {
+                            // Find the customer to check for existing drop
+                            const existingCustomer = customers.find(c => c.id === repositioningCustomer.id);
+                            const updates: Partial<Customer> = { lat, lng };
+
+                            // Backend requires ctoId to verify/update drop connection
+                            if (existingCustomer?.ctoId) {
+                                updates.ctoId = existingCustomer.ctoId;
                             }
-                        } else if (mode === 'position_reserve') {
-                            if (onReservePositionSet) onReservePositionSet(lat, lng);
+
+                            // If customer has a drop, update its last point to the new location
+                            if (existingCustomer && existingCustomer.drop && existingCustomer.drop.coordinates && existingCustomer.drop.coordinates.length > 0) {
+                                const newDropCoords = [...existingCustomer.drop.coordinates];
+                                newDropCoords[newDropCoords.length - 1] = { lat, lng };
+                                updates.dropCoordinates = newDropCoords;
+                                console.log("[Reposition] Updates payload:", updates);
+                            }
+
+                            // Handle Repositioning
+                            updateCustomer(repositioningCustomer.id, updates)
+                                .then(() => {
+                                    showToast(t('customer_updated_success') || "Cliente atualizado", 'success');
+                                    // Refresh map
+                                    const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
+                                    if (currentBounds) fetchCustomers(currentBounds);
+                                })
+                                .catch(err => {
+                                    console.error("Failed to move customer:", err);
+                                    showToast(t('error_save_customer'), 'error');
+                                })
+                                .finally(() => {
+                                    setRepositioningCustomer(null);
+                                });
+                        } else if (drawingCustomerDrop) {
+                            // If we are drawing a drop, clicks add points to it
+                            setDrawingCustomerDrop({
+                                ...drawingCustomerDrop,
+                                points: [...(drawingCustomerDrop.points || []), { lat, lng }]
+                            });
+                        } else if (mode === 'add_customer' || mode === 'add_poste') {
+                            handleMapClickForCustomer(lat, lng);
                         } else {
                             onAddPoint(lat, lng);
                         }
@@ -1276,15 +1164,18 @@ export const MapView: React.FC<MapViewProps> = ({
                     }}
                     onUndoDrawingPoint={() => {
                         if (mode === 'ruler') {
-                            if (onRulerPointsChange && rulerPoints.length > 0) {
-                                onRulerPointsChange(rulerPoints.slice(0, -1));
-                            }
+                            onRulerPointsChange(rulerPoints.slice(0, -1));
                         } else if (onUndoDrawingPoint) {
                             onUndoDrawingPoint();
                         }
                     }}
+
                     onMapMoveEnd={onMapMoveEnd}
                     onContextMenu={(e) => {
+                        if (drawingCustomerDrop) {
+                            // Right click to cancel?
+                            setDrawingCustomerDrop(null);
+                        }
                         L.DomEvent.preventDefault(e as any);
 
                         // Toggle behavior: If map menu is already open, close it and return
@@ -1301,12 +1192,24 @@ export const MapView: React.FC<MapViewProps> = ({
                             lng: e.latlng.lng
                         });
                     }}
-
                 />
 
                 <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />
 
                 <BoundsUpdater setBounds={setMapBoundsState} setZoom={setCurrentZoom} />
+
+                <CustomersLayer
+                    customers={customers}
+                    onCustomerClick={handleCustomerClick}
+                    selectedId={selectedCustomer && (selectedCustomer as any).id}
+                    visible={isCustomersVisible}
+                    mapZoom={currentZoom}
+                    onContextMenu={handleCustomerContextMenu}
+                />
+                <DropsLayer
+                    customers={customers}
+                    visible={isCustomersVisible}
+                />
 
                 <D3CablesLayer
                     cables={d3Cables}
@@ -1418,7 +1321,13 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
-                                onNodeClick={onNodeClick}
+                                onNodeClick={(id, type) => {
+                                    if (drawingCustomerDrop && type === 'CTO') {
+                                        handleConnectToCTO(id);
+                                    } else {
+                                        onNodeClick(id, type);
+                                    }
+                                }}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
@@ -1475,7 +1384,13 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
-                                onNodeClick={onNodeClick}
+                                onNodeClick={(id, type) => {
+                                    if (drawingCustomerDrop && type === 'CTO') {
+                                        handleConnectToCTO(id);
+                                    } else {
+                                        onNodeClick(id, type);
+                                    }
+                                }}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
@@ -1524,6 +1439,9 @@ export const MapView: React.FC<MapViewProps> = ({
                         ))}
                     </>
                 )}
+
+
+
                 {/* PREVIEW IMPORT DATA (Temporary Layer) */}
                 {previewImportData && (
                     <>
@@ -1615,6 +1533,22 @@ export const MapView: React.FC<MapViewProps> = ({
                     </Marker>
                 )}
 
+                {/* Customer Drop Drawing Interaction */}
+                {drawingCustomerDrop && (
+                    <CustomerDropDrawer
+                        drawingState={drawingCustomerDrop}
+                        onUpdatePoints={(points) => {
+                            // Assuming we just update the points in state
+                            setDrawingCustomerDrop(prev => prev ? { ...prev, points } : null);
+                        }}
+                        onCancel={() => setDrawingCustomerDrop(null)}
+                        onComplete={(ctoId) => {
+                            // Handle CTO connection logic here or pass handler
+                            console.log("Connect to CTO:", ctoId);
+                        }}
+                    />
+                )}
+
             </MapContainer>
 
             {/* Context Menu for Cables */}
@@ -1677,6 +1611,81 @@ export const MapView: React.FC<MapViewProps> = ({
             }
 
 
+
+
+            <ConnectCustomerModal
+                isOpen={connectCustomerModalOpen}
+                onClose={() => {
+                    setConnectCustomerModalOpen(false);
+                    setPendingConnection(null);
+                }}
+                allCustomers={allCustomers}
+                onConnect={async (ctoId, splitterId, portIndex) => {
+                    if (!pendingConnection) return;
+
+                    try {
+                        // Construct FULL path for saving: [Start, ...Waypoints, End]
+                        // 1. Start Point (Customer Location)
+                        const startPoint = { lat: drawingCustomerDrop.startLat, lng: drawingCustomerDrop.startLng };
+
+                        // 2. Waypoints (User clicks in between)
+                        const waypoints = pendingConnection.dropPoints.map(p => ({ lat: p.lat, lng: p.lng }));
+
+                        // 3. End Point (CTO Location)
+                        const targetCto = ctos.find(c => c.id === ctoId);
+
+                        if (!targetCto) {
+                            console.error("Critical: Target CTO not found!", ctoId);
+                            showToast(t('error_target_not_found'), 'error');
+                            return;
+                        }
+
+                        const endPoint = { lat: targetCto.coordinates.lat, lng: targetCto.coordinates.lng };
+
+                        const fullPath = [startPoint, ...waypoints, endPoint];
+                        console.log("[MapView] Saving Drop Path:", fullPath);
+
+                        if (drawingCustomerDrop?.customerId) {
+                            const updatedCustomer = await updateCustomer(drawingCustomerDrop.customerId, {
+                                dropCoordinates: fullPath,
+                                ctoId: ctoId,
+                                splitterId: splitterId ?? undefined,
+                                splitterPortIndex: portIndex ?? undefined
+                            });
+
+                            showToast(t('toast_cable_split', { name: targetCto.name }), 'success');
+
+                            // Authoritative Update from Server Response
+                            setCustomers(prev => prev.map(c =>
+                                c.id === drawingCustomerDrop.customerId ? updatedCustomer : c
+                            ));
+                        }
+
+                        setConnectCustomerModalOpen(false);
+                        setPendingConnection(null);
+                        setDrawingCustomerDrop(null); // Finish drawing
+
+                        // Refresh map (Use state if available, fallback to prop)
+                        const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
+                        if (currentBounds) {
+                            // Increased delay to ensure backend consistency and avoid overwriting with stale data
+                            setTimeout(() => fetchCustomers(currentBounds), 1000);
+                        }
+
+                    } catch (error: any) {
+                        console.error("Error saving drop:", error);
+                        // Handle 409 Conflict (Port Occupied)
+                        if (error.response && error.response.status === 409) {
+                            showToast(t('error_port_occupied'), 'error');
+                        } else {
+                            showToast(t('connection_failed_msg'), 'error');
+                        }
+                    }
+                }}
+                cto={ctos.find(c => c.id === pendingConnection?.ctoId) || null}
+            />
+
+
             {/* Map Background Context Menu */}
             {
                 mapContextMenu && (
@@ -1729,6 +1738,25 @@ export const MapView: React.FC<MapViewProps> = ({
                     </div>
                 )
             }
+            <CustomerModal
+                isOpen={customerModalOpen}
+                onClose={() => {
+                    setCustomerModalOpen(false);
+                    setSelectedCustomer(null); // Also clear on close/cancel
+                }}
+                onSave={handleSaveCustomer}
+                onStartDrawingDrop={handleStartDrawingDrop}
+                onReposition={(customer) => {
+                    if (customer.id) {
+                        setRepositioningCustomer({ id: customer.id, name: customer.name || '' });
+                        setCustomerModalOpen(false);
+                        showToast(t('reposition_customer_instruction'), 'info');
+                    }
+                }}
+                initialData={selectedCustomer}
+                ctos={ctos}
+                allCustomers={allCustomers}
+            />
         </div >
     );
 };

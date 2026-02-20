@@ -59,6 +59,7 @@ model Company {
   pops                      Pop[]
   projects                  Project[]
   users                     User[]
+  customers                 Customer[]
 
   @@map("companies")
 }
@@ -126,6 +127,8 @@ model Cto {
   poleId            String?         @map("pole_id")
   company           Company?        @relation(fields: [companyId], references: [id])
   project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  customers         Customer[]
+  drops             Drop[]
 
   @@index([companyId])
   @@index([lat, lng])
@@ -205,6 +208,8 @@ model CatalogSplitter {
   mode        String
   inputs      Int      @default(1)
   outputs     Int
+  connectorType String? @default("Unconnectorized") @map("connector_type")
+  allowCustomConnections Boolean @default(true) @map("allow_custom_connections")
   attenuation Json?    @default("{}")
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
@@ -498,4 +503,50 @@ enum UserRole {
   SUPER_ADMIN
 
   @@map("user_roles")
+}
+
+model Customer {
+  id                String   @id @default(uuid())
+  name              String
+  document          String?
+  phone             String?
+  email             String?
+  address           String?
+  lat               Float
+  lng               Float
+  ctoId             String?  @map("cto_id")
+  splitterId        String?  @map("splitter_id")
+  splitterPortIndex Int?     @map("splitter_port_index")
+  fiberId           String?  @map("fiber_id")
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId         String?  @map("company_id")
+  onuSerial         String?  @map("onu_serial")
+  onuMac            String?  @map("onu_mac")
+  pppoeService      String?  @map("pppoe_service")
+  
+  cto     Cto?     @relation(fields: [ctoId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+  drop    Drop?
+
+  @@index([companyId])
+  @@index([ctoId])
+  @@map("customers")
+}
+
+model Drop {
+  id          String   @id @default(uuid())
+  customerId  String   @unique @map("customer_id")
+  ctoId       String   @map("cto_id")
+  coordinates Json     // Stores the path geometry [{lat, lng}, ...]
+  length      Float?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  cto      Cto      @relation(fields: [ctoId], references: [id])
+
+  @@index([ctoId])
+  @@map("drops")
 }

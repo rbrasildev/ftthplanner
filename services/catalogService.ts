@@ -7,6 +7,8 @@ export interface SplitterCatalogItem {
     mode: string;
     inputs: number;
     outputs: number;
+    connectorType?: string;
+    allowCustomConnections?: boolean;
     attenuation: Record<string, any>;
     description?: string;
     updatedAt?: string;

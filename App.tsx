@@ -19,7 +19,7 @@ import { DashboardPage } from './components/DashboardPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CompanySettings } from './components/settings/CompanySettings';
 import { SearchBox } from './components/SearchBox';
-import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType } from './types';
+import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
@@ -181,13 +181,18 @@ export default function App() {
         }
         // Load Global SaaS Config
         saasService.getSaaSConfig().then(setSaasConfig).catch(console.error);
+
+        // Load Global Customers (for Search/Linking)
+        import('./services/customerService').then(service => {
+            service.getCustomers().then(setGlobalCustomers).catch(console.error);
+        });
     }, []);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -246,6 +251,7 @@ export default function App() {
         ceos: any[];
         poles: any[];
     } | null>(null);
+    const [globalCustomers, setGlobalCustomers] = useState<Customer[]>([]);
 
     // --- Sidebar & Responsive State ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
@@ -2173,6 +2179,7 @@ export default function App() {
                         // Pass OTDR Result Point to MapView to render marker
                         otdrResult={otdrResult}
                         pinnedLocation={pinnedLocation}
+                        allCustomers={globalCustomers}
                         onConvertPin={handleConvertPinToNode}
                         onClearPin={() => setPinnedLocation(null)}
                         rulerPoints={rulerPoints}
@@ -2181,6 +2188,7 @@ export default function App() {
                         onToggleReserveCable={handleToggleReserveCable}
                         onPositionReserveCable={handlePositionReserveCable}
                         onReservePositionSet={handleReservePositionSet}
+                        showToast={showToast}
                     />
 
 

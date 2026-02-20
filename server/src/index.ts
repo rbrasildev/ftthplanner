@@ -12,6 +12,7 @@ import auditRoutes from './routes/auditRoutes';
 import catalogRoutes from './routes/catalogRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import companyRoutes from './routes/companyRoutes';
+import customerRoutes from './routes/customerRoutes';
 
 
 // Tratamento de erros globais para debug em produção
@@ -70,6 +71,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 app.use(express.json({ limit: '100mb' }));
 
+app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
@@ -78,6 +84,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/customers', customerRoutes);
 
 
 // Import Backup Service and Routes

@@ -50,6 +50,8 @@ export interface Splitter {
   type: string;
   inputPortId: string;
   outputPortIds: string[];
+  connectorType?: string; // 'Connectorized' | 'Unconnectorized'
+  allowCustomConnections?: boolean;
 }
 
 export interface FusionPoint {
@@ -284,4 +286,39 @@ export interface SaaSConfig {
   copyrightText?: string | null;
 
   updatedAt: string;
+}
+
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'PLANNED';
+
+export interface Drop {
+  id: string;
+  customerId: string;
+  ctoId: string;
+  coordinates: Coordinates[];
+  length?: number;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  document?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  lat: number;
+  lng: number;
+  ctoId?: string | null;
+  splitterId?: string | null;
+  splitterPortIndex?: number | null;
+  fiberId?: string | null;
+  drop?: Drop; // Include Drop relation
+  status: CustomerStatus;
+  createdAt: string; // ISO Date
+  updatedAt: string; // ISO Date
+  companyId?: string | null;
+  onuSerial?: string | null;
+  onuMac?: string | null;
+  pppoeService?: string | null;
+  onuPower?: string | null; // Signal power (e.g., -20.0 dBm)
+  dropCoordinates?: Coordinates[]; // Optional for API updates
 }

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Splitter, ElementLayout, FiberConnection } from '../../types';
+import { useLanguage } from '../../LanguageContext';
 
 interface SplitterNodeProps {
     splitter: Splitter;
@@ -15,6 +16,7 @@ interface SplitterNodeProps {
     onPortMouseLeave: () => void;
     onDoubleClick?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    attachedCustomers?: Record<number, string>; // portIndex -> Customer Name
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -29,8 +31,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     onPortMouseEnter,
     onPortMouseLeave,
     onDoubleClick,
-    onContextMenu
+    onContextMenu,
+    attachedCustomers = {}
 }) => {
+    const { t } = useLanguage();
     const portCount = splitter.outputPortIds.length;
     // Dimensions aligned to 12px grid
     // Use 12px per port to match fiber pitch
@@ -160,6 +164,9 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         // (idx * 12) + 6 - 5 (to center 10px circle)
                         const leftPos = (idx * 12) + 6 - 5;
 
+                        const customerName = attachedCustomers[idx];
+                        const isConnectorized = splitter.connectorType === 'Connectorized';
+
                         return (
                             <div
                                 key={pid}
@@ -169,21 +176,27 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 onMouseLeave={onPortMouseLeave}
                                 onDoubleClick={(e) => {
                                     e.stopPropagation();
-                                    // if (onDoubleClick) onDoubleClick(splitter.id);
                                 }}
                                 onContextMenu={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     if (onContextMenu) onContextMenu(e, splitter.id);
                                 }}
+                                title={customerName
+                                    ? (t('customer_port_tooltip') || 'Cliente: {name}').replace('{name}', customerName)
+                                    : (t('port_label') || 'Porta {number}').replace('{number}', (idx + 1).toString())
+                                }
                                 className={`
-                                w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
+                                w-2.5 h-2.5 border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
                                 text-[6.5px] font-normal select-none  flex items-center justify-center
+                                ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
                                 ${hoveredPortId === pid ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-500 bg-red-900 text-white'
-                                        : 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
+                                        : customerName
+                                            ? 'border-green-500 bg-green-50 text-green-700 font-bold' // Customer Style
+                                            : 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
                                     }
                             `}
                                 style={{

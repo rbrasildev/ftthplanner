@@ -546,21 +546,37 @@ export const syncProject = async (req: Request, res: Response) => {
                 });
             }
 
-            // 1. CLEANUP PHASE - Delete everything for this project first
-            // We delete in reverse dependency order: Cables -> POPs -> CTOs
-            // We also relax the check to delete ANYTHING with this projectId, ensuring no ghost records remain.
+            // 1. CLEANUP PHASE - Delete Cables, POPs, Poles (CTOs handled separately via Upsert)
+            // We delete in reverse dependency order: Cables -> POPs
             await tx.cable.deleteMany({ where: { projectId: id } });
             await tx.pop.deleteMany({ where: { projectId: id } });
-            await tx.cto.deleteMany({ where: { projectId: id } });
+            // await tx.cto.deleteMany({ where: { projectId: id } }); // CHANGED: Managed via Upsert to preserve relations
             await tx.pole.deleteMany({ where: { projectId: id } });
 
-            // 2. INSERT PHASE - CTOs
-            if (network.ctos && network.ctos.length > 0) {
-                const uniqueCTOs = Array.from(new Map(network.ctos.map((c: any) => [c.id, c])).values());
-                for (let i = 0; i < uniqueCTOs.length; i += CHUNK_SIZE) {
-                    const chunk = uniqueCTOs.slice(i, i + CHUNK_SIZE);
-                    await tx.cto.createMany({
-                        data: chunk.map((c: any) => ({
+            // 2. INSERT/UPDATE PHASE - CTOs
+            // We use Upsert to avoid breaking Foreign Key constraints (Drops, Customers)
+            if (network.ctos) {
+                // A. Identify CTOs to delete (present in DB but missing in payload)
+                const payloadIds = new Set(network.ctos.map((c: any) => c.id));
+                const existingCtos = await tx.cto.findMany({
+                    where: { projectId: id },
+                    select: { id: true }
+                });
+
+                const toDelete = existingCtos
+                    .map((c: any) => c.id)
+                    .filter((dbId: string) => !payloadIds.has(dbId));
+
+                if (toDelete.length > 0) {
+                    await tx.cto.deleteMany({ where: { id: { in: toDelete } } });
+                }
+
+                // B. Upsert payload CTOs
+                // Note: We cannot use createMany with Upsert, so we iterate.
+                for (const c of network.ctos) {
+                    await tx.cto.upsert({
+                        where: { id: c.id },
+                        create: {
                             id: c.id,
                             projectId: id,
                             companyId: user.companyId,
@@ -579,7 +595,24 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
                             poleId: c.poleId
-                        }))
+                        },
+                        update: {
+                            name: c.name,
+                            status: c.status,
+                            lat: c.coordinates.lat,
+                            lng: c.coordinates.lng,
+                            splitters: c.splitters || [],
+                            fusions: c.fusions || [],
+                            connections: c.connections || [],
+                            inputCableIds: c.inputCableIds || [],
+                            layout: c.layout || {},
+                            clientCount: c.clientCount || 0,
+                            catalogId: c.catalogId,
+                            type: c.type,
+                            color: c.color,
+                            reserveLoopLength: c.reserveLoopLength,
+                            poleId: c.poleId
+                        }
                     });
                 }
             }

@@ -25,7 +25,7 @@ export const createSplitter = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, type, mode, inputs, outputs, attenuation, description } = req.body;
+        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, allowCustomConnections } = req.body;
 
         const newSplitter = await prisma.catalogSplitter.create({
             data: {
@@ -35,6 +35,8 @@ export const createSplitter = async (req: Request, res: Response) => {
                 mode,
                 inputs: Number(inputs),
                 outputs: Number(outputs),
+                connectorType,
+                allowCustomConnections: allowCustomConnections !== undefined ? allowCustomConnections : true,
                 attenuation: attenuation || {},
                 description
             }
@@ -52,7 +54,7 @@ export const updateSplitter = async (req: Request, res: Response) => {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
-        const { name, type, mode, inputs, outputs, attenuation, description } = req.body;
+        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, allowCustomConnections } = req.body;
 
         const exists = await prisma.catalogSplitter.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Splitter not found" });
@@ -65,6 +67,8 @@ export const updateSplitter = async (req: Request, res: Response) => {
                 mode,
                 inputs: Number(inputs),
                 outputs: Number(outputs),
+                connectorType,
+                allowCustomConnections,
                 attenuation: attenuation || {},
                 description
             }

@@ -1,9 +1,9 @@
 import React from 'react';
-import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug, Ruler } from 'lucide-react';
+import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug, Ruler, UserPlus } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler';
+    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
@@ -71,6 +71,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 <div className="flex items-center gap-1 px-2 border-r border-zinc-200 dark:border-zinc-700/50">
                     <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />
                     <ToolButton mode="add_pop" icon={Building2} label="POP" />
+                    <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_add_customer') || "Novo Cliente"} />
 
                     {/* Pole Dropdown Trigger */}
                     <div className="relative" ref={menuRef}>

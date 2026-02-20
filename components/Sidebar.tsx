@@ -10,7 +10,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project } from '../types';
 
-export type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt';
+export type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
 
 interface MenuItem {
     id: DashboardView;
@@ -112,7 +112,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable },
                 { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork },
                 { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server },
-                { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap }
+                { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap },
+                { id: 'reg_clientes', label: t('reg_clientes') || 'Clientes', icon: Users }
             ]
         },
         { id: 'users', label: t('users') || 'Usuários', icon: Users },

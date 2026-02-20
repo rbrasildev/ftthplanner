@@ -19,6 +19,8 @@ export const SplitterRegistration: React.FC = () => {
         mode: 'Balanced',
         inputs: 1,
         outputs: 8,
+        connectorType: 'Unconnectorized',
+        allowCustomConnections: true,
         attenuation: '', // We will parse this to JSON if needed, or store as string in JSON
         port1: '', // New field for Unbalanced Port 1
         port2: '', // New field for Unbalanced Port 2
@@ -102,6 +104,8 @@ export const SplitterRegistration: React.FC = () => {
                 mode: item.mode,
                 inputs: item.inputs,
                 outputs: item.outputs,
+                connectorType: item.connectorType || 'Unconnectorized',
+                allowCustomConnections: item.allowCustomConnections !== false,
                 attenuation: typeof rawAtt === 'object' && rawAtt.value ? rawAtt.value : (typeof rawAtt === 'object' ? '' : rawAtt), // Try to keep 'value' for the main input if needed, though we might hide it.
                 port1: p1,
                 port2: p2,
@@ -115,6 +119,8 @@ export const SplitterRegistration: React.FC = () => {
                 mode: 'Balanced',
                 inputs: 1,
                 outputs: 8,
+                connectorType: 'Unconnectorized',
+                allowCustomConnections: true,
                 attenuation: '',
                 port1: '',
                 port2: '',
@@ -363,6 +369,32 @@ export const SplitterRegistration: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
+
+
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('splitter_connector_type')}</label>
+                                <select
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                    value={formData.connectorType || 'Unconnectorized'}
+                                    onChange={e => setFormData({ ...formData, connectorType: e.target.value })}
+                                >
+                                    <option value="Unconnectorized">{t('unconnectorized') || 'Não Conectorizado'}</option>
+                                    <option value="Connectorized">{t('connectorized') || 'Conectorizado'}</option>
+                                </select>
+                            </div>
+
+                            <label className="flex items-center gap-2 mt-4 ml-1 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={!!formData.allowCustomConnections}
+                                    onChange={e => setFormData({ ...formData, allowCustomConnections: e.target.checked })}
+                                    className="w-4 h-4 text-sky-600 bg-slate-100 border-slate-300 rounded focus:ring-sky-500 dark:focus:ring-sky-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                                />
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    {t('allow_custom_connections') || 'Permitir conexão de clientes'}
+                                </span>
+                            </label>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>

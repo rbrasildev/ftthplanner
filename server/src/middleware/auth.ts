@@ -12,12 +12,23 @@ export interface AuthRequest extends Request {
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
+    console.log(`[Auth] Header present: ${!!authHeader}`);
     const token = authHeader && authHeader.split(' ')[1];
+    console.log(`[Auth] Token received: '${token}'`);
 
     if (token == null) return res.sendStatus(401);
 
+    if (!process.env.JWT_SECRET) {
+        console.error("[Auth] CRITICAL: JWT_SECRET is missing in environment variables!");
+        return res.sendStatus(500);
+    }
+
     jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
-        if (err) return res.sendStatus(403);
+        if (err) {
+            console.error(`[Auth] Token verification failed: ${err.message}`);
+            return res.sendStatus(403);
+        }
+        console.log(`[Auth] Token verified for user: ${user?.username || 'unknown'}`);
         (req as AuthRequest).user = user;
         next();
     });

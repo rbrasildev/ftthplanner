@@ -32,7 +32,8 @@ import {
 } from '../services/catalogService';
 import { OpticalPowerModal } from './modals/OpticalPowerModal';
 import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
-import { NetworkState } from '../types';
+import { NetworkState, Customer } from '../types';
+import { getCustomers } from '../services/customerService';
 
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
@@ -137,6 +138,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole
 }) => {
     const { t } = useLanguage();
+    const [ctoCustomers, setCtoCustomers] = useState<Customer[]>([]);
+
+    useEffect(() => {
+        if (cto.id) {
+            getCustomers({ ctoId: cto.id }).then(setCtoCustomers).catch(console.error);
+        }
+    }, [cto.id]);
 
     // --- HELPER: Normalize CTO with Defaults for Dirty Check ---
     const withDefaults = (data: CTOData): CTOData => {
@@ -2576,7 +2584,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             name: `${localCTO.splitters.length + 1}`,
             type: catalogItem.name,
             inputPortId: `${id}-in`,
-            outputPortIds: outputIds
+            outputPortIds: outputIds,
+            connectorType: catalogItem.connectorType,
+            allowCustomConnections: catalogItem.allowCustomConnections
         };
 
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
@@ -3348,6 +3358,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                         {localCTO.splitters.map(splitter => {
                             const layout = getLayout(splitter.id);
+
+                            // Map customers to ports for this splitter
+                            const attachedCustomers = ctoCustomers
+                                .filter(c => c.splitterId === splitter.id && c.splitterPortIndex !== null && c.splitterPortIndex !== undefined)
+                                .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: c.name }), {} as Record<number, string>);
+
                             return (
                                 <SplitterNode
                                     key={splitter.id}
@@ -3364,6 +3380,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onPortMouseLeave={handlePortMouseLeave}
                                     onDoubleClick={handleSplitterDoubleClick}
                                     onContextMenu={handleSplitterContextMenu}
+                                    attachedCustomers={attachedCustomers}
                                 />
                             );
                         })}
