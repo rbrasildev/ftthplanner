@@ -75,7 +75,7 @@ export const createCustomer = async (req: Request, res: Response) => {
             name, document, phone, email, address,
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
-            status, onuSerial, onuMac, pppoeService
+            status, onuSerial, onuMac, pppoeService, onuPower
         } = req.body;
 
         console.log(`[CreateCustomer] Extracting data: name=${name}, lat=${lat}, lng=${lng}`);
@@ -83,6 +83,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         // Parse logic
         const pLat = parseFloat(lat);
         const pLng = parseFloat(lng);
+        const pOnuPower = onuPower ? parseFloat(onuPower) : null;
 
         if (isNaN(pLat) || isNaN(pLng)) {
             console.error("[CreateCustomer] Invalid Coordinates:", { lat, lng });
@@ -186,7 +187,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
             name, document, phone, email, address,
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
-            status, onuSerial, onuMac, pppoeService
+            status, onuSerial, onuMac, pppoeService, onuPower
         } = req.body;
 
         // Verify ownership
@@ -242,7 +243,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     status,
                     onuSerial,
                     onuMac,
-                    pppoeService
+                    pppoeService,
+                    onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined
                 }
             });
 

@@ -319,6 +319,6 @@ export interface Customer {
   onuSerial?: string | null;
   onuMac?: string | null;
   pppoeService?: string | null;
-  onuPower?: string | null; // Signal power (e.g., -20.0 dBm)
+  onuPower?: number | null; // Signal power (e.g., -20.0 dBm)
   dropCoordinates?: Coordinates[]; // Optional for API updates
 }

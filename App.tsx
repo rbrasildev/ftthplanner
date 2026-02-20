@@ -2189,6 +2189,7 @@ export default function App() {
                         onPositionReserveCable={handlePositionReserveCable}
                         onReservePositionSet={handleReservePositionSet}
                         showToast={showToast}
+                        onCustomerSaved={() => setToolMode('view')}
                     />
 
 

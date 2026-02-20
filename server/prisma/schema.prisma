@@ -525,6 +525,7 @@ model Customer {
   onuSerial         String?  @map("onu_serial")
   onuMac            String?  @map("onu_mac")
   pppoeService      String?  @map("pppoe_service")
+  onuPower          Float?   @map("onu_power")
   
   cto     Cto?     @relation(fields: [ctoId], references: [id])
   company Company? @relation(fields: [companyId], references: [id])

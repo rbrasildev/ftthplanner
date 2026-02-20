@@ -548,7 +548,7 @@ interface MapViewProps {
     onRulerPointsChange?: (points: Coordinates[]) => void;
     allCustomers?: Customer[];
     userRole?: string | null;
-    showToast: (msg: string, type: 'success' | 'info' | 'error') => void;
+    onCustomerSaved?: () => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -566,6 +566,7 @@ export const MapView: React.FC<MapViewProps> = ({
     allCustomers = [],
     showToast,
     onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
+    onCustomerSaved,
     userRole = null
 }) => {
     const { t } = useLanguage();
@@ -647,12 +648,14 @@ export const MapView: React.FC<MapViewProps> = ({
                 setCustomerModalOpen(false);
                 if (currentBounds) fetchCustomers(currentBounds);
                 setSelectedCustomer(null); // Clear placement marker
+                if (onCustomerSaved) onCustomerSaved();
             } else {
                 // CREATE NEW CUSTOMER
                 await createCustomer(customer);
                 setCustomerModalOpen(false);
                 if (currentBounds) fetchCustomers(currentBounds);
                 setSelectedCustomer(null); // Clear placement marker
+                if (onCustomerSaved) onCustomerSaved();
             }
         } catch (error) {
             console.error("Failed to save customer:", error);
