@@ -100,7 +100,7 @@ const BoxRegistration: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Box className="w-7 h-7 text-sky-500" />
+                        <Box className="w-7 h-7 text-emerald-500" />
                         {t('box_catalog') || 'Catálogo de Caixas'}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
