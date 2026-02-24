@@ -1317,7 +1317,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                     >
-                        {visibleCTOs.map(cto => (
+                        {visibleCTOs.filter(c => !(mode === 'move_node' && c.id === selectedId)).map(cto => (
                             <CTOMarker
                                 key={cto.id}
                                 cto={cto}
@@ -1343,7 +1343,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
 
-                        {visiblePOPs.map(pop => (
+                        {visiblePOPs.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pop => (
                             <POPMarker
                                 key={pop.id}
                                 pop={pop}
@@ -1362,7 +1362,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 userRole={userRole}
                             />
                         ))}
-                        {visiblePoles.map(pole => (
+                        {visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pole => (
                             <PoleMarker
                                 key={pole.id}
                                 pole={pole}
@@ -1380,7 +1380,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     </MarkerClusterGroup>
                 ) : (
                     <>
-                        {visibleCTOs.map(cto => (
+                        {visibleCTOs.filter(c => !(mode === 'move_node' && c.id === selectedId)).map(cto => (
                             <CTOMarker
                                 key={cto.id}
                                 cto={cto}
@@ -1406,7 +1406,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
 
-                        {visiblePOPs.map(pop => (
+                        {visiblePOPs.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pop => (
                             <POPMarker
                                 key={pop.id}
                                 pop={pop}
@@ -1425,7 +1425,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 userRole={userRole}
                             />
                         ))}
-                        {visiblePoles.map(pole => (
+                        {visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pole => (
                             <PoleMarker
                                 key={pole.id}
                                 pole={pole}
@@ -1443,6 +1443,66 @@ export const MapView: React.FC<MapViewProps> = ({
                     </>
                 )}
 
+
+
+                {/* DRAGGED NODE ISOLATED FROM CLUSTER */}
+                {mode === 'move_node' && selectedId && (
+                    <>
+                        {visibleCTOs.filter(c => c.id === selectedId).map(cto => (
+                            <CTOMarker
+                                key={`drag-cto-${cto.id}`}
+                                cto={cto}
+                                isSelected={true}
+                                showLabels={effectiveShowLabels}
+                                mode={mode}
+                                onNodeClick={noOp}
+                                onMoveNode={onMoveNode || noOp}
+                                onCableStart={noOp}
+                                onCableEnd={noOp}
+                                cableStartPoint={null}
+                                onDragStart={handleNodeDragStart}
+                                onDrag={handleDrag}
+                                onDragEnd={handleDragEnd}
+                                onContextMenu={noOp}
+                                userRole={userRole}
+                            />
+                        ))}
+                        {visiblePOPs.filter(p => p.id === selectedId).map(pop => (
+                            <POPMarker
+                                key={`drag-pop-${pop.id}`}
+                                pop={pop}
+                                isSelected={true}
+                                showLabels={effectiveShowLabels}
+                                mode={mode}
+                                onNodeClick={noOp}
+                                onMoveNode={onMoveNode || noOp}
+                                onCableStart={noOp}
+                                onCableEnd={noOp}
+                                cableStartPoint={null}
+                                onDragStart={handleNodeDragStart}
+                                onDrag={handleDrag}
+                                onDragEnd={handleDragEnd}
+                                onContextMenu={noOp}
+                                userRole={userRole}
+                            />
+                        ))}
+                        {visiblePoles.filter(p => p.id === selectedId).map(pole => (
+                            <PoleMarker
+                                key={`drag-pole-${pole.id}`}
+                                pole={pole}
+                                isSelected={true}
+                                showLabels={effectiveShowLabels}
+                                mode={mode}
+                                onNodeClick={noOp}
+                                onMoveNode={onMoveNode || noOp}
+                                onDragStart={handleNodeDragStart}
+                                onDrag={handleDrag}
+                                onDragEnd={handleDragEnd}
+                                onContextMenu={noOp}
+                            />
+                        ))}
+                    </>
+                )}
 
 
                 {/* PREVIEW IMPORT DATA (Temporary Layer) */}

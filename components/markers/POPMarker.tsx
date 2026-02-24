@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { POPData } from '../../types';
@@ -112,8 +112,20 @@ export const POPMarker = React.memo(({
         }
     }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
 
+    const markerRef = useRef<L.Marker>(null);
+
+    useEffect(() => {
+        if (!markerRef.current) return;
+        if (mode === 'move_node' && userRole !== 'MEMBER') {
+            markerRef.current.dragging?.enable();
+        } else {
+            markerRef.current.dragging?.disable();
+        }
+    }, [mode, userRole]);
+
     return (
         <Marker
+            ref={markerRef}
             position={[pop.coordinates.lat, pop.coordinates.lng]}
             icon={icon}
             draggable={mode === 'move_node' && userRole !== 'MEMBER'}

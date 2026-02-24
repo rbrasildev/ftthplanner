@@ -1854,7 +1854,6 @@ const translations = {
     'customer_status_active': 'Ativo',
     'customer_status_inactive': 'Inativo',
     'customer_status_planned': 'Planejado',
-    'confirm_delete_customer': 'Tem certeza que deseja excluir este cliente?',
   },
 };
 

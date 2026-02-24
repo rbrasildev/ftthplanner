@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { PoleData } from '../../types';
@@ -87,8 +87,20 @@ export const PoleMarker = React.memo(({
         }
     }), [mode, pole.id, isSelected, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
 
+    const markerRef = useRef<L.Marker>(null);
+
+    useEffect(() => {
+        if (!markerRef.current) return;
+        if (mode === 'move_node') {
+            markerRef.current.dragging?.enable();
+        } else {
+            markerRef.current.dragging?.disable();
+        }
+    }, [mode]);
+
     return (
         <Marker
+            ref={markerRef}
             position={[pole.coordinates.lat, pole.coordinates.lng]}
             icon={icon}
             draggable={mode === 'move_node'}
