@@ -145,25 +145,8 @@ export const login = async (req: Request, res: Response) => {
 
                 // CHECK TRIAL / SUBSCRIPTION EXPIRATION
                 if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                    // Expired! Downgrade if not already Free
-                    if (user.company.plan?.name !== 'Plano Grátis') {
-                        console.log(`Subscription/Trial for ${user.company.name} expired. Downgrading to Free.`);
-
-                        const freePlan = await getPlanByName('Plano Grátis');
-                        if (freePlan) {
-                            await prisma.company.update({
-                                where: { id: user.company.id },
-                                data: {
-                                    planId: freePlan.id,
-                                    subscriptionExpiresAt: null // Clear expiration, Free is forever
-                                }
-                            });
-                            // Update local user object to reflect change immediately in response
-                            user.company.plan = freePlan;
-                            user.company.planId = freePlan.id;
-                            user.company.subscriptionExpiresAt = null;
-                        }
-                    }
+                    console.log(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
+                    // We don't downgrade anymore to ensure the trial remains expired and blocked
                 }
             }
 
@@ -229,25 +212,8 @@ export const getMe = async (req: Request, res: Response) => {
         // --- REPEAT EXPIRATION CHECK LOGIC ---
         if (user.company) {
             if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                if (user.company.plan?.name !== 'Plano Grátis') {
-                    console.log(`[getMe] Subscription/Trial for ${user.company.name} expired. Downgrading to Free.`);
-                    const freePlan = await getPlanByName('Plano Grátis');
-                    if (freePlan) {
-                        await prisma.company.update({
-                            where: { id: user.company.id },
-                            data: {
-                                planId: freePlan.id,
-                                subscriptionExpiresAt: null
-                            }
-                        });
-                        user.company.plan = freePlan;
-                        user.company.planId = freePlan.id;
-                        user.company.subscriptionExpiresAt = null;
-                        console.log("[getMe] Downgraded to Free Plan.");
-                    } else {
-                        console.warn("[getMe] Free Plan not found!");
-                    }
-                }
+                console.log(`[getMe] Subscription/Trial for ${user.company.name} expired. Blocking access.`);
+                // Downgrade removed for consistency
             }
         }
 

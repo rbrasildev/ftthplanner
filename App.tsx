@@ -360,7 +360,14 @@ export default function App() {
                 if (p.settings) setSystemSettings(p.settings);
             }).catch(err => {
                 console.error(err);
-                setToast({ msg: 'Failed to load project', type: 'info' });
+                if (err.response && err.response.status === 403) {
+                    const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                    setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : (err.response.data?.error || t('error_permission_denied')));
+                    setShowUpgradeModal(true);
+                    setCurrentProjectId(null); // Return to dashboard
+                } else {
+                    showToast(t('error_project_load') || 'Failed to load project', 'info');
+                }
             });
         } else {
             // Only nullify if we actually switched to a null ID (logout/exit), not on init
@@ -2034,8 +2041,9 @@ export default function App() {
                         currentView={dashboardView}
                         onViewChange={setDashboardView}
                         onOpenProject={(id) => {
-                            if (companyStatus === 'SUSPENDED') {
-                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                            const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                            if (companyStatus === 'SUSPENDED' || isExpired) {
+                                setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
                                 setShowUpgradeModal(true);
                                 return;
                             }
@@ -2043,8 +2051,9 @@ export default function App() {
                             setShowProjectManager(false);
                         }}
                         onCreateProject={async (name, center) => {
-                            if (companyStatus === 'SUSPENDED') {
-                                setUpgradeModalDetails("Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
+                            const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                            if (companyStatus === 'SUSPENDED' || isExpired) {
+                                setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
                                 setShowUpgradeModal(true);
                                 return;
                             }
@@ -2607,7 +2616,16 @@ export default function App() {
                     <ProjectManager
                         projects={projects}
                         currentProjectId={currentProjectId!}
-                        onSelectProject={(id) => { setCurrentProjectId(id); setShowProjectManager(false); }}
+                        onSelectProject={(id) => {
+                            const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                            if (companyStatus === 'SUSPENDED' || isExpired) {
+                                setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                                setShowUpgradeModal(true);
+                                return;
+                            }
+                            setCurrentProjectId(id);
+                            setShowProjectManager(false);
+                        }}
                         onDeleteProject={async (id) => {
                             try {
                                 await projectService.deleteProject(id);

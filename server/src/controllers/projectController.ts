@@ -106,6 +106,12 @@ export const createProject = async (req: Request, res: Response) => {
         });
 
         if (!company) return res.status(404).json({ error: 'Company not found' });
+        if (company.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Assinatura suspensa. Por favor, regularize seu plano para criar novos projetos.' });
+        }
+        if (company.subscriptionExpiresAt && new Date() > company.subscriptionExpiresAt) {
+            return res.status(403).json({ error: 'Seu período de teste (trial) expirou. Por favor, assine um plano para continuar.' });
+        }
 
         if (company.plan && company.plan.limits) {
             const limits = company.plan.limits as any;
@@ -154,11 +160,21 @@ export const getProject = async (req: Request, res: Response) => {
                 ctos: true,
                 pops: true,
                 cables: true,
-                poles: true
+                poles: true,
+                company: true
             }
         });
 
         if (!project) return res.status(404).json({ error: 'Project not found' });
+
+        if (project.company) {
+            if (project.company.status === 'SUSPENDED') {
+                return res.status(403).json({ error: 'Assinatura suspensa. Por favor, regularize seu plano para acessar este projeto.' });
+            }
+            if (project.company.subscriptionExpiresAt && new Date() > project.company.subscriptionExpiresAt) {
+                return res.status(403).json({ error: 'Seu período de teste (trial) expirou. Por favor, assine um plano para acessar seus projetos.' });
+            }
+        }
 
         // Map DB entities to NetworkState
         const network = {
@@ -360,6 +376,15 @@ export const syncProject = async (req: Request, res: Response) => {
             where: { id: user.companyId },
             include: { plan: true }
         });
+
+        if (company) {
+            if (company.status === 'SUSPENDED') {
+                return res.status(403).json({ error: 'Assinatura suspensa. Sincronização bloqueada.' });
+            }
+            if (company.subscriptionExpiresAt && new Date() > company.subscriptionExpiresAt) {
+                return res.status(403).json({ error: 'Trial expirado. Sincronização bloqueada.' });
+            }
+        }
 
         if (company?.plan?.limits) {
             const limits = company.plan.limits as any;

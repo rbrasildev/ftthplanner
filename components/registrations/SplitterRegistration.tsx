@@ -341,7 +341,7 @@ export const SplitterRegistration: React.FC = () => {
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder={t('name_placeholder') || 'Ex: 1:8 Balanced PLC'}
+                                    placeholder={t('splitter_name_placeholder') || 'Ex: 1:8 Balanced PLC'}
                                 />
                             </div>
 
