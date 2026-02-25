@@ -236,7 +236,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                         value={formData.document || ''}
                                         onChange={e => setFormData({ ...formData, document: e.target.value })}
                                         className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder="CPF / CNPJ"
+                                        placeholder={t('customer_doc_placeholder') || "CPF / CNPJ"}
                                     />
                                 </div>
                             </div>
@@ -249,7 +249,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                         value={formData.phone || ''}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                         className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder="(00) 00000-0000"
+                                        placeholder={t('customer_phone_placeholder') || "(00) 00000-0000"}
                                     />
                                 </div>
                                 <div>
@@ -259,7 +259,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                         value={formData.email || ''}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder="cliente@email.com"
+                                        placeholder={t('customer_email_placeholder') || "cliente@email.com"}
                                     />
                                 </div>
                             </div>
@@ -453,7 +453,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                             value={formData.onuSerial || ''}
                                             onChange={e => setFormData({ ...formData, onuSerial: e.target.value })}
                                             className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                            placeholder="Ex: ZTEG12345678"
+                                            placeholder={t('onu_serial_placeholder') || "Ex: ZTEG12345678"}
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
@@ -464,7 +464,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                 value={formData.pppoeService || ''}
                                                 onChange={e => setFormData({ ...formData, pppoeService: e.target.value })}
                                                 className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                                placeholder="usuario@pppoe"
+                                                placeholder={t('pppoe_user_placeholder') || "usuario@pppoe"}
                                             />
                                         </div>
                                         <div>

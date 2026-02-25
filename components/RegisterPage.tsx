@@ -17,6 +17,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
     const [confirmPassword, setConfirmPassword] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [phone, setPhone] = useState('');
+    const [countryCode, setCountryCode] = useState('+55');
+    const [isCustomCountry, setIsCustomCountry] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -37,7 +39,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
         const urlParams = new URLSearchParams(window.location.search);
         const source = urlParams.get('utm_source') || 'direct';
 
-        onRegister(generatedUsername, email, password, companyName, initialPlan, phone, source);
+        const cleanPhone = phone.replace(/\D/g, '');
+        const fullPhone = `${countryCode}${cleanPhone}`;
+
+        onRegister(generatedUsername, email, password, companyName, initialPlan, fullPhone, source);
     };
 
     return (
@@ -110,51 +115,76 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
 
                                 <div className="space-y-1">
                                     <label className="sr-only">{t('register_phone_placeholder')}</label>
-                                    <div className="relative">
+                                    <div className="flex gap-2 relative">
+                                        {isCustomCountry ? (
+                                            <input
+                                                type="text"
+                                                value={countryCode}
+                                                onChange={(e) => {
+                                                    let val = e.target.value;
+                                                    if (!val.startsWith('+')) val = '+' + val.replace(/\D/g, '');
+                                                    else val = '+' + val.substring(1).replace(/\D/g, '');
+                                                    setCountryCode(val);
+                                                }}
+                                                onBlur={() => {
+                                                    if (countryCode === '+' || countryCode === '') {
+                                                        setIsCustomCountry(false);
+                                                        setCountryCode('+55');
+                                                    }
+                                                }}
+                                                className="w-[110px] sm:w-[130px] bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent p-4 outline-none font-medium shadow-sm lg:shadow-none text-center"
+                                                placeholder="+00"
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <select
+                                                value={countryCode}
+                                                onChange={(e) => {
+                                                    if (e.target.value === 'other') {
+                                                        setIsCustomCountry(true);
+                                                        setCountryCode('+');
+                                                    } else {
+                                                        setCountryCode(e.target.value);
+                                                    }
+                                                    setPhone(''); // Reset phone when changing country
+                                                }}
+                                                className="w-[110px] sm:w-[130px] bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent p-4 outline-none font-medium shadow-sm lg:shadow-none cursor-pointer text-center"
+                                            >
+                                                <option value="+55">🇧🇷 +55</option>
+                                                <option value="+351">🇵🇹 +351</option>
+                                                <option value="+1">🇺🇸 +1</option>
+                                                <option value="+52">🇲🇽 +52</option>
+                                                <option value="+54">🇦🇷 +54</option>
+                                                <option value="+56">🇨🇱 +56</option>
+                                                <option value="+57">🇨🇴 +57</option>
+                                                <option value="+51">🇵🇪 +51</option>
+                                                <option value="+598">🇺🇾 +598</option>
+                                                <option value="+58">🇻🇪 +58</option>
+                                                <option value="+593">🇪🇨 +593</option>
+                                                <option value="+591">🇧🇴 +591</option>
+                                                <option value="+595">🇵🇾 +595</option>
+                                                <option value="+34">🇪🇸 +34</option>
+                                                <option value="other">🌍 Outro...</option>
+                                            </select>
+                                        )}
                                         <input
                                             type="tel"
                                             value={phone}
                                             onChange={(e) => {
-                                                let value = e.target.value;
+                                                let value = e.target.value.replace(/\D/g, '');
 
-                                                // If empty or just +, set to empty and return
-                                                if (!value || value === '+') {
-                                                    setPhone('');
-                                                    return;
-                                                }
-
-                                                // Ensure it starts with +
-                                                if (!value.startsWith('+')) {
-                                                    value = '+' + value.replace(/\D/g, '');
-                                                }
-
-                                                // Clean everything except + and digits
-                                                const cleanValue = '+' + value.substring(1).replace(/\D/g, '');
-                                                const digits = cleanValue.substring(1); // digits without +
-
-                                                // If it's Brazil (+55), apply special mask
-                                                if (digits.startsWith('55')) {
-                                                    const brDigits = digits.substring(2); // digits without 55
-                                                    let formatted = '+55';
-
-                                                    if (brDigits.length > 0) {
-                                                        formatted += ' (' + brDigits.substring(0, 2);
-                                                    }
-                                                    if (brDigits.length > 2) {
-                                                        formatted += ') ' + brDigits.substring(2, 7);
-                                                    }
-                                                    if (brDigits.length > 7) {
-                                                        formatted += '-' + brDigits.substring(7, 11);
-                                                    }
+                                                if (countryCode === '+55') {
+                                                    let formatted = '';
+                                                    if (value.length > 0) formatted += '(' + value.substring(0, 2);
+                                                    if (value.length > 2) formatted += ') ' + value.substring(2, 7);
+                                                    if (value.length > 7) formatted += '-' + value.substring(7, 11);
                                                     setPhone(formatted);
                                                 } else {
-                                                    // For other countries, just keep the + and digits
-                                                    // Optionally add basic spacing for readability
-                                                    setPhone(cleanValue);
+                                                    setPhone(value);
                                                 }
                                             }}
-                                            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
-                                            placeholder="+55 (00) 00000-0000"
+                                            className="flex-1 w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block p-4 placeholder-zinc-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            placeholder={countryCode === '+55' ? "(00) 00000-0000" : "000000000"}
                                             required
                                         />
                                     </div>

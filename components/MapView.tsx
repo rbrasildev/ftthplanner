@@ -594,12 +594,16 @@ export const MapView: React.FC<MapViewProps> = ({
     const fetchCustomers = useCallback(async (bounds?: L.LatLngBounds) => {
         if (!bounds) return;
         try {
-            // console.log("Fetching customers for bounds:", bounds.toBBoxString());
+            // Pad by 50% to ensure we load customers whose drops might cross the screen
+            // even if the customer themselves are off-screen when zooming into a CTO.
+            const paddedBounds = bounds.pad(0.5);
+
+            // console.log("Fetching customers for bounds:", paddedBounds.toBBoxString());
             const data = await getCustomers({
-                minLat: bounds.getSouth(),
-                maxLat: bounds.getNorth(),
-                minLng: bounds.getWest(),
-                maxLng: bounds.getEast()
+                minLat: paddedBounds.getSouth(),
+                maxLat: paddedBounds.getNorth(),
+                minLng: paddedBounds.getWest(),
+                maxLng: paddedBounds.getEast()
             });
             console.log(`[MapView] Fetched ${data.length} customers.`);
             // DEBUG: Check for drops
