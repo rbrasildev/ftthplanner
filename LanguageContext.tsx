@@ -709,6 +709,8 @@ const translations = {
     'landing_cta_btn': 'Get Started for Free',
 
     'landing_footer_desc': 'The professional standard for FTTx network design and management.',
+    'landing_footer_support': 'Support',
+    'contact_us': 'Contact Us',
     'landing_footer_product': 'Product',
     'landing_footer_company': 'Company',
     'landing_footer_legal': 'Legal',
@@ -919,6 +921,8 @@ const translations = {
     'landing_cta_btn': 'Começar Grátis',
 
     'landing_footer_desc': 'O padrão profissional para design e gestão de redes FTTx.',
+    'landing_footer_support': 'Suporte',
+    'contact_us': 'Fale Conosco',
     'landing_footer_product': 'Produto',
     'landing_footer_company': 'Empresa',
     'landing_footer_legal': 'Legal',

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X } from 'lucide-react';
+import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X, Mail, Phone } from 'lucide-react';
 import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
 import { VideoDemoModal } from './modals/VideoDemoModal';
@@ -572,6 +572,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <h4 className="font-bold text-white mb-6">{t('landing_footer_company')}</h4>
                             <ul className="space-y-4 text-sm text-slate-400">
                                 <li><a href="#" className="hover:text-sky-600 transition-colors">{t('landing_footer_legal')}</a></li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 className="font-bold text-white mb-6">{t('landing_footer_support')}</h4>
+                            <ul className="space-y-4 text-sm text-slate-400">
+                                {saasConfig?.supportEmail && (
+                                    <li className="flex items-center gap-2">
+                                        <Mail className="w-4 h-4 text-sky-500" />
+                                        <a href={`mailto:${saasConfig.supportEmail}`} className="hover:text-sky-600 transition-colors">{saasConfig.supportEmail}</a>
+                                    </li>
+                                )}
+                                {saasConfig?.supportPhone && (
+                                    <li className="flex items-center gap-2">
+                                        <Phone className="w-4 h-4 text-sky-500" />
+                                        <a href={`tel:${saasConfig.supportPhone.replace(/\D/g, '')}`} className="hover:text-sky-600 transition-colors">{saasConfig.supportPhone}</a>
+                                    </li>
+                                )}
                             </ul>
                         </div>
                     </div>
