@@ -415,6 +415,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             else merged.layout = {};
 
             if (prev.connections) merged.connections = JSON.parse(JSON.stringify(prev.connections));
+            if (prev.splitters) merged.splitters = JSON.parse(JSON.stringify(prev.splitters));
+            if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
             if (prev.viewState) merged.viewState = prev.viewState;
 
             // Run Reconciler on MERGED state (Fixes ID shifts while keeping positions)
@@ -625,6 +627,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [showPropertiesModal, setShowPropertiesModal] = useState(false);
     const [propertiesName, setPropertiesName] = useState('');
     const [propertiesStatus, setPropertiesStatus] = useState<CTOStatus>('PLANNED');
+    const [cableToRemove, setCableToRemove] = useState<string | null>(null);
 
     const handleOpenProperties = () => {
         setPropertiesName(localCTO.name);
@@ -3745,6 +3748,43 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     splitterName={selectedSplitterName}
                 />
 
+                {/* CONFIRM CABLE REMOVAL MODAL */}
+                {cableToRemove && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0 border border-red-300 dark:border-red-500/30">
+                                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('title_remove_cable') || 'Remover Cabo'}</h3>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t('confirm_remove_cable_box')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-row gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        if (onDisconnectCable) onDisconnectCable(cableToRemove);
+                                        setCableToRemove(null);
+                                    }}
+                                    className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap transform active:scale-95"
+                                >
+                                    <Link className="w-4 h-4 rotate-45" />
+                                    {t('action_remove') || 'Remover'}
+                                </button>
+                                <button
+                                    onClick={() => setCableToRemove(null)}
+                                    className="flex-1 py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-sm transition-all whitespace-nowrap"
+                                >
+                                    {t('cancel')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* CONTEXT MENU */}
                 {contextMenu && (
                     <div
@@ -3757,7 +3797,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={() => {
                                         if (onDisconnectCable) {
-                                            onDisconnectCable(contextMenu.id);
+                                            setCableToRemove(contextMenu.id);
                                             setContextMenu(null);
                                         }
                                     }}
