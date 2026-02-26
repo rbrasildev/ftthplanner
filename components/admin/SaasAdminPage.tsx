@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
+import { SaasGlobalMap } from './SaasGlobalMap';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
 import { SendTemplateModal } from './modals/SendTemplateModal';
 
@@ -93,7 +94,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'users' | 'videos' | 'email' | 'config'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config'>('dashboard');
     const [plans, setPlans] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
     const [smtpConfig, setSmtpConfig] = useState<any>({});
@@ -159,6 +160,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const navItems = [
         { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
         { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
+        { id: 'global_map', label: 'Global Map', icon: <Map className="w-5 h-5" /> },
         { id: 'companies', label: 'Companies', icon: <Building2 className="w-5 h-5" /> },
         { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
         { id: 'plans', label: 'SaaS Plans', icon: <CreditCard className="w-5 h-5" /> },
@@ -993,6 +995,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     }
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
+
+                    {activeView === 'global_map' && (
+                        <div className="h-[calc(100vh-160px)] w-full">
+                            <SaasGlobalMap />
+                        </div>
+                    )}
 
                     {
                         activeView === 'users' && (
