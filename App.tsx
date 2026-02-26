@@ -2198,7 +2198,19 @@ export default function App() {
                         onPositionReserveCable={handlePositionReserveCable}
                         onReservePositionSet={handleReservePositionSet}
                         showToast={showToast}
-                        onCustomerSaved={() => setToolMode('view')}
+                        onCustomerSaved={(customer?: Customer) => {
+                            setToolMode('view');
+                            if (customer) {
+                                setGlobalCustomers(prev => {
+                                    const exists = prev.some(c => c.id === customer.id);
+                                    if (exists) {
+                                        return prev.map(c => c.id === customer.id ? customer : c);
+                                    } else {
+                                        return [customer, ...prev];
+                                    }
+                                });
+                            }
+                        }}
                     />
 
 

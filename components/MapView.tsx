@@ -548,7 +548,7 @@ interface MapViewProps {
     onRulerPointsChange?: (points: Coordinates[]) => void;
     allCustomers?: Customer[];
     userRole?: string | null;
-    onCustomerSaved?: () => void;
+    onCustomerSaved?: (customer?: Customer) => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -648,18 +648,21 @@ export const MapView: React.FC<MapViewProps> = ({
             if (customer.id) {
                 // Determine logic for update vs new flow
                 // For now, simple update
-                await updateCustomer(customer.id, customer);
+                const updatedCustomer = await updateCustomer(customer.id, customer);
+                // Optimistically update the single customer in the state immediately
+                setCustomers(prev => prev.map(c => c.id === customer.id ? updatedCustomer : c));
                 setCustomerModalOpen(false);
-                if (currentBounds) fetchCustomers(currentBounds);
+                if (currentBounds) fetchCustomers(currentBounds); // Background sync
                 setSelectedCustomer(null); // Clear placement marker
-                if (onCustomerSaved) onCustomerSaved();
+                if (onCustomerSaved) onCustomerSaved(updatedCustomer);
             } else {
                 // CREATE NEW CUSTOMER
-                await createCustomer(customer);
+                const newCustomer = await createCustomer(customer);
+                setCustomers(prev => [...prev, newCustomer]);
                 setCustomerModalOpen(false);
                 if (currentBounds) fetchCustomers(currentBounds);
                 setSelectedCustomer(null); // Clear placement marker
-                if (onCustomerSaved) onCustomerSaved();
+                if (onCustomerSaved) onCustomerSaved(newCustomer);
             }
         } catch (error) {
             console.error("Failed to save customer:", error);
@@ -669,13 +672,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // Draw Drop Logic
     const handleCustomerContextMenu = useCallback((e: L.LeafletMouseEvent, customer: Customer) => {
-        // Start drawing drop for this customer
-        setDrawingCustomerDrop({
-            customerId: customer.id,
-            startLat: customer.lat,
-            startLng: customer.lng,
-            points: []
-        });
+        // Disabled right-click draw drop as per request. The button in the modal will be used instead.
         setMapContextMenu(null); // Close map menu
     }, []);
 
@@ -1130,10 +1127,10 @@ export const MapView: React.FC<MapViewProps> = ({
                                 updates.ctoId = existingCustomer.ctoId;
                             }
 
-                            // If customer has a drop, update its last point to the new location
+                            // If customer has a drop, update its first point (Customer side) to the new location
                             if (existingCustomer && existingCustomer.drop && existingCustomer.drop.coordinates && existingCustomer.drop.coordinates.length > 0) {
                                 const newDropCoords = [...existingCustomer.drop.coordinates];
-                                newDropCoords[newDropCoords.length - 1] = { lat, lng };
+                                newDropCoords[0] = { lat, lng };
                                 updates.dropCoordinates = newDropCoords;
                                 console.log("[Reposition] Updates payload:", updates);
                             }
@@ -1726,6 +1723,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             setCustomers(prev => prev.map(c =>
                                 c.id === drawingCustomerDrop.customerId ? updatedCustomer : c
                             ));
+                            if (onCustomerSaved) onCustomerSaved(updatedCustomer);
                         }
 
                         setConnectCustomerModalOpen(false);

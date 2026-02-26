@@ -389,7 +389,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                             {splitters.map(splitter => (
                                                 <button
                                                     key={splitter.id}
-                                                    disabled={(!!formData.splitterId && formData.splitterId !== splitter.id) || splitter.allowCustomConnections === false}
+                                                    disabled={splitter.allowCustomConnections === false}
                                                     onClick={() => {
                                                         setSelectedSplitterId(splitter.id);
                                                         setSelectedPortIndex(null);
@@ -400,7 +400,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                         : splitter.allowCustomConnections === false
                                                             ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed opacity-70'
                                                             : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:bg-slate-50'
-                                                        } ${(!!formData.splitterId && formData.splitterId !== splitter.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        } `}
                                                 >
                                                     {splitter.name} ({splitter.type})
                                                 </button>
@@ -415,7 +415,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                 {ports.map(port => (
                                                     <button
                                                         key={port.index}
-                                                        disabled={port.occupied || (formData.splitterPortIndex !== null && formData.splitterPortIndex !== port.index)}
+                                                        disabled={port.occupied}
                                                         onClick={() => setSelectedPortIndex(port.index)}
                                                         className={`
                                                             relative h-10 rounded border flex items-center justify-center text-sm font-bold transition-all
@@ -425,7 +425,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                                     ? 'bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-200 dark:ring-green-900'
                                                                     : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
                                                             }
-                                                            ${(formData.splitterPortIndex !== null && formData.splitterPortIndex !== port.index) ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
                                                         title={port.occupied ? t('port_occupied_by', { name: port.occupantName || '' }) : t('port_free')}
                                                     >

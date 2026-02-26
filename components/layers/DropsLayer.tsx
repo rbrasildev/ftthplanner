@@ -15,7 +15,7 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({ customers, vi
     const dropCount = customers.filter(c => (c as any).drop).length;
     if (dropCount > 0) console.log(`[DropsLayer] Found ${dropCount} customers with drops.`);
 
-    const allPaths = customers.reduce((acc: any[], customer) => {
+    const rawPaths = customers.reduce((acc: any[], customer) => {
         const drop = (customer as any).drop;
         if (!drop || !drop.coordinates) return acc;
 
@@ -35,6 +35,18 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({ customers, vi
         return acc;
     }, []);
 
+    // Create a string representation to detect real changes in the drop geometry
+    // This stringifies the nested array of coordinates [[lat, lng], [lat, lng], ...]
+    const pathsString = JSON.stringify(rawPaths);
+
+    // Only recreate the positions array reference when the actual data string changes.
+    // This PREVENTS React Leaflet from calling setLatLngs() unless the drops ACTUALLY moved.
+    // Calling setLatLngs destroys the in-progress zoom CSS transform on the SVG, causing severe blinking.
+    const allPaths = React.useMemo(() => {
+        return rawPaths;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathsString]);
+
     if (allPaths.length === 0) return null;
 
     return (
@@ -47,7 +59,7 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({ customers, vi
                 dashArray: 'none',
                 lineCap: 'round',
                 lineJoin: 'round',
-                smoothFactor: 0.5, // Less aggressive simplification to avoid shape jumping
+                smoothFactor: 0, // Disable simplification entirely: prevents the line from "snapping" or jumping its shape after zoom
                 noClip: true // Prevent clipping artifacts at tile edges
             }}
             interactive={false} // Performance: Drops are usually not interactive
