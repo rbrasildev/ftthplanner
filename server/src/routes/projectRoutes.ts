@@ -6,7 +6,8 @@ import {
     getProject,
     deleteProject,
     syncProject,
-    updateProject
+    updateProject,
+    updateCTO
 } from '../controllers/projectController';
 
 const router = Router();
@@ -19,5 +20,6 @@ router.get('/:id', getProject);
 router.put('/:id', requireAdminOrOwner, updateProject);
 router.delete('/:id', requireAdminOrOwner, deleteProject);
 router.post('/:id/sync', requireAdminOrOwner, syncProject);
+router.put('/:id/ctos/:ctoId', requireAdminOrOwner, updateCTO);
 
 export default router;

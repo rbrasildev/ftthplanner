@@ -1390,8 +1390,9 @@ export default function App() {
         setIsSaving(true);
         try {
             // We await here to ensure this critical change is saved before anything else can happen
-            await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
-            console.log("[Manual Sync] CTO save success");
+            // Use the fast partial update endpoint instead of syncing the whole project
+            await projectService.updateCTO(currentProject.id, updatedCTO.id, updatedCTO);
+            console.log("[Manual Sync] CTO save success (Fast Update)");
             showToast(t('toast_cto_splicing_saved'));
         } catch (e) {
             console.error("[Manual Sync] CTO save failed", e);

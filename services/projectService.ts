@@ -1,5 +1,5 @@
 import api from './api';
-import { Project, NetworkState, Coordinates } from '../types';
+import { Project, NetworkState, Coordinates, CTOData } from '../types';
 
 export interface ProjectSummary {
     id: string;
@@ -45,4 +45,9 @@ export const getProject = async (id: string) => {
 
 export const syncProject = async (id: string, network: NetworkState, mapState?: { center: Coordinates, zoom: number }, settings?: any) => {
     await api.post(`/projects/${id}/sync`, { network, mapState, settings });
+};
+
+export const updateCTO = async (projectId: string, ctoId: string, cto: CTOData) => {
+    const res = await api.put(`/projects/${projectId}/ctos/${ctoId}`, cto);
+    return res.data;
 };

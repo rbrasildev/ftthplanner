@@ -1,0 +1,61 @@
+export const updateCTO = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id, ctoId } = req.params;
+    const cto = req.body;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        console.log(`[updateCTO] Project ${id} | CTO ${ctoId} | User ${user.username}`);
+
+        // Verify project ownership
+        const project = await prisma.project.findFirst({
+            where: { id, companyId: user.companyId }
+        });
+
+        if (!project) return res.status(404).json({ error: 'Project not found' });
+
+        // Verify CTO exists in this project
+        const existingCto = await prisma.cto.findFirst({
+            where: { id: ctoId, projectId: id, companyId: user.companyId }
+        });
+
+        if (!existingCto) {
+             return res.status(404).json({ error: 'CTO not found in this project' });
+        }
+
+        // Update single CTO
+        const updated = await prisma.cto.update({
+            where: { id: ctoId },
+            data: {
+                name: cto.name,
+                status: cto.status,
+                lat: cto.coordinates?.lat ?? cto.lat,
+                lng: cto.coordinates?.lng ?? cto.lng,
+                splitters: cto.splitters || [],
+                fusions: cto.fusions || [],
+                connections: cto.connections || [],
+                inputCableIds: cto.inputCableIds || [],
+                layout: cto.layout || {},
+                clientCount: cto.clientCount || 0,
+                catalogId: cto.catalogId,
+                type: cto.type,
+                color: cto.color,
+                reserveLoopLength: cto.reserveLoopLength,
+                poleId: cto.poleId
+            }
+        });
+
+        // Touch project updatedAt
+        await prisma.project.update({
+            where: { id },
+            data: { updatedAt: new Date() }
+        });
+
+        res.json({ success: true, timestamp: Date.now(), cto: updated });
+
+    } catch (error: any) {
+        console.error("Update CTO Error:", error);
+        res.status(500).json({ error: 'Failed to update CTO', details: error.message || 'Unknown error' });
+    }
+};
