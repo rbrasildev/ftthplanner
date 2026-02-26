@@ -34,6 +34,17 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
     const { t } = useLanguage();
     const slots = olt.structure?.slots || 1;
     const portsPerSlot = olt.structure?.portsPerSlot || 8;
+
+    // --- Performance Optimization ---
+    const portConnectionsMap = React.useMemo(() => {
+        const map = new Map<string, any>();
+        connections.forEach(c => {
+            map.set(c.sourceId, c);
+            map.set(c.targetId, c);
+        });
+        return map;
+    }, [connections]);
+
     // Premium Look: Gradients, better borders, depth effects
     return (
         <div
@@ -106,8 +117,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                 <div className="flex-1 grid grid-cols-8 gap-1">
                                     {Array.from({ length: currentPortsPerSlot }).map((_, pIdx) => {
                                         const portId = `${olt.id}-s${sIdx + 1}-p${pIdx + 1}`;
-                                        const existingConn = connections.find(c => c.sourceId === portId || c.targetId === portId);
-                                        const isConnected = !!existingConn;
+                                        const isConnected = portConnectionsMap.has(portId);
                                         const isBeingConfigured = configuringOltPortId === portId;
 
                                         return (

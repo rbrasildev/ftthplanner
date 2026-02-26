@@ -45,6 +45,21 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
         onHoverPort(null);
     };
 
+    // --- Performance Optimization ---
+    const portConnectionsMap = React.useMemo(() => {
+        const map = new Map<string, any[]>();
+
+        // Fast grouping
+        connections.forEach(c => {
+            if (!map.has(c.sourceId)) map.set(c.sourceId, []);
+            if (!map.has(c.targetId)) map.set(c.targetId, []);
+            map.get(c.sourceId)!.push(c);
+            map.get(c.targetId)!.push(c);
+        });
+
+        return map;
+    }, [connections]);
+
     return (
         <div
             style={{ transform: `translate(${position.x}px, ${position.y}px)`, width }}
@@ -120,7 +135,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                     {/* Ports Grid */}
                     <div className="grid grid-cols-12 gap-1.5">
                         {dio.portIds.map((pid: string, idx: number) => {
-                            const existingConns = connections.filter((c: any) => c.sourceId === pid || c.targetId === pid);
+                            const existingConns = portConnectionsMap.get(pid) || [];
                             const patchConn = existingConns.find((c: any) => {
                                 const partner = c.sourceId === pid ? c.targetId : c.sourceId;
                                 return partner.includes('olt');

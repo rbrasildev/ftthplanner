@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, getFiberColor, DIO } from '../types';
 import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler, ArrowRight, Settings2, Split } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -105,29 +105,63 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
         onUpdateDio({ ...dio, inputCableIds: newCables });
     };
 
-    // --- Signal Logic ---
-    const getConnectedOltInfo = (dioPortId: string): string | null => {
-        const conn = pop.connections.find(c => {
-            const isTarget = c.targetId === dioPortId;
-            const isSource = c.sourceId === dioPortId;
-            if (!isTarget && !isSource) return false;
-            const partnerId = isTarget ? c.sourceId : c.targetId;
-            return partnerId.includes('olt');
+    // --- Performance Optimizations (O(1) Lookups) ---
+    const fiberFusionsMap = useMemo(() => {
+        const map = new Map<string, FiberConnection>();
+        currentConnections.forEach(c => {
+            if (c.sourceId.includes('fiber')) map.set(c.sourceId, c);
+            if (c.targetId.includes('fiber')) map.set(c.targetId, c);
         });
+        return map;
+    }, [currentConnections]);
 
-        if (!conn) return null;
+    const dioPortIsFiberConnSet = useMemo(() => {
+        const set = new Set<string>();
+        currentConnections.forEach(c => {
+            const sourceIsFiber = c.sourceId.includes('fiber');
+            const targetIsFiber = c.targetId.includes('fiber');
+            if (sourceIsFiber && !targetIsFiber) set.add(c.targetId);
+            if (!sourceIsFiber && targetIsFiber) set.add(c.sourceId);
+        });
+        return set;
+    }, [currentConnections]);
 
-        const oltPortId = conn.sourceId === dioPortId ? conn.targetId : conn.sourceId;
-        const olt = pop.olts.find(o => oltPortId.startsWith(o.id));
-        const oltName = olt ? olt.name : 'OLT';
-        const match = oltPortId.match(/-s(\d+)-p(\d+)$/);
-        if (match) {
-            return `${oltName}: S${match[1]} / P${match[2]}`;
-        }
-        return oltName;
-    };
+    // Pre-calculate OLT connections for all DIO ports to avoid O(N*M) in render sweeps
+    const oltInfoMap = useMemo(() => {
+        const map = new Map<string, string>();
+        pop.connections.forEach(c => {
+            const isSourceDio = c.sourceId.startsWith('dio-');
+            const isTargetDio = c.targetId.startsWith('dio-');
+            const isSourceOlt = c.sourceId.includes('olt');
+            const isTargetOlt = c.targetId.includes('olt');
 
-    const isPortActive = (dioPortId: string) => !!getConnectedOltInfo(dioPortId);
+            if (isSourceDio && isTargetOlt) {
+                const oltPortId = c.targetId;
+                const olt = pop.olts.find(o => oltPortId.startsWith(o.id));
+                const oltName = olt ? olt.name : 'OLT';
+                const match = oltPortId.match(/-s(\d+)-p(\d+)$/);
+                if (match) map.set(c.sourceId, `${oltName}: S${match[1]} / P${match[2]}`);
+                else map.set(c.sourceId, oltName);
+            } else if (isTargetDio && isSourceOlt) {
+                const oltPortId = c.sourceId;
+                const olt = pop.olts.find(o => oltPortId.startsWith(o.id));
+                const oltName = olt ? olt.name : 'OLT';
+                const match = oltPortId.match(/-s(\d+)-p(\d+)$/);
+                if (match) map.set(c.targetId, `${oltName}: S${match[1]} / P${match[2]}`);
+                else map.set(c.targetId, oltName);
+            }
+        });
+        return map;
+    }, [pop.connections, pop.olts]);
+
+    // --- Signal Logic ---
+    const getConnectedOltInfo = useCallback((dioPortId: string): string | null => {
+        return oltInfoMap.get(dioPortId) || null;
+    }, [oltInfoMap]);
+
+    const isPortActive = useCallback((dioPortId: string) => {
+        return oltInfoMap.has(dioPortId);
+    }, [oltInfoMap]);
 
     // --- Helpers ---
     const screenToCanvas = (sx: number, sy: number) => {
@@ -678,7 +712,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                                     const fiberId = `${cable.id}-fiber-${fiberIndex}`;
                                                                     const color = getFiberColor(fOffset, cable.colorStandard); // Fiber colors cycle 1-12 relative to TUBE
 
-                                                                    const fusion = currentConnections.find(c => c.sourceId === fiberId || c.targetId === fiberId);
+                                                                    const fusion = fiberFusionsMap.get(fiberId);
                                                                     const isConnected = !!fusion;
                                                                     const isLit = litPorts.has(fiberId);
 
@@ -785,12 +819,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                     const connectedOltInfo = getConnectedOltInfo(pid);
                                                     const isActive = !!connectedOltInfo;
                                                     const isLit = litPorts.has(pid);
-                                                    const isFiberConnected = currentConnections.some(c => {
-                                                        const isLinked = c.sourceId === pid || c.targetId === pid;
-                                                        if (!isLinked) return false;
-                                                        const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                                        return partner.includes('fiber');
-                                                    });
+                                                    const isFiberConnected = dioPortIsFiberConnSet.has(pid);
 
                                                     let bgClass = 'bg-slate-900 hover:bg-slate-800';
                                                     let borderClass = 'border-slate-700/50 hover:border-slate-500';
@@ -933,7 +962,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             <div className="p-6 flex-1 overflow-y-auto max-h-[60vh] space-y-6 bg-slate-950/80 custom-scrollbar">
                                 {/* Connection Status of current fiber */}
                                 {(() => {
-                                    const existingConn = currentConnections.find(c => c.sourceId === configuringFiberId || c.targetId === configuringFiberId);
+                                    const existingConn = fiberFusionsMap.get(configuringFiberId);
                                     if (existingConn) {
                                         const portId = existingConn.sourceId === configuringFiberId ? existingConn.targetId : existingConn.sourceId;
                                         const match = portId.match(/-p-(\d+)$/);
@@ -985,17 +1014,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                                         const existingConns = currentConnections.filter(c => c.sourceId === pid || c.targetId === pid);
 
                                                         const isOccupiedByMe = existingConns.some(c => c.sourceId === configuringFiberId || c.targetId === configuringFiberId);
-                                                        const occupiedByOtherFiber = existingConns.some(c => {
-                                                            if (c.sourceId === configuringFiberId || c.targetId === configuringFiberId) return false;
-                                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                                            return partner.includes('fiber');
-                                                        });
+                                                        const occupiedByOtherFiber = dioPortIsFiberConnSet.has(pid) && !isOccupiedByMe;
 
                                                         // Patch cord check (occupied by OLT?)
-                                                        const occupiedByOLT = existingConns.some(c => {
-                                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                                            return partner.includes('olt');
-                                                        });
+                                                        const occupiedByOLT = oltInfoMap.has(pid);
 
                                                         let btnClass = 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white hover:border-slate-500';
                                                         if (isOccupiedByMe) {
