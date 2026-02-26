@@ -1,7 +1,7 @@
 
-import React, { useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, getFiberColor, DIO } from '../types';
-import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler, ArrowRight, Settings2, Split } from 'lucide-react';
+import { X, Save, ZoomIn, ZoomOut, GripHorizontal, Zap, Cable as CableIcon, AlertCircle, Link2, Check, Layers, Unplug, Router, Flashlight, Ruler, ArrowRight, Settings2, Split, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface DIOEditorProps {
@@ -33,6 +33,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const containerRef = useRef<HTMLDivElement>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+    const [hasFittedView, setHasFittedView] = useState(false);
 
     // Draggable Panels State
     const [cablePanelOffsets, setCablePanelOffsets] = useState<Record<string, { x: number, y: number }>>(dio.cableLayout || {});
@@ -55,6 +56,38 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     // Filter incoming cables to only those assigned to this DIO
     const relevantCables = incomingCables.filter(c => dio.inputCableIds?.includes(c.id));
 
+    // Accordion State
+    const [collapsedCables, setCollapsedCables] = useState<Set<number>>(new Set());
+    const [collapsedTubes, setCollapsedTubes] = useState<Set<string>>(new Set());
+
+    // Canvas Redraw Sync
+    const [redrawTrigger, setRedrawTrigger] = useState(0);
+
+    useEffect(() => {
+        // Redraw lines after the DOM natively paints the new zoomed/panned layout or accordion heights
+        const timer = setTimeout(() => setRedrawTrigger(c => c + 1), 10);
+        return () => clearTimeout(timer);
+    }, [viewState.zoom, viewState.x, viewState.y, collapsedCables, collapsedTubes]);
+
+    const toggleCableCollapse = (cIdx: number) => {
+        setCollapsedCables(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(cIdx)) newSet.delete(cIdx);
+            else newSet.add(cIdx);
+            return newSet;
+        });
+    };
+
+    const toggleTubeCollapse = (cIdx: number, tubeIdx: number) => {
+        const tubeId = `${cIdx}-tube-${tubeIdx}`;
+        setCollapsedTubes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(tubeId)) newSet.delete(tubeId);
+            else newSet.add(tubeId);
+            return newSet;
+        });
+    };
+
     // Interaction State
     const [dragState, setDragState] = useState<{
         mode: DragMode;
@@ -73,6 +106,57 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     // Force re-render for SVG lines
     const [, setForceUpdate] = useState(0);
     useLayoutEffect(() => setForceUpdate(n => n + 1), [viewState]);
+
+    // Initial Auto-Fit View
+    useEffect(() => {
+        if (!hasFittedView && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            // Estimate bounding boxes: Default cable group is at x:20, y:20, tray is at x:(...right-40), y:20.
+
+            // Hardcoded initial bounding boxes for performance (avoids waiting for DOM layout jumps)
+            const cableGroupX = cablePanelOffsets['group']?.x || 20;
+            const cableGroupY = cablePanelOffsets['group']?.y || 20;
+            const tableWidth = 220;
+            const tableHeight = relevantCables.length * 80 + 30; // Approx
+
+            const totalTrays = Math.ceil(dio.portIds.length / 12);
+
+            const trayX = rect.width - 600 - 40 + trayPanelOffset.x; // right-40 and w-[600px]
+            const trayY = 80 + trayPanelOffset.y; // top-20 is ~80px
+            const trayWidth = 600;
+            const trayHeight = totalTrays * 150; // Approx height
+
+            let minX = Math.min(cableGroupX, trayX);
+            let minY = Math.min(cableGroupY, trayY);
+            let maxX = Math.max(cableGroupX + tableWidth, trayX + trayWidth);
+            let maxY = Math.max(cableGroupY + tableHeight, trayY + trayHeight);
+
+            // Add padding
+            minX -= 50;
+            minY -= 50;
+            maxX += 50;
+            maxY += 50;
+
+            const contentW = maxX - minX;
+            const contentH = maxY - minY;
+
+            if (contentW > 0 && contentH > 0) {
+                const scaleX = rect.width / contentW;
+                const scaleY = rect.height / contentH;
+                const bestScale = Math.min(scaleX, scaleY, 1); // Max zoom 1, shrink to fit if needed
+
+                const centerX = (rect.width - (contentW * bestScale)) / 2;
+                const centerY = (rect.height - (contentH * bestScale)) / 2;
+
+                setViewState({
+                    x: centerX - (minX * bestScale),
+                    y: centerY - (minY * bestScale),
+                    zoom: bestScale * 0.95 // 5% extra margin
+                });
+            }
+            setHasFittedView(true);
+        }
+    }, [hasFittedView, relevantCables.length, dio.portIds.length, cablePanelOffsets, trayPanelOffset]);
 
     // --- Calculate Lit Connections Locally (Visuals) ---
     const litConnections = useMemo(() => {
@@ -438,7 +522,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
     const totalTrays = Math.ceil(dio.portIds.length / PORTS_PER_TRAY);
 
     return (
-        <div className={`fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md ${isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : ''}`}>
+        <div
+            className={`fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md select-none ${isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : ''}`}
+            onContextMenu={(e) => e.preventDefault()}
+        >
             <div className="w-[95vw] h-[95vh] bg-slate-950/80 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden relative overflow-hidden backdrop-blur-xl">
 
                 {/* Toolbar */}
@@ -559,90 +646,20 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                             height: '100%' // Ensure full height coverage
                         }}
                     >
-                        {/* SVG Connections Layer */}
-                        <svg className="absolute top-[-5000px] left-[-5000px] w-[10000px] h-[10000px] pointer-events-none overflow-visible z-10">
-                            {currentConnections.map(conn => {
-                                // Only visualize connections involving FIBERS in this view
-                                const isDioConn = (conn.sourceId.startsWith(dio.id) || conn.targetId.startsWith(dio.id));
-                                const isFiberConn = (conn.sourceId.includes('fiber') || conn.targetId.includes('fiber'));
-
-                                if (!isDioConn || !isFiberConn) return null;
-                                if (dragState?.mode === 'reconnect' && dragState.connectionId === conn.id) return null;
-
-                                const p1 = getPortCoordinates(conn.sourceId);
-                                const p2 = getPortCoordinates(conn.targetId);
-                                if (!p1 || !p2) return null;
-
-                                const activeSignal = isPortActive(conn.sourceId.startsWith(dio.id) ? conn.sourceId : conn.targetId);
-                                const isLit = litConnections.has(conn.id);
-
-                                const lineColor = isLit ? '#ef4444' : (activeSignal ? '#10b981' : '#64748b');
-                                const lineWidth = isLit ? 4 : (activeSignal ? 3 : 2);
-
-                                const distX = Math.abs(p2.x - p1.x);
-                                const controlOffset = Math.max(distX * 0.5, 80);
-
-                                return (
-                                    <g key={conn.id} className="pointer-events-auto group">
-                                        {/* Shadow/Glow for active lines */}
-                                        {(isLit || activeSignal) && (
-                                            <path
-                                                d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
-                                                stroke={lineColor}
-                                                strokeWidth={lineWidth * 3}
-                                                fill="none"
-                                                opacity={0.3}
-                                                className="blur-[4px]"
-                                            />
-                                        )}
-                                        <path
-                                            d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
-                                            stroke={lineColor}
-                                            strokeWidth={lineWidth}
-                                            fill="none"
-                                            strokeLinecap="round"
-                                            className="transition-all duration-300"
-                                        />
-                                        {/* Hover hitbox */}
-                                        <path
-                                            d={`M ${p1.x} ${p1.y} C ${p1.x + controlOffset} ${p1.y}, ${p2.x - controlOffset} ${p2.y}, ${p2.x} ${p2.y}`}
-                                            stroke="transparent"
-                                            strokeWidth={15}
-                                            fill="none"
-                                            className="cursor-pointer"
-                                        />
-                                        <circle cx={p1.x} cy={p1.y} r={3} fill={lineColor} />
-                                        <circle cx={p2.x} cy={p2.y} r={3} fill={lineColor} />
-                                    </g>
-                                );
-                            })}
-
-                            {(dragState?.mode === 'connection' || dragState?.mode === 'reconnect') && dragState.currentMouseX && (
-                                <g>
-                                    <path
-                                        d={`M ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.x || 0)} ${(getPortCoordinates(dragState.portId || dragState.fixedPortId!)?.y || 0)} 
-                                        L ${dragState.currentMouseX} ${dragState.currentMouseY}`}
-                                        stroke="#facc15"
-                                        strokeWidth={2}
-                                        strokeDasharray="6,4"
-                                        fill="none"
-                                        className="animate-pulse"
-                                    />
-                                    <circle cx={dragState.currentMouseX} cy={dragState.currentMouseY} r={4} fill="#facc15" />
-                                </g>
-                            )}
-                        </svg>
-
                         {/* --- LEFT SIDE: Incoming Cables (Filtered by Assignment) --- */}
                         <div
-                            className="absolute top-20 left-20 flex flex-col gap-10 pb-40"
+                            className="absolute z-20 flex flex-col items-center"
+                            style={{ transform: `translate(${cablePanelOffsets['group']?.x || 20}px, ${cablePanelOffsets['group']?.y || 20}px)` }}
                         >
-                            <div
-                                className="absolute -top-8 left-0 right-0 h-8 flex items-center justify-center cursor-move opacity-0 hover:opacity-100 transition-opacity"
-                            // Removed global cable drag
-                            >
-                                <div className="w-12 h-1 bg-white/20 rounded-full" />
-                            </div>
+                            {relevantCables.length > 0 && (
+                                <div
+                                    className="h-6 w-[220px] bg-slate-800/80 rounded-t-xl flex items-center justify-center cursor-move mb-1 hover:bg-slate-700 transition-colors border border-white/5 border-b-0 backdrop-blur-md z-10"
+                                    onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel', 'group')}
+                                    title={t('drag_all_cables')}
+                                >
+                                    <GripHorizontal className="w-4 h-4 text-slate-500" />
+                                </div>
+                            )}
 
                             {relevantCables.length === 0 ? (
                                 <div className="w-[300px] h-64 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center group select-none">
@@ -661,121 +678,139 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                                     )}
                                 </div>
                             ) : (
-                                relevantCables.map((cable, cIdx) => {
-                                    const looseTubeCount = cable.looseTubeCount || 1;
-                                    const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
-                                    const offset = cablePanelOffsets[cable.id] || { x: 0, y: 0 };
+                                <div className="flex flex-col gap-3 relative pb-20">
+                                    {relevantCables.map((cable, cIdx) => {
+                                        const looseTubeCount = cable.looseTubeCount || 1;
+                                        const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
 
-                                    return (
-                                        <div
-                                            key={cable.id}
-                                            className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl w-[220px] z-20 flex flex-col overflow-hidden ring-1 ring-black/50"
-                                            style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
-                                        >
-                                            {/* Cable Header */}
+                                        return (
                                             <div
-                                                className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-3 px-4 flex items-center justify-between cursor-move"
-                                                onMouseDown={(e) => handlePanelDragStart(e, 'cablePanel', cable.id)}
+                                                key={cable.id}
+                                                className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl w-[220px] shrink-0 flex flex-col overflow-hidden ring-1 ring-black/50 transition-all duration-300"
                                             >
-                                                <div className="min-w-0 select-none">
-                                                    <span className="text-xs font-bold text-slate-400 block uppercase tracking-wider mb-0.5">{t('cable')}</span>
-                                                    <span className="text-sm font-bold text-white truncate block" title={cable.name}>{cable.name}</span>
-                                                </div>
-                                                <div className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-white/5 rounded">
-                                                    <GripHorizontal className="w-4 h-4 text-slate-600" />
-                                                </div>
-                                            </div>
-
-                                            <div className="p-3 space-y-3">
-                                                {Array.from({ length: looseTubeCount }).map((_, tubeIdx) => {
-                                                    const tubeColor = getFiberColor(tubeIdx, cable.colorStandard);
-                                                    // Added 3 (White) and 10 (Gray) to black text indices
-                                                    const isLight = [1, 2, 3, 8, 10, 11, 12].includes((tubeIdx % 12) + 1);
-
-                                                    const startFiberIndex = tubeIdx * fibersPerTube;
-                                                    const endFiberIndex = Math.min(startFiberIndex + fibersPerTube, cable.fiberCount);
-                                                    const tubeFibersCount = Math.max(0, endFiberIndex - startFiberIndex);
-
-                                                    return (
-                                                        <div key={tubeIdx} className="rounded-xl border border-white/5 bg-slate-950/50 overflow-hidden shadow-inner">
-                                                            <div
-                                                                className={`px-3 py-1.5 text-[10px] font-bold uppercase flex justify-between items-center ${isLight ? 'text-slate-900' : 'text-white'}`}
-                                                                style={{ backgroundColor: tubeColor }}
-                                                            >
-                                                                <span className="opacity-90">{t('tube')} {tubeIdx + 1}</span>
-                                                                <span className="opacity-60 text-[9px]">{tubeFibersCount}F</span>
-                                                            </div>
-                                                            <div className="p-1.5 space-y-1">
-                                                                {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
-                                                                    const fiberIndex = startFiberIndex + fOffset;
-
-                                                                    const fiberId = `${cable.id}-fiber-${fiberIndex}`;
-                                                                    const color = getFiberColor(fOffset, cable.colorStandard); // Fiber colors cycle 1-12 relative to TUBE
-
-                                                                    const fusion = fiberFusionsMap.get(fiberId);
-                                                                    const isConnected = !!fusion;
-                                                                    const isLit = litPorts.has(fiberId);
-
-                                                                    let activeOltInfo: string | null = null;
-                                                                    if (fusion) {
-                                                                        const dioPortId = fusion.sourceId === fiberId ? fusion.targetId : fusion.sourceId;
-                                                                        activeOltInfo = getConnectedOltInfo(dioPortId);
-                                                                    }
-
-                                                                    return (
-                                                                        <div key={fiberId} className="flex items-center justify-between group relative pl-1 pr-0.5">
-                                                                            <div className="text-[10px] font-mono text-slate-500 w-5 select-none">{fiberIndex + 1}</div>
-                                                                            <div className="flex-1 h-[1px] bg-slate-800 mx-2 relative">
-                                                                                {/* Active line indicator */}
-                                                                                {isLit && <div className="absolute inset-0 bg-red-500 shadow-[0_0_8px_#ef4444] opacity-100 h-[2px]"></div>}
-                                                                                {!isLit && activeOltInfo && <div className="absolute inset-0 bg-emerald-500 shadow-[0_0_8px_#10b981] opacity-100 h-[2px]"></div>}
-                                                                            </div>
-
-                                                                            {/* Fiber Node Interaction */}
-                                                                            <div
-                                                                                id={fiberId}
-                                                                                onClick={(e) => handleFiberClick(e, fiberId)}
-                                                                                onMouseEnter={() => setHoveredPortId(fiberId)}
-                                                                                onMouseLeave={() => setHoveredPortId(null)}
-                                                                                className={`
-                                                                               w-6 h-6 rounded-full cursor-pointer 
-                                                                               flex items-center justify-center transition-all relative z-10 duration-200
-                                                                               ${isConnected
-                                                                                        ? 'border-0 scale-100 shadow-lg'
-                                                                                        : 'border-2 bg-slate-900 border-slate-700 hover:border-white scale-90 hover:scale-110'
-                                                                                    }
-                                                                               ${hoveredPortId === fiberId ? 'ring-2 ring-white scale-110 z-20' : ''}
-                                                                               ${isLit ? 'ring-2 ring-red-500 border-red-500 shadow-[0_0_15px_#ef4444]' : ''}
-                                                                           `}
-                                                                                style={{
-                                                                                    backgroundColor: isConnected ? color : (hoveredPortId === fiberId ? color : 'transparent'),
-                                                                                    borderColor: isConnected ? 'transparent' : (hoveredPortId === fiberId ? color : color),
-                                                                                    opacity: isConnected ? 1 : 0.8
-                                                                                }}
-                                                                                title={isConnected ? t('click_to_manage') : t('click_to_connect')}
-                                                                            >
-                                                                                {isConnected && <Check className="w-3.5 h-3.5 text-black/60 font-black" />}
-                                                                            </div>
-
-                                                                            {activeOltInfo && !isLit && hoveredPortId === fiberId && (
-                                                                                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur text-white p-2 rounded-lg border border-emerald-500/50 shadow-2xl shadow-black/50 whitespace-nowrap z-[100] animate-in slide-in-from-left-2 zoom-in-95 duration-200">
-                                                                                    <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider mb-1">
-                                                                                        <Zap className="w-3 h-3" /> Signal Active
-                                                                                    </div>
-                                                                                    <div className="text-xs font-medium">{activeOltInfo}</div>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
+                                                {/* Cable Header */}
+                                                <div
+                                                    className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-white/5 py-3 px-3 flex items-center justify-between select-none"
+                                                >
+                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                        <div
+                                                            onMouseDown={(e) => { e.stopPropagation(); toggleCableCollapse(cIdx); }}
+                                                            className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-white transition-colors cursor-pointer"
+                                                        >
+                                                            {collapsedCables.has(cIdx) ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                         </div>
-                                                    );
-                                                })}
+                                                        <div className="min-w-0">
+                                                            <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">{t('cable')}</span>
+                                                            <span className="text-sm font-bold text-white truncate block" title={cable.name}>{cable.name}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-white/5 rounded">
+                                                        <GripHorizontal className="w-4 h-4 text-slate-600" />
+                                                    </div>
+                                                </div>
+
+                                                {!collapsedCables.has(cIdx) && (
+                                                    <div className="p-2 space-y-2">
+                                                        {Array.from({ length: looseTubeCount }).map((_, tubeIdx) => {
+                                                            const tubeColor = getFiberColor(tubeIdx, cable.colorStandard);
+                                                            // Added 3 (White) and 10 (Gray) to black text indices
+                                                            const isLight = [1, 2, 3, 8, 10, 11, 12].includes((tubeIdx % 12) + 1);
+
+                                                            const startFiberIndex = tubeIdx * fibersPerTube;
+                                                            const endFiberIndex = Math.min(startFiberIndex + fibersPerTube, cable.fiberCount);
+                                                            const tubeFibersCount = Math.max(0, endFiberIndex - startFiberIndex);
+
+                                                            const tubeId = `${cIdx}-tube-${tubeIdx}`;
+                                                            const isTubeCollapsed = collapsedTubes.has(tubeId);
+
+                                                            return (
+                                                                <div key={tubeIdx} className="rounded-xl border border-white/5 bg-slate-950/50 overflow-hidden shadow-inner">
+                                                                    <div
+                                                                        className={`px-3 py-1.5 text-[10px] font-bold uppercase flex justify-between items-center cursor-pointer select-none ${isLight ? 'text-slate-900' : 'text-white'}`}
+                                                                        style={{ backgroundColor: tubeColor }}
+                                                                        onMouseDown={(e) => { e.stopPropagation(); toggleTubeCollapse(cIdx, tubeIdx); }}
+                                                                    >
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            {isTubeCollapsed ? <ChevronRight className="w-3 h-3 opacity-70" /> : <ChevronDown className="w-3 h-3 opacity-70" />}
+                                                                            <span className="opacity-90">{t('tube')} {tubeIdx + 1}</span>
+                                                                        </div>
+                                                                        <span className="opacity-60 text-[9px]">{tubeFibersCount}F</span>
+                                                                    </div>
+                                                                    {!isTubeCollapsed && (
+                                                                        <div className="p-1.5 space-y-0.5">
+                                                                            {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
+                                                                                const fiberIndex = startFiberIndex + fOffset;
+
+                                                                                const fiberId = `${cable.id}-fiber-${fiberIndex}`;
+                                                                                const color = getFiberColor(fOffset, cable.colorStandard); // Fiber colors cycle 1-12 relative to TUBE
+
+                                                                                const fusion = fiberFusionsMap.get(fiberId);
+                                                                                const isConnected = !!fusion;
+                                                                                const isLit = litPorts.has(fiberId);
+
+                                                                                let activeOltInfo: string | null = null;
+                                                                                if (fusion) {
+                                                                                    const dioPortId = fusion.sourceId === fiberId ? fusion.targetId : fusion.sourceId;
+                                                                                    activeOltInfo = getConnectedOltInfo(dioPortId);
+                                                                                }
+
+                                                                                return (
+                                                                                    <div key={fiberId} className="flex items-center justify-between group relative pl-1 pr-0.5">
+                                                                                        <div className="text-[10px] font-mono text-slate-500 w-5 select-none">{fiberIndex + 1}</div>
+                                                                                        <div className="flex-1 h-[1px] bg-slate-800 mx-2 relative">
+                                                                                            {/* Active line indicator */}
+                                                                                            {isLit && <div className="absolute inset-0 bg-red-500 shadow-[0_0_8px_#ef4444] opacity-100 h-[2px]"></div>}
+                                                                                            {!isLit && activeOltInfo && <div className="absolute inset-0 bg-emerald-500 shadow-[0_0_8px_#10b981] opacity-100 h-[2px]"></div>}
+                                                                                        </div>
+
+                                                                                        {/* Fiber Node Interaction */}
+                                                                                        <div
+                                                                                            id={fiberId}
+                                                                                            onClick={(e) => handleFiberClick(e, fiberId)}
+                                                                                            onMouseEnter={() => setHoveredPortId(fiberId)}
+                                                                                            onMouseLeave={() => setHoveredPortId(null)}
+                                                                                            className={`
+                                                                                   w-6 h-6 rounded-full cursor-pointer 
+                                                                                   flex items-center justify-center transition-all relative z-10 duration-200
+                                                                                   ${isConnected
+                                                                                                    ? 'border-0 scale-100 shadow-lg'
+                                                                                                    : 'border-2 bg-slate-900 border-slate-700 hover:border-white scale-90 hover:scale-110'
+                                                                                                }
+                                                                                   ${hoveredPortId === fiberId ? 'ring-2 ring-white scale-110 z-20' : ''}
+                                                                                   ${isLit ? 'ring-2 ring-red-500 border-red-500 shadow-[0_0_15px_#ef4444]' : ''}
+                                                                               `}
+                                                                                            style={{
+                                                                                                backgroundColor: isConnected ? color : (hoveredPortId === fiberId ? color : 'transparent'),
+                                                                                                borderColor: isConnected ? 'transparent' : (hoveredPortId === fiberId ? color : color),
+                                                                                                opacity: isConnected ? 1 : 0.8
+                                                                                            }}
+                                                                                            title={isConnected ? t('click_to_manage') : t('click_to_connect')}
+                                                                                        >
+                                                                                            {isConnected && <Check className="w-3.5 h-3.5 text-black/60 font-black" />}
+                                                                                        </div>
+
+                                                                                        {activeOltInfo && !isLit && hoveredPortId === fiberId && (
+                                                                                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-900/90 backdrop-blur text-white p-2 rounded-lg border border-emerald-500/50 shadow-2xl shadow-black/50 whitespace-nowrap z-[100] animate-in slide-in-from-left-2 zoom-in-95 duration-200">
+                                                                                                <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider mb-1">
+                                                                                                    <Zap className="w-3 h-3" /> Signal Active
+                                                                                                </div>
+                                                                                                <div className="text-xs font-medium">{activeOltInfo}</div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
 
@@ -1104,6 +1139,6 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({ dio, pop, incomingCables, 
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
