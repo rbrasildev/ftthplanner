@@ -19,6 +19,7 @@ import { ConnectCustomerModal } from './modals/ConnectCustomerModal';
 import { CTOMarker } from './markers/CTOMarker';
 import { POPMarker } from './markers/POPMarker';
 import { PoleMarker } from './markers/PoleMarker';
+import { TechnicalReserveMarker } from './markers/TechnicalReserveMarker';
 
 
 
@@ -1443,6 +1444,35 @@ export const MapView: React.FC<MapViewProps> = ({
                         ))}
                     </>
                 )}
+
+                {/* TECHNICAL RESERVES (Draggable Markers) */}
+                {cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)).map(cable => {
+                    const position = cable.reserveLocation || (() => {
+                        const coords = cable.coordinates;
+                        if (coords && coords.length >= 2) {
+                            const midIndex = Math.floor(coords.length / 2);
+                            return coords[midIndex];
+                        }
+                        return null;
+                    })();
+
+                    if (!position) return null;
+
+                    return (
+                        <TechnicalReserveMarker
+                            key={`reserve-${cable.id}`}
+                            cableId={cable.id}
+                            reserveValue={cable.technicalReserve || 0}
+                            position={position}
+                            mode={mode}
+                            currentZoom={currentZoom}
+                            onMoveReserve={(id, lat, lng) => onReservePositionSet && onReservePositionSet(lat, lng)}
+                            onDragStart={handlePointDragStart}
+                            onDrag={handleDrag}
+                            onDragEnd={handleDragEnd}
+                        />
+                    );
+                })}
 
 
 

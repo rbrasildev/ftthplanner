@@ -248,70 +248,13 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             g.selectAll('text.cable-label:not(.cable-label-group text)').remove();
 
             // --- LABEL LAYER (Technical Reserve) ---
+            // Disabled in favor of interactive TechnicalReserveMarker in MapView.tsx
+            g.selectAll('g.cable-label-group').remove();
+            /*
             const labels = g.selectAll<SVGGElement, CableData>('g.cable-label-group')
                 .data(cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)), (d: any) => d.id);
-
-            labels.exit().remove();
-
-            const labelsEnter = labels.enter().append('g')
-                .attr('class', 'cable-label-group')
-                .style('pointer-events', 'none');
-
-            // Icon background / Outer ring
-            labelsEnter.append('circle')
-                .attr('r', 9)
-                .style('fill', 'white')
-                .style('stroke', '#0f172a')
-                .style('stroke-width', '1.5px');
-
-            // Middle ring
-            labelsEnter.append('circle')
-                .attr('r', 6)
-                .style('fill', 'none')
-                .style('stroke', '#0f172a')
-                .style('stroke-width', '1.2px');
-
-            // Inner ring
-            labelsEnter.append('circle')
-                .attr('r', 3)
-                .style('fill', 'none')
-                .style('stroke', '#0f172a')
-                .style('stroke-width', '1px');
-
-            labelsEnter.append('text')
-                .attr('class', 'cable-label')
-                .attr('text-anchor', 'start')
-                .attr('dominant-baseline', 'middle')
-                .attr('dx', 11)
-                .style('font-weight', '700')
-                .style('font-family', 'Inter, system-ui, sans-serif')
-                .style('fill', 'white')
-                .style('text-shadow', '0px 1px 3px rgba(0,0,0,0.8), 0px 0px 2px black');
-
-            labelsEnter.merge(labels)
-                .attr('transform', (d: any) => {
-                    let x = 0, y = 0;
-                    if (d.reserveLocation) {
-                        const p = projectPoint(d.reserveLocation.lat, d.reserveLocation.lng);
-                        x = p.x - mapTopLeft.x;
-                        y = p.y - mapTopLeft.y;
-                    } else {
-                        const coords = getRenderCoordinates(d);
-                        if (coords && coords.length >= 2) {
-                            const midIndex = Math.floor(coords.length / 2);
-                            const p = projectPoint(coords[midIndex].lat, coords[midIndex].lng);
-                            x = p.x - mapTopLeft.x;
-                            y = p.y - mapTopLeft.y - 8;
-                        }
-                    }
-                    // Use Math.round to prevent sub-pixel rendering jump during zoom
-                    return `translate(${Math.round(x)}, ${Math.round(y)})`;
-                });
-
-            // Update text separately in the merged selection
-            g.selectAll<SVGTextElement, CableData>('g.cable-label-group text')
-                .attr('font-size', currentZoom < 14 ? '9px' : '11px')
-                .text((d: any) => `RT: ${d.technicalReserve}m`);
+            ...
+            */
 
             // --- HIT AREA LAYER (Transparent, wider) ---
             const hitPaths = g.selectAll<SVGPathElement, CableData>('path.cable-hit')
