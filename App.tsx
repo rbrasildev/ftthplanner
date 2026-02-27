@@ -1806,6 +1806,37 @@ export default function App() {
         showToast(t('toast_fusion_type_deleted') || 'Tipo de fusão removido');
     };
 
+    const handleCancelMode = useCallback(() => {
+        if (toolMode === 'view') return;
+
+        // Cleanup logic for each complex mode
+        if (toolMode === 'ruler') {
+            setRulerPoints([]);
+        } else if (toolMode === 'draw_cable') {
+            setDrawingPath([]);
+            setDrawingFromId(null);
+        } else if (toolMode === 'edit_cable' || toolMode === 'connect_cable') {
+            if (previousNetworkState.current) {
+                const backup = previousNetworkState.current;
+                updateCurrentNetwork(() => backup);
+                previousNetworkState.current = null;
+                setEditingCTO(null);
+                setEditingPOP(null);
+            }
+            setMultiConnectionIds(new Set());
+            setHighlightedCableId(null);
+        } else if (toolMode === 'move_node') {
+            // Cancel move
+            const net = getCurrentNetwork();
+            setCurrentProject(prev => prev ? { ...prev, network: net } : null);
+        } else if (toolMode === 'position_reserve') {
+            setPendingReserveCableId(null);
+        }
+
+        setToolMode('view');
+        setSelectedId(null);
+        showToast(t('action_cancelled') || "Ação Cancelada", 'info');
+    }, [toolMode, t]);
 
     if (!user) {
         if (authView === 'landing') {
@@ -1898,38 +1929,6 @@ export default function App() {
     const deployedItems = deployedCTOs + totalPOPs + deployedCables;
 
     const deploymentProgress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
-
-    const handleCancelMode = useCallback(() => {
-        if (toolMode === 'view') return;
-
-        // Cleanup logic for each complex mode
-        if (toolMode === 'ruler') {
-            setRulerPoints([]);
-        } else if (toolMode === 'draw_cable') {
-            setDrawingPath([]);
-            setDrawingFromId(null);
-        } else if (toolMode === 'edit_cable' || toolMode === 'connect_cable') {
-            if (previousNetworkState.current) {
-                const backup = previousNetworkState.current;
-                updateCurrentNetwork(() => backup);
-                previousNetworkState.current = null;
-                setEditingCTO(null);
-                setEditingPOP(null);
-            }
-            setMultiConnectionIds(new Set());
-            setHighlightedCableId(null);
-        } else if (toolMode === 'move_node') {
-            // Cancel move
-            const net = getCurrentNetwork();
-            setCurrentProject(prev => prev ? { ...prev, network: net } : null);
-        } else if (toolMode === 'position_reserve') {
-            setPendingReserveCableId(null);
-        }
-
-        setToolMode('view');
-        setSelectedId(null);
-        showToast(t('action_cancelled') || "Ação Cancelada", 'info');
-    }, [toolMode, t]);
 
     const handleMainSearch = (term: string) => {
         if (!term || term.trim() === '') {

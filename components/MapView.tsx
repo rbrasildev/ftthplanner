@@ -808,18 +808,26 @@ export const MapView: React.FC<MapViewProps> = ({
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                // Se algum input ou textarea estiver focado (ex: no CTOEditor), não cancele a ferramenta do mapa.
+                if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                    return;
+                }
+
+                // Se um modal de CTO ou POP estiver aberto (indicado por uma classe comum do modal no DOM ou id no body), evite o cancelamento global do mapa
+                if (document.querySelector('.cto-editor-modal, .pop-editor-modal')) {
+                    return;
+                }
+
                 setContextMenu(null);
                 setMapContextMenu(null);
                 if (onCancelMode) {
                     onCancelMode();
-                    // Prevent propagation to other listeners (like Leaflet or Browser)
-                    e.preventDefault();
-                    e.stopPropagation();
                 }
             }
         };
-        window.addEventListener('keydown', handleKeyDown, true); // Use capture phase to be first
-        return () => window.removeEventListener('keydown', handleKeyDown, true);
+        // Removed true (capture phase) to allow internal components to process ESC first
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onCancelMode]);
 
     const activeCable = useMemo(() => cables.find(c => c.id === activeCableId), [cables, activeCableId]);

@@ -2914,7 +2914,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     return (
         <div
-            className={`fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-4 w-auto h-auto' : ''}`}
+            className={`cto-editor-modal fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-4 w-auto h-auto' : ''}`}
             style={isMaximized ? {} : { left: windowPos.x, top: windowPos.y }}
         >
             {dragState && (
