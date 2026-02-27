@@ -871,6 +871,7 @@ const translations = {
     'type_FUSION': 'Fusion',
     'type_CONNECTOR': 'Connector / DIO',
     'type_OLT': 'OLT',
+    'action_cancelled': 'Action cancelled',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -1751,6 +1752,7 @@ const translations = {
     'port_status_occupied': 'Ocupada ({name})',
     'port_status_free': 'Livre',
     'customer_port_tooltip': 'Cliente: {name}',
+    'action_cancelled': 'Ação Cancelada',
   },
 };
 

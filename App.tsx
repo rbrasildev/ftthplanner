@@ -183,10 +183,14 @@ export default function App() {
         saasService.getSaaSConfig().then(setSaasConfig).catch(console.error);
 
         // Load Global Customers (for Search/Linking)
-        import('./services/customerService').then(service => {
-            service.getCustomers().then(setGlobalCustomers).catch(console.error);
-        });
-    }, []);
+        if (currentProjectId) {
+            import('./services/customerService').then(service => {
+                service.getCustomers({ projectId: currentProjectId }).then(setGlobalCustomers).catch(console.error);
+            });
+        } else {
+            setGlobalCustomers([]);
+        }
+    }, [currentProjectId]);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
@@ -1895,6 +1899,38 @@ export default function App() {
 
     const deploymentProgress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
 
+    const handleCancelMode = useCallback(() => {
+        if (toolMode === 'view') return;
+
+        // Cleanup logic for each complex mode
+        if (toolMode === 'ruler') {
+            setRulerPoints([]);
+        } else if (toolMode === 'draw_cable') {
+            setDrawingPath([]);
+            setDrawingFromId(null);
+        } else if (toolMode === 'edit_cable' || toolMode === 'connect_cable') {
+            if (previousNetworkState.current) {
+                const backup = previousNetworkState.current;
+                updateCurrentNetwork(() => backup);
+                previousNetworkState.current = null;
+                setEditingCTO(null);
+                setEditingPOP(null);
+            }
+            setMultiConnectionIds(new Set());
+            setHighlightedCableId(null);
+        } else if (toolMode === 'move_node') {
+            // Cancel move
+            const net = getCurrentNetwork();
+            setCurrentProject(prev => prev ? { ...prev, network: net } : null);
+        } else if (toolMode === 'position_reserve') {
+            setPendingReserveCableId(null);
+        }
+
+        setToolMode('view');
+        setSelectedId(null);
+        showToast(t('action_cancelled') || "Ação Cancelada", 'info');
+    }, [toolMode, t]);
+
     const handleMainSearch = (term: string) => {
         if (!term || term.trim() === '') {
             setPinnedLocation(null);
@@ -2094,6 +2130,7 @@ export default function App() {
                         isLoading={isLoadingProjects}
                         onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
                         onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                        currentProjectId={currentProjectId || undefined}
                     />
                 </main>
             ) : currentProjectId && !currentProject ? (
@@ -2161,6 +2198,7 @@ export default function App() {
                         snapDistance={systemSettings.snapDistance}
 
                         viewKey={mapForceUpdateKey ? `force-${mapForceUpdateKey}` : (currentProjectId || undefined)}
+                        projectId={currentProjectId || undefined}
                         initialCenter={savedMapState?.center || currentProject?.mapState?.center}
                         initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
                         onMapMoveEnd={handleMapMoveEnd}
@@ -2212,6 +2250,7 @@ export default function App() {
                                 });
                             }
                         }}
+                        onCancelMode={handleCancelMode}
                     />
 
 
@@ -2428,6 +2467,7 @@ export default function App() {
                         subscriptionExpiresAt={subscriptionExpiresAt}
                         onShowUpgrade={handleCTOShowUpgrade}
                         network={editingCTONetwork}
+                        projectId={currentProjectId || undefined}
                     />
                 )
             }

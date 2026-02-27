@@ -292,7 +292,9 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     const latlng = map.mouseEventToLatLng(event);
                     const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
                     onClick(leafletEvent, d);
-                    if (mode !== 'ruler') L.DomEvent.stopPropagation(event);
+
+                    const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
+                    if (mode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(event);
                 })
                 .on("contextmenu", (event, d) => {
                     // Prevent default browser context menu

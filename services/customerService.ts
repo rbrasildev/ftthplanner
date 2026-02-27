@@ -4,7 +4,8 @@ import { Customer } from '../types';
 export const getCustomers = async (params?: {
     minLat?: number, maxLat?: number, minLng?: number, maxLng?: number,
     ctoId?: string,
-    search?: string
+    search?: string,
+    projectId?: string
 }) => {
     const response = await api.get<Customer[]>('/customers', { params });
     return response.data;

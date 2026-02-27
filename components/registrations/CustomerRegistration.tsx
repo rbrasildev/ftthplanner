@@ -6,9 +6,10 @@ import { Customer } from '../../types';
 
 interface CustomerRegistrationProps {
     onLocate?: (customer: Customer) => void;
+    projectId?: string;
 }
 
-const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate }) => {
+const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, projectId }) => {
     const { t } = useLanguage();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [search, setSearch] = useState('');
@@ -29,12 +30,12 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate })
 
     useEffect(() => {
         loadCustomers();
-    }, []);
+    }, [projectId]);
 
     const loadCustomers = async () => {
         setIsLoading(true);
         try {
-            const data = await getCustomers();
+            const data = await getCustomers({ projectId });
             setCustomers(data);
         } catch (error) {
             console.error("Failed to load customers", error);

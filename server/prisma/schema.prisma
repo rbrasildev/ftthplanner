@@ -98,6 +98,7 @@ model Project {
   cables    Cable[]
   ctos      Cto[]
   poles     Pole[]
+  customers Customer[]
   pops      Pop[]
   company   Company? @relation(fields: [companyId], references: [id])
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -526,8 +527,10 @@ model Customer {
   onuMac            String?  @map("onu_mac")
   pppoeService      String?  @map("pppoe_service")
   onuPower          Float?   @map("onu_power")
+  projectId         String?  @map("project_id")
   
   cto     Cto?     @relation(fields: [ctoId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
   company Company? @relation(fields: [companyId], references: [id])
   drop    Drop?
 

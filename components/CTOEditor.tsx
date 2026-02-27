@@ -128,6 +128,7 @@ interface CTOEditorProps {
     onShowUpgrade?: () => void;
     userRole?: string | null;
     network: NetworkState;
+    projectId?: string;
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
@@ -135,16 +136,17 @@ type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'win
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
     litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
-    userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole
+    userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole,
+    projectId
 }) => {
     const { t } = useLanguage();
     const [ctoCustomers, setCtoCustomers] = useState<Customer[]>([]);
 
     useEffect(() => {
         if (cto.id) {
-            getCustomers({ ctoId: cto.id }).then(setCtoCustomers).catch(console.error);
+            getCustomers({ ctoId: cto.id, projectId }).then(setCtoCustomers).catch(console.error);
         }
-    }, [cto.id]);
+    }, [cto.id, projectId]);
 
     // --- HELPER: Normalize CTO with Defaults for Dirty Check ---
     const withDefaults = (data: CTOData): CTOData => {

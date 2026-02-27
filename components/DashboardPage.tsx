@@ -36,6 +36,7 @@ interface DashboardPageProps {
   isLoading?: boolean;
   currentView?: DashboardView;
   onViewChange?: (view: DashboardView) => void;
+  currentProjectId?: string;
 }
 
 // Helper to fix Leaflet size inside Modals
@@ -104,7 +105,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onUpdateProject,
   isLoading = false,
   currentView: externalView,
-  onViewChange: onExternalViewChange
+  onViewChange: onExternalViewChange,
+  currentProjectId
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -626,6 +628,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* --- CUSTOMER REGISTRATION --- */}
         {currentView === 'reg_clientes' && (
           <CustomerRegistration
+            projectId={currentProjectId}
             onLocate={(customer) => {
               // Try to find which project this customer belongs to (by ctoId)
               if (customer.ctoId) {

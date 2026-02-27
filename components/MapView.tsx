@@ -537,6 +537,8 @@ interface MapViewProps {
     onPositionReserveCable?: (id: string) => void;
     onReservePositionSet?: (lat: number, lng: number) => void;
 
+    projectId?: string;
+
     onEditNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
@@ -550,6 +552,7 @@ interface MapViewProps {
     allCustomers?: Customer[];
     userRole?: string | null;
     onCustomerSaved?: (customer?: Customer) => void;
+    onCancelMode?: () => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -568,7 +571,9 @@ export const MapView: React.FC<MapViewProps> = ({
     showToast,
     onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
     onCustomerSaved,
-    userRole = null
+    userRole = null,
+    projectId,
+    onCancelMode
 }) => {
     const { t } = useLanguage();
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -604,7 +609,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 minLat: paddedBounds.getSouth(),
                 maxLat: paddedBounds.getNorth(),
                 minLng: paddedBounds.getWest(),
-                maxLng: paddedBounds.getEast()
+                maxLng: paddedBounds.getEast(),
+                projectId
             });
             console.log(`[MapView] Fetched ${data.length} customers.`);
             // DEBUG: Check for drops
@@ -628,7 +634,7 @@ export const MapView: React.FC<MapViewProps> = ({
             }, 500); // 500ms debounce
             return () => clearTimeout(timer);
         }
-    }, [mapBounds, mapBoundsState, isCustomersVisible, fetchCustomers]);
+    }, [mapBounds, mapBoundsState, isCustomersVisible, fetchCustomers, projectId]);
 
     // Customer Handlers
     const handleCustomerClick = useCallback((customer: Customer) => {
@@ -658,7 +664,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 if (onCustomerSaved) onCustomerSaved(updatedCustomer);
             } else {
                 // CREATE NEW CUSTOMER
-                const newCustomer = await createCustomer(customer);
+                const newCustomer = await createCustomer({ ...customer, projectId });
                 setCustomers(prev => [...prev, newCustomer]);
                 setCustomerModalOpen(false);
                 if (currentBounds) fetchCustomers(currentBounds);
@@ -849,11 +855,17 @@ export const MapView: React.FC<MapViewProps> = ({
             if (e.key === 'Escape') {
                 setContextMenu(null);
                 setMapContextMenu(null);
+                if (onCancelMode) {
+                    onCancelMode();
+                    // Prevent propagation to other listeners (like Leaflet or Browser)
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
             }
         };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+        window.addEventListener('keydown', handleKeyDown, true); // Use capture phase to be first
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [onCancelMode]);
 
     const activeCable = useMemo(() => cables.find(c => c.id === activeCableId), [cables, activeCableId]);
 
@@ -899,7 +911,8 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableClickInternal = useCallback((e: any, cable: CableData) => {
         // Fix propagation: Use originalEvent if available (Leaflet), otherwise e (DOM/D3)
         const domEvent = e.originalEvent || e;
-        if (mode !== 'ruler') L.DomEvent.stopPropagation(domEvent);
+        const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
+        if (mode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(domEvent);
 
         // Single click: Only for selection/view/otdr
         if (mode === 'connect_cable') {

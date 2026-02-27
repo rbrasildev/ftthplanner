@@ -9,11 +9,15 @@ export const getCustomers = async (req: Request, res: Response) => {
     if (!user || !user.companyId) return res.status(401).send();
 
     try {
-        const { minLat, maxLat, minLng, maxLng, ctoId, search } = req.query;
+        const { minLat, maxLat, minLng, maxLng, ctoId, search, projectId } = req.query;
 
         const where: any = {
             companyId: user.companyId
         };
+
+        if (projectId) {
+            where.projectId = projectId as string;
+        }
 
         // Spatial Filter (Bounding Box)
         if (minLat && maxLat && minLng && maxLng) {
@@ -75,7 +79,8 @@ export const createCustomer = async (req: Request, res: Response) => {
             name, document, phone, email, address,
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
-            status, onuSerial, onuMac, pppoeService, onuPower
+            status, onuSerial, onuMac, pppoeService, onuPower,
+            projectId
         } = req.body;
 
         console.log(`[CreateCustomer] Extracting data: name=${name}, lat=${lat}, lng=${lng}`);
@@ -121,6 +126,7 @@ export const createCustomer = async (req: Request, res: Response) => {
             const customer = await tx.customer.create({
                 data: {
                     companyId: user.companyId,
+                    projectId: projectId || null,
                     name,
                     document,
                     phone,
@@ -187,7 +193,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
             name, document, phone, email, address,
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
-            status, onuSerial, onuMac, pppoeService, onuPower
+            status, onuSerial, onuMac, pppoeService, onuPower,
+            projectId
         } = req.body;
 
         // Verify ownership
@@ -244,7 +251,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     onuSerial,
                     onuMac,
                     pppoeService,
-                    onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined
+                    onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined,
+                    projectId: projectId !== undefined ? (projectId || null) : undefined
                 }
             });
 

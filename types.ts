@@ -321,4 +321,5 @@ export interface Customer {
   pppoeService?: string | null;
   onuPower?: number | null; // Signal power (e.g., -20.0 dBm)
   dropCoordinates?: Coordinates[]; // Optional for API updates
+  projectId?: string | null;
 }
