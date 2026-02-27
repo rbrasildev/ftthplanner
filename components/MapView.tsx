@@ -384,7 +384,6 @@ const MapEvents: React.FC<{
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
-                onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'connect_cable') {
                 onClearSelection();
             } else {
