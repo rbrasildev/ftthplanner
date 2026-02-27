@@ -579,7 +579,6 @@ export const MapView: React.FC<MapViewProps> = ({
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
 
     // Customer State
-    const [customers, setCustomers] = useState<Customer[]>([]);
     const [customerModalOpen, setCustomerModalOpen] = useState(false);
     const [connectCustomerModalOpen, setConnectCustomerModalOpen] = useState(false);
     const [pendingConnection, setPendingConnection] = useState<{ ctoId: string, dropPoints: L.LatLng[] } | null>(null);
@@ -597,44 +596,6 @@ export const MapView: React.FC<MapViewProps> = ({
     const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
 
     // Fetch Customers
-    const fetchCustomers = useCallback(async (bounds?: L.LatLngBounds) => {
-        if (!bounds) return;
-        try {
-            // Pad by 50% to ensure we load customers whose drops might cross the screen
-            // even if the customer themselves are off-screen when zooming into a CTO.
-            const paddedBounds = bounds.pad(0.5);
-
-            // console.log("Fetching customers for bounds:", paddedBounds.toBBoxString());
-            const data = await getCustomers({
-                minLat: paddedBounds.getSouth(),
-                maxLat: paddedBounds.getNorth(),
-                minLng: paddedBounds.getWest(),
-                maxLng: paddedBounds.getEast(),
-                projectId
-            });
-            console.log(`[MapView] Fetched ${data.length} customers.`);
-            // DEBUG: Check for drops
-            const withDrops = data.filter(c => (c as any).drop).length;
-            console.log(`[MapView] Customers with drops: ${withDrops}`, withDrops > 0 ? (data.find(c => (c as any).drop) as any).drop : 'None');
-            setCustomers(data);
-        } catch (error) {
-            console.error("Error fetching customers:", error);
-        }
-    }, []);
-
-    // Update customers when map moves (debounced)
-    // Update customers when map moves (debounced)
-    useEffect(() => {
-        // Use mapBoundsState (from BoundsUpdater) if available, falling back to mapBounds prop
-        const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
-
-        if (currentBounds && isCustomersVisible) {
-            const timer = setTimeout(() => {
-                fetchCustomers(currentBounds);
-            }, 500); // 500ms debounce
-            return () => clearTimeout(timer);
-        }
-    }, [mapBounds, mapBoundsState, isCustomersVisible, fetchCustomers, projectId]);
 
     // Customer Handlers
     const handleCustomerClick = useCallback((customer: Customer) => {
@@ -656,18 +617,13 @@ export const MapView: React.FC<MapViewProps> = ({
                 // Determine logic for update vs new flow
                 // For now, simple update
                 const updatedCustomer = await updateCustomer(customer.id, customer);
-                // Optimistically update the single customer in the state immediately
-                setCustomers(prev => prev.map(c => c.id === customer.id ? updatedCustomer : c));
                 setCustomerModalOpen(false);
-                if (currentBounds) fetchCustomers(currentBounds); // Background sync
                 setSelectedCustomer(null); // Clear placement marker
                 if (onCustomerSaved) onCustomerSaved(updatedCustomer);
             } else {
                 // CREATE NEW CUSTOMER
                 const newCustomer = await createCustomer({ ...customer, projectId });
-                setCustomers(prev => [...prev, newCustomer]);
                 setCustomerModalOpen(false);
-                if (currentBounds) fetchCustomers(currentBounds);
                 setSelectedCustomer(null); // Clear placement marker
                 if (onCustomerSaved) onCustomerSaved(newCustomer);
             }
@@ -1133,7 +1089,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             onRulerPointsChange([...rulerPoints, { lat, lng }]);
                         } else if (repositioningCustomer) {
                             // Find the customer to check for existing drop
-                            const existingCustomer = customers.find(c => c.id === repositioningCustomer.id);
+                            const existingCustomer = allCustomers.find(c => c.id === repositioningCustomer.id);
                             const updates: Partial<Customer> = { lat, lng };
 
                             // Backend requires ctoId to verify/update drop connection
@@ -1153,9 +1109,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             updateCustomer(repositioningCustomer.id, updates)
                                 .then(() => {
                                     showToast(t('customer_updated_success') || "Cliente atualizado", 'success');
-                                    // Refresh map
-                                    const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
-                                    if (currentBounds) fetchCustomers(currentBounds);
+                                    // Map refresh now happens because allCustomers prop updates in App
                                 })
                                 .catch(err => {
                                     console.error("Failed to move customer:", err);
@@ -1217,7 +1171,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 <BoundsUpdater setBounds={setMapBoundsState} setZoom={setCurrentZoom} />
 
                 <CustomersLayer
-                    customers={customers}
+                    customers={allCustomers}
                     onCustomerClick={handleCustomerClick}
                     selectedId={selectedCustomer && (selectedCustomer as any).id}
                     visible={isCustomersVisible}
@@ -1225,7 +1179,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     onContextMenu={handleCustomerContextMenu}
                 />
                 <DropsLayer
-                    customers={customers}
+                    customers={allCustomers}
                     visible={isCustomersVisible}
                 />
 
@@ -1762,10 +1716,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                             showToast(t('toast_cable_split', { name: targetCto.name }), 'success');
 
-                            // Authoritative Update from Server Response
-                            setCustomers(prev => prev.map(c =>
-                                c.id === drawingCustomerDrop.customerId ? updatedCustomer : c
-                            ));
+                            // Authoritative Update from Server Response happens in App.tsx via onCustomerSaved
                             if (onCustomerSaved) onCustomerSaved(updatedCustomer);
                         }
 
@@ -1773,12 +1724,6 @@ export const MapView: React.FC<MapViewProps> = ({
                         setPendingConnection(null);
                         setDrawingCustomerDrop(null); // Finish drawing
 
-                        // Refresh map (Use state if available, fallback to prop)
-                        const currentBounds = (mapBoundsState || mapBounds) as L.LatLngBounds;
-                        if (currentBounds) {
-                            // Increased delay to ensure backend consistency and avoid overwriting with stale data
-                            setTimeout(() => fetchCustomers(currentBounds), 1000);
-                        }
 
                     } catch (error: any) {
                         console.error("Error saving drop:", error);

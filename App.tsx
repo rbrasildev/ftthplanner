@@ -2183,10 +2183,10 @@ export default function App() {
                     )}
 
                     <MapView
-                        ctos={getCurrentNetwork().ctos}
-                        pops={getCurrentNetwork().pops || []}
-                        poles={getCurrentNetwork().poles || []}
-                        cables={getCurrentNetwork().cables}
+                        ctos={currentProject?.network.ctos || []}
+                        pops={currentProject?.network.pops || []}
+                        poles={currentProject?.network.poles || []}
+                        cables={currentProject?.network.cables || []}
                         mode={toolMode}
                         userRole={userRole}
                         selectedId={selectedId}
