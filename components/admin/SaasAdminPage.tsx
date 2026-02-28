@@ -263,7 +263,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 localStorage.setItem('ftth_support_token', res.token);
                 // Previne que tente abrir o projeto previamente aberto pelo admin
                 localStorage.removeItem('ftth_current_project_id');
-                window.location.href = '/dashboard';
+                window.location.href = '/';
             }
         } catch (error: any) {
             console.error('Failed to create support session', error);

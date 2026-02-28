@@ -148,8 +148,8 @@ export default function App() {
             // FIX: If we clear project and are in support mode, ensure we go to projects dashboard view
             if (isSupportMode) {
                 setDashboardView('projects');
-                localStorage.removeItem(STORAGE_KEY_USER); // Remove admin username cache
-                setProjects([]); // Clear admin projects
+                // We should NOT clear user or projects here, 
+                // as the support admin still needs to see the client's dashboard.
             }
         }
         // Safety: Reset tool mode and clear backup when switching projects
@@ -449,7 +449,7 @@ export default function App() {
             setUser(null);
             setUserPlan('Plano Grátis');
             setIsSupportMode(false);
-            window.location.href = '/saas/admin'; // Redirect back to admin panel
+            window.location.href = '/'; // Redirect back to origin root to prevent 404 in production route
         }
     };
 
@@ -2190,7 +2190,7 @@ export default function App() {
             ) : (
                 <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
                     {/* Map Toolbar (Floating) */}
-                    <div className="absolute top-20 lg:top-4 left-0 right-0 z-[1000] pointer-events-none">
+                    <div className={`absolute ${isSupportMode ? 'top-20 lg:top-20' : 'top-20 lg:top-4'} left-0 right-0 z-[1000] pointer-events-none`}>
                         {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
                         <div className="pointer-events-auto w-fit mx-auto">
                             <MapToolbar
