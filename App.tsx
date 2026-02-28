@@ -445,6 +445,7 @@ export default function App() {
             localStorage.removeItem('ftth_support_token');
             localStorage.removeItem('ftth_current_project_id');
             localStorage.removeItem(STORAGE_KEY_USER); // Force admin to reload profile
+            setCurrentProjectId(null); // CRITICAL: Stop useEffect from re-saving to localStorage
             setProjects([]);
             setUser(null);
             setUserPlan('Plano Grátis');
