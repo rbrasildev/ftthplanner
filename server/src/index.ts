@@ -30,21 +30,11 @@ const PORT = process.env.PORT || 3000;
 
 // CORS
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://www.ftthplan.com',
-        'https://ftthplan.com',
-        'https://ftth.redeconexaonet.com',
-        'https://ftthplanner.com.br',
-        'https://www.ftthplanner.com.br',
-        'https://api.ftthplanner.com.br',
-        'https://www.api.ftthplanner.com.br'
-    ],
+    origin: true, // Reflete a origin automaticamente
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    optionsSuccessStatus: 204
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    optionsSuccessStatus: 200 // 200 é mais seguro para navegadores antigos que o 204
 }));
 
 app.get('/api/health', (req, res) => {
