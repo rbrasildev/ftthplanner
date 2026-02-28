@@ -7,6 +7,8 @@ export interface AuthRequest extends Request {
         username: string;
         companyId: string;
         role: string;
+        adminId?: string;
+        supportSessionId?: string;
     };
 }
 
@@ -44,7 +46,7 @@ export const requireSuperAdmin = (req: Request, res: Response, next: NextFunctio
 
 export const requireAdminOrOwner = (req: Request, res: Response, next: NextFunction) => {
     const user = (req as AuthRequest).user;
-    if (user?.role !== 'ADMIN' && user?.role !== 'OWNER' && user?.role !== 'SUPER_ADMIN') {
+    if (user?.role !== 'ADMIN' && user?.role !== 'OWNER' && user?.role !== 'SUPER_ADMIN' && user?.role !== 'support') {
         return res.sendStatus(403);
     }
     next();

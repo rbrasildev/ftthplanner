@@ -332,9 +332,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
     { id: 'backup', label: t('backup') || 'Backup', icon: Database },
   ].filter(item => {
-    // Only show Users, Backup and Registrations to ADMIN or OWNER
+    // Only show Users, Backup and Registrations to ADMIN or OWNER or SUPPORT
     if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
-      return userRole === 'ADMIN' || userRole === 'OWNER';
+      return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
     }
     return true;
   }) as MenuItem[];
@@ -438,7 +438,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                   />
                 </div>
-                {(userRole === 'ADMIN' || userRole === 'OWNER') && (
+                {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
                   <button
                     onClick={() => setIsCreating(true)}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
@@ -495,7 +495,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-50 dark:group-hover:bg-sky-900/30 rounded-lg flex items-center justify-center transition-colors">
                           <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
                         </div>
-                        {(userRole === 'ADMIN' || userRole === 'OWNER') && (
+                        {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
                           <div className="flex items-center gap-1 relative z-20">
                             {/* EDIT BUTTON */}
                             <button

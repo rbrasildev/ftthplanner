@@ -121,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
         if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
-            return userRole === 'ADMIN' || userRole === 'OWNER';
+            return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
         }
         return true;
     }) as MenuItem[];
@@ -402,7 +402,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     )}
 
-                    {!isCollapsed && isHydrated && (
+                    {!isCollapsed && isHydrated && userRole !== 'support' && (
                         <div className="px-2 mb-1">
                             <button
                                 onClick={onUpgradeClick}

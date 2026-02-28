@@ -24,7 +24,7 @@ import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import {
     Map as MapIcon, Zap, MousePointer2, Unplug, CheckCircle2, Eye, EyeOff, Server, Box, Move, Ruler, X, Settings, Check, Loader2, Building2,
-    UtilityPole, FileUp, ChevronRight, Plus
+    UtilityPole, FileUp, ChevronRight, Plus, AlertTriangle
 } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
@@ -108,15 +108,21 @@ export default function App() {
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
     const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_TOKEN));
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [isSupportMode, setIsSupportMode] = useState<boolean>(() => !!localStorage.getItem('ftth_support_token'));
 
     useEffect(() => {
-        if (token) {
-            const decoded = parseJwt(token);
+        // Evaluate token with interceptor logic priority
+        const supportToken = localStorage.getItem('ftth_support_token');
+        const activeToken = supportToken || token;
+
+        if (activeToken) {
+            const decoded = parseJwt(activeToken);
             if (decoded?.role) setUserRole(decoded.role);
+            if (decoded?.username) setUser(decoded.username);
         } else {
             setUserRole(null);
         }
-    }, [token]);
+    }, [token, isSupportMode]);
 
     const [authView, setAuthView] = useState<'landing' | 'login' | 'register' | 'reset-password'>('landing');
     const [selectedRegisterPlan, setSelectedRegisterPlan] = useState<string | undefined>(undefined);
@@ -139,11 +145,17 @@ export default function App() {
             localStorage.setItem('ftth_current_project_id', currentProjectId);
         } else {
             localStorage.removeItem('ftth_current_project_id');
+            // FIX: If we clear project and are in support mode, ensure we go to projects dashboard view
+            if (isSupportMode) {
+                setDashboardView('projects');
+                localStorage.removeItem(STORAGE_KEY_USER); // Remove admin username cache
+                setProjects([]); // Clear admin projects
+            }
         }
         // Safety: Reset tool mode and clear backup when switching projects
         setToolMode('view');
         previousNetworkState.current = null;
-    }, [currentProjectId]);
+    }, [currentProjectId, isSupportMode]);
     const prevProjectIdRef = useRef<string>('');
 
     const [showProjectManager, setShowProjectManager] = useState(false);
@@ -261,6 +273,10 @@ export default function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [dashboardView, setDashboardView] = useState<any>(() => {
+        // Se começou a sessão de suporte agora, forçamos 'projects'
+        if (!!localStorage.getItem('ftth_support_token')) {
+            return 'projects';
+        }
         const saved = localStorage.getItem('dashboard_active_view');
         return saved || 'projects';
     });
@@ -270,8 +286,11 @@ export default function App() {
     }, [isSidebarCollapsed]);
 
     useEffect(() => {
-        localStorage.setItem('dashboard_active_view', dashboardView);
-    }, [dashboardView]);
+        // Salva somente se NAO for suporte, ou se a view mudou para nao admin_users.
+        if (!isSupportMode || dashboardView !== 'admin_users') {
+            localStorage.setItem('dashboard_active_view', dashboardView);
+        }
+    }, [dashboardView, isSupportMode]);
 
     useEffect(() => user ? localStorage.setItem(STORAGE_KEY_USER, user) : localStorage.removeItem(STORAGE_KEY_USER), [user]);
     useEffect(() => token ? localStorage.setItem(STORAGE_KEY_TOKEN, token) : localStorage.removeItem(STORAGE_KEY_TOKEN), [token]);
@@ -288,9 +307,9 @@ export default function App() {
             // Hydrate User Session (Plan & Subscription)
             authService.getMe().then((data: any) => {
                 if (data.user) {
-                    // Check if user matches (sanity check)
+                    // Force update user based on DB response, even in support mode, 
+                    // this guarantees the client name shows in sidebar
                     if (data.user.username !== user) {
-                        // Token belongs to different user? Update user state.
                         setUser(data.user.username);
                     }
 
@@ -415,6 +434,23 @@ export default function App() {
     const showToast = (msg: string, type: 'success' | 'info' | 'error' = 'success') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleEndSupport = async () => {
+        try {
+            await saasService.endSupportSession();
+        } catch (error) {
+            console.error('Failed to end support session remotely', error);
+        } finally {
+            localStorage.removeItem('ftth_support_token');
+            localStorage.removeItem('ftth_current_project_id');
+            localStorage.removeItem(STORAGE_KEY_USER); // Force admin to reload profile
+            setProjects([]);
+            setUser(null);
+            setUserPlan('Plano Grátis');
+            setIsSupportMode(false);
+            window.location.href = '/saas/admin'; // Redirect back to admin panel
+        }
     };
 
     // const currentProject = projects.find(p => p.id === currentProjectId); // REMOVED (using state)
@@ -2011,6 +2047,19 @@ export default function App() {
                 </div>
             )}
 
+            {isSupportMode && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[99999] bg-orange-600 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-4 shadow-2xl font-bold text-sm border-2 border-orange-400 animate-in fade-in slide-in-from-top-4">
+                    <AlertTriangle className="w-5 h-5 animate-pulse" />
+                    <span>MODO DE SUPORTE ATIVO</span>
+                    <button
+                        onClick={handleEndSupport}
+                        className="bg-white text-orange-600 hover:bg-orange-50 px-4 py-1.5 rounded-full text-xs transition-all shadow-sm active:scale-95"
+                    >
+                        Encerrar Suporte
+                    </button>
+                </div>
+            )}
+
             {/* Mobile TopBar */}
             <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
@@ -2045,6 +2094,7 @@ export default function App() {
                     setUser(null);
                     setToken(null);
                     setCurrentProjectId(null);
+                    localStorage.removeItem('ftth_support_token');
                 }}
                 onUpgradeClick={() => setIsAccountSettingsOpen(true)}
                 setCurrentProjectId={setCurrentProjectId}

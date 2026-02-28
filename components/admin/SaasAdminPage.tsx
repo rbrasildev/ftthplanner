@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
@@ -253,6 +253,21 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         } catch (error) {
             console.error(error);
             alert('Failed to update user');
+        }
+    };
+
+    const handleEntrarSuporte = async (userId: string) => {
+        try {
+            const res = await saasService.createSupportSession(userId);
+            if (res.token) {
+                localStorage.setItem('ftth_support_token', res.token);
+                // Previne que tente abrir o projeto previamente aberto pelo admin
+                localStorage.removeItem('ftth_current_project_id');
+                window.location.href = '/dashboard';
+            }
+        } catch (error: any) {
+            console.error('Failed to create support session', error);
+            alert(error.response?.data?.error || 'Erro ao iniciar sessão de suporte');
         }
     };
 
@@ -1114,6 +1129,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 <Shield className="w-4 h-4" />
                                                             </button>
                                                         )}
+                                                        <button
+                                                            onClick={() => handleEntrarSuporte(user.id)}
+                                                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Acessar Modo Suporte"
+                                                        >
+                                                            <UserCheck className="w-4 h-4" />
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}

@@ -139,5 +139,12 @@ export const uploadSaaSLogo = async (logoBase64: string) => {
     return response.data;
 };
 
+export const createSupportSession = async (targetUserId: string) => {
+    const response = await api.post('/support/session', { targetUserId });
+    return response.data;
+};
 
-
+export const endSupportSession = async (sessionId?: string) => {
+    const response = await api.post('/support/end', { sessionId });
+    return response.data;
+};

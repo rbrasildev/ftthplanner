@@ -13,6 +13,7 @@ import catalogRoutes from './routes/catalogRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import companyRoutes from './routes/companyRoutes';
 import customerRoutes from './routes/customerRoutes';
+import supportRoutes from './routes/supportRoutes';
 
 
 // Tratamento de erros globais para debug em produção
@@ -85,6 +86,7 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/support', supportRoutes);
 
 
 // Import Backup Service and Routes

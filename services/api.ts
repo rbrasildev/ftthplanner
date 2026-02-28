@@ -6,7 +6,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('ftth_planner_token_v1');
+        const supportToken = localStorage.getItem('ftth_support_token');
+        const mainToken = localStorage.getItem('ftth_planner_token_v1');
+        const token = supportToken || mainToken;
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
