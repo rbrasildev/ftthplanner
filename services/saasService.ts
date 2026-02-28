@@ -153,3 +153,8 @@ export const getRetentionDashboard = async () => {
     const response = await api.get('/saas/retention');
     return response.data;
 };
+
+export const processRetentionData = async () => {
+    const response = await api.post('/saas/retention/process');
+    return response.data;
+};

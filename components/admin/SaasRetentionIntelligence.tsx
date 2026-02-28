@@ -68,6 +68,18 @@ export const SaasRetentionIntelligence: React.FC = () => {
         }
     };
 
+    const handleRefreshData = async () => {
+        try {
+            setLoading(true);
+            await saasService.processRetentionData();
+            await loadData();
+        } catch (error) {
+            console.error('Failed to process retention data manually', error);
+            alert(t('error_processing_retention') || 'Erro ao processar as métricas de retenção. Verifique o console.');
+            setLoading(false);
+        }
+    };
+
     if (loading || !data) {
         return <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-full">
             <HeartPulse className="w-12 h-12 text-slate-200 animate-pulse mb-4" />
@@ -105,7 +117,7 @@ export const SaasRetentionIntelligence: React.FC = () => {
                         {t('retention_subtitle')}
                     </p>
                 </div>
-                <button onClick={loadData} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300 transition-all flex items-center gap-2">
+                <button onClick={handleRefreshData} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300 transition-all flex items-center gap-2">
                     <Activity className="w-4 h-4" />
                     {t('retention_refresh_data')}
                 </button>

@@ -3,6 +3,18 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+import { processRetentionMetrics } from '../services/retentionService';
+
+export const processRetentionManual = async (req: Request, res: Response) => {
+    try {
+        await processRetentionMetrics();
+        res.json({ success: true, message: 'Retention metrics processed successfully.' });
+    } catch (error) {
+        console.error('Error manually processing retention metrics:', error);
+        res.status(500).json({ error: 'Failed to process retention metrics manually.' });
+    }
+};
+
 export const getRetentionDashboard = async (req: Request, res: Response) => {
     try {
         const today = new Date();

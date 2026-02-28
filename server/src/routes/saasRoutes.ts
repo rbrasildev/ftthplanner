@@ -4,7 +4,7 @@ import { getPlans, createPlan, updatePlan, getCompanies, updateCompanyStatus, ge
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
-import { getRetentionDashboard } from '../controllers/retentionController';
+import { getRetentionDashboard, processRetentionManual } from '../controllers/retentionController';
 
 const router = express.Router();
 
@@ -56,5 +56,6 @@ router.post('/email/send', authenticateToken, requireSuperAdmin, sendTemplate);
 
 // Retention Intelligence
 router.get('/retention', authenticateToken, requireSuperAdmin, getRetentionDashboard);
+router.post('/retention/process', authenticateToken, requireSuperAdmin, processRetentionManual);
 
 export default router;
