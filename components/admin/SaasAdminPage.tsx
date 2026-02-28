@@ -2075,6 +2075,15 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                             <p className="text-xs text-slate-400 uppercase">{u.role}</p>
                                                         </div>
                                                     </div>
+                                                    {['OWNER', 'ADMIN'].includes(u.role) && (
+                                                        <button
+                                                            onClick={() => handleEntrarSuporte(u.id)}
+                                                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                            title={t('saas_support_mode') || 'Acessar Modo Suporte'}
+                                                        >
+                                                            <UserCheck className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ))}
                                             {(!selectedCompany.users || selectedCompany.users.length === 0) && (
