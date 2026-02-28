@@ -14,6 +14,7 @@ import paymentRoutes from './routes/paymentRoutes';
 import companyRoutes from './routes/companyRoutes';
 import customerRoutes from './routes/customerRoutes';
 import supportRoutes from './routes/supportRoutes';
+import { initCronJobs } from './jobs/cronJobs';
 
 
 // Tratamento de erros globais para debug em produção
@@ -36,7 +37,9 @@ app.use(cors({
         'https://ftthplan.com',
         'https://ftth.redeconexaonet.com',
         'https://ftthplanner.com.br',
-        'https://www.ftthplanner.com.br'
+        'https://www.ftthplanner.com.br',
+        'https://api.ftthplanner.com.br',
+        'https://www.api.ftthplanner.com.br'
     ],
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -97,6 +100,7 @@ app.use('/api/backups', backupRoutes);
 
 // Initialize Scheduler
 BackupService.initScheduledBackups();
+initCronJobs();
 
 // Seed Plans and Admin (Desativado para evitar recriação automática de planos deletados)
 // import { seedDefaultPlans, seedSuperAdmin } from './services/seedService';

@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
 import { SendTemplateModal } from './modals/SendTemplateModal';
+import { SaasRetentionIntelligence } from './SaasRetentionIntelligence';
 
 interface Company {
     id: string;
@@ -94,7 +95,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention'>('dashboard');
     const [plans, setPlans] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
     const [smtpConfig, setSmtpConfig] = useState<any>({});
@@ -158,16 +159,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     // ... (omitted) ...
 
     const navItems = [
-        { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
-        { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
-        { id: 'global_map', label: 'Global Map', icon: <Map className="w-5 h-5" /> },
-        { id: 'companies', label: 'Companies', icon: <Building2 className="w-5 h-5" /> },
-        { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
-        { id: 'plans', label: 'SaaS Plans', icon: <CreditCard className="w-5 h-5" /> },
-        { id: 'videos', label: 'Demo Videos', icon: <Play className="w-5 h-5" /> },
-        { id: 'email', label: 'Email Settings', icon: <Mail className="w-5 h-5" /> },
-        { id: 'audit', label: 'Audit Logs', icon: <Settings className="w-5 h-5" /> },
-        { id: 'config', label: 'SaaS Config', icon: <Shield className="w-5 h-5" /> },
+        { id: 'dashboard', label: t('saas_nav_overview'), icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'analytics', label: t('saas_nav_analytics'), icon: <BarChart3 className="w-5 h-5" /> },
+        { id: 'retention', label: t('saas_nav_retention'), icon: <HeartPulse className="w-5 h-5" /> },
+        { id: 'global_map', label: t('saas_nav_global_map'), icon: <Map className="w-5 h-5" /> },
+        { id: 'companies', label: t('saas_nav_companies'), icon: <Building2 className="w-5 h-5" /> },
+        { id: 'users', label: t('saas_nav_users'), icon: <Users className="w-5 h-5" /> },
+        { id: 'plans', label: t('saas_nav_plans'), icon: <CreditCard className="w-5 h-5" /> },
+        { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
+        { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
+        { id: 'audit', label: t('saas_nav_audit'), icon: <Settings className="w-5 h-5" /> },
+        { id: 'config', label: t('saas_nav_config'), icon: <Shield className="w-5 h-5" /> },
     ];
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
@@ -524,8 +526,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             <main className="flex-1 overflow-auto relative">
                 <header className="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md px-8 py-6 flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white capitalize">{activeView === 'audit' ? 'Audit Logs' : activeView}</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Manage your platform resources and subscriptions</p>
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white capitalize">
+                            {activeView === 'audit' ? t('saas_nav_audit') :
+                                activeView === 'dashboard' ? t('saas_nav_overview') :
+                                    activeView === 'analytics' ? t('saas_nav_analytics') :
+                                        activeView === 'retention' ? t('saas_nav_retention') :
+                                            activeView === 'global_map' ? t('saas_nav_global_map') :
+                                                activeView === 'companies' ? t('saas_nav_companies') :
+                                                    activeView === 'users' ? t('saas_nav_users') :
+                                                        activeView === 'plans' ? t('saas_nav_plans') :
+                                                            activeView === 'videos' ? t('saas_nav_videos') :
+                                                                activeView === 'email' ? t('saas_nav_email') :
+                                                                    activeView === 'config' ? t('saas_nav_config') : activeView}
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t('saas_dashboard_subtitle')}</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <button
@@ -533,10 +547,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-sm"
                         >
                             <Lock className="w-3 h-3" />
-                            Change Password
+                            {t('saas_change_password')}
                         </button>
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Administrator</p>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('saas_administrator')}</p>
                             <p className="text-xs text-slate-400">super@ftthmaster.com</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold border-2 border-white dark:border-slate-800 shadow-sm">
@@ -555,10 +569,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
                                             <Building2 className="w-6 h-6" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">Total</span>
+                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">{t('saas_total')}</span>
                                     </div>
                                     <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">{companies.length}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Registered Companies</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_registered_companies')}</p>
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
@@ -566,10 +580,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
                                             <CheckCircle2 className="w-6 h-6" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">Active</span>
+                                        <span className="text-xs font-bold px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">{t('saas_active')}</span>
                                     </div>
                                     <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">{companies.filter(c => c.status === 'ACTIVE').length}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Active Subscriptions</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_active_subscriptions')}</p>
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
@@ -577,12 +591,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
                                             <CreditCard className="w-6 h-6" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">Monthly</span>
+                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">{t('saas_monthly')}</span>
                                     </div>
                                     <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">
                                         ${companies.reduce((acc, c) => acc + (c.plan?.price || 0), 0).toFixed(2)}
                                     </h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Estimated MRR</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_estimated_mrr')}</p>
                                 </div>
                             </div>
 
@@ -593,7 +607,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                                         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                                             <Activity className="w-5 h-5 text-indigo-500" />
-                                            Platform Health
+                                            {t('saas_platform_health')}
                                         </h3>
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
@@ -602,7 +616,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <Zap className="w-4 h-4" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-500 uppercase">Total Projects</p>
+                                                        <p className="text-xs font-bold text-slate-500 uppercase">{t('saas_total_projects')}</p>
                                                         <p className="font-bold text-slate-900 dark:text-white">{companies.reduce((acc, c) => acc + (c._count.projects || 0), 0)}</p>
                                                     </div>
                                                 </div>
@@ -613,9 +627,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <Server className="w-4 h-4" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-500 uppercase">Avg. Size</p>
+                                                        <p className="text-xs font-bold text-slate-500 uppercase">{t('saas_avg_size')}</p>
                                                         <p className="font-bold text-slate-900 dark:text-white">
-                                                            {(companies.reduce((acc, c) => acc + (c._count.projects || 0), 0) / (companies.length || 1)).toFixed(1)} <span className="text-xs font-normal text-slate-400">proj/sub</span>
+                                                            {(companies.reduce((acc, c) => acc + (c._count.projects || 0), 0) / (companies.length || 1)).toFixed(1)} <span className="text-xs font-normal text-slate-400">{t('saas_proj_sub')}</span>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -633,7 +647,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-500">
                                                 <h3 className="font-bold text-sm text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
                                                     <AlertTriangle className="w-4 h-4" />
-                                                    Capacity Alerts
+                                                    {t('saas_capacity_alerts')}
                                                 </h3>
                                                 <div className="space-y-2">
                                                     {companies.filter(c => {
@@ -644,10 +658,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     }).slice(0, 5).map(c => (
                                                         <div key={c.id} className="text-[11px] flex justify-between items-center bg-white/50 dark:bg-slate-900/50 p-2 rounded-lg group cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-amber-200" onClick={() => setSelectedCompany(c)}>
                                                             <span className="font-bold text-slate-700 dark:text-slate-200 truncate pr-2">{c.name}</span>
-                                                            <span className="shrink-0 text-[10px] text-amber-600 font-bold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded">Near Limit</span>
+                                                            <span className="shrink-0 text-[10px] text-amber-600 font-bold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded">{t('saas_near_limit')}</span>
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => setActiveView('companies')} className="w-full text-center text-[10px] text-amber-600 font-bold hover:underline mt-2">View all companies &rarr;</button>
+                                                    <button onClick={() => setActiveView('companies')} className="w-full text-center text-[10px] text-amber-600 font-bold hover:underline mt-2">{t('saas_view_all_companies')} &rarr;</button>
                                                 </div>
                                             </div>
                                         )}
@@ -655,9 +669,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     {/* Action Banner */}
                                     <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => setActiveView('companies')}>
                                         <div className="relative z-10">
-                                            <h3 className="font-bold text-lg mb-1">Manage Companies</h3>
-                                            <p className="text-indigo-100 text-sm mb-4">View details, update limits, or suspend access.</p>
-                                            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-bold transition-all">Go to Companies &rarr;</button>
+                                            <h3 className="font-bold text-lg mb-1">{t('saas_manage_companies')}</h3>
+                                            <p className="text-indigo-100 text-sm mb-4">{t('saas_manage_companies_sub')}</p>
+                                            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-bold transition-all">{t('saas_go_to_companies')} &rarr;</button>
                                         </div>
                                         <Building2 className="absolute -bottom-4 -right-4 w-32 h-32 text-indigo-500/30 group-hover:scale-110 transition-transform duration-500" />
                                     </div>
@@ -667,16 +681,16 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
                                     <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
                                         <div>
-                                            <h3 className="font-bold text-lg">Live Activity Feed</h3>
-                                            <p className="text-xs text-slate-500">Real-time system events and audit logs</p>
+                                            <h3 className="font-bold text-lg">{t('saas_live_activity')}</h3>
+                                            <p className="text-xs text-slate-500">{t('saas_live_activity_sub')}</p>
                                         </div>
-                                        <button onClick={() => setActiveView('audit')} className="text-xs text-indigo-600 hover:text-indigo-500 font-bold uppercase tracking-wider hover:underline">View History</button>
+                                        <button onClick={() => setActiveView('audit')} className="text-xs text-indigo-600 hover:text-indigo-500 font-bold uppercase tracking-wider hover:underline">{t('saas_view_history')}</button>
                                     </div>
                                     <div className="flex-1 overflow-auto max-h-[400px] p-0">
                                         {auditLogs.length === 0 ? (
                                             <div className="p-8 text-center text-slate-400 flex flex-col items-center">
                                                 <Activity className="w-12 h-12 mb-3 opacity-20" />
-                                                <p>No recent activity recorded.</p>
+                                                <p>{t('saas_no_recent_activity')}</p>
                                             </div>
                                         ) : (
                                             <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -728,7 +742,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         <input
                                             type="text"
-                                            placeholder="Search name or ID..."
+                                            placeholder={t('saas_search_company')}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
@@ -740,30 +754,30 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             onChange={(e) => setStatusFilter(e.target.value)}
                                             className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                                         >
-                                            <option value="ALL">All Status</option>
-                                            <option value="ACTIVE">Active</option>
-                                            <option value="SUSPENDED">Suspended</option>
+                                            <option value="ALL">{t('saas_all_status')}</option>
+                                            <option value="ACTIVE">{t('saas_active')}</option>
+                                            <option value="SUSPENDED">{t('saas_suspender')}</option>
                                         </select>
                                         <select
                                             value={planFilter}
                                             onChange={(e) => setPlanFilter(e.target.value)}
                                             className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                                         >
-                                            <option value="ALL">All Plans</option>
+                                            <option value="ALL">{t('saas_all_plans')}</option>
                                             {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                     </div>
                                 </div>
                                 <div className="text-sm text-slate-500">
-                                    Showing <span className="font-bold text-slate-900 dark:text-white">{filteredCompanies.length}</span> results
+                                    {t('saas_showing_results', { val: filteredCompanies.length })}
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
-                                            <th className="px-6 py-4">{t('company_name') || 'Company Name'}</th>
-                                            <th className="px-6 py-4">{t('current_plan') || 'Current Plan'}</th>
+                                            <th className="px-6 py-4">{t('saas_company_name')}</th>
+                                            <th className="px-6 py-4">{t('saas_current_plan')}</th>
                                             <th className="px-6 py-4 text-center">{t('admin_col_phone')}</th>
                                             <th className="px-6 py-4 text-center">{t('admin_col_infrastructure')}</th>
                                             <th className="px-6 py-4">{t('status')}</th>
@@ -964,18 +978,18 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         activeView === 'audit' && (
                             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                 <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-                                    <h3 className="font-bold text-lg">System Audit Log</h3>
-                                    <p className="text-sm text-slate-500">Immutable record of all administrative actions.</p>
+                                    <h3 className="font-bold text-lg">{t('saas_audit_title')}</h3>
+                                    <p className="text-sm text-slate-500">{t('saas_audit_subtitle')}</p>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                             <tr>
-                                                <th className="px-6 py-4">Time</th>
-                                                <th className="px-6 py-4">User</th>
-                                                <th className="px-6 py-4">Action</th>
-                                                <th className="px-6 py-4">Entity</th>
-                                                <th className="px-6 py-4">Details</th>
+                                                <th className="px-6 py-4">{t('saas_audit_time')}</th>
+                                                <th className="px-6 py-4">{t('saas_audit_user')}</th>
+                                                <th className="px-6 py-4">{t('saas_audit_action')}</th>
+                                                <th className="px-6 py-4">{t('saas_audit_entity')}</th>
+                                                <th className="px-6 py-4">{t('saas_audit_details')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -985,7 +999,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         {new Date(log.createdAt).toLocaleString()}
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">
-                                                        {log.user?.username || 'System'}
+                                                        {log.user?.username || t('saas_system')}
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -1011,6 +1025,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
 
+                    {activeView === 'retention' && <SaasRetentionIntelligence />}
+
                     {activeView === 'global_map' && (
                         <div className="h-[calc(100vh-160px)] w-full">
                             <SaasGlobalMap />
@@ -1021,9 +1037,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         activeView === 'users' && (
                             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                 <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                                    <h3 className="font-bold text-lg">Platform Users</h3>
+                                    <h3 className="font-bold text-lg">{t('saas_users_title')}</h3>
                                     <div className="text-sm text-slate-500">
-                                        Total: <span className="font-bold text-slate-900 dark:text-white">{users.length}</span>
+                                        {t('saas_total')}: <span className="font-bold text-slate-900 dark:text-white">{users.length}</span>
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -1060,7 +1076,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 {user.company.name}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-slate-400 italic">No Company</span>
+                                                            <span className="text-slate-400 italic">{t('saas_no_company')}</span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -1070,10 +1086,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                             className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs rounded py-1 px-2"
                                                             disabled={user.role === 'SUPER_ADMIN'}
                                                         >
-                                                            <option value="OWNER">Owner</option>
-                                                            <option value="ADMIN">Admin</option>
-                                                            <option value="EDITOR">Editor</option>
-                                                            <option value="VIEWER">Viewer</option>
+                                                            <option value="OWNER">{t('saas_role_owner')}</option>
+                                                            <option value="ADMIN">{t('saas_role_admin')}</option>
+                                                            <option value="EDITOR">{t('saas_role_editor')}</option>
+                                                            <option value="VIEWER">{t('saas_role_viewer')}</option>
                                                         </select>
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -1154,7 +1170,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
                                 >
                                     <Play className="w-4 h-4" />
-                                    Add New Video
+                                    {t('saas_add_video')}
                                 </button>
                             </div>
 
@@ -1162,10 +1178,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
-                                            <th className="px-6 py-4">Video</th>
-                                            <th className="px-6 py-4">Order</th>
-                                            <th className="px-6 py-4">Status</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
+                                            <th className="px-6 py-4">{t('saas_video')}</th>
+                                            <th className="px-6 py-4">{t('saas_video_order')}</th>
+                                            <th className="px-6 py-4">{t('saas_video_status')}</th>
+                                            <th className="px-6 py-4 text-right">{t('saas_video_actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1185,7 +1201,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <td className="px-6 py-4 font-mono text-xs">{video.order}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${video.active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                                                        {video.active ? 'Active' : 'Inactive'}
+                                                        {video.active ? t('saas_active') : t('saas_inactive')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
@@ -1215,48 +1231,48 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
                                             <Server className="w-5 h-5" />
                                         </div>
-                                        <h2 className="text-lg font-bold">SMTP Configuration</h2>
+                                        <h2 className="text-lg font-bold">{t('saas_smtp_title')}</h2>
                                     </div>
 
                                     <form id="smtp-form" onSubmit={handleSaveSmtp} className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Host</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_host')}</label>
                                                 <input name="host" defaultValue={smtpConfig?.host} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="smtp.example.com" required />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Port</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_port')}</label>
                                                 <input name="port" type="number" defaultValue={smtpConfig?.port} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="587" required />
                                             </div>
                                             <div className="flex items-end pb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer">
                                                     <input type="checkbox" name="secure" defaultChecked={smtpConfig?.secure} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                                    <span className="text-sm font-medium">SSL/TLS (Secure)</span>
+                                                    <span className="text-sm font-medium">{t('saas_smtp_secure')}</span>
                                                 </label>
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Username / E-mail</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_user')}</label>
                                                 <input name="user" defaultValue={smtpConfig?.user} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="user@example.com" required />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Password</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_password')}</label>
                                                 <input name="pass" type="password" defaultValue={smtpConfig?.pass} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="••••••••" required />
                                             </div>
                                             <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sender E-mail</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_from')}</label>
                                                 <input name="fromEmail" defaultValue={smtpConfig?.fromEmail} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="noreply@ftthplanner.com" required />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sender Name</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_from_name')}</label>
                                                 <input name="fromName" defaultValue={smtpConfig?.fromName} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm" placeholder="FTTH Planner Pro" required />
                                             </div>
                                         </div>
                                         <div className="flex gap-3 pt-4">
                                             <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all">
-                                                Save Settings
+                                                {t('saas_save_settings')}
                                             </button>
                                             <button type="button" onClick={handleTestSmtp} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg font-bold text-sm transition-all">
-                                                Test Connection
+                                                {t('saas_test_connection')}
                                             </button>
                                         </div>
                                     </form>
@@ -1270,7 +1286,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl">
                                                     <Mail className="w-5 h-5" />
                                                 </div>
-                                                <h2 className="text-lg font-bold">Email Templates</h2>
+                                                <h2 className="text-lg font-bold">{t('saas_email_templates')}</h2>
                                             </div>
                                             <button onClick={() => openTemplateModal()} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
                                                 <Zap className="w-4 h-4" />
@@ -1337,224 +1353,222 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
                                         <Shield className="w-6 h-6" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-xl font-bold">Configurações Globais da Plataforma</h2>
-                                        <p className="text-sm text-slate-500">Defina a identidade visual e contatos mestres do seu SaaS</p>
-                                    </div>
+                                    <h2 className="text-xl font-bold">{t('saas_config_title')}</h2>
+                                    <p className="text-sm text-slate-500">{t('saas_config_subtitle')}</p>
                                 </div>
+                            </div>
 
-                                <div className="space-y-8">
-                                    {/* Branding Section */}
-                                    <div className="space-y-6">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            Branding & Identidade
-                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-                                        </h3>
+                            <div className="space-y-8">
+                                {/* Branding Section */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        {t('saas_config_branding')}
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                    </h3>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Nome da Plataforma</label>
-                                                    <input
-                                                        defaultValue={saasConfig?.appName}
-                                                        onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                        placeholder="Ex: FTTH Planner Pro"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Website Principal</label>
-                                                    <input
-                                                        defaultValue={saasConfig?.websiteUrl || ''}
-                                                        onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                        placeholder="https://suaplataforma.com"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                                    <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                                                        {saasConfig?.appLogoUrl ? (
-                                                            <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
-                                                        ) : (
-                                                            <Monitor className="w-8 h-8 text-slate-300" />
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo Master (Servidor)</label>
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            onChange={async (e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = async () => {
-                                                                        const base64 = reader.result as string;
-                                                                        try {
-                                                                            const result = await saasService.uploadSaaSLogo(base64);
-                                                                            if (result.success) {
-                                                                                setSaasConfig(prev => prev ? { ...prev, appLogoUrl: result.logoUrl } : null);
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Failed to upload SaaS logo:', err);
-                                                                        }
-                                                                    };
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
-                                                            className="text-[10px] w-full"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Support Section */}
-                                    <div className="space-y-6">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            Suporte & Contato
-                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-                                        </h3>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">E-mail de Suporte</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_app_name')}</label>
                                                 <input
-                                                    defaultValue={saasConfig?.supportEmail || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
+                                                    defaultValue={saasConfig?.appName}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
                                                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="suporte@suaplataforma.com"
+                                                    placeholder="Ex: FTTH Planner Pro"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Telefone de Suporte</label>
-                                                <input
-                                                    defaultValue={saasConfig?.supportPhone || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="+55 (00) 00000-0000"
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Website Principal</label>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_website')}</label>
                                                 <input
                                                     defaultValue={saasConfig?.websiteUrl || ''}
                                                     onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
                                                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="https://seusite.com.br"
+                                                    placeholder="https://suaplataforma.com"
                                                 />
                                             </div>
                                         </div>
-                                    </div>
-
-                                    {/* SEO Section */}
-                                    <div className="space-y-6">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            SEO & Metatags
-                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-                                        </h3>
 
                                         <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Descrição Curta (SEO)</label>
-                                                <textarea
-                                                    defaultValue={saasConfig?.appDescription || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
-                                                    placeholder="Planeje redes FTTH com facilidade..."
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Palavras-chave (Keywords)</label>
-                                                <input
-                                                    defaultValue={saasConfig?.appKeywords || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="ftth, projetos, fibra óptica, telecall"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">OG Image URL (Social Share)</label>
-                                                <input
-                                                    defaultValue={saasConfig?.ogImageUrl || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Social Media Section */}
-                                    <div className="space-y-6">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            Redes Sociais
-                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-                                        </h3>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {['Facebook', 'Twitter', 'Instagram', 'Linkedin', 'Youtube'].map((social) => (
-                                                <div key={social}>
-                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{social} URL</label>
+                                            <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {saasConfig?.appLogoUrl ? (
+                                                        <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                                                    ) : (
+                                                        <Monitor className="w-8 h-8 text-slate-300" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_config_logo')}</label>
                                                     <input
-                                                        defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
-                                                        onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
-                                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                        placeholder={`https://${social.toLowerCase()}.com/perfil`}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = async () => {
+                                                                    const base64 = reader.result as string;
+                                                                    try {
+                                                                        const result = await saasService.uploadSaaSLogo(base64);
+                                                                        if (result.success) {
+                                                                            setSaasConfig(prev => prev ? { ...prev, appLogoUrl: result.logoUrl } : null);
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error('Failed to upload SaaS logo:', err);
+                                                                    }
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }}
+                                                        className="text-[10px] w-full"
                                                     />
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Content & Layout Section */}
-                                    <div className="space-y-6">
-                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            Conteúdo da Landing Page
-                                            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
-                                        </h3>
+                                {/* Support Section */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        {t('saas_config_support')}
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                    </h3>
 
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Hero Preview Image (URL)</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_email')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.supportEmail || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="suporte@suaplataforma.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_phone')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.supportPhone || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="+55 (00) 00000-0000"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_website')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.websiteUrl || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="https://seusite.com.br"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SEO Section */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        {t('saas_config_seo')}
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_desc')}</label>
+                                            <textarea
+                                                defaultValue={saasConfig?.appDescription || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                                placeholder="Planeje redes FTTH com facilidade..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_keywords')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.appKeywords || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="ftth, projetos, fibra óptica, telecall"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_image')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.ogImageUrl || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Social Media Section */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        {t('saas_config_social')}
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                    </h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {['Facebook', 'Twitter', 'Instagram', 'Linkedin', 'Youtube'].map((social) => (
+                                            <div key={social}>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{social} URL</label>
                                                 <input
-                                                    defaultValue={saasConfig?.heroPreviewUrl || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
+                                                    defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
+                                                    onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
                                                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="/dashboard-preview.png"
+                                                    placeholder={`https://${social.toLowerCase()}.com/perfil`}
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">CTA Background Image (URL)</label>
-                                                <input
-                                                    defaultValue={saasConfig?.ctaBgImageUrl || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ ctaBgImageUrl: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="URL da imagem de fundo"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Texto do Rodapé (Descrição)</label>
-                                                <textarea
-                                                    defaultValue={saasConfig?.footerDesc || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ footerDesc: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
-                                                    placeholder="Software profissional para planejamento..."
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Texto de Direitos Autorais</label>
-                                                <input
-                                                    defaultValue={saasConfig?.copyrightText || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ copyrightText: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="© 2024 Todos os direitos reservados."
-                                                />
-                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Content & Layout Section */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        {t('saas_config_landing')}
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800"></div>
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_hero')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.heroPreviewUrl || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="/dashboard-preview.png"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_cta')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.ctaBgImageUrl || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ ctaBgImageUrl: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="URL da imagem de fundo"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_footer')}</label>
+                                            <textarea
+                                                defaultValue={saasConfig?.footerDesc || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ footerDesc: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                                placeholder="Software profissional para planejamento..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_copyright')}</label>
+                                            <input
+                                                defaultValue={saasConfig?.copyrightText || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ copyrightText: e.target.value })}
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                placeholder="© 2024 Todos os direitos reservados."
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -1568,7 +1582,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             <form onSubmit={handleSavePlan} className="flex flex-col h-full overflow-hidden">
                                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                        {editingPlan ? 'Edit SaaS Plan' : 'Create New Plan'}
+                                        {editingPlan ? t('saas_plan_edit') : t('saas_plan_create')}
                                     </h3>
                                     <button
                                         type="button"
@@ -1580,7 +1594,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan Name</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('saas_plan_name')}</label>
                                         <input
                                             name="name"
                                             defaultValue={editingPlan?.name}
@@ -1764,54 +1778,57 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </form>
                         </div>
                     </div >
-                )}
+                )
+                }
 
-                {isVideoModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-                            <form onSubmit={handleSaveVideo}>
-                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                        {editingVideo ? 'Edit Video' : 'Add New Video'}
-                                    </h3>
-                                    <button type="button" onClick={() => setIsVideoModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
-                                </div>
-                                <div className="p-6 space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Title</label>
-                                        <input name="title" defaultValue={editingVideo?.title} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                {
+                    isVideoModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+                                <form onSubmit={handleSaveVideo}>
+                                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                            {editingVideo ? 'Edit Video' : 'Add New Video'}
+                                        </h3>
+                                        <button type="button" onClick={() => setIsVideoModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Description</label>
-                                        <textarea name="description" defaultValue={editingVideo?.description} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Embed URL (YouTube/Vimeo)</label>
-                                        <input name="url" defaultValue={editingVideo?.url} required placeholder="https://www.youtube.com/embed/..." className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs" />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-6 space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">Icon Name (Lucide)</label>
-                                            <input name="icon" defaultValue={editingVideo?.icon || 'Monitor'} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                            <label className="block text-sm font-medium mb-1">Title</label>
+                                            <input name="title" defaultValue={editingVideo?.title} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium mb-1">Order</label>
-                                            <input name="order" type="number" defaultValue={editingVideo?.order || 0} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                            <label className="block text-sm font-medium mb-1">Description</label>
+                                            <textarea name="description" defaultValue={editingVideo?.description} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
                                         </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Embed URL (YouTube/Vimeo)</label>
+                                            <input name="url" defaultValue={editingVideo?.url} required placeholder="https://www.youtube.com/embed/..." className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Icon Name (Lucide)</label>
+                                                <input name="icon" defaultValue={editingVideo?.icon || 'Monitor'} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-1">Order</label>
+                                                <input name="order" type="number" defaultValue={editingVideo?.order || 0} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" />
+                                            </div>
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" name="active" defaultChecked={editingVideo?.active ?? true} className="w-4 h-4 rounded" />
+                                            <span className="text-sm">Active</span>
+                                        </label>
                                     </div>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" name="active" defaultChecked={editingVideo?.active ?? true} className="w-4 h-4 rounded" />
-                                        <span className="text-sm">Active</span>
-                                    </label>
-                                </div>
-                                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                                    <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
-                                    <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
-                                </div>
-                            </form>
+                                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                                        <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
+                                        <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
                 {/* Company Quick View Drawer */}
                 {
                     selectedCompany && (
@@ -1832,7 +1849,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-4">
                                         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                             <Building2 className="w-4 h-4 text-indigo-500" />
-                                            Perfil Institucional
+                                            {t('saas_company_profile')}
                                         </h3>
 
                                         <div className="space-y-3">
@@ -1845,7 +1862,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Logotipo (Base64)</label>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_logo')}</label>
                                                     <input
                                                         type="file"
                                                         accept="image/*"
@@ -1867,7 +1884,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                                             <div className="grid grid-cols-1 gap-3">
                                                 <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome da Empresa</label>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_nav_companies')}</label>
                                                     <input
                                                         className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                         defaultValue={selectedCompany.name}
@@ -1880,7 +1897,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CNPJ</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_cnpj')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                             defaultValue={selectedCompany.cnpj || ''}
@@ -1888,7 +1905,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Telefone</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_phone')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                             defaultValue={selectedCompany.phone || ''}
@@ -1898,7 +1915,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">E-mail Comercial</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_business_email')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-mono"
                                                             defaultValue={selectedCompany.businessEmail || ''}
@@ -1906,7 +1923,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Website</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_website')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-mono"
                                                             defaultValue={selectedCompany.website || ''}
@@ -1915,7 +1932,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Endereço Completo</label>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_address')}</label>
                                                     <input
                                                         className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                         defaultValue={selectedCompany.address || ''}
@@ -1924,7 +1941,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                                 <div className="grid grid-cols-3 gap-2">
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cidade</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_city')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                             defaultValue={selectedCompany.city || ''}
@@ -1932,7 +1949,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Estado</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_state')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                             defaultValue={selectedCompany.state || ''}
@@ -1940,7 +1957,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CEP</label>
+                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_zip')}</label>
                                                         <input
                                                             className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm"
                                                             defaultValue={selectedCompany.zipCode || ''}
@@ -1954,11 +1971,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                                     {/* Summary Card */}
                                     <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Health & Usage</h3>
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{t('saas_health_usage')}</h3>
                                         <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-4">
                                             <div>
-                                                <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">Plan info</p>
-                                                <p className="font-bold text-slate-900 dark:text-white text-sm">{selectedCompany.plan?.name || 'No Plan'}</p>
+                                                <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">{t('saas_plan_info')}</p>
+                                                <p className="font-bold text-slate-900 dark:text-white text-sm">{selectedCompany.plan?.name || t('saas_no_plan')}</p>
                                             </div>
                                             <div>
                                                 <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">Status</p>
@@ -1972,21 +1989,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
                                         </div>
 
-                                        {/* Stripe & Expiration Info */}
                                         <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Expires At</p>
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">{t('saas_expires_at')}</p>
                                                     <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
                                                         {selectedCompany.subscriptionExpiresAt
                                                             ? new Date(selectedCompany.subscriptionExpiresAt).toLocaleDateString()
-                                                            : 'No expiration'}
+                                                            : t('saas_no_expiration')}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">Phone</p>
+                                                    <p className="text-slate-400 text-[10px] uppercase font-bold">{t('saas_company_phone')}</p>
                                                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                        {selectedCompany.phone || 'N/A'}
+                                                        {selectedCompany.phone || t('saas_na')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2022,7 +2038,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 className="flex items-center justify-center gap-2 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-xl text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
                                             >
                                                 <Lock className="w-3.5 h-3.5" />
-                                                Suspend
+                                                {t('saas_suspend')}
                                             </button>
                                         ) : (
                                             <button
@@ -2030,7 +2046,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
                                             >
                                                 <Shield className="w-3.5 h-3.5" />
-                                                Activate
+                                                {t('saas_activate')}
                                             </button>
                                         )}
                                         <button
@@ -2038,14 +2054,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             className="flex items-center justify-center gap-2 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
-                                            Delete
+                                            {t('saas_delete')}
                                         </button>
                                     </div>
 
                                     {/* Users List */}
                                     <div>
                                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            Team Members <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
+                                            {t('saas_team_members')} <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
                                         </h3>
                                         <div className="space-y-2">
                                             {selectedCompany.users?.map(u => (
@@ -2062,7 +2078,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                             ))}
                                             {(!selectedCompany.users || selectedCompany.users.length === 0) && (
-                                                <p className="text-sm text-slate-400 italic">No users found.</p>
+                                                <p className="text-sm text-slate-400 italic">{t('saas_no_users_found')}</p>
                                             )}
                                         </div>
                                     </div>
@@ -2070,7 +2086,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     {/* Projects List */}
                                     <div>
                                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            Projects <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
+                                            {t('saas_projects')} <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
                                         </h3>
                                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                             {selectedCompany.projects?.map(p => (
@@ -2084,7 +2100,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                             ))}
                                             {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
-                                                <p className="text-sm text-slate-400 italic">No projects found.</p>
+                                                <p className="text-sm text-slate-400 italic">{t('saas_no_projects_found')}</p>
                                             )}
                                         </div>
                                     </div>
@@ -2099,7 +2115,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     isOpen={isPasswordModalOpen}
                     onClose={() => setIsPasswordModalOpen(false)}
                 />
-            </main>
+            </main >
             {/* Delete Confirmation Modal */}
             {
                 isDeleteModalOpen && companyToDelete && (
@@ -2109,19 +2125,19 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full mb-2">
                                     <AlertTriangle className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Company?</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('saas_delete_company_q')}</h3>
                                 <div className="text-sm text-slate-500 dark:text-slate-400">
-                                    <p>You are about to delete <span className="font-bold text-slate-800 dark:text-slate-200">{companyToDelete.name}</span>.</p>
+                                    <p>{t('saas_delete_company_warn_1')} <span className="font-bold text-slate-800 dark:text-slate-200">{companyToDelete.name}</span>.</p>
                                     <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl text-left border border-red-100 dark:border-red-900/50">
-                                        <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">This will permanently delete:</p>
+                                        <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">{t('saas_delete_company_warn_2')}</p>
                                         <ul className="space-y-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> All Projects & Networks</li>
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {companyToDelete._count.users} Users accounts</li>
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> Active Subscriptions</li>
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> System Audit Logs</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {t('saas_projects')}</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {companyToDelete._count.users} {t('saas_delete_company_warn_3')}</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {t('saas_delete_company_warn_4')}</li>
+                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-red-500 rounded-full"></div> {t('saas_nav_audit')}</li>
                                         </ul>
                                     </div>
-                                    <p className="mt-4 text-xs text-slate-400">This action cannot be undone.</p>
+                                    <p className="mt-4 text-xs text-slate-400">{t('saas_delete_company_warn_6')}</p>
                                 </div>
                             </div>
 
@@ -2130,14 +2146,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     onClick={() => setIsDeleteModalOpen(false)}
                                     className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                                 >
-                                    Cancel
+                                    {t('saas_cancel')}
                                 </button>
                                 <button
                                     onClick={confirmDeleteCompany}
                                     className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    Confirm Delete
+                                    {t('saas_confirm_delete')}
                                 </button>
                             </div>
                         </div>
@@ -2145,60 +2161,64 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 )
             }
 
-            {isTemplateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
-                        <form onSubmit={handleSaveTemplate} className="flex flex-col h-full overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                <h3 className="text-lg font-bold">
-                                    {editingTemplate ? 'Edit Template' : 'Create Template'}
-                                </h3>
-                                <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
-                                        <input name="name" defaultValue={editingTemplate?.name} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome Email" />
+            {
+                isTemplateModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+                            <form onSubmit={handleSaveTemplate} className="flex flex-col h-full overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                    <h3 className="text-lg font-bold">
+                                        {editingTemplate ? t('saas_template_edit') : t('saas_template_create')}
+                                    </h3>
+                                    <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_name')}</label>
+                                            <input name="name" defaultValue={editingTemplate?.name} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome Email" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_slug')}</label>
+                                            <input name="slug" defaultValue={editingTemplate?.slug} required disabled={!!editingTemplate} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg disabled:opacity-50" placeholder="welcome-email" />
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Slug (Identifier)</label>
-                                        <input name="slug" defaultValue={editingTemplate?.slug} required disabled={!!editingTemplate} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg disabled:opacity-50" placeholder="welcome-email" />
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_subject')}</label>
+                                        <input name="subject" defaultValue={editingTemplate?.subject} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome to FTTH Planner, {{username}}!" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_vars')}</label>
+                                        <input name="variables" defaultValue={Array.isArray(editingTemplate?.variables) ? editingTemplate.variables.join(', ') : ''} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="p.ex: username, app_name, app_logo, company_name" />
+                                    </div>
+                                    <div className="flex-1 flex flex-col min-h-[300px]">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_body')}</label>
+                                        <textarea name="body" defaultValue={editingTemplate?.body} required className="flex-1 w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs resize-none" placeholder="<h1>Olá {{username}}!</h1>..." />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Subject</label>
-                                    <input name="subject" defaultValue={editingTemplate?.subject} required className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="Welcome to FTTH Planner, {{username}}!" />
+                                <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                                    <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="px-6 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">{t('saas_cancel')}</button>
+                                    <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20">{t('saas_template_save')}</button>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Available Variables (comma-separated)</label>
-                                    <input name="variables" defaultValue={Array.isArray(editingTemplate?.variables) ? editingTemplate.variables.join(', ') : ''} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg" placeholder="p.ex: username, app_name, app_logo, company_name" />
-                                </div>
-                                <div className="flex-1 flex flex-col min-h-[300px]">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Body (HTML)</label>
-                                    <textarea name="body" defaultValue={editingTemplate?.body} required className="flex-1 w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-xs resize-none" placeholder="<h1>Olá {{username}}!</h1>..." />
-                                </div>
-                            </div>
-                            <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                                <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="px-6 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">Cancel</button>
-                                <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20">Save Template</button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-            {isSendModalOpen && templateToSend && (
-                <SendTemplateModal
-                    isOpen={isSendModalOpen}
-                    template={templateToSend}
-                    onClose={() => {
-                        setIsSendModalOpen(false);
-                        setTemplateToSend(null);
-                    }}
-                />
-            )}
-        </div>
+                )
+            }
+            {
+                isSendModalOpen && templateToSend && (
+                    <SendTemplateModal
+                        isOpen={isSendModalOpen}
+                        template={templateToSend}
+                        onClose={() => {
+                            setIsSendModalOpen(false);
+                            setTemplateToSend(null);
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 };

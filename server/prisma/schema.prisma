@@ -24,10 +24,15 @@ model User {
   projects          Project[]
   company           Company?   @relation(fields: [companyId], references: [id])
 
-  adminSessions       AdminSupportSession[] @relation("admin_sessions")
-  targetSessions      AdminSupportSession[] @relation("target_sessions")
-  adminLogs           SupportAccessLog[]    @relation("admin_logs")
-  targetLogs          SupportAccessLog[]    @relation("target_logs")
+  adminSessions  AdminSupportSession[] @relation("admin_sessions")
+  targetSessions AdminSupportSession[] @relation("target_sessions")
+  adminLogs      SupportAccessLog[]    @relation("admin_logs")
+  targetLogs     SupportAccessLog[]    @relation("target_logs")
+
+  engagementMetrics    UserEngagementMetrics?
+  financialMetrics     UserFinancialMetrics?
+  retentionAlerts      RetentionAlert[]
+  retentionMessageLogs RetentionMessageLog[]
 
   @@index([companyId])
   @@map("users")
@@ -66,6 +71,10 @@ model Company {
   users                     User[]
   customers                 Customer[]
 
+  engagementMetrics UserEngagementMetrics[]
+  financialMetrics  UserFinancialMetrics[]
+  retentionAlerts   RetentionAlert[]
+
   @@map("companies")
 }
 
@@ -90,23 +99,23 @@ model Plan {
 }
 
 model Project {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
   name      String
-  centerLat Float    @map("center_lat")
-  centerLng Float    @map("center_lng")
-  zoom      Int      @default(15)
-  settings  Json?    @default("{\"snapDistance\": 30}")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-  companyId String?  @map("company_id")
+  centerLat Float      @map("center_lat")
+  centerLng Float      @map("center_lng")
+  zoom      Int        @default(15)
+  settings  Json?      @default("{\"snapDistance\": 30}")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at")
+  companyId String?    @map("company_id")
   cables    Cable[]
   ctos      Cto[]
   poles     Pole[]
   customers Customer[]
   pops      Pop[]
-  company   Company? @relation(fields: [companyId], references: [id])
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company?   @relation(fields: [companyId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("projects")
@@ -208,20 +217,20 @@ model AuditLog {
 }
 
 model CatalogSplitter {
-  id          String   @id @default(uuid())
-  name        String
-  type        String
-  mode        String
-  inputs      Int      @default(1)
-  outputs     Int
-  connectorType String? @default("Unconnectorized") @map("connector_type")
-  allowCustomConnections Boolean @default(true) @map("allow_custom_connections")
-  attenuation Json?    @default("{}")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
-  companyId   String?  @map("company_id")
-  company     Company? @relation(fields: [companyId], references: [id])
+  id                     String   @id @default(uuid())
+  name                   String
+  type                   String
+  mode                   String
+  inputs                 Int      @default(1)
+  outputs                Int
+  connectorType          String?  @default("Unconnectorized") @map("connector_type")
+  allowCustomConnections Boolean  @default(true) @map("allow_custom_connections")
+  attenuation            Json?    @default("{}")
+  description            String?
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId              String?  @map("company_id")
+  company                Company? @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
   @@map("catalog_splitters")
@@ -533,7 +542,7 @@ model Customer {
   pppoeService      String?  @map("pppoe_service")
   onuPower          Float?   @map("onu_power")
   projectId         String?  @map("project_id")
-  
+
   cto     Cto?     @relation(fields: [ctoId], references: [id])
   project Project? @relation(fields: [projectId], references: [id])
   company Company? @relation(fields: [companyId], references: [id])
@@ -548,7 +557,7 @@ model Drop {
   id          String   @id @default(uuid())
   customerId  String   @unique @map("customer_id")
   ctoId       String   @map("cto_id")
-  coordinates Json     // Stores the path geometry [{lat, lng}, ...]
+  coordinates Json // Stores the path geometry [{lat, lng}, ...]
   length      Float?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -590,4 +599,93 @@ model SupportAccessLog {
   targetUser User @relation("target_logs", fields: [targetUserId], references: [id])
 
   @@map("support_access_logs")
+}
+
+model UserEngagementMetrics {
+  id                   String    @id @default(uuid())
+  userId               String    @unique @map("user_id")
+  companyId            String?   @map("company_id")
+  lastLoginAt          DateTime? @map("last_login_at")
+  lastProjectCreatedAt DateTime? @map("last_project_created_at")
+  login7d              Int       @default(0)
+  login30d             Int       @default(0)
+  actions7d            Int       @default(0)
+  engagementScore      Float     @default(0)
+  churnRiskScore       Float     @default(0) @map("churn_risk_score")
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([lastLoginAt])
+  @@index([churnRiskScore])
+  @@map("user_engagement_metrics")
+}
+
+model RetentionAlert {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  companyId  String?   @map("company_id")
+  type       String
+  severity   String    @default("medium")
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("retention_alerts")
+}
+
+model RetentionAutomationRule {
+  id              String   @id @default(uuid())
+  triggerType     String   @map("trigger_type")
+  delayInDays     Int      @default(0) @map("delay_in_days")
+  messageTemplate String   @map("message_template")
+  channel         String   @default("email")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  logs RetentionMessageLog[]
+
+  @@map("retention_automation_rules")
+}
+
+model RetentionMessageLog {
+  id      String   @id @default(uuid())
+  userId  String   @map("user_id")
+  ruleId  String   @map("rule_id")
+  channel String
+  status  String   @default("sent")
+  sentAt  DateTime @default(now()) @map("sent_at")
+
+  user User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule RetentionAutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ruleId])
+  @@map("retention_message_logs")
+}
+
+model UserFinancialMetrics {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  companyId        String?  @map("company_id")
+  monthlyRevenue   Float    @default(0) @map("monthly_revenue")
+  lifetimeRevenue  Float    @default(0) @map("lifetime_revenue")
+  estimatedLTV     Float    @default(0) @map("estimated_ltv")
+  churnProbability Float    @default(0) @map("churn_probability")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("user_financial_metrics")
 }

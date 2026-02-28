@@ -148,3 +148,8 @@ export const endSupportSession = async (sessionId?: string) => {
     const response = await api.post('/support/end', { sessionId });
     return response.data;
 };
+
+export const getRetentionDashboard = async () => {
+    const response = await api.get('/saas/retention');
+    return response.data;
+};
