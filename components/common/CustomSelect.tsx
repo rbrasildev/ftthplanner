@@ -17,6 +17,7 @@ interface CustomSelectProps {
     showSearch?: boolean;
     error?: string;
     className?: string;
+    placement?: 'top' | 'bottom';
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -28,7 +29,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     searchPlaceholder = "Buscar...",
     showSearch = true,
     error,
-    className = ""
+    className = "",
+    placement = "bottom"
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -85,7 +87,10 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-[100] top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 origin-top">
+                <div className={`
+                    absolute z-[100] left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300
+                    ${placement === 'top' ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'}
+                `}>
                     {/* Search Bar */}
                     {showSearch && (
                         <div className="p-3 border-b border-slate-100 dark:border-slate-800">

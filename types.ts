@@ -22,7 +22,7 @@ export const CTO_STATUS_COLORS: Record<CTOStatus, string> = {
   'PLANNED': '#ffff00', // Amber/Orange (Em projeto)
   'NOT_DEPLOYED': '#ef4444', // Red (NÃ£o implantado)
   'DEPLOYED': '#00ff00', // Greenish-Blue (Implantado)
-  'CERTIFIED': '#22c55e', // Green (Certificado)
+  'CERTIFIED': '#0EA5E9', // skyblue (Certificado)
 };
 
 export const CABLE_STATUS_COLORS: Record<CableStatus, string> = {

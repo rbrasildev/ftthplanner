@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings, Check } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -629,37 +629,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [autoTargetId, setAutoTargetId] = useState<string>('');
     const [exportingType, setExportingType] = useState<'png' | 'pdf' | null>(null);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-    const [showPropertiesModal, setShowPropertiesModal] = useState(false);
     const [propertiesName, setPropertiesName] = useState('');
     const [propertiesStatus, setPropertiesStatus] = useState<CTOStatus>('PLANNED');
     const [cableToRemove, setCableToRemove] = useState<string | null>(null);
 
-    const handleOpenProperties = () => {
+    // Sync properties states with localCTO when it changes (initial load)
+    useEffect(() => {
         setPropertiesName(localCTO.name);
         setPropertiesStatus((localCTO.status as CTOStatus) || 'PLANNED');
-        setShowPropertiesModal(true);
-    };
+    }, [localCTO.id]);
 
-    const handleSaveProperties = async () => {
-        const updatedCTO = {
-            ...localCTO,
-            name: propertiesName,
-            status: propertiesStatus
-        };
-
-        // 1. Update local state for immediate UI feedback
-        setLocalCTO(updatedCTO);
-
-        // 2. Hide properties modal
-        setShowPropertiesModal(false);
-
-        // 3. PERSIST GLOBALLY (This fixes the 'dirty check' and 'unsaved changes' warning)
-        try {
-            await onSave(updatedCTO);
-        } catch (e) {
-            console.error("Failed to save properties globally", e);
-        }
-    };
 
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
@@ -2938,10 +2917,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 >
                     {/* Line 1: Title and Main Actions */}
                     <div className="h-14 flex items-center justify-between px-6">
-                        <div className="flex items-center gap-4 pointer-events-none min-w-0 flex-1">
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
                             <h2 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
                                 <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                                <span className="truncate">{t('splicing_title', { name: cto.name })}</span>
+                                <input
+                                    type="text"
+                                    value={propertiesName}
+                                    onChange={(e) => {
+                                        const newName = e.target.value;
+                                        setPropertiesName(newName);
+                                        setLocalCTO(prev => ({ ...prev, name: newName }));
+                                    }}
+                                    className="bg-transparent border-0 border-b-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 px-1 py-0.5 outline-none transition-all w-full max-w-[400px] text-slate-900 dark:text-white font-bold placeholder:text-slate-400"
+                                    placeholder={t('name')}
+                                />
                             </h2>
                         </div>
                         <div className="flex gap-1 pointer-events-auto items-center">
@@ -3084,15 +3073,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 PDF
                             </button>
 
-                            <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 mx-1" />
 
-                            <button
-                                onClick={handleOpenProperties}
-                                className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                title={t('properties')}
-                            >
-                                <Settings className="w-5 h-5" />
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -3403,18 +3384,72 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
                 </div>
 
-                {/* Footer: Help text and Save Button */}
-                <div className="h-16 bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50">
-                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 italic text-[13px]">
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                        <span>{t('general_help')}</span>
+                {/* Footer: Redesigned with Model and Status Controls */}
+                <div className="h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50">
+                    <div className="flex items-center gap-8">
+                        {/* Model Select */}
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('model') || 'Modelo'}</span>
+                            <div className="w-48">
+                                <CustomSelect
+                                    value={localCTO.catalogId || ''}
+                                    placement="top"
+                                    showSearch={false}
+                                    onChange={(selectedId) => {
+                                        const box = availableBoxes.find(b => b.id === selectedId);
+                                        setLocalCTO(prev => ({
+                                            ...prev,
+                                            catalogId: selectedId,
+                                            type: box?.type || prev.type
+                                        }));
+                                    }}
+                                    options={[
+                                        { value: '', label: t('select_box_model') || 'Selecionar Modelo...' },
+                                        ...availableBoxes.map(box => ({
+                                            value: box.id,
+                                            label: `${box.name} (${box.brand})`
+                                        }))
+                                    ]}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Status Radio Buttons */}
+                        <div className="flex items-center gap-4">
+                            {[
+                                { id: 'PLANNED', label: t('status_PLANNED'), color: '#f59e0b', textColor: 'text-amber-600 dark:text-amber-500' },
+                                { id: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED'), color: '#ef4444', textColor: 'text-red-600 dark:text-red-500' },
+                                { id: 'DEPLOYED', label: t('status_DEPLOYED'), color: '#10b981', textColor: 'text-emerald-600 dark:text-emerald-500' },
+                                { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-sky-600 dark:text-sky-500' }
+                            ].map((status) => (
+                                <button
+                                    key={status.id}
+                                    onClick={() => {
+                                        setPropertiesStatus(status.id as CTOStatus);
+                                        setLocalCTO(prev => ({ ...prev, status: status.id as CTOStatus }));
+                                    }}
+                                    className="flex items-center gap-2 group cursor-pointer transition-all"
+                                >
+                                    <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
+                                        <div
+                                            className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                                            style={{ backgroundColor: status.color }}
+                                        />
+                                    </div>
+                                    <span className={`text-[13px] font-bold transition-colors ${propertiesStatus === status.id ? status.textColor : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
+                                        {status.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
+
                     <div className="flex items-center gap-3">
                         {userRole !== 'MEMBER' && (
                             <button
                                 onClick={handleApply}
                                 disabled={savingAction !== 'idle'}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
+                                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
                             >
                                 {savingAction === 'apply' ? (
                                     <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -3565,98 +3600,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
                 )}
 
-                {/* PROPERTIES MODAL */}
-                {showPropertiesModal && (
-                    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-[400px] border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-200">
-                            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
-                                <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                                    <Settings className="w-5 h-5 text-indigo-500" />
-                                    {t('properties')}
-                                </h3>
-                                <button onClick={() => setShowPropertiesModal(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                                    <X className="w-5 h-5 text-slate-500" />
-                                </button>
-                            </div>
 
-                            <div className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        {t('name')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={propertiesName}
-                                        onChange={(e) => setPropertiesName(e.target.value)}
-                                        disabled={userRole === 'MEMBER'}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        {t('model')}
-                                    </label>
-                                    <select
-                                        value={localCTO.catalogId || ''}
-                                        onChange={(e) => {
-                                            const selectedId = e.target.value;
-                                            const box = availableBoxes.find(b => b.id === selectedId);
-                                            setLocalCTO(prev => ({
-                                                ...prev,
-                                                catalogId: selectedId,
-                                                type: box?.type || prev.type
-                                            }));
-                                        }}
-                                        disabled={userRole === 'MEMBER'}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                                    >
-                                        <option value="">{t('select_box_model') || 'Select Model...'}</option>
-                                        {availableBoxes.map(box => (
-                                            <option key={box.id} value={box.id}>
-                                                {box.name} ({box.brand})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        {t('status')}
-                                    </label>
-                                    <select
-                                        value={propertiesStatus}
-                                        onChange={(e) => setPropertiesStatus(e.target.value as CTOStatus)}
-                                        disabled={userRole === 'MEMBER'}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                                    >
-                                        <option value="PLANNED">{t('status_PLANNED')}</option>
-                                        <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
-                                        <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
-                                        <option value="CERTIFIED">{t('status_CERTIFIED')}</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-end gap-2 p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
-                                <button
-                                    onClick={() => setShowPropertiesModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-                                >
-                                    {userRole === 'MEMBER' ? (t('done') || 'Sair') : t('cancel')}
-                                </button>
-                                {userRole !== 'MEMBER' && (
-                                    <button
-                                        onClick={handleSaveProperties}
-                                        className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95"
-                                    >
-                                        {t('save')}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* AUTO SPLICE MODAL */}
                 {isAutoSpliceOpen && (
