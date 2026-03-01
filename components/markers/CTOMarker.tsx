@@ -11,10 +11,10 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 const iconCache = new Map<string, L.DivIcon>();
 
 const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
-    const size = Math.round(20 * zoomScale);
-    const borderSize = Math.max(2, Math.round(3 * zoomScale));
-    const pulseSize = Math.round(40 * zoomScale);
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 16));
+    const size = Math.round(18 * zoomScale);
+    const borderSize = Math.max(1.5, Math.round(2.5 * zoomScale));
+    const pulseSize = Math.round(36 * zoomScale);
 
     const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${currentZoom}`;
 
