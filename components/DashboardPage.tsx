@@ -18,6 +18,8 @@ import CustomerRegistration from './registrations/CustomerRegistration';
 import { BackupManager } from './BackupManager';
 import L from 'leaflet';
 import { searchLocation } from '../services/nominatimService';
+import { CustomInput } from './common/CustomInput';
+import { CustomSelect } from './common/CustomSelect';
 
 interface DashboardPageProps {
   username: string;
@@ -761,64 +763,54 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* --- ADD USER MODAL --- */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
-            <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col relative">
+            <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {editingUser ? t('edit_user') : t('add_user')}
               </h3>
               <button onClick={() => setIsUserModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('email')}</label>
-                <input
-                  type="email"
-                  value={userFormData.email}
-                  onChange={e => setUserFormData({ ...userFormData, email: e.target.value })}
-                  placeholder="exemplo@isp.com.br"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('username')} ({t('optional') || 'Opcional'})</label>
-                <input
-                  type="text"
-                  value={userFormData.username}
-                  onChange={e => setUserFormData({ ...userFormData, username: e.target.value })}
-                  disabled={!!editingUser} // Username cannot be changed
-                  className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('password')}</label>
-                <input
-                  type="password"
-                  value={userFormData.password}
-                  onChange={e => setUserFormData({ ...userFormData, password: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('role')}</label>
-                <select
-                  value={userFormData.role}
-                  onChange={e => setUserFormData({ ...userFormData, role: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                >
-                  <option value="MEMBER">{t('role_member')}</option>
-                  <option value="ADMIN">{t('role_admin')}</option>
-                </select>
-              </div>
+            <div className="p-6 space-y-4 relative z-10">
+              <CustomInput
+                label={t('email')}
+                type="email"
+                value={userFormData.email}
+                onChange={e => setUserFormData({ ...userFormData, email: e.target.value })}
+                placeholder={t('user_email_placeholder')}
+              />
+              <CustomInput
+                label={`${t('username')} (${t('optional')})`}
+                type="text"
+                value={userFormData.username}
+                onChange={e => setUserFormData({ ...userFormData, username: e.target.value })}
+                disabled={!!editingUser}
+              />
+              <CustomInput
+                label={t('password')}
+                type="password"
+                value={userFormData.password}
+                onChange={e => setUserFormData({ ...userFormData, password: e.target.value })}
+              />
+              <CustomSelect
+                label={t('role')}
+                value={userFormData.role}
+                options={[
+                  { value: 'MEMBER', label: t('role_member') },
+                  { value: 'ADMIN', label: t('role_admin') }
+                ]}
+                onChange={val => setUserFormData({ ...userFormData, role: val })}
+                showSearch={false}
+              />
             </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
               <button onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
 
               <button
                 onClick={editingUser ? handleUpdateUser : handleCreateUser}
-                className="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"
+                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"
               >
-                <Plus className={`w-4 h-4 ${editingUser ? 'hidden' : ''}`} />
-                <Save className={`w-4 h-4 ${editingUser ? '' : 'hidden'}`} />
+                {!editingUser && <Plus className="w-4 h-4" />}
+                {editingUser && <Save className="w-4 h-4" />}
                 {editingUser ? t('update') : t('create')}
               </button>
             </div>
@@ -854,50 +846,64 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {
         isCreating && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]">
-              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
+              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {t('create_project_modal_title')}
+                  <Plus className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {t('create_project_modal_title')}
                 </h3>
-                <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
+                <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600 dark:hover:white transition-colors"><X className="w-6 h-6" /></button>
               </div>
               <div className="p-6 overflow-y-auto flex-1 space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('name')}</label>
-                  <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder={t('new_project_placeholder')} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors" autoFocus />
+                <div className="space-y-4">
+                  <CustomInput
+                    label={t('name')}
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder={t('new_project_placeholder')}
+                    autoFocus
+                  />
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 flex justify-between">
-                    {t('search_location')}
-                    <span className="text-sky-600 dark:text-sky-400 font-normal normal-case flex items-center gap-1"><MapIcon className="w-3 h-3" /> {t('pinned_location')}: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}</span>
-                  </label>
-                  <div className="relative z-20">
-                    <div className="relative w-full">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
-                      <input type="text" value={locationQuery} onChange={(e) => setLocationQuery(e.target.value)} placeholder={t('search_location_placeholder')} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg pl-9 pr-10 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500" />
-                      {isSearchingLocation && (<div className="absolute right-3 top-1/2 -translate-y-1/2"><Loader2 className="w-4 h-4 animate-spin text-sky-500" /></div>)}
-                    </div>
-                    {locationResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
-                        {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2"> <MapPin className="w-3 h-3 text-sky-500" /> <span className="truncate">{loc.name}</span> </button>))}
-                      </div>
-                    )}
+                <div className="relative z-20">
+                  <CustomInput
+                    label={t('search_location')}
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    placeholder={t('search_location_placeholder')}
+                    icon={MapPin}
+                    loading={isSearchingLocation}
+                  />
+                  <div className="absolute top-[3px] right-0">
+                    <span className="text-emerald-700 dark:text-emerald-400 text-[10px] font-bold normal-case flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/50">
+                      <MapIcon className="w-3 h-3" /> {t('pinned_location')}: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
+                    </span>
                   </div>
-                  <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
-                    <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
-                      <MapInvalidator />
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-                      <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
-                    </MapContainer>
-                    <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
-                      {t('map_instruction')}
+                  {locationResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
+                      {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
                     </div>
+                  )}
+                </div>
+                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
+                  <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
+                    <MapInvalidator />
+                    <LayersControl position="topright">
+                      <LayersControl.BaseLayer checked name={t('map_street')}>
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
+                      </LayersControl.BaseLayer>
+                      <LayersControl.BaseLayer name={t('map_satellite')}>
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
+                      </LayersControl.BaseLayer>
+                    </LayersControl>
+                    <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
+                  </MapContainer>
+                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
+                    {t('map_instruction')}
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
                 <button onClick={() => setIsCreating(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                <button onClick={handleCreateSubmit} disabled={!newProjectName.trim()} className="px-6 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Plus className="w-4 h-4" /> {t('confirm_create')} </button>
+                <button onClick={handleCreateSubmit} disabled={!newProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Plus className="w-4 h-4" /> {t('confirm_create')} </button>
               </div>
             </div>
           </div>
@@ -908,57 +914,64 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {
         isEditing && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]">
-              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
+              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {t('edit_project')}
+                  <Settings className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {t('edit_project')}
                 </h3>
-                <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
+                <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 dark:hover:white transition-colors"><X className="w-6 h-6" /></button>
               </div>
               <div className="p-6 overflow-y-auto flex-1 space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('name')}</label>
-                  <input type="text" value={editProjectName} onChange={(e) => setEditProjectName(e.target.value)} placeholder={t('new_project_placeholder')} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors" autoFocus />
+                <div className="space-y-4">
+                  <CustomInput
+                    label={t('name')}
+                    value={editProjectName}
+                    onChange={(e) => setEditProjectName(e.target.value)}
+                    placeholder={t('new_project_placeholder')}
+                    autoFocus
+                  />
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 flex justify-between">
-                    {t('search_location')}
-                    <span className="text-sky-600 dark:text-sky-400 font-normal normal-case flex items-center gap-1"><MapIcon className="w-3 h-3" /> {t('pinned_location')}: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}</span>
-                  </label>
-                  <div className="relative z-20">
-                    <div className="relative w-full">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
-                      <input type="text" value={locationQuery} onChange={(e) => setLocationQuery(e.target.value)} placeholder={t('search_location_placeholder')} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg pl-9 pr-10 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500" />
-                      {isSearchingLocation && (<div className="absolute right-3 top-1/2 -translate-y-1/2"><Loader2 className="w-4 h-4 animate-spin text-sky-500" /></div>)}
-                    </div>
-                    {locationResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
-                        {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2"> <MapPin className="w-3 h-3 text-sky-500" /> <span className="truncate">{loc.name}</span> </button>))}
-                      </div>
-                    )}
+                <div className="relative z-20">
+                  <CustomInput
+                    label={t('search_location')}
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    placeholder={t('search_location_placeholder')}
+                    icon={MapPin}
+                    loading={isSearchingLocation}
+                  />
+                  <div className="absolute top-[3px] right-0">
+                    <span className="text-emerald-700 dark:text-emerald-400 text-[10px] font-bold normal-case flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/50">
+                      <MapIcon className="w-3 h-3" /> {t('pinned_location')}: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
+                    </span>
                   </div>
-                  <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
-                    <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
-                      <MapInvalidator />
-                      <LayersControl position="topright">
-                        <LayersControl.BaseLayer checked name={t('map_street')}>
-                          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
-                        </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name={t('map_satellite')}>
-                          <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
-                        </LayersControl.BaseLayer>
-                      </LayersControl>
-                      <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
-                    </MapContainer>
-                    <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
-                      {t('map_instruction')}
+                  {locationResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
+                      {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
                     </div>
+                  )}
+                </div>
+                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
+                  <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
+                    <MapInvalidator />
+                    <LayersControl position="topright">
+                      <LayersControl.BaseLayer checked name={t('map_street')}>
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
+                      </LayersControl.BaseLayer>
+                      <LayersControl.BaseLayer name={t('map_satellite')}>
+                        <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
+                      </LayersControl.BaseLayer>
+                    </LayersControl>
+                    <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
+                  </MapContainer>
+                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
+                    {t('map_instruction')}
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
                 <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                <button onClick={handleEditSubmit} disabled={!editProjectName.trim()} className="px-6 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Save className="w-4 h-4" /> {t('save_changes')} </button>
+                <button onClick={handleEditSubmit} disabled={!editProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Save className="w-4 h-4" /> {t('save_changes')} </button>
               </div>
             </div>
           </div>

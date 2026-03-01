@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Search, Server, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getOLTs, createOLT, updateOLT, deleteOLT, OLTCatalogItem } from '../../services/catalogService';
+import { CustomSelect, CustomInput } from '../common';
 
 export const OLTRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -254,81 +255,67 @@ export const OLTRegistration: React.FC = () => {
                         <div className="p-6 overflow-y-auto space-y-4">
                             <div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('equipment_name')}</label>
-                                    <input
-                                        type="text"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                        value={formData.name}
+                                    <CustomInput
+                                        label={t('equipment_name')}
+                                        required
+                                        value={formData.name || ''}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         placeholder={t('equipment_name_placeholder') || 'e.g., Huawei MA5608T, Cisco 2960...'}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('equipment_type')}</label>
-                                    <select
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                        value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                    >
-                                        <option value="OLT">{t('type_olt')}</option>
-                                        <option value="SWITCH">{t('type_switch')}</option>
-                                        <option value="ROUTER">{t('type_router')}</option>
-                                        <option value="SERVER">{t('type_server')}</option>
-                                        <option value="OTHER">{t('type_other')}</option>
-                                    </select>
+                                    <CustomSelect
+                                        label={t('equipment_type')}
+                                        value={formData.type || 'OLT'}
+                                        options={[
+                                            { value: 'OLT', label: t('type_olt') },
+                                            { value: 'SWITCH', label: t('type_switch') },
+                                            { value: 'ROUTER', label: t('type_router') },
+                                            { value: 'SERVER', label: t('type_server') },
+                                            { value: 'OTHER', label: t('type_other') }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, type: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 items-end mb-4">
-                                    {/* Row 1: Labels */}
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        {formData.type === 'OLT' ? t('output_power') : t('power_consumption')}
-                                    </label>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        {t('olt_slots')}
-                                    </label>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        {formData.type === 'OLT' ? t('olt_ports') : t('active_ports')}
-                                    </label>
-
-                                    {/* Row 2: Inputs */}
-                                    <div className="flex flex-col">
-                                        <input
+                                <div className="grid grid-cols-3 gap-x-4 mb-4">
+                                    <div>
+                                        <CustomInput
+                                            label={formData.type === 'OLT' ? t('output_power') : t('power_consumption')}
                                             type="number"
                                             step="0.1"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                             value={formData.outputPower}
                                             onChange={e => setFormData({ ...formData, outputPower: parseFloat(e.target.value) })}
                                         />
-                                        <p className="text-[10px] text-slate-500 mt-1 h-4">
+                                        <p className="text-[10px] text-slate-500 mt-1">
                                             {formData.type === 'OLT' ? t('olt_output_power_help') : ''}
                                         </p>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <input
+                                    <div>
+                                        <CustomInput
+                                            label={t('olt_slots')}
                                             type="number"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                             value={formData.slots}
                                             onChange={e => setFormData({ ...formData, slots: parseInt(e.target.value) })}
                                         />
-                                        <div className="h-4 mt-1" /> {/* Spacer to match power help text height */}
                                     </div>
-                                    <div className="flex flex-col">
-                                        <input
+                                    <div>
+                                        <CustomInput
+                                            label={formData.type === 'OLT' ? t('olt_ports') : t('active_ports')}
                                             type="number"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                             value={formData.portsPerSlot}
                                             onChange={e => setFormData({ ...formData, portsPerSlot: parseInt(e.target.value) })}
                                         />
-                                        <div className="h-4 mt-1" /> {/* Spacer to match power help text height */}
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('description')}</label>
-                                    <textarea
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white min-h-[80px]"
-                                        value={formData.description}
+                                    <CustomInput
+                                        isTextarea
+                                        label={t('description')}
+                                        value={formData.description || ''}
                                         onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     />
                                 </div>
@@ -344,7 +331,7 @@ export const OLTRegistration: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-sky-500/20"
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
                                 >
                                     <Save className="w-4 h-4" />
                                     {t('save')}

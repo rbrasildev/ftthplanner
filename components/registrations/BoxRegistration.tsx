@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, X, Save, Box, AlertTriangle, Palette, MoreHorizontal, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getBoxes, createBox, updateBox, deleteBox, BoxCatalogItem } from '../../services/catalogService';
+import { CustomSelect, CustomInput } from '../common';
 
 const BoxRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -239,35 +240,29 @@ const BoxRegistration: React.FC = () => {
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('name')} *</label>
-                                <input
-                                    type="text"
+                                <CustomInput
+                                    label={`${t('name')} *`}
                                     required
-                                    value={formData.name}
+                                    value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
                                     placeholder={t('name_placeholder') || 'Ex: CTO-PRECON'}
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('brand')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.brand}
+                                    <CustomInput
+                                        label={t('brand')}
+                                        value={formData.brand || ''}
                                         onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
                                         placeholder={t('brand')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('model')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.model}
+                                    <CustomInput
+                                        label={t('model')}
+                                        value={formData.model || ''}
                                         onChange={e => setFormData({ ...formData, model: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
                                         placeholder={t('model')}
                                     />
                                 </div>
@@ -275,24 +270,24 @@ const BoxRegistration: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('type')}</label>
-                                    <select
-                                        value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value as 'CTO' | 'CEO' })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-                                    >
-                                        <option value="CTO">{t('type_cto_termination')}</option>
-                                        <option value="CEO">{t('type_ceo_splice')}</option>
-                                    </select>
+                                    <CustomSelect
+                                        label={t('type')}
+                                        value={formData.type || 'CTO'}
+                                        options={[
+                                            { value: 'CTO', label: t('type_cto_termination') },
+                                            { value: 'CEO', label: t('type_ceo_splice') }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, type: val as 'CTO' | 'CEO' })}
+                                        showSearch={false}
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('reserve_loop_length')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('reserve_loop_length')}
                                         type="number"
                                         min="0"
                                         value={formData.reserveLoopLength}
                                         onChange={e => setFormData({ ...formData, reserveLoopLength: parseFloat(e.target.value) || 0 })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
                                     />
                                 </div>
                             </div>
@@ -315,11 +310,11 @@ const BoxRegistration: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('description')}</label>
-                                <textarea
-                                    value={formData.description}
+                                <CustomInput
+                                    isTextarea
+                                    label={t('description')}
+                                    value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors min-h-[80px]"
                                     placeholder={t('details_placeholder')}
                                 />
                             </div>
@@ -334,7 +329,7 @@ const BoxRegistration: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-medium shadow-lg shadow-sky-200/50 transition active:scale-95 flex items-center justify-center gap-2"
+                                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium shadow-lg shadow-emerald-500/20 transition active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     <Save className="w-4 h-4" />
                                     {t('save')}

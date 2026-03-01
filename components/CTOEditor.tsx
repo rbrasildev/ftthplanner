@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings, Check } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Settings, Check } from 'lucide-react';
 // ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
 // No, replace_file_content is single block. I have to do multiple edits or one large edit.
 // Let's do imports first, then function body.
@@ -603,6 +603,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     });
 
     const [isMaximized, setIsMaximized] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const [savedWindowPos, setSavedWindowPos] = useState(windowPos);
 
     const toggleMaximize = () => {
@@ -2925,7 +2926,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full' : 'w-[1100px] h-[750px]'} bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full' : isCollapsed ? 'w-[1100px] h-auto' : 'w-[1100px] h-[750px]'} bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -2943,6 +2944,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                         <div className="flex gap-1 pointer-events-auto items-center">
                             <button
+                                onClick={() => setIsCollapsed(!isCollapsed)}
+                                title={isCollapsed ? t('expand') : t('collapse')}
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                            >
+                                {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                            </button>
+                            <button
                                 onClick={toggleMaximize}
                                 title={isMaximized ? t('restore') : t('maximize')}
                                 className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
@@ -2955,8 +2963,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     </div>
 
-                    {/* Line 2: All Tools and Exports */}
-                    <div className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
+                    {/* Line 2: All Tools and Exports — hidden when collapsed */}
+                    <div style={{ display: isCollapsed ? 'none' : undefined }} className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
                         <div className="flex gap-1.5 pointer-events-auto items-center">
 
                             {/* GROUP 1: EDIT MODES */}
@@ -3091,7 +3099,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 <div
                     ref={containerRef}
                     className="flex-1 bg-[#E6E6E6] dark:bg-slate-950 relative overflow-hidden"
-                    style={{ cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
+                    style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                 >

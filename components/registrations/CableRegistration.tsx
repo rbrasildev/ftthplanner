@@ -5,6 +5,7 @@ import {
 } from '../../services/catalogService';
 import { Plus, Edit2, Trash2, Search, Cable, AlertTriangle, X, Save } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { CustomSelect, CustomInput } from '../common';
 
 const SPEC_COLORS = ['#10b981', '#86efac', '#3b82f6', '#93c5fd', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5', '#8b5cf6', '#c4b5fd', '#ec4899', '#f9a8d4', '#6b7280', '#d1d5db'];
 
@@ -236,46 +237,42 @@ const CableRegistration: React.FC = () => {
                             {/* Main Info */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="md:col-span-3">
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('name')}</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                                    <CustomInput
+                                        label={t('name')}
+                                        required
                                         placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
-                                        value={formData.name}
+                                        value={formData.name || ''}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('brand')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.brand}
+                                    <CustomInput
+                                        label={t('brand')}
+                                        value={formData.brand || ''}
                                         onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
                                         placeholder={t('brand_placeholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('model')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.model}
+                                    <CustomInput
+                                        label={t('model')}
+                                        value={formData.model || ''}
                                         onChange={e => setFormData({ ...formData, model: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
                                         placeholder={t('model_placeholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('type')}</label>
-                                    <select
-                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
-                                        value={formData.defaultLevel}
-                                        onChange={e => setFormData({ ...formData, defaultLevel: e.target.value })}
-                                    >
-                                        <option value="DISTRIBUICAO">DISTRIBUIÇÃO</option>
-                                        <option value="TRONCO">TRONCO</option>
-                                        <option value="DROP">DROP</option>
-                                    </select>
+                                    <CustomSelect
+                                        label={t('type')}
+                                        value={formData.defaultLevel || 'DISTRIBUICAO'}
+                                        options={[
+                                            { value: 'DISTRIBUICAO', label: 'DISTRIBUIÇÃO' },
+                                            { value: 'TRONCO', label: 'TRONCO' },
+                                            { value: 'DROP', label: 'DROP' }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, defaultLevel: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
                             </div>
 
@@ -284,37 +281,34 @@ const CableRegistration: React.FC = () => {
                                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">{t('specifications')}</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('fiber_count')}</label>
-                                        <input
+                                        <CustomInput
+                                            label={t('fiber_count')}
                                             type="number"
-                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
                                             value={formData.fiberCount}
                                             onChange={e => setFormData({ ...formData, fiberCount: parseInt(e.target.value) })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('loose_tubes')}</label>
-                                        <input
+                                        <CustomInput
+                                            label={t('loose_tubes')}
                                             type="number"
-                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
                                             value={formData.looseTubeCount}
                                             onChange={e => setFormData({ ...formData, looseTubeCount: Number(e.target.value) })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('fibers_per_tube') || 'Fibras por Tubo'}</label>
-                                        <input
+                                        <CustomInput
+                                            label={t('fibers_per_tube') || 'Fibras por Tubo'}
                                             type="number"
-                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
                                             value={formData.fibersPerTube}
                                             onChange={e => setFormData({ ...formData, fibersPerTube: Number(e.target.value) })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('attenuation_db')}</label>
-                                        <input
-                                            type="number" step="0.01"
-                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-sky-500"
+                                        <CustomInput
+                                            label={t('attenuation_db')}
+                                            type="number"
+                                            step="0.01"
                                             value={formData.attenuation}
                                             onChange={e => setFormData({ ...formData, attenuation: Number(e.target.value) })}
                                         />
@@ -353,12 +347,12 @@ const CableRegistration: React.FC = () => {
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1">{t('description')}</label>
-                                <textarea
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-sky-500 transition-all"
+                                <CustomInput
+                                    isTextarea
+                                    label={t('description')}
                                     rows={3}
                                     placeholder={t('details_placeholder')}
-                                    value={formData.description}
+                                    value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
@@ -447,7 +441,7 @@ const CableRegistration: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="flex-1 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                             >
                                 <Save className="w-4 h-4" />
                                 {t('save')}

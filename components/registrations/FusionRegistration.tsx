@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
 import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save, AlertTriangle } from 'lucide-react';
+import { CustomInput } from '../common';
 
 export const FusionRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -222,24 +223,21 @@ export const FusionRegistration: React.FC = () => {
 
                         <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('name') || "Nome"}</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
+                                <CustomInput
+                                    label={t('name') || "Nome"}
+                                    value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     placeholder={t('name_placeholder') || 'Ex: Fusão Padrão'}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"
                                     autoFocus
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_db') || "Atenuação (dB)"}</label>
-                                <input
+                                <CustomInput
+                                    label={t('attenuation_db') || "Atenuação (dB)"}
                                     type="number"
                                     step="0.01"
-                                    value={formData.attenuation}
+                                    value={formData.attenuation || ''}
                                     onChange={e => setFormData({ ...formData, attenuation: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"
                                 />
                             </div>
 
@@ -253,7 +251,7 @@ export const FusionRegistration: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2"
+                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2"
                                 >
                                     <Save className="w-4 h-4" />
                                     {t('save')}

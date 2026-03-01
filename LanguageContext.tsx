@@ -89,6 +89,7 @@ const translations = {
     'delete_project_confirm': 'Are you sure you want to delete project "{name}"?',
     'project_updated': 'Project updated successfully!',
     'toast_project_deleted': 'Project deleted successfully!',
+    'toast_applied_success': 'Properties applied successfully!',
     'error_project_update': 'Failed to update project.',
     'error_project_delete': 'Failed to delete project.',
     'error_saving_changes': 'Error saving changes. Please try again.',
@@ -108,6 +109,8 @@ const translations = {
     'toggle_labels': 'Labels',
     'sidebar_collapse': 'Collapse Menu',
     'sidebar_expand': 'Expand Menu',
+    'collapse': 'Collapse',
+    'expand': 'Expand',
     'menu': 'Menu',
     'home': 'Home',
     'mode_view': 'Selection / Nav',
@@ -160,6 +163,12 @@ const translations = {
     'reg_clientes': 'Customers',
     'users': 'Users',
     'add_user': 'Add User',
+    'edit_user': 'Edit User',
+    'optional': 'Optional',
+    'create': 'Create',
+    'update': 'Update',
+    'confirm_delete_user_msg': 'Are you sure you want to delete user "{username}" ({email})?',
+    'user_email_placeholder': 'user@email.com',
     'users_manage_desc': 'Manage system users and their permissions.',
     'role_member': 'Member',
     'role_admin': 'Administrator',
@@ -243,6 +252,7 @@ const translations = {
     'tooltip_add_customer': 'Placement Mode: Click on map to add a Customer.',
     'mode_add_customer': 'Place Customer',
     'sidebar_add_customer': 'New Customer',
+    'professional': 'PRO',
 
     // Active Equipment (OLT) Catalog
     'olt_catalog_desc': 'Manage your active equipment models and specifications.',
@@ -431,7 +441,7 @@ const translations = {
     'status_CERTIFIED': 'Certificado',
     'status_ANALYSING': 'Em análise',
     'status_LICENSED': 'Licenciado',
-    'pole_properties': 'Pole Properties',
+    'pole_properties': 'Properties',
     'select_pole': 'Select Pole',
     'search_pole': 'Search pole model...',
     'selection_pole_type': 'Pole Type',
@@ -439,8 +449,8 @@ const translations = {
     'confirm_delete_pole_msg': 'Are you sure you want to delete this pole?',
 
     // CTO/POP Details
-    'edit_cto': 'Edit CTO',
-    'edit_pop': 'Edit POP',
+    'edit_cto': 'Properties',
+    'edit_pop': 'Properties',
     'cto_info': 'CTO Information',
     'pop_info': 'POP Information',
 
@@ -575,6 +585,7 @@ const translations = {
     'click_to_manage': 'Click to Manage',
     'click_to_connect': 'Click to Connect',
     'splice_trays': 'Splice Trays',
+    'apply': 'Apply',
 
     'tray': 'Tray',
     'trays': 'Trays',
@@ -834,10 +845,6 @@ const translations = {
     'error_target_not_found': 'Target not found',
     'toast_select_next_cable': 'Select another cable to connect',
     'password': 'Password',
-    'edit_user': 'Edit User',
-    'update': 'Update',
-    'confirm_delete_user_msg': 'Are you sure you want to delete user {username} ({email})?',
-    'create': 'Create',
 
     // User Management Errors
     'error_username_taken': 'Username or email is already taken.',
@@ -1300,6 +1307,7 @@ const translations = {
     'delete_project_confirm': 'Tem certeza que deseja deletar o projeto "{name}"?',
     'project_updated': 'Projeto atualizado com sucesso!',
     'toast_project_deleted': 'Projeto excluído com sucesso!',
+    'toast_applied_success': 'Alterações aplicadas com sucesso!',
     'error_project_update': 'Falha ao atualizar projeto.',
     'error_project_delete': 'Falha ao excluir projeto.',
     'error_saving_changes': 'Erro ao salvar as alterações. Tente novamente.',
@@ -1320,6 +1328,8 @@ const translations = {
     'sidebar_expand': 'Expandir Menu',
     'menu': 'Menu',
     'home': 'Início',
+    'collapse': 'Recolher',
+    'expand': 'Expandir',
     'mode_view': 'Seleção / Nav',
     'mode_move': 'Mover Elementos',
     'mode_otdr': 'OTDR Trace',
@@ -1378,6 +1388,12 @@ const translations = {
     'reg_clientes': 'Clientes',
     'users': 'Usuários',
     'add_user': 'Adicionar Usuário',
+    'edit_user': 'Editar Usuário',
+    'optional': 'Opcional',
+    'create': 'Criar',
+    'update': 'Atualizar',
+    'confirm_delete_user_msg': 'Tem certeza que deseja excluir o usuário "{username}" ({email})?',
+    'user_email_placeholder': 'usuario@email.com',
     'users_manage_desc': 'Gerencie os usuários do sistema e suas permissões.',
     'role_member': 'Membro',
     'role_admin': 'Administrador',
@@ -1456,6 +1472,7 @@ const translations = {
     'draw_customer_drop_desc': 'Clique para desenhar o cabo drop do cliente até a CTO.',
     'draw_drop': 'Desenhar Cabo',
     'sidebar_add_customer': 'Adicionar Cliente',
+    'professional': 'PRO',
     'confirm_disconnect': 'Tem certeza que deseja desconectar este cliente? Isso removerá o cabo e a conexão.',
     'confirm_remove_cable_box': 'Tem certeza que deseja remover este cabo da caixa?',
     'title_remove_cable': 'Remover Cabo',
@@ -1644,7 +1661,7 @@ const translations = {
     'status_LICENSED': 'Licenciado',
 
     // Pole Details
-    'pole_properties': 'Propriedades do poste',
+    'pole_properties': 'Propriedades',
     'select_pole': 'Selecionar Poste',
     'search_pole': 'Buscar modelo de poste...',
     'pole_type': 'Tipo de poste',
@@ -1655,8 +1672,8 @@ const translations = {
     'confirm_delete_pole_confirm': 'Deseja excluir este poste?',
 
     // CTO/POP Details
-    'edit_cto': 'Editar CTO',
-    'edit_pop': 'Editar POP',
+    'edit_cto': 'Propriedades',
+    'edit_pop': 'Propriedades',
     'cto_info': 'Informações da CTO',
     'pop_info': 'Informações do POP',
 
@@ -1769,6 +1786,7 @@ const translations = {
     'link_cables': 'Vincular Cabos',
     'linked_pole': 'Poste Vinculado',
     'unlinked': 'Sem vínculo',
+    'link_to_nearest_pole': 'Vincular ao poste próximo',
     'linked_cables': 'Cabos Vinculados',
     'no_cables_linked': 'Nenhum Cabo Vinculado',
     'link_cables_help': 'Você pode vincular cabos a este DIO usando o botão acima.',
@@ -1819,6 +1837,7 @@ const translations = {
     'edit_fusion': 'Editar Fusão',
 
     'bm_cancel': 'Cancelar',
+    'apply': 'Aplicar',
 
     // Cable Catalog
     'cable_catalog': 'Catálogo de Cabos',
@@ -2092,7 +2111,6 @@ const translations = {
     'upload_restore': 'Enviar & Restaurar',
     'restore_confirm': 'AVISO: Isso irá apagar TODOS os dados de rede atuais (CTOs, Cabos, POPs, Projetos) e substituí-los pelo backup. Isso não pode ser desfeito. Tem certeza?',
     'restore_success': 'Sistema restaurado com sucesso. Recarregando...',
-    'apply': 'Aplicar',
     'maximize': 'Maximizar',
     'mode_ruler': 'Régua',
     'tooltip_ruler': 'Régua: Clique no mapa para medir a distância entre pontos.',

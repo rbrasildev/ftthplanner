@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CTOData, CTOStatus, CTO_STATUS_COLORS, PoleData } from '../types';
-import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown, Loader2 } from 'lucide-react';
+import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { getBoxes, BoxCatalogItem } from '../services/catalogService';
 import { calculateDistance } from '../utils/geometryUtils';
+import { CustomInput } from './common/CustomInput';
+import { CustomSelect } from './common/CustomSelect';
 
 interface CTODetailsPanelProps {
   cto: CTOData;
@@ -29,13 +31,20 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
 }) => {
   const { t } = useLanguage();
   const [name, setName] = useState(cto.name);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [status, setStatus] = useState<CTOStatus>(cto.status || 'PLANNED');
+  const [catalogId, setCatalogId] = useState(cto.catalogId || '');
+  const [poleId, setPoleId] = useState(cto.poleId || '');
   const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingLocal, setIsSavingLocal] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     setName(cto.name);
-  }, [cto.id, cto.name]);
+    setStatus(cto.status || 'PLANNED');
+    setCatalogId(cto.catalogId || '');
+    setPoleId(cto.poleId || '');
+  }, [cto.id, cto.name, cto.status, cto.catalogId, cto.poleId]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -45,28 +54,32 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
       .finally(() => setIsLoading(false));
   }, []);
 
-  const handleNameBlur = () => {
-    if (name !== cto.name) {
-      onRename(cto.id, name);
+  const handleSave = async () => {
+    setIsSavingLocal(true);
+    try {
+      const updates: Partial<CTOData> = {};
+      if (name !== cto.name) updates.name = name;
+      if (status !== cto.status) updates.status = status;
+      if (catalogId !== cto.catalogId) {
+        updates.catalogId = catalogId || undefined;
+        const box = availableBoxes.find(b => b.id === catalogId);
+        if (box) {
+          updates.type = box.type as any;
+          updates.color = box.color;
+          updates.reserveLoopLength = box.reserveLoopLength;
+        }
+      }
+      if (poleId !== cto.poleId) updates.poleId = poleId || undefined;
+
+      if (Object.keys(updates).length > 0) {
+        await onUpdate(updates);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save CTO properties', error);
+    } finally {
+      setIsSavingLocal(false);
     }
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowDeleteConfirm(true);
-  };
-
-  const handleConfirmDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onDelete(cto.id);
-  };
-
-  const handleCancelDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowDeleteConfirm(false);
   };
 
   // Calculate accurate fusion count
@@ -148,201 +161,148 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Box className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+          <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
           {t('edit_cto')}
         </h2>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-3 h-3 rounded-full shadow-sm"
-            style={{ backgroundColor: CTO_STATUS_COLORS[cto.status || 'PLANNED'] }}
-            title={t(`status_${cto.status}`)}
-          />
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+            title={isCollapsed ? t('expand') : t('collapse')}
+          >
+            {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+          </button>
+          <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
             <X className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      <div className="p-6 space-y-5 flex-1 overflow-y-auto min-h-0">
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Type className="w-3 h-3" /> {t('name')}
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={handleNameBlur}
-            onKeyDown={(e) => e.key === 'Enter' && handleNameBlur()}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
-            placeholder="CTO Name"
-            autoFocus
-          />
-        </div>
+      {!isCollapsed && (
+        <>
+          <div className="p-6 space-y-5 flex-1 overflow-y-auto min-h-0">
+            <CustomInput
+              label={t('name')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              icon={Type}
+              placeholder="CTO Name"
+              autoFocus
+            />
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Box className="w-3 h-3" /> {t('box_model') || 'Modelo de Caixa'}
-          </label>
-          <div className="relative">
-            {isLoading ? (
-              <div className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <Loader2 className="w-4 h-4 animate-spin text-sky-500" />
-                <span className="text-sm">{t('loading') || 'Carregando...'}</span>
-              </div>
-            ) : (
-              <>
-                <select
-                  value={cto.catalogId || ''}
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
-                    const box = availableBoxes.find(b => b.id === selectedId);
-                    if (box) {
-                      onUpdate({
-                        catalogId: selectedId,
-                        type: box.type as any,
-                        color: box.color,
-                        reserveLoopLength: box.reserveLoopLength
-                      });
-                    } else if (selectedId === '') {
-                      onUpdate({ catalogId: undefined });
+            <div>
+              {isLoading ? (
+                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 flex items-center gap-2 text-slate-500 dark:text-slate-400 h-[46px]">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                  <span className="text-sm">{t('loading') || 'Carregando...'}</span>
+                </div>
+              ) : (
+                <CustomSelect
+                  label={t('box_model') || 'Modelo de Caixa'}
+                  value={catalogId}
+                  onChange={(selectedId) => setCatalogId(selectedId)}
+                  options={[
+                    { value: '', label: t('select_box_model') || 'Selecione Modelo...' },
+                    ...availableBoxes.map(box => ({
+                      value: box.id,
+                      label: box.name,
+                      sublabel: box.type
+                    }))
+                  ]}
+                  placeholder={t('select_box_model') || 'Selecione Modelo...'}
+                />
+              )}
+            </div>
+
+            <CustomSelect
+              label={t('status')}
+              value={status}
+              onChange={(val) => setStatus(val as CTOStatus)}
+              options={[
+                { value: 'PLANNED', label: t('status_PLANNED') },
+                { value: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED') },
+                { value: 'DEPLOYED', label: t('status_DEPLOYED') },
+                { value: 'CERTIFIED', label: t('status_CERTIFIED') },
+              ]}
+              showSearch={false}
+            />
+
+            <div>
+              <CustomSelect
+                label={t('linked_pole') || 'Poste Vinculado'}
+                value={poleId}
+                onChange={(val) => setPoleId(val)}
+                options={[
+                  { value: '', label: t('unlinked') || 'Sem vínculo' },
+                  ...poles.map(p => ({ value: p.id, label: p.name }))
+                ]}
+              />
+              <button
+                onClick={() => {
+                  let nearest = null;
+                  let minDist = Infinity;
+                  poles.forEach(p => {
+                    const d = calculateDistance(cto.coordinates, p.coordinates);
+                    if (d < minDist) {
+                      minDist = d;
+                      nearest = p;
                     }
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer appearance-none"
-                >
-                  <option value="">{t('select_box_model') || 'Selecione Modelo...'}</option>
-                  {availableBoxes.map(box => (
-                    <option key={box.id} value={box.id}>
-                      {box.name} ({box.type})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Activity className="w-3 h-3" /> {t('status')}
-          </label>
-          <select
-            value={cto.status || 'PLANNED'}
-            onChange={(e) => onUpdateStatus(e.target.value as CTOStatus)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer"
-          >
-            <option value="PLANNED">{t('status_PLANNED')}</option>
-            <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
-            <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
-            <option value="CERTIFIED">{t('status_CERTIFIED')}</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {t('linked_pole') || 'Poste Vinculado'}
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={cto.poleId || ''}
-              onChange={(e) => onUpdate({ poleId: e.target.value || undefined })}
-              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors cursor-pointer appearance-none text-sm"
-            >
-              <option value="">{t('unlinked') || 'Sem vínculo'}</option>
-              {poles.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => {
-                let nearest = null;
-                let minDist = Infinity;
-                poles.forEach(p => {
-                  const d = calculateDistance(cto.coordinates, p.coordinates);
-                  if (d < minDist) {
-                    minDist = d;
-                    nearest = p;
+                  });
+                  if (nearest && minDist < 20) {
+                    setPoleId((nearest as any).id);
                   }
-                });
-                if (nearest && minDist < 20) {
-                  onUpdate({ poleId: (nearest as any).id });
-                }
-              }}
-              title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
-              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
+                }}
+                title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
+                className="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-800 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+              >
+                <Activity className="w-4 h-4" />
+                {t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
+              </button>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">{t('inputs')}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-mono">{(cto.inputCableIds || []).length} Cable(s)</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">{t('connections')}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-mono">{fusionCount} {t('spliced')}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">{t('splitters')}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-mono">{(cto.splitters || []).length} Unit(s)</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex items-start gap-2">
+                <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
+                <span className="text-[10px] text-slate-500 font-mono leading-tight">
+                  {cto.coordinates.lat.toFixed(5)}, <br /> {cto.coordinates.lng.toFixed(5)}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 shrink-0 flex gap-3">
+            <button
+              onClick={onOpenSplicing}
+              className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
             >
-              <Activity className="w-4 h-4" />
+              <Settings2 className="w-4 h-4" />
+              {t('manage_splicing')}
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={isSavingLocal}
+              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/20"
+            >
+              {isSavingLocal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+              {t('apply')}
             </button>
           </div>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">{t('inputs')}</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{(cto.inputCableIds || []).length} Cable(s)</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">{t('connections')}</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{fusionCount} {t('spliced')}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">{t('splitters')}</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{(cto.splitters || []).length} Unit(s)</span>
-          </div>
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex items-start gap-2">
-            <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
-            <span className="text-[10px] text-slate-500 font-mono leading-tight">
-              {cto.coordinates.lat.toFixed(5)}, <br /> {cto.coordinates.lng.toFixed(5)}
-            </span>
-          </div>
-        </div>
-
-      </div>
-
-      <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 shrink-0 flex flex-col gap-3">
-        <button
-          onClick={onOpenSplicing}
-          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/20"
-        >
-          <Settings2 className="w-4 h-4" />
-          {t('manage_splicing')}
-        </button>
-
-        {showDeleteConfirm ? (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
-              <AlertTriangle className="w-5 h-5 shrink-0" />
-              <p className="text-xs font-medium leading-tight">
-                {t('confirm_delete_cto_msg', { name: cto.name })}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleCancelDelete}
-                className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold transition shadow-lg shadow-red-900/20"
-              >
-                {t('confirm_delete')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleDeleteClick}
-            className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center justify-center gap-2 transition text-sm font-medium cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-            {t('delete_cto_btn')}
-          </button>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };

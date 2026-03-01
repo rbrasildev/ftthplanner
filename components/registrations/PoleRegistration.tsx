@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { PoleCatalogItem, getPoles, createPole, updatePole, deletePole } from '../../services/catalogService';
 import { Search, Plus, Edit2, Trash2, X, Save, AlertTriangle, Loader2, Zap } from 'lucide-react';
+import { CustomSelect, CustomInput } from '../common';
 
 export const PoleRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -220,77 +221,75 @@ export const PoleRegistration: React.FC = () => {
 
                         <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('name')}</label>
-                                <input
-                                    type="text"
+                                <CustomInput
+                                    label={t('name')}
                                     required
                                     value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('splitter_type')}</label>
-                                    <select
+                                    <CustomSelect
+                                        label={t('splitter_type')}
                                         value={formData.type || 'Concreto'}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
-                                    >
-                                        <option value="Concreto">{t('concrete') || 'Concreto'}</option>
-                                        <option value="Madeira">{t('wood') || 'Madeira'}</option>
-                                        <option value="Metal">{t('metal') || 'Metal'}</option>
-                                        <option value="Fibra">{t('fiber') || 'Fibra'}</option>
-                                    </select>
+                                        options={[
+                                            { value: 'Concreto', label: t('concrete') || 'Concreto' },
+                                            { value: 'Madeira', label: t('wood') || 'Madeira' },
+                                            { value: 'Metal', label: t('metal') || 'Metal' },
+                                            { value: 'Fibra', label: t('fiber') || 'Fibra' }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, type: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('pole_shape')}</label>
-                                    <select
+                                    <CustomSelect
+                                        label={t('pole_shape')}
                                         value={formData.shape || 'Circular'}
-                                        onChange={e => setFormData({ ...formData, shape: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
-                                    >
-                                        <option value="Circular">{t('shape_circular')}</option>
-                                        <option value="Duplo T">{t('shape_duplot')}</option>
-                                        <option value="Quadrado">{t('shape_square')}</option>
-                                    </select>
+                                        options={[
+                                            { value: 'Circular', label: t('shape_circular') },
+                                            { value: 'Duplo T', label: t('shape_duplot') },
+                                            { value: 'Quadrado', label: t('shape_square') }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, shape: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('pole_height')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('pole_height')}
                                         type="number"
                                         step="0.1"
                                         required
                                         value={formData.height || ''}
                                         onChange={e => setFormData({ ...formData, height: Number(e.target.value) })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('pole_strength')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('pole_strength')}
                                         type="number"
                                         step="10"
                                         required
                                         value={formData.strength || ''}
                                         onChange={e => setFormData({ ...formData, strength: Number(e.target.value) })}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none dark:text-white"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">{t('description')}</label>
-                                <textarea
+                                <CustomInput
+                                    isTextarea
+                                    label={t('description')}
                                     rows={3}
                                     value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-sky-500 outline-none resize-none dark:text-white"
                                     placeholder={t('details_placeholder')}
                                 />
                             </div>
@@ -306,7 +305,7 @@ export const PoleRegistration: React.FC = () => {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20"
+                                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
                                 >
                                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     {t('save')}

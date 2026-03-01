@@ -2662,6 +2662,7 @@ export default function App() {
                                 ...prev,
                                 ctos: prev.ctos.map(c => c.id === selectedId ? { ...c, ...updates } : c)
                             }));
+                            showToast(t('toast_applied_success'));
                         }}
                         onOpenSplicing={() => { setEditingCTO(getCurrentNetwork().ctos.find(c => c.id === selectedId)!); setSelectedId(null); }}
                         onDelete={handleDeleteCTO}
@@ -2677,7 +2678,10 @@ export default function App() {
                         poles={getCurrentNetwork().poles || []}
                         onRename={handleRenamePOP}
                         onUpdateStatus={handleUpdatePOPStatus}
-                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onUpdate={(id, updates) => {
+                            updateCurrentNetwork(prev => ({ ...prev, pops: prev.pops.map(p => p.id === id ? { ...p, ...updates } : p) }));
+                            showToast(t('toast_applied_success'));
+                        }}
                         onOpenRack={() => { setEditingPOP(getCurrentNetwork().pops?.find(p => p.id === selectedId)!); setSelectedId(null); }}
                         onDelete={handleDeletePOP}
                         onClose={() => setSelectedId(null)}
@@ -2692,7 +2696,10 @@ export default function App() {
                         cables={getCurrentNetwork().cables}
                         onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
                         onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
-                        onUpdate={(id, updates) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }))}
+                        onUpdate={(id, updates) => {
+                            updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, ...updates } : p) }));
+                            showToast(t('toast_applied_success'));
+                        }}
                         onDelete={(id) => {
                             updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.filter(p => p.id !== id) }));
                             setSelectedId(null);

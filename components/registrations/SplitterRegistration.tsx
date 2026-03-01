@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
+import { CustomSelect, CustomInput } from '../common';
 
 export const SplitterRegistration: React.FC = () => {
     const { t } = useLanguage();
@@ -335,11 +336,10 @@ export const SplitterRegistration: React.FC = () => {
 
                         <div className="p-6 overflow-y-auto space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('splitter_name')}</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                    value={formData.name}
+                                <CustomInput
+                                    label={t('splitter_name')}
+                                    required
+                                    value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     placeholder={t('splitter_name_placeholder') || 'Ex: 1:8 Balanced PLC'}
                                 />
@@ -347,41 +347,44 @@ export const SplitterRegistration: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('splitter_type')}</label>
-                                    <select
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                    <CustomSelect
+                                        label={t('splitter_type')}
                                         value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                    >
-                                        <option value="PLC">PLC</option>
-                                        <option value="FBT">FBT</option>
-                                    </select>
+                                        options={[
+                                            { value: 'PLC', label: 'PLC' },
+                                            { value: 'FBT', label: 'FBT' }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, type: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('splitter_mode')}</label>
-                                    <select
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                    <CustomSelect
+                                        label={t('splitter_mode')}
                                         value={formData.mode}
-                                        onChange={e => setFormData({ ...formData, mode: e.target.value })}
-                                    >
-                                        <option value="Balanced">{t('splitter_mode_balanced')}</option>
-                                        <option value="Unbalanced">{t('splitter_mode_unbalanced')}</option>
-                                    </select>
+                                        options={[
+                                            { value: 'Balanced', label: t('splitter_mode_balanced') },
+                                            { value: 'Unbalanced', label: t('splitter_mode_unbalanced') }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, mode: val })}
+                                        showSearch={false}
+                                    />
                                 </div>
                             </div>
 
 
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('splitter_connector_type')}</label>
-                                <select
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
+                                <CustomSelect
+                                    label={t('splitter_connector_type')}
                                     value={formData.connectorType || 'Unconnectorized'}
-                                    onChange={e => setFormData({ ...formData, connectorType: e.target.value })}
-                                >
-                                    <option value="Unconnectorized">{t('unconnectorized') || 'Não Conectorizado'}</option>
-                                    <option value="Connectorized">{t('connectorized') || 'Conectorizado'}</option>
-                                </select>
+                                    options={[
+                                        { value: 'Unconnectorized', label: t('unconnectorized') || 'Não Conectorizado' },
+                                        { value: 'Connectorized', label: t('connectorized') || 'Conectorizado' }
+                                    ]}
+                                    onChange={val => setFormData({ ...formData, connectorType: val })}
+                                    showSearch={false}
+                                />
                             </div>
 
                             <label className="flex items-center gap-2 mt-4 ml-1 cursor-pointer select-none">
@@ -398,19 +401,17 @@ export const SplitterRegistration: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('inputs')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('inputs')}
                                         type="number"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                         value={formData.inputs}
                                         onChange={e => setFormData({ ...formData, inputs: parseInt(e.target.value) })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('outputs')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('outputs')}
                                         type="number"
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
                                         value={formData.outputs}
                                         onChange={e => setFormData({ ...formData, outputs: parseInt(e.target.value) })}
                                     />
@@ -421,21 +422,17 @@ export const SplitterRegistration: React.FC = () => {
                                 {formData.mode === 'Unbalanced' ? (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_port1')}</label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                                value={formData.port1}
+                                            <CustomInput
+                                                label={t('attenuation_port1')}
+                                                value={formData.port1 || ''}
                                                 onChange={e => setFormData({ ...formData, port1: e.target.value })}
                                                 placeholder={t('attenuation_placeholder') || 'e.g. 14'}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_port2')}</label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                                value={formData.port2}
+                                            <CustomInput
+                                                label={t('attenuation_port2')}
+                                                value={formData.port2 || ''}
                                                 onChange={e => setFormData({ ...formData, port2: e.target.value })}
                                                 placeholder={t('attenuation_placeholder') || 'e.g. 0.5'}
                                             />
@@ -443,24 +440,21 @@ export const SplitterRegistration: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('attenuation_db')}</label>
-                                        <input
-                                            type="text"
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white"
-                                            value={formData.attenuation}
+                                        <CustomInput
+                                            label={t('attenuation_db')}
+                                            value={formData.attenuation || ''}
                                             onChange={e => setFormData({ ...formData, attenuation: e.target.value })}
                                             placeholder={t('attenuation_placeholder') || 'e.g., 10.5'}
                                         />
                                     </div>
                                 )}
-
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('description')}</label>
-                                <textarea
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none dark:text-white min-h-[80px]"
-                                    value={formData.description}
+                                <CustomInput
+                                    isTextarea
+                                    label={t('description')}
+                                    value={formData.description || ''}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
@@ -476,7 +470,7 @@ export const SplitterRegistration: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-sky-500/20"
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
                             >
                                 <Save className="w-4 h-4" />
                                 {t('save')}

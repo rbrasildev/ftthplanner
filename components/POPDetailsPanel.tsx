@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { POPData, CTOStatus, CTO_STATUS_COLORS, PoleData } from '../types';
-import { Settings2, Trash2, Activity, MapPin, Building2, Type, X, AlertTriangle, Palette, Scaling } from 'lucide-react';
+import { POPData, CTOStatus, CTO_STATUS_COLORS, PoleData, CTOData } from '../types';
+import { Settings2, Trash2, Activity, MapPin, Building2, Type, X, AlertTriangle, Palette, Scaling, Loader2, Edit2, Check, Settings, Info, Share2, Plus, Unlink, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { calculateDistance } from '../utils/geometryUtils';
+import { CustomInput } from './common/CustomInput';
+import { CustomSelect } from './common/CustomSelect';
 
 interface POPDetailsPanelProps {
   pop: POPData;
@@ -28,34 +29,42 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
 }) => {
   const { t } = useLanguage();
   const [name, setName] = useState(pop.name);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [status, setStatus] = useState<CTOStatus>(pop.status || 'PLANNED');
+  const [poleId, setPoleId] = useState(pop.poleId || '');
+  const [color, setColor] = useState(pop.color || '#6366f1');
+  const [size, setSize] = useState(pop.size || 24);
+  const [isSavingLocal, setIsSavingLocal] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     setName(pop.name);
-  }, [pop.id, pop.name]);
+    setStatus(pop.status || 'PLANNED');
+    setPoleId(pop.poleId || '');
+    setColor(pop.color || '#6366f1');
+    setSize(pop.size || 24);
+  }, [pop.id, pop.name, pop.status, pop.poleId, pop.color, pop.size]);
 
-  const handleNameBlur = () => {
-    if (name !== pop.name) {
-      onRename(pop.id, name);
+  const handleSave = async () => {
+    setIsSavingLocal(true);
+    try {
+      const updates: Partial<POPData> = {};
+      if (name !== pop.name) updates.name = name;
+      if (status !== pop.status) updates.status = status;
+      if (poleId !== pop.poleId) updates.poleId = poleId || undefined;
+      if (color !== pop.color) updates.color = color;
+      if (size !== pop.size) updates.size = size;
+
+      if (Object.keys(updates).length > 0) {
+        await onUpdate(pop.id, updates);
+        if (name !== pop.name) onRename(pop.id, name);
+        if (status !== pop.status) onUpdateStatus(status);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save POP properties', error);
+    } finally {
+      setIsSavingLocal(false);
     }
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowDeleteConfirm(true);
-  };
-
-  const handleConfirmDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onDelete(pop.id);
-  };
-
-  const handleCancelDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowDeleteConfirm(false);
   };
 
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -121,69 +130,57 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+          <Building2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
           {t('edit_pop')}
         </h2>
-        <div className="flex items-center gap-3">
-          <div
-            className="w-3 h-3 rounded-full shadow-sm"
-            style={{ backgroundColor: CTO_STATUS_COLORS[pop.status || 'PLANNED'] }}
-            title={t(`status_${pop.status}`)}
-          />
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition-colors"
+            title={isCollapsed ? t('expand') : t('collapse')}
+          >
+            {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+          </button>
+          <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
             <X className="w-6 h-6" />
           </button>
         </div>
       </div>
 
-      <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Type className="w-3 h-3" /> {t('name')}
-          </label>
-          <input
-            type="text"
+      {!isCollapsed && (
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto">
+          <CustomInput
+            label={t('name')}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={handleNameBlur}
-            onKeyDown={(e) => e.key === 'Enter' && handleNameBlur()}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors"
+            icon={Type}
             placeholder="POP Name"
             autoFocus
           />
-        </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Activity className="w-3 h-3" /> {t('status')}
-          </label>
-          <select
-            value={pop.status || 'PLANNED'}
-            onChange={(e) => onUpdateStatus(e.target.value as CTOStatus)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer"
-          >
-            <option value="PLANNED">{t('status_PLANNED')}</option>
-            <option value="NOT_DEPLOYED">{t('status_NOT_DEPLOYED')}</option>
-            <option value="DEPLOYED">{t('status_DEPLOYED')}</option>
-            <option value="CERTIFIED">{t('status_CERTIFIED')}</option>
-          </select>
-        </div>
+          <CustomSelect
+            label={t('status')}
+            value={status}
+            onChange={(val) => setStatus(val as CTOStatus)}
+            options={[
+              { value: 'PLANNED', label: t('status_PLANNED') },
+              { value: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED') },
+              { value: 'DEPLOYED', label: t('status_DEPLOYED') },
+              { value: 'CERTIFIED', label: t('status_CERTIFIED') },
+            ]}
+            showSearch={false}
+          />
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {t('linked_pole') || 'Poste Vinculado'}
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={pop.poleId || ''}
-              onChange={(e) => onUpdate(pop.id, { poleId: e.target.value || undefined })}
-              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors cursor-pointer appearance-none text-sm"
-            >
-              <option value="">{t('unlinked') || 'Sem vínculo'}</option>
-              {poles.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+          <div>
+            <CustomSelect
+              label={t('linked_pole') || 'Poste Vinculado'}
+              value={poleId}
+              onChange={(val) => setPoleId(val)}
+              options={[
+                { value: '', label: t('unlinked') || 'Sem vínculo' },
+                ...poles.map(p => ({ value: p.id, label: p.name }))
+              ]}
+            />
             <button
               onClick={() => {
                 let nearest = null;
@@ -196,115 +193,91 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
                   }
                 });
                 if (nearest && minDist < 20) {
-                  onUpdate(pop.id, { poleId: (nearest as any).id });
+                  setPoleId((nearest as any).id);
                 }
               }}
               title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
-              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors"
+              className="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-800 transition-all flex items-center justify-center gap-2 text-xs font-bold"
             >
               <Activity className="w-4 h-4" />
+              {t('link_to_nearest_pole')}
             </button>
           </div>
-        </div>
 
-        <div className="space-y-3">
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
-            <Palette className="w-3 h-3" /> Visualização
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] text-slate-400 mb-1 block">Cor do Ícone</label>
-              <div className="flex gap-2 items-center">
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
+              <Palette className="w-3 h-3" /> Visualização
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block">Cor do Ícone</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                    title="Escolher Cor"
+                  />
+                  <span className="text-xs font-mono text-slate-500">{color}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 mb-1 block flex items-center gap-1"><Scaling className="w-3 h-3" /> Tamanho ({size}px)</label>
                 <input
-                  type="color"
-                  value={pop.color || '#6366f1'}
-                  onChange={(e) => onUpdate(pop.id, { color: e.target.value })}
-                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                  title="Escolher Cor"
+                  type="range"
+                  min="16"
+                  max="64"
+                  step="4"
+                  value={size}
+                  onChange={(e) => setSize(parseInt(e.target.value))}
+                  className="w-full accent-emerald-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                 />
-                <span className="text-xs font-mono text-slate-500">{pop.color || '#6366f1'}</span>
               </div>
             </div>
-            <div>
-              <label className="text-[10px] text-slate-400 mb-1 block flex items-center gap-1"><Scaling className="w-3 h-3" /> Tamanho ({pop.size || 24}px)</label>
-              <input
-                type="range"
-                min="16"
-                max="64"
-                step="4"
-                value={pop.size || 24}
-                onChange={(e) => onUpdate(pop.id, { size: parseInt(e.target.value) })}
-                className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-              />
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">{t('backbone_cables')}</span>
+              <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.inputCableIds || []).length}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">OLTs</span>
+              <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.olts || []).length} Unit(s)</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">DIOs</span>
+              <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.dios || []).length} Unit(s)</span>
+            </div>
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex items-start gap-2">
+              <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
+              <span className="text-[10px] text-slate-500 font-mono leading-tight">
+                {pop.coordinates.lat.toFixed(5)}, <br /> {pop.coordinates.lng.toFixed(5)}
+              </span>
             </div>
           </div>
-        </div>
 
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">{t('backbone_cables')}</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.inputCableIds || []).length}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">OLTs</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.olts || []).length} Unit(s)</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500">DIOs</span>
-            <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.dios || []).length} Unit(s)</span>
-          </div>
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex items-start gap-2">
-            <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
-            <span className="text-[10px] text-slate-500 font-mono leading-tight">
-              {pop.coordinates.lat.toFixed(5)}, <br /> {pop.coordinates.lng.toFixed(5)}
-            </span>
-          </div>
-        </div>
-
-        <div className="pt-2 flex flex-col gap-3">
-          <button
-            onClick={onOpenRack}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-900/10 dark:shadow-indigo-900/20"
-          >
-            <Settings2 className="w-4 h-4" />
-            {t('manage_pop')}
-          </button>
-
-          {showDeleteConfirm ? (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
-                <p className="text-xs font-medium leading-tight">
-                  {t('confirm_delete_pop_msg', { name: pop.name })}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCancelDelete}
-                  className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold transition shadow-lg shadow-red-900/20"
-                >
-                  {t('confirm_delete')}
-                </button>
-              </div>
-            </div>
-          ) : (
+          <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
             <button
-              type="button"
-              onClick={handleDeleteClick}
-              className="w-full py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center justify-center gap-2 transition text-sm font-medium cursor-pointer"
+              onClick={onOpenRack}
+              className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
             >
-              <Trash2 className="w-4 h-4" />
-              {t('delete_pop_btn')}
+              <Settings2 className="w-4 h-4" />
+              {t('manage_pop')}
             </button>
-          )}
+
+            <button
+              onClick={handleSave}
+              disabled={isSavingLocal}
+              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/20"
+            >
+              {isSavingLocal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+              {t('apply')}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

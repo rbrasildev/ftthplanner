@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Search, Edit2, Trash2, X, Save, AlertTriangle, Loader2, MapPin, Phone, Mail, FileText } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { CustomSelect, CustomInput } from '../common';
 import { getCustomers, updateCustomer, deleteCustomer } from '../../services/customerService';
 import { Customer } from '../../types';
 
@@ -257,67 +258,61 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('name')} *</label>
-                                <input
-                                    type="text"
+                                <CustomInput
+                                    label={t('name')}
                                     required
-                                    value={formData.name}
+                                    value={formData.name || ''}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('customer_doc')}</label>
-                                    <input
-                                        type="text"
+                                    <CustomInput
+                                        label={t('customer_doc')}
                                         value={formData.document || ''}
                                         onChange={e => setFormData({ ...formData, document: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('customer_status_title')}</label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                    >
-                                        <option value="ACTIVE">{t('customer_status_active')}</option>
-                                        <option value="INACTIVE">{t('customer_status_inactive')}</option>
-                                        <option value="PLANNED">{t('customer_status_planned')}</option>
-                                    </select>
+                                    <CustomSelect
+                                        label={t('customer_status_title')}
+                                        value={formData.status || 'ACTIVE'}
+                                        options={[
+                                            { value: 'ACTIVE', label: t('customer_status_active') },
+                                            { value: 'INACTIVE', label: t('customer_status_inactive') },
+                                            { value: 'PLANNED', label: t('customer_status_planned') }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, status: val as any })}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('customer_phone')}</label>
-                                    <input
-                                        type="text"
+                                    <CustomInput
+                                        label={t('customer_phone')}
                                         value={formData.phone || ''}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('email')}</label>
-                                    <input
+                                    <CustomInput
+                                        label={t('email')}
                                         type="email"
                                         value={formData.email || ''}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('customer_address')}</label>
-                                <textarea
+                                <CustomInput
+                                    isTextarea
+                                    label={t('customer_address')}
                                     value={formData.address || ''}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                    className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors min-h-[60px]"
+                                    rows={2}
                                 />
                             </div>
 
