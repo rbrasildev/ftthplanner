@@ -23,6 +23,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
         text-sm text-slate-900 dark:text-white
         placeholder:text-slate-400
         focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10
+        disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900
         ${error
             ? 'border-red-500 ring-4 ring-red-500/10'
             : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'}

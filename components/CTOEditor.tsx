@@ -14,6 +14,8 @@ import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizon
 // I will use multi_replace_file_content.
 
 import { useLanguage } from '../LanguageContext';
+import { CustomSelect } from './common/CustomSelect';
+import { CustomInput } from './common/CustomInput';
 import { FiberCableNode } from './editor/FiberCableNode';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
@@ -2938,7 +2940,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     <div className="h-14 flex items-center justify-between px-6">
                         <div className="flex items-center gap-4 pointer-events-none min-w-0 flex-1">
                             <h2 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
-                                <Box className="w-5 h-5 text-sky-500 dark:text-sky-400 shrink-0" />
+                                <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
                                 <span className="truncate">{t('splicing_title', { name: cto.name })}</span>
                             </h2>
                         </div>
@@ -2971,7 +2973,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
                                 <button
                                     onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('rotate_mode')}
                                 >
                                     <RotateCw className={`w-4 h-4 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
@@ -2989,7 +2991,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
                                 <button
                                     onClick={() => setShowSplitterDropdown(true)}
-                                    className={`p-1.5 rounded border transition ${showSplitterDropdown ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                    className={`p-1.5 rounded border transition ${showSplitterDropdown ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                     title={t('splitters')}
                                 >
                                     <Triangle className="w-4 h-4 -rotate-90" />
@@ -3012,7 +3014,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
                                     onClick={() => setIsAutoSpliceOpen(true)}
                                     title={t('auto_splice')}
-                                    className={`p-1.5 rounded border transition ${isAutoSpliceOpen ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`p-1.5 rounded border transition ${isAutoSpliceOpen ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                 >
                                     <ArrowRightLeft className="w-4 h-4" />
                                 </button>
@@ -3051,7 +3053,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <button
 
                                     onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-indigo-600 border-indigo-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-emerald-600 border-emerald-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('otdr_trace_tool')}
                                 >
                                     <Ruler className="w-4 h-4" />
@@ -3062,7 +3064,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <div className="flex items-center gap-1.5 pl-2">
                                 <button
                                     onClick={() => setIsSnapping(!isSnapping)}
-                                    className={`p-1.5 rounded border transition ${isSnapping ? 'bg-sky-500 border-sky-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`p-1.5 rounded border transition ${isSnapping ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                     title={t('snap_grid')}
                                 >
                                     <Magnet className="w-4 h-4" />
@@ -3412,7 +3414,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <button
                                 onClick={handleApply}
                                 disabled={savingAction !== 'idle'}
-                                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-sky-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
                             >
                                 {savingAction === 'apply' ? (
                                     <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -3506,7 +3508,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         onClick={() => activateFusionTool(ft.id)}
                                         className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
                                     >
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-sky-400">
+                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                                             {ft.name}
                                         </span>
                                         {ft.attenuation && (
@@ -3549,7 +3551,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
                                             className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
                                         >
-                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-sky-400">
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                                                 {item.name}
                                             </span>
                                             <span className="text-xs text-slate-400 font-mono">
@@ -3675,33 +3677,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </p>
 
                             <div className="space-y-4 mb-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('source_cable')}</label>
-                                    <select
-                                        value={autoSourceId}
-                                        onChange={(e) => setAutoSourceId(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors cursor-pointer"
-                                    >
-                                        <option value="">{t('select_cable')}</option>
-                                        {incomingCables.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name} ({c.fiberCount} FO)</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <CustomSelect
+                                    label={t('source_cable')}
+                                    value={autoSourceId}
+                                    onChange={(val) => setAutoSourceId(val)}
+                                    showSearch={false}
+                                    options={[
+                                        { value: '', label: t('select_cable') },
+                                        ...incomingCables.map(c => ({ value: c.id, label: `${c.name} (${c.fiberCount} FO)` }))
+                                    ]}
 
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('target_cable')}</label>
-                                    <select
-                                        value={autoTargetId}
-                                        onChange={(e) => setAutoTargetId(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors cursor-pointer"
-                                    >
-                                        <option value="">{t('select_cable')}</option>
-                                        {incomingCables.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name} ({c.fiberCount} FO)</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                />
+                                <CustomSelect
+                                    label={t('target_cable')}
+                                    value={autoTargetId}
+                                    onChange={(val) => setAutoTargetId(val)}
+                                    showSearch={false}
+                                    options={[
+                                        { value: '', label: t('select_cable') },
+                                        ...incomingCables.map(c => ({ value: c.id, label: `${c.name} (${c.fiberCount} FO)` }))
+                                    ]}
+                                />
                             </div>
 
                             <div className="flex gap-2">
@@ -3723,7 +3719,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setOtdrTargetPort(null)}>
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <Ruler className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
@@ -3732,19 +3728,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </div>
                             </div>
 
-                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t('otdr_distance_lbl')}</label>
-                            <input
-                                type="number"
-                                value={otdrDistance}
-                                onChange={(e) => setOtdrDistance(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white font-mono focus:border-indigo-500 focus:outline-none mb-4 transition-colors"
-                                placeholder="e.g. 1250"
-                                autoFocus
-                            />
+                            <div className="mb-4">
+                                <CustomInput
+                                    label={t('otdr_distance_lbl')}
+                                    type="number"
+                                    value={otdrDistance}
+                                    onChange={(e) => setOtdrDistance(e.target.value)}
+                                    placeholder="e.g. 1250"
+                                    autoFocus
+                                />
+                            </div>
 
                             <div className="flex gap-2">
                                 <button onClick={() => setOtdrTargetPort(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                                <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg transition">{t('otdr_locate')}</button>
+                                <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition">{t('otdr_locate')}</button>
                             </div>
                         </div>
                     </div>

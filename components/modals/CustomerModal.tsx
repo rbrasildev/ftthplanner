@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Customer, CTOData, Splitter } from '../../types';
 import { useLanguage } from '../../LanguageContext';
 import { X, Save, MapPin, User, Phone, FileText, Search, Network } from 'lucide-react';
+import { CustomInput } from '../common/CustomInput';
+import { CustomSelect } from '../common/CustomSelect';
 
 interface CustomerModalProps {
     isOpen: boolean;
@@ -174,7 +176,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                     <button
                         onClick={() => setActiveTab(TABS.DATA)}
                         className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === TABS.DATA
-                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10'
+                            ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                     >
@@ -184,7 +186,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                     <button
                         onClick={() => setActiveTab(TABS.CONNECTION)}
                         className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activeTab === TABS.CONNECTION
-                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10'
+                            ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                     >
@@ -219,59 +221,44 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 />
                             )}
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500 mb-1">{t('customer_name')} *</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder={t('customer_name')}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500 mb-1">{t('customer_doc')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.document || ''}
-                                        onChange={e => setFormData({ ...formData, document: e.target.value })}
-                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder={t('customer_doc_placeholder') || "CPF / CNPJ"}
-                                    />
-                                </div>
+                                <CustomInput
+                                    label={`${t('customer_name')} *`}
+                                    value={formData.name || ''}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder={t('customer_name')}
+                                />
+                                <CustomInput
+                                    label={t('customer_doc')}
+                                    value={formData.document || ''}
+                                    onChange={e => setFormData({ ...formData, document: e.target.value })}
+                                    placeholder={t('customer_doc_placeholder') || 'CPF / CNPJ'}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500 mb-1">{t('customer_phone')}</label>
-                                    <input
-                                        type="text"
-                                        value={formData.phone || ''}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder={t('customer_phone_placeholder') || "(00) 00000-0000"}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-500 mb-1">{t('email')}</label>
-                                    <input
-                                        type="email"
-                                        value={formData.email || ''}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                        placeholder={t('customer_email_placeholder') || "cliente@email.com"}
-                                    />
-                                </div>
+                                <CustomInput
+                                    label={t('customer_phone')}
+                                    value={formData.phone || ''}
+                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder={t('customer_phone_placeholder') || '(00) 00000-0000'}
+                                />
+                                <CustomInput
+                                    label={t('email')}
+                                    type="email"
+                                    value={formData.email || ''}
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder={t('customer_email_placeholder') || 'cliente@email.com'}
+                                />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('customer_address')}</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1.5 uppercase text-[10px] tracking-wider">{t('customer_address')}</label>
                                 <div className="flex gap-2">
-                                    <MapPin className="text-slate-400 mt-2" size={16} />
+                                    <MapPin className="text-slate-400 mt-3" size={16} />
                                     <textarea
                                         value={formData.address || ''}
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                        className="flex-1 p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
+                                        className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
                                         rows={2}
                                         placeholder={t('customer_address')}
                                     />
@@ -289,18 +276,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('customer_status_title')}</label>
-                                <select
-                                    value={formData.status}
-                                    onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                                    className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                >
-                                    <option value="ACTIVE">{t('customer_status_active')}</option>
-                                    <option value="INACTIVE">{t('customer_status_inactive')}</option>
-                                    <option value="PLANNED">{t('customer_status_planned')}</option>
-                                </select>
-                            </div>
+                            <CustomSelect
+                                label={t('customer_status_title')}
+                                value={formData.status || 'ACTIVE'}
+                                onChange={val => setFormData({ ...formData, status: val as any })}
+                                showSearch={false}
+                                options={[
+                                    { value: 'ACTIVE', label: t('customer_status_active') },
+                                    { value: 'INACTIVE', label: t('customer_status_inactive') },
+                                    { value: 'PLANNED', label: t('customer_status_planned') },
+                                ]}
+                            />
                         </div>
                     )}
 
@@ -445,57 +431,42 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     {t('onu_data_section')}
                                 </h3>
                                 <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('onu_serial')}</label>
-                                        <input
-                                            type="text"
-                                            value={formData.onuSerial || ''}
-                                            onChange={e => setFormData({ ...formData, onuSerial: e.target.value })}
-                                            className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                            placeholder={t('onu_serial_placeholder') || "Ex: ZTEG12345678"}
-                                        />
-                                    </div>
+                                    <CustomInput
+                                        label={t('onu_serial')}
+                                        value={formData.onuSerial || ''}
+                                        onChange={e => setFormData({ ...formData, onuSerial: e.target.value })}
+                                        placeholder={t('onu_serial_placeholder') || 'Ex: ZTEG12345678'}
+                                    />
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">{t('pppoe_user')}</label>
-                                            <input
-                                                type="text"
-                                                value={formData.pppoeService || ''}
-                                                onChange={e => setFormData({ ...formData, pppoeService: e.target.value })}
-                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                                placeholder={t('pppoe_user_placeholder') || "usuario@pppoe"}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">{t('onu_mac')}</label>
-                                            <input
-                                                type="text"
-                                                value={formData.onuMac || ''}
-                                                onChange={e => {
-                                                    let value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
-                                                    if (value.length > 12) value = value.substring(0, 12);
-                                                    const parts = value.match(/.{1,2}/g) || [];
-                                                    const masked = parts.join(':');
-                                                    setFormData({ ...formData, onuMac: masked });
-                                                }}
-                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono"
-                                                placeholder="00:00:00:00:00:00"
-                                                maxLength={17}
-                                            />
-                                        </div>
+                                        <CustomInput
+                                            label={t('pppoe_user')}
+                                            value={formData.pppoeService || ''}
+                                            onChange={e => setFormData({ ...formData, pppoeService: e.target.value })}
+                                            placeholder={t('pppoe_user_placeholder') || 'usuario@pppoe'}
+                                        />
+                                        <CustomInput
+                                            label={t('onu_mac')}
+                                            value={formData.onuMac || ''}
+                                            onChange={e => {
+                                                let value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '');
+                                                if (value.length > 12) value = value.substring(0, 12);
+                                                const parts = value.match(/.{1,2}/g) || [];
+                                                const masked = parts.join(':');
+                                                setFormData({ ...formData, onuMac: masked });
+                                            }}
+                                            placeholder="00:00:00:00:00:00"
+                                            maxLength={17}
+                                            className="font-mono"
+                                        />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">{t('onu_power')}</label>
-                                            <input
-                                                type="text"
-                                                value={formData.onuPower || ''}
-                                                onChange={e => setFormData({ ...formData, onuPower: e.target.value })}
-                                                className="w-full p-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
-                                                placeholder="-20.50"
-                                            />
-                                        </div>
+                                        <CustomInput
+                                            label={t('onu_power')}
+                                            value={formData.onuPower || ''}
+                                            onChange={e => setFormData({ ...formData, onuPower: e.target.value })}
+                                            placeholder="-20.50"
+                                        />
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 mb-1">{t('drop_length')}</label>
                                             <div className="flex gap-2">
@@ -563,7 +534,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                     <button
                         onClick={handleSave}
                         disabled={loading || !formData.name}
-                        className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-bold transition"
                     >
                         {loading ? t('saving') : (
                             <>

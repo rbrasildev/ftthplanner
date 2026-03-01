@@ -5,6 +5,7 @@ import JSZip from 'jszip';
 import { useLanguage } from '../../LanguageContext';
 import * as catalogService from '../../services/catalogService';
 import { PoleCatalogItem } from '../../services/catalogService';
+import { CustomSelect } from '../common/CustomSelect';
 
 interface KmlImportModalProps {
     isOpen: boolean;
@@ -126,8 +127,8 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                 {/* Header */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                            <FileUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                            <FileUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <h3 className="font-bold text-lg text-slate-800 dark:text-white">Importar Postes (KMZ)</h3>
                     </div>
@@ -142,7 +143,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                     {/* 1. File Upload Area */}
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Arquivo KMZ / KML</label>
-                        <div className={`relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center transition-all ${file ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                        <div className={`relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center transition-all ${file ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/5'}`}>
                             <input
                                 type="file"
                                 accept=".kml,.kmz"
@@ -152,7 +153,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                             />
                             {isParsing ? (
                                 <div className="flex flex-col items-center gap-2">
-                                    <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                                    <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
                                     <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Processando arquivo...</span>
                                 </div>
                             ) : file ? (
@@ -186,17 +187,15 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                                 <Loader2 className="w-4 h-4 animate-spin" /> Carregando catálogo...
                             </div>
                         ) : poleTypes.length > 0 ? (
-                            <select
+                            <CustomSelect
                                 value={selectedPoleTypeId}
-                                onChange={(e) => setSelectedPoleTypeId(e.target.value)}
-                                className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
-                            >
-                                {poleTypes.map(type => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.name} ({type.height}m - {type.strength}daN)
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(val) => setSelectedPoleTypeId(val)}
+                                showSearch={false}
+                                options={poleTypes.map(type => ({
+                                    value: type.id,
+                                    label: `${type.name} (${type.height}m - ${type.strength}daN)`
+                                }))}
+                            />
                         ) : (
                             <div className="p-3 bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 text-sm rounded-xl border border-amber-100 dark:border-amber-900/30">
                                 Nenhum tipo de poste cadastrado. Cadastre um no menu.
@@ -218,7 +217,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                     <button
                         onClick={handleConfirm}
                         disabled={parsedPoints.length === 0 || !selectedPoleTypeId || isParsing}
-                        className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                        className="px-6 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                     >
                         <FileUp className="w-4 h-4" />
                         Importar {parsedPoints.length > 0 ? `(${parsedPoints.length})` : ''}

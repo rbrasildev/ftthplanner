@@ -109,7 +109,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
 
   useEffect(() => {
     if (panelRef.current) {
-      const width = 400;
+      const width = 520;
       const height = panelRef.current.offsetHeight || 500;
       const initialX = (window.innerWidth - width) / 2;
       const initialY = Math.max(50, (window.innerHeight - height) / 2);
@@ -153,7 +153,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
+      className="fixed z-[2000] w-[520px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div

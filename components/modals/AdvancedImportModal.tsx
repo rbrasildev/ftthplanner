@@ -301,7 +301,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
         <button
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === tab
-                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/50 dark:bg-indigo-900/10'
+                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50/50 dark:bg-emerald-900/10'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
         >
@@ -323,8 +323,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 {/* Header */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                            <FileUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                            <FileUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
                             <h3 className="font-bold text-xl text-slate-800 dark:text-white">Importação Profissional KMZ</h3>
@@ -340,7 +340,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 {!file ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12">
                         <div className={`relative border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center transition-all w-full max-w-2xl
-                            ${isParsing ? 'border-indigo-400 bg-indigo-50/30' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800/30'}
+                            ${isParsing ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/20 dark:hover:bg-emerald-900/5'}
                          `}>
                             <input
                                 type="file"
@@ -351,14 +351,14 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                             />
                             {isParsing ? (
                                 <div className="flex flex-col items-center gap-4">
-                                    <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+                                    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
                                     <h3 className="text-xl font-bold text-slate-700">Processando Arquivo...</h3>
                                     <p className="text-slate-500">Isso pode levar alguns segundos dependendo do tamanho.</p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center gap-4">
-                                    <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-2">
-                                        <Upload className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+                                    <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-2">
+                                        <Upload className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Selecione o arquivo KMZ/KML</h3>
                                     <p className="text-slate-500 max-w-md">O sistema irá identificar automaticamente Cabos, CTOs, CEOs e Postes para você classificar e validar.</p>
@@ -383,21 +383,21 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                         </div>
 
                         {/* Toolbar (Bulk Actions) */}
-                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 flex items-center gap-4 shrink-0 overflow-x-auto">
-                            <div className="flex items-center gap-2 px-2 border-r border-slate-200">
+                        <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center gap-4 shrink-0 overflow-x-auto">
+                            <div className="flex items-center gap-2 px-2 border-r border-slate-200 dark:border-slate-700">
                                 <input
                                     type="checkbox"
                                     checked={activeList.length > 0 && activeList.every(i => i.selected)}
                                     onChange={(e) => handleSelectAll(e.target.checked)}
-                                    className="rounded border-slate-300 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                                    className="rounded border-slate-300 w-4 h-4 text-emerald-600 focus:ring-emerald-500"
                                 />
-                                <span className="text-xs font-bold uppercase text-slate-500">Todos</span>
+                                <span className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Todos</span>
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-medium text-slate-500">Definir Tipo:</span>
                                 <select
-                                    className="text-sm p-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 min-w-[200px]"
+                                    className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
                                     onChange={(e) => {
                                         if (e.target.value) {
                                             handleApplyType(e.target.value);
@@ -416,7 +416,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                             <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4 border-r pr-4 mr-2">
                                 <span className="text-xs font-medium text-slate-500">Status:</span>
                                 <select
-                                    className="text-sm p-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
                                     onChange={(e) => {
                                         if (e.target.value) {
                                             handleApplyStatus(e.target.value);
@@ -436,9 +436,9 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                 <div className="flex items-center gap-2 ml-auto">
                                     <span className="text-xs font-medium text-slate-500">Mover para:</span>
                                     <div className="flex gap-1">
-                                        {activeTab !== 'ctos' && <button onClick={() => handleMoveTo('ctos')} className="px-2 py-1 bg-white border border-slate-300 rounded text-xs hover:bg-slate-50">CTO</button>}
-                                        {activeTab !== 'ceos' && <button onClick={() => handleMoveTo('ceos')} className="px-2 py-1 bg-white border border-slate-300 rounded text-xs hover:bg-slate-50">CEO</button>}
-                                        {activeTab !== 'poles' && <button onClick={() => handleMoveTo('poles')} className="px-2 py-1 bg-white border border-slate-300 rounded text-xs hover:bg-slate-50">Poste</button>}
+                                        {activeTab !== 'ctos' && <button onClick={() => handleMoveTo('ctos')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">CTO</button>}
+                                        {activeTab !== 'ceos' && <button onClick={() => handleMoveTo('ceos')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">CEO</button>}
+                                        {activeTab !== 'poles' && <button onClick={() => handleMoveTo('poles')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Poste</button>}
                                     </div>
                                 </div>
                             )}
@@ -465,7 +465,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                                         {activeList.map((item) => (
-                                            <tr key={item.id} className={`hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors ${!item.selected ? 'opacity-50 grayscale' : ''}`}>
+                                            <tr key={item.id} className={`hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors ${!item.selected ? 'opacity-50 grayscale' : ''}`}>
                                                 <td className="p-3 text-center">
                                                     <input
                                                         type="checkbox"
@@ -477,7 +477,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                                                 [activeTab]: prev[activeTab].map(i => i.id === item.id ? { ...i, selected: isChecked } : i)
                                                             }));
                                                         }}
-                                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                                                     />
                                                 </td>
                                                 <td className="p-3 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -497,7 +497,11 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                                             }));
                                                         }}
                                                         disabled={!item.selected}
-                                                        className={`w-full text-sm p-1.5 rounded border ${!item.typeId && item.selected ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'}`}
+                                                        className={`w-full text-sm px-3 py-1.5 rounded-xl border shadow-sm transition-all outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                                                            bg-white dark:bg-slate-800 text-slate-900 dark:text-white
+                                                            ${!item.typeId && item.selected
+                                                                ? 'border-red-400 dark:border-red-500'
+                                                                : 'border-slate-200 dark:border-slate-700'}`}
                                                     >
                                                         <option value="">Selecione...</option>
                                                         {activeCatalog.map((t: any) => (
@@ -549,7 +553,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                 <button
                                     onClick={handleConfirm}
                                     disabled={invalidCount > 0 || totalSelected === 0 || isImporting}
-                                    className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95 transition-all"
+                                    className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95 transition-all"
                                 >
                                     {isImporting ? (
                                         <>

@@ -78,7 +78,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
 
   useEffect(() => {
     if (panelRef.current) {
-      const width = 400;
+      const width = 520;
       const height = panelRef.current.offsetHeight || 600;
       const initialX = (window.innerWidth - width) / 2;
       const initialY = Math.max(50, (window.innerHeight - height) / 2);
@@ -122,7 +122,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[400px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
+      className="fixed z-[2000] w-[520px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div
@@ -171,38 +171,6 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
             showSearch={false}
           />
 
-          <div>
-            <CustomSelect
-              label={t('linked_pole') || 'Poste Vinculado'}
-              value={poleId}
-              onChange={(val) => setPoleId(val)}
-              options={[
-                { value: '', label: t('unlinked') || 'Sem vínculo' },
-                ...poles.map(p => ({ value: p.id, label: p.name }))
-              ]}
-            />
-            <button
-              onClick={() => {
-                let nearest = null;
-                let minDist = Infinity;
-                poles.forEach(p => {
-                  const d = calculateDistance(pop.coordinates, p.coordinates);
-                  if (d < minDist) {
-                    minDist = d;
-                    nearest = p;
-                  }
-                });
-                if (nearest && minDist < 20) {
-                  setPoleId((nearest as any).id);
-                }
-              }}
-              title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
-              className="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-800 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-            >
-              <Activity className="w-4 h-4" />
-              {t('link_to_nearest_pole')}
-            </button>
-          </div>
 
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center gap-1">
