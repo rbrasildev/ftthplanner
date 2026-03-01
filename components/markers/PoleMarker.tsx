@@ -6,8 +6,8 @@ import { PoleData } from '../../types';
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
 
-const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: string = 'concrete', currentZoom: number = 15) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 15));
+const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: string = 'concrete', currentZoom: number = 18) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
     const baseSize = 12;
     const size = Math.round(baseSize * zoomScale);
 
@@ -58,7 +58,7 @@ interface PoleMarkerProps {
 }
 
 export const PoleMarker = React.memo(({
-    pole, isSelected, showLabels, mode, currentZoom = 15, onNodeClick, onMoveNode,
+    pole, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onMoveNode,
     onDragStart, onDrag, onDragEnd, onContextMenu
 }: PoleMarkerProps) => {
     const icon = useMemo(() =>

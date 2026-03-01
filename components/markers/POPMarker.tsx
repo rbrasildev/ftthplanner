@@ -6,8 +6,8 @@ import { POPData } from '../../types';
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
 
-const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 15) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 15));
+const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
     const size = Math.round(baseSize * zoomScale);
     const pulseSize = Math.round(baseSize * 2 * zoomScale);
 
@@ -81,7 +81,7 @@ interface POPMarkerProps {
 }
 
 export const POPMarker = React.memo(({
-    pop, isSelected, showLabels, mode, currentZoom = 15, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
+    pop, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: POPMarkerProps) => {
     const icon = useMemo(() =>

@@ -10,8 +10,8 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 15) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 15));
+const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
     const size = Math.round(20 * zoomScale);
     const borderSize = Math.max(2, Math.round(3 * zoomScale));
     const pulseSize = Math.round(40 * zoomScale);
@@ -87,7 +87,7 @@ interface CTOMarkerProps {
 }
 
 export const CTOMarker = React.memo(({
-    cto, isSelected, showLabels, mode, currentZoom = 15, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
+    cto, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: CTOMarkerProps) => {
     const icon = useMemo(() =>
