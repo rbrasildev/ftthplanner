@@ -7,11 +7,12 @@ import { POPData } from '../../types';
 const iconCache = new Map<string, L.DivIcon>();
 
 const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
+    const effectiveZoom = Math.floor(currentZoom);
+    const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(baseSize * zoomScale);
     const pulseSize = Math.round(baseSize * 2 * zoomScale);
 
-    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${baseSize}-${currentZoom}`;
+    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${baseSize}-${effectiveZoom}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;

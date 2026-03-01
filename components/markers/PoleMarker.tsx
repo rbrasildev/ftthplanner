@@ -7,11 +7,12 @@ import { PoleData } from '../../types';
 const iconCache = new Map<string, L.DivIcon>();
 
 const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: string = 'concrete', currentZoom: number = 18) => {
-    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 18));
+    const effectiveZoom = Math.floor(currentZoom);
+    const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const baseSize = 12;
     const size = Math.round(baseSize * zoomScale);
 
-    const cacheKey = `pole-${type}-${isSelected}-${showLabels}-${currentZoom}`;
+    const cacheKey = `pole-${type}-${isSelected}-${showLabels}-${effectiveZoom}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
