@@ -571,37 +571,31 @@ export const syncProject = async (req: Request, res: Response) => {
                 });
             }
 
-            // 1. CLEANUP PHASE - Delete Cables, POPs, Poles (CTOs handled separately via Upsert)
-            // We delete in reverse dependency order: Cables -> POPs
-            await tx.cable.deleteMany({ where: { projectId: id } });
-            await tx.pop.deleteMany({ where: { projectId: id } });
-            // await tx.cto.deleteMany({ where: { projectId: id } }); // CHANGED: Managed via Upsert to preserve relations
-            await tx.pole.deleteMany({ where: { projectId: id } });
+            // 1. CLEANUP PHASE - Handled via Diffing in respective phases below
+            // No more blanket deleteMany for all entities to preserve data integrity and performance.
 
-            // 2. INSERT/UPDATE PHASE - CTOs
-            // We use Upsert to avoid breaking Foreign Key constraints (Drops, Customers)
+            // 2. INSERT/UPDATE PHASE - CTOs (Optimized with Diffing)
             if (network.ctos) {
-                // A. Identify CTOs to delete (present in DB but missing in payload)
-                const payloadIds = new Set(network.ctos.map((c: any) => c.id));
-                const existingCtos = await tx.cto.findMany({
+                const payloadCTOs = network.ctos;
+                const payloadIds = new Set(payloadCTOs.map((c: any) => c.id));
+
+                // Fetch ALL existing CTOs in this project to compute diff
+                const existingCTOsInDB = await tx.cto.findMany({
                     where: { projectId: id },
-                    select: { id: true }
                 });
+                const dbCTOMap = new Map(existingCTOsInDB.map((c: any) => [c.id, c]));
 
-                const toDelete = existingCtos
-                    .map((c: any) => c.id)
-                    .filter((dbId: string) => !payloadIds.has(dbId));
+                const toDelete = existingCTOsInDB
+                    .filter((c: any) => !payloadIds.has(c.id))
+                    .map((c: any) => c.id);
 
-                if (toDelete.length > 0) {
-                    await tx.cto.deleteMany({ where: { id: { in: toDelete } } });
-                }
+                const toCreate: any[] = [];
+                const toUpdate: any[] = [];
 
-                // B. Upsert payload CTOs
-                // Note: We cannot use createMany with Upsert, so we iterate.
-                for (const c of network.ctos) {
-                    await tx.cto.upsert({
-                        where: { id: c.id },
-                        create: {
+                for (const c of payloadCTOs as any[]) {
+                    const dbC = dbCTOMap.get(c.id) as any;
+                    if (!dbC) {
+                        toCreate.push({
                             id: c.id,
                             projectId: id,
                             companyId: user.companyId,
@@ -620,35 +614,87 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
                             poleId: c.poleId
-                        },
-                        update: {
-                            name: c.name,
-                            status: c.status,
-                            lat: c.coordinates.lat,
-                            lng: c.coordinates.lng,
-                            splitters: c.splitters || [],
-                            fusions: c.fusions || [],
-                            connections: c.connections || [],
-                            inputCableIds: c.inputCableIds || [],
-                            layout: c.layout || {},
-                            clientCount: c.clientCount || 0,
-                            catalogId: c.catalogId,
-                            type: c.type,
-                            color: c.color,
-                            reserveLoopLength: c.reserveLoopLength,
-                            poleId: c.poleId
+                        });
+                    } else {
+                        // DIFFING: Compare crucial fields to decide if update is needed
+                        // Coordinates might come as lat/lng properties directly or nested
+                        const incomingLat = c.coordinates?.lat ?? c.lat;
+                        const incomingLng = c.coordinates?.lng ?? c.lng;
+
+                        const hasChanged =
+                            dbC.name !== c.name ||
+                            dbC.status !== c.status ||
+                            Math.abs((dbC.lat || 0) - incomingLat) > 0.0000001 ||
+                            Math.abs((dbC.lng || 0) - incomingLng) > 0.0000001 ||
+                            dbC.clientCount !== (c.clientCount || 0) ||
+                            dbC.catalogId !== c.catalogId ||
+                            dbC.type !== c.type ||
+                            dbC.color !== c.color ||
+                            dbC.poleId !== c.poleId ||
+                            dbC.reserveLoopLength !== c.reserveLoopLength ||
+                            JSON.stringify(dbC.splitters) !== JSON.stringify(c.splitters || []) ||
+                            JSON.stringify(dbC.fusions) !== JSON.stringify(c.fusions || []) ||
+                            JSON.stringify(dbC.connections) !== JSON.stringify(c.connections || []) ||
+                            JSON.stringify(dbC.inputCableIds) !== JSON.stringify(c.inputCableIds || []) ||
+                            JSON.stringify(dbC.layout) !== JSON.stringify(c.layout || {});
+
+                        if (hasChanged) {
+                            toUpdate.push(c);
                         }
-                    });
+                    }
                 }
+
+                // Execute Operations
+                if (toDelete.length > 0) {
+                    await tx.cto.deleteMany({ where: { id: { in: toDelete } } });
+                }
+
+                if (toCreate.length > 0) {
+                    await tx.cto.createMany({ data: toCreate });
+                }
+
+                if (toUpdate.length > 0) {
+                    // Updates still need to be individual in Prisma for now, but we only do them for CHANGED items
+                    for (const c of toUpdate as any[]) {
+                        await tx.cto.update({
+                            where: { id: c.id },
+                            data: {
+                                name: c.name,
+                                status: c.status,
+                                lat: c.coordinates?.lat ?? c.lat,
+                                lng: c.coordinates?.lng ?? c.lng,
+                                splitters: c.splitters || [],
+                                fusions: c.fusions || [],
+                                connections: c.connections || [],
+                                inputCableIds: c.inputCableIds || [],
+                                layout: c.layout || {},
+                                clientCount: c.clientCount || 0,
+                                catalogId: c.catalogId,
+                                type: c.type,
+                                color: c.color,
+                                reserveLoopLength: c.reserveLoopLength,
+                                poleId: c.poleId
+                            }
+                        });
+                    }
+                }
+                console.log(`[Sync Diff] CTOs: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} deleted.`);
             }
 
-            // 3. INSERT PHASE - POPs
-            if (network.pops && network.pops.length > 0) {
-                const uniquePOPs = Array.from(new Map(network.pops.map((p: any) => [p.id, p])).values());
-                for (let i = 0; i < uniquePOPs.length; i += CHUNK_SIZE) {
-                    const chunk = uniquePOPs.slice(i, i + CHUNK_SIZE);
-                    await tx.pop.createMany({
-                        data: chunk.map((p: any) => ({
+            // 3. INSERT/UPDATE PHASE - POPs (Optimized with Diffing)
+            if (network.pops) {
+                const payloadIds = new Set(network.pops.map((p: any) => p.id));
+                const existingInDB = await tx.pop.findMany({ where: { projectId: id } });
+                const dbMap = new Map(existingInDB.map((p: any) => [p.id, p]));
+
+                const toDelete = existingInDB.filter((p: any) => !payloadIds.has(p.id)).map((p: any) => p.id);
+                const toCreate: any[] = [];
+                const toUpdate: any[] = [];
+
+                for (const p of network.pops as any[]) {
+                    const dbP = dbMap.get(p.id) as any;
+                    if (!dbP) {
+                        toCreate.push({
                             id: p.id,
                             projectId: id,
                             companyId: user.companyId,
@@ -665,18 +711,66 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: p.color,
                             size: p.size,
                             poleId: p.poleId
-                        }))
+                        });
+                    } else {
+                        const hasChanged =
+                            dbP.name !== p.name ||
+                            dbP.status !== p.status ||
+                            Math.abs((dbP.lat || 0) - (p.coordinates?.lat ?? p.lat)) > 0.0000001 ||
+                            Math.abs((dbP.lng || 0) - (p.coordinates?.lng ?? p.lng)) > 0.0000001 ||
+                            dbP.color !== p.color ||
+                            dbP.size !== p.size ||
+                            dbP.poleId !== p.poleId ||
+                            JSON.stringify(dbP.olts) !== JSON.stringify(p.olts || []) ||
+                            JSON.stringify(dbP.dios) !== JSON.stringify(p.dios || []) ||
+                            JSON.stringify(dbP.fusions) !== JSON.stringify(p.fusions || []) ||
+                            JSON.stringify(dbP.connections) !== JSON.stringify(p.connections || []) ||
+                            JSON.stringify(dbP.inputCableIds) !== JSON.stringify(p.inputCableIds || []) ||
+                            JSON.stringify(dbP.layout) !== JSON.stringify(p.layout || {});
+
+                        if (hasChanged) toUpdate.push(p);
+                    }
+                }
+
+                if (toDelete.length > 0) await tx.pop.deleteMany({ where: { id: { in: toDelete } } });
+                if (toCreate.length > 0) await tx.pop.createMany({ data: toCreate });
+                for (const p of toUpdate as any[]) {
+                    await tx.pop.update({
+                        where: { id: p.id },
+                        data: {
+                            name: p.name,
+                            status: p.status,
+                            lat: p.coordinates?.lat ?? p.lat,
+                            lng: p.coordinates?.lng ?? p.lng,
+                            olts: p.olts || [],
+                            dios: p.dios || [],
+                            fusions: p.fusions || [],
+                            connections: p.connections || [],
+                            inputCableIds: p.inputCableIds || [],
+                            layout: p.layout || {},
+                            color: p.color,
+                            size: p.size,
+                            poleId: p.poleId
+                        }
                     });
                 }
+                console.log(`[Sync Diff] POPs: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} deleted.`);
             }
 
-            // 4. INSERT PHASE - Cables
-            if (network.cables && network.cables.length > 0) {
-                const uniqueCables = Array.from(new Map(network.cables.map((c: any) => [c.id, c])).values());
-                for (let i = 0; i < uniqueCables.length; i += CHUNK_SIZE) {
-                    const chunk = uniqueCables.slice(i, i + CHUNK_SIZE);
-                    await tx.cable.createMany({
-                        data: chunk.map((c: any) => ({
+            // 4. INSERT/UPDATE PHASE - Cables (Optimized with Diffing)
+            if (network.cables) {
+                const payloadIds = new Set(network.cables.map((c: any) => c.id));
+                const existingInDB = await tx.cable.findMany({ where: { projectId: id } });
+                const dbMap = new Map(existingInDB.map((c: any) => [c.id, c]));
+
+                const toDelete = existingInDB.filter((c: any) => !payloadIds.has(c.id)).map((c: any) => c.id);
+                const toCreate: any[] = [];
+                const toUpdate: any[] = [];
+
+                for (const c of network.cables as any[]) {
+                    const dbC = dbMap.get(c.id) as any;
+                    if (!dbC) {
+                        toCreate.push({
                             id: c.id,
                             projectId: id,
                             companyId: user.companyId,
@@ -693,32 +787,110 @@ export const syncProject = async (req: Request, res: Response) => {
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
-                        }))
+                        });
+                    } else {
+                        const hasChanged =
+                            dbC.name !== c.name ||
+                            dbC.status !== c.status ||
+                            dbC.fiberCount !== c.fiberCount ||
+                            (dbC.looseTubeCount || 1) !== (c.looseTubeCount || 1) ||
+                            dbC.color !== c.color ||
+                            dbC.fromNodeId !== c.fromNodeId ||
+                            dbC.toNodeId !== c.toNodeId ||
+                            dbC.catalogId !== c.catalogId ||
+                            dbC.technicalReserve !== (c.technicalReserve || 0) ||
+                            dbC.showReserveLabel !== (c.showReserveLabel !== undefined ? c.showReserveLabel : true) ||
+                            JSON.stringify(dbC.coordinates) !== JSON.stringify(c.coordinates) ||
+                            JSON.stringify(dbC.reserveLocation) !== JSON.stringify(c.reserveLocation || null);
+
+                        if (hasChanged) toUpdate.push(c);
+                    }
+                }
+
+                if (toDelete.length > 0) await tx.cable.deleteMany({ where: { id: { in: toDelete } } });
+                if (toCreate.length > 0) await tx.cable.createMany({ data: toCreate });
+                for (const c of toUpdate as any[]) {
+                    await tx.cable.update({
+                        where: { id: c.id },
+                        data: {
+                            name: c.name,
+                            status: c.status,
+                            fiberCount: c.fiberCount,
+                            looseTubeCount: c.looseTubeCount || 1,
+                            color: c.color,
+                            colorStandard: c.colorStandard || 'ABNT',
+                            coordinates: c.coordinates,
+                            fromNodeId: c.fromNodeId,
+                            toNodeId: c.toNodeId,
+                            catalogId: c.catalogId,
+                            technicalReserve: c.technicalReserve || 0,
+                            reserveLocation: c.reserveLocation || null,
+                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
+                        }
                     });
                 }
+                console.log(`[Sync Diff] Cables: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} deleted.`);
             }
 
-            // 5. INSERT PHASE - Poles
-            if (network.poles && network.poles.length > 0) {
-                const uniquePoles = Array.from(new Map(network.poles.map((p: any) => [p.id, p])).values());
-                for (let i = 0; i < uniquePoles.length; i += CHUNK_SIZE) {
-                    const chunk = uniquePoles.slice(i, i + CHUNK_SIZE);
-                    await tx.pole.createMany({
-                        data: chunk.map((pole: any) => ({
-                            id: pole.id,
+            // 5. INSERT/UPDATE PHASE - Poles (Optimized with Diffing)
+            if (network.poles) {
+                const payloadIds = new Set(network.poles.map((p: any) => p.id));
+                const existingInDB = await tx.pole.findMany({ where: { projectId: id } });
+                const dbMap = new Map(existingInDB.map((p: any) => [p.id, p]));
+
+                const toDelete = existingInDB.filter((p: any) => !payloadIds.has(p.id)).map((p: any) => p.id);
+                const toCreate: any[] = [];
+                const toUpdate: any[] = [];
+
+                for (const p of network.poles as any[]) {
+                    const dbP = dbMap.get(p.id) as any;
+                    if (!dbP) {
+                        toCreate.push({
+                            id: p.id,
                             projectId: id,
                             companyId: user.companyId,
-                            name: pole.name,
-                            status: pole.status,
-                            lat: pole.coordinates.lat,
-                            lng: pole.coordinates.lng,
-                            catalogId: pole.catalogId || null,
-                            type: pole.type,
-                            height: pole.height,
-                            linkedCableIds: pole.linkedCableIds || []
-                        }))
+                            name: p.name,
+                            status: p.status,
+                            lat: p.coordinates.lat,
+                            lng: p.coordinates.lng,
+                            catalogId: p.catalogId || null,
+                            type: p.type,
+                            height: p.height,
+                            linkedCableIds: p.linkedCableIds || []
+                        });
+                    } else {
+                        const hasChanged =
+                            dbP.name !== p.name ||
+                            dbP.status !== p.status ||
+                            Math.abs((dbP.lat || 0) - (p.coordinates?.lat ?? p.lat)) > 0.0000001 ||
+                            Math.abs((dbP.lng || 0) - (p.coordinates?.lng ?? p.lng)) > 0.0000001 ||
+                            dbP.catalogId !== (p.catalogId || null) ||
+                            dbP.type !== p.type ||
+                            dbP.height !== p.height ||
+                            JSON.stringify(dbP.linkedCableIds) !== JSON.stringify(p.linkedCableIds || []);
+
+                        if (hasChanged) toUpdate.push(p);
+                    }
+                }
+
+                if (toDelete.length > 0) await tx.pole.deleteMany({ where: { id: { in: toDelete } } });
+                if (toCreate.length > 0) await tx.pole.createMany({ data: toCreate });
+                for (const p of toUpdate as any[]) {
+                    await tx.pole.update({
+                        where: { id: p.id },
+                        data: {
+                            name: p.name,
+                            status: p.status,
+                            lat: p.coordinates?.lat ?? p.lat,
+                            lng: p.coordinates?.lng ?? p.lng,
+                            catalogId: p.catalogId || null,
+                            type: p.type,
+                            height: p.height,
+                            linkedCableIds: p.linkedCableIds || []
+                        }
                     });
                 }
+                console.log(`[Sync Diff] Poles: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} deleted.`);
             }
         }, {
             timeout: 300000 // 5 minutes

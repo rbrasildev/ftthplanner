@@ -163,6 +163,7 @@ export default function App() {
     const [settingsSaved, setSettingsSaved] = useState(false);
     const settingsTimeoutRef = useRef<any>(null);
     const syncTimeoutRef = useRef<any>(null); // For debounce sync
+    const skipNextAutoSyncRef = useRef<boolean>(false); // NEW: To avoid sync conflict when manual updateCTO is running
 
     // Backup for Cancel functionality
     const previousNetworkState = useRef<NetworkState | null>(null);
@@ -475,11 +476,8 @@ export default function App() {
             return { ...prev, network: newNetwork, updatedAt: Date.now() };
         });
 
-        // DEBOUNCE SYNC
+        // DEBOUNCE SYNC - Cleared here, triggered by useEffect on currentProject
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-        syncTimeoutRef.current = setTimeout(() => {
-            // Sync happens via Effect watching currentProject
-        }, 1000);
     }, []);
 
     const [isSaving, setIsSaving] = useState(false);
@@ -490,6 +488,13 @@ export default function App() {
     useEffect(() => {
         if (!currentProject || !token) return;
         if (isInitialLoad.current) { isInitialLoad.current = false; return; }
+
+        if (skipNextAutoSyncRef.current) {
+            console.log("[Sync] Skipping auto-sync because a manual fast-update was just performed.");
+            skipNextAutoSyncRef.current = false;
+            setIsSaving(false);
+            return;
+        }
 
         setIsSaving(true);
         const timer = setTimeout(() => {
@@ -530,7 +535,7 @@ export default function App() {
                         }
                     }
                 });
-        }, 1000); // Reduced delay for better safety (was 3000)
+        }, 800); // Reduced delay for faster saving (was 1000)
         return () => clearTimeout(timer);
     }, [currentProject, token]);
 
@@ -1428,6 +1433,8 @@ export default function App() {
         setEditingCTO(updatedCTO);
 
         // 4. BLOCKING SYNC (Wait for confirmation to ensure data integrity)
+        // Set skip flag so the auto-sync useEffect (watching currentProject) doesn't fire redundantly
+        skipNextAutoSyncRef.current = true;
         setIsSaving(true);
         try {
             // We await here to ensure this critical change is saved before anything else can happen
