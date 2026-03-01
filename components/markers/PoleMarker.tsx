@@ -6,15 +6,18 @@ import { PoleData } from '../../types';
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
 
-const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: string = 'concrete') => {
-    const cacheKey = `pole-${type}-${isSelected}-${showLabels}`;
+const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: string = 'concrete', currentZoom: number = 15) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 15));
+    const baseSize = 12;
+    const size = Math.round(baseSize * zoomScale);
+
+    const cacheKey = `pole-${type}-${isSelected}-${showLabels}-${currentZoom}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
     }
 
     const color = type === 'wood' ? '#78350f' : '#57534e'; // wood vs stone
-    const size = 12;
 
     const icon = L.divIcon({
         className: 'custom-icon',
@@ -22,7 +25,7 @@ const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: 
       <div style="
         position: relative;
         background-color: ${color};
-        border: 2px solid ${isSelected ? '#f59e0b' : '#a8a29e'};
+        border: ${Math.max(1.5, 2 * zoomScale)}px solid ${isSelected ? '#f59e0b' : '#a8a29e'};
         border-radius: 50%;
         width: ${size}px;
         height: ${size}px;
@@ -30,7 +33,7 @@ const createPoleIcon = (isSelected: boolean, showLabels: boolean = false, type: 
         z-index: 5;
       ">
       </div>
-      ${showLabels ? `<div style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 1px 3px; font-size: 8px; border-radius: 2px; white-space: nowrap;">Poste</div>` : ''}
+      ${showLabels ? `<div style="position: absolute; top: ${size + 2}px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 1px 3px; font-size: ${Math.max(7, Math.round(8 * Math.min(1.5, zoomScale)))}px; border-radius: 2px; white-space: nowrap;">Poste</div>` : ''}
     `,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2]
@@ -45,6 +48,7 @@ interface PoleMarkerProps {
     isSelected: boolean;
     showLabels: boolean;
     mode: string;
+    currentZoom?: number;
     onNodeClick: (id: string, type: 'Pole') => void;
     onMoveNode: (id: string, lat: number, lng: number) => void;
     onDragStart: (id: string) => void;
@@ -54,12 +58,12 @@ interface PoleMarkerProps {
 }
 
 export const PoleMarker = React.memo(({
-    pole, isSelected, showLabels, mode, onNodeClick, onMoveNode,
+    pole, isSelected, showLabels, mode, currentZoom = 15, onNodeClick, onMoveNode,
     onDragStart, onDrag, onDragEnd, onContextMenu
 }: PoleMarkerProps) => {
     const icon = useMemo(() =>
-        createPoleIcon(isSelected, showLabels, pole.type),
-        [isSelected, showLabels, pole.type]);
+        createPoleIcon(isSelected, showLabels, pole.type, currentZoom),
+        [isSelected, showLabels, pole.type, currentZoom]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {

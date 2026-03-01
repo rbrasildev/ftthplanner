@@ -6,8 +6,12 @@ import { POPData } from '../../types';
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
 
-const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', size: number = 24) => {
-    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${size}`;
+const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 15) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, currentZoom - 15));
+    const size = Math.round(baseSize * zoomScale);
+    const pulseSize = Math.round(baseSize * 2 * zoomScale);
+
+    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${baseSize}-${currentZoom}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
@@ -16,12 +20,12 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
     const icon = L.divIcon({
         className: 'custom-icon',
         html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${size * 2}px; height: ${size * 2}px; background: rgba(99, 102, 241, 0.4); border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
+      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${pulseSize}px; height: ${pulseSize}px; background: rgba(99, 102, 241, 0.4); border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
         background-color: ${color};
-        border: 3px solid ${isSelected ? '#818cf8' : 'white'};
-        border-radius: 6px;
+        border: ${Math.max(2, Math.round(3 * zoomScale))}px solid ${isSelected ? '#818cf8' : 'white'};
+        border-radius: ${Math.round(6 * zoomScale)}px;
         width: ${size}px;
         height: ${size}px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -42,7 +46,7 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
         color: white;
         padding: 2px 5px;
         border-radius: 4px;
-        font-size: 10px;
+        font-size: ${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
         font-weight: 600;
         white-space: nowrap;
         pointer-events: none;
@@ -63,6 +67,7 @@ interface POPMarkerProps {
     isSelected: boolean;
     showLabels: boolean;
     mode: string;
+    currentZoom?: number;
     onNodeClick: (id: string, type: 'POP') => void;
     onCableStart: (id: string) => void;
     onCableEnd: (id: string) => void;
@@ -76,12 +81,12 @@ interface POPMarkerProps {
 }
 
 export const POPMarker = React.memo(({
-    pop, isSelected, showLabels, mode, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
+    pop, isSelected, showLabels, mode, currentZoom = 15, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: POPMarkerProps) => {
     const icon = useMemo(() =>
-        createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size),
-        [pop.name, isSelected, showLabels, pop.color, pop.size]);
+        createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size, currentZoom),
+        [pop.name, isSelected, showLabels, pop.color, pop.size, currentZoom]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {

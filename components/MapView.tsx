@@ -1300,6 +1300,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={(id, type) => {
                                     if (drawingCustomerDrop && type === 'CTO') {
                                         handleConnectToCTO(id);
@@ -1326,6 +1327,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === pop.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
@@ -1345,6 +1347,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === pole.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onDragStart={handleNodeDragStart}
@@ -1363,6 +1366,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={(id, type) => {
                                     if (drawingCustomerDrop && type === 'CTO') {
                                         handleConnectToCTO(id);
@@ -1389,6 +1393,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === pop.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
@@ -1408,6 +1413,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === pole.id}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onDragStart={handleNodeDragStart}
@@ -1460,6 +1466,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={true}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={noOp}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={noOp}
@@ -1479,6 +1486,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={true}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={noOp}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={noOp}
@@ -1498,6 +1506,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={true}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
+                                currentZoom={currentZoom}
                                 onNodeClick={noOp}
                                 onMoveNode={onMoveNode || noOp}
                                 onDragStart={handleNodeDragStart}
