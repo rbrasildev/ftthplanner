@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
@@ -95,7 +95,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention'>(() => {
+        return (localStorage.getItem('saasAdminActiveView') as any) || 'dashboard';
+    });
     const [plans, setPlans] = useState<any[]>([]);
     const [videos, setVideos] = useState<any[]>([]);
     const [smtpConfig, setSmtpConfig] = useState<any>({});
@@ -103,6 +105,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [saasConfig, setSaasConfig] = useState<SaaSConfig | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        return localStorage.getItem('saasAdminSidebarCollapsed') === 'true';
+    });
+    const { toggleTheme } = useTheme();
+    const { setLanguage, language } = useLanguage();
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -174,6 +181,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
     useEffect(() => {
+        localStorage.setItem('saasAdminActiveView', activeView);
         loadData();
     }, [activeView]);
 
@@ -214,6 +222,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 if (activeView === 'dashboard' && results[2]) {
                     setAuditLogs(results[2]);
                 }
+            }
+
+            // Sempre carregar a configuração básica para o logo/nome na sidebar
+            if (!saasConfig) {
+                const config = await saasService.getSaaSConfig();
+                setSaasConfig(config);
             }
         } catch (error) {
             console.error('Failed to load data', error);
@@ -483,42 +497,84 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-xl">
-                <div className="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/50">
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20 text-white">
-                        <Network className="w-6 h-6" />
+            <aside className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-xl transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
+                {/* Collapse Button */}
+                <button
+                    onClick={() => {
+                        const newState = !isCollapsed;
+                        setIsCollapsed(newState);
+                        localStorage.setItem('saasAdminSidebarCollapsed', String(newState));
+                    }}
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center shadow-md z-30 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors"
+                >
+                    {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
+
+                <div className={`p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/50 overflow-hidden ${isCollapsed ? 'justify-center px-4' : ''}`}>
+                    <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-300 ${!saasConfig?.appLogoUrl ? 'bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white' : ''}`}>
+                        {saasConfig?.appLogoUrl ? (
+                            <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain" />
+                        ) : (
+                            <Network className="w-7 h-7" />
+                        )}
                     </div>
-                    <div>
-                        <h1 className="font-bold text-lg leading-tight">FTTH Master</h1>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Super Admin</p>
-                    </div>
+                    {!isCollapsed && (
+                        <div className="flex-1 min-w-0 transition-opacity duration-300">
+                            <h1 className="font-bold text-lg leading-tight truncate">
+                                {saasConfig?.appName || 'FTTH Master'}
+                            </h1>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Super Admin</p>
+                        </div>
+                    )}
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     {navItems.map(item => (
                         <button
                             key={item.id}
                             onClick={() => setActiveView(item.id as any)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeView === item.id
+                            title={isCollapsed ? item.label : ''}
+                            className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${activeView === item.id
                                 ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm'
                                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                                 } `}
                         >
-                            {item.icon}
-                            {item.label}
-                            {activeView === item.id && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
+                            <span className={`shrink-0 transition-transform duration-200 ${activeView === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                {item.icon}
+                            </span>
+                            {!isCollapsed && <span className="truncate">{item.label}</span>}
+                            {activeView === item.id && !isCollapsed && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
                         </button>
                     ))}
                 </nav>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                    <button
-                        onClick={onLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl text-sm font-medium transition-colors"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Sign Out
-                    </button>
+                    <div className={`flex items-center gap-1 ${isCollapsed ? 'flex-col' : 'justify-between'}`}>
+                        <button
+                            onClick={toggleTheme}
+                            title={t('saas_change_theme') || 'Change Theme'}
+                            className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                        >
+                            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                        </button>
+
+                        <button
+                            onClick={() => setLanguage(language === 'pt' ? 'en' : 'pt')}
+                            title={language === 'pt' ? 'English' : 'Português'}
+                            className="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors flex items-center gap-1.5"
+                        >
+                            <Languages className="w-5 h-5" />
+                            {!isCollapsed && <span className="text-[10px] font-bold uppercase">{language === 'pt' ? 'PT' : 'EN'}</span>}
+                        </button>
+
+                        <button
+                            onClick={onLogout}
+                            title="Sign Out"
+                            className="p-2.5 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </aside>
 

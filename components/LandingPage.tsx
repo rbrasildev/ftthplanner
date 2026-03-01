@@ -569,13 +569,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         </div>
 
                         <div>
-                            <h4 className="font-bold text-white mb-6">{t('landing_footer_company')}</h4>
-                            <ul className="space-y-4 text-sm text-slate-400">
-                                <li><a href="#" className="hover:text-sky-600 transition-colors">{t('landing_footer_legal')}</a></li>
-                            </ul>
-                        </div>
-
-                        <div>
                             <h4 className="font-bold text-white mb-6">{t('landing_footer_support')}</h4>
                             <ul className="space-y-4 text-sm text-slate-400">
                                 {saasConfig?.supportEmail && (
