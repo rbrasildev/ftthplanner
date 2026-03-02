@@ -106,10 +106,10 @@ export const SupportAdminPanel: React.FC = () => {
         const token = supportToken || mainToken;
 
         if (token) {
-            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const socketUrl = isLocal
-                ? 'http://127.0.0.1:3001'
-                : window.location.origin;
+            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const socketUrl = apiUrl
+                ? apiUrl.replace(/\/api$/, '')
+                : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
 
             socketRef.current = io(socketUrl, {
                 auth: { token },

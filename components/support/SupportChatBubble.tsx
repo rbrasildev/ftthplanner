@@ -37,10 +37,12 @@ export const SupportChatBubble: React.FC = () => {
         loadSaaSConfig();
 
         if (token && !socketRef.current) {
-            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const socketUrl = isLocal
-                ? 'http://127.0.0.1:3001'
-                : window.location.origin;
+            // Deriva a URL do socket do VITE_API_URL para funcionar com frontend na Vercel 
+            // e backend em outra VPS (URLs diferentes)
+            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const socketUrl = apiUrl
+                ? apiUrl.replace(/\/api$/, '') // remove o sufixo /api se existir
+                : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
 
             console.log(`[SupportChat] Global Presence Connect to ${socketUrl}`);
 
