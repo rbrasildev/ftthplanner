@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
 import { SendTemplateModal } from './modals/SendTemplateModal';
 import { SaasRetentionIntelligence } from './SaasRetentionIntelligence';
+import { SupportAdminPanel } from './SupportAdminPanel';
 
 interface Company {
     id: string;
@@ -95,7 +96,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention'>(() => {
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat'>(() => {
         return (localStorage.getItem('saasAdminActiveView') as any) || 'dashboard';
     });
     const [plans, setPlans] = useState<any[]>([]);
@@ -176,6 +177,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
         { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
         { id: 'audit', label: t('saas_nav_audit'), icon: <Settings className="w-5 h-5" /> },
+        { id: 'support_chat', label: 'Suporte Chat', icon: <MessageSquare className="w-5 h-5" /> },
         { id: 'config', label: t('saas_nav_config'), icon: <Shield className="w-5 h-5" /> },
     ];
     const [editingPlan, setEditingPlan] = useState<any>(null);
@@ -591,9 +593,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 activeView === 'companies' ? t('saas_nav_companies') :
                                                     activeView === 'users' ? t('saas_nav_users') :
                                                         activeView === 'plans' ? t('saas_nav_plans') :
-                                                            activeView === 'videos' ? t('saas_nav_videos') :
-                                                                activeView === 'email' ? t('saas_nav_email') :
-                                                                    activeView === 'config' ? t('saas_nav_config') : activeView}
+                                                            activeView === 'email' ? t('saas_nav_email') :
+                                                                activeView === 'config' ? t('saas_nav_config') :
+                                                                    activeView === 'support_chat' ? 'Suporte ao Cliente' : activeView}
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t('saas_dashboard_subtitle')}</p>
                     </div>
@@ -1399,6 +1401,12 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {activeView === 'support_chat' && (
+                        <div className="space-y-6">
+                            <SupportAdminPanel />
                         </div>
                     )}
 

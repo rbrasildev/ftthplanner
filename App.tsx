@@ -44,6 +44,7 @@ import { KmlImportModal } from './components/modals/KmlImportModal';
 import { AdvancedImportModal } from './components/modals/AdvancedImportModal';
 import { ProjectReportModal } from './components/modals/ProjectReportModal';
 import { FusionModule } from './components/FusionModule';
+import { SupportChatBubble } from './components/support/SupportChatBubble';
 
 
 
@@ -2904,6 +2905,9 @@ export default function App() {
                 network={currentProject?.network || { ctos: [], pops: [], cables: [], poles: [] }}
                 projectName={currentProject?.name || ''}
             />
+
+            {/* Support Chat Bubble */}
+            {token && <SupportChatBubble />}
 
         </div >
     );

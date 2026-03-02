@@ -14,7 +14,10 @@ import paymentRoutes from './routes/paymentRoutes';
 import companyRoutes from './routes/companyRoutes';
 import customerRoutes from './routes/customerRoutes';
 import supportRoutes from './routes/supportRoutes';
+import supportChatRoutes from './routes/supportChatRoutes';
 import { initCronJobs } from './jobs/cronJobs';
+import { createServer } from 'http';
+import { SocketService } from './services/SocketService';
 
 
 // Tratamento de erros globais para debug em produção
@@ -87,6 +90,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/support/chat', supportChatRoutes);
 
 // Backup and Cron
 import backupRoutes from './routes/backupRoutes';
@@ -119,6 +123,9 @@ app.get('/', (req, res) => {
 BackupService.initScheduledBackups();
 initCronJobs();
 
-app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (0.0.0.0)`);
+const httpServer = createServer(app);
+SocketService.init(httpServer);
+
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`[Server] API and Socket.io running on port ${PORT} (0.0.0.0)`);
 });

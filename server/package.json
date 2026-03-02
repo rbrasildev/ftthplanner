@@ -24,7 +24,8 @@
     "mercadopago": "^2.12.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

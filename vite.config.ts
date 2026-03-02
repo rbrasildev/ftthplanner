@@ -10,10 +10,15 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
-      https: true, // Enable HTTPS
       proxy: {
         '/api': {
           target: 'http://127.0.0.1:3001',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/socket.io': {
+          target: 'http://127.0.0.1:3001',
+          ws: true,
           changeOrigin: true,
           secure: false,
         }

@@ -3081,7 +3081,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-[#E6E6E6] dark:bg-[#121212] relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-[#242424] relative overflow-hidden"
                     style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
@@ -3094,7 +3094,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     )}
 
-                    {/* FUSION GHOST / CURSOR */}
                     {/* FUSION GHOST / CURSOR */}
                     {isFusionToolActive && cursorPosition && (
                         <div

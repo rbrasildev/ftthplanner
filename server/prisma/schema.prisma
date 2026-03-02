@@ -15,6 +15,7 @@ model User {
   active            Boolean    @default(true)
   companyId         String?    @map("company_id")
   role              UserRole   @default(OWNER)
+  chatAvailability  String     @default("OFFLINE") @map("chat_availability") // ONLINE, OFFLINE, AWAY
   email             String     @unique
   lastLoginAt       DateTime?  @map("last_login_at")
   source            String?
@@ -28,6 +29,9 @@ model User {
   targetSessions AdminSupportSession[] @relation("target_sessions")
   adminLogs      SupportAccessLog[]    @relation("admin_logs")
   targetLogs     SupportAccessLog[]    @relation("target_logs")
+
+  conversations  SupportConversation[] @relation("user_conversations")
+  messages       SupportMessage[]      @relation("sender_messages")
 
   engagementMetrics    UserEngagementMetrics?
   financialMetrics     UserFinancialMetrics?
@@ -688,4 +692,31 @@ model UserFinancialMetrics {
   @@index([userId])
   @@index([companyId])
   @@map("user_financial_metrics")
+}
+
+model SupportConversation {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  status    String   @default("OPEN") // OPEN, CLOSED
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user     User             @relation("user_conversations", fields: [userId], references: [id])
+  messages SupportMessage[]
+
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  senderId       String   @map("sender_id")
+  content        String
+  isRead         Boolean  @default(false) @map("is_read")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation("sender_messages", fields: [senderId], references: [id])
+
+  @@map("support_messages")
 }
