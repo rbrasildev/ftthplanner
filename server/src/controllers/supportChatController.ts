@@ -197,8 +197,8 @@ export const getOnlineAgents = async (req: Request, res: Response) => {
             select: { id: true, username: true, chatAvailability: true }
         });
 
-        const verifiedAgents = agents.filter(agent => SocketService.isUserOnline(agent.id));
-        res.json(verifiedAgents);
+        // Usa apenas o campo do banco — confiável entre restarts e deploys
+        res.json(agents);
     } catch (error) {
         console.error("Get Online Agents Error:", error);
         res.status(500).json({ error: 'Erro ao buscar atendentes' });
