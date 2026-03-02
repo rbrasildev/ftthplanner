@@ -3081,7 +3081,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-[#E6E6E6] dark:bg-slate-950 relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-[#121212] relative overflow-hidden"
                     style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
@@ -3112,10 +3112,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
 
                             {/* Left Port - Edge */}
-                            <div className="w-2 h-2 rounded-full bg-black border border-black z-30 absolute left-[2px]" />
+                            <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
 
                             {/* Right Port - Edge */}
-                            <div className="w-2 h-2 rounded-full bg-black border border-black z-30 absolute right-[2px]" />
+                            <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
                         </div>
                     )}
 

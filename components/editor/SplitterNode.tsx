@@ -102,7 +102,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
                             points={`${50 + skewPercent},0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
-                            className={`transition-colors duration-300 fill-white dark:fill-slate-900 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
+                            className={`transition-colors duration-300 fill-white dark:fill-[#2E2D39] ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
@@ -141,7 +141,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             e.stopPropagation();
                             if (onContextMenu) onContextMenu(e, splitter.id);
                         }}
-                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
+                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-[#2E2D39] cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
@@ -187,7 +187,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     : (t('port_label') || 'Porta {number}').replace('{number}', (idx + 1).toString())
                                 }
                                 className={`
-                                w-2.5 h-2.5 border bg-white dark:bg-slate-900 cursor-pointer pointer-events-auto
+                                w-2.5 h-2.5 border bg-white dark:bg-[#2E2D39] cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
                                 text-[6.5px] font-normal select-none  flex items-center justify-center
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 

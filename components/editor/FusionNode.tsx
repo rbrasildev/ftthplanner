@@ -82,7 +82,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-black border border-black
+                        w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39]
                         cursor-pointer select-none transition-all z-30 absolute left-[2px]
                         ${hoveredPortId === portA ? 'ring-2 ring-sky-400 scale-125' : ''} 
                         ${isLitA ? 'ring-2 ring-red-500 bg-red-600' : ''}
@@ -98,7 +98,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-black border border-black
+                        w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39]
                         cursor-pointer select-none transition-all z-30 absolute right-[2px]
                         ${hoveredPortId === portB ? 'ring-2 ring-sky-400 scale-125' : ''} 
                         ${isLitB ? 'ring-2 ring-red-500 bg-red-600' : ''}
