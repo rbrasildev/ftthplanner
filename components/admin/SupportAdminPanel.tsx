@@ -105,79 +105,77 @@ export const SupportAdminPanel: React.FC = () => {
         const mainToken = localStorage.getItem('ftth_planner_token_v1');
         const token = supportToken || mainToken;
 
-        if (token) {
-            const apiUrl = import.meta.env.VITE_API_URL || '';
-            const socketUrl = apiUrl
-                ? apiUrl.replace(/\/api$/, '')
-                : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
+        const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+        const socketUrl = apiUrl
+            ? apiUrl.replace(/\/api$/, '')
+            : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
 
-            socketRef.current = io(socketUrl, {
-                auth: { token },
-                transports: ['polling', 'websocket'],
-                reconnection: true,
-                reconnectionAttempts: 5,
-                timeout: 20000
+        socketRef.current = io(socketUrl, {
+            auth: { token },
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            timeout: 20000
+        });
+
+        socketRef.current.on('connect', () => {
+            console.log('[AdminChat] Connected to WebSocket server');
+            loadOnlineUsers();
+        });
+
+        socketRef.current.on('user_presence_change', ({ userId, status }: { userId: string, status: string }) => {
+            setOnlineUsers(prev => {
+                const next = new Set(prev);
+                if (status === 'ONLINE') next.add(userId);
+                else next.delete(userId);
+                return next;
             });
+            loadOnlineUsers();
+        });
 
-            socketRef.current.on('connect', () => {
-                console.log('[AdminChat] Connected to WebSocket server');
-                loadOnlineUsers();
-            });
-
-            socketRef.current.on('user_presence_change', ({ userId, status }: { userId: string, status: string }) => {
-                setOnlineUsers(prev => {
-                    const next = new Set(prev);
-                    if (status === 'ONLINE') next.add(userId);
-                    else next.delete(userId);
-                    return next;
-                });
-                loadOnlineUsers();
-            });
-
-            socketRef.current.on('new_message', (msg: Message) => {
-                // Toca som apenas para mensagens do cliente (não do próprio admin)
-                if (msg.senderId !== 'admin') {
-                    try {
-                        const audio = new Audio('/sounds/notify.mp3');
-                        audio.volume = 0.4;
-                        audio.play().catch(() => { }); // silencioso se autoplay bloqueado
-                    } catch (e) {
-                        // não crítico
-                    }
+        socketRef.current.on('new_message', (msg: Message) => {
+            // Toca som apenas para mensagens do cliente (não do próprio admin)
+            if (msg.senderId !== 'admin') {
+                try {
+                    const audio = new Audio('/sounds/notify.mp3');
+                    audio.volume = 0.4;
+                    audio.play().catch(() => { }); // silencioso se autoplay bloqueado
+                } catch (e) {
+                    // não crítico
                 }
+            }
 
-                setMessages(prev => {
-                    if (prev.find(m => m.id === msg.id)) return prev;
-                    if (selectedConv?.id === msg.conversationId) return [...prev, msg];
+            setMessages(prev => {
+                if (prev.find(m => m.id === msg.id)) return prev;
+                if (selectedConv?.id === msg.conversationId) return [...prev, msg];
+                return prev;
+            });
+
+            // Atualiza lista de conversas inline (sem chamada API extra)
+            // Apenas move a conversa para o topo e atualiza a última mensagem
+            setConversations(prev => {
+                const idx = prev.findIndex(c => c.id === msg.conversationId);
+                if (idx === -1) {
+                    // Nova conversa que ainda não está na lista — busca do servidor apenas nesse caso
+                    loadConversations();
                     return prev;
-                });
-
-                // Atualiza lista de conversas inline (sem chamada API extra)
-                // Apenas move a conversa para o topo e atualiza a última mensagem
-                setConversations(prev => {
-                    const idx = prev.findIndex(c => c.id === msg.conversationId);
-                    if (idx === -1) {
-                        // Nova conversa que ainda não está na lista — busca do servidor apenas nesse caso
-                        loadConversations();
-                        return prev;
-                    }
-                    const updated = [...prev];
-                    const conv = { ...updated[idx] };
-                    conv.messages = [{ content: msg.content, createdAt: msg.createdAt, senderId: msg.senderId }];
-                    conv.updatedAt = msg.createdAt;
-                    updated.splice(idx, 1);
-                    return [conv, ...updated];
-                });
-            });
-
-            socketRef.current.on('conversation_closed', ({ conversationId }: { conversationId: string }) => {
-                if (selectedConv?.id === conversationId) {
-                    setSelectedConv(null);
-                    setMessages([]);
                 }
-                loadConversations();
+                const updated = [...prev];
+                const conv = { ...updated[idx] };
+                conv.messages = [{ content: msg.content, createdAt: msg.createdAt, senderId: msg.senderId }];
+                conv.updatedAt = msg.createdAt;
+                updated.splice(idx, 1);
+                return [conv, ...updated];
             });
-        }
+        });
+
+        socketRef.current.on('conversation_closed', ({ conversationId }: { conversationId: string }) => {
+            if (selectedConv?.id === conversationId) {
+                setSelectedConv(null);
+                setMessages([]);
+            }
+            loadConversations();
+        });
 
         loadConversations();
         loadOnlineUsers();

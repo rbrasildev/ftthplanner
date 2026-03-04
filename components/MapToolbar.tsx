@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, Waypoints, Unplug, Ruler, UserPlus } from 'lucide-react';
+import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, FileDown, Waypoints, Unplug, Ruler, UserPlus } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
@@ -8,6 +8,8 @@ interface MapToolbarProps {
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
     onImportKml: () => void;
+    onExportKmz?: () => void;
+    isExporting?: boolean;
     onConnectClick: () => void;
     userRole?: string | null;
 }
@@ -18,6 +20,8 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
     activeMenuId,
     setActiveMenuId,
     onImportKml,
+    onExportKmz,
+    isExporting,
     onConnectClick,
     userRole
 }) => {
@@ -71,49 +75,14 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 <div className="flex items-center gap-1 px-2 border-r border-zinc-200 dark:border-zinc-700/50">
                     <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />
                     <ToolButton mode="add_pop" icon={Building2} label="POP" />
-                    <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_add_customer') || "Novo Cliente"} />
+                    <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_customer') || "Cliente"} />
 
-                    {/* Pole Dropdown Trigger */}
-                    <div className="relative" ref={menuRef}>
-                        <ToolButton
-                            mode="add_pole"
-                            icon={UtilityPole}
-                            label={t('sidebar_pole')}
-                            onClick={() => setActiveMenuId(activeMenuId === 'pole_menu' ? null : 'pole_menu')}
-                        />
-
-                        {/* Pole Menu Dropdown */}
-                        {activeMenuId === 'pole_menu' && (
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-1.5 grid gap-1 animate-in fade-in zoom-in-95 duration-200">
-                                <button
-                                    onClick={() => {
-                                        setToolMode('add_pole');
-                                        setActiveMenuId(null);
-                                    }}
-                                    className={`flex items-center gap-2 p-2 rounded-lg text-left transition-colors ${toolMode === 'add_pole' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300'}`}
-                                >
-                                    <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md"><Plus className="w-3.5 h-3.5" /></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold">{t('sidebar_add_pole_desc')}</span>
-                                        <span className="text-[9px] opacity-60">1-click</span>
-                                    </div>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        onImportKml();
-                                        setActiveMenuId(null);
-                                    }}
-                                    className="flex items-center gap-2 p-2 rounded-lg text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
-                                >
-                                    <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md"><FileUp className="w-3.5 h-3.5" /></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold">{t('import_kmz_label')}</span>
-                                        <span className="text-[9px] opacity-60">Google Earth</span>
-                                    </div>
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    {/* Pole Button - No More Dropdown */}
+                    <ToolButton
+                        mode="add_pole"
+                        icon={UtilityPole}
+                        label={t('sidebar_pole') || "Poste"}
+                    />
                 </div>
             )}
 
@@ -122,6 +91,21 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 {userRole !== 'MEMBER' && <ToolButton mode="draw_cable" icon={Waypoints} label="Cabo" />}
                 <ToolButton mode="ruler" icon={Ruler} label={t('mode_ruler') || "Régua"} />
             </div>
+
+            {/* Group 4: Project Actions */}
+            {(userRole !== 'MEMBER') && (
+                <div className="flex items-center gap-1 pl-2 ml-1 border-l border-zinc-200 dark:border-zinc-700/50">
+                    <button
+                        onClick={onExportKmz}
+                        disabled={isExporting}
+                        className={`relative group p-2.5 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 min-w-[60px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white border border-transparent ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={t('export_kmz_tooltip') || "Exportar para Google Earth"}
+                    >
+                        <FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} strokeWidth={2} />
+                        <span className="text-[9px] font-bold uppercase tracking-tight leading-none">{t('export_kmz_button') || "Exportar"}</span>
+                    </button>
+                </div>
+            )}
 
         </div>
     );

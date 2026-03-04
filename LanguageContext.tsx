@@ -252,6 +252,7 @@ const translations = {
     'tooltip_add_customer': 'Placement Mode: Click on map to add a Customer.',
     'mode_add_customer': 'Place Customer',
     'sidebar_add_customer': 'New Customer',
+    'sidebar_customer': 'Customer',
     'professional': 'PRO',
 
     // Active Equipment (OLT) Catalog
@@ -1091,6 +1092,15 @@ const translations = {
     'retention_no_users_found': 'No users found with current filters.',
     'retention_alerts_title': 'Users at Risk Today',
     'retention_no_recent_events': 'No recent events generated.',
+
+    // KMZ Export
+    'export_kmz_button': 'Export KMZ',
+    'export_kmz_generating': 'Generating...',
+    'export_kmz_tooltip': 'For Google Earth',
+    'toast_kmz_start': 'Generating KMZ file...',
+    'toast_kmz_success': 'KMZ file generated successfully!',
+    'toast_kmz_error': 'Error exporting KMZ: {error}',
+    'toast_kmz_error_start': 'Error starting KMZ export.',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -1472,6 +1482,7 @@ const translations = {
     'draw_customer_drop_desc': 'Clique para desenhar o cabo drop do cliente até a CTO.',
     'draw_drop': 'Desenhar Cabo',
     'sidebar_add_customer': 'Adicionar Cliente',
+    'sidebar_customer': 'Cliente',
     'professional': 'PRO',
     'confirm_disconnect': 'Tem certeza que deseja desconectar este cliente? Isso removerá o cabo e a conexão.',
     'confirm_remove_cable_box': 'Tem certeza que deseja remover este cabo da caixa?',
@@ -2194,6 +2205,15 @@ const translations = {
     'retention_no_users_found': 'Nenhum usuário encontrado com os filtros atuais.',
     'retention_alerts_title': 'Usuários em Risco Hoje',
     'retention_no_recent_events': 'Nenhum evento recente gerado.',
+
+    // Exportação KMZ
+    'export_kmz_button': 'Exportar KMZ',
+    'export_kmz_generating': 'Gerando...',
+    'export_kmz_tooltip': 'Para Google Earth',
+    'toast_kmz_start': 'Gerando arquivo KMZ...',
+    'toast_kmz_success': 'Arquivo KMZ gerado com sucesso!',
+    'toast_kmz_error': 'Erro ao exportar KMZ: {error}',
+    'toast_kmz_error_start': 'Erro ao iniciar exportação KMZ.',
   },
 };
 

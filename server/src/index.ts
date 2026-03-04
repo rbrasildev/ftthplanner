@@ -1,6 +1,19 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// =========================================================
+// GLOBAL LOG SILENCER (BACKEND)
+// =========================================================
+// Remove or set to false to see all backend logs again
+const MUTE_LOGS = true;
+
+if (MUTE_LOGS) {
+    // Only muting log, info and debug. Keeping warn and error.
+    console.log = function () { };
+    console.info = function () { };
+    console.debug = function () { };
+}
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -75,7 +88,7 @@ app.use('/api/uploads', express.static(uploadsPath));
 app.use(express.json({ limit: '100mb' }));
 
 app.use((req, res, next) => {
-    console.log(`[Request] ${req.method} ${req.url}`);
+    // console.log(`[Request] ${req.method} ${req.url}`);
     next();
 });
 

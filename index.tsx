@@ -13,6 +13,17 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// =========================================================
+// GLOBAL LOG SILENCER (FRONTEND)
+// =========================================================
+// Uncomment the line inside to re-enable logs for debugging
+if (process.env.NODE_ENV === 'production' || true) {
+  console.log = function () { };
+  console.info = function () { };
+  console.debug = function () { };
+  // Keeping console.warn and console.error active for critical issues
+}
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>

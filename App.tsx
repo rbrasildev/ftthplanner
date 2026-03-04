@@ -22,10 +22,9 @@ import { SearchBox } from './components/SearchBox';
 import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
-import {
-    Map as MapIcon, Zap, MousePointer2, Unplug, CheckCircle2, Eye, EyeOff, Server, Box, Move, Ruler, X, Settings, Check, Loader2, Building2,
-    UtilityPole, FileUp, ChevronRight, Plus, AlertTriangle
-} from 'lucide-react';
+import { useKMZExport } from './hooks/useKMZExport';
+
+import { Loader2, Plus, FileDown, Waypoints, Box, Activity, CalendarDays, Database, Users, Link as LinkIcon, Building2, Map as MapIcon, LayoutDashboard, Settings, LogOut, ChevronRight, Share2, Crown, Zap, Save, AlertTriangle, Building, ChevronLeft, MapPin, X, FileUp, Check, CheckCircle2, Play, Pause, Square, SkipForward, SkipBack, Search, Maximize2, UtilityPole, Ruler, Scissors, ArrowRightLeft, MousePointer2, AlertCircle, Phone, Info, Eye, Download, EyeOff, LayoutTemplate, Layers, Move } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
 import L from 'leaflet';
@@ -43,6 +42,7 @@ import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
 import { KmlImportModal } from './components/modals/KmlImportModal';
 import { AdvancedImportModal } from './components/modals/AdvancedImportModal';
 import { ProjectReportModal } from './components/modals/ProjectReportModal';
+import { ExportKMZModal, ExportKMZOptions } from './components/modals/ExportKMZModal';
 import { FusionModule } from './components/FusionModule';
 import { SupportChatBubble } from './components/support/SupportChatBubble';
 
@@ -138,6 +138,9 @@ export default function App() {
 
     // Global System Settings
     const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
+
+    const [isExportKMZModalOpen, setIsExportKMZModalOpen] = useState(false);
+    const { isExporting, exportToKMZ } = useKMZExport();
 
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(() => localStorage.getItem('ftth_current_project_id'));
 
@@ -1407,8 +1410,8 @@ export default function App() {
             return {
                 ...prev,
                 cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
-                ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
-                pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
+                ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cable.id] } : c),
+                pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cable.id] } : p)
             };
         });
     }, [updateCurrentNetwork, t]);
@@ -1883,6 +1886,23 @@ export default function App() {
         showToast(t('action_cancelled') || "Ação Cancelada", 'info');
     }, [toolMode, t]);
 
+    const handleExportKMZ = useCallback((options: ExportKMZOptions) => {
+        if (!currentProject) return;
+
+        // Construct object specifically for the worker
+        const projectData = {
+            projectName: currentProject.name,
+            nodes: currentProject.network.ctos,
+            cables: currentProject.network.cables,
+            pops: currentProject.network.pops,
+            poles: currentProject.network.poles,
+            customers: globalCustomers // Fix to use the populated customer state
+        };
+
+        exportToKMZ(projectData, options, showToast);
+        setIsExportKMZModalOpen(false);
+    }, [currentProject, globalCustomers, exportToKMZ, showToast]);
+
     if (!user) {
         if (authView === 'landing') {
             return <LandingPage
@@ -2109,6 +2129,8 @@ export default function App() {
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
+                onExportClick={() => setIsExportKMZModalOpen(true)}
+                isExporting={isExporting}
                 onReportClick={() => setIsReportModalOpen(true)}
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -2198,25 +2220,28 @@ export default function App() {
                 </main>
             ) : (
                 <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
-                    {/* Map Toolbar (Floating) */}
-                    <div className={`absolute ${isSupportMode ? 'top-20 lg:top-20' : 'top-20 lg:top-4'} left-0 right-0 z-[1000] pointer-events-none`}>
+                    {/* Map Toolbar (Floating Center) */}
+                    <div className={`absolute ${isSupportMode ? 'top-20 lg:top-20' : 'top-20 lg:top-4'} left-1/2 -translate-x-1/2 z-[1000] pointer-events-none`}>
                         {/* Pointer events none on container so clicks pass through, but auto on toolbar itself */}
-                        <div className="pointer-events-auto w-fit mx-auto">
+                        <div className="pointer-events-auto w-fit">
                             <MapToolbar
                                 toolMode={toolMode}
                                 setToolMode={setToolMode}
                                 activeMenuId={activeMenuId}
                                 setActiveMenuId={setActiveMenuId}
                                 onImportKml={() => setIsKmlImportOpen(true)}
-                                userRole={userRole}
                                 onConnectClick={() => {
                                     previousNetworkState.current = JSON.parse(JSON.stringify(getCurrentNetwork()));
                                     setToolMode('connect_cable');
                                     setSelectedId(null);
                                 }}
+                                userRole={userRole}
+                                onExportKmz={() => setIsExportKMZModalOpen(true)}
+                                isExporting={isExporting}
                             />
                         </div>
                     </div>
+
 
                     {/* Move Mode Floating Controls */}
                     {toolMode === 'move_node' && (
@@ -2804,6 +2829,13 @@ export default function App() {
                         setPendingPoleLocation(null);
                     }
                 }}
+            />
+
+            <ExportKMZModal
+                isOpen={isExportKMZModalOpen}
+                onClose={() => setIsExportKMZModalOpen(false)}
+                onExport={handleExportKMZ}
+                isExporting={isExporting}
             />
 
             {/* --- SYSTEM SETTINGS MODAL --- */}
