@@ -174,7 +174,13 @@ export const createCustomer = async (req: Request, res: Response) => {
             });
         }
 
-        res.json(result);
+        // Fetch the fully hydrated object so the client gets the drop right away
+        const finalCustomer = await prisma.customer.findUnique({
+            where: { id: result.id },
+            include: { drop: true }
+        });
+
+        res.json(finalCustomer);
     } catch (error: any) {
         console.error("Create Customer Error:", error);
         // Ensure we send a JSON response even if error object is weird
@@ -287,7 +293,13 @@ export const updateCustomer = async (req: Request, res: Response) => {
         }
         // Also update old CTO count if changed (simplified here)
 
-        res.json(result);
+        // Fetch the fully hydrated object so the client gets the updated drop right away
+        const finalCustomer = await prisma.customer.findUnique({
+            where: { id: result.id },
+            include: { drop: true }
+        });
+
+        res.json(finalCustomer);
     } catch (error) {
         console.error("Update Customer Error:", error);
         res.status(500).json({ error: 'Failed to update customer' });

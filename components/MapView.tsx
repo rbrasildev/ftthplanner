@@ -1114,9 +1114,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
                             // Handle Repositioning
                             updateCustomer(repositioningCustomer.id, updates)
-                                .then(() => {
+                                .then((updatedCustomer) => {
                                     showToast(t('customer_updated_success') || "Cliente atualizado", 'success');
-                                    // Map refresh now happens because allCustomers prop updates in App
+                                    if (onCustomerSaved) onCustomerSaved(updatedCustomer);
                                 })
                                 .catch(err => {
                                     console.error("Failed to move customer:", err);
