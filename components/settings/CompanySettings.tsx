@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { Building2, Save, Upload, Globe, Mail, Phone, MapPin, Hash, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as companyService from '../../services/companyService';
+import { CustomInput } from '../common/CustomInput';
 
 export const CompanySettings: React.FC = () => {
     const { t } = useLanguage();
@@ -88,7 +89,7 @@ export const CompanySettings: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center p-20">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
             </div>
         );
     }
@@ -98,7 +99,7 @@ export const CompanySettings: React.FC = () => {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Building2 className="w-7 h-7 text-sky-500" />
+                    <Building2 className="w-7 h-7 text-emerald-500" />
                     {t('company_settings_title')}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t('company_settings_subtitle')}</p>
@@ -121,30 +122,25 @@ export const CompanySettings: React.FC = () => {
                                 )}
                                 {uploading && (
                                     <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex flex-col items-center justify-center gap-2">
-                                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-                                        <span className="text-[10px] font-bold text-indigo-500 uppercase">{t('company_uploading')}</span>
+                                        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                                        <span className="text-[10px] font-bold text-emerald-500 uppercase">{t('company_uploading')}</span>
                                     </div>
                                 )}
                             </div>
-                            <label className="absolute -bottom-2 -right-2 p-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg shadow-lg cursor-pointer transition-all active:scale-95">
+                            <label className="absolute -bottom-2 -right-2 p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg cursor-pointer transition-all active:scale-95">
                                 <Upload className="w-4 h-4" />
                                 <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                             </label>
                         </div>
 
                         <div className="flex-1 space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                    {t('company_name_label')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                                    required
-                                />
-                            </div>
+                            <CustomInput
+                                label={t('company_name_label')}
+                                type="text"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
                             <p className="text-xs text-slate-500 italic">{t('company_logo_hint')}</p>
                         </div>
                     </div>
@@ -156,55 +152,41 @@ export const CompanySettings: React.FC = () => {
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <Hash className="w-4 h-4" /> Informações Legais
                         </h3>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_cnpj_label')}</label>
-                            <input
-                                type="text"
-                                value={formData.cnpj}
-                                onChange={e => setFormData({ ...formData, cnpj: e.target.value })}
-                                placeholder="00.000.000/0000-00"
-                                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_phone_label')}</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={formData.phone}
-                                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                                />
-                            </div>
-                        </div>
+                        <CustomInput
+                            label={t('company_cnpj_label')}
+                            type="text"
+                            value={formData.cnpj}
+                            onChange={e => setFormData({ ...formData, cnpj: e.target.value })}
+                            placeholder="00.000.000/0000-00"
+                            icon={Hash}
+                        />
+                        <CustomInput
+                            label={t('company_phone_label')}
+                            type="text"
+                            value={formData.phone}
+                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                            icon={Phone}
+                        />
                     </div>
 
                     <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <Mail className="w-4 h-4" /> Canais Digitais
                         </h3>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_email_label')}</label>
-                            <input
-                                type="email"
-                                value={formData.businessEmail}
-                                onChange={e => setFormData({ ...formData, businessEmail: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_website_label')}</label>
-                            <div className="relative">
-                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={formData.website}
-                                    onChange={e => setFormData({ ...formData, website: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                                />
-                            </div>
-                        </div>
+                        <CustomInput
+                            label={t('company_email_label')}
+                            type="email"
+                            value={formData.businessEmail}
+                            onChange={e => setFormData({ ...formData, businessEmail: e.target.value })}
+                            icon={Mail}
+                        />
+                        <CustomInput
+                            label={t('company_website_label')}
+                            type="text"
+                            value={formData.website}
+                            onChange={e => setFormData({ ...formData, website: e.target.value })}
+                            icon={Globe}
+                        />
                     </div>
                 </div>
 
@@ -215,43 +197,36 @@ export const CompanySettings: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="lg:col-span-2">
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_address_label')}</label>
-                            <input
+                            <CustomInput
+                                label={t('company_address_label')}
                                 type="text"
                                 value={formData.address}
                                 onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
+                                icon={MapPin}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_city_label')}</label>
-                            <input
+                            <CustomInput
+                                label={t('company_city_label')}
                                 type="text"
                                 value={formData.city}
                                 onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_state_label')}</label>
-                                <input
-                                    type="text"
-                                    value={formData.state}
-                                    onChange={e => setFormData({ ...formData, state: e.target.value })}
-                                    maxLength={2}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1">{t('company_zip_label')}</label>
-                                <input
-                                    type="text"
-                                    value={formData.zipCode}
-                                    onChange={e => setFormData({ ...formData, zipCode: e.target.value })}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-sky-500 transition-all outline-none"
-                                />
-                            </div>
+                            <CustomInput
+                                label={t('company_state_label')}
+                                type="text"
+                                value={formData.state}
+                                onChange={e => setFormData({ ...formData, state: e.target.value })}
+                                maxLength={2}
+                            />
+                            <CustomInput
+                                label={t('company_zip_label')}
+                                type="text"
+                                value={formData.zipCode}
+                                onChange={e => setFormData({ ...formData, zipCode: e.target.value })}
+                            />
                         </div>
                     </div>
                 </div>

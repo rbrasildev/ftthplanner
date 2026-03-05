@@ -36,13 +36,13 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     // Let's assume auto-renewal is YES for paid plans unless explicitly shown otherwise, or just show "Stripe" details.
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 animate-in fade-in duration-300">
             <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
 
                 {/* Header */}
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <User className="w-5 h-5 text-sky-500" />
+                        <User className="w-5 h-5 text-emerald-500" />
                         Minha Conta
                     </h2>
                     <button
@@ -72,7 +72,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                         <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                             <span className="text-slate-500 dark:text-slate-400 font-medium">Plano Atual</span>
                             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                {isFree ? <span className="text-slate-500">Grátis</span> : <span className="text-sky-500">{userData.plan}</span>}
+                                {isFree ? <span className="text-slate-500">Grátis</span> : <span className="text-emerald-500">{userData.plan}</span>}
                             </span>
                         </div>
 
@@ -105,14 +105,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             onClick={onManagePlan}
                             className="w-full py-3 px-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group"
                         >
-                            <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-sky-500 transition-colors" />
+                            <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                             {t('upgrade_plan') || 'Fazer Upgrade / Trocar Plano'}
                         </button>
 
-                        {!isFree && !isTrial && hasActiveSubscription && (
+                        {!isFree && !isTrial && (
                             <button
                                 onClick={async () => {
-                                    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Sua conta retornará ao plano Grátis no final do período.')) return;
+                                    if (!confirm('Tem certeza que deseja cancelar sua assinatura ativa? Você manterá o acesso até o fim do período já pago.')) return;
                                     try {
                                         setLoading(true);
                                         await api.post('/payments/cancel_subscription');
@@ -126,9 +126,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     }
                                 }}
                                 disabled={loading}
-                                className="w-full py-2 px-4 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                                className="w-full py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-red-200 dark:border-red-900/30 flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Processando...' : 'Cancelar Assinatura'}
+                                <X className="w-4 h-4" />
+                                {loading ? 'Processando...' : 'Cancelar Assinatura Atual'}
                             </button>
                         )}
 

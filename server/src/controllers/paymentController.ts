@@ -7,6 +7,10 @@ import { AuthRequest } from '../middleware/auth';
 const prisma = new PrismaClient();
 
 // Initialize the client object with the access token from environment variables
+if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    console.warn('WARNING: MERCADOPAGO_ACCESS_TOKEN is not set in environment variables.');
+}
+
 const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
     options: { timeout: 10000, idempotencyKey: 'ftth-planner-payment' }
@@ -58,25 +62,13 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
 
             const subscriptionBody = {
                 body: {
-                    reason: `Subscription: ${plan.name} (Company: ${companyId})`,
-                    auto_recurring: {
-                        frequency: 1,
-                        frequency_type: 'months',
-                        transaction_amount: plan.price,
-                        currency_id: 'BRL'
-                    },
-                    back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br', // Redirect after payment
+                    preapproval_plan_id: plan.mercadopagoId,
                     payer_email: payer.email,
-                    card_token_id: token, // Card token from frontend
-                    status: 'authorized', // Auto-approve
-                    external_reference: companyId, // To identify in webhooks
-                    // Enhanced data for anti-fraud
-                    payment_method_id: payment_method_id,
-                    payer: {
-                        email: payer.email,
-                        identification: payer.identification
-                    }
-                } as any // Cast to any because definitions might be missing these fields for PreApproval
+                    card_token_id: token,
+                    back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br',
+                    status: 'authorized',
+                    external_reference: companyId,
+                } as any
             };
 
             try {
@@ -161,10 +153,21 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
 
     } catch (error: any) {
         console.error('Subscription Error:', error);
-        const errorMessage = error.message || 'Unknown error during subscription';
+
+        let errorMessage = error.message || 'Unknown error during subscription';
+        let errorDetails = error;
+
+        // Try to extract more details from Mercado Pago error response
+        if (error.response?.data) {
+            console.error('Mercado Pago API Error Details:', JSON.stringify(error.response.data, null, 2));
+            errorMessage = error.response.data.message || errorMessage;
+            errorDetails = error.response.data;
+        }
+
         return res.status(500).json({
             error: 'Error processing subscription',
-            details: errorMessage
+            message: errorMessage,
+            details: errorDetails
         });
     }
 };

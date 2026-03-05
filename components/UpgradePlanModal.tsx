@@ -43,6 +43,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true); // Ensure loading is initialized properly
     const [selectedPlanForBilling, setSelectedPlanForBilling] = useState<Plan | null>(null);
+    const [isSuccess, setIsSuccess] = useState(false);
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -130,65 +131,85 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
     return (
         <>
-            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/40 animate-in fade-in duration-300 p-0 sm:p-4">
+                <div className="bg-white dark:bg-slate-900 shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full sm:h-auto sm:min-h-[90vh] sm:max-h-[95vh] sm:rounded-2xl">
 
-                    {/* Header */}
-                    <div className="p-8 text-center bg-white dark:bg-slate-900 shrink-0 relative">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
+                    <div className={`${(selectedPlanForBilling || isSuccess) ? 'p-6 sm:p-6' : 'p-8 sm:p-8'} text-center bg-white dark:bg-slate-900 shrink-0 relative transition-all`}>
+                        {!isSuccess && (
+                            <button
+                                onClick={onClose}
+                                className="absolute top-6 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors z-20"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        )}
 
                         {/* Back Button (Only when in Payment Mode) */}
-                        {selectedPlanForBilling && (
+                        {selectedPlanForBilling && !isSuccess && (
                             <button
                                 onClick={() => setSelectedPlanForBilling(null)}
-                                className="absolute top-4 left-4 flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors"
+                                className="absolute top-6 left-4 flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-emerald-600 hover:text-emerald-700 dark:hover:text-white transition-colors z-20"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                                 <span className="text-sm font-bold">Voltar</span>
                             </button>
                         )}
 
-                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ring-4 
-                            ${limitDetails
-                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-50 dark:ring-red-900/10'
-                                : 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 ring-sky-50 dark:ring-sky-900/10'}`}>
-                            {selectedPlanForBilling ? <Shield className="w-8 h-8" /> : (limitDetails ? <Shield className="w-8 h-8" /> : <Star className="w-8 h-8" />)}
-                        </div>
+                        {!selectedPlanForBilling && !isSuccess && (
+                            <>
+                                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ring-4 
+                                    ${limitDetails
+                                        ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-50 dark:ring-red-900/10'
+                                        : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 ring-emerald-50 dark:ring-emerald-900/10'}`}>
+                                    {limitDetails ? <Shield className="w-8 h-8" /> : <Star className="w-8 h-8" />}
+                                </div>
 
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
-                            {selectedPlanForBilling
-                                ? "Finalizar Assinatura"
-                                : (limitDetails ? "Limite Atingido!" : (currentPlanName && !currentPlanName.toLowerCase().includes('grátis') ? "Gerenciar Assinatura" : "Faça um Upgrade"))
-                            }
-                        </h2>
-                        <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-                            {selectedPlanForBilling
-                                ? `Você está a um passo de desbloquear o plano ${selectedPlanForBilling.name}.`
-                                : (limitDetails
-                                    ? <>{limitDetails} <br /> Escolha um plano ideal para continuar expandindo.</>
-                                    : "Confira as opções disponíveis e escolha o plano ideal para o seu crescimento."
-                                )
-                            }
-                        </p>
-
+                                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
+                                    {limitDetails ? "Limite Atingido!" : (currentPlanName && !currentPlanName.toLowerCase().includes('grátis') ? "Gerenciar Assinatura" : "Faça um Upgrade")}
+                                </h2>
+                                <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
+                                    {limitDetails
+                                        ? <>{limitDetails} <br /> Escolha um plano ideal para continuar expandindo.</>
+                                        : "Confira as opções disponíveis e escolha o plano ideal para o seu crescimento."
+                                    }
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     {/* Content Area */}
-                    <div className="p-8 overflow-y-auto bg-white dark:bg-slate-900 flex-1">
-                        {selectedPlanForBilling ? (
+                    <div className="pt-4 sm:pt-9 overflow-y-auto bg-white dark:bg-slate-900 flex-1 relative px-4 sm:px-0">
+                        {isSuccess ? (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-900 text-center animate-in fade-in zoom-in duration-500">
+                                <div className="mb-8 relative">
+                                    <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping duration-1000"></div>
+                                    <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/40 relative z-10">
+                                        <Check className="w-12 h-12 text-white stroke-[3px]" />
+                                    </div>
+                                </div>
+                                <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Assinatura Confirmada!</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-lg max-w-md mx-auto mb-10 leading-relaxed">
+                                    Seu plano foi atualizado com sucesso. Prepare-se para elevar o nível dos seus projetos.
+                                </p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-2xl shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] text-lg uppercase tracking-wider"
+                                >
+                                    Acessar Plataforma
+                                </button>
+
+                                <div className="mt-12 opacity-30">
+                                    <Zap className="w-6 h-6 text-emerald-500 animate-bounce" />
+                                </div>
+                            </div>
+                        ) : selectedPlanForBilling ? (
                             <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-                                <div className="w-full max-w-2xl">
+                                <div className="w-full max-w-3xl">
                                     <UpgradePaymentForm
                                         plan={selectedPlanForBilling}
                                         email={email}
                                         onSuccess={() => {
-                                            alert('Upgrade realizado com sucesso! A página será atualizada.');
-                                            window.location.reload();
+                                            setIsSuccess(true);
                                         }}
                                         onCancel={() => setSelectedPlanForBilling(null)}
                                     />
@@ -219,20 +240,20 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             key={plan.id}
                                             className={`relative bg-white dark:bg-slate-900 rounded-xl p-6 border transition-all duration-300 flex flex-col w-full max-w-[300px]
                                             ${plan.highlight
-                                                    ? 'border-sky-500 ring-4 ring-sky-500/10 shadow-xl scale-105 z-10'
-                                                    : 'border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-lg'
+                                                    ? 'border-emerald-500 ring-4 ring-emerald-500/10 shadow-xl scale-105 z-10'
+                                                    : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg'
                                                 }
                                             ${(billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'opacity-50 grayscale' : ''}
                                         `}
                                         >
                                             {plan.highlight && (
-                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-sky-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
+                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
                                                     Recomendado
                                                 </div>
                                             )}
 
                                             <div className="mb-4">
-                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${plan.highlight ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${plan.highlight ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                                                     {plan.icon ? <plan.icon className="w-6 h-6" /> : <Star className="w-6 h-6" />}
                                                 </div>
                                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
@@ -251,7 +272,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             <ul className="space-y-3 mb-8 flex-1">
                                                 {plan.features.map((feature, idx) => (
                                                     <li key={idx} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
-                                                        <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-sky-500' : 'text-slate-400'}`} />
+                                                        <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-emerald-500' : 'text-slate-400'}`} />
                                                         <span className="leading-snug">{feature}</span>
                                                     </li>
                                                 ))}
@@ -264,7 +285,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                 ${isCurrent
                                                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                                                         : plan.highlight
-                                                            ? 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-900/20 hover:-translate-y-0.5'
+                                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 hover:-translate-y-0.5'
                                                             : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200'
                                                     }
                                             `}
@@ -272,18 +293,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                 {isCurrent ? 'Plano Atual' : (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'Indisponível Anual' : 'Assinar Agora'}
                                             </button>
 
-
                                         </div>
                                     );
                                 })}
                             </div>
                         )}
-                    </div>
-
-                    <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-                            Entre em contato com o suporte para ativação imediata.
-                        </p>
                     </div>
                 </div>
             </div>
