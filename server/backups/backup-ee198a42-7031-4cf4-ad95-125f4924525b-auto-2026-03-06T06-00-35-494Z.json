@@ -1,0 +1,4731 @@
+{
+  "meta": {
+    "createdAt": "2026-03-06T06:00:35.494Z",
+    "version": "1.0",
+    "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b"
+  },
+  "projects": [
+    {
+      "id": "fd32c70d-d71e-4485-a936-89a31db81cd7",
+      "userId": "aaa1c7ae-5952-4044-b021-86481de2bcd3",
+      "name": "ISI TECNOLOGIA - ISAC JERRYD",
+      "centerLat": -1.458878209973721,
+      "centerLng": -56.40028953552247,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-02-09T21:08:43.414Z",
+      "updatedAt": "2026-02-09T21:08:43.414Z",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b"
+    },
+    {
+      "id": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "userId": "aaa1c7ae-5952-4044-b021-86481de2bcd3",
+      "name": "H-NORTE TELECOMUNICAÇÔES",
+      "centerLat": -2.629290113238349,
+      "centerLng": -56.73387986316413,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-01-30T15:13:04.358Z",
+      "updatedAt": "2026-02-10T01:48:32.810Z",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b"
+    },
+    {
+      "id": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "userId": "aaa1c7ae-5952-4044-b021-86481de2bcd3",
+      "name": "BRUNO MULTSERVIÇOS - FREGUESIA DO ANDIRÁ",
+      "centerLat": -2.859034640090075,
+      "centerLng": -56.9967269897461,
+      "zoom": 15,
+      "settings": {
+        "snapDistance": 30
+      },
+      "createdAt": "2026-02-08T20:00:57.091Z",
+      "updatedAt": "2026-02-28T14:35:28.490Z",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b"
+    }
+  ],
+  "ctos": [
+    {
+      "id": "cto-1770606320203",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "",
+      "status": "PLANNED",
+      "lat": -2.858214905454262,
+      "lng": -57.00146913528442,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606351105",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-2",
+      "status": "PLANNED",
+      "lat": -2.858498865884603,
+      "lng": -56.99888080358506,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606366415",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-3",
+      "status": "PLANNED",
+      "lat": -2.858975704939723,
+      "lng": -56.99670016765595,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606376865",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-4",
+      "status": "PLANNED",
+      "lat": -2.857684488613174,
+      "lng": -57.00088441371918,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606390622",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-5",
+      "status": "PLANNED",
+      "lat": -2.85895963171637,
+      "lng": -57.00168907642365,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606396517",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-6",
+      "status": "PLANNED",
+      "lat": -2.85903999783087,
+      "lng": -56.99965059757233,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606402081",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-7",
+      "status": "PLANNED",
+      "lat": -2.859495405706683,
+      "lng": -56.99731171131135,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606406997",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-8",
+      "status": "PLANNED",
+      "lat": -2.859891878298409,
+      "lng": -56.9951605796814,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606411448",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-9",
+      "status": "PLANNED",
+      "lat": -2.86036335903989,
+      "lng": -56.99248373508454,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606424341",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-10",
+      "status": "PLANNED",
+      "lat": -2.859811512243589,
+      "lng": -57.00282633304597,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606435332",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-11",
+      "status": "PLANNED",
+      "lat": -2.85992938245539,
+      "lng": -57.00061082839967,
+      "splitters": [],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-pass-1772289325558-0",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-0",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-0"
+        },
+        {
+          "id": "conn-pass-1772289325558-1",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-1",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-1"
+        },
+        {
+          "id": "conn-pass-1772289325558-2",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-2",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-2"
+        },
+        {
+          "id": "conn-pass-1772289325558-3",
+          "color": "#0000FF",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-3",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-3"
+        },
+        {
+          "id": "conn-pass-1772289325558-4",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-4",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-4"
+        },
+        {
+          "id": "conn-pass-1772289325558-5",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-5",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-5"
+        },
+        {
+          "id": "conn-pass-1772289325558-6",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-6",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-6"
+        },
+        {
+          "id": "conn-pass-1772289325558-7",
+          "color": "#ec4899",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-7",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-7"
+        },
+        {
+          "id": "conn-pass-1772289325558-8",
+          "color": "#000000",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-8",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-8"
+        },
+        {
+          "id": "conn-pass-1772289325558-9",
+          "color": "#9ca3af",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-9",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-9"
+        },
+        {
+          "id": "conn-pass-1772289325558-10",
+          "color": "#f97316",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-10",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-10"
+        },
+        {
+          "id": "conn-pass-1772289325558-11",
+          "color": "#22d3ee",
+          "points": [],
+          "sourceId": "cable-1770606247560-fiber-11",
+          "targetId": "8bc29cee-d93b-46c9-8039-34e82ee5befe-fiber-11"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770606247560"
+      ],
+      "layout": {
+        "cable-1770606247560": {
+          "x": -18,
+          "y": 210,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "8bc29cee-d93b-46c9-8039-34e82ee5befe": {
+          "x": -18,
+          "y": -96,
+          "mirrored": false,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606459919",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-12",
+      "status": "PLANNED",
+      "lat": -2.861676003264825,
+      "lng": -57.00075566768646,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770606473335",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CTO-13",
+      "status": "PLANNED",
+      "lat": -2.860676786470999,
+      "lng": -57.00062960386277,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1769809835886",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-1",
+      "status": "PLANNED",
+      "lat": -2.620639316561864,
+      "lng": -56.64765894412995,
+      "splitters": [
+        {
+          "id": "spl-1769810072621",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1769810072621-in",
+          "outputPortIds": [
+            "spl-1769810072621-out-0",
+            "spl-1769810072621-out-1",
+            "spl-1769810072621-out-2",
+            "spl-1769810072621-out-3",
+            "spl-1769810072621-out-4",
+            "spl-1769810072621-out-5",
+            "spl-1769810072621-out-6",
+            "spl-1769810072621-out-7",
+            "spl-1769810072621-out-8",
+            "spl-1769810072621-out-9",
+            "spl-1769810072621-out-10",
+            "spl-1769810072621-out-11",
+            "spl-1769810072621-out-12",
+            "spl-1769810072621-out-13",
+            "spl-1769810072621-out-14",
+            "spl-1769810072621-out-15"
+          ]
+        },
+        {
+          "id": "spl-1769810486436",
+          "name": "2",
+          "type": "1:2D-10/90",
+          "inputPortId": "spl-1769810486436-in",
+          "outputPortIds": [
+            "spl-1769810486436-out-0",
+            "spl-1769810486436-out-1"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1769810492869",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769786238325-fiber-0",
+          "targetId": "spl-1769810486436-in"
+        },
+        {
+          "id": "conn-1769810496972",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1769810486436-out-1",
+          "targetId": "cable-1769810153118-fiber-0"
+        },
+        {
+          "id": "conn-1769810500093",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1769810486436-out-0",
+          "targetId": "spl-1769810072621-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769786238325",
+        "cable-1769810153118"
+      ],
+      "layout": {
+        "spl-1769810072621": {
+          "x": 714,
+          "y": 270,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1769810257837": {
+          "x": 492,
+          "y": 30,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1769810472136": {
+          "x": 294,
+          "y": -48,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1769810486436": {
+          "x": 468,
+          "y": 174,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1769810153118": {
+          "x": 816,
+          "y": 42,
+          "mirrored": false,
+          "rotation": 180
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1769810141637",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-2",
+      "status": "PLANNED",
+      "lat": -2.619197796452909,
+      "lng": -56.64868354797364,
+      "splitters": [
+        {
+          "id": "spl-1769810620196",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1769810620196-in",
+          "outputPortIds": [
+            "spl-1769810620196-out-0",
+            "spl-1769810620196-out-1",
+            "spl-1769810620196-out-2",
+            "spl-1769810620196-out-3",
+            "spl-1769810620196-out-4",
+            "spl-1769810620196-out-5",
+            "spl-1769810620196-out-6",
+            "spl-1769810620196-out-7",
+            "spl-1769810620196-out-8",
+            "spl-1769810620196-out-9",
+            "spl-1769810620196-out-10",
+            "spl-1769810620196-out-11",
+            "spl-1769810620196-out-12",
+            "spl-1769810620196-out-13",
+            "spl-1769810620196-out-14",
+            "spl-1769810620196-out-15"
+          ]
+        },
+        {
+          "id": "spl-1769810635372",
+          "name": "2",
+          "type": "1:2D-10/90",
+          "inputPortId": "spl-1769810635372-in",
+          "outputPortIds": [
+            "spl-1769810635372-out-0",
+            "spl-1769810635372-out-1"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1769810657484",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769810153118-fiber-0",
+          "targetId": "spl-1769810635372-in"
+        },
+        {
+          "id": "conn-1769810661228",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1769810635372-out-1",
+          "targetId": "cable-1769810552414-fiber-0"
+        },
+        {
+          "id": "conn-1769810667180",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1769810635372-out-0",
+          "targetId": "spl-1769810620196-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769810153118",
+        "cable-1769810552414"
+      ],
+      "layout": {
+        "spl-1769810620196": {
+          "x": 648,
+          "y": 252,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1769810635372": {
+          "x": 456,
+          "y": 138,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1769810552414": {
+          "x": 750,
+          "y": 42,
+          "mirrored": false,
+          "rotation": 180
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1769810540989",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-3",
+      "status": "PLANNED",
+      "lat": -2.617284698430497,
+      "lng": -56.65006220340729,
+      "splitters": [
+        {
+          "id": "spl-1770323795248",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1770323795248-in",
+          "outputPortIds": [
+            "spl-1770323795248-out-0",
+            "spl-1770323795248-out-1",
+            "spl-1770323795248-out-2",
+            "spl-1770323795248-out-3",
+            "spl-1770323795248-out-4",
+            "spl-1770323795248-out-5",
+            "spl-1770323795248-out-6",
+            "spl-1770323795248-out-7",
+            "spl-1770323795248-out-8",
+            "spl-1770323795248-out-9",
+            "spl-1770323795248-out-10",
+            "spl-1770323795248-out-11",
+            "spl-1770323795248-out-12",
+            "spl-1770323795248-out-13",
+            "spl-1770323795248-out-14",
+            "spl-1770323795248-out-15"
+          ]
+        },
+        {
+          "id": "spl-1770323805750",
+          "name": "2",
+          "type": "1:2D-15/85",
+          "inputPortId": "spl-1770323805750-in",
+          "outputPortIds": [
+            "spl-1770323805750-out-0",
+            "spl-1770323805750-out-1"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770323811650",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769810552414-fiber-0",
+          "targetId": "spl-1770323805750-in"
+        },
+        {
+          "id": "conn-1770323814252",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1770323805750-out-1",
+          "targetId": "cable-1770323721026-fiber-0"
+        },
+        {
+          "id": "conn-1770323817829",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1770323805750-out-0",
+          "targetId": "spl-1770323795248-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769810552414",
+        "cable-1770323721026"
+      ],
+      "layout": {
+        "spl-1770323795248": {
+          "x": 618,
+          "y": 270,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770323805750": {
+          "x": 456,
+          "y": 156,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1769810552414": {
+          "x": 66,
+          "y": 60,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1770323721026": {
+          "x": 714,
+          "y": 60,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770323377481",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-4",
+      "status": "PLANNED",
+      "lat": -2.61575743320724,
+      "lng": -56.65119946002961,
+      "splitters": [
+        {
+          "id": "spl-1770324325192",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1770324325192-in",
+          "outputPortIds": [
+            "spl-1770324325192-out-0",
+            "spl-1770324325192-out-1",
+            "spl-1770324325192-out-2",
+            "spl-1770324325192-out-3",
+            "spl-1770324325192-out-4",
+            "spl-1770324325192-out-5",
+            "spl-1770324325192-out-6",
+            "spl-1770324325192-out-7"
+          ]
+        },
+        {
+          "id": "spl-1770324375368",
+          "name": "2",
+          "type": "1:2D-10/90",
+          "inputPortId": "spl-1770324375368-in",
+          "outputPortIds": [
+            "spl-1770324375368-out-0",
+            "spl-1770324375368-out-1"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770324381346",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770323721026-fiber-0",
+          "targetId": "spl-1770324375368-in"
+        },
+        {
+          "id": "conn-1770324385926",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1770324375368-out-1",
+          "targetId": "cable-1770324272496-fiber-0"
+        },
+        {
+          "id": "conn-1770324388660",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1770324375368-out-0",
+          "targetId": "spl-1770324325192-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770323721026",
+        "cable-1770324272496"
+      ],
+      "layout": {
+        "spl-1770324325192": {
+          "x": 678,
+          "y": 264,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770324334013": {
+          "x": 504,
+          "y": 168,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770324375368": {
+          "x": 486,
+          "y": 168,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770324272496": {
+          "x": 744,
+          "y": 42,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324249415",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-5",
+      "status": "PLANNED",
+      "lat": -2.61394614782995,
+      "lng": -56.65246009826661,
+      "splitters": [
+        {
+          "id": "spl-1770324507994",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1770324507994-in",
+          "outputPortIds": [
+            "spl-1770324507994-out-0",
+            "spl-1770324507994-out-1",
+            "spl-1770324507994-out-2",
+            "spl-1770324507994-out-3",
+            "spl-1770324507994-out-4",
+            "spl-1770324507994-out-5",
+            "spl-1770324507994-out-6",
+            "spl-1770324507994-out-7"
+          ]
+        },
+        {
+          "id": "spl-1770324512680",
+          "name": "2",
+          "type": "1:2D-10/90",
+          "inputPortId": "spl-1770324512680-in",
+          "outputPortIds": [
+            "spl-1770324512680-out-0",
+            "spl-1770324512680-out-1"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770324526203",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770324272496-fiber-0",
+          "targetId": "spl-1770324512680-in"
+        },
+        {
+          "id": "conn-1770324535162",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1770324512680-out-1",
+          "targetId": "cable-1770324471706-fiber-0"
+        },
+        {
+          "id": "conn-1770324538894",
+          "color": "#0f172a",
+          "points": [],
+          "sourceId": "spl-1770324512680-out-0",
+          "targetId": "spl-1770324507994-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770324272496",
+        "cable-1770324471706"
+      ],
+      "layout": {
+        "spl-1770324507994": {
+          "x": 714,
+          "y": 258,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770324512680": {
+          "x": 480,
+          "y": 150,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770324471706": {
+          "x": 762,
+          "y": 42,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324444856",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-6",
+      "status": "PLANNED",
+      "lat": -2.61266002644822,
+      "lng": -56.65450930595399,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1770324471706"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324694455",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-7",
+      "status": "PLANNED",
+      "lat": -2.612295625150535,
+      "lng": -56.65793180465699,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324701008",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-8",
+      "status": "PLANNED",
+      "lat": -2.612027682952431,
+      "lng": -56.66064620018006,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324737539",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-9",
+      "status": "PLANNED",
+      "lat": -2.614010453864447,
+      "lng": -56.66374683380128,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770324758980",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-10",
+      "status": "PLANNED",
+      "lat": -2.61343169943538,
+      "lng": -56.66692256927491,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770410456593",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-11",
+      "status": "PLANNED",
+      "lat": -2.616754174932255,
+      "lng": -56.66484117507935,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770410467320",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-12",
+      "status": "PLANNED",
+      "lat": -2.615768150864407,
+      "lng": -56.6675877571106,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770410499745",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-13",
+      "status": "PLANNED",
+      "lat": -2.609937731845768,
+      "lng": -56.65767431259156,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770410509117",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-14",
+      "status": "PLANNED",
+      "lat": -2.614106912910009,
+      "lng": -56.66073203086854,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770410521490",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-15",
+      "status": "PLANNED",
+      "lat": -2.610586152945691,
+      "lng": -56.65936410427094,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770411079500",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-16",
+      "status": "PLANNED",
+      "lat": -2.623366946723198,
+      "lng": -56.64815783500672,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "442d538e-0e3d-44a2-a2be-18038390171d",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004552917",
+      "status": "DEPLOYED",
+      "lat": -2.85733446275453,
+      "lng": -57.0055138007244,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "186fe1a4-24bf-4497-bb58-5d3a78724a12",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544916",
+      "status": "DEPLOYED",
+      "lat": -2.8575783052706,
+      "lng": -57.0055110667693,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "12ebaa7c-4ac2-46df-a545-c2705e43b7ac",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004540121",
+      "status": "DEPLOYED",
+      "lat": -2.8578577045832,
+      "lng": -57.0055075040672,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "33483401-05a7-446e-96fe-cf816e0e3350",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004539684",
+      "status": "DEPLOYED",
+      "lat": -2.85815062427577,
+      "lng": -57.0054971728502,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "50d87886-b5db-49bb-8671-078ae576b50c",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004554838",
+      "status": "DEPLOYED",
+      "lat": -2.85844363643364,
+      "lng": -57.0055000412182,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "c019707a-12e1-4fa9-a2ad-a66026e13d16",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004539673",
+      "status": "DEPLOYED",
+      "lat": -2.85869101763199,
+      "lng": -57.0054997733513,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "8b5e2cf0-80bf-4893-9072-c0b1e379c9bf",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553748",
+      "status": "DEPLOYED",
+      "lat": -2.85719782403672,
+      "lng": -57.003036018167,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "c1026806-643a-41e1-b8b4-1faec9b46ca9",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004541467",
+      "status": "DEPLOYED",
+      "lat": -2.85714768398796,
+      "lng": -57.0033248397747,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "390fdb11-5d7a-4b3b-b128-63b50102c08b",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004543135",
+      "status": "DEPLOYED",
+      "lat": -2.85710733583755,
+      "lng": -57.003611943584,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "8a5c89f9-77dc-4a22-8184-2a2ecc134b3b",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004545051",
+      "status": "DEPLOYED",
+      "lat": -2.85706381534013,
+      "lng": -57.00387195857,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "dc40b151-3752-4636-8a4d-18b0e32ee300",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004545050",
+      "status": "DEPLOYED",
+      "lat": -2.85706314645,
+      "lng": -57.00413112588729,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9b32cb06-0c34-4d4d-9ff5-d25e38562432",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004540548",
+      "status": "DEPLOYED",
+      "lat": -2.85706326924829,
+      "lng": -57.0043814081185,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "14a6062c-0f56-42b3-b307-73a34c172f70",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004541149",
+      "status": "DEPLOYED",
+      "lat": -2.85705849615189,
+      "lng": -57.00467105896539,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "30b01469-4b8e-4e78-ad29-4a474ae9c5cc",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004547421",
+      "status": "DEPLOYED",
+      "lat": -2.85705896308264,
+      "lng": -57.0049647845217,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "9edd7f77-cc41-41f2-abff-2f9e27570cff",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553630",
+      "status": "DEPLOYED",
+      "lat": -2.85705833840839,
+      "lng": -57.0052278573719,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "05945336-ab83-4d07-b34f-b77a4d53cc24",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544731",
+      "status": "DEPLOYED",
+      "lat": -2.85783881141344,
+      "lng": -57.00524073918,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "1d66f947-7fb7-4ddb-88b9-524005aa1303",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004542653",
+      "status": "DEPLOYED",
+      "lat": -2.85783335450808,
+      "lng": -57.0049374140106,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "f90b2c5b-48a3-4c6b-8cbe-31ccca0a5d85",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553628",
+      "status": "DEPLOYED",
+      "lat": -2.85782572041091,
+      "lng": -57.0046821773642,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "ddf2437b-b7a4-487c-873b-88a301725f8d",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553629",
+      "status": "DEPLOYED",
+      "lat": -2.85779215413038,
+      "lng": -57.00441135951809,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "0ff46341-8a83-4a77-a8fb-d982001fd32b",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004554130",
+      "status": "DEPLOYED",
+      "lat": -2.85747222193167,
+      "lng": -57.0043843743986,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "226b6748-443d-4325-80bd-d8b3303d9f84",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553353",
+      "status": "DEPLOYED",
+      "lat": -2.85729592830204,
+      "lng": -57.00436751930889,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "38f7c3e4-d621-4597-b999-c23e94134869",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004545110",
+      "status": "DEPLOYED",
+      "lat": -2.85783143563826,
+      "lng": -57.0041012836422,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "63d45cb0-8b89-415a-ab0b-fec8d015a606",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004540787",
+      "status": "DEPLOYED",
+      "lat": -2.85784961758684,
+      "lng": -57.00384163756969,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "811d2c59-a06c-4214-bae0-28c7b6f422ae",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004546736",
+      "status": "DEPLOYED",
+      "lat": -2.85786746375081,
+      "lng": -57.0035525569728,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "0a042c5e-88f3-430a-becb-863f5017301a",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004546457",
+      "status": "DEPLOYED",
+      "lat": -2.85788256734197,
+      "lng": -57.0032625253756,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "5e3fc7c5-7b72-4a92-b069-1b9154d4e485",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004552918",
+      "status": "DEPLOYED",
+      "lat": -2.85790612822342,
+      "lng": -57.0029379034809,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "54f27554-584d-474e-9727-c6af9f7e5554",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553358",
+      "status": "DEPLOYED",
+      "lat": -2.85795683626477,
+      "lng": -57.0026963959742,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "d86ccd8d-90f6-4920-bf96-1e1681242866",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553476",
+      "status": "DEPLOYED",
+      "lat": -2.85801160021788,
+      "lng": -57.0024220584363,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "991d30a8-b5ab-48b9-80a2-4760d14521ad",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544859",
+      "status": "DEPLOYED",
+      "lat": -2.85888228153954,
+      "lng": -57.0027278412916,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "f394879d-cac5-427b-ade6-0e2b18a37574",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004539704",
+      "status": "DEPLOYED",
+      "lat": -2.8584313560324,
+      "lng": -57.0026828675447,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "2248a7d6-bfb0-4ddf-ac08-4c091d1a8b5f",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004539887",
+      "status": "DEPLOYED",
+      "lat": -2.85818870545485,
+      "lng": -57.0038582955214,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "e66c4e88-5ae1-4d84-aff5-ed67defca032",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004540581",
+      "status": "DEPLOYED",
+      "lat": -2.8584841198357,
+      "lng": -57.0038776688215,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "43cc4da2-1085-4fbf-bba8-f3b063984026",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004540580",
+      "status": "DEPLOYED",
+      "lat": -2.85879248201719,
+      "lng": -57.0039122265702,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "30321544-7f62-4bcc-bcc3-6407cb884e30",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544750",
+      "status": "DEPLOYED",
+      "lat": -2.85875717542727,
+      "lng": -57.0041886665849,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "a7868660-cdf1-413c-81ec-1f208dfc0ad6",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004553862",
+      "status": "DEPLOYED",
+      "lat": -2.85874723694209,
+      "lng": -57.0044303609193,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "1d86a462-ba81-4dd8-90f9-87097d03a439",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544768",
+      "status": "DEPLOYED",
+      "lat": -2.85872105951114,
+      "lng": -57.004711483594,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "c3cda2d1-599a-4a7b-9233-d3adc0da2a8f",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544995",
+      "status": "DEPLOYED",
+      "lat": -2.85869699706305,
+      "lng": -57.0049823380151,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "471fb91e-bf7e-41b5-bc50-487f36cfd3a6",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004541132",
+      "status": "DEPLOYED",
+      "lat": -2.8586969283295,
+      "lng": -57.00523748558869,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "3641be3c-7505-47c5-a00d-83bd592e3ac9",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004554285",
+      "status": "DEPLOYED",
+      "lat": -2.85882900463089,
+      "lng": -57.0036085730258,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "77de5440-28cf-4f1e-b881-243f94fe808d",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004545759",
+      "status": "DEPLOYED",
+      "lat": -2.85885497674156,
+      "lng": -57.00328973845939,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "6096a863-4152-4b93-8b66-21558fe3cda5",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "UID: 1004544029",
+      "status": "DEPLOYED",
+      "lat": -2.8588684377707,
+      "lng": -57.00300589128759,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576147645",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO 01 - ramal 01 - pon 01",
+      "status": "PLANNED",
+      "lat": -2.862184987355795,
+      "lng": -57.00297117233277,
+      "splitters": [
+        {
+          "id": "spl-1770577423266",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1770577423266-in",
+          "outputPortIds": [
+            "spl-1770577423266-out-0",
+            "spl-1770577423266-out-1",
+            "spl-1770577423266-out-2",
+            "spl-1770577423266-out-3",
+            "spl-1770577423266-out-4",
+            "spl-1770577423266-out-5",
+            "spl-1770577423266-out-6",
+            "spl-1770577423266-out-7"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770576771475",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-1",
+          "targetId": "cable-1770576534037-fiber-1"
+        },
+        {
+          "id": "conn-1770576775627",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-2",
+          "targetId": "cable-1770576534037-fiber-2"
+        },
+        {
+          "id": "conn-1770576778887",
+          "color": "#0000FF",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-3",
+          "targetId": "cable-1770576534037-fiber-3"
+        },
+        {
+          "id": "conn-1770576781952",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-4",
+          "targetId": "cable-1770576534037-fiber-4"
+        },
+        {
+          "id": "conn-1770576784790",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-5",
+          "targetId": "cable-1770576534037-fiber-5"
+        },
+        {
+          "id": "conn-1770576787657",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-6",
+          "targetId": "cable-1770576534037-fiber-6"
+        },
+        {
+          "id": "conn-1770576790411",
+          "color": "#ec4899",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-7",
+          "targetId": "cable-1770576534037-fiber-7"
+        },
+        {
+          "id": "conn-1770577427017",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770576511698-fiber-0",
+          "targetId": "spl-1770577423266-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770576511698",
+        "cable-1770576534037"
+      ],
+      "layout": {
+        "spl-1770576736225": {
+          "x": 552,
+          "y": -24,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770577413604": {
+          "x": 564,
+          "y": 78,
+          "rotation": 270
+        },
+        "spl-1770577423266": {
+          "x": 570,
+          "y": 108,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770577449093": {
+          "x": 708,
+          "y": 234,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "spl-1770577461845": {
+          "x": 786,
+          "y": 36,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770576534037": {
+          "x": 330,
+          "y": 360,
+          "mirrored": true,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576151465",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-166",
+      "status": "PLANNED",
+      "lat": -2.863653003362309,
+      "lng": -57.00386166572572,
+      "splitters": [
+        {
+          "id": "spl-1770576897360",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1770576897360-in",
+          "outputPortIds": [
+            "spl-1770576897360-out-0",
+            "spl-1770576897360-out-1",
+            "spl-1770576897360-out-2",
+            "spl-1770576897360-out-3",
+            "spl-1770576897360-out-4",
+            "spl-1770576897360-out-5",
+            "spl-1770576897360-out-6",
+            "spl-1770576897360-out-7",
+            "spl-1770576897360-out-8",
+            "spl-1770576897360-out-9",
+            "spl-1770576897360-out-10",
+            "spl-1770576897360-out-11",
+            "spl-1770576897360-out-12",
+            "spl-1770576897360-out-13",
+            "spl-1770576897360-out-14",
+            "spl-1770576897360-out-15"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770576915185",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1770576534037-fiber-1",
+          "targetId": "spl-1770576897360-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770576534037",
+        "cable-1770576551740"
+      ],
+      "layout": {
+        "spl-1770576897360": {
+          "x": 528,
+          "y": 96,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770576551740": {
+          "x": 42,
+          "y": 234,
+          "mirrored": false,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576154565",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-167",
+      "status": "PLANNED",
+      "lat": -2.864992432383706,
+      "lng": -57.00435519218446,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1770576551740",
+        "cable-1770576558341"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576158428",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-168",
+      "status": "PLANNED",
+      "lat": -2.866503306439066,
+      "lng": -57.00481653213502,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1770576558341",
+        "cable-1770576563519"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576160722",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-169",
+      "status": "PLANNED",
+      "lat": -2.867531985505537,
+      "lng": -57.00529932975769,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1770576563519"
+      ],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770576421233",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CEO-01",
+      "status": "PLANNED",
+      "lat": -2.861429547729036,
+      "lng": -57.00237572193146,
+      "splitters": [
+        {
+          "id": "spl-1770576475494",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1770576475494-in",
+          "outputPortIds": [
+            "spl-1770576475494-out-0",
+            "spl-1770576475494-out-1",
+            "spl-1770576475494-out-2",
+            "spl-1770576475494-out-3",
+            "spl-1770576475494-out-4",
+            "spl-1770576475494-out-5",
+            "spl-1770576475494-out-6",
+            "spl-1770576475494-out-7"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770576642207",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-0",
+          "targetId": "spl-1770576475494-in"
+        },
+        {
+          "id": "conn-1770576650080",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-7",
+          "targetId": "cable-1770576511698-fiber-0"
+        },
+        {
+          "id": "conn-1770576653287",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-6",
+          "targetId": "cable-1770576511698-fiber-1"
+        },
+        {
+          "id": "conn-1770576656045",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-5",
+          "targetId": "cable-1770576511698-fiber-2"
+        },
+        {
+          "id": "conn-1770576659425",
+          "color": "#0000FF",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-4",
+          "targetId": "cable-1770576511698-fiber-3"
+        },
+        {
+          "id": "conn-1770576662847",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-3",
+          "targetId": "cable-1770576511698-fiber-4"
+        },
+        {
+          "id": "conn-1770576665438",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-2",
+          "targetId": "cable-1770576511698-fiber-5"
+        },
+        {
+          "id": "conn-1770576667582",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-1",
+          "targetId": "cable-1770576511698-fiber-6"
+        },
+        {
+          "id": "conn-1770577099651",
+          "color": "#eab308",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-1",
+          "targetId": "cable-1770577026094-fiber-1"
+        },
+        {
+          "id": "conn-1770577103149",
+          "color": "#ffffff",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-2",
+          "targetId": "cable-1770577026094-fiber-2"
+        },
+        {
+          "id": "conn-1770577108984",
+          "color": "#0000FF",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-3",
+          "targetId": "cable-1770577026094-fiber-3"
+        },
+        {
+          "id": "conn-1770577111584",
+          "color": "#ef4444",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-4",
+          "targetId": "cable-1770577026094-fiber-4"
+        },
+        {
+          "id": "conn-1770577114035",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-5",
+          "targetId": "cable-1770577026094-fiber-5"
+        },
+        {
+          "id": "conn-1770577116507",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-6",
+          "targetId": "cable-1770577026094-fiber-6"
+        },
+        {
+          "id": "conn-1770577119305",
+          "color": "#ec4899",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-7",
+          "targetId": "cable-1770577026094-fiber-7"
+        },
+        {
+          "id": "conn-1770576672613",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "spl-1770576475494-out-0",
+          "targetId": "cable-1770578138968-fiber-5"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770575996420",
+        "cable-1770576511698",
+        "cable-1770577026094",
+        "cable-1770578138968"
+      ],
+      "layout": {
+        "spl-1770576475494": {
+          "x": 402,
+          "y": 210,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770575996420": {
+          "x": 60,
+          "y": 42,
+          "mirrored": false,
+          "rotation": 0
+        },
+        "cable-1770576511698": {
+          "x": 570,
+          "y": 438,
+          "mirrored": true,
+          "rotation": 90
+        },
+        "cable-1770577026094": {
+          "x": 804,
+          "y": 48,
+          "mirrored": true,
+          "rotation": 0
+        },
+        "cable-1770578138968": {
+          "x": 774,
+          "y": 486,
+          "mirrored": true,
+          "rotation": 90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": "#00ffff",
+      "reserveLoopLength": 50,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770577150294",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-171",
+      "status": "PLANNED",
+      "lat": -2.861649214622208,
+      "lng": -57.00082004070283,
+      "splitters": [
+        {
+          "id": "spl-1770577209414",
+          "name": "1",
+          "type": "Splitter 1:8",
+          "inputPortId": "spl-1770577209414-in",
+          "outputPortIds": [
+            "spl-1770577209414-out-0",
+            "spl-1770577209414-out-1",
+            "spl-1770577209414-out-2",
+            "spl-1770577209414-out-3",
+            "spl-1770577209414-out-4",
+            "spl-1770577209414-out-5",
+            "spl-1770577209414-out-6",
+            "spl-1770577209414-out-7"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770577218321",
+          "color": "#78350f",
+          "points": [],
+          "sourceId": "cable-1770577026094-fiber-6",
+          "targetId": "spl-1770577209414-in"
+        },
+        {
+          "id": "conn-1770577314156",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "spl-1770577209414-out-7",
+          "targetId": "cable-1770577254037-fiber-0"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770577026094",
+        "cable-1770577254037"
+      ],
+      "layout": {
+        "spl-1770577209414": {
+          "x": 492,
+          "y": 288,
+          "mirrored": false,
+          "rotation": -90
+        },
+        "cable-1770577254037": {
+          "x": 786,
+          "y": 66,
+          "mirrored": true,
+          "rotation": 0
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "4dfd9ac4-4cfb-45b3-814f-9d661e5ff0a3",
+      "color": "#00ffff",
+      "reserveLoopLength": 50,
+      "type": "CEO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770577235010",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-172",
+      "status": "PLANNED",
+      "lat": -2.861842092835143,
+      "lng": -56.99899077415467,
+      "splitters": [
+        {
+          "id": "spl-1770577328305",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1770577328305-in",
+          "outputPortIds": [
+            "spl-1770577328305-out-0",
+            "spl-1770577328305-out-1",
+            "spl-1770577328305-out-2",
+            "spl-1770577328305-out-3",
+            "spl-1770577328305-out-4",
+            "spl-1770577328305-out-5",
+            "spl-1770577328305-out-6",
+            "spl-1770577328305-out-7",
+            "spl-1770577328305-out-8",
+            "spl-1770577328305-out-9",
+            "spl-1770577328305-out-10",
+            "spl-1770577328305-out-11",
+            "spl-1770577328305-out-12",
+            "spl-1770577328305-out-13",
+            "spl-1770577328305-out-14",
+            "spl-1770577328305-out-15"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770577333829",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770577254037-fiber-0",
+          "targetId": "spl-1770577328305-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770577254037"
+      ],
+      "layout": {
+        "spl-1770577328305": {
+          "x": 564,
+          "y": 174,
+          "mirrored": false,
+          "rotation": -90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770578237125",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-130",
+      "status": "PLANNED",
+      "lat": -2.862517166324846,
+      "lng": -57.00077712535859,
+      "splitters": [
+        {
+          "id": "spl-1770578264454",
+          "name": "1",
+          "type": "Splitter 1:16",
+          "inputPortId": "spl-1770578264454-in",
+          "outputPortIds": [
+            "spl-1770578264454-out-0",
+            "spl-1770578264454-out-1",
+            "spl-1770578264454-out-2",
+            "spl-1770578264454-out-3",
+            "spl-1770578264454-out-4",
+            "spl-1770578264454-out-5",
+            "spl-1770578264454-out-6",
+            "spl-1770578264454-out-7",
+            "spl-1770578264454-out-8",
+            "spl-1770578264454-out-9",
+            "spl-1770578264454-out-10",
+            "spl-1770578264454-out-11",
+            "spl-1770578264454-out-12",
+            "spl-1770578264454-out-13",
+            "spl-1770578264454-out-14",
+            "spl-1770578264454-out-15"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "conn-1770578311421",
+          "color": "#a855f7",
+          "points": [],
+          "sourceId": "cable-1770578138968-fiber-5",
+          "targetId": "spl-1770578264454-in"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770578138968"
+      ],
+      "layout": {
+        "spl-1770578264454": {
+          "x": 402,
+          "y": 90,
+          "mirrored": false,
+          "rotation": -90
+        }
+      },
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770688078407",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "switch giga 5 portas",
+      "status": "PLANNED",
+      "lat": -2.591897022545119,
+      "lng": -56.57649457454682,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    },
+    {
+      "id": "cto-1770688110546",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CTO-68",
+      "status": "PLANNED",
+      "lat": -2.592140853841054,
+      "lng": -56.57599568367005,
+      "splitters": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {},
+      "clientCount": 0,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "color": null,
+      "reserveLoopLength": null,
+      "type": "CTO",
+      "poleId": null
+    }
+  ],
+  "pops": [
+    {
+      "id": "pop-1769786015224",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "POP-H-NORTE-01",
+      "status": "PLANNED",
+      "lat": -2.621126967970217,
+      "lng": -56.64690256118774,
+      "olts": [
+        {
+          "id": "olt-1769786051615",
+          "name": "Switch-Olt-V-Sol V1600 Gs 2",
+          "ports": 1,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1769786051615-s1-p1"
+          ],
+          "structure": {
+            "slots": 1,
+            "portsPerSlot": 1
+          }
+        }
+      ],
+      "dios": [
+        {
+          "id": "dio-1769786070087",
+          "name": "DIO 1",
+          "ports": 12,
+          "status": "PLANNED",
+          "portIds": [
+            "dio-1769786070087-p-0",
+            "dio-1769786070087-p-1",
+            "dio-1769786070087-p-2",
+            "dio-1769786070087-p-3",
+            "dio-1769786070087-p-4",
+            "dio-1769786070087-p-5",
+            "dio-1769786070087-p-6",
+            "dio-1769786070087-p-7",
+            "dio-1769786070087-p-8",
+            "dio-1769786070087-p-9",
+            "dio-1769786070087-p-10",
+            "dio-1769786070087-p-11"
+          ],
+          "inputCableIds": [
+            "cable-1769786238325"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "fusion-1769788428585",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1769786238325-fiber-0",
+          "targetId": "dio-1769786070087-p-0"
+        },
+        {
+          "id": "patch-1769788445615",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1769786051615-s1-p1",
+          "targetId": "dio-1769786070087-p-0"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1769786213430",
+        "cable-1769786238325"
+      ],
+      "layout": {
+        "dio-1769786070087": {
+          "x": 520,
+          "y": 120,
+          "rotation": 0
+        },
+        "olt-1769786032269": {
+          "x": 680,
+          "y": 60,
+          "rotation": 0
+        },
+        "olt-1769786051615": {
+          "x": 520,
+          "y": -60,
+          "rotation": 0
+        },
+        "cable-1769786238325": {
+          "x": 640,
+          "y": 340,
+          "rotation": 0
+        }
+      },
+      "color": "#6366f1",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "size": 24,
+      "poleId": null
+    },
+    {
+      "id": "pop-1770575105183",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "POP-2",
+      "status": "PLANNED",
+      "lat": -2.861574206419515,
+      "lng": -57.00432300567628,
+      "olts": [
+        {
+          "id": "olt-1770579159635",
+          "name": "vsol - 4 portas Pon 1",
+          "type": "OLT",
+          "ports": 4,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1770579159635-s1-p1",
+            "olt-1770579159635-s1-p2",
+            "olt-1770579159635-s1-p3",
+            "olt-1770579159635-s1-p4"
+          ],
+          "structure": {
+            "slots": 1,
+            "slotsConfig": [
+              {
+                "active": true,
+                "portCount": 4
+              }
+            ],
+            "portsPerSlot": 4
+          }
+        }
+      ],
+      "dios": [
+        {
+          "id": "dio-1770575937458",
+          "name": "DIO 1",
+          "ports": 12,
+          "status": "PLANNED",
+          "portIds": [
+            "dio-1770575937458-p-0",
+            "dio-1770575937458-p-1",
+            "dio-1770575937458-p-2",
+            "dio-1770575937458-p-3",
+            "dio-1770575937458-p-4",
+            "dio-1770575937458-p-5",
+            "dio-1770575937458-p-6",
+            "dio-1770575937458-p-7",
+            "dio-1770575937458-p-8",
+            "dio-1770575937458-p-9",
+            "dio-1770575937458-p-10",
+            "dio-1770575937458-p-11"
+          ],
+          "cableLayout": {
+            "cable-1770575996420": {
+              "x": 578,
+              "y": 186
+            }
+          },
+          "inputCableIds": [
+            "cable-1770575996420"
+          ]
+        }
+      ],
+      "fusions": [],
+      "connections": [
+        {
+          "id": "fusion-1770576056433",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-0",
+          "targetId": "dio-1770575937458-p-0"
+        },
+        {
+          "id": "fusion-1770576061057",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-1",
+          "targetId": "dio-1770575937458-p-1"
+        },
+        {
+          "id": "fusion-1770576065484",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-2",
+          "targetId": "dio-1770575937458-p-2"
+        },
+        {
+          "id": "fusion-1770576070324",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-3",
+          "targetId": "dio-1770575937458-p-3"
+        },
+        {
+          "id": "fusion-1770576074397",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-4",
+          "targetId": "dio-1770575937458-p-4"
+        },
+        {
+          "id": "fusion-1770576076559",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-5",
+          "targetId": "dio-1770575937458-p-5"
+        },
+        {
+          "id": "fusion-1770576078799",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-6",
+          "targetId": "dio-1770575937458-p-6"
+        },
+        {
+          "id": "fusion-1770576081309",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-7",
+          "targetId": "dio-1770575937458-p-7"
+        },
+        {
+          "id": "fusion-1770576101538",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-8",
+          "targetId": "dio-1770575937458-p-8"
+        },
+        {
+          "id": "fusion-1770576104311",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-9",
+          "targetId": "dio-1770575937458-p-9"
+        },
+        {
+          "id": "fusion-1770576106816",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-10",
+          "targetId": "dio-1770575937458-p-10"
+        },
+        {
+          "id": "fusion-1770576109433",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "cable-1770575996420-fiber-11",
+          "targetId": "dio-1770575937458-p-11"
+        },
+        {
+          "id": "patch-1770579167320",
+          "color": "#22c55e",
+          "points": [],
+          "sourceId": "olt-1770579159635-s1-p1",
+          "targetId": "dio-1770575937458-p-0"
+        }
+      ],
+      "inputCableIds": [
+        "cable-1770575996420"
+      ],
+      "layout": {
+        "dio-1770575937458": {
+          "x": 480,
+          "y": 120,
+          "rotation": 0
+        },
+        "olt-1770575952241": {
+          "x": 220,
+          "y": -80,
+          "rotation": 0
+        },
+        "olt-1770579159635": {
+          "x": 460,
+          "y": -60,
+          "rotation": 0
+        },
+        "cable-1770575996420": {
+          "x": 600,
+          "y": 360,
+          "rotation": 0
+        }
+      },
+      "color": "#6366f1",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "size": 24,
+      "poleId": null
+    },
+    {
+      "id": "pop-1770687964400",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "POP-3",
+      "status": "PLANNED",
+      "lat": -2.591942573450127,
+      "lng": -56.57649993896485,
+      "olts": [
+        {
+          "id": "olt-1770688053682",
+          "name": "starlink mini 1",
+          "type": "OLT",
+          "ports": 16,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1770688053682-s1-p1",
+            "olt-1770688053682-s1-p2",
+            "olt-1770688053682-s1-p3",
+            "olt-1770688053682-s1-p4",
+            "olt-1770688053682-s1-p5",
+            "olt-1770688053682-s1-p6",
+            "olt-1770688053682-s1-p7",
+            "olt-1770688053682-s1-p8",
+            "olt-1770688053682-s1-p9",
+            "olt-1770688053682-s1-p10",
+            "olt-1770688053682-s1-p11",
+            "olt-1770688053682-s1-p12",
+            "olt-1770688053682-s1-p13",
+            "olt-1770688053682-s1-p14",
+            "olt-1770688053682-s1-p15",
+            "olt-1770688053682-s1-p16"
+          ],
+          "structure": {
+            "slots": 1,
+            "slotsConfig": [
+              {
+                "active": true,
+                "portCount": 16
+              }
+            ],
+            "portsPerSlot": 16
+          }
+        },
+        {
+          "id": "olt-1770688063600",
+          "name": "RB 750 g3r 2",
+          "type": "OLT",
+          "ports": 16,
+          "status": "PLANNED",
+          "portIds": [
+            "olt-1770688063600-s1-p1",
+            "olt-1770688063600-s1-p2",
+            "olt-1770688063600-s1-p3",
+            "olt-1770688063600-s1-p4",
+            "olt-1770688063600-s1-p5",
+            "olt-1770688063600-s1-p6",
+            "olt-1770688063600-s1-p7",
+            "olt-1770688063600-s1-p8",
+            "olt-1770688063600-s1-p9",
+            "olt-1770688063600-s1-p10",
+            "olt-1770688063600-s1-p11",
+            "olt-1770688063600-s1-p12",
+            "olt-1770688063600-s1-p13",
+            "olt-1770688063600-s1-p14",
+            "olt-1770688063600-s1-p15",
+            "olt-1770688063600-s1-p16"
+          ],
+          "structure": {
+            "slots": 1,
+            "slotsConfig": [
+              {
+                "active": true,
+                "portCount": 16
+              }
+            ],
+            "portsPerSlot": 16
+          }
+        }
+      ],
+      "dios": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [],
+      "layout": {
+        "olt-1770688053682": {
+          "x": 760,
+          "y": 120,
+          "rotation": 0
+        },
+        "olt-1770688063600": {
+          "x": 760,
+          "y": 320,
+          "rotation": 0
+        }
+      },
+      "color": "#6366f1",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "size": 24,
+      "poleId": null
+    },
+    {
+      "id": "pop-1770580867738",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "POP-1",
+      "status": "PLANNED",
+      "lat": -2.861491161617958,
+      "lng": -57.00426936149598,
+      "olts": [],
+      "dios": [],
+      "fusions": [],
+      "connections": [],
+      "inputCableIds": [
+        "cable-1770606247560"
+      ],
+      "layout": {},
+      "color": "#6366f1",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "size": 24,
+      "poleId": null
+    }
+  ],
+  "cables": [
+    {
+      "id": "cable-1770606247560",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CBL-1 (A)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -2.861491161617958,
+          "lng": -57.00426936149598
+        },
+        {
+          "lat": -2.861278191857422,
+          "lng": -57.00424388051034
+        },
+        {
+          "lat": -2.861334448024428,
+          "lng": -57.00355991721155
+        },
+        {
+          "lat": -2.861432226593836,
+          "lng": -57.00281560420991
+        },
+        {
+          "lat": -2.861542060045428,
+          "lng": -57.00224697589875
+        },
+        {
+          "lat": -2.861729580548216,
+          "lng": -57.00080931186677
+        },
+        {
+          "lat": -2.85992938245539,
+          "lng": -57.00061082839967
+        }
+      ],
+      "fromNodeId": "pop-1770580867738",
+      "toNodeId": "cto-1770606435332",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "8bc29cee-d93b-46c9-8039-34e82ee5befe",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "CBL-1 (B)",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -2.85992938245539,
+          "lng": -57.00061082839967
+        },
+        {
+          "lat": -2.858991778162847,
+          "lng": -57.00058937072754
+        },
+        {
+          "lat": -2.858188116730795,
+          "lng": -57.00041770935059
+        }
+      ],
+      "fromNodeId": "cto-1770606435332",
+      "toNodeId": null,
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770576563519",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CBL-12",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -2.866503306439066,
+          "lng": -57.00481653213502
+        },
+        {
+          "lat": -2.867531985505537,
+          "lng": -57.00529932975769
+        }
+      ],
+      "fromNodeId": "cto-1770576158428",
+      "toNodeId": "cto-1770576160722",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769786238325",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO - CABO A",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.621126967970217,
+          "lng": -56.64690256118774
+        },
+        {
+          "lat": -2.621298449738989,
+          "lng": -56.6471815109253
+        },
+        {
+          "lat": -2.620639316561864,
+          "lng": -56.64765894412995
+        }
+      ],
+      "fromNodeId": "pop-1769786015224",
+      "toNodeId": "cto-1769809835886",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 15
+    },
+    {
+      "id": "cable-1769810153118",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO - CABO B",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.620639316561864,
+          "lng": -56.64765894412995
+        },
+        {
+          "lat": -2.619197796452909,
+          "lng": -56.64868354797364
+        }
+      ],
+      "fromNodeId": "cto-1769809835886",
+      "toNodeId": "cto-1769810141637",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1769810552414",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO - CABO A",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.619197796452909,
+          "lng": -56.64868354797364
+        },
+        {
+          "lat": -2.617284698430497,
+          "lng": -56.65006220340729
+        }
+      ],
+      "fromNodeId": "cto-1769810141637",
+      "toNodeId": "cto-1769810540989",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770323721026",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO - A",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.617284698430497,
+          "lng": -56.65006220340729
+        },
+        {
+          "lat": -2.61575743320724,
+          "lng": -56.65119946002961
+        }
+      ],
+      "fromNodeId": "cto-1769810540989",
+      "toNodeId": "cto-1770323377481",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 15
+    },
+    {
+      "id": "cable-1770324272496",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO - B",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.61575743320724,
+          "lng": -56.65119946002961
+        },
+        {
+          "lat": -2.61394614782995,
+          "lng": -56.65246009826661
+        }
+      ],
+      "fromNodeId": "cto-1770323377481",
+      "toNodeId": "cto-1770324249415",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 15
+    },
+    {
+      "id": "cable-1770324471706",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo Drop Flat 1FO",
+      "status": "DEPLOYED",
+      "fiberCount": 1,
+      "looseTubeCount": 1,
+      "color": "#000000",
+      "coordinates": [
+        {
+          "lat": -2.61394614782995,
+          "lng": -56.65246009826661
+        },
+        {
+          "lat": -2.613099451401831,
+          "lng": -56.65306627750397
+        },
+        {
+          "lat": -2.612729691390152,
+          "lng": -56.65347933769227
+        },
+        {
+          "lat": -2.612676102973625,
+          "lng": -56.65420889854432
+        },
+        {
+          "lat": -2.61266002644822,
+          "lng": -56.65450930595399
+        }
+      ],
+      "fromNodeId": "cto-1770324249415",
+      "toNodeId": "cto-1770324444856",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "1f4730bd-f75b-4ec8-84b5-c9e96560caaf",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770575996420",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO - cabo principal 01",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.861574206419515,
+          "lng": -57.00432300567628
+        },
+        {
+          "lat": -2.861263458098936,
+          "lng": -57.00427472591401
+        },
+        {
+          "lat": -2.861429547729036,
+          "lng": -57.00237572193146
+        }
+      ],
+      "fromNodeId": "pop-1770575105183",
+      "toNodeId": "cto-1770576421233",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770576511698",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO - Ramal 01 - pon 01",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.861429547729036,
+          "lng": -57.00237572193146
+        },
+        {
+          "lat": -2.862184987355795,
+          "lng": -57.00297117233277
+        }
+      ],
+      "fromNodeId": "cto-1770576421233",
+      "toNodeId": "cto-1770576147645",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770576534037",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO cabo A",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.862184987355795,
+          "lng": -57.00297117233277
+        },
+        {
+          "lat": -2.863653003362309,
+          "lng": -57.00386166572572
+        }
+      ],
+      "fromNodeId": "cto-1770576147645",
+      "toNodeId": "cto-1770576151465",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770576551740",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO - B",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.863653003362309,
+          "lng": -57.00386166572572
+        },
+        {
+          "lat": -2.864992432383706,
+          "lng": -57.00435519218446
+        }
+      ],
+      "fromNodeId": "cto-1770576151465",
+      "toNodeId": "cto-1770576154565",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770576558341",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "CBL-11",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0ea5e9",
+      "coordinates": [
+        {
+          "lat": -2.864992432383706,
+          "lng": -57.00435519218446
+        },
+        {
+          "lat": -2.866503306439066,
+          "lng": -57.00481653213502
+        }
+      ],
+      "fromNodeId": "cto-1770576154565",
+      "toNodeId": "cto-1770576158428",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": null,
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770577026094",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO - cabo principal 02",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.861429547729036,
+          "lng": -57.00237572193146
+        },
+        {
+          "lat": -2.861649214622208,
+          "lng": -57.00082004070283
+        }
+      ],
+      "fromNodeId": "cto-1770576421233",
+      "toNodeId": "cto-1770577150294",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770577254037",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 12FO - cabo ramal- 02",
+      "status": "DEPLOYED",
+      "fiberCount": 12,
+      "looseTubeCount": 1,
+      "color": "#0000ff",
+      "coordinates": [
+        {
+          "lat": -2.861649214622208,
+          "lng": -57.00082004070283
+        },
+        {
+          "lat": -2.861842092835143,
+          "lng": -56.99899077415467
+        }
+      ],
+      "fromNodeId": "cto-1770577150294",
+      "toNodeId": "cto-1770577235010",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "23863781-d3ab-4efa-a4e9-8e28d6a20b7c",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    },
+    {
+      "id": "cable-1770578138968",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Cabo 6FO",
+      "status": "DEPLOYED",
+      "fiberCount": 6,
+      "looseTubeCount": 1,
+      "color": "#ff00ff",
+      "coordinates": [
+        {
+          "lat": -2.861429547729036,
+          "lng": -57.00237572193146
+        },
+        {
+          "lat": -2.862243922341203,
+          "lng": -57.00289607048035
+        },
+        {
+          "lat": -2.862517166324846,
+          "lng": -57.00077712535859
+        }
+      ],
+      "fromNodeId": "cto-1770576421233",
+      "toNodeId": "cto-1770578237125",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "catalogId": "0b626d37-d370-43a4-8a54-200ac13b8c33",
+      "colorStandard": "ABNT",
+      "reserveLocation": null,
+      "showReserveLabel": true,
+      "technicalReserve": 0
+    }
+  ],
+  "poles": [
+    {
+      "id": "pole-1770579407595",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861275512992254,
+      "lng": -57.00424388051034,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770579460486",
+      "projectId": "15fe51e3-5861-4512-89bb-2acf58a113db",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861300962211058,
+      "lng": -57.00390189886094,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580942626",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861773781805112,
+      "lng": -57.00074493885041,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580961398",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861740296004578,
+      "lng": -57.00104266405106,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580968561",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.86169475531429,
+      "lng": -57.00134843587876,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580983005",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.86165122377042,
+      "lng": -57.001618668437,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580990380",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861614389385852,
+      "lng": -57.0019318163395,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770580999309",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861574206419515,
+      "lng": -57.00224563479424,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581026106",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.862969893958234,
+      "lng": -57.00083613395692,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581039584",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.863304751560146,
+      "lng": -57.00085490942001,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581061553",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.86181865277628,
+      "lng": -57.00044117867947,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581067510",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861846780846857,
+      "lng": -57.00013875961304,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581074402",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861867542041379,
+      "lng": -56.99980415403844,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581085455",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861906385565583,
+      "lng": -56.99951514601708,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581098493",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861910403861117,
+      "lng": -56.99924893677235,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581104249",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861927816474924,
+      "lng": -56.99899546802044,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581156974",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859886520561596,
+      "lng": -57.00349688529969,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581179035",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859873126219441,
+      "lng": -57.00313344597818,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770581201623",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859869777633881,
+      "lng": -57.00283840298653,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584520995",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.85761081958808,
+      "lng": -57.00198814272882,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584528000",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.85764430550917,
+      "lng": -57.00170785188676,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584536227",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.857677791429279,
+      "lng": -57.00142085552216,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584543906",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.857705919601405,
+      "lng": -57.00115934014321,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584551405",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.857742084393134,
+      "lng": -57.00089111924172,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584570340",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858790193139869,
+      "lng": -57.00223155319691,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584577059",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858536370087129,
+      "lng": -57.00225301086903,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584585008",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858273170925646,
+      "lng": -57.00225099921227,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584613720",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.857928266080676,
+      "lng": -57.00224295258523,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584633925",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.857586040005853,
+      "lng": -57.00222350656987,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584972268",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.85826245543688,
+      "lng": -57.00195226818323,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770584997830",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858248391357718,
+      "lng": -57.00114592909814,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585005187",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858255088538292,
+      "lng": -57.00087234377862,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585017188",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858247051921603,
+      "lng": -57.00055986642838,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585025711",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858299289929103,
+      "lng": -57.0003278553486,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585033706",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858339473010181,
+      "lng": -57.00004756450654,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585039802",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858385013833709,
+      "lng": -56.99975654482842,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585045962",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858434572963126,
+      "lng": -56.99944272637369,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585051321",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858496187012946,
+      "lng": -56.99919998645782,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585057198",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858551103880639,
+      "lng": -56.99888080358506,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585064397",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858607360181407,
+      "lng": -56.9985643029213,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585071215",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858697102369779,
+      "lng": -56.9982397556305,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585078568",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858804257212377,
+      "lng": -56.99795678257943,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585085802",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858868550113142,
+      "lng": -56.99764698743821,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585091054",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.858943558492801,
+      "lng": -56.99735194444656,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585100988",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859009190820979,
+      "lng": -56.99703410267831,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585115676",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859057410488264,
+      "lng": -56.99670687317849,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585147372",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859041337266069,
+      "lng": -57.00084686279298,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585152986",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859210106087993,
+      "lng": -57.00084954500198,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585169834",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859398966406896,
+      "lng": -57.00056456029417,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585177311",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859625330861634,
+      "lng": -57.00069263577463,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585188304",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.86001175765304,
+      "lng": -57.00063966214657,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585306610",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860797335460147,
+      "lng": -56.99120700359345,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585312652",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860686162503931,
+      "lng": -56.99164956808091,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585319447",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860553558602306,
+      "lng": -56.9920626282692,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585327068",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.8604249729861,
+      "lng": -56.9924944639206,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585432874",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860316478861199,
+      "lng": -56.99295982718468,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585450486",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860252186041601,
+      "lng": -56.99340373277665,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585459068",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860159765107115,
+      "lng": -56.99379801750184,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585467665",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860099490580609,
+      "lng": -56.99426606297494,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585475730",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.86002984001271,
+      "lng": -56.99473276734354,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585484304",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859948134533416,
+      "lng": -56.99516192078591,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585489365",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859885181127376,
+      "lng": -56.99560582637788,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585495423",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859842319231929,
+      "lng": -56.99596926569939,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585501351",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.85979811790057,
+      "lng": -56.9963300228119,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585508978",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859727127879966,
+      "lng": -56.99667602777482,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585515197",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859653458986026,
+      "lng": -56.99700057506562,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585526286",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859565056307037,
+      "lng": -56.99734658002854,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585533741",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859503442314632,
+      "lng": -56.99772879481316,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585542038",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859443167753636,
+      "lng": -56.9980412721634,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585554943",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859163225862166,
+      "lng": -56.99805334210397,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585618486",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860691520237016,
+      "lng": -57.00069531798363,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585663471",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.860915205570615,
+      "lng": -57.00070336461069,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585668338",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861149606322473,
+      "lng": -57.00070068240166,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585675929",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.861422850566998,
+      "lng": -57.00072884559632,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585718477",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.85925631659442,
+      "lng": -56.99883319437505,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585724043",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859206757500485,
+      "lng": -56.99909336864949,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585729522",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859148492076505,
+      "lng": -56.99936494231225,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585737952",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859095584390102,
+      "lng": -56.99963785707951,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585744747",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859080180886008,
+      "lng": -56.99998319149018,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585754441",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859052052747558,
+      "lng": -57.00024604797363,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585768501",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859020910879188,
+      "lng": -57.00050588697196,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585785512",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859017227432337,
+      "lng": -57.00112715363503,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585795087",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859012539409046,
+      "lng": -57.00140677392484,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585802938",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859017897149943,
+      "lng": -57.0016796886921,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585810788",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859031291502071,
+      "lng": -57.00194589793682,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585817898",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859029952066872,
+      "lng": -57.00221613049508,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585824694",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859323958057006,
+      "lng": -57.00223959982396,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585829956",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859613275950964,
+      "lng": -57.00224094092847,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585839576",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859887859995789,
+      "lng": -57.0022389292717,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    },
+    {
+      "id": "pole-1770585847874",
+      "projectId": "c808e796-9b20-4e6b-99c4-5ec3b36f54b5",
+      "name": "Poste Circular 11/600",
+      "status": "PLANNED",
+      "lat": -2.859869107916771,
+      "lng": -57.00258627533914,
+      "catalogId": "a2ccfe72-5a7b-4e80-a4a6-b466b44274bc",
+      "companyId": "ee198a42-7031-4cf4-ad95-125f4924525b",
+      "height": 11,
+      "linkedCableIds": [],
+      "type": "Concreto"
+    }
+  ]
+}

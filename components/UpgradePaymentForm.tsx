@@ -177,7 +177,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             const firstName = nameParts[0];
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
             const deviceElement = document.getElementById('deviceId') as HTMLInputElement | null;
-            const deviceId = deviceElement ? deviceElement.value : '';
+            const deviceId = (window as any).MP_DEVICE_SESSION_ID || (deviceElement ? deviceElement.value : '') || '';
 
             // Call Backend Subscribe
             await api.post('/payments/subscribe', {
