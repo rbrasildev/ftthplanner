@@ -1101,6 +1101,11 @@ const translations = {
     'toast_kmz_success': 'KMZ file generated successfully!',
     'toast_kmz_error': 'Error exporting KMZ: {error}',
     'toast_kmz_error_start': 'Error starting KMZ export.',
+    'mp_err_unauthorized': 'Unauthorized access to resource. Please check credentials or permissions.',
+    'mp_err_default': 'Error processing payment.',
+    'mp_success': 'Payment processed successfully! Welcome.',
+    'mp_pix_success': 'Pix payment confirmed! Welcome.',
+    'mp_pix_error': 'Error generating Pix.'
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -2214,6 +2219,11 @@ const translations = {
     'toast_kmz_success': 'Arquivo KMZ gerado com sucesso!',
     'toast_kmz_error': 'Erro ao exportar KMZ: {error}',
     'toast_kmz_error_start': 'Erro ao iniciar exportação KMZ.',
+    'mp_err_unauthorized': 'Acesso negado ao recurso. O Plano ou a Credencial Mercado Pago pode estar inválida para esta conta. (Unauthorized acess to resource.)',
+    'mp_err_default': 'Erro ao processar pagamento.',
+    'mp_success': 'Pagamento processado com sucesso! Bem-vindo.',
+    'mp_pix_success': 'Pagamento Pix confirmado! Bem-vindo.',
+    'mp_pix_error': 'Erro ao gerar Pix.'
   },
 };
 

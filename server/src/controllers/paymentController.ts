@@ -21,7 +21,7 @@ const payment = new Payment(client);
 
 export const subscribe = async (req: AuthRequest, res: Response) => {
     try {
-        const { planId, token, payment_method_id, payer, installments, issuer_id } = req.body;
+        const { planId, token, payment_method_id, payer, installments, issuer_id, deviceId } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) {
@@ -68,7 +68,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br',
                     status: 'authorized',
                     external_reference: companyId,
-                } as any
+                } as any,
+                requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
             };
 
             try {
@@ -92,6 +93,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     issuer_id: issuer_id,
                     payer: {
                         email: payer.email,
+                        first_name: payer.first_name,
+                        last_name: payer.last_name,
                         identification: payer.identification
                     },
                     metadata: {
@@ -110,9 +113,10 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                             }
                         ]
                     }
-                }
+                },
+                requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
             };
-            result = await payment.create(paymentBody);
+            result = await payment.create(paymentBody as any);
         }
 
         // 4. Update Company Subscription on Success
@@ -143,12 +147,18 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     }
                 });
             }
+        } else {
+            return res.status(400).json({
+                error: 'Payment rejected',
+                message: `Pagamento recusado (${(result as any).status_detail || result.status}). Verifique o cartão.`,
+                details: result
+            });
         }
 
         return res.status(200).json({
             id: result.id,
             status: result.status,
-            status_detail: (result as any).status_detail || 'active', // PreApproval might not have status_detail
+            status_detail: (result as any).status_detail || 'active',
         });
 
     } catch (error: any) {
@@ -157,7 +167,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
         let errorMessage = error.message || 'Unknown error during subscription';
         let errorDetails = error;
 
-        // Try to extract more details from Mercado Pago error response
+        // Try to extract more details from Mercado Pago error
         if (error.response?.data) {
             console.error('Mercado Pago API Error Details:', JSON.stringify(error.response.data, null, 2));
             errorMessage = error.response.data.message || errorMessage;
@@ -176,7 +186,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
 
 export const processPayment = async (req: Request, res: Response) => {
     try {
-        const { token, payment_method_id, transaction_amount, payer, installments, issuer_id, description } = req.body;
+        const { token, payment_method_id, transaction_amount, payer, installments, issuer_id, description, deviceId } = req.body;
 
         // Basic validation
         if (!token || !payment_method_id || !transaction_amount || !payer || !payer.email) {
@@ -192,6 +202,9 @@ export const processPayment = async (req: Request, res: Response) => {
                 payment_method_id: payment_method_id,
                 issuer_id: issuer_id,
                 payer: {
+                    email: payer.email,
+                    first_name: payer.first_name,
+                    last_name: payer.last_name,
                     identification: payer.identification
                 },
                 additional_info: {
@@ -206,10 +219,11 @@ export const processPayment = async (req: Request, res: Response) => {
                         }
                     ]
                 }
-            }
+            },
+            requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
         };
 
-        const result = await payment.create(paymentData);
+        const result = await payment.create(paymentData as any);
 
         return res.status(200).json({
             id: result.id,
@@ -228,6 +242,90 @@ export const processPayment = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const createPixPayment = async (req: AuthRequest, res: Response) => {
+    try {
+        const { planId, payer } = req.body;
+        const companyId = req.user?.companyId;
+
+        if (!companyId) return res.status(401).json({ error: 'User does not belong to a company.' });
+        if (!planId || !payer || !payer.email) return res.status(400).json({ error: 'Missing required data (planId, payer.email).' });
+
+        const plan = await prisma.plan.findUnique({ where: { id: planId } });
+        if (!plan) return res.status(404).json({ error: 'Plan not found.' });
+
+        // Update company payment method preference
+        await prisma.company.update({
+            where: { id: companyId },
+            data: { paymentMethod: 'PIX' }
+        });
+
+        // Set expiration for Pix (e.g., 30 minutes from now)
+        const dateOfExpiration = new Date();
+        dateOfExpiration.setMinutes(dateOfExpiration.getMinutes() + 30);
+
+        const paymentBody = {
+            body: {
+                transaction_amount: plan.price,
+                description: `FTTH Planner - Assinatura: ${plan.name}`,
+                payment_method_id: 'pix',
+                payer: {
+                    email: payer.email,
+                    first_name: payer.first_name || 'Cliente',
+                    identification: payer.identification || undefined
+                },
+                date_of_expiration: dateOfExpiration.toISOString(),
+                external_reference: companyId,
+                metadata: {
+                    company_id: companyId,
+                    plan_id: plan.id,
+                    type: 'SUBSCRIPTION_PIX'
+                }
+            }
+        };
+
+        const result = await payment.create(paymentBody);
+
+        const qrCode = result.point_of_interaction?.transaction_data?.qr_code;
+        const qrCodeBase64 = result.point_of_interaction?.transaction_data?.qr_code_base64;
+
+        if (!qrCode) {
+            throw new Error('QR Code was not generated by Mercado Pago.');
+        }
+
+        // Save Invoice in local DB
+        const invoice = await prisma.invoice.create({
+            data: {
+                companyId,
+                planId,
+                amount: plan.price,
+                status: 'PENDING',
+                paymentMethod: 'PIX',
+                mercadopagoPaymentId: String(result.id),
+                qrCode,
+                qrCodeBase64,
+                expiresAt: dateOfExpiration
+            }
+        });
+
+        return res.status(200).json({
+            id: result.id,
+            status: result.status,
+            qr_code: qrCode,
+            qr_code_base64: qrCodeBase64,
+            expires_at: dateOfExpiration,
+            invoiceId: invoice.id
+        });
+
+    } catch (error: any) {
+        console.error('Create Pix Error:', error);
+        return res.status(500).json({
+            error: 'Error generating Pix payment',
+            details: error.message || error.response?.data
+        });
+    }
+};
+
 
 export const handleWebhook = async (req: Request, res: Response) => {
     try {
@@ -256,7 +354,19 @@ export const handleWebhook = async (req: Request, res: Response) => {
                         subscriptionExpiresAt: nextMonth
                     }
                 });
-                console.log(`Company ${companyId} subscription EXTENDED via payment webhook.`);
+
+                // If it's a known Invoice (Pix or manual payment), mark as PAID
+                const localInvoice = await prisma.invoice.findUnique({
+                    where: { mercadopagoPaymentId: String(id) }
+                });
+                if (localInvoice && localInvoice.status !== 'PAID') {
+                    await prisma.invoice.update({
+                        where: { id: localInvoice.id },
+                        data: { status: 'PAID' }
+                    });
+                }
+
+                console.log(`Company ${companyId} subscription EXTENDED via payment webhook. ID: ${id}`);
             }
         } else if (topic === 'subscription_preapproval') {
             // Handle Subscription events (e.g., cancelled, paused)
@@ -314,5 +424,60 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         console.error('Cancel Subscription Error:', error);
         res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
+    }
+};
+
+export const getInvoiceStatus = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const companyId = req.user?.companyId;
+
+        if (!companyId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const invoice = await prisma.invoice.findFirst({
+            where: { id: id, companyId: companyId },
+            select: { status: true }
+        });
+
+        if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+        return res.json({ status: invoice.status });
+    } catch (error) {
+        console.error('Get Invoice Status Error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const getInvoices = async (req: AuthRequest, res: Response) => {
+    try {
+        const companyId = req.user?.companyId;
+
+        if (!companyId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const invoices = await prisma.invoice.findMany({
+            where: { companyId: companyId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                plan: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        return res.json(invoices.map(inv => ({
+            id: inv.id,
+            planName: inv.plan?.name || 'Assinatura',
+            amount: inv.amount,
+            status: inv.status,
+            paymentMethod: inv.paymentMethod,
+            createdAt: inv.createdAt,
+            expiresAt: inv.expiresAt,
+            qrCode: inv.qrCode,
+            qrCodeBase64: inv.qrCodeBase64,
+            mercadopagoPaymentId: inv.mercadopagoPaymentId
+        })));
+    } catch (error) {
+        console.error('Get Invoices Error:', error);
+        return res.status(500).json({ error: 'Failed to fetch invoices' });
     }
 };

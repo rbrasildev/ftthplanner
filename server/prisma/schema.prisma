@@ -74,6 +74,8 @@ model Company {
   projects                  Project[]
   users                     User[]
   customers                 Customer[]
+  invoices                  Invoice[]
+  paymentMethod             String            @default("CREDIT_CARD") @map("payment_method")
 
   engagementMetrics UserEngagementMetrics[]
   financialMetrics  UserFinancialMetrics[]
@@ -98,8 +100,31 @@ model Plan {
   mercadopagoId     String?   @map("mercadopago_id")
   stripeId          String?   @map("stripe_id")
   companies         Company[]
+  invoices          Invoice[]
 
   @@map("plans")
+}
+
+model Invoice {
+  id                   String   @id @default(uuid())
+  companyId            String   @map("company_id")
+  planId               String   @map("plan_id")
+  amount               Float
+  status               String   @default("PENDING") // PENDING, PAID, EXPIRED, CANCELLED
+  paymentMethod        String   @default("PIX") @map("payment_method")
+  mercadopagoPaymentId String?  @unique @map("mercadopago_payment_id")
+  qrCode               String?  @map("qr_code")
+  qrCodeBase64         String?  @map("qr_code_base64")
+  expiresAt            DateTime @map("expires_at")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  @@index([companyId])
+  @@index([mercadopagoPaymentId])
+  @@map("invoices")
 }
 
 model Project {

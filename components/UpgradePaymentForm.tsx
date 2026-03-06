@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { CreditCard, Lock, Calendar, User, ShieldCheck, Mail, AlertTriangle, Loader2, CheckCircle2, ChevronLeft, Wallet, Minus, Plus } from 'lucide-react';
+import { CreditCard, Lock, Calendar, User, ShieldCheck, Mail, AlertTriangle, Loader2, CheckCircle2, ChevronLeft, Wallet, Minus, Plus, Copy, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 declare global {
     interface Window {
@@ -21,10 +22,16 @@ interface UpgradePaymentFormProps {
 }
 
 export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, onSuccess, onCancel, email }) => {
+    const { t } = useLanguage();
     const [mp, setMp] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const [paymentTab, setPaymentTab] = useState<'card' | 'pix'>('card');
+
+    // Pix State
+    const [pixLoading, setPixLoading] = useState(false);
+    const [pixData, setPixData] = useState<{ qr_code: string, qr_code_base64: string, invoiceId: string, expires_at: string } | null>(null);
+    const [pixCopied, setPixCopied] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -54,12 +61,45 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         };
         document.body.appendChild(script);
 
+        // Append Security Script for Device ID
+        const securityScript = document.createElement('script');
+        securityScript.src = 'https://www.mercadopago.com/v2/security.js';
+        securityScript.setAttribute('view', 'checkout');
+        securityScript.setAttribute('output', 'deviceId');
+        securityScript.async = true;
+        document.body.appendChild(securityScript);
+
         return () => {
             if (document.body.contains(script)) {
                 document.body.removeChild(script);
             }
+            if (document.body.contains(securityScript)) {
+                document.body.removeChild(securityScript);
+            }
         };
     }, []);
+
+    // Pix Polling Effect
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (pixData?.invoiceId && !status) {
+            interval = setInterval(async () => {
+                try {
+                    const res = await api.get(`/payments/invoice/${pixData.invoiceId}/status`);
+                    if (res.data.status === 'PAID') {
+                        setStatus({ type: 'success', message: t('mp_pix_success') });
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            onSuccess();
+                        }, 1500);
+                    }
+                } catch (err) {
+                    console.error('Error polling invoice status', err);
+                }
+            }, 5000); // Poll every 5 seconds
+        }
+        return () => clearInterval(interval);
+    }, [pixData, status, onSuccess]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -133,6 +173,11 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 throw new Error('Falha ao gerar token do cartão. Verifique os dados.');
             }
 
+            const nameParts = formData.cardholderName.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
+            const deviceId = (window as any).deviceId || '';
+
             // Call Backend Subscribe
             await api.post('/payments/subscribe', {
                 planId: plan.id,
@@ -142,6 +187,49 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 installments: 1,
                 payer: {
                     email: formData.email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    identification: {
+                        type: formData.identificationType,
+                        number: formData.identificationNumber
+                    }
+                },
+                deviceId: deviceId
+            });
+
+            setStatus({ type: 'success', message: t('mp_success') });
+            setTimeout(() => {
+                onSuccess();
+            }, 1500);
+
+        } catch (err: any) {
+            console.error('Subscription Error:', err);
+            let msg = t('mp_err_default');
+            const responseMsg = err.response?.data?.message || err.response?.data?.error || err.message || '';
+
+            if (responseMsg.includes('Unauthorized') || responseMsg === 'Unauthorized access to resource.') {
+                msg = t('mp_err_unauthorized');
+            } else if (responseMsg) {
+                msg = responseMsg;
+            }
+
+            setStatus({ type: 'error', message: msg });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGeneratePix = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPixLoading(true);
+        setStatus(null);
+
+        try {
+            const res = await api.post('/payments/create_pix', {
+                planId: plan.id,
+                payer: {
+                    email: formData.email,
+                    first_name: formData.cardholderName || 'Cliente FTTH',
                     identification: {
                         type: formData.identificationType,
                         number: formData.identificationNumber
@@ -149,20 +237,30 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 }
             });
 
-            setStatus({ type: 'success', message: 'Pagamento processado com sucesso! Bem-vindo.' });
-            setTimeout(() => {
-                onSuccess();
-            }, 1500);
-
+            setPixData(res.data);
+            setFormData(prev => ({ ...prev, email: '', identificationNumber: '', cardholderName: '' })); // Clear slightly to avoid confusion, or keep it.
         } catch (err: any) {
-            console.error('Subscription Error:', err);
-            let msg = err.message || 'Erro ao processar pagamento.';
-            if (err.response?.data?.error) {
-                msg = err.response.data.message || err.response.data.error;
+            console.error('Pix Error:', err);
+            const responseMsg = err.response?.data?.message || err.response?.data?.error || '';
+            let msg = t('mp_pix_error');
+
+            if (responseMsg.includes('Unauthorized') || responseMsg === 'Unauthorized access to resource.') {
+                msg = t('mp_err_unauthorized');
+            } else if (responseMsg) {
+                msg = responseMsg;
             }
+
             setStatus({ type: 'error', message: msg });
         } finally {
-            setLoading(false);
+            setPixLoading(false);
+        }
+    };
+
+    const handleCopyPix = () => {
+        if (pixData?.qr_code) {
+            navigator.clipboard.writeText(pixData.qr_code);
+            setPixCopied(true);
+            setTimeout(() => setPixCopied(false), 2000);
         }
     };
 
@@ -350,20 +448,130 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                             </div>
                         </form>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 px-8 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
-                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
-                                <Wallet className="w-8 h-8 text-emerald-600" />
-                            </div>
-                            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Pix disponível em breve</h4>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs">
-                                Estamos finalizando a integração com o Pix. Por enquanto, utilize o pagamento via cartão de crédito para ativação imediata.
-                            </p>
-                            <button
-                                onClick={() => setPaymentTab('card')}
-                                className="mt-6 text-emerald-600 font-bold hover:underline"
-                            >
-                                Usar Cartão de Crédito
-                            </button>
+                        <div className="space-y-4">
+                            {status && (
+                                <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:border-red-500/20'
+                                    }`}>
+                                    {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                                    {status.message}
+                                </div>
+                            )}
+
+                            {pixData ? (
+                                <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-in zoom-in duration-300">
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Pague com Pix</h3>
+                                        <p className="text-sm text-slate-500 max-w-xs">
+                                            Abra o app do seu banco, escolha a opção Pix e escaneie o código abaixo.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-2xl border-4 border-emerald-50 shadow-inner mb-6 relative">
+                                        <img src={`data:image/png;base64,${pixData.qr_code_base64}`} alt="QR Code Pix" className="w-48 h-48 object-contain" />
+                                        {status?.type === 'success' && (
+                                            <div className="absolute inset-0 bg-emerald-500/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center flex flex-col text-white animate-in zoom-in">
+                                                <CheckCircle2 className="w-12 h-12 mb-2" />
+                                                <span className="font-bold text-sm">Pago!</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="w-full max-w-sm space-y-3">
+                                        <label className="block text-xs font-bold text-slate-500 text-center uppercase tracking-wider">Ou use o Copia e Cola</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={pixData.qr_code}
+                                                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-500 truncate outline-none select-all"
+                                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                            />
+                                            <button
+                                                onClick={handleCopyPix}
+                                                className={`px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 transition-all ${pixCopied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800'}`}
+                                            >
+                                                {pixCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                {pixCopied ? 'Copiado!' : 'Copiar'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {!status?.type && (
+                                        <div className="mt-8 flex items-center justify-center gap-3 text-sm text-slate-500 animate-pulse">
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Aguardando pagamento...
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <form onSubmit={handleGeneratePix} className="space-y-4">
+                                    <div className="p-6 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl">
+                                        <h3 className="text-emerald-800 dark:text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                                            <Wallet className="w-5 h-5" /> Pagamento com Pix
+                                        </h3>
+                                        <p className="text-sm text-emerald-700/80 dark:text-emerald-400/80 leading-relaxed mb-4">
+                                            O pagamento via Pix proporciona liberação imediata da sua assinatura. Precisamos apenas de alguns dados para gerar a cobrança.
+                                        </p>
+
+                                        <div className="space-y-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                            <div>
+                                                <label className={labelClasses}>Nome Completo</label>
+                                                <div className="relative">
+                                                    <div className={iconClasses}><User className="w-4.5 h-4.5" /></div>
+                                                    <input
+                                                        type="text"
+                                                        name="cardholderName"
+                                                        value={formData.cardholderName}
+                                                        onChange={handleInputChange}
+                                                        className={inputClasses}
+                                                        placeholder="Seu nome"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className={labelClasses}>CPF / CNPJ</label>
+                                                <div className="relative">
+                                                    <div className={iconClasses}><ShieldCheck className="w-4.5 h-4.5" /></div>
+                                                    <input
+                                                        type="text"
+                                                        name="identificationNumber"
+                                                        value={formData.identificationNumber}
+                                                        onChange={handleInputChange}
+                                                        className={inputClasses}
+                                                        placeholder="Documento"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className={labelClasses}>E-mail</label>
+                                                <div className="relative">
+                                                    <div className={iconClasses}><Mail className="w-4.5 h-4.5" /></div>
+                                                    <input
+                                                        type="email"
+                                                        name="email"
+                                                        value={formData.email}
+                                                        onChange={handleInputChange}
+                                                        className={inputClasses}
+                                                        placeholder="seu@e-mail.com"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={pixLoading}
+                                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold rounded-xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-3 text-lg"
+                                    >
+                                        {pixLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                                        {pixLoading ? 'Gerando Pix...' : 'Gerar QR Code Pix'}
+                                    </button>
+                                </form>
+                            )}
                         </div>
                     )}
                 </div>
