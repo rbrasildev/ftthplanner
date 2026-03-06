@@ -176,7 +176,8 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             const nameParts = formData.cardholderName.trim().split(' ');
             const firstName = nameParts[0];
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
-            const deviceId = (window as any).deviceId || '';
+            const deviceElement = document.getElementById('deviceId') as HTMLInputElement | null;
+            const deviceId = deviceElement ? deviceElement.value : '';
 
             // Call Backend Subscribe
             await api.post('/payments/subscribe', {
@@ -308,6 +309,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
 
                     {paymentTab === 'card' ? (
                         <form onSubmit={handleSubmit} className="space-y-2">
+                            <input type="hidden" id="deviceId" />
                             {status && (
                                 <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:border-red-500/20'
                                     }`}>

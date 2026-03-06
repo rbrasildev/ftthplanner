@@ -64,12 +64,14 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                 body: {
                     preapproval_plan_id: plan.mercadopagoId,
                     payer_email: payer.email,
+                    payer_first_name: payer.first_name,
+                    payer_last_name: payer.last_name,
                     card_token_id: token,
                     back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br',
                     status: 'authorized',
                     external_reference: companyId,
                 } as any,
-                requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
+                requestOptions: deviceId ? { customHeaders: { 'X-meli-session-id': String(deviceId) } } as any : undefined
             };
 
             try {
@@ -114,7 +116,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                         ]
                     }
                 },
-                requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
+                requestOptions: deviceId ? { customHeaders: { 'X-meli-session-id': String(deviceId) } } as any : undefined
             };
             result = await payment.create(paymentBody as any);
         }
@@ -220,7 +222,7 @@ export const processPayment = async (req: Request, res: Response) => {
                     ]
                 }
             },
-            requestOptions: deviceId ? { headers: { 'X-meli-session-id': String(deviceId) } } as any : undefined
+            requestOptions: deviceId ? { customHeaders: { 'X-meli-session-id': String(deviceId) } } as any : undefined
         };
 
         const result = await payment.create(paymentData as any);
