@@ -31,6 +31,11 @@ export const updatePlan = async (id: string, data: any) => {
     return response.data;
 };
 
+export const deletePlan = async (id: string) => {
+    const response = await api.delete(`/saas/plans/${id}`);
+    return response.data;
+};
+
 export const getAuditLogs = async (params: any = {}) => {
     const response = await api.get('/audit', { params });
     return response.data;

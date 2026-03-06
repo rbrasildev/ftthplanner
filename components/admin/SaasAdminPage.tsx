@@ -130,6 +130,15 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
+    const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
+    const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+
+    const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean; title?: string; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+
+    const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info', title?: string) => {
+        setAlertConfig({ isOpen: true, message, type, title });
+    };
+
     const filteredCompanies = companies.filter(company => {
         const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             company.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -301,13 +310,36 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             await saasService.deleteCompany(companyToDelete.id);
             setCompanies(prev => prev.filter(c => c.id !== companyToDelete.id));
             loadData();
+            showAlert(t('saas_company_deleted_success') || 'Empresa deletada com sucesso!', 'success');
         } catch (error: any) {
             console.error("Delete failed", error);
             const msg = error.response?.data?.details || error.response?.data?.error || 'Failed to delete company';
-            alert(msg);
+            showAlert(msg, 'error');
         } finally {
             setIsDeleteModalOpen(false);
             setCompanyToDelete(null);
+        }
+    };
+
+    const requestDeletePlan = (plan: Plan) => {
+        setPlanToDelete(plan);
+        setIsDeletePlanModalOpen(true);
+    };
+
+    const confirmDeletePlan = async () => {
+        if (!planToDelete) return;
+        try {
+            await saasService.deletePlan(planToDelete.id);
+            setPlans(prev => prev.filter(p => p.id !== planToDelete.id));
+            loadData();
+            showAlert(t('saas_plan_deleted_success'), 'success');
+        } catch (error: any) {
+            console.error("Delete failed", error);
+            const msg = error.response?.data?.details || error.response?.data?.error || 'Failed to delete plan';
+            showAlert(msg, 'error');
+        } finally {
+            setIsDeletePlanModalOpen(false);
+            setPlanToDelete(null);
         }
     };
 
@@ -320,7 +352,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         const planData = {
             name: formData.get('name'),
             price: parseFloat(formData.get('price') as string),
-            priceYearly: formData.get('priceYearly') ? parseFloat(formData.get('priceYearly') as string) : null,
             type: formData.get('type') || 'STANDARD',
             trialDurationDays: formData.get('trialDurationDays') ? parseInt(formData.get('trialDurationDays') as string) : null,
             features: featuresValid,
@@ -345,8 +376,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             await loadData();
             setIsPlanModalOpen(false);
             setEditingPlan(null);
+            showAlert('Plano salvo com sucesso!', 'success');
         } catch (error) {
-            alert('Failed to save plan');
+            showAlert('Failed to save plan', 'error');
         }
     };
 
@@ -968,6 +1000,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <div className="flex gap-2">
                                                     <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
                                                         <Settings className="w-5 h-5" />
+                                                    </button>
+                                                    <button onClick={() => requestDeletePlan(plan)} title={t('saas_delete_plan')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-600 transition-colors">
+                                                        <Trash2 className="w-5 h-5" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1668,23 +1703,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly Price ($)</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('saas_plan_price_monthly')}</label>
                                         <input
                                             name="price"
                                             type="number"
                                             step="0.01"
                                             defaultValue={editingPlan?.price}
                                             required
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Yearly Price ($)</label>
-                                        <input
-                                            name="priceYearly"
-                                            type="number"
-                                            step="0.01"
-                                            defaultValue={editingPlan?.priceYearly}
                                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
@@ -2290,6 +2315,65 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             setTemplateToSend(null);
                         }}
                     />
+                )
+            }
+            {
+                isDeletePlanModalOpen && planToDelete && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-8">
+                            <div className="flex flex-col items-center text-center space-y-4">
+                                <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full mb-2">
+                                    <AlertTriangle className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('saas_delete_plan')}</h3>
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    <p>{t('saas_confirm_delete_plan')}</p>
+                                    <p className="mt-2 text-lg font-bold text-slate-800 dark:text-slate-200">{planToDelete.name}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => setIsDeletePlanModalOpen(false)}
+                                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    {t('saas_cancel')}
+                                </button>
+                                <button
+                                    onClick={confirmDeletePlan}
+                                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('saas_delete_plan')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                alertConfig.isOpen && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-6">
+                            <div className="flex flex-col items-center text-center space-y-4">
+                                <div className={`p-4 rounded-full mb-2 ${alertConfig.type === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900/30' : alertConfig.type === 'success' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30'}`}>
+                                    {alertConfig.type === 'error' ? <AlertTriangle className="w-8 h-8" /> : alertConfig.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <Shield className="w-8 h-8" />}
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{alertConfig.title || (alertConfig.type === 'error' ? 'Erro' : alertConfig.type === 'success' ? 'Sucesso' : 'Aviso')}</h3>
+                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    <p>{alertConfig.message}</p>
+                                </div>
+                            </div>
+                            <div className="mt-8">
+                                <button
+                                    onClick={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                                    className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )
             }
         </div >

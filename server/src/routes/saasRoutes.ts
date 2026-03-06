@@ -1,6 +1,6 @@
 ﻿import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
-import { getPlans, createPlan, updatePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans } from '../controllers/saasController';
+import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans } from '../controllers/saasController';
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
@@ -22,6 +22,7 @@ router.get('/public/plans', getPublicPlans);
 router.get('/plans', authenticateToken, getPlans);
 router.post('/plans', authenticateToken, requireSuperAdmin, createPlan);
 router.put('/plans/:id', authenticateToken, requireSuperAdmin, updatePlan);
+router.delete('/plans/:id', authenticateToken, requireSuperAdmin, deletePlan);
 
 // Map Data
 router.get('/map-data', authenticateToken, requireSuperAdmin, getGlobalMapData);

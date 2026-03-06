@@ -121,6 +121,35 @@ export const updatePlan = async (req: AuthRequest, res: Response) => {
     }
 };
 
+export const deletePlan = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const companiesCount = await prisma.company.count({ where: { planId: id } });
+        if (companiesCount > 0) {
+            return res.status(400).json({ error: 'Cannot delete plan because it is being used by one or more companies.' });
+        }
+
+        // Delete associated invoices to avoid foreign key constraint violations
+        await prisma.invoice.deleteMany({ where: { planId: id } });
+
+        const plan = await prisma.plan.delete({
+            where: { id }
+        });
+
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'DELETE_PLAN', 'Plan', id, { name: plan.name }, req.ip);
+        }
+
+        res.json({ message: 'Plan deleted successfully' });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to delete plan',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
 // --- COMPANIES ---
 export const getCompanies = async (req: AuthRequest, res: Response) => {
     try {
