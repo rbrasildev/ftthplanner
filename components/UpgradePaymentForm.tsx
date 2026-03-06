@@ -26,7 +26,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
     const [mp, setMp] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-    const [paymentTab, setPaymentTab] = useState<'card' | 'pix'>('card');
+    const [paymentTab, setPaymentTab] = useState<'card' | 'pix'>('pix');
 
     // Pix State
     const [pixLoading, setPixLoading] = useState(false);
@@ -286,14 +286,13 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                     {/* Seletor de Método de Pagamento */}
                     <div className="flex gap-2 mb-2">
                         <button
-                            onClick={() => setPaymentTab('card')}
-                            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all ${paymentTab === 'card'
-                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold'
-                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 text-slate-500 dark:text-slate-400'
-                                }`}
+                            onClick={() => { }}
+                            disabled
+                            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400`}
+                            title="Cartão de crédito indisponível no momento"
                         >
                             <CreditCard className="w-4 sm:w-5 h-4 sm:h-5" />
-                            <span className="text-sm sm:text-base">Cartão</span>
+                            <span className="text-sm sm:text-base cursor-not-allowed">Cartão (Indisponível)</span>
                         </button>
                         <button
                             onClick={() => setPaymentTab('pix')}
