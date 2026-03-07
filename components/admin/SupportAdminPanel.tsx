@@ -1,8 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, User, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { MessageSquare, Send, User, Clock, CheckCircle, Loader2, SmilePlus } from 'lucide-react';
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
 import { io, Socket } from 'socket.io-client';
 import api from '../../services/api';
 import { CustomSelect } from '../common/CustomSelect';
+
+const EmojiPickerOverlay: React.FC<{ reply: string, setReply: (val: string) => void }> = ({ reply, setReply }) => {
+    const [showEmoji, setShowEmoji] = useState(false);
+    const pickerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+                setShowEmoji(false);
+            }
+        };
+        if (showEmoji) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showEmoji]);
+
+    return (
+        <div className="relative flex items-end shrink-0" ref={pickerRef}>
+            <button
+                type="button"
+                onClick={() => setShowEmoji(!showEmoji)}
+                className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-500 transition-colors"
+            >
+                <SmilePlus className="w-5 h-5" />
+            </button>
+            {showEmoji && (
+                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 z-50">
+                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-slate-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
+                        <EmojiPicker
+                            onEmojiClick={(emojiData) => setReply(reply + emojiData.emoji)}
+                            width={300}
+                            height={400}
+                        />
+                    </Suspense>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // Componente isolado para gerenciar o estado de erro do logo, evitando que o React
 // restore o fallback escondido durante re-renders
@@ -87,6 +127,21 @@ export const SupportAdminPanel: React.FC = () => {
         return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
     };
 
+    // Fast Link Parser
+    const renderMessageText = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split(urlRegex).map((part, i) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity">
+                        {part}
+                    </a>
+                );
+            }
+            return <span key={i}>{part}</span>;
+        });
+    };
+
     const filteredConversations = conversations.filter(conv => {
         const matchesSearch =
             conv.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -123,13 +178,9 @@ export const SupportAdminPanel: React.FC = () => {
             loadOnlineUsers();
         });
 
-        socketRef.current.on('user_presence_change', ({ userId, status }: { userId: string, status: string }) => {
-            setOnlineUsers(prev => {
-                const next = new Set(prev);
-                if (status === 'ONLINE') next.add(userId);
-                else next.delete(userId);
-                return next;
-            });
+        socketRef.current.on('user_presence_change', () => {
+            // Recarrega a fonte da verdade da API toda vez que há mudança de presença,
+            // garantindo que o Set de bolinhas nunca dessincronize em caso de pacotes perdidos.
             loadOnlineUsers();
         });
 
@@ -179,6 +230,7 @@ export const SupportAdminPanel: React.FC = () => {
 
         loadConversations();
         loadOnlineUsers();
+        loadMyAvailability();
 
         return () => {
             if (socketRef.current) {
@@ -205,8 +257,21 @@ export const SupportAdminPanel: React.FC = () => {
         try {
             const res = await api.get('/support/chat/online-users');
             setOnlineUsersList(res.data);
+            // Sincroniza o Set de bolinhas verdes usando a resposta oficial da API como fonte da verdade
+            setOnlineUsers(new Set(res.data.map((u: any) => u.id)));
         } catch (err) {
             console.error("[AdminChat] Failed to load online users", err);
+        }
+    };
+
+    const loadMyAvailability = async () => {
+        try {
+            const res = await api.get('/support/chat/me/availability');
+            if (res.data?.status) {
+                setAvailability(res.data.status);
+            }
+        } catch (err) {
+            console.error("[AdminChat] Failed to load personal availability", err);
         }
     };
 
@@ -267,10 +332,25 @@ export const SupportAdminPanel: React.FC = () => {
             else if (selectedOnlineUser) body.targetUserId = selectedOnlineUser.id;
             else return;
 
-            await api.post('/support/chat/messages', { ...body });
+            const res = await api.post('/support/chat/messages', { ...body });
 
             if (selectedOnlineUser) {
-                loadConversations();
+                // Ao criar uma conversa proativa, a API devolve a mensagem que contém o ID da conversa real
+                const newConvId = res.data.conversationId;
+
+                // Força o recarregamento das conversas
+                const convRes = await api.get('/support/chat/conversations');
+                setConversations(convRes.data);
+
+                // Encontra a nova conversa nas atualizadas para popular o cabeçalho certinho
+                const newConv = convRes.data.find((c: any) => c.id === newConvId);
+
+                if (newConv) {
+                    setSelectedOnlineUser(null);
+                    setSelectedConv(newConv);
+                    loadMessages(newConv.id);
+                    setActiveTab('chats');
+                }
             }
 
             setReply('');
@@ -479,8 +559,8 @@ export const SupportAdminPanel: React.FC = () => {
                                             <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${isMe
                                                 ? 'bg-emerald-600 text-white rounded-br-none'
                                                 : 'bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
-                                                }`}>
-                                                {msg.content}
+                                                }`} style={{ wordBreak: 'break-word' }}>
+                                                {renderMessageText(msg.content)}
                                                 <div className={`text-[9px] mt-1.5 flex items-center gap-1 ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
                                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     {isMe && <CheckCircle className="w-2.5 h-2.5 opacity-50" />}
@@ -495,7 +575,8 @@ export const SupportAdminPanel: React.FC = () => {
 
                         {(!selectedConv || selectedConv.status !== 'CLOSED') ? (
                             <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                                <div className="relative flex items-center gap-3">
+                                <div className="relative flex items-end gap-2">
+                                    <EmojiPickerOverlay reply={reply} setReply={setReply} />
                                     <textarea
                                         value={reply}
                                         onChange={(e) => setReply(e.target.value)}

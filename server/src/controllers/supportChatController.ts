@@ -163,6 +163,23 @@ export const updateAvailability = async (req: Request, res: Response) => {
     }
 };
 
+export const getMyAvailability = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    if (!user) return res.status(401).send();
+
+    try {
+        const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { chatAvailability: true }
+        });
+
+        res.json({ status: dbUser?.chatAvailability || 'OFFLINE' });
+    } catch (error) {
+        console.error("Get Availability Error:", error);
+        res.status(500).json({ error: 'Erro ao buscar disponibilidade' });
+    }
+};
+
 export const closeConversation = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
     const { conversationId } = req.params;

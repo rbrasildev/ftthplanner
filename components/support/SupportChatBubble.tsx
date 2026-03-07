@@ -1,7 +1,48 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Minus, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { MessageCircle, X, Send, Minus, Loader2, SmilePlus } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import api from '../../services/api';
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
+
+const EmojiPickerOverlay: React.FC<{ reply: string, setReply: (val: string) => void }> = ({ reply, setReply }) => {
+    const [showEmoji, setShowEmoji] = useState(false);
+    const pickerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+                setShowEmoji(false);
+            }
+        };
+        if (showEmoji) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showEmoji]);
+
+    return (
+        <div className="relative flex items-end shrink-0" ref={pickerRef}>
+            <button
+                type="button"
+                onClick={() => setShowEmoji(!showEmoji)}
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-emerald-500 transition-colors"
+            >
+                <SmilePlus className="w-5 h-5" />
+            </button>
+            {showEmoji && (
+                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 z-50">
+                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-slate-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
+                        <EmojiPicker
+                            onEmojiClick={(emojiData) => setReply(reply + emojiData.emoji)}
+                            width={300}
+                            height={400}
+                        />
+                    </Suspense>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 interface Message {
     id: string;
@@ -28,6 +69,21 @@ export const SupportChatBubble: React.FC = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    // Fast Link Parser
+    const renderMessageText = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split(urlRegex).map((part, i) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity">
+                        {part}
+                    </a>
+                );
+            }
+            return <span key={i}>{part}</span>;
+        });
+    };
+
     // Global Socket Connection - Run as soon as mounted if token exists
     useEffect(() => {
         const supportToken = localStorage.getItem('ftth_support_token');
@@ -39,7 +95,7 @@ export const SupportChatBubble: React.FC = () => {
         if (token && !socketRef.current) {
             // Deriva a URL do socket do VITE_API_URL para funcionar com frontend na Vercel 
             // e backend em outra VPS (URLs diferentes)
-            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const apiUrl = (import.meta as any).env.VITE_API_URL || '';
             const socketUrl = apiUrl
                 ? apiUrl.replace(/\/api$/, '') // remove o sufixo /api se existir
                 : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
@@ -268,8 +324,8 @@ export const SupportChatBubble: React.FC = () => {
                                             <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${isMe
                                                 ? 'bg-emerald-600 text-white rounded-br-none'
                                                 : 'bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
-                                                }`}>
-                                                {msg.content}
+                                                }`} style={{ wordBreak: 'break-word' }}>
+                                                {renderMessageText(msg.content)}
                                                 <div className={`text-[10px] mt-1.5 ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
                                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
@@ -295,7 +351,8 @@ export const SupportChatBubble: React.FC = () => {
                     </div>
 
                     <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                        <div className="relative flex items-center gap-2">
+                        <div className="relative flex items-end gap-2">
+                            <EmojiPickerOverlay reply={message} setReply={setMessage} />
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}

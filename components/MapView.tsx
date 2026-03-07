@@ -1056,9 +1056,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 zoomAnimation={true}
                 fadeAnimation={true}
                 markerZoomAnimation={true}
-                transform3DLimit={1024}
             >
-                <ZoomControl position="bottomright" />
+                <ZoomControl position="bottomleft" />
 
                 <MapJumpController viewKey={viewKey} />
 
