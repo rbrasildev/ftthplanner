@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
-import { MessageSquare, Send, User, Clock, CheckCircle, Loader2, SmilePlus } from 'lucide-react';
+import { MessageSquare, Send, User, Clock, CheckCircle, Loader2, SmilePlus, UserCheck } from 'lucide-react';
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
 import { io, Socket } from 'socket.io-client';
 import api from '../../services/api';
+import * as saasService from '../../services/saasService';
 import { CustomSelect } from '../common/CustomSelect';
 
 const EmojiPickerOverlay: React.FC<{ reply: string, setReply: (val: string) => void }> = ({ reply, setReply }) => {
@@ -286,15 +287,27 @@ export const SupportAdminPanel: React.FC = () => {
 
     const handleCloseTicket = async () => {
         if (!selectedConv) return;
-        if (!confirm('Deseja realmente encerrar este atendimento?')) return;
-
         try {
-            await api.post(`/support/chat/close/${selectedConv.id}`);
-            setSelectedConv(null);
-            setMessages([]);
+            await api.patch(`/support/chat/conversations/${selectedConv.id}/close`);
+            setSelectedConv({ ...selectedConv, status: 'CLOSED' });
             loadConversations();
-        } catch (err) {
-            console.error("[AdminChat] Failed to close ticket", err);
+        } catch (error) {
+            console.error('Failed to close ticket', error);
+        }
+    };
+
+    const handleEntrarSuporte = async (userId: string) => {
+        try {
+            const res = await saasService.createSupportSession(userId);
+            if (res.token) {
+                localStorage.setItem('ftth_support_token', res.token);
+                // Previne que tente abrir o projeto previamente aberto pelo admin
+                localStorage.removeItem('ftth_current_project_id');
+                window.location.href = '/';
+            }
+        } catch (error: any) {
+            console.error('Failed to create support session', error);
+            alert(error.response?.data?.error || 'Erro ao iniciar sessão de suporte');
         }
     };
 
@@ -449,9 +462,6 @@ export const SupportAdminPanel: React.FC = () => {
                                             <div className="flex justify-between items-center">
                                                 <span className={`font-bold text-sm truncate ${isUnread ? 'text-emerald-600 dark:text-emerald-400' : 'dark:text-slate-200'}`}>
                                                     {conv.user?.username}
-                                                    {isUnread && !isClosed && (
-                                                        <span className="inline-block ml-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
-                                                    )}
                                                 </span>
                                                 <span className="text-[10px] text-slate-400 font-medium ml-2 shrink-0">{formatRelativeTime(conv.updatedAt)}</span>
                                             </div>
@@ -530,13 +540,23 @@ export const SupportAdminPanel: React.FC = () => {
                             </div>
 
                             {selectedConv && selectedConv.status !== 'CLOSED' && (
-                                <button
-                                    onClick={handleCloseTicket}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold transition-all"
-                                >
-                                    <CheckCircle className="w-4 h-4" />
-                                    Resolver
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleEntrarSuporte(selectedConv?.userId || selectedOnlineUser?.id || '')}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold transition-all"
+                                        title="Acessar conta do cliente"
+                                    >
+                                        <UserCheck className="w-4 h-4" />
+                                        Modo Suporte
+                                    </button>
+                                    <button
+                                        onClick={handleCloseTicket}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold transition-all"
+                                    >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Resolver
+                                    </button>
+                                </div>
                             )}
                         </div>
 
