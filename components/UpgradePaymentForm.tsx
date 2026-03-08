@@ -216,7 +216,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             const currentDeviceId = deviceId || window.MP_DEVICE_SESSION_ID || '';
 
             // Call Backend Subscribe
-            await api.post('/saas/subscribe', {
+            await api.post('/payments/subscribe', {
                 token: tokenResponse.id,
                 planId: plan.id,
                 installments: 1,
