@@ -15,6 +15,7 @@ interface DIOUnitProps {
     onSplice: (e: React.MouseEvent, id: string) => void;
     onEdit: (e: React.MouseEvent, dio: any) => void;
     onDelete: (e: React.MouseEvent, dio: any) => void;
+    onPortClick: (e: React.MouseEvent, portId: string) => void;
     onHoverPort: (portId: string | null) => void;
 }
 
@@ -30,6 +31,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     onSplice,
     onEdit,
     onDelete,
+    onPortClick,
     onHoverPort
 }) => {
     const { t } = useLanguage();
@@ -170,6 +172,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                     )}
                                     <div
                                         id={pid}
+                                        onMouseDown={(e) => onPortClick(e, pid)}
                                         onMouseEnter={() => handlePortEnter(pid)}
                                         onMouseLeave={handlePortLeave}
                                         className={`

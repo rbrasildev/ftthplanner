@@ -169,6 +169,7 @@ export interface OLTCatalogItem {
     outputPower: number; // dBm
     slots?: number;
     portsPerSlot?: number;
+    uplinkPorts?: number;
     description?: string;
     updatedAt?: string;
 }

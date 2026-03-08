@@ -19,7 +19,8 @@ export const OLTRegistration: React.FC = () => {
         type: 'OLT',
         outputPower: 3, // Default Class B+
         slots: 1,
-        portsPerSlot: 16, // Default
+        portsPerSlot: 16,
+        uplinkPorts: 0,
         description: ''
     });
 
@@ -48,6 +49,7 @@ export const OLTRegistration: React.FC = () => {
                 outputPower: item.outputPower,
                 slots: item.slots || 1,
                 portsPerSlot: item.portsPerSlot || 16,
+                uplinkPorts: item.uplinkPorts || 0,
                 description: item.description || ''
             });
         } else {
@@ -58,6 +60,7 @@ export const OLTRegistration: React.FC = () => {
                 outputPower: 3,
                 slots: 1,
                 portsPerSlot: 16,
+                uplinkPorts: 0,
                 description: ''
             });
         }
@@ -71,7 +74,8 @@ export const OLTRegistration: React.FC = () => {
                 // Ensure number types
                 outputPower: Number(formData.outputPower),
                 slots: Number(formData.slots),
-                portsPerSlot: Number(formData.portsPerSlot)
+                portsPerSlot: Number(formData.portsPerSlot),
+                uplinkPorts: Number(formData.uplinkPorts)
             };
 
             if (editingItem) {
@@ -252,91 +256,105 @@ export const OLTRegistration: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-4">
+                        <div className="p-6 overflow-y-auto space-y-6">
+                            {/* Nome do Equipamento */}
                             <div>
+                                <CustomInput
+                                    label={t('equipment_name')}
+                                    required
+                                    value={formData.name || ''}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder={t('equipment_name_placeholder') || 'e.g., Huawei MA5608T, Cisco 2960...'}
+                                />
+                            </div>
+
+                            {/* Tipo de Equipamento */}
+                            <div>
+                                <CustomSelect
+                                    label={t('equipment_type')}
+                                    value={formData.type || 'OLT'}
+                                    options={[
+                                        { value: 'OLT', label: t('type_olt') },
+                                        { value: 'SWITCH', label: t('type_switch') },
+                                        { value: 'ROUTER', label: t('type_router') },
+                                        { value: 'SERVER', label: t('type_server') },
+                                        { value: 'OTHER', label: t('type_other') }
+                                    ]}
+                                    onChange={val => setFormData({ ...formData, type: val })}
+                                    showSearch={false}
+                                />
+                            </div>
+
+                            {/* Especificações Técnicas (Saída, Slots, Portas/Slot) */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                                 <div>
                                     <CustomInput
-                                        label={t('equipment_name')}
-                                        required
-                                        value={formData.name || ''}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder={t('equipment_name_placeholder') || 'e.g., Huawei MA5608T, Cisco 2960...'}
+                                        label={formData.type === 'OLT' ? t('output_power') : t('power_consumption')}
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.outputPower}
+                                        onChange={e => setFormData({ ...formData, outputPower: parseFloat(e.target.value) })}
                                     />
-                                </div>
-
-                                <div>
-                                    <CustomSelect
-                                        label={t('equipment_type')}
-                                        value={formData.type || 'OLT'}
-                                        options={[
-                                            { value: 'OLT', label: t('type_olt') },
-                                            { value: 'SWITCH', label: t('type_switch') },
-                                            { value: 'ROUTER', label: t('type_router') },
-                                            { value: 'SERVER', label: t('type_server') },
-                                            { value: 'OTHER', label: t('type_other') }
-                                        ]}
-                                        onChange={val => setFormData({ ...formData, type: val })}
-                                        showSearch={false}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-x-4 mb-4">
-                                    <div>
-                                        <CustomInput
-                                            label={formData.type === 'OLT' ? t('output_power') : t('power_consumption')}
-                                            type="number"
-                                            step="0.1"
-                                            value={formData.outputPower}
-                                            onChange={e => setFormData({ ...formData, outputPower: parseFloat(e.target.value) })}
-                                        />
-                                        <p className="text-[10px] text-slate-500 mt-1">
-                                            {formData.type === 'OLT' ? t('olt_output_power_help') : ''}
+                                    {formData.type === 'OLT' && (
+                                        <p className="text-[10px] text-slate-500 mt-1 leading-tight">
+                                            {t('olt_output_power_help')}
                                         </p>
-                                    </div>
-                                    <div>
-                                        <CustomInput
-                                            label={t('olt_slots')}
-                                            type="number"
-                                            value={formData.slots}
-                                            onChange={e => setFormData({ ...formData, slots: parseInt(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <CustomInput
-                                            label={formData.type === 'OLT' ? t('olt_ports') : t('active_ports')}
-                                            type="number"
-                                            value={formData.portsPerSlot}
-                                            onChange={e => setFormData({ ...formData, portsPerSlot: parseInt(e.target.value) })}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
-
                                 <div>
                                     <CustomInput
-                                        isTextarea
-                                        label={t('description')}
-                                        value={formData.description || ''}
-                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        label={t('olt_slots')}
+                                        type="number"
+                                        value={formData.slots}
+                                        onChange={e => setFormData({ ...formData, slots: parseInt(e.target.value) })}
                                     />
                                 </div>
-
+                                <div>
+                                    <CustomInput
+                                        label={formData.type === 'OLT' ? t('olt_ports') : t('active_ports')}
+                                        type="number"
+                                        value={formData.portsPerSlot}
+                                        onChange={e => setFormData({ ...formData, portsPerSlot: parseInt(e.target.value) })}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                >
-                                    {t('cancel')}
-                                </button>
-                                <button
-                                    onClick={handleSave}
-                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    {t('save')}
-                                </button>
+                            {/* Portas Uplink (Apenas OLT) */}
+                            {formData.type === 'OLT' && (
+                                <div>
+                                    <CustomInput
+                                        label={t('uplink_ports')}
+                                        type="number"
+                                        value={formData.uplinkPorts || 0}
+                                        onChange={e => setFormData({ ...formData, uplinkPorts: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <CustomInput
+                                    isTextarea
+                                    label={t('description')}
+                                    value={formData.description || ''}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                />
                             </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
+                            >
+                                <Save className="w-4 h-4" />
+                                {t('save')}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -80,6 +80,8 @@ export interface OLT {
   name: string;
   ports: number; // Total ports
   portIds: string[];
+  uplinkPorts?: number;
+  uplinkPortIds?: string[];
   status?: CTOStatus;
   type?: 'OLT' | 'SWITCH' | 'ROUTER' | 'SERVER' | 'OTHER';
   structure?: {
@@ -98,6 +100,7 @@ export interface DIO {
   inputCableIds?: string[]; // Array of Cable IDs linked to this DIO
   cableLayout?: Record<string, { x: number; y: number }>; // Saved visual position of cables
   trayLayout?: { x: number; y: number }; // Saved position of the splice tray panel
+  splicingLayout?: { col1: string[]; col2: string[]; col3: string[] };
 }
 
 export interface POPData {
@@ -112,6 +115,7 @@ export interface POPData {
   connections: FiberConnection[]; // Internal Patch Cords
   inputCableIds: string[];
   layout?: Record<string, ElementLayout>;
+  patchingLayout?: { col1: string[]; col2: string[]; col3: string[] };
   // Customization
   color?: string; // Hex color for the marker
   size?: number; // Size/radius of the marker (default 24)

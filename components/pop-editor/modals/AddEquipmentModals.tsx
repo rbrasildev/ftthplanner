@@ -11,7 +11,7 @@ interface AddEquipmentModalsProps {
     onCloseOLT: () => void;
     onCloseDIO: () => void;
     // onDragStart removed - handled internally
-    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string };
+    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number; type?: string };
     setNewOLTConfig: (config: any) => void;
     newDIOConfig: { ports: number };
     setNewDIOConfig: (config: any) => void;
@@ -141,7 +141,9 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                 setNewOLTConfig({
                     slots: selected.slots || 1,
                     portsPerSlot: selected.portsPerSlot || 16,
-                    modelName: selected.name
+                    modelName: selected.name,
+                    uplinkPorts: selected.uplinkPorts || 2,
+                    type: selected.type || 'OLT'
                 });
             }
         }
@@ -233,6 +235,24 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {newOLTConfig.type === 'OLT' && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
+                                    <Settings2 className="w-3.5 h-3.5" /> {t('uplink_ports') || 'Uplinks'}
+                                </label>
+                                <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="8"
+                                        value={newOLTConfig.uplinkPorts ?? 2}
+                                        onChange={e => setNewOLTConfig({ ...newOLTConfig, uplinkPorts: parseInt(e.target.value) })}
+                                        className="w-full bg-transparent text-white font-mono text-sm font-bold focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-3 flex items-start gap-3">
                             <div className="mt-0.5">

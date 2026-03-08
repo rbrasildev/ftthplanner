@@ -308,11 +308,70 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // --- Safe Closing Logic ---
 
 
-    // --- Patching Logic (New Modal Based) ---
-
-    const handleOltPortClick = (e: React.MouseEvent, portId: string) => {
+    // --- Patching Logic (Universal Canvas/Modal Selection) ---
+    const handlePortClick = (e: React.MouseEvent, portId: string) => {
         e.stopPropagation();
-        setConfiguringOltPortId(portId);
+
+        if (configuringOltPortId === portId) {
+            setConfiguringOltPortId(null);
+            return;
+        }
+
+        if (!configuringOltPortId) {
+            setConfiguringOltPortId(portId);
+            return;
+        }
+
+        // We have a selection, and clicked a different port
+        const sourceId = configuringOltPortId;
+        const targetId = portId;
+
+        // Prevent self-connection (same equipment)
+        const sourceEquipId = sourceId.split('-')[1]; // olt-123-s1-p1 -> 123
+        const targetEquipId = targetId.split('-')[1];
+
+        if (sourceEquipId === targetEquipId) {
+            // Switch selection
+            setConfiguringOltPortId(portId);
+            return;
+        }
+
+        // Valid connection between different equipment
+        // Determine color: follow DIO tray fiber if possible
+        let slotColor = '#6366f1'; // Default Indigo
+        const dio = localPOP.dios.find((d: any) => d.portIds.includes(sourceId) || d.portIds.includes(targetId));
+        if (dio) {
+            const pid = dio.portIds.includes(sourceId) ? sourceId : targetId;
+            const pIdx = dio.portIds.indexOf(pid);
+            const trayIdx = Math.floor(pIdx / 12);
+            slotColor = getFiberColor(trayIdx, 'ABNT');
+        } else {
+            // Check if one is an Uplink to give a different default color if between actives
+            if (sourceId.includes('uplink') || targetId.includes('uplink')) {
+                slotColor = '#94a3b8'; // Slate/Silver for Uplink
+            }
+        }
+
+        // Clean existing for both ends
+        let cleanedConnections = localPOP.connections.filter(c =>
+            c.sourceId !== sourceId && c.targetId !== sourceId &&
+            c.sourceId !== targetId && c.targetId !== targetId
+        );
+
+        const newConn: FiberConnection = {
+            id: `patch-${Date.now()}`,
+            sourceId,
+            targetId,
+            color: slotColor,
+            points: []
+        };
+
+        setLocalPOP(prev => ({
+            ...prev,
+            connections: [...cleanedConnections, newConn]
+        }));
+
+        setConfiguringOltPortId(null);
     };
 
     const handleConnectPort = (targetDioPortId: string) => {
@@ -387,6 +446,16 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             newDios[dioIndex] = { ...dio, inputCableIds: newCables };
             return { ...prev, dios: newDios };
         });
+    };
+
+    const handleUpdatePatchingLayout = (newLayout: { col1: string[]; col2: string[]; col3: string[] }) => {
+        setLocalPOP(prev => ({
+            ...prev,
+            patchingLayout: newLayout
+        }));
+
+        // As with other handlers, this modifies localPOP which is then saved
+        // when exiting or automatically if there's an auto-save
     };
 
     const handleDIOSave = (updatedConnections: FiberConnection[]) => {
@@ -535,7 +604,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleAddOLT = () => {
         const id = `olt-${Date.now()}`;
-        const { slots, portsPerSlot, type } = newOLTConfig;
+        const { slots, portsPerSlot, type, uplinkPorts } = newOLTConfig as any;
         const defaultSlotsConfig = Array.from({ length: slots || 1 }).map(() => ({
             active: true,
             portCount: portsPerSlot || 16
@@ -552,6 +621,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             }
         });
 
+        const isOLT = type === 'OLT' || !type;
+        const numUplinks = isOLT ? (uplinkPorts ?? 2) : 0;
+        const uplinkPortIds: string[] = [];
+        for (let i = 1; i <= numUplinks; i++) {
+            uplinkPortIds.push(`${id}-uplink-${i}`);
+        }
+
         const newOLT: OLT = {
             id,
             name: (newOLTConfig as any).modelName
@@ -561,6 +637,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             portIds,
             status: 'PLANNED',
             type: type || 'OLT',
+            uplinkPorts: numUplinks,
+            uplinkPortIds,
             structure: {
                 slots: slots || 1,
                 portsPerSlot: portsPerSlot || 16,
@@ -594,7 +672,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleSaveEditedOLT = () => {
         if (!editingOLT) return;
-        const { id, name, type, structure } = editingOLT as OLT;
+        const { id, name, type, structure, uplinkPorts } = editingOLT as OLT;
         const slots = structure?.slots || 1;
         const portsPerSlot = structure?.portsPerSlot || 16;
 
@@ -619,6 +697,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             }
         }
 
+        const isOLT = type === 'OLT' || !type;
+        const numUplinks = isOLT ? (uplinkPorts ?? 2) : 0;
+        const newUplinkPortIds: string[] = [];
+        for (let i = 1; i <= numUplinks; i++) {
+            newUplinkPortIds.push(`${id}-uplink-${i}`);
+        }
+
         setLocalPOP(prev => {
             const updatedOlts = prev.olts.map(o => o.id === id ? {
                 ...o,
@@ -626,14 +711,18 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 ports: totalPorts,
                 portIds: newPortIds,
                 type: type || 'OLT',
+                uplinkPorts: numUplinks,
+                uplinkPortIds: newUplinkPortIds,
                 structure: { ...structure, slots, portsPerSlot } as any
             } : o);
+
+            const allValidOLTPorts = [...newPortIds, ...newUplinkPortIds];
 
             const updatedConnections = prev.connections.filter(c => {
                 const isSourceInOLT = c.sourceId.startsWith(id);
                 const isTargetInOLT = c.targetId.startsWith(id);
-                if (isSourceInOLT && !newPortIds.includes(c.sourceId)) return false;
-                if (isTargetInOLT && !newPortIds.includes(c.targetId)) return false;
+                if (isSourceInOLT && !allValidOLTPorts.includes(c.sourceId)) return false;
+                if (isTargetInOLT && !allValidOLTPorts.includes(c.targetId)) return false;
                 return true;
             });
 
@@ -811,6 +900,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 localPOP={localPOP}
                                 onAddConnection={handleAddLogicalConnection}
                                 onRemoveConnection={handleRemoveLogicalConnection}
+                                onManageFusions={setSpliceDioId}
+                                onUpdatePatchingLayout={handleUpdatePatchingLayout}
                             />
                         </div>
                     ) : (
@@ -943,7 +1034,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         onDragStart={handleElementDragStart}
                                         onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT(JSON.parse(JSON.stringify(olt))); }}
                                         onDelete={(e, olt) => { e.stopPropagation(); setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name }); }}
-                                        onPortClick={(e, portId) => handleOltPortClick(e, portId)}
+                                        onPortClick={(e, portId) => handlePortClick(e, portId)}
                                         onPortHover={setHoveredPortId}
                                         getFiberColor={getFiberColor}
                                     />
@@ -968,6 +1059,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         onSplice={(e, id) => { e.stopPropagation(); setSpliceDioId(id); }}
                                         onEdit={(e, dio) => { e.stopPropagation(); setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports }); }}
                                         onDelete={(e, dio) => { e.stopPropagation(); setItemToDelete({ type: 'DIO', id: dio.id, name: dio.name }); }}
+                                        onPortClick={(e, portId) => handlePortClick(e, portId)}
                                         onHoverPort={setHoveredPortId}
                                     />
                                 );
@@ -1103,8 +1195,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                 <ConfirmationDialog
                     isOpen={showClearConfirm}
-                    title={t('confirm_clear_title') || "Confirm Clear"}
-                    message={t('confirm_clear_msg') || "Are you sure you want to remove all connections?"}
+                    title={t('confirm_clear_title')}
+                    message={t('confirm_clear_msg')}
                     confirmLabel={t('confirm_clear')}
                     type="danger"
                     onConfirm={handleConfirmClearConnections}

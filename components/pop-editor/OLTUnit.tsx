@@ -148,6 +148,50 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                             </div>
                         );
                     })}
+
+                    {/* Uplink Ports */}
+                    {(olt.uplinkPorts || 0) > 0 && (
+                        <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded border border-slate-300 dark:border-slate-700 shadow-sm mt-3">
+                            <div
+                                className="w-14 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-300 dark:bg-slate-900 select-none text-slate-700 dark:text-slate-300"
+                                style={{ borderLeft: `2px solid #94a3b8` }}
+                            >
+                                {t('uplinks') || 'UPLINK'}
+                            </div>
+                            <div className="flex-1 flex gap-2">
+                                {Array.from({ length: olt.uplinkPorts }).map((_, pIdx) => {
+                                    const portId = `${olt.id}-uplink-${pIdx + 1}`;
+                                    const isConnected = portConnectionsMap.has(portId);
+                                    const isBeingConfigured = configuringOltPortId === portId;
+                                    const slotColor = '#94a3b8'; // Slate 400
+
+                                    return (
+                                        <div
+                                            key={portId}
+                                            id={portId}
+                                            onMouseDown={(e) => onPortClick(e, portId)}
+                                            onMouseEnter={() => onPortHover(portId)}
+                                            onMouseLeave={() => onPortHover(null)}
+                                            className={`
+                                                w-6 h-6 rounded border cursor-pointer select-none flex items-center justify-center text-[8px] font-mono transition-all
+                                                ${isBeingConfigured ? 'ring-2 ring-slate-500 scale-125 z-10' : ''}
+                                                ${hoveredPortId === portId ? 'scale-125 border-white z-10 shadow' : ''}
+                                            `}
+                                            style={{
+                                                backgroundColor: isConnected ? slotColor : 'transparent',
+                                                borderColor: isConnected ? slotColor : 'inherit',
+                                                color: isConnected ? '#fff' : 'inherit',
+                                                boxShadow: isConnected ? `0 0 5px ${slotColor}80` : 'none'
+                                            }}
+                                            title={`Uplink Port ${pIdx + 1}`}
+                                        >
+                                            U{pIdx + 1}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer/Meta (Model Info) */}

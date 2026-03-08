@@ -72,6 +72,12 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
         onUpdateDio({ ...dio, inputCableIds: newCables });
     };
 
+    const handleUpdateSplicingLayout = (newLayout: { col1: string[]; col2: string[]; col3: string[] }) => {
+        if (onUpdateDio) {
+            onUpdateDio({ ...dio, splicingLayout: newLayout });
+        }
+    };
+
     return (
         <div
             className="fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md select-none"
@@ -133,6 +139,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         currentConnections={currentConnections}
                         onAddConnection={handleAddLogicalConnection}
                         onRemoveConnection={handleRemoveLogicalConnection}
+                        onUpdateSplicingLayout={handleUpdateSplicingLayout}
                     />
                 </div>
 
