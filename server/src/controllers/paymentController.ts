@@ -54,6 +54,12 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
         let result;
         let isSubscription = false;
 
+        // Sanitize payer data for both PreApproval and Fallback
+        const rawName = payer.first_name || 'Cliente';
+        const nameParts = rawName.trim().split(' ');
+        const firstName = nameParts[0].substring(0, 256);
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ').substring(0, 256) : undefined;
+
         // CHECK IF PLAN HAS A MERCADOPAGO PLAN ID (Recurring)
         if (plan.mercadopagoId) {
             isSubscription = true;
@@ -64,8 +70,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                 body: {
                     preapproval_plan_id: plan.mercadopagoId,
                     payer_email: payer.email,
-                    payer_first_name: payer.first_name,
-                    payer_last_name: payer.last_name,
+                    payer_first_name: firstName,
+                    payer_last_name: lastName,
                     card_token_id: token,
                     back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br',
                     status: 'authorized',
@@ -87,7 +93,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
             // FALLBACK TO ONE-TIME PAYMENT (Old Logic)
             const paymentBody = {
                 body: {
-                    transaction_amount: plan.price,
+                    transaction_amount: Number(plan.price),
                     token: token,
                     description: `Subscription: ${plan.name} (Company: ${companyId})`,
                     installments: Number(installments || 1),
@@ -95,9 +101,12 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     issuer_id: issuer_id,
                     payer: {
                         email: payer.email,
-                        first_name: payer.first_name,
-                        last_name: payer.last_name,
-                        identification: payer.identification
+                        first_name: firstName,
+                        last_name: lastName,
+                        identification: payer.identification && payer.identification.number ? {
+                            type: payer.identification.type ? String(payer.identification.type).toUpperCase() : 'CPF',
+                            number: String(payer.identification.number).replace(/\D/g, '')
+                        } : { type: 'CPF', number: '00000000000' }
                     },
                     metadata: {
                         company_id: companyId,
