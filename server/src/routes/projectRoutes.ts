@@ -7,7 +7,8 @@ import {
     deleteProject,
     syncProject,
     updateProject,
-    updateCTO
+    updateCTO,
+    updatePOP
 } from '../controllers/projectController';
 
 const router = Router();
@@ -21,5 +22,6 @@ router.put('/:id', requireAdminOrOwner, updateProject);
 router.delete('/:id', requireAdminOrOwner, deleteProject);
 router.post('/:id/sync', requireAdminOrOwner, syncProject);
 router.put('/:id/ctos/:ctoId', requireAdminOrOwner, updateCTO);
+router.put('/:id/pops/:popId', requireAdminOrOwner, updatePOP);
 
 export default router;

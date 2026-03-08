@@ -19,7 +19,7 @@ interface POPEditorProps {
     pop: POPData;
     incomingCables: CableData[];
     onClose: () => void;
-    onSave: (updatedPOP: POPData) => void;
+    onSave: (updatedPOP: POPData) => Promise<void> | void;
 
     // VFL Props
     litPorts: Set<string>;
@@ -45,7 +45,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Viewport State
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const [isSnapping, setIsSnapping] = useState(true);
-    const [viewMode, setViewMode] = useState<'canvas' | 'rack' | 'logical'>('canvas');
+    const [viewMode, setViewMode] = useState<'canvas' | 'logical'>('canvas');
 
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
@@ -170,10 +170,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         localPOP.olts.forEach(o => expand(o.id));
         localPOP.dios.forEach(d => expand(d.id));
 
-        // Also include cables in non-rack mode for better centering
-        if (viewMode !== 'rack') {
-            uniqueIncomingCables.forEach(c => expand(c.id, 112, 60));
-        }
+        // Also include cables for better centering
+        uniqueIncomingCables.forEach(c => expand(c.id, 112, 60));
 
         if (count > 0 && minX !== Infinity) {
             const PADDING = 60;
@@ -226,83 +224,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // --- Helpers ---
     const getLayout = (id: string) => localPOP.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
-    const organizeRackLayout = (targetMode: 'canvas' | 'rack' | 'logical') => {
+    const handleViewModeChange = (targetMode: 'canvas' | 'logical') => {
         setViewMode(targetMode);
-
-        if (targetMode !== 'rack') {
-            return;
-        }
-
-        const containerW = containerRef.current?.clientWidth || 800;
-        // Inverse transform to find center in Canvas Space
-        const centerX = (-viewState.x + containerW / 2) / viewState.zoom;
-        const startY = (-viewState.y + 80) / viewState.zoom;
-
-        // Align Rack to Grid
-        const RACK_X = Math.round((centerX - EQUIPMENT_WIDTH / 2) / GRID_SIZE) * GRID_SIZE;
-        const START_Y = Math.round(startY / GRID_SIZE) * GRID_SIZE;
-
-        let currentY = START_Y;
-
-        setLocalPOP(prev => {
-            const newLayout = { ...prev.layout };
-
-            // 1. Stack OLTs
-            prev.olts.forEach(olt => {
-                newLayout[olt.id] = { x: RACK_X, y: currentY, rotation: 0 };
-
-                // Calculate precise height based on render logic
-                const slots = olt.structure?.slots || 1;
-                // Header (32px) + Body Padding (12px) + Slots * (approx 34px per slot row + gap) + bottom padding
-                const estimatedHeight = 32 + 12 + (slots * 38) + 12;
-
-                currentY += estimatedHeight + 10; // 10px Gap between units
-            });
-
-            // 2. Gap between OLTs and DIOs (Cable Management Space)
-            currentY += 20;
-
-            // 3. Stack DIOs
-            prev.dios.forEach(dio => {
-                newLayout[dio.id] = { x: RACK_X, y: currentY, rotation: 0 };
-
-                // Calculate precise height
-                // Header (32px) + Body Padding (12px) + Rows * (approx 24px per row) + bottom
-                // 12 ports per row
-                const rows = Math.ceil(dio.ports / 12);
-                // Base height + rows * row_height + linked_cables_header (variable)
-                const estimatedHeight = 32 + 12 + (rows * 28) + 50;
-
-                currentY += estimatedHeight + 10;
-            });
-
-            return { ...prev, layout: newLayout };
-        });
     };
 
-    // Find the rack vertical bounds to draw rails
-    const rackBounds = useMemo(() => {
-        if (viewMode !== 'rack') return null;
-        let minY = Infinity;
-        let maxY = -Infinity;
-        let rackX = 0;
-        let count = 0;
-
-        [...localPOP.olts, ...localPOP.dios].forEach(item => {
-            const layout = localPOP.layout?.[item.id];
-            if (layout) {
-                if (layout.y < minY) minY = layout.y;
-                // Approximate max Y based on standard unit height
-                if (layout.y > maxY) maxY = layout.y + 200;
-                rackX = layout.x;
-                count++;
-            }
-        });
-
-        if (count === 0) return null;
-        // Add padding for the "Cabinet" look
-        return { x: rackX, top: minY - 40, bottom: maxY + 100 };
-    }, [localPOP, viewMode]);
 
 
     // --- Safe Closing Logic ---
@@ -807,15 +732,37 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     const handleCloseRequest = () => {
-        // Simple dirty check could proceed here if needed
-        const hasChanges = JSON.stringify(localPOP) !== JSON.stringify(pop);
+        // Robust dirty check: exclude viewState and stabilize order
+        const normalize = (data: POPData) => {
+            const { layout, connections, ...rest } = JSON.parse(JSON.stringify(data));
+            // Stabilize connections for comparison
+            if (connections) {
+                connections.sort((a: any, b: any) => a.id.localeCompare(b.id));
+            }
+            // Filter out default visual positions that might have been auto-added
+            const cleanLayout: Record<string, any> = {};
+            if (layout) {
+                Object.keys(layout).forEach(key => {
+                    // Only consider it a "change" if it's not a default-ish position
+                    // but since layout is critical, we usually just compare it
+                    cleanLayout[key] = layout[key];
+                });
+            }
+            return { ...rest, connections, layout: cleanLayout };
+        };
+
+        const hasChanges = JSON.stringify(normalize(localPOP)) !== JSON.stringify(normalize(pop));
         if (hasChanges) setShowCloseConfirm(true);
         else onClose();
     };
 
-    const handleSaveAndClose = () => {
-        onSave(localPOP);
-        onClose();
+    const handleSaveAndClose = async () => {
+        try {
+            await onSave(localPOP);
+            onClose();
+        } catch (e) {
+            console.error("Failed to save and close POP", e);
+        }
     };
 
     const handleConfirmClearConnections = () => {
@@ -865,7 +812,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 <PopToolbar
                     onAddOLT={handleOpenAddOLT}
                     onAddDIO={handleOpenAddDIO}
-                    onViewModeChange={organizeRackLayout}
+                    onViewModeChange={handleViewModeChange}
                     viewMode={viewMode}
                     onClearAll={() => setShowClearConfirm(true)}
                     t={t}
@@ -914,72 +861,41 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             }}
                         >
                             {/* Visual Connections (Cables -> DIOs) */}
-                            {viewMode !== 'rack' && (
-                                <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
-                                    {localPOP.dios.map(dio => {
-                                        if (!dio.inputCableIds || dio.inputCableIds.length === 0) return null;
-                                        const dioLayout = getLayout(dio.id);
-                                        const p2 = { x: dioLayout.x, y: dioLayout.y + 40 };
+                            <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
+                                {localPOP.dios.map(dio => {
+                                    if (!dio.inputCableIds || dio.inputCableIds.length === 0) return null;
+                                    const dioLayout = getLayout(dio.id);
+                                    const p2 = { x: dioLayout.x, y: dioLayout.y + 40 };
 
-                                        return dio.inputCableIds.map(cableId => {
-                                            const cable = uniqueIncomingCables.find(c => c.id === cableId);
-                                            if (!cable) return null;
-                                            const cableLayout = getLayout(cable.id);
-                                            const p1 = { x: cableLayout.x + 112, y: cableLayout.y + 30 };
+                                    return dio.inputCableIds.map(cableId => {
+                                        const cable = uniqueIncomingCables.find(c => c.id === cableId);
+                                        if (!cable) return null;
+                                        const cableLayout = getLayout(cable.id);
+                                        const p1 = { x: cableLayout.x + 112, y: cableLayout.y + 30 };
 
-                                            const cx = (p1.x + p2.x) / 2;
-                                            const cy = (p1.y + p2.y) / 2;
+                                        const cx = (p1.x + p2.x) / 2;
+                                        const cy = (p1.y + p2.y) / 2;
 
-                                            return (
-                                                <g key={`${cable.id}-${dio.id}`}>
-                                                    <path
-                                                        d={`M ${p1.x} ${p1.y} C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`}
-                                                        stroke="#0ea5e9"
-                                                        strokeWidth={3}
-                                                        fill="none"
-                                                        opacity={0.5}
-                                                    />
-                                                    <circle cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
-                                                    <circle cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
-                                                </g>
-                                            );
-                                        });
-                                    })}
-                                </svg>
-                            )}
+                                        return (
+                                            <g key={`${cable.id}-${dio.id}`}>
+                                                <path
+                                                    d={`M ${p1.x} ${p1.y} C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`}
+                                                    stroke="#0ea5e9"
+                                                    strokeWidth={3}
+                                                    fill="none"
+                                                    opacity={0.5}
+                                                />
+                                                <circle cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
+                                                <circle cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
+                                            </g>
+                                        );
+                                    });
+                                })}
+                            </svg>
 
-                            {/* Rack Background Rails */}
-                            {viewMode === 'rack' && rackBounds && (
-                                <div
-                                    className="absolute pointer-events-none z-10"
-                                    style={{
-                                        left: rackBounds.x - 20,
-                                        top: rackBounds.top,
-                                        width: EQUIPMENT_WIDTH + 40,
-                                        height: rackBounds.bottom - rackBounds.top
-                                    }}
-                                >
-                                    {/* Left Rail */}
-                                    <div className="absolute top-0 bottom-0 left-0 w-4 bg-slate-800 border-r border-slate-600 flex flex-col items-center py-2 gap-4">
-                                        {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
-                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
-                                        ))}
-                                    </div>
-                                    {/* Right Rail */}
-                                    <div className="absolute top-0 bottom-0 right-0 w-4 bg-slate-800 border-l border-slate-600 flex flex-col items-center py-2 gap-4">
-                                        {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
-                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
-                                        ))}
-                                    </div>
-                                    {/* Header Label */}
-                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-500 font-bold text-xs bg-slate-900 px-2 py-1 rounded border border-slate-700 select-none">
-                                        19" RACK
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Incoming Cables */}
-                            {viewMode !== 'rack' && uniqueIncomingCables.map(cable => {
+                            {uniqueIncomingCables.map(cable => {
                                 const layout = getLayout(cable.id);
                                 return (
                                     <div

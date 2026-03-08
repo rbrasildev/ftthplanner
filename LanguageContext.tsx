@@ -412,7 +412,7 @@ const translations = {
     'convert_to_pole': 'Convert to Pole',
     'remove_pin': 'Remove Pin',
     'manage_splicing': 'Manage Splicing',
-    'manage_pop': 'Manage Rack & Patching',
+    'manage_pop': 'Manage Patching',
     'unsaved_changes': 'Unsaved Changes',
     'unsaved_changes_msg': 'You have unsaved changes. Do you want to save them before closing?',
     'discard': 'Discard',
@@ -466,7 +466,7 @@ const translations = {
     'equipment': 'Equipment',
     'backbone_cables': 'Backbone Cables',
     'confirm_delete_cto_msg': 'Confirm deletion of {name}? All connected cables will be removed.',
-    'confirm_delete_pop_msg': 'Confirm deletion of POP {name}? This will remove all racks, equipment, and connected cables.',
+    'confirm_delete_pop_msg': 'Confirm deletion of POP {name}? This will remove all equipment and connected cables.',
     'delete_cto_btn': 'Delete CTO',
     'delete_pop_btn': 'Delete POP',
 
@@ -647,7 +647,7 @@ const translations = {
 
 
     // POP Editor
-    'pop_editor_title': 'POP Management: {name}',
+    'pop_editor_title': 'POP Editor: {name}',
     'add_dio': 'Add DIO',
     'add_active_equipment': 'Add Active',
     'olt_ports': 'PON Ports',
@@ -656,7 +656,6 @@ const translations = {
     'uplinks': 'Uplinks',
     'patching_instruct': 'Select two ports from different equipment to create a connection.',
     'dio_ports': 'Ports',
-    'rack_view': 'Rack View',
 
     // OLT/DIO Modal
     'modal_add_olt_title': 'Add Active Equipment',
@@ -678,7 +677,7 @@ const translations = {
     'olt_config_locked_msg': 'Chassis capacity managed via Catalog.',
     'create_device': 'Create Device',
     'specifications': 'Specifications',
-    'dio_preview_msg': 'Creates a Rack-mountable DIO with {ports} splice capacity organized in {trays} trays.',
+    'dio_preview_msg': 'Creates a DIO with {ports} splice capacity organized in {trays} trays.',
     'ports_label': 'Ports',
     'capacity_label': 'Capacity',
     'dio_capacity_warning': 'Reducing capacity will permanently delete connections on removed ports.',
@@ -1283,7 +1282,7 @@ const translations = {
     'feature_auto_backup': 'Backup Automático',
     'feature_projects_unlimited': 'Projetos Ilimitados',
     'feature_users_unlimited': 'Usuários Ilimitados',
-    'feature_ctos_unlimited': 'CTOs Ilimitados',
+    'feature_ctos_unlimited': 'CTOs Ilimitadas',
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
@@ -1682,8 +1681,10 @@ const translations = {
     'patching_summary': 'Manobra',
     'disconnect_btn': 'Desconectar',
     'cancel_btn': 'Cancelar',
-    'close_btn': 'Fechar',
+    'pop_editor_title': 'Editor de POP: {name}',
     'column_name': 'Coluna',
+    'tray': 'Bandeja',
+    'close_btn': 'Fechar',
     'save': 'Salvar',
     'cancel': 'Cancelar',
     'edit': 'Editar',
@@ -1700,7 +1701,7 @@ const translations = {
     'color': 'Cor',
     'id': 'ID',
     'manage_splicing': 'Gerenciar fusões',
-    'manage_pop': 'Gerenciar rack e patching',
+    'manage_pop': 'Gerenciar Patching',
     'unsaved_changes': 'Alterações não salvas',
     'unsaved_changes_msg': 'Você tem alterações não salvas. Deseja salvá-las antes de sair?',
     'discard': 'Descartar',
@@ -1736,8 +1737,6 @@ const translations = {
     'status_ANALYSING': 'Em análise',
     'status_LICENSED': 'Licenciado',
 
-    'tray': 'Bandeja',
-
     // Pole Details
     'pole_properties': 'Propriedades',
     'select_pole': 'Selecionar Poste',
@@ -1764,7 +1763,7 @@ const translations = {
     'equipment': 'Equipamentos',
     'backbone_cables': 'Cabos Backbone',
     'confirm_delete_cto_msg': 'Confirmar deleção de {name}? Todos os cabos conectados serão removidos.',
-    'confirm_delete_pop_msg': 'Confirmar deleção do POP {name}? Isso removerá racks, equipamentos e cabos.',
+    'confirm_delete_pop_msg': 'Confirmar deleção do POP {name}? Isso removerá equipamentos e cabos.',
     'delete_cto_btn': 'Deletar CTO',
     'delete_pop_btn': 'Deletar POP',
 
@@ -1944,7 +1943,6 @@ const translations = {
     'olt_ports': 'Portas PON',
     'active_ports': 'Portas',
     'dio_ports': 'Portas',
-    'rack_view': 'Visão do Rack',
 
     // OLT/DIO Modal
     'modal_add_olt_title': 'Adicionar Equipamento Ativo',
@@ -1966,7 +1964,7 @@ const translations = {
     'olt_config_locked_msg': 'Capacidade do chassi gerenciada via Catálogo.',
     'create_device': 'Criar Dispositivo',
     'specifications': 'Especificações',
-    'dio_preview_msg': 'Cria um DIO de rack com capacidade de {ports} fusões organizado em {trays} bandejas.',
+    'dio_preview_msg': 'Cria um DIO com capacidade de {ports} fusões organizado em {trays} bandejas.',
     'ports_label': 'Portas',
     'capacity_label': 'Capacidade',
     'dio_capacity_warning': 'Reduzir a capacidade apagará permanentemente as conexões nas portas removidas.',

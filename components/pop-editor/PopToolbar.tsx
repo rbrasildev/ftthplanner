@@ -4,8 +4,8 @@ import { Router, Server, AlignJustify, Scissors, Zap, Magnet, Network } from 'lu
 interface PopToolbarProps {
     onAddOLT: () => void;
     onAddDIO: () => void;
-    onViewModeChange: (mode: 'canvas' | 'rack' | 'logical') => void;
-    viewMode: 'canvas' | 'rack' | 'logical';
+    onViewModeChange: (mode: 'canvas' | 'logical') => void;
+    viewMode: 'canvas' | 'logical';
     onClearAll: () => void;
     userRole?: string | null;
     t: (key: string) => string;
@@ -52,16 +52,6 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                         title="Visão Livre 2D"
                     >
                         <Zap className="w-3.5 h-3.5" /> 2D Canvas
-                    </button>
-                    <button
-                        onClick={() => onViewModeChange('rack')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'rack'
-                            ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20 border border-indigo-500'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border border-transparent'
-                            }`}
-                        title="Visão Rack 19\u0022"
-                    >
-                        <AlignJustify className="w-3.5 h-3.5" /> Rack
                     </button>
                     <button
                         onClick={() => onViewModeChange('logical')}

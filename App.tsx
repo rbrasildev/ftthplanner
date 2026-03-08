@@ -1275,14 +1275,15 @@ export default function App() {
 
         // 3. Update React State
         setCurrentProject(prev => prev ? { ...prev, network: newNetwork, updatedAt: Date.now() } : null);
-        setEditingPOP(null);
+        setEditingPOP(updatedPOP);
         setHighlightedCableId(null);
 
-        // 4. BLOCKING SYNC
+        // 4. BLOCKING SYNC (Fast Partial Update)
+        skipNextAutoSyncRef.current = true;
         setIsSaving(true);
         try {
-            await projectService.syncProject(currentProject.id, newNetwork, currentProject.mapState, systemSettings);
-            console.log("[Manual Sync] POP save success");
+            await projectService.updatePOP(currentProject.id, updatedPOP.id, updatedPOP);
+            console.log("[Manual Sync] POP save success (Fast Update)");
             showToast(t('toast_pop_saved'));
         } catch (e) {
             console.error("[Manual Sync] POP save failed", e);

@@ -51,3 +51,7 @@ export const updateCTO = async (projectId: string, ctoId: string, cto: CTOData) 
     const res = await api.put(`/projects/${projectId}/ctos/${ctoId}`, cto);
     return res.data;
 };
+export const updatePOP = async (projectId: string, popId: string, pop: POPData) => {
+    const res = await api.put(`/projects/${projectId}/pops/${popId}`, pop);
+    return res.data;
+};

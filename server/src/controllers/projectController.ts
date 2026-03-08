@@ -966,3 +966,63 @@ export const updateCTO = async (req: Request, res: Response) => {
     }
 };
 
+export const updatePOP = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id, popId } = req.params;
+    const pop = req.body;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        console.log(`[updatePOP] Project ${id} | POP ${popId} | User ${user.username}`);
+
+        // Verify project ownership
+        const project = await prisma.project.findFirst({
+            where: { id, companyId: user.companyId }
+        });
+
+        if (!project) return res.status(404).json({ error: 'Project not found' });
+
+        // Verify POP exists in this project
+        const existingPop = await prisma.pop.findFirst({
+            where: { id: popId, projectId: id, companyId: user.companyId }
+        });
+
+        if (!existingPop) {
+            return res.status(404).json({ error: 'POP not found in this project' });
+        }
+
+        // Update single POP
+        const updated = await prisma.pop.update({
+            where: { id: popId },
+            data: {
+                name: pop.name,
+                status: pop.status,
+                lat: pop.coordinates?.lat ?? pop.lat,
+                lng: pop.coordinates?.lng ?? pop.lng,
+                olts: pop.olts || [],
+                dios: pop.dios || [],
+                fusions: pop.fusions || [],
+                connections: pop.connections || [],
+                inputCableIds: pop.inputCableIds || [],
+                layout: pop.layout || {},
+                color: pop.color,
+                size: pop.size,
+                poleId: pop.poleId
+            }
+        });
+
+        // Touch project updatedAt
+        await prisma.project.update({
+            where: { id },
+            data: { updatedAt: new Date() }
+        });
+
+        res.json({ success: true, timestamp: Date.now(), pop: updated });
+
+    } catch (error: any) {
+        console.error("Update POP Error:", error);
+        res.status(500).json({ error: 'Failed to update POP', details: error.message || 'Unknown error' });
+    }
+};
+
