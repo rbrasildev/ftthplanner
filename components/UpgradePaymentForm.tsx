@@ -6,6 +6,7 @@ import { useLanguage } from '../LanguageContext';
 declare global {
     interface Window {
         MercadoPago: any;
+        MP_DEVICE_SESSION_ID?: string; // Added for Mercado Pago security script
     }
 }
 
@@ -24,6 +25,7 @@ interface UpgradePaymentFormProps {
 export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, onSuccess, onCancel, email }) => {
     const { t } = useLanguage();
     const [mp, setMp] = useState<any>(null);
+    const [deviceId, setDeviceId] = useState<string | null>(null); // New state for deviceId
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
     const [paymentTab, setPaymentTab] = useState<'card' | 'pix'>('card');
@@ -54,6 +56,27 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 try {
                     const mpInstance = new window.MercadoPago(publicKey);
                     setMp(mpInstance);
+
+                    // Carregar script antifraude do MP (Device Fingerprint)
+                    const securityScript = document.createElement('script');
+                    securityScript.src = 'https://http2.mlstatic.com/storage/security/custom-eval.js';
+                    securityScript.id = 'mercadopago-security-js';
+                    securityScript.setAttribute('data-session-id', Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
+                    securityScript.async = true;
+
+                    securityScript.onload = () => {
+                        // O script do MP popula essa variável global
+                        if (window.MP_DEVICE_SESSION_ID) {
+                            setDeviceId(window.MP_DEVICE_SESSION_ID);
+                        }
+                    };
+
+                    if (!document.getElementById('mercadopago-security-js')) {
+                        document.body.appendChild(securityScript);
+                    } else if (window.MP_DEVICE_SESSION_ID) {
+                        setDeviceId(window.MP_DEVICE_SESSION_ID);
+                    }
+
                 } catch (e) {
                     console.error("Failed to initialize Mercado Pago", e);
                 }
@@ -61,20 +84,15 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         };
         document.body.appendChild(script);
 
-        // Append Security Script for Device ID
-        const securityScript = document.createElement('script');
-        securityScript.src = 'https://www.mercadopago.com/v2/security.js';
-        securityScript.setAttribute('view', 'checkout');
-        securityScript.setAttribute('output', 'deviceId');
-        securityScript.async = true;
-        document.body.appendChild(securityScript);
-
+        // Cleanup function
         return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
+            const mpScript = document.getElementById('mercadopago-js');
+            if (mpScript && document.body.contains(mpScript)) {
+                document.body.removeChild(mpScript);
             }
-            if (document.body.contains(securityScript)) {
-                document.body.removeChild(securityScript);
+            const securityScriptElement = document.getElementById('mercadopago-security-js');
+            if (securityScriptElement && document.body.contains(securityScriptElement)) {
+                document.body.removeChild(securityScriptElement);
             }
         };
     }, []);
@@ -85,7 +103,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         if (pixData?.invoiceId && !status) {
             interval = setInterval(async () => {
                 try {
-                    const res = await api.get(`/payments/invoice/${pixData.invoiceId}/status`);
+                    const res = await api.get(`/ payments / invoice / ${pixData.invoiceId}/status`);
                     if (res.data.status === 'PAID') {
                         setStatus({ type: 'success', message: t('mp_pix_success') });
                         clearInterval(interval);
@@ -194,16 +212,17 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             const nameParts = formData.cardholderName.trim().split(' ');
             const firstName = nameParts[0];
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
-            const deviceElement = document.getElementById('deviceId') as HTMLInputElement | null;
-            const deviceId = (window as any).MP_DEVICE_SESSION_ID || (deviceElement ? deviceElement.value : '') || '';
+            // Use the deviceId from state, or fallback to window.MP_DEVICE_SESSION_ID if state isn't updated yet
+            const currentDeviceId = deviceId || window.MP_DEVICE_SESSION_ID || '';
 
             // Call Backend Subscribe
-            await api.post('/payments/subscribe', {
-                planId: plan.id,
+            await api.post('/saas/subscribe', {
                 token: tokenResponse.id,
-                payment_method_id: paymentMethodId,
-                transaction_amount: plan.priceRaw,
+                planId: plan.id,
                 installments: 1,
+                paymentMethodId: paymentMethodId,
+                issuerId: tokenResponse.issuer_id, // include the issuer
+                deviceId: currentDeviceId, // Anti-fraud hash
                 payer: {
                     email: formData.email,
                     first_name: firstName,
@@ -212,8 +231,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                         type: formData.identificationType,
                         number: formData.identificationNumber
                     }
-                },
-                deviceId: deviceId
+                }
             });
 
             setStatus({ type: 'success', message: t('mp_success') });
