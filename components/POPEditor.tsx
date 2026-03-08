@@ -8,6 +8,7 @@ import { PopHeader } from './pop-editor/PopHeader';
 import { PopToolbar } from './pop-editor/PopToolbar';
 import { OLTUnit } from './pop-editor/OLTUnit';
 import { DIOUnit } from './pop-editor/DIOUnit';
+import { LogicalPatchingView } from './pop-editor/LogicalPatchingView';
 import { AddEquipmentModals } from './pop-editor/modals/AddEquipmentModals';
 import { EditEquipmentModals } from './pop-editor/modals/EditEquipmentModals';
 import { ConfirmationDialog } from './pop-editor/modals/ConfirmationDialog';
@@ -44,7 +45,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Viewport State
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const [isSnapping, setIsSnapping] = useState(true);
-    const [isRackMode, setIsRackMode] = useState(false);
+    const [viewMode, setViewMode] = useState<'canvas' | 'rack' | 'logical'>('canvas');
 
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
@@ -170,7 +171,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         localPOP.dios.forEach(d => expand(d.id));
 
         // Also include cables in non-rack mode for better centering
-        if (!isRackMode) {
+        if (viewMode !== 'rack') {
             uniqueIncomingCables.forEach(c => expand(c.id, 112, 60));
         }
 
@@ -196,7 +197,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             // Default Fallback
             setViewState({ x: 50, y: 50, zoom: 1 });
         }
-    }, [localPOP.layout, localPOP.olts, localPOP.dios, isRackMode, uniqueIncomingCables]);
+    }, [localPOP.layout, localPOP.olts, localPOP.dios, viewMode, uniqueIncomingCables]);
 
     // Initial Center View Effect
     const hasCentered = useRef(false);
@@ -225,9 +226,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // --- Helpers ---
     const getLayout = (id: string) => localPOP.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
-    const organizeRackLayout = () => {
-        if (isRackMode) {
-            setIsRackMode(false);
+    const organizeRackLayout = (targetMode: 'canvas' | 'rack' | 'logical') => {
+        setViewMode(targetMode);
+
+        if (targetMode !== 'rack') {
             return;
         }
 
@@ -276,12 +278,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
             return { ...prev, layout: newLayout };
         });
-        setIsRackMode(true);
     };
 
     // Find the rack vertical bounds to draw rails
     const rackBounds = useMemo(() => {
-        if (!isRackMode) return null;
+        if (viewMode !== 'rack') return null;
         let minY = Infinity;
         let maxY = -Infinity;
         let rackX = 0;
@@ -301,7 +302,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         if (count === 0) return null;
         // Add padding for the "Cabinet" look
         return { x: rackX, top: minY - 40, bottom: maxY + 100 };
-    }, [localPOP, isRackMode]);
+    }, [localPOP, viewMode]);
 
 
     // --- Safe Closing Logic ---
@@ -403,6 +404,37 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         }));
     };
 
+    const handleAddLogicalConnection = (sourceId: string, targetId: string) => {
+        let slotColor = '#22c55e';
+        const targetDio = localPOP.dios.find((d: any) => d.portIds.includes(targetId) || d.portIds.includes(sourceId));
+        if (targetDio) {
+            const isSourceDio = targetDio.portIds.includes(sourceId);
+            const dioPort = isSourceDio ? sourceId : targetId;
+            const portIndex = targetDio.portIds.indexOf(dioPort);
+            const trayIndex = Math.floor(portIndex / 12);
+            slotColor = getFiberColor(trayIndex, 'ABNT');
+        }
+
+        const newConn: FiberConnection = {
+            id: `patch-${Date.now()}`,
+            sourceId,
+            targetId,
+            color: slotColor,
+            points: []
+        };
+        setLocalPOP(prev => ({ ...prev, connections: [...prev.connections, newConn] }));
+    };
+
+    const handleRemoveLogicalConnection = (sourceId: string, targetId: string) => {
+        setLocalPOP(prev => ({
+            ...prev,
+            connections: prev.connections.filter(c =>
+                !(c.sourceId === sourceId && c.targetId === targetId) &&
+                !(c.sourceId === targetId && c.targetId === sourceId)
+            )
+        }));
+    };
+
     // --- Event Handlers (Drag & View) ---
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -438,6 +470,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!dragState) return;
+
+        // Prevent dragging units in rack or logical mode
+        if (dragState.mode === 'element' && viewMode !== 'canvas') {
+            return;
+        }
 
         if (dragState.mode === 'view') {
             const dx = e.clientX - dragState.startX;
@@ -739,9 +776,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 <PopToolbar
                     onAddOLT={handleOpenAddOLT}
                     onAddDIO={handleOpenAddDIO}
-                    onToggleRackMode={organizeRackLayout}
-                    isRackMode={isRackMode}
-                    onClearAll={() => setShowClearConfirm(true)} // Reusing boolean for confirmation dialog
+                    onViewModeChange={organizeRackLayout}
+                    viewMode={viewMode}
+                    onClearAll={() => setShowClearConfirm(true)}
                     t={t}
                     userRole={userRole}
                 />
@@ -757,176 +794,187 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     style={{ cursor: dragState ? 'grabbing' : 'default' }}
                 >
                     {/* Grid */}
-                    <div
-                        className="absolute inset-0 pointer-events-none opacity-20"
-                        style={{
-                            backgroundImage: `radial-gradient(#475569 1px, transparent 1px)`,
-                            backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
-                            backgroundPosition: `${viewState.x}px ${viewState.y}px`
-                        }}
-                    />
+                    {viewMode !== 'logical' && (
+                        <div
+                            className="absolute inset-0 pointer-events-none opacity-20"
+                            style={{
+                                backgroundImage: `radial-gradient(#475569 1px, transparent 1px)`,
+                                backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
+                                backgroundPosition: `${viewState.x}px ${viewState.y}px`
+                            }}
+                        />
+                    )}
 
-                    <div
-                        style={{
-                            transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.zoom})`,
-                            transformOrigin: '0 0',
-                            width: '100%',
-                            height: '100%'
-                        }}
-                    >
-                        {/* Visual Connections (Cables -> DIOs) */}
-                        {!isRackMode && (
-                            <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
-                                {localPOP.dios.map(dio => {
-                                    if (!dio.inputCableIds || dio.inputCableIds.length === 0) return null;
-                                    const dioLayout = getLayout(dio.id);
-                                    const p2 = { x: dioLayout.x, y: dioLayout.y + 40 };
+                    {viewMode === 'logical' ? (
+                        <div className="absolute inset-0 z-10 bg-white dark:bg-slate-950 overflow-hidden">
+                            <LogicalPatchingView
+                                localPOP={localPOP}
+                                onAddConnection={handleAddLogicalConnection}
+                                onRemoveConnection={handleRemoveLogicalConnection}
+                            />
+                        </div>
+                    ) : (
+                        <div
+                            style={{
+                                transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.zoom})`,
+                                transformOrigin: '0 0',
+                                width: '100%',
+                                height: '100%'
+                            }}
+                        >
+                            {/* Visual Connections (Cables -> DIOs) */}
+                            {viewMode !== 'rack' && (
+                                <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
+                                    {localPOP.dios.map(dio => {
+                                        if (!dio.inputCableIds || dio.inputCableIds.length === 0) return null;
+                                        const dioLayout = getLayout(dio.id);
+                                        const p2 = { x: dioLayout.x, y: dioLayout.y + 40 };
 
-                                    return dio.inputCableIds.map(cableId => {
-                                        const cable = uniqueIncomingCables.find(c => c.id === cableId);
-                                        if (!cable) return null;
-                                        const cableLayout = getLayout(cable.id);
-                                        const p1 = { x: cableLayout.x + 112, y: cableLayout.y + 30 };
+                                        return dio.inputCableIds.map(cableId => {
+                                            const cable = uniqueIncomingCables.find(c => c.id === cableId);
+                                            if (!cable) return null;
+                                            const cableLayout = getLayout(cable.id);
+                                            const p1 = { x: cableLayout.x + 112, y: cableLayout.y + 30 };
 
-                                        const cx = (p1.x + p2.x) / 2;
-                                        const cy = (p1.y + p2.y) / 2;
+                                            const cx = (p1.x + p2.x) / 2;
+                                            const cy = (p1.y + p2.y) / 2;
 
-                                        return (
-                                            <g key={`${cable.id}-${dio.id}`}>
-                                                <path
-                                                    d={`M ${p1.x} ${p1.y} C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`}
-                                                    stroke="#0ea5e9"
-                                                    strokeWidth={3}
-                                                    fill="none"
-                                                    opacity={0.5}
-                                                />
-                                                <circle cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
-                                                <circle cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
-                                            </g>
-                                        );
-                                    });
-                                })}
-                            </svg>
-                        )}
+                                            return (
+                                                <g key={`${cable.id}-${dio.id}`}>
+                                                    <path
+                                                        d={`M ${p1.x} ${p1.y} C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`}
+                                                        stroke="#0ea5e9"
+                                                        strokeWidth={3}
+                                                        fill="none"
+                                                        opacity={0.5}
+                                                    />
+                                                    <circle cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
+                                                    <circle cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
+                                                </g>
+                                            );
+                                        });
+                                    })}
+                                </svg>
+                            )}
 
-                        {/* Rack Background Rails */}
-                        {isRackMode && rackBounds && (
-                            <div
-                                className="absolute pointer-events-none z-10"
-                                style={{
-                                    left: rackBounds.x - 20,
-                                    top: rackBounds.top,
-                                    width: EQUIPMENT_WIDTH + 40,
-                                    height: rackBounds.bottom - rackBounds.top
-                                }}
-                            >
-                                {/* Left Rail */}
-                                <div className="absolute top-0 bottom-0 left-0 w-4 bg-slate-800 border-r border-slate-600 flex flex-col items-center py-2 gap-4">
-                                    {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
-                                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
-                                    ))}
-                                </div>
-                                {/* Right Rail */}
-                                <div className="absolute top-0 bottom-0 right-0 w-4 bg-slate-800 border-l border-slate-600 flex flex-col items-center py-2 gap-4">
-                                    {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
-                                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
-                                    ))}
-                                </div>
-                                {/* Header Label */}
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-500 font-bold text-xs bg-slate-900 px-2 py-1 rounded border border-slate-700 select-none">
-                                    19" RACK
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Incoming Cables */}
-                        {!isRackMode && uniqueIncomingCables.map(cable => {
-                            const layout = getLayout(cable.id);
-                            return (
+                            {/* Rack Background Rails */}
+                            {viewMode === 'rack' && rackBounds && (
                                 <div
-                                    key={cable.id}
-                                    style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
-                                    className="absolute w-28 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-20 flex flex-col opacity-50 hover:opacity-100 transition-opacity clickable-element select-none"
-                                    onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
-                                    onMouseLeave={() => onHoverCable && onHoverCable(null)}
-                                    onDoubleClick={(e) => {
-                                        e.stopPropagation();
-                                        onEditCable && onEditCable(cable);
+                                    className="absolute pointer-events-none z-10"
+                                    style={{
+                                        left: rackBounds.x - 20,
+                                        top: rackBounds.top,
+                                        width: EQUIPMENT_WIDTH + 40,
+                                        height: rackBounds.bottom - rackBounds.top
                                     }}
                                 >
-                                    <div
-                                        className="h-6 bg-slate-800 border-b border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
-                                        onMouseDown={(e) => handleElementDragStart(e, cable.id)}
-                                    >
-                                        <span className="text-[10px] font-bold text-slate-200 truncate flex-1">{cable.name}</span>
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onEditCable && onEditCable(cable);
-                                                }}
-                                                className="text-slate-400 hover:text-white p-0.5"
-                                                title={t('edit_cable') || "Editar Cabo"}
-                                            >
-                                                <Pencil className="w-3 h-3" />
-                                            </button>
-                                            <GripHorizontal className="w-3 h-3 text-slate-600" />
-                                        </div>
+                                    {/* Left Rail */}
+                                    <div className="absolute top-0 bottom-0 left-0 w-4 bg-slate-800 border-r border-slate-600 flex flex-col items-center py-2 gap-4">
+                                        {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
+                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
+                                        ))}
                                     </div>
-                                    <div className="p-2 text-[10px] text-slate-500 text-center">
-                                        Backbone Cable<br />(Splice inside DIO)
+                                    {/* Right Rail */}
+                                    <div className="absolute top-0 bottom-0 right-0 w-4 bg-slate-800 border-l border-slate-600 flex flex-col items-center py-2 gap-4">
+                                        {Array.from({ length: Math.floor((rackBounds.bottom - rackBounds.top) / 20) }).map((_, i) => (
+                                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-black/50"></div>
+                                        ))}
+                                    </div>
+                                    {/* Header Label */}
+                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-slate-500 font-bold text-xs bg-slate-900 px-2 py-1 rounded border border-slate-700 select-none">
+                                        19" RACK
                                     </div>
                                 </div>
-                            );
-                        })}
+                            )}
 
-                        {/* OLT Units */}
-                        {localPOP.olts.map(olt => {
-                            const layout = getLayout(olt.id);
-                            return (
-                                <OLTUnit
-                                    key={olt.id}
-                                    olt={olt}
-                                    position={{ x: layout.x, y: layout.y }}
-                                    width={EQUIPMENT_WIDTH}
-                                    connections={localPOP.connections}
-                                    configuringOltPortId={configuringOltPortId}
-                                    hoveredPortId={hoveredPortId}
-                                    onDragStart={handleElementDragStart}
-                                    onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT(JSON.parse(JSON.stringify(olt))); }}
-                                    onDelete={(e, olt) => { e.stopPropagation(); setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name }); }}
-                                    onPortClick={(e, portId) => handleOltPortClick(e, portId)}
-                                    onPortHover={setHoveredPortId}
-                                    getFiberColor={getFiberColor}
-                                />
-                            );
-                        })}
+                            {/* Incoming Cables */}
+                            {viewMode !== 'rack' && uniqueIncomingCables.map(cable => {
+                                const layout = getLayout(cable.id);
+                                return (
+                                    <div
+                                        key={cable.id}
+                                        style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
+                                        className="absolute w-28 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-20 flex flex-col opacity-50 hover:opacity-100 transition-opacity clickable-element select-none"
+                                        onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
+                                        onMouseLeave={() => onHoverCable && onHoverCable(null)}
+                                        onDoubleClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditCable && onEditCable(cable);
+                                        }}
+                                    >
+                                        <div
+                                            className="h-6 bg-slate-800 border-b border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
+                                            onMouseDown={(e) => handleElementDragStart(e, cable.id)}
+                                        >
+                                            <span className="text-[10px] font-bold text-slate-200 truncate flex-1">{cable.name}</span>
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onEditCable && onEditCable(cable);
+                                                    }}
+                                                    className="text-slate-400 hover:text-white p-0.5"
+                                                    title={t('edit_cable') || "Editar Cabo"}
+                                                >
+                                                    <Pencil className="w-3 h-3" />
+                                                </button>
+                                                <GripHorizontal className="w-3 h-3 text-slate-600" />
+                                            </div>
+                                        </div>
+                                        <div className="p-2 text-[10px] text-slate-500 text-center">
+                                            Backbone Cable<br />(Splice inside DIO)
+                                        </div>
+                                    </div>
+                                );
+                            })}
 
-                        {/* DIO Units */}
-                        {localPOP.dios.map(dio => {
-                            const layout = getLayout(dio.id);
-                            const linkedCables = uniqueIncomingCables.filter(c => dio.inputCableIds?.includes(c.id));
-                            return (
-                                <DIOUnit
-                                    key={dio.id}
-                                    dio={dio}
-                                    position={{ x: layout.x, y: layout.y }}
-                                    width={EQUIPMENT_WIDTH}
-                                    linkedCables={linkedCables}
-                                    connections={localPOP.connections}
-                                    configuringOltPortId={configuringOltPortId}
-                                    onDragStart={handleElementDragStart}
-                                    onLinkCables={(e, id) => { e.stopPropagation(); setConfiguringDioCablesId(id); }}
-                                    onSplice={(e, id) => { e.stopPropagation(); setSpliceDioId(id); }}
-                                    onEdit={(e, dio) => { e.stopPropagation(); setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports }); }}
-                                    onDelete={(e, dio) => { e.stopPropagation(); setItemToDelete({ type: 'DIO', id: dio.id, name: dio.name }); }}
-                                    onHoverPort={setHoveredPortId}
-                                />
-                            );
-                        })}
+                            {/* OLT Units */}
+                            {localPOP.olts.map(olt => {
+                                const layout = getLayout(olt.id);
+                                return (
+                                    <OLTUnit
+                                        key={olt.id}
+                                        olt={olt}
+                                        position={{ x: layout.x, y: layout.y }}
+                                        width={EQUIPMENT_WIDTH}
+                                        connections={localPOP.connections}
+                                        configuringOltPortId={configuringOltPortId}
+                                        hoveredPortId={hoveredPortId}
+                                        onDragStart={handleElementDragStart}
+                                        onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT(JSON.parse(JSON.stringify(olt))); }}
+                                        onDelete={(e, olt) => { e.stopPropagation(); setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name }); }}
+                                        onPortClick={(e, portId) => handleOltPortClick(e, portId)}
+                                        onPortHover={setHoveredPortId}
+                                        getFiberColor={getFiberColor}
+                                    />
+                                );
+                            })}
 
+                            {/* DIO Units */}
+                            {localPOP.dios.map(dio => {
+                                const layout = getLayout(dio.id);
+                                const linkedCables = uniqueIncomingCables.filter(c => dio.inputCableIds?.includes(c.id));
+                                return (
+                                    <DIOUnit
+                                        key={dio.id}
+                                        dio={dio}
+                                        position={{ x: layout.x, y: layout.y }}
+                                        width={EQUIPMENT_WIDTH}
+                                        linkedCables={linkedCables}
+                                        connections={localPOP.connections}
+                                        configuringOltPortId={configuringOltPortId}
+                                        onDragStart={handleElementDragStart}
+                                        onLinkCables={(e, id) => { e.stopPropagation(); setConfiguringDioCablesId(id); }}
+                                        onSplice={(e, id) => { e.stopPropagation(); setSpliceDioId(id); }}
+                                        onEdit={(e, dio) => { e.stopPropagation(); setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports }); }}
+                                        onDelete={(e, dio) => { e.stopPropagation(); setItemToDelete({ type: 'DIO', id: dio.id, name: dio.name }); }}
+                                        onHoverPort={setHoveredPortId}
+                                    />
+                                );
+                            })}
 
-                    </div>
+                        </div>
+                    )}
 
                     {/* Footer (Floating) */}
                     {/* Floating Navigation Controls */}

@@ -262,21 +262,32 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
             data: { paymentMethod: 'PIX' }
         });
 
-        // Set expiration for Pix (e.g., 30 minutes from now)
+        // Get safe expiration date for DB (24h from now)
         const dateOfExpiration = new Date();
-        dateOfExpiration.setMinutes(dateOfExpiration.getMinutes() + 30);
+        dateOfExpiration.setHours(dateOfExpiration.getHours() + 24);
+
+        // Sanitize payer data
+        const rawName = payer.first_name || 'Cliente';
+        const nameParts = rawName.trim().split(' ');
+        const firstName = nameParts[0].substring(0, 256);
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ').substring(0, 256) : undefined;
+
+        const cleanIdentification = payer.identification ? {
+            type: payer.identification.type ? String(payer.identification.type).toUpperCase() : 'CPF',
+            number: payer.identification.number ? String(payer.identification.number).replace(/\\D/g, '') : ''
+        } : undefined;
 
         const paymentBody = {
             body: {
-                transaction_amount: plan.price,
+                transaction_amount: Number(plan.price),
                 description: `FTTH Planner - Assinatura: ${plan.name}`,
                 payment_method_id: 'pix',
                 payer: {
                     email: payer.email,
-                    first_name: payer.first_name || 'Cliente',
-                    identification: payer.identification || undefined
+                    first_name: firstName,
+                    last_name: lastName,
+                    identification: cleanIdentification
                 },
-                date_of_expiration: dateOfExpiration.toISOString(),
                 external_reference: companyId,
                 metadata: {
                     company_id: companyId,
