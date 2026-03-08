@@ -262,9 +262,26 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
             data: { paymentMethod: 'PIX' }
         });
 
-        // Get safe expiration date for DB (24h from now)
+        // MercadoPago requires an explicit GMT offset like -03:00 or Z
         const dateOfExpiration = new Date();
         dateOfExpiration.setHours(dateOfExpiration.getHours() + 24);
+
+        // Formata data ISO com offset para satisfazer MP (ex: 2024-05-15T10:00:00.000-03:00)
+        // Isso evita bugs de TZ ('Z' as vezes é rejeitado dependendo da conta)
+        const tzo = -dateOfExpiration.getTimezoneOffset();
+        const dif = tzo >= 0 ? '+' : '-';
+        const pad = (num: number) => {
+            const norm = Math.floor(Math.abs(num));
+            return (norm < 10 ? '0' : '') + norm;
+        };
+        const isoExpiration = dateOfExpiration.getFullYear() +
+            '-' + pad(dateOfExpiration.getMonth() + 1) +
+            '-' + pad(dateOfExpiration.getDate()) +
+            'T' + pad(dateOfExpiration.getHours()) +
+            ':' + pad(dateOfExpiration.getMinutes()) +
+            ':' + pad(dateOfExpiration.getSeconds()) +
+            '.' + (dateOfExpiration.getMilliseconds() / 1000).toFixed(3).slice(2, 5) +
+            dif + pad(tzo / 60) + ':' + pad(tzo % 60);
 
         // Sanitize payer data
         const rawName = payer.first_name || 'Cliente';
@@ -272,10 +289,10 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
         const firstName = nameParts[0].substring(0, 256);
         const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ').substring(0, 256) : undefined;
 
-        const cleanIdentification = payer.identification ? {
+        const cleanIdentification = payer.identification && payer.identification.number ? {
             type: payer.identification.type ? String(payer.identification.type).toUpperCase() : 'CPF',
-            number: payer.identification.number ? String(payer.identification.number).replace(/\\D/g, '') : ''
-        } : undefined;
+            number: String(payer.identification.number).replace(/\D/g, '')
+        } : { type: 'CPF', number: '00000000000' };
 
         const paymentBody = {
             body: {
@@ -288,6 +305,7 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
                     last_name: lastName,
                     identification: cleanIdentification
                 },
+                date_of_expiration: isoExpiration,
                 external_reference: companyId,
                 metadata: {
                     company_id: companyId,
@@ -331,10 +349,11 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Create Pix Error:', error);
+        console.error('Create Pix Error Deep Trace:', JSON.stringify(error.response?.data || error.message, null, 2));
         return res.status(500).json({
             error: 'Error generating Pix payment',
-            details: error.message || error.response?.data
+            details: error.response?.data || { message: error.message },
+            message: error.message
         });
     }
 };
