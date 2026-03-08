@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { POPData, FiberConnection, CableData, DIO, getFiberColor } from '../../types';
-import { Layers, Cable as CableIcon, Split, Unplug, ArrowRight, ArrowRightLeft, Check, ChevronRight, ChevronDown, GripVertical } from 'lucide-react';
+import { Layers, Cable as CableIcon, Split, Unplug, ArrowRight, ArrowRightLeft, Check, ChevronRight, ChevronDown, GripVertical, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 
 interface LogicalSplicingViewProps {
@@ -11,6 +11,11 @@ interface LogicalSplicingViewProps {
     onAddConnection: (sourceId: string, targetId: string) => void;
     onRemoveConnection: (sourceId: string, targetId: string) => void;
     onUpdateSplicingLayout?: (newLayout: { col1: string[]; col2: string[]; col3: string[] }) => void;
+    isOtdrToolActive?: boolean;
+    onSelectOtdrTarget?: (id: string) => void;
+    isVflToolActive?: boolean;
+    litPorts?: Set<string>;
+    onToggleVfl?: (id: string) => void;
 }
 
 export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
@@ -20,7 +25,12 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
     currentConnections,
     onAddConnection,
     onRemoveConnection,
-    onUpdateSplicingLayout
+    onUpdateSplicingLayout,
+    isOtdrToolActive,
+    onSelectOtdrTarget,
+    isVflToolActive,
+    litPorts,
+    onToggleVfl
 }) => {
     const { t } = useLanguage();
     const [selectedFiberId, setSelectedFiberId] = useState<string | null>(null);
@@ -154,6 +164,16 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
     }, [currentConnections]);
 
     const handleItemClick = (id: string, type: 'fiber' | 'port') => {
+        if (isOtdrToolActive && onSelectOtdrTarget) {
+            onSelectOtdrTarget(id);
+            return;
+        }
+
+        if (isVflToolActive && onToggleVfl) {
+            onToggleVfl(id);
+            return;
+        }
+
         const isConnectedTo = connectionMap[id];
 
         // If we are already viewing something, clear it first
@@ -300,6 +320,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                             const isConnected = !!connectionMap[fiberId];
                                             const isSelected = selectedFiberId === fiberId;
                                             const isViewed = viewingConnectionStr?.sourceId === fiberId || viewingConnectionStr?.targetId === fiberId;
+                                            const isLit = litPorts?.has(fiberId); // Assuming litPorts is available in scope
                                             const targetPort = connectionMap[fiberId];
                                             const targetPortNum = targetPort ? parseInt(targetPort.split('-p-')[1] || targetPort.split('-p')[1] || '0') + 1 : '';
 
@@ -311,15 +332,18 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                         h-6 w-6 mx-auto rounded-full border flex items-center justify-center text-[9px] font-bold transition-all relative
                                                         ${isSelected ? 'ring-2 ring-orange-500 scale-105 z-10' : ''}
                                                         ${isViewed ? 'ring-2 ring-emerald-500 scale-105 z-10' : ''}
+                                                        ${isLit ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-slate-50 animate-pulse border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.4)] dark:ring-offset-slate-900' : ''}
                                                     `}
                                                     style={{
                                                         backgroundColor: color,
-                                                        borderColor: isSelected ? '#f97316' : (isViewed ? '#10b981' : 'rgba(0,0,0,0.1)'),
+                                                        borderColor: isSelected ? '#f97316' : (isViewed ? '#10b981' : (isLit ? '#ef4444' : 'rgba(0,0,0,0.1)')),
                                                         color: [1, 2, 3, 8, 10, 11, 12].includes((fOffset % 12) + 1) ? '#0f172a' : '#ffffff'
                                                     }}
                                                     title={isConnected ? `DIO: ${targetPortNum}` : t('port_free')}
                                                 >
-                                                    {fiberIndex + 1}
+                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-800 shadow-sm z-20" />}
+                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10" />}
+                                                    <span className="relative z-[5]">{(fiberIndex % 12) + 1}</span>
                                                     {isConnected && !isSelected && (
                                                         <div className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-white"></div>
                                                     )}
@@ -371,6 +395,20 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {t('splicing_instruct')}
                 </p>
+
+                {isOtdrToolActive && (
+                    <div className="mt-3 px-3 py-2 bg-indigo-600 dark:bg-indigo-900/90 text-white rounded-lg text-sm font-bold flex items-center gap-2 animate-pulse shadow-lg border border-indigo-400">
+                        <Ruler className="w-4 h-4" />
+                        {t('otdr_instruction_banner')}
+                    </div>
+                )}
+
+                {isVflToolActive && (
+                    <div className="mt-3 px-3 py-2 bg-red-600 dark:bg-red-900/90 text-white rounded-lg text-sm font-bold flex items-center gap-2 animate-pulse shadow-lg border border-red-400">
+                        <Flashlight className="w-4 h-4" />
+                        {t('vfl_instruction_banner')}
+                    </div>
+                )}
                 {selectedFiberId && !viewingConnectionStr && (() => {
                     const isFiber = selectedFiberId.includes('fiber');
                     const label = isFiber ? t('conn_fiber') : t('conn_port');
@@ -492,6 +530,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                 const isPatched = !!patchingConn;
                                                 const isSelected = selectedFiberId === pId;
                                                 const isViewed = viewingConnectionStr?.sourceId === pId || viewingConnectionStr?.targetId === pId;
+                                                const isLit = litPorts?.has(pId);
 
                                                 const fiberId = splicingConn ? (splicingConn.sourceId === pId ? splicingConn.targetId : splicingConn.sourceId) : null;
                                                 const connectedFiberNum = fiberId ? parseInt(fiberId.split('-').pop() || '0') + 1 : '';
@@ -502,14 +541,17 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                         onClick={() => handleItemClick(pId, 'port')}
                                                         className={`
                                                         h-8 rounded border flex flex-col items-center justify-center cursor-pointer transition-all relative group
-                                                        ${isSelected ? 'bg-orange-500 text-white border-orange-600 shadow-md ring-2 ring-orange-400' :
-                                                                isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400' :
-                                                                    isSpliced ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400' :
-                                                                        'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400'}
+                                                        ${isSelected ? 'bg-orange-500 text-white border-orange-600 shadow-md ring-2 ring-orange-400 z-10' :
+                                                                isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 z-10' :
+                                                                    isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)] z-10' :
+                                                                        isSpliced ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400' :
+                                                                            'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400'}
                                                     `}
                                                         title={isSpliced ? `F: ${connectedFiberNum}` : t('port_free')}
                                                     >
-                                                        <span className="text-[10px] font-bold">{pIndex + 1}</span>
+                                                        {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-800 shadow-sm z-20" />}
+                                                        {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10" />}
+                                                        <span className="text-[10px] font-bold relative z-[5]">{pIndex + 1}</span>
                                                         <div className="flex gap-1 mt-0.5">
                                                             {isSpliced && !isSelected && !isViewed && <div className="w-1 h-1 rounded-full bg-orange-500"></div>}
                                                             {isPatched && !isSelected && <div className="w-1 h-1 rounded-full bg-emerald-500"></div>}

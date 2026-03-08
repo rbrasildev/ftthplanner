@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { POPData, CableData, FiberConnection, DIO } from '../types';
-import { X, Save, AlertCircle, Link2, Check, Split } from 'lucide-react';
+import { X, Save, AlertCircle, Link2, Check, Split, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { CustomInput } from './common/CustomInput';
 import { LogicalSplicingView } from './pop-editor/LogicalSplicingView';
 
 interface DIOEditorProps {
@@ -12,12 +13,12 @@ interface DIOEditorProps {
     onSave: (updatedConnections: FiberConnection[]) => void;
     onUpdateDio?: (updatedDio: DIO) => void;
 
-    // VFL Props (Kept for TS backward compatibility, but UI retired in Matrix mode)
+    // VFL Props
     litPorts?: Set<string>;
     vflSource?: string | null;
     onToggleVfl?: (portId: string) => void;
 
-    // OTDR Prop (Kept for TS backward compatibility)
+    // OTDR Prop
     onOtdrTrace?: (portId: string, distance: number) => void;
 }
 
@@ -27,11 +28,23 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
     incomingCables,
     onClose,
     onSave,
-    onUpdateDio
+    onUpdateDio,
+    litPorts,
+    vflSource,
+    onToggleVfl,
+    onOtdrTrace
 }) => {
     const { t } = useLanguage();
     const [currentConnections, setCurrentConnections] = useState<FiberConnection[]>(pop.connections);
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+
+    // OTDR States
+    const [isOtdrToolActive, setIsOtdrToolActive] = useState(false);
+    const [otdrTargetPort, setOtdrTargetPort] = useState<string | null>(null);
+    const [otdrDistance, setOtdrDistance] = useState<string>('');
+
+    // VFL State
+    const [isVflToolActive, setIsVflToolActive] = useState(false);
 
     const relevantCables = useMemo(() => {
         return incomingCables.filter(c => dio.inputCableIds?.includes(c.id));
@@ -78,6 +91,16 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
         }
     };
 
+    const handleOtdrSubmit = () => {
+        if (!otdrTargetPort || !otdrDistance || !onOtdrTrace) return;
+        const dist = parseFloat(otdrDistance);
+        if (isNaN(dist)) return;
+
+        onOtdrTrace(otdrTargetPort, dist);
+        setOtdrTargetPort(null);
+        setIsOtdrToolActive(false);
+    };
+
     return (
         <div
             className="fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md select-none"
@@ -112,6 +135,42 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                 <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-400">{relevantCables.length}</span>
                             </button>
                         )}
+
+                        {onOtdrTrace && (
+                            <button
+                                onClick={() => {
+                                    setIsOtdrToolActive(!isOtdrToolActive);
+                                    setIsVflToolActive(false);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
+                                    ${isOtdrToolActive
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20'
+                                        : 'bg-slate-800/50 border-white/10 text-slate-300 hover:bg-slate-800 hover:text-white'}
+                                `}
+                                title={t('tooltip_otdr')}
+                            >
+                                <Ruler className="w-3.5 h-3.5" />
+                                {t('otdr_trace_tool')}
+                            </button>
+                        )}
+
+                        {onToggleVfl && (
+                            <button
+                                onClick={() => {
+                                    setIsVflToolActive(!isVflToolActive);
+                                    setIsOtdrToolActive(false);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
+                                    ${isVflToolActive
+                                        ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/20'
+                                        : 'bg-slate-800/50 border-white/10 text-slate-300 hover:bg-slate-800 hover:text-white'}
+                                `}
+                                title={t('tooltip_vfl')}
+                            >
+                                <Flashlight className="w-3.5 h-3.5" />
+                                {t('vfl_trace')}
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -140,6 +199,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         onAddConnection={handleAddLogicalConnection}
                         onRemoveConnection={handleRemoveLogicalConnection}
                         onUpdateSplicingLayout={handleUpdateSplicingLayout}
+                        isOtdrToolActive={isOtdrToolActive}
+                        onSelectOtdrTarget={setOtdrTargetPort}
+                        isVflToolActive={isVflToolActive}
+                        litPorts={litPorts}
+                        onToggleVfl={onToggleVfl}
                     />
                 </div>
 
@@ -187,6 +251,39 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                         </button>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* OTDR INPUT MODAL */}
+                {otdrTargetPort && (
+                    <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }}>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                    <Ruler className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">{t('otdr_title')}</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('otdr_trace_msg')}</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <CustomInput
+                                    label={t('otdr_distance_lbl')}
+                                    type="number"
+                                    value={otdrDistance}
+                                    onChange={(e: any) => setOtdrDistance(e.target.value)}
+                                    placeholder="ex: 1250"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
+                                <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-indigo-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition">{t('otdr_locate')}</button>
                             </div>
                         </div>
                     </div>

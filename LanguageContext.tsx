@@ -384,6 +384,8 @@ const translations = {
     'otdr_inside_cto': 'Inside CTO {name}',
     'otdr_trace_msg': 'Trace from selected fiber',
     'otdr_instruction_banner': 'Click a fiber port to measure distance.',
+    'vfl_instruction_banner': 'Click a port to turn the laser on/off.',
+    'tooltip_vfl': 'VFL (Injected Light)',
     'otdr_event_tooltip': 'OTDR Event',
     'otdr_traversing_pole': 'Traversing pole {name}...',
 
@@ -555,6 +557,7 @@ const translations = {
     'generating_pdf': 'Generating...',
     'tool_vfl': 'VFL (Visual Fault Locator)',
     'vfl_active_msg': 'VFL Active: Click any port to inject light.',
+    'vfl_trace': 'VFL Trace',
     'vfl_active_status': 'VFL Active',
     'vfl_source_label': 'Source: {name}',
     'turn_off': 'Turn Off',
@@ -1638,6 +1641,8 @@ const translations = {
     'otdr_inside_cto': 'Dentro da CTO {name}',
     'otdr_trace_msg': 'Rastrear a partir da fibra selecionada',
     'otdr_instruction_banner': 'Clique em uma porta de fibra para medir a distância.',
+    'vfl_instruction_banner': 'Clique em uma porta para ligar/desligar o laser.',
+    'tooltip_vfl': 'VFL (Injetar Luz)',
     'otdr_event_tooltip': 'Evento OTDR',
 
     // CTO Editor Modals
@@ -1860,7 +1865,7 @@ const translations = {
     'generating_pdf': 'Gerando...',
     'tool_vfl': 'VFL (Caneta Óptica)',
     'vfl_active_msg': 'VFL Ativo: Clique em qualquer porta para injetar a luz.',
-
+    'vfl_trace': 'Traço VFL',
     'vfl_source_label': 'Fonte: {name}',
     'turn_off': 'Desligar',
     'source_cable': 'Cabo Origem',
