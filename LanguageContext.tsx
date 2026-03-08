@@ -528,6 +528,8 @@ const translations = {
     'splicing_title': '{name}',
     'dio_splicing_title': 'DIO Splicing: {name}',
     'splicing_help': 'Mouse Wheel to Zoom. Drag Background to Pan. Double-click points to remove.',
+    'splicing_matrix': 'Splicing Matrix',
+    'splicing_instruct': 'Click a Fiber then a DIO Port to create a splice.',
 
     'add_fusion': 'Fusion',
     'auto_splice': 'Auto Pass-Through',
@@ -590,6 +592,21 @@ const translations = {
 
     'tray': 'Tray',
     'trays': 'Trays',
+    'free_fiber': 'Free Fiber',
+    'spliced_to_port': 'Spliced to Port {port}',
+    'free_port': 'Free Port',
+    'spliced_to_fiber': 'Spliced to Fiber {port}',
+    'tube_number': 'Tube {num}',
+    'spliced_fiber': 'Spliced Fiber',
+    'patched_fiber': 'Patched (Front)',
+
+    // Splicing & Patching Matrix generic texts
+    'incoming_cables': 'Incoming Cables (Fibers)',
+    'incoming_cables_empty': 'No cables linked to this DIO.',
+    'waiting_b_side': 'Waiting for Side B...',
+    'conn_fiber': 'Fiber',
+    'conn_port': 'Port',
+    'disconnect_btn': 'Disconnect',
 
     // Box Catalog
     'box_catalog': 'Box Catalog',
@@ -1608,6 +1625,8 @@ const translations = {
     'otdr_event_tooltip': 'Evento OTDR',
 
     // CTO Editor Modals
+    'splicing_matrix': 'Matriz de Fusão',
+    'splicing_instruct': 'Clique numa Fibra e depois numa Porta do DIO para realizar a fusão.',
     'select_splitter': 'Selecionar Splitter',
     'select_fusion_type': 'Selecionar Tipo de Fusão',
 
@@ -1631,6 +1650,16 @@ const translations = {
     'type_OLT': 'OLT',
 
     // Common
+    // Modals & Panels general UI
+    'incoming_cables': 'Cabos de Entrada (Fibras)',
+    'incoming_cables_empty': 'Nenhum cabo vinculado a este DIO.',
+    'waiting_b_side': 'Aguardando Lado B...',
+    'conn_fiber': 'Fibra',
+    'conn_port': 'Porta',
+    'disconnect_btn': 'Desconectar',
+
+    // Modal Components
+    'cancel_btn': 'Cancelar',
     'save': 'Salvar',
     'cancel': 'Cancelar',
     'edit': 'Editar',
@@ -1679,6 +1708,8 @@ const translations = {
     'status_ANALYSING': 'Em análise',
     'status_LICENSED': 'Licenciado',
 
+    'tray': 'Bandeja',
+
     // Pole Details
     'pole_properties': 'Propriedades',
     'select_pole': 'Selecionar Poste',
@@ -1718,8 +1749,14 @@ const translations = {
     'use_catalog_model': 'Usar modelo do catálogo',
     'loading_catalog': 'Carregando catálogo...',
     'select_model': '-- Selecione um modelo --',
-    'loose_tubes': 'Tubos loose',
     'tube': 'Tubo',
+    'free_fiber': 'Fibra Livre',
+    'spliced_to_port': 'Fundida na Porta {port}',
+    'free_port': 'Posição Livre',
+    'spliced_to_fiber': 'Fundida com a Fibra {port}',
+    'tube_number': 'Tubo {num}',
+    'spliced_fiber': 'Fibra Fundida',
+    'patched_fiber': 'Patch Cord Frente',
     'technical_reserve': 'Reserva técnica',
     'geometric_length': 'Comprimento geométrico',
     'estimated_length': 'Comprimento est.',

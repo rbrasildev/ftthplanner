@@ -27,6 +27,9 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
     const [collapsedCables, setCollapsedCables] = useState<Set<string>>(new Set());
     const [collapsedTrays, setCollapsedTrays] = useState<Set<number>>(new Set());
 
+    // State for viewing an already connected item's details
+    const [viewingConnectionStr, setViewingConnectionStr] = useState<{ sourceId: string; targetId: string } | null>(null);
+
     const toggleCable = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setCollapsedCables(prev => {
@@ -62,11 +65,26 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
     }, [currentConnections]);
 
     const handleItemClick = (id: string, type: 'fiber' | 'port') => {
+        const isConnectedTo = connectionMap[id];
+
+        // 1. Always prioritize clearing viewing state on new click (unless clicking the exact same again)
+        if (viewingConnectionStr) {
+            setViewingConnectionStr(null);
+            // Don't return, let it process the click as a new selection or connection phase
+            if (viewingConnectionStr.sourceId === id || viewingConnectionStr.targetId === id) return;
+        }
+
+        // 2. If it is already connected and nothing is selected to connect TO, just view it
+        if (isConnectedTo && !selectedFiberId) {
+            setViewingConnectionStr({ sourceId: id, targetId: isConnectedTo });
+            return;
+        }
+
         if (!selectedFiberId) {
-            // Can start from either side
+            // Start connection flow
             setSelectedFiberId(id);
         } else {
-            // Prevent same-side selections (fiber-fiber or port-port)
+            // Try to connect
             const isFiber1 = selectedFiberId.includes('fiber');
             const isFiber2 = id.includes('fiber');
 
@@ -79,12 +97,11 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
             const fiber = isFiber1 ? selectedFiberId : id;
             const port = isFiber1 ? id : selectedFiberId;
 
-            // Remove existing SPLICING connections (do not remove patching connections)
+            // Remove existing connections on both ends if needed
             if (connectionMap[fiber] && connectionMap[fiber] !== port) {
                 onRemoveConnection(fiber, connectionMap[fiber]);
             }
 
-            // Check if port already has a fiber spliced
             const existingFusionOnPort = currentConnections.find(c =>
                 (c.sourceId === port && c.targetId.includes('fiber')) ||
                 (c.targetId === port && c.sourceId.includes('fiber'))
@@ -120,10 +137,29 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {t('splicing_instruct') || 'Clique numa Fibra e depois numa Porta do DIO para realizar a fusão.'}
                 </p>
-                {selectedFiberId && (
+                {selectedFiberId && !viewingConnectionStr && (
                     <div className="mt-3 px-3 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50 rounded-lg text-sm text-orange-700 dark:text-orange-300 font-medium flex items-center gap-2 animate-pulse">
-                        <ArrowRight className="w-4 h-4" /> Selecionado: {selectedFiberId.split('-').pop()}. Aguardando Lado B...
-                        <button onClick={() => setSelectedFiberId(null)} className="ml-auto text-xs bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded hover:bg-orange-300 dark:hover:bg-orange-700">Cancelar</button>
+                        <ArrowRight className="w-4 h-4" /> Selecionado: {selectedFiberId.split('-').pop()}. {t('waiting_b_side') || 'Aguardando Lado B...'}
+                        <button onClick={() => setSelectedFiberId(null)} className="ml-auto text-xs bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded hover:bg-orange-300 dark:hover:bg-orange-700">{t('cancel_btn') || 'Cancelar'}</button>
+                    </div>
+                )}
+                {viewingConnectionStr && (
+                    <div className="mt-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-lg text-sm text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        Conexão: A {t('conn_fiber') || 'Fibra'} <strong>{viewingConnectionStr.sourceId.includes('fiber') ? parseInt(viewingConnectionStr.sourceId.split('-fiber-')[1] || '0') + 1 : parseInt(viewingConnectionStr.targetId.split('-fiber-')[1] || '0') + 1}</strong> está fundida na {t('conn_port') || 'Porta'} <strong>{viewingConnectionStr.sourceId.includes('-p-') ? parseInt(viewingConnectionStr.sourceId.split('-p-')[1] || '0') + 1 : parseInt(viewingConnectionStr.targetId.split('-p-')[1] || '0') + 1}</strong>
+
+                        <div className="ml-auto flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    onRemoveConnection(viewingConnectionStr.sourceId, viewingConnectionStr.targetId);
+                                    setViewingConnectionStr(null);
+                                }}
+                                className="text-xs bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-3 py-1.5 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                            >
+                                {t('disconnect_btn') || 'Desconectar'}
+                            </button>
+                            <button onClick={() => setViewingConnectionStr(null)} className="text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">{t('cancel_btn') || 'Fechar'}</button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -132,16 +168,16 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 {/* Lado A: Incoming Cables (Fibers) */}
                 <div className="w-1/2 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto custom-scrollbar">
                     <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-                        <CableIcon className="w-4 h-4 text-slate-500" /> Cabos de Entrada (Fibras)
+                        <CableIcon className="w-4 h-4 text-slate-500" /> {t('incoming_cables') || 'Cabos de Entrada'}
                     </h4>
 
                     {relevantCables.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-40 text-slate-400">
                             <Unplug className="w-8 h-8 mb-2 opacity-50" />
-                            <p className="text-sm">Nenhum cabo vinculado a este DIO.</p>
+                            <p className="text-sm">{t('incoming_cables_empty') || 'Nenhum cabo vinculado a este DIO.'}</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col">
                             {relevantCables.map((cable, cIdx) => {
                                 const looseTubeCount = cable.looseTubeCount || 1;
                                 const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
@@ -180,7 +216,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                                 className={`px-3 py-1.5 text-xs font-bold uppercase ${isLight ? 'text-slate-900' : 'text-white'}`}
                                                                 style={{ backgroundColor: tubeColor }}
                                                             >
-                                                                Tubo {tubeIdx + 1}
+                                                                {t('tube_number', { num: (tubeIdx + 1).toString() }) || `Tubo ${tubeIdx + 1}`}
                                                             </div>
                                                             <div className="p-2 grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-1.5 bg-slate-50 dark:bg-slate-900/50">
                                                                 {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
@@ -190,34 +226,37 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
 
                                                                     const isConnected = !!connectionMap[fiberId];
                                                                     const isSelected = selectedFiberId === fiberId;
+                                                                    const isViewed = viewingConnectionStr?.sourceId === fiberId || viewingConnectionStr?.targetId === fiberId;
                                                                     const targetPort = connectionMap[fiberId];
+
+                                                                    const targetPortNum = targetPort ? parseInt(targetPort.split('-p-')[1] || targetPort.split('-p')[1] || '0') + 1 : '';
 
                                                                     return (
                                                                         <button
                                                                             key={fiberId}
                                                                             onClick={() => handleItemClick(fiberId, 'fiber')}
                                                                             className={`
-                                                                            h-8 rounded-[4px] border text-[10px] font-bold transition-all relative group
+                                                                            h-8 w-8 mx-auto rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all relative group
                                                                             ${isSelected ? 'ring-2 ring-orange-500 scale-105 z-10' : ''}
-                                                                            ${isConnected && !isSelected ? 'opacity-50 hover:opacity-100' : 'hover:scale-105 hover:shadow-md'}
+                                                                            ${isViewed ? 'ring-2 ring-emerald-500 scale-105 z-10 opacity-100 shadow-md rotate-[360deg] transition-transform duration-500' : ''}
+                                                                            ${!isSelected && !isViewed && isConnected && viewingConnectionStr ? 'opacity-30' : ''}
+                                                                            ${!isSelected && !isViewed ? 'hover:scale-105 hover:shadow-md' : ''}
                                                                         `}
                                                                             style={{
                                                                                 backgroundColor: color,
-                                                                                borderColor: isSelected ? '#f97316' : 'rgba(0,0,0,0.1)',
+                                                                                borderColor: isSelected ? '#f97316' : (isViewed ? '#10b981' : 'rgba(0,0,0,0.2)'),
                                                                                 color: [1, 2, 3, 8, 10, 11, 12].includes((fOffset % 12) + 1) ? '#0f172a' : '#ffffff'
                                                                             }}
-                                                                            title={isConnected ? `Fundida na ${targetPort}` : `Fibra Livre`}
+                                                                            title={isConnected ? t('spliced_to_port', { port: targetPortNum.toString() }) : (t('free_fiber') || 'Fibra Livre')}
                                                                         >
                                                                             {fiberIndex + 1}
                                                                             {isConnected && !isSelected && (
-                                                                                <div className="absolute inset-x-0 bottom-0 top-0 flex items-center justify-center bg-black/20 rounded-[3px]">
-                                                                                    <Check className="w-3 h-3 text-white drop-shadow-md" />
-                                                                                </div>
+                                                                                <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_3px_rgba(0,0,0,0.6)] border border-white" title={t('spliced_fiber') || 'Fibra Fundida'}></div>
                                                                             )}
 
                                                                             {isConnected && (
                                                                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                                                                                    \u2192 DIO: {targetPort.split('-p-')[1]}
+                                                                                    DIO: {targetPortNum}
                                                                                 </div>
                                                                             )}
                                                                         </button>
@@ -239,10 +278,10 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 {/* Lado B: DIO (Trays/Ports) */}
                 <div className="w-1/2 p-4 overflow-y-auto custom-scrollbar">
                     <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-orange-500" /> DIO (Bandejas de Fusão)
+                        <Layers className="w-4 h-4 text-orange-500" /> DIO ({t('tray') || 'Bandeja'}s)
                     </h4>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col">
                         {Array.from({ length: totalTrays }).map((_, trayIdx) => {
                             const trayColor = getFiberColor(trayIdx, 'ABNT');
                             const isLightTray = [1, 2, 3, 8, 10, 11, 12].includes((trayIdx % 12) + 1);
@@ -252,25 +291,27 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                             const portsInTray = endPort - startPort;
 
                             return (
-                                <div key={trayIdx} className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4">
+                                <div key={trayIdx} className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-2">
                                     <button
                                         onClick={(e) => toggleTray(trayIdx, e)}
-                                        className={`w-full px-4 py-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold uppercase flex items-center justify-between hover:brightness-95 transition-all cursor-pointer ${isLightTray ? 'text-slate-900' : 'text-white'}`}
-                                        style={{ backgroundColor: trayColor }}
+                                        className="w-full bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase flex items-center justify-between hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
                                     >
-                                        <span>Bandeja {trayIdx + 1}</span>
                                         <div className="flex items-center gap-2">
-                                            <span className="opacity-70">{portsInTray} Posições</span>
+                                            <Layers className="w-4 h-4 text-slate-400" />
+                                            <span>{t('tray') || 'Bandeja'} {trayIdx + 1}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="opacity-70 font-normal normal-case text-slate-500">{portsInTray} {t('dio_ports') || 'Posições'}</span>
                                             {collapsedTrays.has(trayIdx) ? (
-                                                <ChevronRight className="w-4 h-4 opacity-70" />
+                                                <ChevronRight className="w-4 h-4 text-slate-400" />
                                             ) : (
-                                                <ChevronDown className="w-4 h-4 opacity-70" />
+                                                <ChevronDown className="w-4 h-4 text-slate-400" />
                                             )}
                                         </div>
                                     </button>
 
                                     {!collapsedTrays.has(trayIdx) && (
-                                        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 bg-slate-50 dark:bg-slate-900/50">
+                                        <div className="p-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2 bg-slate-50 dark:bg-slate-900/50">
                                             {Array.from({ length: portsInTray }).map((__, pOffset) => {
                                                 const pIndex = startPort + pOffset;
                                                 const pId = dio.portIds[pIndex];
@@ -291,7 +332,10 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                 const isSpliced = !!splicingConn;
                                                 const isPatched = !!patchingConn;
                                                 const isSelected = selectedFiberId === pId;
+                                                const isViewed = viewingConnectionStr?.sourceId === pId || viewingConnectionStr?.targetId === pId;
+
                                                 const fiberId = splicingConn ? (splicingConn.sourceId === pId ? splicingConn.targetId : splicingConn.sourceId) : null;
+                                                const connectedFiberNum = fiberId ? parseInt(fiberId.split('-').pop() || '0') + 1 : '';
 
                                                 return (
                                                     <button
@@ -300,22 +344,24 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                         className={`
                                                         h-12 rounded-lg border flex flex-col items-center justify-center cursor-pointer transition-all relative group
                                                         ${isSelected ? 'bg-orange-500 text-white border-orange-600 shadow-md ring-2 ring-orange-400 scale-105 z-10' :
-                                                                isSpliced ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 hover:border-orange-500 text-orange-700 dark:text-orange-400' :
-                                                                    'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400 hover:shadow-sm'}
+                                                                isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20 transition-transform duration-500' :
+                                                                    isSpliced ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 hover:border-orange-500 text-orange-700 dark:text-orange-400' :
+                                                                        'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400 hover:shadow-sm'}
+                                                        ${!isSelected && !isViewed && isSpliced && viewingConnectionStr ? 'opacity-30' : ''}
                                                     `}
-                                                        title={isSpliced ? `Fundida com ${fiberId?.split('-').pop()}` : `Posição Livre`}
+                                                        title={isSpliced ? t('spliced_to_fiber', { port: connectedFiberNum.toString() }) : (t('free_port') || 'Posição Livre')}
                                                     >
                                                         <span className="text-xs font-bold">{pIndex + 1}</span>
 
                                                         {/* Indicators (Patch vs Splice) */}
                                                         <div className="flex gap-1 mt-1">
-                                                            {isSpliced && !isSelected && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Fibra Fundida Atrás"></div>}
-                                                            {isPatched && !isSelected && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Patch Cord Ligado na Frente"></div>}
+                                                            {isSpliced && !isSelected && !isViewed && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title={t('spliced_fiber') || "Fibra Fundida"}></div>}
+                                                            {isPatched && !isSelected && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title={t('patched_fiber') || "Patch Cord Ligado na Frente"}></div>}
                                                         </div>
 
                                                         {isSpliced && (
                                                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                                                                &#8592; F: {fiberId?.split('-').pop()}
+                                                                &#8592; F: {connectedFiberNum}
                                                             </div>
                                                         )}
                                                     </button>
