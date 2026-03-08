@@ -111,6 +111,24 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             return;
         }
 
+        // Identification formatting (CPF/CNPJ mask)
+        if (name === 'identificationNumber') {
+            let v = value.replace(/\D/g, '');
+            if (v.length <= 11) { // CPF
+                v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                v = v.replace(/(\d{3})(\d)/, '$1.$2');
+                v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            } else { // CNPJ
+                v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+                v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                v = v.replace(/(\d{4})(\d)/, '$1-$2');
+                v = v.substring(0, 18);
+            }
+            setFormData(prev => ({ ...prev, [name]: v }));
+            return;
+        }
+
         // Expiry date formatting (MM/AA)
         if (name === 'expiry') {
             let formattedValue = value.replace(/\D/g, '');
@@ -242,13 +260,26 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             setFormData(prev => ({ ...prev, email: '', identificationNumber: '', cardholderName: '' })); // Clear slightly to avoid confusion, or keep it.
         } catch (err: any) {
             console.error('Pix Error:', err);
-            const responseMsg = err.response?.data?.message || err.response?.data?.error || '';
-            let msg = t('mp_pix_error');
 
-            if (responseMsg.includes('Unauthorized') || responseMsg === 'Unauthorized access to resource.') {
-                msg = t('mp_err_unauthorized');
-            } else if (responseMsg) {
-                msg = responseMsg;
+            // Try to extract exact MP error to display in UI
+            let msg = t('mp_pix_error') || 'Error generating Pix payment';
+            const mpDetails = err.response?.data?.details;
+            const errorMsg = err.response?.data?.message || err.response?.data?.error;
+
+            if (mpDetails && typeof mpDetails === 'object') {
+                if (mpDetails.message) {
+                    msg = mpDetails.message;
+                } else if (Array.isArray(mpDetails.cause) && mpDetails.cause.length > 0) {
+                    msg = `MP Error: ${mpDetails.cause[0].description || mpDetails.cause[0].code}`;
+                } else {
+                    msg = JSON.stringify(mpDetails).substring(0, 100);
+                }
+            } else if (errorMsg) {
+                if (errorMsg.includes('Unauthorized') || errorMsg === 'Unauthorized access to resource.') {
+                    msg = t('mp_err_unauthorized') || 'Unauthorized';
+                } else {
+                    msg = String(errorMsg);
+                }
             }
 
             setStatus({ type: 'error', message: msg });
