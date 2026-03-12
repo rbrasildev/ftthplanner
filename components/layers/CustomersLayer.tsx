@@ -60,7 +60,6 @@ interface CustomersLayerProps {
 }
 
 export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ customers, selectedId, onCustomerClick, visible, mapZoom, onContextMenu }) => {
-    console.log(`[CustomersLayer] Rendering. Customers: ${customers.length}, Visible: ${visible}, Zoom: ${mapZoom}`);
 
     // Debug: Force visible if zoom is close enough, just to be sure
     if (!visible) return null;

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
@@ -1760,7 +1760,76 @@ export default function App() {
                 return;
             }
 
-            const nextPortId = connection.sourceId === currentPortId ? connection.targetId : connection.sourceId;
+            let nextPortId = connection.sourceId === currentPortId ? connection.targetId : connection.sourceId;
+            let currentInternalConn = connection;
+            let visitedInternalPorts = new Set<string>();
+
+            // DIAGNOSTICO:
+            showToast(`[OTDR] Chegou no nó: ${nextNode.name}. Entrou pelo port: ${nextPortId}`);
+
+            // Internal Node Traversal (Cross connects, fusions, splitters)
+            let internalSafety = 0;
+            while (!nextPortId.includes('-fiber-') && internalSafety < 20) {
+                internalSafety++;
+                visitedInternalPorts.add(nextPortId);
+                
+                let jumpedPortId: string | null = null;
+
+                // 1. CTO Fusion (fus-XXX-a <-> fus-XXX-b)
+                if (nextPortId.startsWith('fus-')) {
+                    jumpedPortId = nextPortId.endsWith('-a') ? nextPortId.replace('-a', '-b') : nextPortId.replace('-b', '-a');
+                }
+                // 2. Splitter (Uplink/Upstream traversal: out -> in)
+                else if (nextPortId.includes('-out-')) {
+                    jumpedPortId = nextPortId.split('-out-')[0] + '-in';
+                }
+                // 3. Patch cord (Port to Port inside DIO)
+                else {
+                    const patchConn = (nextNode as any).connections.find((c: any) => 
+                        c !== currentInternalConn && 
+                        (c.sourceId === nextPortId || c.targetId === nextPortId) &&
+                        !c.sourceId.includes('-fiber-') && !c.targetId.includes('-fiber-') && 
+                        (!visitedInternalPorts.has(c.sourceId) && !visitedInternalPorts.has(c.targetId))
+                    );
+                    if (patchConn) {
+                        jumpedPortId = patchConn.sourceId === nextPortId ? patchConn.targetId : patchConn.sourceId;
+                        currentInternalConn = patchConn;
+                    }
+                }
+
+                if (jumpedPortId) {
+                    visitedInternalPorts.add(jumpedPortId);
+                    // Find what's connected to this new jumped port
+                    const nextInternalConn = (nextNode as any).connections.find((c: any) => 
+                        c !== currentInternalConn && 
+                        (c.sourceId === jumpedPortId || c.targetId === jumpedPortId)
+                    );
+                    
+                    if (nextInternalConn) {
+                        nextPortId = nextInternalConn.sourceId === jumpedPortId ? nextInternalConn.targetId : nextInternalConn.sourceId;
+                        currentInternalConn = nextInternalConn;
+                        continue; 
+                    } else {
+                        // Dead end inside the node
+                        break; 
+                    }
+                } else {
+                    // Try to find if this port is directly spliced to another fiber
+                    const directFiberConn = (nextNode as any).connections.find((c: any) => 
+                        c !== currentInternalConn &&
+                        (c.sourceId === nextPortId || c.targetId === nextPortId) &&
+                        (c.sourceId.includes('-fiber-') || c.targetId.includes('-fiber-'))
+                    );
+                    if (directFiberConn) {
+                        nextPortId = directFiberConn.sourceId === nextPortId ? directFiberConn.targetId : directFiberConn.sourceId;
+                        currentInternalConn = directFiberConn;
+                        continue;
+                    }
+                    
+                    // No jumps or direct connections, stop at this port
+                    break;
+                }
+            }
 
             if (nextPortId.includes('-fiber-')) {
                 currentPortId = nextPortId;

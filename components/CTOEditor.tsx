@@ -36,7 +36,6 @@ import { OpticalPowerModal } from './modals/OpticalPowerModal';
 import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
-
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
     const A = p.x - a.x;

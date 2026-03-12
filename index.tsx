@@ -17,7 +17,7 @@ if (!rootElement) {
 // GLOBAL LOG SILENCER (FRONTEND)
 // =========================================================
 // Uncomment the line inside to re-enable logs for debugging
-if (process.env.NODE_ENV === 'production' || true) {
+if (process.env.NODE_ENV === 'production') {
   console.log = function () { };
   console.info = function () { };
   console.debug = function () { };
