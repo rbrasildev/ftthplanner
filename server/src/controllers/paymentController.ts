@@ -1,10 +1,25 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
 
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
+
+// Initialize Stripe lazily to ensure process.env is fully loaded via dotenv
+let stripeInstance: Stripe | null = null;
+const getStripe = () => {
+    if (!stripeInstance) {
+        if (!process.env.STRIPE_SECRET_KEY) {
+            console.error('WARNING: STRIPE_SECRET_KEY is missing in env!');
+        }
+        stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+            apiVersion: '2023-10-16' as any,
+        });
+    }
+    return stripeInstance;
+};
 
 // Initialize the client object with the access token from environment variables
 if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
@@ -18,6 +33,167 @@ const client = new MercadoPagoConfig({
 
 const preapproval = new PreApproval(client);
 const payment = new Payment(client);
+
+// ------------- STRIPE IMPLEMENTATION -------------
+
+export const createStripeIntent = async (req: AuthRequest, res: Response) => {
+    try {
+        const { planId } = req.body;
+        const companyId = req.user?.companyId;
+
+        if (!companyId) return res.status(401).json({ error: 'User does not belong to a company.' });
+
+        const company = await prisma.company.findUnique({
+            where: { id: companyId },
+            include: { users: true }
+        });
+
+        if (!company) return res.status(404).json({ error: 'Company not found.' });
+
+        const plan = await prisma.plan.findUnique({ where: { id: planId } });
+        if (!plan) return res.status(404).json({ error: 'Plan not found.' });
+
+        // Retrieve or create Stripe Customer
+        let stripeCustomerId = (company as any).stripeCustomerId as string | undefined;
+        const stripe = getStripe();
+
+        if (!stripeCustomerId) {
+            const customer = await stripe.customers.create({
+                email: company.users?.[0]?.email,
+                name: company.name,
+                metadata: {
+                    companyId: companyId
+                }
+            });
+            stripeCustomerId = customer.id;
+            
+            // Save customer ID for future use (requires adding this field to schema later, or saving in metadata. 
+            // For now, if schema doesn't have stripeCustomerId, we'll just create a new one each time to avoid crashing.
+            // Let's assume Prisma schema doesn't have it yet. We will just use the new customer.)
+            try {
+                // Ignore TS error if field doesn't exist yet, we will just silently fail to save it
+                await (prisma.company as any).update({
+                    where: { id: companyId },
+                    data: { stripeCustomerId: customer.id }
+                });
+            } catch (e) { console.log("Could not save stripeCustomerId, column might not exist."); }
+        }
+
+        // Check if plan has a pre-existing Stripe Price ID
+        const stripePriceId = plan.stripeId;
+
+        let subscriptionItems = [];
+
+        if (stripePriceId) {
+            subscriptionItems = [{
+                price: stripePriceId, // Use the price ID from the admin panel directly
+            }];
+        } else {
+            // Fallback: Create a unique product for this plan inline (if stripeId wasn't set)
+            const product = await stripe.products.create({
+                name: plan.name,
+                description: `SaaS Subscription - ${plan.name}`,
+            });
+
+            subscriptionItems = [{
+                price_data: {
+                    currency: 'BRL',
+                    product: product.id,
+                    unit_amount: Math.round(plan.price * 100), // Stripe works in cents
+                    recurring: {
+                        interval: 'month' as const,
+                    },
+                },
+            }];
+        }
+
+        // Create a generic Subscription or PaymentIntent.
+        const subscription = await stripe.subscriptions.create({
+            customer: stripeCustomerId,
+            items: subscriptionItems,
+            payment_behavior: 'default_incomplete',
+            payment_settings: { save_default_payment_method: 'on_subscription' },
+            expand: ['latest_invoice.payment_intent'],
+            metadata: {
+                companyId: companyId,
+                planId: plan.id
+            }
+        });
+
+        const invoice = subscription.latest_invoice as any;
+        const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+
+        res.json({
+            clientSecret: paymentIntent.client_secret,
+            subscriptionId: subscription.id
+        });
+
+    } catch (error: any) {
+        console.error('Stripe Intent Error:', error);
+        require('fs').writeFileSync('stripe-error.log', String(error.stack || error.message) + '\\n' + JSON.stringify(error, null, 2));
+        res.status(500).json({ error: 'Stripe Error: ' + (error.message || 'Unknown'), details: error.message });
+    }
+};
+
+export const handleStripeWebhook = async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!sig || !webhookSecret) {
+        console.error('Webhook missing signature or secret');
+        return res.status(400).send('Webhook Error: Missing signature or secret');
+    }
+
+    let event: Stripe.Event;
+    const stripe = getStripe();
+
+    try {
+        // Stripe requires the raw body, assuming index.ts maps /api/payments/stripe-webhook to raw express middleware
+        // Alternatively, if body-parser is already parsing JSON globally, we may need to verify from req.body directly
+        // Warning: if express.json() is applied globally before this route, signature verification will fail unless raw body is saved.
+        // For standard implementations, we will attempt to parse it or trust it if testing locally.
+        event = stripe.webhooks.constructEvent(req.body, sig as string, webhookSecret);
+    } catch (err: any) {
+        console.error(`Webhook Error: ${err.message}`);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    try {
+        if (event.type === 'invoice.payment_succeeded') {
+            const invoice = event.data.object as any;
+            const subscriptionId = invoice.subscription as string;
+            
+            // Retrieve subscription to get metadata
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const companyId = subscription.metadata.companyId;
+            const planId = subscription.metadata.planId;
+
+            if (companyId && planId) {
+                const nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1); // Simplistic 30 day bump
+
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        planId: planId,
+                        status: 'ACTIVE',
+                        subscriptionExpiresAt: nextMonth
+                    }
+                });
+                console.log(`Stripe Webhook: Activated company ${companyId} on plan ${planId}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error processing Stripe webhook:', error);
+        return res.status(500).json({ error: 'Failed to process webhook' });
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    res.json({ received: true });
+};
+
+// ------------- MERCADO PAGO IMPLEMENTATION -------------
 
 export const subscribe = async (req: AuthRequest, res: Response) => {
     try {

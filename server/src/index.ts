@@ -5,7 +5,7 @@ dotenv.config();
 // GLOBAL LOG SILENCER (BACKEND)
 // =========================================================
 // Remove or set to false to see all backend logs again
-const MUTE_LOGS = true;
+const MUTE_LOGS = false;
 
 if (MUTE_LOGS) {
     // Only muting log, info and debug. Keeping warn and error.

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { CreditCard, Lock, Calendar, User, ShieldCheck, Mail, AlertTriangle, Loader2, CheckCircle2, ChevronLeft, Wallet, Minus, Plus, Copy, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe((import.meta as any).env.VITE_STRIPE_PUBLIC_KEY || '');
 
 declare global {
     interface Window {
@@ -21,6 +25,111 @@ interface UpgradePaymentFormProps {
     onCancel: () => void;
     email?: string;
 }
+
+const CARD_ELEMENT_OPTIONS = {
+    style: {
+        base: {
+            color: "#32325d",
+            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+            fontSmoothing: "antialiased",
+            fontSize: "16px",
+            "::placeholder": {
+                color: "#aab7c4",
+            },
+        },
+        invalid: {
+            color: "#fa755a",
+            iconColor: "#fa755a",
+        },
+    },
+};
+
+const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onSuccess: () => void, status: any, setStatus: any }) => {
+    const stripe = useStripe();
+    const elements = useElements();
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+
+        if (!stripe || !elements) return;
+
+        setLoading(true);
+        setStatus(null);
+
+        try {
+            // Request the client_secret from backend
+            const { data } = await api.post('/payments/create-stripe-intent', { planId: plan.id });
+            const { clientSecret } = data;
+
+            // Confirm payment in browser securely
+            const result = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                    card: elements.getElement(CardElement) as any,
+                }
+            });
+
+            if (result.error) {
+                setStatus({ type: 'error', message: result.error.message || 'Erro no pagamento' });
+            } else {
+                if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'requires_capture') {
+                    setStatus({ type: 'success', message: 'Pagamento concluído com sucesso!' });
+                    setTimeout(onSuccess, 1500);
+                } else {
+                    // It can sometimes just be 'processing'
+                    setStatus({ type: 'success', message: 'Assinatura criada com sucesso! Processando pagamento...' });
+                    setTimeout(onSuccess, 2000);
+                }
+            }
+        } catch (err: any) {
+            console.error(err);
+            setStatus({ type: 'error', message: err.response?.data?.error || err.message || 'Erro inesperado' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            {status && (
+                <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:border-red-500/20'
+                    }`}>
+                    {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                    {status.message}
+                </div>
+            )}
+            
+            <div className="space-y-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                   <CreditCard className="w-5 h-5 text-slate-400" />
+                   <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Dados do Cartão</h3>
+                </div>
+                
+                <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl relative">
+                   <CardElement options={CARD_ELEMENT_OPTIONS} className="w-full h-8" />
+                </div>
+            </div>
+
+            <div className="pt-2">
+                <button
+                    type="submit"
+                    disabled={!stripe || loading}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-3 text-lg active:scale-[0.98]"
+                >
+                    {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <Lock className="w-5 h-5" />
+                    )}
+                    {loading ? 'Processando...' : `Assinar Seguro com Stripe`}
+                </button>
+                <p className="mt-4 text-[11px] text-slate-400 text-center leading-relaxed px-4">
+                    Seus dados de cartão são processados e armazenados com máxima segurança diretamente no cofre da Stripe (PCI DSS Nível 1).
+                </p>
+            </div>
+        </form>
+    );
+};
 
 export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, onSuccess, onCancel, email }) => {
     const { t } = useLanguage();
@@ -51,7 +160,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         script.src = 'https://sdk.mercadopago.com/js/v2';
         script.async = true;
         script.onload = () => {
-            const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+            const publicKey = (import.meta as any).env.VITE_MERCADOPAGO_PUBLIC_KEY;
             if (publicKey) {
                 try {
                     const mpInstance = new window.MercadoPago(publicKey);
@@ -357,147 +466,9 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                     </div>
 
                     {paymentTab === 'card' ? (
-                        <form onSubmit={handleSubmit} className="space-y-2">
-                            <input type="hidden" id="deviceId" />
-                            {status && (
-                                <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-500/10 dark:border-red-500/20'
-                                    }`}>
-                                    {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                                    {status.message}
-                                </div>
-                            )}
-
-                            <div className="space-y-5">
-                                <div>
-                                    <div className="flex justify-between items-end mb-1.5 ml-1">
-                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Número do Cartão</label>
-                                        <div className="flex gap-1 items-center opacity-60 grayscale scale-90 origin-right">
-                                            <img src="https://static.vecteezy.com/system/resources/previews/020/975/572/original/visa-logo-visa-icon-transparent-free-png.png" alt="Visa" className="h-3" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-3" />
-                                        </div>
-                                    </div>
-                                    <div className="relative">
-                                        <div className={iconClasses}><CreditCard className="w-4.5 h-4.5" /></div>
-                                        <input
-                                            type="text"
-                                            name="cardNumber"
-                                            value={formData.cardNumber}
-                                            onChange={handleInputChange}
-                                            className={inputClasses}
-                                            placeholder="0000 0000 0000 0000"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className={labelClasses}>Data de Validade</label>
-                                        <div className="relative">
-                                            <div className={iconClasses}><Calendar className="w-4.5 h-4.5" /></div>
-                                            <input
-                                                type="text"
-                                                name="expiry"
-                                                value={formData.expiry}
-                                                onChange={handleInputChange}
-                                                className={inputClasses}
-                                                placeholder="MM / AA"
-                                                maxLength={5}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className={labelClasses}>CVV</label>
-                                        <div className="relative">
-                                            <div className={iconClasses}><Lock className="w-4.5 h-4.5" /></div>
-                                            <input
-                                                type="text"
-                                                name="securityCode"
-                                                value={formData.securityCode}
-                                                onChange={handleInputChange}
-                                                className={inputClasses}
-                                                placeholder="Cód. de segurança"
-                                                maxLength={4}
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-2">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-5 pb-2 border-b border-slate-100 dark:border-slate-800">Dados do Titular</h3>
-
-                                <div className="space-y-5">
-                                    <div>
-                                        <label className={labelClasses}>Nome no Cartão</label>
-                                        <div className="relative">
-                                            <div className={iconClasses}><User className="w-4.5 h-4.5" /></div>
-                                            <input
-                                                type="text"
-                                                name="cardholderName"
-                                                value={formData.cardholderName}
-                                                onChange={handleInputChange}
-                                                className={inputClasses}
-                                                placeholder="NOME COMPLETO"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClasses}>E-mail para Recebo</label>
-                                        <div className="relative">
-                                            <div className={iconClasses}><Mail className="w-4.5 h-4.5" /></div>
-                                            <input
-                                                type="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleInputChange}
-                                                className={inputClasses}
-                                                placeholder="seu@e-mail.com"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className={labelClasses}>CPF do Titular</label>
-                                        <div className="relative">
-                                            <div className={iconClasses}><ShieldCheck className="w-4.5 h-4.5" /></div>
-                                            <input
-                                                type="text"
-                                                name="identificationNumber"
-                                                value={formData.identificationNumber}
-                                                onChange={handleInputChange}
-                                                className={inputClasses}
-                                                placeholder="000.000.000-00"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-6">
-                                <button
-                                    type="submit"
-                                    disabled={loading || !mp}
-                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-3 text-lg active:scale-[0.98]"
-                                >
-                                    {loading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Lock className="w-5 h-5" />
-                                    )}
-                                    {loading ? 'Processando...' : `Assinar`}
-                                </button>
-                                <p className="mt-4 text-[11px] text-slate-400 text-center leading-relaxed px-4">
-                                    Pagamento seguro via Mercado Pago. Ao assinar, você concorda com nossos termos.
-                                </p>
-                            </div>
-                        </form>
+                        <Elements stripe={stripePromise}>
+                            <StripeCardForm plan={plan} onSuccess={onSuccess} status={status} setStatus={setStatus} />
+                        </Elements>
                     ) : (
                         <div className="space-y-4">
                             {status && (

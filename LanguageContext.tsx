@@ -20,11 +20,11 @@ const translations = {
     'register_btn': 'Create Account',
     'no_account': "Don't have an account?",
     'already_have_account': 'Already have an account?',
-    'register_title': 'Create FTTx Planner Account',
+    'register_title': 'Create FTTH Planner Account',
     'back_to_login': 'Back to Login',
     'registration_success': 'Account created! You can now log in.',
     'registration_failed': 'Registration failed. Username might be taken.',
-    'login_title': 'FTTx Planner',
+    'login_title': 'FTTH Planner',
     'login_subtitle': 'Enter your credentials',
     'login_email_placeholder': 'Email',
     'login_password_placeholder': 'Password',
@@ -1942,7 +1942,6 @@ const translations = {
 
 
     // POP Editor
-    'pop_editor_title': 'Gerenciamento POP: {name}',
     'add_dio': 'Adicionar DIO',
     'add_active_equipment': 'Adicionar Ativo',
     'olt_ports': 'Portas PON',
