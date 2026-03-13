@@ -112,7 +112,12 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
             customer: stripeCustomerId,
             items: subscriptionItems,
             payment_behavior: 'default_incomplete',
-            payment_settings: { save_default_payment_method: 'on_subscription' },
+            payment_settings: { 
+                save_default_payment_method: 'on_subscription',
+                payment_method_options: {
+                    card: { request_three_d_secure: 'any' }
+                }
+            },
             expand: ['latest_invoice.payment_intent'],
             metadata: {
                 companyId: companyId,
@@ -152,7 +157,8 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
         // Alternatively, if body-parser is already parsing JSON globally, we may need to verify from req.body directly
         // Warning: if express.json() is applied globally before this route, signature verification will fail unless raw body is saved.
         // For standard implementations, we will attempt to parse it or trust it if testing locally.
-        event = stripe.webhooks.constructEvent(req.body, sig as string, webhookSecret);
+        const payload = (req as any).rawBody || req.body;
+        event = stripe.webhooks.constructEvent(payload, sig as string, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook Error: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -164,10 +170,15 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
             const invoice = event.data.object as any;
             const subscriptionId = invoice.subscription as string;
             
-            // Retrieve subscription to get metadata
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const companyId = subscription.metadata.companyId;
-            const planId = subscription.metadata.planId;
+            let companyId = invoice.metadata?.companyId;
+            let planId = invoice.metadata?.planId;
+
+            if (subscriptionId) {
+                // Retrieve subscription to get metadata
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                companyId = companyId || subscription.metadata?.companyId;
+                planId = planId || subscription.metadata?.planId;
+            }
 
             if (companyId && planId) {
                 const nextMonth = new Date();
@@ -182,11 +193,15 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                     }
                 });
                 console.log(`Stripe Webhook: Activated company ${companyId} on plan ${planId}`);
+            } else {
+                console.log(`Stripe Webhook: Unhandled invoice ${invoice.id} payment_succeeded (missing companyId/planId)`);
             }
         }
     } catch (error) {
-        console.error('Error processing Stripe webhook:', error);
-        return res.status(500).json({ error: 'Failed to process webhook' });
+        const errMsg = error instanceof Error ? error.stack || error.message : String(error);
+        console.error('Error processing Stripe webhook:', errMsg);
+        require('fs').appendFileSync(require('path').join(__dirname, '../../stripe-error.log'), `\n[WEBHOOK ERR] ${new Date().toISOString()}:\n${errMsg}\n`);
+        return res.status(500).json({ error: 'Failed to process webhook', details: errMsg });
     }
 
     // Return a 200 response to acknowledge receipt of the event

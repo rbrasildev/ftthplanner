@@ -10,6 +10,7 @@ import { AuthRequest } from '../middleware/auth';
 export const getPlans = async (req: AuthRequest, res: Response) => {
     try {
         const plans = await prisma.plan.findMany({
+            where: { active: true },
             orderBy: { price: 'asc' }
         });
         res.json(plans);
@@ -25,6 +26,7 @@ export const getPlans = async (req: AuthRequest, res: Response) => {
 export const getPublicPlans = async (req: Request, res: Response) => {
     try {
         const plans = await prisma.plan.findMany({
+            where: { active: true },
             orderBy: { price: 'asc' },
             select: {
                 id: true,

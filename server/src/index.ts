@@ -85,7 +85,14 @@ app.get('/api/health', (req, res) => {
 const uploadsPath = path.resolve(__dirname, '..', 'uploads');
 app.use('/api/uploads', express.static(uploadsPath));
 
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ 
+    limit: '100mb',
+    verify: (req: any, res, buf) => {
+        if (req.originalUrl && req.originalUrl.includes('/stripe-webhook')) {
+            req.rawBody = buf;
+        }
+    }
+}));
 
 app.use((req, res, next) => {
     // console.log(`[Request] ${req.method} ${req.url}`);
