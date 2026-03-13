@@ -9,8 +9,9 @@ import { AuthRequest } from '../middleware/auth';
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
     try {
+        const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
         const plans = await prisma.plan.findMany({
-            where: { active: true },
+            where: isSuperAdmin ? undefined : { active: true },
             orderBy: { price: 'asc' }
         });
         res.json(plans);

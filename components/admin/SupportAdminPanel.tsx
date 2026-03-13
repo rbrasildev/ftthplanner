@@ -288,7 +288,7 @@ export const SupportAdminPanel: React.FC = () => {
     const handleCloseTicket = async () => {
         if (!selectedConv) return;
         try {
-            await api.patch(`/support/chat/conversations/${selectedConv.id}/close`);
+            await api.post(`/support/chat/close/${selectedConv.id}`);
             setSelectedConv({ ...selectedConv, status: 'CLOSED' });
             loadConversations();
         } catch (error) {
