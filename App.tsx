@@ -365,8 +365,11 @@ export default function App() {
     }, [currentProject]);
 
     useEffect(() => {
-        if (currentProjectId && token && currentProjectId !== prevProjectIdRef.current) {
-            projectService.getProject(currentProjectId).then(p => {
+        // Fetch project if ID is present AND (ID changed OR currentProject is missing/mismatched)
+        const needsLoad = currentProjectId && (!currentProject || currentProject.id !== currentProjectId);
+        
+        if (needsLoad && token) {
+            projectService.getProject(currentProjectId!).then(p => {
                 setCurrentProject(p);
                 if (p.settings) setSystemSettings(p.settings);
             }).catch(err => {
@@ -380,11 +383,11 @@ export default function App() {
                     showToast(t('error_project_load') || 'Failed to load project', 'info');
                 }
             });
-        } else {
-            // Only nullify if we actually switched to a null ID (logout/exit), not on init
-            if (!currentProjectId && prevProjectIdRef.current) setCurrentProject(null);
+        } else if (!currentProjectId && prevProjectIdRef.current) {
+            // Only nullify if we actually switched to a null ID (logout/exit)
+            setCurrentProject(null);
         }
-    }, [currentProjectId, token]);
+    }, [currentProjectId, token, currentProject?.id]);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 

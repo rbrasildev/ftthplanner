@@ -37,7 +37,7 @@ root.render(
   </React.StrictMode>
 );
 // Register Service Worker for Map Caching
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/map-sw.js')
       .then(registration => console.log('Map SW registered'))
