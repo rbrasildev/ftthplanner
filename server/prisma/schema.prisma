@@ -24,6 +24,7 @@ model User {
   auditLogs         AuditLog[]
   projects          Project[]
   company           Company?   @relation(fields: [companyId], references: [id])
+  deletedAt         DateTime?  @map("deleted_at")
 
   adminSessions  AdminSupportSession[] @relation("admin_sessions")
   targetSessions AdminSupportSession[] @relation("target_sessions")
@@ -123,6 +124,7 @@ model Invoice {
   plan    Plan    @relation(fields: [planId], references: [id])
 
   @@index([companyId])
+  @@index([expiresAt])
   @@index([mercadopagoPaymentId])
   @@map("invoices")
 }
@@ -145,6 +147,7 @@ model Project {
   pops      Pop[]
   company   Company?   @relation(fields: [companyId], references: [id])
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deletedAt DateTime?  @map("deleted_at")
 
   @@index([companyId])
   @@map("projects")
@@ -173,6 +176,7 @@ model Cto {
   project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   customers         Customer[]
   drops             Drop[]
+  deletedAt         DateTime?       @map("deleted_at")
 
   @@index([companyId])
   @@index([lat, lng])
@@ -198,6 +202,7 @@ model Pop {
   poleId        String?         @map("pole_id")
   company       Company?        @relation(fields: [companyId], references: [id])
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deletedAt     DateTime?       @map("deleted_at")
 
   @@index([companyId])
   @@index([lat, lng])
@@ -223,6 +228,7 @@ model Cable {
   technicalReserve Float?   @default(0) @map("technical_reserve")
   company          Company? @relation(fields: [companyId], references: [id])
   project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deletedAt        DateTime? @map("deleted_at")
 
   @@index([companyId])
   @@map("cables")
@@ -241,6 +247,7 @@ model AuditLog {
   user      User?    @relation(fields: [userId], references: [id])
 
   @@index([companyId])
+  @@index([createdAt])
   @@index([userId])
   @@map("audit_logs")
 }
@@ -403,6 +410,7 @@ model Pole {
   catalog        CatalogPole?    @relation(fields: [catalogId], references: [id])
   company        Company?        @relation(fields: [companyId], references: [id])
   project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deletedAt      DateTime?       @map("deleted_at")
 
   @@index([companyId])
   @@index([lat, lng])
@@ -578,6 +586,7 @@ model Customer {
   project Project? @relation(fields: [projectId], references: [id])
   company Company? @relation(fields: [companyId], references: [id])
   drop    Drop?
+  deletedAt DateTime? @map("deleted_at")
 
   @@index([companyId])
   @@index([ctoId])
@@ -644,11 +653,14 @@ model UserEngagementMetrics {
   engagementScore      Float     @default(0)
   churnRiskScore       Float     @default(0) @map("churn_risk_score")
   updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  deletedAt            DateTime? @map("deleted_at")
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company? @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
+  @@index([userId, createdAt])
   @@index([userId])
   @@index([lastLoginAt])
   @@index([churnRiskScore])
@@ -712,6 +724,7 @@ model UserFinancialMetrics {
   estimatedLTV     Float    @default(0) @map("estimated_ltv")
   churnProbability Float    @default(0) @map("churn_probability")
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company? @relation(fields: [companyId], references: [id])

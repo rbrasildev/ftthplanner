@@ -52,6 +52,7 @@ export const getPublicPlans = async (req: Request, res: Response) => {
 export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
     try {
         const projects = await prisma.project.findMany({
+            where: { deletedAt: null },
             select: {
                 id: true,
                 name: true,
@@ -159,12 +160,19 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
             include: {
                 plan: true,
                 users: {
+                    where: { deletedAt: null },
                     select: { id: true, username: true, role: true, lastLoginAt: true, createdAt: true }
                 },
                 _count: {
-                    select: { projects: true, users: true, ctos: true, pops: true }
+                    select: { 
+                        projects: { where: { deletedAt: null } }, 
+                        users: { where: { deletedAt: null } }, 
+                        ctos: { where: { deletedAt: null } }, 
+                        pops: { where: { deletedAt: null } } 
+                    }
                 },
                 projects: {
+                    where: { deletedAt: null },
                     select: { id: true, name: true }
                 }
             },
@@ -256,7 +264,17 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         // Note: Project elements (Cables, CTOs, etc.) usually cascade from Project if configured,
         // but to be safe we rely on Prisma's relation capabilities or manual if needed.
         // Assuming Project -> User has Cascade, but Project -> Company might not.
-        await prisma.project.deleteMany({ where: { companyId: id } });
+        // 1. Soft-Delete Projects (and their children)
+        await prisma.project.updateMany({ 
+            where: { companyId: id, deletedAt: null },
+            data: { deletedAt: new Date() }
+        });
+        // We should also soft-delete children to be consistent, although project delete usually hides them
+        await prisma.cto.updateMany({ where: { companyId: id, deletedAt: null }, data: { deletedAt: new Date() } });
+        await prisma.pop.updateMany({ where: { companyId: id, deletedAt: null }, data: { deletedAt: new Date() } });
+        await prisma.cable.updateMany({ where: { companyId: id, deletedAt: null }, data: { deletedAt: new Date() } });
+        await prisma.pole.updateMany({ where: { companyId: id, deletedAt: null }, data: { deletedAt: new Date() } });
+        await prisma.customer.updateMany({ where: { companyId: id, deletedAt: null }, data: { deletedAt: new Date() } });
 
         // 2. Delete Catalog Items (Manual Cascade for all types)
         await prisma.catalogCable.deleteMany({ where: { companyId: id } });
@@ -271,7 +289,11 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         await prisma.auditLog.deleteMany({ where: { user: { companyId: id } } });
 
         // 4. Delete Users
-        await prisma.user.deleteMany({ where: { companyId: id } });
+        // 4. Soft-Delete Users
+        await prisma.user.updateMany({ 
+            where: { companyId: id, deletedAt: null },
+            data: { deletedAt: new Date(), active: false }
+        });
 
         // 4. Delete Company
         const company = await prisma.company.delete({
@@ -297,6 +319,7 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
 export const getGlobalUsers = async (req: AuthRequest, res: Response) => {
     try {
         const users = await prisma.user.findMany({
+            where: { deletedAt: null },
             include: {
                 company: {
                     select: { id: true, name: true }

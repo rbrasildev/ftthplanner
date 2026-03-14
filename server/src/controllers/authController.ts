@@ -130,8 +130,8 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const user = await prisma.user.findFirst({
+            where: { email, deletedAt: null },
             include: {
                 company: {
                     include: { plan: true }
@@ -213,8 +213,8 @@ export const getMe = async (req: Request, res: Response) => {
         }
 
         logger.debug(`[getMe] Fetching user ${userId}...`);
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const user = await prisma.user.findFirst({
+            where: { id: userId, deletedAt: null },
             include: {
                 company: {
                     include: { plan: true }
@@ -269,7 +269,7 @@ export const changePassword = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing defined parameters' });
         }
 
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -293,7 +293,7 @@ export const changePassword = async (req: Request, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
     const { email } = req.body;
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
         if (!user) {
             // We return 200 even if user doesn't exist for security (don't reveal registered emails)
             return res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });

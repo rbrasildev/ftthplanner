@@ -15,7 +15,7 @@ export const getProjects = async (req: Request, res: Response) => {
 
         // Fetch projects summaries
         const projects = await prisma.project.findMany({
-            where: { companyId: user.companyId },
+            where: { companyId: user.companyId, deletedAt: null },
             orderBy: { updatedAt: 'desc' },
             select: {
                 id: true,
@@ -154,12 +154,12 @@ export const getProject = async (req: Request, res: Response) => {
 
     try {
         const project = await prisma.project.findFirst({
-            where: { id, companyId: user.companyId },
+            where: { id, companyId: user.companyId, deletedAt: null },
             include: {
-                ctos: true,
-                pops: true,
-                cables: true,
-                poles: true,
+                ctos: { where: { deletedAt: null } },
+                pops: { where: { deletedAt: null } },
+                cables: { where: { deletedAt: null } },
+                poles: { where: { deletedAt: null } },
                 company: true
             }
         });
@@ -298,13 +298,29 @@ export const deleteProject = async (req: Request, res: Response) => {
 
         // Explicitly delete related resources first to ensure no orphans
         // This is a safety measure in case DB cascade is not configured
-        await prisma.cable.deleteMany({ where: { projectId: id, companyId: user.companyId } });
-        await prisma.cto.deleteMany({ where: { projectId: id, companyId: user.companyId } });
-        await prisma.pop.deleteMany({ where: { projectId: id, companyId: user.companyId } });
-        await prisma.pole.deleteMany({ where: { projectId: id, companyId: user.companyId } });
+        // Explicitly soft-delete related resources
+        await prisma.cable.updateMany({ 
+            where: { projectId: id, companyId: user.companyId, deletedAt: null },
+            data: { deletedAt: new Date() }
+        });
+        await prisma.cto.updateMany({ 
+            where: { projectId: id, companyId: user.companyId, deletedAt: null },
+            data: { deletedAt: new Date() }
+        });
+        await prisma.pop.updateMany({ 
+            where: { projectId: id, companyId: user.companyId, deletedAt: null },
+            data: { deletedAt: new Date() }
+        });
+        await prisma.pole.updateMany({ 
+            where: { projectId: id, companyId: user.companyId, deletedAt: null },
+            data: { deletedAt: new Date() }
+        });
 
-        // Delete the project
-        await prisma.project.delete({ where: { id } }); // We already verified checks above
+        // Soft-delete the project
+        await prisma.project.update({ 
+            where: { id },
+            data: { deletedAt: new Date() }
+        });
         res.json({ success: true });
     } catch (e: any) {
         logger.error(`Delete project error: ${e.message}`);

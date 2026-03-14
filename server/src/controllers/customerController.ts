@@ -10,7 +10,8 @@ export const getCustomers = async (req: Request, res: Response) => {
         const { minLat, maxLat, minLng, maxLng, ctoId, search, projectId } = req.query;
 
         const where: any = {
-            companyId: user.companyId
+            companyId: user.companyId,
+            deletedAt: null
         };
 
         if (projectId) {
@@ -101,7 +102,8 @@ export const createCustomer = async (req: Request, res: Response) => {
                     companyId: user.companyId,
                     ctoId,
                     splitterId,
-                    splitterPortIndex: Number(splitterPortIndex)
+                    splitterPortIndex: Number(splitterPortIndex),
+                    deletedAt: null
                 }
             });
 
@@ -220,7 +222,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     ctoId,
                     splitterId,
                     splitterPortIndex: Number(splitterPortIndex),
-                    id: { not: id } // Exclude self
+                    id: { not: id }, // Exclude self
+                    deletedAt: null
                 }
             });
 
@@ -313,11 +316,14 @@ export const deleteCustomer = async (req: Request, res: Response) => {
         const customer = await prisma.customer.findFirst({ where: { id, companyId: user.companyId } });
         if (!customer) return res.status(404).json({ error: 'Customer not found' });
 
-        await prisma.customer.delete({ where: { id } });
+        await prisma.customer.update({ 
+            where: { id },
+            data: { deletedAt: new Date(), status: 'INACTIVE' }
+        });
 
         // Update CTO count
         if (customer.ctoId) {
-            const count = await prisma.customer.count({ where: { ctoId: customer.ctoId } });
+            const count = await prisma.customer.count({ where: { ctoId: customer.ctoId, deletedAt: null } });
             await prisma.cto.update({
                 where: { id: customer.ctoId },
                 data: { clientCount: count }

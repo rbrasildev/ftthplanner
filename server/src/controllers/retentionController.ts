@@ -22,6 +22,7 @@ export const getRetentionDashboard = async (req: Request, res: Response) => {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
         const metrics = await prisma.userEngagementMetrics.findMany({
+            where: { deletedAt: null },
             include: {
                 user: { select: { id: true, username: true, email: true, active: true } },
                 company: { select: { id: true, name: true, status: true, subscriptionExpiresAt: true } }

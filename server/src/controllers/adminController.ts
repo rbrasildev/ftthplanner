@@ -11,7 +11,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
 
         const users = await prisma.user.findMany({
-            where: { companyId },
+            where: { companyId, deletedAt: null },
             select: {
                 id: true,
                 username: true,
@@ -52,7 +52,8 @@ export const createUser = async (req: AuthRequest, res: Response) => {
                 OR: [
                     { username: finalUsername },
                     { email: finalEmail }
-                ]
+                ],
+                deletedAt: null
             }
         });
         if (existingUser) return res.status(400).json({ error: 'Username or Email already taken' });
@@ -155,7 +156,10 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        await prisma.user.delete({ where: { id } });
+        await prisma.user.update({ 
+            where: { id },
+            data: { deletedAt: new Date(), active: false }
+        });
 
         res.json({ message: 'User deleted successfully' });
 
