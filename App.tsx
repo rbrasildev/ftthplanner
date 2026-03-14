@@ -36,7 +36,6 @@ import api from './services/api';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { AccountSettingsModal } from './components/AccountSettingsModal';
 
-const STORAGE_KEY_TOKEN = 'ftth_planner_token_v1';
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
 import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
 import { KmlImportModal } from './components/modals/KmlImportModal';
@@ -107,7 +106,7 @@ export default function App() {
     const { theme, toggleTheme } = useTheme();
 
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_TOKEN));
+    const [token, setToken] = useState<string | null>(null); // Token is now in cookies
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isSupportMode, setIsSupportMode] = useState<boolean>(() => !!localStorage.getItem('ftth_support_token'));
 
@@ -116,11 +115,11 @@ export default function App() {
         const supportToken = localStorage.getItem('ftth_support_token');
         const activeToken = supportToken || token;
 
-        if (activeToken) {
+        if (activeToken && activeToken !== 'session') {
             const decoded = parseJwt(activeToken);
             if (decoded?.role) setUserRole(decoded.role);
             if (decoded?.username) setUser(decoded.username);
-        } else {
+        } else if (!activeToken) {
             setUserRole(null);
         }
     }, [token, isSupportMode]);
@@ -134,7 +133,7 @@ export default function App() {
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
 
-    const [isLoadingProjects, setIsLoadingProjects] = useState(() => !!localStorage.getItem(STORAGE_KEY_TOKEN));
+    const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
     // Global System Settings
     const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
@@ -298,81 +297,65 @@ export default function App() {
     }, [dashboardView, isSupportMode]);
 
     useEffect(() => user ? localStorage.setItem(STORAGE_KEY_USER, user) : localStorage.removeItem(STORAGE_KEY_USER), [user]);
-    useEffect(() => token ? localStorage.setItem(STORAGE_KEY_TOKEN, token) : localStorage.removeItem(STORAGE_KEY_TOKEN), [token]);
+    // localStorage token persistence removed - handled by cookies
 
-    // Load Projects on Auth
+    // Load Projects and Hydrate Session on Auth/Mount
     useEffect(() => {
-        if (token && user) {
-            setIsLoadingProjects(true);
-            projectService.getProjects()
-                .then(setProjects)
-                .catch(console.error)
-                .finally(() => setIsLoadingProjects(false));
+        const hydrate = async () => {
+            // If we don't have a user hint, but haven't hydrated, we still try getMe 
+            // because there might be a cookie.
+            if (!isHydrated) {
+                setIsLoadingProjects(true);
+            }
 
-            // Hydrate User Session (Plan & Subscription)
-            authService.getMe().then((data: any) => {
+            try {
+                const data = await authService.getMe();
                 if (data.user) {
-                    // Force update user based on DB response, even in support mode, 
-                    // this guarantees the client name shows in sidebar
-                    if (data.user.username !== user) {
-                        setUser(data.user.username);
+                    setUser(data.user.username);
+                    setToken("session"); // Compatibility placeholder for cookies
+                    
+                    if (data.user.role) {
+                        setUserRole(data.user.role);
                     }
 
-                    if (data.user.company?.plan?.name) {
-                        setUserPlan(data.user.company.plan.name);
-                    }
-                    if (data.user.company?.plan?.id) {
-                        setUserPlanId(data.user.company.plan.id);
-                    }
-                    if (data.user.company?.plan?.type) {
-                        setUserPlanType(data.user.company.plan.type);
-                    }
-                    if (data.user.company?.subscriptionExpiresAt) {
-                        setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
-                    } else if (data.user.company?.subscription?.currentPeriodEnd) {
-                        setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
-                    } else {
-                        setSubscriptionExpiresAt(null);
-                    }
-                    if (data.user.company?.subscription?.cancelAtPeriodEnd) {
-                        setCancelAtPeriodEnd(true);
-                    } else {
-                        setCancelAtPeriodEnd(false);
-                    }
-                    if (data.user.company?.id) {
-                        setCompanyId(data.user.company.id);
-                    }
-                    if (data.user.email) {
-                        setUserEmail(data.user.email);
-                    }
-                    if (data.user.company?.id) {
-                        setCompanyId(data.user.company.id);
-                    }
-                    if (data.user.company?.name) {
-                        setCompanyName(data.user.company.name);
-                    }
-                    if (data.user.company?.logoUrl) {
-                        setCompanyLogo(data.user.company.logoUrl);
-                    }
+                    // Populate other user fields
+                    if (data.user.company?.plan?.name) setUserPlan(data.user.company.plan.name);
+                    if (data.user.company?.plan?.id) setUserPlanId(data.user.company.plan.id);
+                    if (data.user.company?.plan?.type) setUserPlanType(data.user.company.plan.type);
+                    if (data.user.company?.subscriptionExpiresAt) setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
+                    else if (data.user.company?.subscription?.currentPeriodEnd) setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
+                    
+                    setCancelAtPeriodEnd(!!data.user.company?.subscription?.cancelAtPeriodEnd);
+                    if (data.user.company?.id) setCompanyId(data.user.company.id);
+                    if (data.user.email) setUserEmail(data.user.email);
+                    if (data.user.company?.name) setCompanyName(data.user.company.name);
+                    if (data.user.company?.logoUrl) setCompanyLogo(data.user.company.logoUrl);
                     setCompanyStatus(data.user.company?.status || 'ACTIVE');
-                    if (data.user.company?.mercadopagoSubscriptionId) {
-                        setHasActiveSubscription(true);
-                    } else {
-                        setHasActiveSubscription(false);
-                    }
-                }
-            }).catch(err => {
-                console.error("Failed to hydrate session", err);
-                if (err.response && err.response.status === 401) {
-                    // Token invalid/expired - Logout
-                    setToken(null);
+                    setHasActiveSubscription(!!data.user.company?.mercadopagoSubscriptionId);
+
+                    // Now load projects
+                    const prjs = await projectService.getProjects();
+                    setProjects(prjs);
+                } else if (user) {
+                    // Fail-safe: if getMe returns no user but we have hit in localStorage, clear it
                     setUser(null);
+                    setToken(null);
                 }
-            }).finally(() => {
+            } catch (err: any) {
+                console.error("Session hydration failed", err);
+                if (err.response && err.response.status === 401) {
+                    setUser(null);
+                    setToken(null);
+                    setProjects([]);
+                }
+            } finally {
                 setIsHydrated(true);
-            });
-        }
-    }, [token, user]);
+                setIsLoadingProjects(false);
+            }
+        };
+
+        hydrate();
+    }, [isHydrated]); // Only trigger on mount (or if explicitly reset)
 
     // Load Project Details when ID changes
     useEffect(() => {
@@ -447,15 +430,20 @@ export default function App() {
         } catch (error) {
             console.error('Failed to end support session remotely', error);
         } finally {
+            try {
+                await authService.logout();
+            } catch (authErr) {
+                console.error('Logout API call failed', authErr);
+            }
             localStorage.removeItem('ftth_support_token');
             localStorage.removeItem('ftth_current_project_id');
-            localStorage.removeItem(STORAGE_KEY_USER); // Force admin to reload profile
-            setCurrentProjectId(null); // CRITICAL: Stop useEffect from re-saving to localStorage
+            localStorage.removeItem(STORAGE_KEY_USER); 
+            setCurrentProjectId(null);
             setProjects([]);
             setUser(null);
             setUserPlan('Plano Grátis');
             setIsSupportMode(false);
-            window.location.href = '/'; // Redirect back to origin root to prevent 404 in production route
+            window.location.href = '/';
         }
     };
 
@@ -1852,6 +1840,23 @@ export default function App() {
 
     // --- UPGRADE MODAL STATE REMOVED (Duplicate) ---
 
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+        } catch (e) {
+            console.error("Logout error:", e);
+        } finally {
+            setUser(null);
+            setToken(null);
+            setCurrentProjectId(null);
+            setCurrentProject(null);
+            setProjects([]);
+            localStorage.removeItem('ftth_support_token');
+            // Force return to landing or login
+            setAuthView('landing');
+        }
+    };
+
     const handleLogin = async (email: string, password?: string) => {
         setIsLoggingIn(true);
         setLoginError(null);
@@ -1859,18 +1864,10 @@ export default function App() {
             const data = await authService.login(email, password);
             setIsLoadingProjects(true); // START LOADING IMMEDIATELY to prevent "No Projects" flash
             setUser(data.user.username);
-            setToken(data.token);
-            // Fetch Plan Name
-            if (data.user.company?.plan?.name) {
-                setUserPlan(data.user.company.plan.name);
-                setUserPlanType(data.user.company.plan.type || 'STANDARD');
-                setUserPlanId(data.user.company.plan.id);
-            }
-            if (data.user.company?.subscriptionExpiresAt) {
-                setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
-            } else {
-                setSubscriptionExpiresAt(null);
-            }
+            setToken("session"); // Compatibility placeholder
+            
+            // Trigger hydration to fill all fields and load projects
+            setIsHydrated(false); 
         } catch (e: any) {
             console.error("Login error:", e);
             if (e.response && e.response.status === 401) {
@@ -2189,12 +2186,7 @@ export default function App() {
                 searchResults={searchResults}
                 onSearch={handleMainSearch}
                 onResultClick={handleSearchResultClick}
-                onLogout={() => {
-                    setUser(null);
-                    setToken(null);
-                    setCurrentProjectId(null);
-                    localStorage.removeItem('ftth_support_token');
-                }}
+                onLogout={handleLogout}
                 onUpgradeClick={() => setIsAccountSettingsOpen(true)}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
@@ -2278,7 +2270,7 @@ export default function App() {
                             }
                         }}
                         isLoading={isLoadingProjects}
-                        onLogout={() => { setUser(null); setToken(null); setProjects([]); setCurrentProjectId(null); setCurrentProject(null); }}
+                        onLogout={handleLogout}
                         onUpgradeClick={() => setIsAccountSettingsOpen(true)}
                         currentProjectId={currentProjectId || undefined}
                     />

@@ -52,7 +52,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 className={`relative group p-2.5 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 min-w-[60px]
                 ${isActive
                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-sm'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white border border-transparent'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
                     }`}
                 title={label}
             >
@@ -63,16 +63,16 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
     };
 
     return (
-        <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-1 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-800/60 flex items-center gap-1 animate-in fade-in slide-in-from-top-4 duration-300">
 
             {/* Group 1: Navigation */}
-            <div className="flex items-center gap-1 pr-2 border-r border-zinc-200 dark:border-zinc-700/50">
+            <div className="flex items-center gap-1 pr-2 border-r border-slate-200 dark:border-slate-700/50">
                 <ToolButton mode="view" icon={MousePointer2} label={t('sidebar_select')} />
             </div>
 
             {/* Group 2: Construction - Hide for MEMBER */}
             {(userRole !== 'MEMBER') && (
-                <div className="flex items-center gap-1 px-2 border-r border-zinc-200 dark:border-zinc-700/50">
+                <div className="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700/50">
                     <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />
                     <ToolButton mode="add_pop" icon={Building2} label="POP" />
                     <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_customer') || "Cliente"} />
@@ -94,11 +94,11 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
 
             {/* Group 4: Project Actions */}
             {(userRole !== 'MEMBER') && (
-                <div className="flex items-center gap-1 pl-2 ml-1 border-l border-zinc-200 dark:border-zinc-700/50">
+                <div className="flex items-center gap-1 pl-2 ml-1 border-l border-slate-200 dark:border-slate-700/50">
                     <button
                         onClick={onExportKmz}
                         disabled={isExporting}
-                        className={`relative group p-2.5 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 min-w-[60px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white border border-transparent ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`relative group p-2.5 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 min-w-[60px] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={t('export_kmz_tooltip') || "Exportar para Google Earth"}
                     >
                         <FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} strokeWidth={2} />

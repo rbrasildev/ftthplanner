@@ -17,3 +17,7 @@ export const changePassword = async (currentPassword: string, newPassword: strin
     const res = await api.post('/auth/change-password', { currentPassword, newPassword });
     return res.data;
 };
+export const logout = async () => {
+    const res = await api.post('/auth/logout');
+    return res.data;
+};

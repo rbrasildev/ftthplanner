@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <img src={saasLogo || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
                             </div>
                             <div className="flex flex-col">
-                                <h1 className="font-extrabold text-sm tracking-tighter text-zinc-900 dark:text-zinc-50 leading-none uppercase">
+                                <h1 className="font-extrabold text-sm tracking-tighter text-slate-900 dark:text-slate-50 leading-none uppercase">
                                     {saasName || "FTTH PLANNER"}
                                 </h1>
                                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none mt-1">{t('professional') || 'PRO'}</span>
@@ -177,14 +177,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <button
                         onClick={onToggleCollapse}
-                        className="hidden lg:flex p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-emerald-500 transition-all duration-200"
+                        className="hidden lg:flex p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-emerald-500 transition-all duration-200"
                         title={isCollapsed ? t('sidebar_expand') : t('sidebar_collapse')}
                     >
                         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                     </button>
 
                     {/* Mobile Close */}
-                    <button onClick={onCloseMobile} className="lg:hidden p-2 text-zinc-400 hover:text-red-500">
+                    <button onClick={onCloseMobile} className="lg:hidden p-2 text-slate-400 hover:text-red-500">
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                 </div>
@@ -196,18 +196,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onClick={onImportClick}
                             className={`group relative flex items-center transition-all duration-200 
                                 ${isCollapsed
-                                    ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-emerald-500'
-                                    : 'w-full gap-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 group-hover:bg-emerald-50/50'}`}
+                                    ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-emerald-500'
+                                    : 'w-full gap-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 group-hover:bg-emerald-50/50'}`}
                             title={isCollapsed ? t('import_kmz_label') : ''}
                         >
-                            <FileUp className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4 text-zinc-400 group-hover:text-emerald-500'}`} />
+                            <FileUp className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4 text-slate-400 group-hover:text-emerald-500'}`} />
                             {!isCollapsed && (
                                 <div className="flex flex-col items-start overflow-hidden text-left">
-                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider leading-none mb-1">{t('import_kmz_label')}</span>
-                                    <span className="truncate text-[10px] font-medium text-zinc-500 dark:text-zinc-400 leading-tight">{t('import_kmz_desc')}</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{t('import_kmz_label')}</span>
+                                    <span className="truncate text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">{t('import_kmz_desc')}</span>
                                 </div>
                             )}
-                            {!isCollapsed && <Upload className="w-3.5 h-3.5 text-zinc-300 ml-auto group-hover:text-emerald-500" />}
+                            {!isCollapsed && <Upload className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-emerald-500" />}
                         </button>
 
                         <NavButton
@@ -215,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             label={currentProjectName}
                             onClick={() => setShowProjectManager(true)}
                             isCollapsed={isCollapsed}
-                            variant="zinc"
+                            variant="slate"
                         />
 
                         <NavButton
@@ -237,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {/* Search Section */}
                             {!isCollapsed ? (
                                 <div className="space-y-2 animate-in slide-in-from-left-2 duration-300">
-                                    <span className="px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">{t('search_generic')}</span>
+                                    <span className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('search_generic')}</span>
                                     <SearchBox
                                         onSearch={onSearch}
                                         results={searchResults}
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <div className="flex justify-center">
                                     <button
                                         onClick={() => { onToggleCollapse(); setTimeout(() => document.querySelector('input')?.focus(), 100); }}
-                                        className="w-10 h-10 flex items-center justify-center rounded-xl text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800/50"
+                                        className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800/50"
                                         title={t('search_generic')}
                                     >
                                         <Search className="w-5 h-5" />
@@ -259,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {/* Operation Section */}
                             <div className="space-y-1">
                                 {!isCollapsed && (
-                                    <span className="px-2 pb-2 block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">{t('sidebar_operation')}</span>
+                                    <span className="px-2 pb-2 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('sidebar_operation')}</span>
                                 )}
 
                                 <NavButton
@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     label={t('home')}
                                     onClick={() => { setCurrentProjectId(null); setShowProjectManager(false); onCloseMobile(); }}
                                     isCollapsed={isCollapsed}
-                                    variant="zinc"
+                                    variant="slate"
                                 />
 
                                 <NavButton
@@ -275,7 +275,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     label={t('report_analyze')}
                                     onClick={() => { onReportClick?.(); onCloseMobile(); }}
                                     isCollapsed={isCollapsed}
-                                    variant="zinc"
+                                    variant="slate"
                                 />
                             </div>
 
@@ -324,7 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                 }
                                             }}
                                             isCollapsed={isCollapsed}
-                                            variant={active ? "emerald" : "zinc"}
+                                            variant={active ? "emerald" : "slate"}
                                             isActive={active}
                                             hasArrow={hasSubItems && !isCollapsed}
                                             isExpanded={isExpanded}
@@ -346,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all
                                                                 ${subActive
                                                                     ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
-                                                                    : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                                                    : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                                                         >
                                                             <sub.icon className={`w-3.5 h-3.5 ${subActive ? 'text-emerald-500' : ''}`} />
                                                             <span>{sub.label}</span>
@@ -374,11 +374,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 )}
                             </div>
                             <div className="flex flex-col overflow-hidden">
-                                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">{companyName || user}</span>
-                                <span className="text-[9px] text-zinc-400 truncate">{user}</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{companyName || user}</span>
+                                <span className="text-[9px] text-slate-400 truncate">{user}</span>
                                 {isHydrated ? (
                                     <>
-                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{userPlan || 'Plano Grátis'}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{userPlan || 'Plano Grátis'}</span>
                                         {(() => {
                                             const isTrialPlan = userPlanType?.toUpperCase() === 'TRIAL' || userPlan?.toLowerCase().includes('trial') || userPlan?.toLowerCase().includes('teste');
                                             const isFree = userPlan === 'Plano Grátis';
@@ -396,7 +396,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         })()}
                                     </>
                                 ) : (
-                                    <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                                    <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
                                 )}
                             </div>
                         </div>
@@ -409,7 +409,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 className={`flex items-center justify-center gap-2 text-[10px] px-3 py-2 rounded-xl font-bold w-full shadow-sm border border-transparent transition-all transform hover:scale-[1.02] active:scale-[0.98]
                                 ${(userPlan === 'Plano Grátis' || userPlanType?.toUpperCase() === 'TRIAL')
                                         ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
-                                        : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-emerald-500 hover:text-emerald-500 hover:shadow-md'}`}
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-500 hover:shadow-md'}`}
                             >
                                 {(userPlan === 'Plano Grátis' || userPlanType?.toUpperCase() === 'TRIAL')
                                     ? <><Zap className="w-3.5 h-3.5" /> {t('upgrade_now') || 'Fazer Upgrade'}</>
@@ -452,29 +452,29 @@ interface NavButtonProps {
     label: string;
     onClick: () => void;
     isCollapsed: boolean;
-    variant?: 'zinc' | 'emerald';
+    variant?: 'slate' | 'emerald';
     progress?: number;
     isActive?: boolean;
     hasArrow?: boolean;
     isExpanded?: boolean;
 }
 
-const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed, variant = 'zinc', progress, isActive, hasArrow, isExpanded }) => {
+const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed, variant = 'slate', progress, isActive, hasArrow, isExpanded }) => {
     const isEmerald = variant === 'emerald' || isActive;
 
     const activeClass = isEmerald
         ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/50'
-        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100';
+        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100';
 
     return (
         <button
             onClick={onClick}
             className={`flex items-center group relative transition-all duration-300 rounded-xl border border-transparent overflow-hidden
                 ${isCollapsed ? 'w-10 h-10 justify-center mx-auto' : 'w-full px-3 py-2.5 gap-3'} ${activeClass}
-                ${!isActive && 'hover:shadow-sm hover:border-slate-200/50 dark:hover:border-zinc-800'}`}
+                ${!isActive && 'hover:shadow-sm hover:border-slate-200/50 dark:hover:border-slate-800'}`}
             title={isCollapsed ? label : ''}
         >
-            <div className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${isEmerald ? 'text-emerald-500' : 'text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100'}`}>
+            <div className={`flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${isEmerald ? 'text-emerald-500' : 'text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-100'}`}>
                 {icon}
             </div>
 
@@ -483,7 +483,7 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed
             )}
 
             {hasArrow && (
-                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} text-zinc-400`} />
+                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} text-slate-400`} />
             )}
 
             {progress !== undefined && !isCollapsed && (
@@ -500,7 +500,7 @@ const FooterButton: React.FC<{ icon: React.ReactNode; title?: string; onClick: (
         className={`h-9 flex items-center justify-center rounded-xl border transition-all duration-200 flex-1 px-2 ${className}
             ${danger
                 ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30 text-rose-500 hover:bg-rose-500 hover:text-white'
-                : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:border-emerald-500 hover:text-emerald-500 shadow-sm'}`}
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-500 shadow-sm'}`}
     >
         {icon}
     </button>

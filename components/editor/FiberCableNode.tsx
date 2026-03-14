@@ -104,14 +104,14 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                     <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
-                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                            className="text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                             title={t('action_flip')}
                         >
                             <ArrowRightLeft className="w-4 h-4" />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onRotate(e, cable.id); }}
-                            className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                            className="text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                             title={t('action_rotate')}
                         >
                             <RotateCw className="w-4 h-4" />
@@ -122,7 +122,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 {/* VISUAL BODY - Draggable Area Updated */}
                 <div
                     className={`
-                        flex flex-col bg-white dark:bg-[#2E2D39]  border-slate-200 dark:border-slate-700 overflow-hidden w-[168px] h-full
+                        flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden w-[168px] h-full
                         ${isMirrored ? 'border-l-0' : 'border-r-0'}
                         cursor-grab active:cursor-grabbing
                     `}
@@ -193,7 +193,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         hover:scale-125 z-30
                                         absolute ${isMirrored ? '-left-[3px]' : '-right-[3px]'} shadow-sm ${textColor} text-[7px] font-bold leading-none pb-[0.5px]
                                         flex items-center justify-center
-                                        ${hoveredPortId === fiberId ? 'ring-2 ring-sky-500' : ''}
+                                        ${hoveredPortId === fiberId ? 'ring-2 ring-emerald-500' : ''}
                                         ${isLit ? 'ring-2 ring-red-500 border-red-500' : ''}
                                     `}
                                         style={{

@@ -87,7 +87,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <FolderOpen className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+          <FolderOpen className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
           {t('project_manager')}
         </h2>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
@@ -107,13 +107,13 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                 onClick={() => onSelectProject(project.id)}
                 className={`group flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer
                   ${isActive
-                    ? 'bg-sky-50 dark:bg-sky-900/20 border-sky-500 dark:border-sky-600 shadow-md ring-1 ring-sky-500/20'
-                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-sm'}`}
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 dark:border-emerald-600 shadow-md ring-1 ring-emerald-500/20'
+                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-sm'}`}
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-sky-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
                   <div className="overflow-hidden">
-                    <h4 className={`text-sm font-bold truncate ${isActive ? 'text-sky-700 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
+                    <h4 className={`text-sm font-bold truncate ${isActive ? 'text-emerald-700 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>
                       {project.name}
                     </h4>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -145,7 +145,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                 )}
 
                 {isActive && (
-                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest">{t('active') || 'Ativo'}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{t('active') || 'Ativo'}</span>
                 )}
               </div>
             );

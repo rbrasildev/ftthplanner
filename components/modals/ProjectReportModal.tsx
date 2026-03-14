@@ -149,9 +149,9 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                     </section>
 
                     {/* Info Alert */}
-                    <div className="p-4 bg-sky-50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/30 rounded-2xl flex gap-3">
-                        <Info className="w-5 h-5 text-sky-500 flex-shrink-0" />
-                        <p className="text-[11px] font-medium text-sky-700 dark:text-sky-400 leading-relaxed">
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex gap-3">
+                        <Info className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                        <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 leading-relaxed">
                             {t('report_estimated')}: Os valores de metragem são baseados na distância geográfica (geodésica) entre os pontos e incluem as reservas técnicas cadastradas. O valor real pode variar conforme a topografia e curvas de instalação.
                         </p>
                     </div>

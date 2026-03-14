@@ -189,7 +189,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
         className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Cable className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+          <Cable className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
           {t('edit_cable')}
         </h2>
         <div className="flex items-center gap-1">
@@ -319,7 +319,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                   <span className="text-[10px] text-slate-400">{t('technical_reserve')}:</span>
                   <span>{formData.technicalReserve?.toLocaleString()} m</span>
                 </div>
-                <div className="flex justify-between pt-1 font-bold text-sky-600 dark:text-sky-400">
+                <div className="flex justify-between pt-1 font-bold text-emerald-600 dark:text-emerald-400">
                   <span className="text-[10px] uppercase">Total:</span>
                   <span>{(Math.round(calculatedLength) + (formData.technicalReserve || 0)).toLocaleString()} m</span>
                 </div>

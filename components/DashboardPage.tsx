@@ -11,7 +11,7 @@ import BoxRegistration from './registrations/BoxRegistration';
 import { CompanySettings } from './settings/CompanySettings';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
 import CustomerRegistration from './registrations/CustomerRegistration';
@@ -142,6 +142,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('ftth_project_view_mode') as 'grid' | 'list') || 'grid';
+  });
+
+  const toggleViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('ftth_project_view_mode', mode);
+  };
 
   // New Project State
   const [newProjectName, setNewProjectName] = useState('');
@@ -420,7 +428,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {/* Header Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <FolderOpen className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
                   {t('my_projects')}
                 </h2>
@@ -430,20 +438,38 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <div className="relative flex-1 sm:w-72 group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
                   <input
                     type="text"
                     placeholder={t('search_generic')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
+                    className="w-full bg-slate-100/80 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800/50 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
+
+                <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800/50 rounded-xl p-1 shadow-sm h-[38px]">
+                  <button
+                    onClick={() => toggleViewMode('grid')}
+                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                    title={t('grid_view') || "Grade"}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => toggleViewMode('list')}
+                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                    title={t('list_view') || "Lista"}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+
                 {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
                   <button
                     onClick={() => setIsCreating(true)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap active:scale-95"
                   >
                     <Plus className="w-4 h-4" /> {t('create_new_project_btn')}
                   </button>
@@ -466,14 +492,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <p className="text-slate-500 font-medium">{t('no_projects')}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols3 xl:grid-cols-3 gap-6">
+              <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
                 {filteredProjects.map((project: any) => {
                   const counts = project.counts || { ctos: 0, pops: 0, cables: 0, poles: 0, deployedCtos: 0, deployedCables: 0 };
                   const totalCTOs = project.network?.ctos?.length || counts.ctos || 0;
                   const totalCables = project.network?.cables?.length || counts.cables || 0;
                   const totalPOPs = project.network?.pops?.length || counts.pops || 0;
 
-                  // Use network data if available (detailed), otherwise use optimized counts from summary
                   const deployedCTOs = project.network
                     ? project.network.ctos.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length
                     : (counts.deployedCtos || 0);
@@ -487,15 +512,74 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   const progress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
                   const hasNetworkData = !!project.network;
 
+                  if (viewMode === 'list') {
+                    return (
+                      <div
+                        key={project.id}
+                        onClick={() => onOpenProject(project.id)}
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg flex items-center gap-6 relative"
+                      >
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0 transition-colors">
+                          <MapIcon className="w-6 h-6 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                              {project.name}
+                            </h3>
+                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                              {t('last_modified', { date: new Date(project.updatedAt).toLocaleDateString() })}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            <span className="flex items-center gap-1"><Box className="w-3 h-3" /> {totalCTOs} CTOs</span>
+                            <span className="flex items-center gap-1"><Cable className="w-3 h-3" /> {totalCables} {t('cables')}</span>
+                            <span className="flex items-center gap-1"><Activity className="w-3 h-3 text-emerald-500" /> {progress}%</span>
+                          </div>
+                        </div>
+
+                        <div className="hidden md:block w-48 shrink-0">
+                          <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 transition-all"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
+                          <div className="flex items-center gap-1 pl-4 border-l border-slate-100 dark:border-slate-800">
+                            <button
+                              onClick={(e) => handleEditClick(e, project)}
+                              className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
+                              title={t('edit_project')}
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, project)}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                              title={t('delete')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={project.id}
                       onClick={() => onOpenProject(project.id)}
-                      className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 rounded-xl p-5 cursor-pointer transition-all hover:shadow-xl hover:shadow-sky-900/10 hover:-translate-y-1 relative"
+                      className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-5 cursor-pointer transition-all hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1 relative"
                     >
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-50 dark:group-hover:bg-sky-900/30 rounded-lg flex items-center justify-center transition-colors">
-                          <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400" />
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center transition-colors">
+                          <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
                         </div>
                         {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
                           <div className="flex items-center gap-1 relative z-20">
@@ -518,7 +602,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         )}
                       </div>
 
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                         {project.name}
                       </h3>
 
@@ -677,7 +761,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Users className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
                   {t('users')}
                 </h2>
@@ -698,7 +782,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
 
             {isLoadingUsers ? (
-              <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-sky-500" /></div>
+              <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /></div>
             ) : (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm">
@@ -719,7 +803,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                              ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                              user.role === 'ADMIN' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300' :
+                              user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'}`}>
                             {user.role === 'OWNER' ? t('role_owner') : user.role === 'ADMIN' ? t('role_admin') : t('role_member')}
                           </span>
@@ -730,7 +814,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => handleEditUserClick(user)}
-                            className="text-slate-400 hover:text-sky-500 transition-colors p-2 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg mr-1"
+                            className="text-slate-400 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg mr-1"
                             title={t('edit_user')}
                           >
                             <Settings className="w-4 h-4" />
@@ -766,7 +850,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col relative">
             <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-sky-500 dark:text-sky-400" /> {editingUser ? t('edit_user') : t('add_user')}
+                <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {editingUser ? t('edit_user') : t('add_user')}
               </h3>
               <button onClick={() => setIsUserModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
             </div>

@@ -134,7 +134,7 @@ const CableRegistration: React.FC = () => {
                             placeholder={t('search_placeholder_cable')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -174,7 +174,7 @@ const CableRegistration: React.FC = () => {
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenModal(cable)}
-                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -319,13 +319,13 @@ const CableRegistration: React.FC = () => {
                                     <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1 mb-3">
                                         <button
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'ABNT' })}
-                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'ABNT' || !formData.fiberProfile ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'ABNT' || !formData.fiberProfile ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
                                         >
                                             {t('standard_abnt')}
                                         </button>
                                         <button
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'EIA' })}
-                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'EIA' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'EIA' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
                                         >
                                             {t('standard_eia')}
                                         </button>
@@ -370,7 +370,7 @@ const CableRegistration: React.FC = () => {
                                                     <button
                                                         key={c}
                                                         onClick={() => setFormData({ ...formData, deployedSpec: { ...formData.deployedSpec!, color: c } })}
-                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.deployedSpec?.color === c ? 'ring-2 ring-sky-600 ring-offset-1 scale-110' : ''}`}
+                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.deployedSpec?.color === c ? 'ring-2 ring-emerald-600 ring-offset-1 scale-110' : ''}`}
                                                         style={{ backgroundColor: c }}
                                                     />
                                                 ))}
@@ -405,7 +405,7 @@ const CableRegistration: React.FC = () => {
                                                     <button
                                                         key={c}
                                                         onClick={() => setFormData({ ...formData, plannedSpec: { ...formData.plannedSpec!, color: c } })}
-                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.plannedSpec?.color === c ? 'ring-2 ring-sky-600 ring-offset-1 scale-110' : ''}`}
+                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.plannedSpec?.color === c ? 'ring-2 ring-emerald-600 ring-offset-1 scale-110' : ''}`}
                                                         style={{ backgroundColor: c }}
                                                     />
                                                 ))}

@@ -41,7 +41,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/20">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Activity className="w-6 h-6 text-sky-500" />
+                            <Activity className="w-6 h-6 text-emerald-500" />
                             {t('optical_budget') || 'Orçamento Óptico'}
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -84,7 +84,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
                             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">{t('origin_olt')}</div>
                             <div className="text-slate-900 dark:text-white font-semibold flex items-center gap-2">
-                                <Network className="w-4 h-4 text-sky-500" />
+                                <Network className="w-4 h-4 text-emerald-500" />
                                 {result.oltDetails?.name || (result.sourceName === 'NO_SIGNAL' ? t('no_signal') : result.sourceName)}
                             </div>
                             {result.oltDetails ? (
@@ -116,10 +116,10 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                                     <div key={idx} className="flex items-start gap-4">
                                         <div className={`
                                             w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2
-                                            ${item.type === 'CABLE' ? 'bg-white border-sky-500 text-sky-600' : ''}
+                                            ${item.type === 'CABLE' ? 'bg-white border-emerald-500 text-emerald-600' : ''}
                                             ${item.type === 'SPLITTER' ? 'bg-white border-indigo-500 text-indigo-600' : ''}
                                             ${item.type === 'FUSION' ? 'bg-white border-amber-500 text-amber-600' : ''}
-                                            ${item.type === 'OLT' ? 'bg-sky-500 border-sky-600 text-white' : ''}
+                                            ${item.type === 'OLT' ? 'bg-emerald-500 border-emerald-600 text-white' : ''}
                                         `}>
                                             {idx + 1}
                                         </div>

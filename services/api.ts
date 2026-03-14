@@ -1,16 +1,15 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: (import.meta as any).env.VITE_API_URL || '/api',
+    withCredentials: true,
 });
 
 api.interceptors.request.use(
     (config) => {
         const supportToken = localStorage.getItem('ftth_support_token');
-        const mainToken = localStorage.getItem('ftth_planner_token_v1');
-        const token = supportToken || mainToken;
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+        if (supportToken) {
+            config.headers['Authorization'] = `Bearer ${supportToken}`;
         }
         return config;
     },

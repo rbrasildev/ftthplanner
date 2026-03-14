@@ -947,7 +947,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             <div className="absolute inset-0 bg-[url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0')] bg-cover bg-center" />
                         ) : (
                             <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                <MapIcon className="w-8 h-8 text-sky-600 opacity-60" />
+                                <MapIcon className="w-8 h-8 text-emerald-600 opacity-60" />
                                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/10" />
                             </div>
                         )}
@@ -1573,7 +1573,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                     <button
                                         onClick={() => onConvertPin && onConvertPin('CTO')}
                                         title={t('convert_to_cto')}
-                                        className="flex items-center justify-center px-2 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 transition-colors"
+                                        className="flex items-center justify-center px-2 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
                                     >
                                         <Box className="w-5 h-5" />
                                     </button>
@@ -1787,7 +1787,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             }}
                             className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
                         >
-                            <Globe className="w-4 h-4 text-sky-500" />
+                            <Globe className="w-4 h-4 text-emerald-500" />
                             {t('open_google_maps') || "Abrir no Google Maps"}
                         </button>
 

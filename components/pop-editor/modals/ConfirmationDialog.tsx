@@ -33,7 +33,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     const colors = {
         danger: { bg: 'bg-red-900/30', border: 'border-red-500/30', icon: 'text-red-500', btn: 'bg-red-600 hover:bg-red-500', shadow: 'shadow-red-900/20' },
         warning: { bg: 'bg-amber-900/30', border: 'border-amber-500/30', icon: 'text-amber-500', btn: 'bg-amber-600 hover:bg-amber-500', shadow: 'shadow-amber-900/20' },
-        info: { bg: 'bg-sky-900/30', border: 'border-sky-500/30', icon: 'text-sky-500', btn: 'bg-sky-600 hover:bg-sky-500', shadow: 'shadow-sky-900/20' }
+        info: { bg: 'bg-emerald-900/30', border: 'border-emerald-500/30', icon: 'text-emerald-500', btn: 'bg-emerald-600 hover:bg-emerald-500', shadow: 'shadow-emerald-900/20' }
     };
 
     const style = colors[type];

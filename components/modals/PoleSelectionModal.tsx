@@ -39,7 +39,7 @@ export const PoleSelectionModal: React.FC<PoleSelectionModalProps> = ({ isOpen, 
                 {/* Header */}
                 <div className="h-14 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between shrink-0">
                     <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <UtilityPole className="w-5 h-5 text-sky-500" />
+                        <UtilityPole className="w-5 h-5 text-emerald-500" />
                         {t('select_pole') || 'Selecionar Poste'}
                     </h3>
                     <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
@@ -56,7 +56,7 @@ export const PoleSelectionModal: React.FC<PoleSelectionModalProps> = ({ isOpen, 
                             placeholder={t('search_pole') || 'Buscar modelo de poste...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-sky-500 transition-colors"
+                            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
                             autoFocus
                         />
                     </div>
@@ -77,11 +77,11 @@ export const PoleSelectionModal: React.FC<PoleSelectionModalProps> = ({ isOpen, 
                             <div
                                 key={pole.id}
                                 onClick={() => onSelect(pole)}
-                                className="group flex items-center justify-between p-3 rounded-lg border border-transparent hover:border-sky-500/30 hover:bg-sky-50 dark:hover:bg-sky-900/20 cursor-pointer transition-all"
+                                className="group flex items-center justify-between p-3 rounded-lg border border-transparent hover:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 cursor-pointer transition-all"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors">
-                                        <UtilityPole className="w-5 h-5 text-slate-500 group-hover:text-sky-500" />
+                                        <UtilityPole className="w-5 h-5 text-slate-500 group-hover:text-emerald-500" />
                                     </div>
                                     <div>
                                         <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">{pole.name}</div>
@@ -95,7 +95,7 @@ export const PoleSelectionModal: React.FC<PoleSelectionModalProps> = ({ isOpen, 
                                     </div>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Check className="w-4 h-4 text-sky-500" />
+                                    <Check className="w-4 h-4 text-emerald-500" />
                                 </div>
                             </div>
                         ))

@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
@@ -13,12 +13,13 @@ export interface AuthRequest extends Request {
 }
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers['authorization'];
-    console.log(`[Auth] Header present: ${!!authHeader}`);
-    const token = authHeader && authHeader.split(' ')[1];
-    console.log(`[Auth] Token received: '${token}'`);
-
-    if (token == null) return res.sendStatus(401);
+    // Tenta ler do cookie primeiro, depois do header (fallback para compatibilidade)
+    const token = req.cookies?.auth_token || (req.headers['authorization']?.split(' ')[1]);
+    
+    if (token == null) {
+        console.log(`[Auth] No token found in cookies or headers`);
+        return res.sendStatus(401);
+    }
 
     if (!process.env.JWT_SECRET) {
         console.error("[Auth] CRITICAL: JWT_SECRET is missing in environment variables!");

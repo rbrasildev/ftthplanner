@@ -228,7 +228,7 @@ export const SplitterRegistration: React.FC = () => {
                             placeholder={t('search_splitters')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -258,7 +258,7 @@ export const SplitterRegistration: React.FC = () => {
                                 <tr key={splitter.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                             {splitter.name}
                                         </div>
                                     </td>
@@ -276,7 +276,7 @@ export const SplitterRegistration: React.FC = () => {
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenModal(splitter)}
-                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
@@ -392,7 +392,7 @@ export const SplitterRegistration: React.FC = () => {
                                     type="checkbox"
                                     checked={!!formData.allowCustomConnections}
                                     onChange={e => setFormData({ ...formData, allowCustomConnections: e.target.checked })}
-                                    className="w-4 h-4 text-sky-600 bg-slate-100 border-slate-300 rounded focus:ring-sky-500 dark:focus:ring-sky-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                                    className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 dark:focus:ring-emerald-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
                                 />
                                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {t('allow_custom_connections') || 'Permitir conexão de clientes'}

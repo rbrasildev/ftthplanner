@@ -48,8 +48,8 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
                 }}
                 className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
             >
-                <div className="p-1.5 bg-sky-50 dark:bg-sky-900/30 rounded-md group-hover:bg-sky-100 dark:group-hover:bg-sky-900/50 transition-colors">
-                    <Edit className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
+                    <Edit className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span className="text-sm font-medium">{t('edit')}</span>
             </button>

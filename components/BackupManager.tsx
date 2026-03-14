@@ -104,7 +104,7 @@ export const BackupManager: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Save className="w-7 h-7 text-sky-500 dark:text-sky-400" />
+                        <Save className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
                         {t('backup_title')}
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -139,7 +139,7 @@ export const BackupManager: React.FC = () => {
 
             {isLoading ? (
                 <div className="flex justify-center p-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                 </div>
             ) : (
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -188,7 +188,7 @@ export const BackupManager: React.FC = () => {
                                                 </button>
                                                 <button
                                                     onClick={() => backupService.downloadBackupFile(backup.filename)}
-                                                    className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/10 rounded-lg transition-colors"
+                                                    className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
                                                     title={t('download')}
                                                 >
                                                     <Download className="w-4 h-4" />

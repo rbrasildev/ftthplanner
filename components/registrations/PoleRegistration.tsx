@@ -118,14 +118,14 @@ export const PoleRegistration: React.FC = () => {
                             placeholder={t('search_placeholder_box') || 'Buscar...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
 
                 {loading ? (
                     <div className="flex justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                     </div>
                 ) : filteredPoles.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">
@@ -148,7 +148,7 @@ export const PoleRegistration: React.FC = () => {
                                 <tr key={pole.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                             {pole.name}
                                         </div>
                                     </td>
@@ -160,7 +160,7 @@ export const PoleRegistration: React.FC = () => {
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => openModal(pole)}
-                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
                                                 <Edit2 className="w-4 h-4" />

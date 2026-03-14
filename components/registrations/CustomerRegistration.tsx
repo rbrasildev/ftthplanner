@@ -176,7 +176,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                     <td className="px-6 py-4">
                                         {customer.ctoId ? (
                                             <div className="flex flex-col">
-                                                <span className="text-sky-600 dark:text-sky-400 font-bold text-xs uppercase">{t('status_DEPLOYED')}</span>
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">{t('status_DEPLOYED')}</span>
                                                 <span className="text-[10px] text-slate-400">ID: {customer.ctoId}</span>
                                             </div>
                                         ) : (
@@ -188,7 +188,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                             {onLocate && (
                                                 <button
                                                     onClick={() => onLocate(customer)}
-                                                    className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                    className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                     title={t('locate_on_map')}
                                                 >
                                                     <MapPin className="w-4 h-4" />

@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 // =========================================================
 // GLOBAL LOG SILENCER (BACKEND)
@@ -42,32 +45,23 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
+app.use(helmet());
+app.use(cookieParser());
 const PORT = process.env.PORT || 3000;
 
 // CORS
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://www.ftthplan.com',
-    'https://ftthplan.com',
-    'https://ftth.redeconexaonet.com',
-    'https://ftthplanner.com.br',
-    'https://www.ftthplanner.com.br',
-    'https://api.ftthplanner.com.br',
-    'https://www.api.ftthplanner.com.br'
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
     origin: function (origin, callback) {
         // allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        // Verifica se a origem está na lista permitida ou é um subdomínio válido
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.ftthplanner.com.br') || origin.endsWith('.ftthplan.com')) {
+        if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.log('CORS Tentativa Não Mapeada (permitindo temporariamente para evitar 503):', origin);
-            callback(null, true); // Evita lançar um Error duro que causa o 503 no Express/Nginx
+            console.warn('CORS bloqueado para a origem:', origin);
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -75,6 +69,30 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     optionsSuccessStatus: 200
 }));
+
+// Rate Limiters
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' }
+});
+
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    message: { error: 'Muitas solicitações de senha, tente novamente em 1 hora.' }
+});
+
+const generalLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 100,
+    message: { error: 'Muitas requisições, tente novamente em breve.' }
+});
+
+// Aplicar Rate Limiters
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+app.use(generalLimiter);
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'live', time: new Date().toISOString() });
@@ -86,13 +104,15 @@ const uploadsPath = path.resolve(__dirname, '..', 'uploads');
 app.use('/api/uploads', express.static(uploadsPath));
 
 app.use(express.json({ 
-    limit: '100mb',
+    limit: '5mb',
     verify: (req: any, res, buf) => {
         if (req.originalUrl && req.originalUrl.includes('/stripe-webhook')) {
             req.rawBody = buf;
         }
     }
 }));
+
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 app.use((req, res, next) => {
     // console.log(`[Request] ${req.method} ${req.url}`);

@@ -127,14 +127,14 @@ const BoxRegistration: React.FC = () => {
                             placeholder={t('search_placeholder_box') || 'Buscar...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-sky-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
 
                 {isLoading ? (
                     <div className="flex justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-sky-500" />
+                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                     </div>
                 ) : filteredBoxes.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">
@@ -164,7 +164,7 @@ const BoxRegistration: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${box.type === 'CTO' ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'}`}>
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${box.type === 'CTO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'}`}>
                                             {box.type}
                                         </span>
                                     </td>
@@ -178,7 +178,7 @@ const BoxRegistration: React.FC = () => {
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenModal(box)}
-                                                className="p-2 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -230,7 +230,7 @@ const BoxRegistration: React.FC = () => {
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 translate-y-0 border border-slate-200 dark:border-slate-800">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Box className="w-6 h-6 text-sky-600" />
+                                <Box className="w-6 h-6 text-emerald-600" />
                                 {editingBox ? (t('edit_box') || 'Editar Caixa') : (t('new_box') || 'Nova Caixa')}
                             </h2>
                             <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">

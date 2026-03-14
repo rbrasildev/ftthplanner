@@ -1,4 +1,4 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -107,6 +107,19 @@ export const register = async (req: Request, res: Response) => {
         }).catch(err => console.error('[Registration] Failed to fetch SaaS config for admin notification:', err));
 
 
+        const token = jwt.sign(
+            { id: result.user.id, username: result.user.username, companyId: result.company.id, role: result.user.role },
+            process.env.JWT_SECRET as string,
+            { expiresIn: '7d' }
+        );
+
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: true, // Em produção via Nginx/Proxy ou SSL direto
+            sameSite: 'none', // Necessário para cross-origin se frontend/backend em domínios diferentes
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
 
     } catch (error) {
@@ -163,16 +176,24 @@ export const login = async (req: Request, res: Response) => {
                     companyId: user.companyId,
                     role: user.role
                 },
-                process.env.JWT_SECRET as string
+                process.env.JWT_SECRET as string,
+                { expiresIn: '7d' }
             );
+
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
             res.json({
-                token,
                 user: {
                     id: user.id,
                     username: user.username,
                     companyId: user.companyId,
                     role: user.role,
-                    company: user.company // Return full company info (with plan)
+                    company: user.company
                 }
             });
         } else {
@@ -340,3 +361,18 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 };
 
+export const logout = async (req: Request, res: Response) => {
+    res.clearCookie('auth_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+    });
+    res.json({ message: 'Logged out successfully' });
+};
+
+export const refresh = async (req: Request, res: Response) => {
+    // Implementação simplificada: se o cookie for válido (checado pelo middleware se necessário) 
+    // ou se quisermos renovar baseado no cookie atual.
+    // Por enquanto, apenas retornamos sucesso para compatibilidade.
+    res.json({ message: 'Refresh successful' });
+};

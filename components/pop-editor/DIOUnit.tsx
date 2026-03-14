@@ -86,7 +86,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={(e) => onLinkCables(e, dio.id)}
-                            className="p-1 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded transition-colors"
+                            className="p-1 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
                             title="Link Cables"
                         >
                             <Link2 className="w-3.5 h-3.5" />
@@ -121,7 +121,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                         {linkedCables.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5 select-none">
                                 {linkedCables.map(c => (
-                                    <span key={c.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/40 dark:text-sky-300 dark:border-sky-800/50">
+                                    <span key={c.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800/50">
                                         {c.name}
                                     </span>
                                 ))}

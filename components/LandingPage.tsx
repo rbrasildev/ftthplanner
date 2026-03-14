@@ -39,7 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
     }, []);
 
     return (
-        <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-sky-500/30">
+        <div className="h-full bg-slate-950 font-sans text-slate-100 overflow-y-auto overflow-x-hidden selection:bg-emerald-500/30">
             <Helmet>
                 <title>{appTitle} | Software para Projetos de Fibra Óptica</title>
                 <meta name="description" content={appDesc} />
@@ -94,16 +94,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="h-10 w-auto object-contain rounded-lg" />
                             <div className="flex flex-col">
                                 <span className="font-bold text-xl tracking-tight leading-none text-white">{saasConfig?.appName || t('app_title')}</span>
-                                <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest">Planner Pro</span>
+                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Planner Pro</span>
                             </div>
                         </div>
 
                         {/* Desktop Menu */}
                         <div className="hidden md:flex items-center space-x-8">
-                            <a href="#features" className="text-sm font-semibold text-slate-300 hover:text-sky-400 transition-colors">{t('landing_features')}</a>
-                            <a href="#pricing" className="text-sm font-semibold text-slate-300 hover:text-sky-400 transition-colors">{t('landing_pricing')}</a>
-                            <a href="#performance" className="text-sm font-semibold text-slate-300 hover:text-sky-400 transition-colors">{t('landing_performance')}</a>
-                            <a href="#how-it-works" className="text-sm font-semibold text-slate-300 hover:text-sky-400 transition-colors">{t('landing_how_it_works')}</a>
+                            <a href="#features" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_features')}</a>
+                            <a href="#pricing" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_pricing')}</a>
+                            <a href="#performance" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_performance')}</a>
+                            <a href="#how-it-works" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_how_it_works')}</a>
                         </div>
 
                         {/* Auth Buttons */}
@@ -118,7 +118,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             </button>
                             <button
                                 onClick={onLoginClick}
-                                className="text-sm font-bold text-slate-300 hover:text-sky-400 transition-colors"
+                                className="text-sm font-bold text-slate-300 hover:text-emerald-400 transition-colors"
                             >
                                 {t('landing_login')}
                             </button>
@@ -155,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 <span className="uppercase">{language === 'pt' ? 'English' : 'Português'}</span>
                             </button>
                             <button onClick={() => { onLoginClick(); setIsMenuOpen(false); }} className="w-full py-3 font-bold text-center border rounded-xl">{t('landing_login')}</button>
-                            <button onClick={() => { onRegisterClick(); setIsMenuOpen(false); }} className="w-full py-3 bg-sky-600 text-white font-bold rounded-xl shadow-lg">{t('landing_get_started')}</button>
+                            <button onClick={() => { onRegisterClick(); setIsMenuOpen(false); }} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg">{t('landing_get_started')}</button>
                         </div>
                     </div>
                 )}
@@ -164,17 +164,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             {/* --- HERO SECTION --- */}
             <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
                 {/* Background Blobs */}
-                <div className="absolute top-0 right-0 -z-10 w-[800px] h-[800px] bg-sky-500/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute top-0 right-0 -z-10 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
                 <div className="absolute bottom-0 left-0 -z-10 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -translate-x-1/3 translate-y-1/3"></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-900/30 border border-sky-800 text-sky-300 text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in zoom-in duration-700">
-                        <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/30 border border-emerald-800 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-8 animate-in fade-in zoom-in duration-700">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         {t('landing_hero_badge')}
                     </div>
 
                     <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 max-w-4xl mx-auto leading-[1.1]">
-                        {t('landing_hero_title_1')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">{t('landing_hero_title_2')}</span> {t('landing_hero_title_3')}
+                        {t('landing_hero_title_1')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-indigo-600">{t('landing_hero_title_2')}</span> {t('landing_hero_title_3')}
                     </h1>
 
                     <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -184,7 +184,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center mb-16">
                         <button
                             onClick={() => onRegisterClick()}
-                            className="w-full sm:w-auto px-8 py-4 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-sky-600/30 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-emerald-600/30 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                         >
                             {t('landing_start_trial')}
                             <ChevronRight className="w-5 h-5" />
@@ -270,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
             {/* --- FEATURES GRID --- */}
             <section id="features" className="py-24 relative overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -z-10 w-[1000px] h-[1000px] bg-sky-500/5 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute top-1/2 left-1/2 -z-10 w-[1000px] h-[1000px] bg-emerald-500/5 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2"></div>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">{t('landing_features_title')}</h2>
@@ -281,7 +281,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         {[
                             {
                                 icon: <MapIcon className="w-6 h-6 text-white" />,
-                                color: "bg-sky-500",
+                                color: "bg-emerald-500",
                                 title: t('landing_feat_maps'),
                                 desc: t('landing_feat_maps_desc')
                             },
@@ -393,12 +393,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             {/* --- PERFORMANCE SECTION --- */}
             <section id="performance" className="py-24 bg-slate-900 text-white relative overflow-hidden" >
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-sky-600/20 blur-[100px] rounded-full"></div>
+                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-emerald-600/20 blur-[100px] rounded-full"></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-900/50 border border-sky-700 text-sky-400 text-xs font-bold uppercase tracking-wider mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-700 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6">
                                 <Zap className="w-3 h-3" /> {t('landing_perf_badge')}
                             </div>
                             <h2 className="text-3xl md:text-5xl font-extrabold mb-6">{t('landing_perf_title')}</h2>
@@ -408,7 +408,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                             <div className="grid grid-cols-2 gap-8">
                                 <div>
-                                    <div className="text-4xl font-extrabold text-sky-400 mb-1">10k+</div>
+                                    <div className="text-4xl font-extrabold text-emerald-400 mb-1">10k+</div>
                                     <div className="text-sm font-medium text-slate-500 uppercase">{t('landing_stat_elements')}</div>
                                 </div>
                                 <div>
@@ -434,14 +434,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                     </div>
                                     <div className="w-full h-32 bg-slate-900 rounded-xl relative overflow-hidden">
                                         {/* Fake Graph */}
-                                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-sky-500/20 to-transparent"></div>
+                                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-emerald-500/20 to-transparent"></div>
                                         <svg className="absolute bottom-0 left-0 right-0 w-full h-full" preserveAspectRatio="none">
                                             <path d="M0,100 Q50,50 100,80 T200,40 T300,90 T400,20 T500,60 V120 H0 Z" fill="none" stroke="#0ea5e9" strokeWidth="2" />
                                         </svg>
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
-                                            <div className="h-full bg-sky-500 w-[95%]"></div>
+                                            <div className="h-full bg-emerald-500 w-[95%]"></div>
                                         </div>
                                     </div>
                                     <div className="text-xs text-slate-500 text-right">{t('landing_graph_load')}</div>
@@ -455,7 +455,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
             {/* --- SECURITY --- */}
             <section className="py-24 bg-slate-950" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-sky-600">
+                    <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-emerald-600">
                         <Shield className="w-8 h-8" />
                     </div>
                     <h2 className="text-3xl font-bold text-white mb-4">{t('landing_sec_title')}</h2>
@@ -495,7 +495,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             { step: "03", title: t('landing_step_3_title'), desc: t('landing_step_3_desc') }
                         ].map((item, idx) => (
                             <div key={idx} className="relative z-10 group">
-                                <div className="w-16 h-16 mx-auto bg-slate-900 border-2 border-slate-700 rounded-2xl flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-sky-600 group-hover:border-sky-500 transition-all duration-300 shadow-sm group-hover:shadow-lg group-hover:-translate-y-1 mb-6">
+                                <div className="w-16 h-16 mx-auto bg-slate-900 border-2 border-slate-700 rounded-2xl flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-500 transition-all duration-300 shadow-sm group-hover:shadow-lg group-hover:-translate-y-1 mb-6">
                                     {item.step}
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
@@ -510,7 +510,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
             {/* --- CTA SECTION --- */}
             <section className="py-24 relative overflow-hidden" >
-                <div className="absolute inset-0 bg-sky-600"></div>
+                <div className="absolute inset-0 bg-emerald-600"></div>
                 <div className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${saasConfig?.ctaBgImageUrl || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop'})` }}></div>
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2"></div>
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-900/40 rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2"></div>
@@ -519,12 +519,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
                         {t('landing_cta_title')}
                     </h2>
-                    <p className="text-xl text-sky-100 mb-10 max-w-2xl mx-auto">
+                    <p className="text-xl text-emerald-100 mb-10 max-w-2xl mx-auto">
                         {t('landing_cta_desc')}
                     </p>
                     <button
                         onClick={() => onRegisterClick()}
-                        className="px-10 py-5 bg-white text-sky-600 rounded-2xl font-bold text-xl shadow-2xl hover:bg-sky-50 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
+                        className="px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:bg-emerald-50 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
                     >
                         {t('landing_cta_btn')}
                         <ArrowRight className="w-6 h-6" />
@@ -546,12 +546,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             </p>
                             <div className="flex gap-4">
                                 {saasConfig?.socialFacebook && (
-                                    <a href={saasConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                                    <a href={saasConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
                                         <Globe className="w-5 h-5" />
                                     </a>
                                 )}
                                 {saasConfig?.socialInstagram && (
-                                    <a href={saasConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                                    <a href={saasConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
                                         <Network className="w-5 h-5" />
                                     </a>
                                 )}
@@ -561,10 +561,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         <div>
                             <h4 className="font-bold text-white mb-6">{t('landing_footer_product')}</h4>
                             <ul className="space-y-4 text-sm text-slate-400">
-                                <li><a href="#features" className="hover:text-sky-600 transition-colors">{t('landing_features')}</a></li>
-                                <li><a href="#pricing" className="hover:text-sky-600 transition-colors">{t('landing_pricing')}</a></li>
-                                <li><a href="#performance" className="hover:text-sky-600 transition-colors">{t('landing_performance')}</a></li>
-                                <li><a href="#how-it-works" className="hover:text-sky-600 transition-colors">{t('landing_how_it_works')}</a></li>
+                                <li><a href="#features" className="hover:text-emerald-600 transition-colors">{t('landing_features')}</a></li>
+                                <li><a href="#pricing" className="hover:text-emerald-600 transition-colors">{t('landing_pricing')}</a></li>
+                                <li><a href="#performance" className="hover:text-emerald-600 transition-colors">{t('landing_performance')}</a></li>
+                                <li><a href="#how-it-works" className="hover:text-emerald-600 transition-colors">{t('landing_how_it_works')}</a></li>
                             </ul>
                         </div>
 
@@ -573,14 +573,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <ul className="space-y-4 text-sm text-slate-400">
                                 {saasConfig?.supportEmail && (
                                     <li className="flex items-center gap-2">
-                                        <Mail className="w-4 h-4 text-sky-500" />
-                                        <a href={`mailto:${saasConfig.supportEmail}`} className="hover:text-sky-600 transition-colors">{saasConfig.supportEmail}</a>
+                                        <Mail className="w-4 h-4 text-emerald-500" />
+                                        <a href={`mailto:${saasConfig.supportEmail}`} className="hover:text-emerald-600 transition-colors">{saasConfig.supportEmail}</a>
                                     </li>
                                 )}
                                 {saasConfig?.supportPhone && (
                                     <li className="flex items-center gap-2">
-                                        <Phone className="w-4 h-4 text-sky-500" />
-                                        <a href={`tel:${saasConfig.supportPhone.replace(/\D/g, '')}`} className="hover:text-sky-600 transition-colors">{saasConfig.supportPhone}</a>
+                                        <Phone className="w-4 h-4 text-emerald-500" />
+                                        <a href={`tel:${saasConfig.supportPhone.replace(/\D/g, '')}`} className="hover:text-emerald-600 transition-colors">{saasConfig.supportPhone}</a>
                                     </li>
                                 )}
                             </ul>

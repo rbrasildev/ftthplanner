@@ -102,7 +102,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
                             points={`${50 + skewPercent},0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
-                            className={`transition-colors duration-300 fill-white dark:fill-[#2E2D39] ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
+                            className={`transition-colors duration-300 fill-white dark:fill-slate-800 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-600'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
@@ -141,13 +141,13 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             e.stopPropagation();
                             if (onContextMenu) onContextMenu(e, splitter.id);
                         }}
-                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-[#2E2D39] cursor-pointer pointer-events-auto
+                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-800 cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
-                        ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
+                        ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                         ${isLitIn
                                 ? 'border-red-500 bg-red-900 text-white'
-                                : 'border-slate-900 dark:border-slate-500 text-slate-900 dark:text-slate-500 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'}
+                                : 'border-slate-900 dark:border-slate-600 text-slate-900 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
                     `}
                     >
                         1
@@ -187,16 +187,16 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     : (t('port_label') || 'Porta {number}').replace('{number}', (idx + 1).toString())
                                 }
                                 className={`
-                                w-2.5 h-2.5 border bg-white dark:bg-[#2E2D39] cursor-pointer pointer-events-auto
+                                w-2.5 h-2.5 border bg-white dark:bg-slate-800 cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
                                 text-[6.5px] font-normal select-none  flex items-center justify-center
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
-                                ${hoveredPortId === pid ? 'ring-2 ring-sky-500 border-sky-400 bg-sky-50 dark:bg-sky-900' : ''}
+                                ${hoveredPortId === pid ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-500 bg-red-900 text-white'
                                         : customerName
                                             ? 'border-green-500 bg-green-50 text-green-700 font-bold' // Customer Style
-                                            : 'border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100 hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-300'
+                                            : 'border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
                                     }
                             `}
                                 style={{

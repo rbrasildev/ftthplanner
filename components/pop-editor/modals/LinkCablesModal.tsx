@@ -25,7 +25,7 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
             <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-80 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="h-10 bg-slate-700 px-4 flex items-center justify-between border-b border-slate-600">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <Link2 className="w-4 h-4 text-sky-400" />
+                        <Link2 className="w-4 h-4 text-emerald-400" />
                         {t('link_cables')}
                     </h3>
                     <button onClick={() => setConfiguringDioCablesId(null)}><X className="w-4 h-4 text-slate-400 hover:text-white" /></button>
@@ -45,7 +45,7 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                                 onClick={() => handleToggleCableLink(configuringDioCablesId, cable.id)}
                                 className={`
                                      w-full flex items-center justify-between p-2 rounded border text-xs font-medium transition-all
-                                     ${isLinked ? 'bg-sky-900/40 border-sky-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}
+                                     ${isLinked ? 'bg-emerald-900/40 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}
                                      ${assignedToOther ? 'opacity-50 cursor-not-allowed bg-slate-950' : ''}
                                  `}
                             >
@@ -53,7 +53,7 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                                     <CableIcon className="w-3 h-3" />
                                     {cable.name}
                                 </span>
-                                {isLinked && <Check className="w-3 h-3 text-sky-400" />}
+                                {isLinked && <Check className="w-3 h-3 text-emerald-400" />}
                                 {assignedToOther && <span className="text-[9px] text-red-400">Linked to {assignedToOther.name}</span>}
                             </button>
                         );

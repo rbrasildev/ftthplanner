@@ -89,23 +89,23 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                     icon={<Pencil className="w-4 h-4 text-white" />}
                     initialPos={initialPos}
                     onClose={() => setEditingOLT(null)}
-                    headerColor="bg-gradient-to-r from-sky-600 to-sky-800"
+                    headerColor="bg-gradient-to-r from-emerald-600 to-emerald-800"
                 >
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-sky-300 uppercase flex items-center gap-1.5">
+                            <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
                                 <Settings2 className="w-3.5 h-3.5" /> {t('name')}
                             </label>
                             <input
                                 type="text"
                                 value={editingOLT.name}
                                 onChange={e => setEditingOLT({ ...editingOLT, name: e.target.value })}
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-sky-500 font-bold"
+                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-bold"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-sky-300 uppercase flex items-center gap-1.5">
+                            <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
                                 <Settings2 className="w-3.5 h-3.5" /> {t('equipment_type')}
                             </label>
 
@@ -161,7 +161,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-sky-300 uppercase flex items-center gap-1.5">
+                            <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
                                 <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
@@ -183,7 +183,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
 
                         {(editingOLT.type === 'OLT' || !editingOLT.type) && (
                             <div className="space-y-3 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
-                                <label className="text-xs font-bold text-sky-300 uppercase flex items-center gap-1.5">
+                                <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
                                     <Settings2 className="w-3.5 h-3.5" /> {t('manage_slots')}
                                 </label>
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -196,7 +196,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                                 </span>
                                                 <div className="flex items-center gap-2">
                                                     <select
-                                                        className="bg-slate-900 border border-slate-700 rounded text-[10px] text-white p-1 focus:outline-none focus:border-sky-500"
+                                                        className="bg-slate-900 border border-slate-700 rounded text-[10px] text-white p-1 focus:outline-none focus:border-emerald-500"
                                                         value={slotConfig.active ? 'active' : 'empty'}
                                                         onChange={e => {
                                                             const newSlotsConfig = [...(editingOLT.structure?.slotsConfig || Array.from({ length: editingOLT.structure?.slots || 1 }).map(() => ({ active: true, portCount: editingOLT.structure?.portsPerSlot || 16 })))];
@@ -209,7 +209,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                                     </select>
                                                     {slotConfig.active && (
                                                         <select
-                                                            className="bg-slate-900 border border-slate-700 rounded text-[10px] text-white p-1 focus:outline-none focus:border-sky-500"
+                                                            className="bg-slate-900 border border-slate-700 rounded text-[10px] text-white p-1 focus:outline-none focus:border-emerald-500"
                                                             value={slotConfig.portCount}
                                                             onChange={e => {
                                                                 const newSlotsConfig = [...(editingOLT.structure?.slotsConfig || Array.from({ length: editingOLT.structure?.slots || 1 }).map(() => ({ active: true, portCount: editingOLT.structure?.portsPerSlot || 16 })))];
@@ -231,7 +231,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
 
                         <button
                             onClick={handleSaveEditedOLT}
-                            className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg shadow-lg shadow-sky-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
                         >
                             <Save className="w-4 h-4" /> {t('update')}
                         </button>

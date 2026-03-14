@@ -64,16 +64,16 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
             {/* Background */}
             <div className="absolute inset-0 z-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
 
-            <div className="relative z-10 w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                 <div className="p-8 sm:p-12">
                     <div className="text-center space-y-2 mb-8">
                         <div className="flex justify-center mb-6">
                             <img src={logoUrl || "/logo.png"} alt="Logo" className="h-20 w-auto object-contain" />
                         </div>
-                        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                             {success ? t('reset_password_success') : t('reset_password_title')}
                         </h1>
-                        <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                             {success ? t('reset_password_success_redirect') : t('reset_password_subtitle')}
                         </p>
                     </div>
@@ -107,7 +107,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 outline-none font-medium transition-all"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
                                         placeholder={t('register_password_placeholder')}
                                         required
                                         disabled={isLoading || !token}
@@ -119,7 +119,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                                         type="password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-zinc-400 outline-none font-medium transition-all"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
                                         placeholder={t('register_confirm_password_placeholder')}
                                         required
                                         disabled={isLoading || !token}
@@ -138,7 +138,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                             <button
                                 type="button"
                                 onClick={onBackToLogin}
-                                className="w-full text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                                className="w-full text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                                 {t('back_to_login')}

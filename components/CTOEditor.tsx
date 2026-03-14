@@ -659,6 +659,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [availableOLTs, setAvailableOLTs] = useState<OLTCatalogItem[]>([]);
     const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
     const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
+    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
 
     // Optical Power Calculation State
     const [isOpticalModalOpen, setIsOpticalModalOpen] = useState(false);
@@ -667,6 +668,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     useEffect(() => {
         const loadCatalogs = async () => {
+            setIsCatalogLoading(true);
             try {
                 const [splitters, fusions, cables, boxes, olts] = await Promise.all([
                     getSplitters(),
@@ -682,6 +684,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 setAvailableOLTs(olts);
             } catch (err) {
                 console.error("Failed to load catalogs", err);
+            } finally {
+                setIsCatalogLoading(false);
             }
         };
         loadCatalogs();
@@ -2895,7 +2899,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     return (
         <div
-            className={`cto-editor-modal fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-4 w-auto h-auto' : ''}`}
+            id="cto-editor-modal"
+            className={`cto-editor-modal fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-0' : ''}`}
             style={isMaximized ? {} : { left: windowPos.x, top: windowPos.y }}
         >
             {dragState && (
@@ -2906,7 +2911,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full' : isCollapsed ? 'w-[1100px] h-auto' : 'w-[1100px] h-[750px]'} bg-white dark:bg-slate-900 rounded-xl border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'w-[1100px] h-auto rounded-xl' : 'w-[1100px] h-[750px] rounded-xl'} bg-white dark:bg-slate-900 border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 {/* Toolbar / Draggable Header */}
@@ -2933,13 +2938,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </h2>
                         </div>
                         <div className="flex gap-1 pointer-events-auto items-center">
-                            <button
-                                onClick={() => setIsCollapsed(!isCollapsed)}
-                                title={isCollapsed ? t('expand') : t('collapse')}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                            >
-                                {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                            </button>
+                            {!isMaximized && (
+                                <button
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+                                    title={isCollapsed ? t('expand') : t('collapse')}
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                                >
+                                    {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                </button>
+                            )}
                             <button
                                 onClick={toggleMaximize}
                                 title={isMaximized ? t('restore') : t('maximize')}
@@ -3080,7 +3087,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-[#E6E6E6] dark:bg-[#242424] relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-slate-900 relative overflow-hidden"
                     style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
@@ -3088,7 +3095,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     {/* LOADING OVERLAY - Masks initial layout calculation */}
                     {!isContentReady && (
                         <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-bl-xl">
-                            <Loader2 className="w-10 h-10 text-sky-600 animate-spin mb-3" />
+                            <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-3" />
                             <p className="text-slate-600 dark:text-slate-400 font-medium text-sm animate-pulse">{t('loading_diagram') || 'Carregando diagrama...'}</p>
                         </div>
                     )}
@@ -3147,7 +3154,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                     {/* Grid Pattern - Adapts to Theme */}
                     <div
-                        className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] opacity-40"
+                        className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#475569_1px,transparent_1px),linear-gradient(to_bottom,#475569_1px,transparent_1px)] opacity-20"
                         style={{
                             backgroundSize: `${(GRID_SIZE * 5) * viewState.zoom}px ${(GRID_SIZE * 5) * viewState.zoom}px`,
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
@@ -3383,32 +3390,36 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
-                <div className="h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50">
+                <div className={`h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50 ${isMaximized ? 'pr-24' : ''}`}>
                     <div className="flex items-center gap-8">
                         {/* Model Select */}
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('model') || 'Modelo'}</span>
                             <div className="w-48">
-                                <CustomSelect
-                                    value={localCTO.catalogId || ''}
-                                    placement="top"
-                                    showSearch={false}
-                                    onChange={(selectedId) => {
-                                        const box = availableBoxes.find(b => b.id === selectedId);
-                                        setLocalCTO(prev => ({
-                                            ...prev,
-                                            catalogId: selectedId,
-                                            type: box?.type || prev.type
-                                        }));
-                                    }}
-                                    options={[
-                                        { value: '', label: t('select_box_model') || 'Selecionar Modelo...' },
-                                        ...availableBoxes.map(box => ({
-                                            value: box.id,
-                                            label: `${box.name} (${box.brand})`
-                                        }))
-                                    ]}
-                                />
+                                {isCatalogLoading ? (
+                                    <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl border border-slate-300 dark:border-slate-700" />
+                                ) : (
+                                    <CustomSelect
+                                        value={localCTO.catalogId || ''}
+                                        placement="top"
+                                        showSearch={false}
+                                        onChange={(selectedId) => {
+                                            const box = availableBoxes.find(b => b.id === selectedId);
+                                            setLocalCTO(prev => ({
+                                                ...prev,
+                                                catalogId: selectedId,
+                                                type: box?.type || prev.type
+                                            }));
+                                        }}
+                                        options={[
+                                            { value: '', label: t('select_box_model') || 'Selecionar Modelo...' },
+                                            ...availableBoxes.map(box => ({
+                                                value: box.id,
+                                                label: `${box.name} (${box.brand})`
+                                            }))
+                                        ]}
+                                    />
+                                )}
                             </div>
                         </div>
 
@@ -3418,7 +3429,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 { id: 'PLANNED', label: t('status_PLANNED'), color: '#f59e0b', textColor: 'text-amber-600 dark:text-amber-500' },
                                 { id: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED'), color: '#ef4444', textColor: 'text-red-600 dark:text-red-500' },
                                 { id: 'DEPLOYED', label: t('status_DEPLOYED'), color: '#10b981', textColor: 'text-emerald-600 dark:text-emerald-500' },
-                                { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-sky-600 dark:text-sky-500' }
+                                { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-emerald-600 dark:text-emerald-500' }
                             ].map((status) => (
                                 <button
                                     key={status.id}

@@ -128,7 +128,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         {onUpdateDio && (
                             <button
                                 onClick={() => setIsLinkModalOpen(true)}
-                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-sky-600/20 hover:border-sky-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-sky-400 flex items-center gap-2 border border-white/10 transition-all select-none"
+                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-emerald-600/20 hover:border-emerald-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-emerald-400 flex items-center gap-2 border border-white/10 transition-all select-none"
                             >
                                 <Link2 className="w-3.5 h-3.5" />
                                 {t('link_cables')}
@@ -213,7 +213,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         <div className="bg-slate-900 border border-white/10 rounded-2xl w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="h-14 bg-gradient-to-r from-slate-900 to-slate-800 px-5 flex items-center justify-between border-b border-white/5">
                                 <h3 className="text-white font-bold flex items-center gap-2">
-                                    <Link2 className="w-5 h-5 text-sky-400" />
+                                    <Link2 className="w-5 h-5 text-emerald-400" />
                                     {t('link_cables')}
                                 </h3>
                                 <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -236,7 +236,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                             disabled={!!assignedToWho}
                                             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group
                                         ${isLinked
-                                                    ? 'bg-sky-500/10 border-sky-500/50 text-white shadow-[0_0_10px_rgba(14,165,233,0.1)]'
+                                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-white shadow-[0_0_10px_rgba(14,165,233,0.1)]'
                                                     : (assignedToWho ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-500')}
                                     `}
                                         >
@@ -247,7 +247,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                                 </div>
                                                 <div className="text-[10px] opacity-60 font-mono">{cable.fiberCount} Fibers</div>
                                             </div>
-                                            {isLinked && <Check className="w-4 h-4 text-sky-400" />}
+                                            {isLinked && <Check className="w-4 h-4 text-emerald-400" />}
                                         </button>
                                     );
                                 })}

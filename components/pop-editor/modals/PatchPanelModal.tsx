@@ -50,7 +50,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
             <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="h-10 bg-slate-700 px-4 flex items-center justify-between border-b border-slate-600">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <Router className="w-4 h-4 text-sky-400" />
+                        <Router className="w-4 h-4 text-emerald-400" />
                         {t('connection_slot_port') || 'Connection for Slot/Port'}
                     </h3>
                     <button onClick={() => setConfiguringOltPortId(null)}><X className="w-4 h-4 text-slate-400 hover:text-white" /></button>
@@ -134,12 +134,12 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                                                             className={`
                                                                                         w-8 h-8 mx-auto rounded text-[9px] font-mono flex items-center justify-center border transition-all relative
                                                                                         ${isConnectedToSelf ? 'bg-emerald-600 border-emerald-400 text-white ring-2 ring-emerald-400/50 font-bold scale-110 z-10' : ''}
-                                                                                        ${occupiedByOtherOLT ? 'bg-slate-950 border-slate-800 text-slate-700 cursor-not-allowed' : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-sky-600 hover:text-white hover:border-sky-400'}
+                                                                                        ${occupiedByOtherOLT ? 'bg-slate-950 border-slate-800 text-slate-700 cursor-not-allowed' : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-400'}
                                                                                     `}
                                                                         >
                                                                             {(idx + 1) + 0 /* idx is 0-based relative to tray slice, so +1 gives 1-12. If we want 1-12 always, (idx+1) is correct. */}
                                                                             {hasBackboneLink && !isConnectedToSelf && !occupiedByOtherOLT && (
-                                                                                <CableIcon className="w-3 h-3 text-sky-500 absolute -top-1 -right-1" />
+                                                                                <CableIcon className="w-3 h-3 text-emerald-500 absolute -top-1 -right-1" />
                                                                             )}
                                                                         </button>
                                                                     );

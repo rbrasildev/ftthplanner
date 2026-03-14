@@ -73,7 +73,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={(e) => onEdit(e, olt)}
-                            className="p-1 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded transition-colors"
+                            className="p-1 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
                         >
                             <Pencil className="w-3.5 h-3.5" />
                         </button>
