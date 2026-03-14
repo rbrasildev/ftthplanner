@@ -1,8 +1,6 @@
-﻿import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 // Get Audit Logs
 export const getAuditLogs = async (req: AuthRequest, res: Response) => {

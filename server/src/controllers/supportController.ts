@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 
 export const createSupportSession = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;

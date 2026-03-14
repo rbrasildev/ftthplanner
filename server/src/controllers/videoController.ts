@@ -1,9 +1,7 @@
-﻿import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { logAudit } from './auditController';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 // Get all videos (Admin - includes inactive)
 export const getVideos = async (req: AuthRequest, res: Response) => {

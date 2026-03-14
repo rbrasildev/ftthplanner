@@ -1,6 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
-
-const defaultPrisma = new PrismaClient();
+import { prisma as defaultPrisma } from '../lib/prisma';
 
 export const cloneTemplatesToCompany = async (companyId: string, prisma: any = defaultPrisma) => {
     try {

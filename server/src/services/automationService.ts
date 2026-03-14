@@ -1,6 +1,5 @@
-import { PrismaClient, RetentionAutomationRule } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { RetentionAutomationRule } from '@prisma/client';
 
 export const executeAutomations = async () => {
     try {

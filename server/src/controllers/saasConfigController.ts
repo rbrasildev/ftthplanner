@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { logAudit } from './auditController';
 import fs from 'fs';
 import path from 'path';
-
-const prisma = new PrismaClient();
 
 const UPLOADS_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'logos');
 if (!fs.existsSync(UPLOADS_DIR)) {

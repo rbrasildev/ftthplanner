@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
 import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import Stripe from 'stripe';
-
-const prisma = new PrismaClient();
 
 // Initialize Stripe lazily to ensure process.env is fully loaded via dotenv
 let stripeInstance: Stripe | null = null;

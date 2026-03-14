@@ -1,11 +1,9 @@
-﻿import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer';
 import { Request, Response } from 'express';
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { testSmtpConnection, sendEmail } from '../services/emailService';
-
-const prisma = new PrismaClient();
 
 // SMTP Config
 export const getSmtpConfig = async (req: AuthRequest, res: Response) => {

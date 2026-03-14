@@ -1,9 +1,6 @@
-﻿import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 export const getSplitters = async (req: Request, res: Response) => {
     try {

@@ -1,9 +1,7 @@
 import cron from 'node-cron';
 import { processRetentionMetrics } from '../services/retentionService';
 import { executeAutomations } from '../services/automationService';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export const initCronJobs = () => {
     // Run daily at 02:00 AM for retention

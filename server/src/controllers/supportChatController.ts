@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { SocketService } from '../services/SocketService';
 
-const prisma = new PrismaClient();
+
 
 export const getConversations = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
