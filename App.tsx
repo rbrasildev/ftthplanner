@@ -365,11 +365,8 @@ export default function App() {
     }, [currentProject]);
 
     useEffect(() => {
-        // Fetch project if ID is present AND (ID changed OR currentProject is missing/mismatched)
-        const needsLoad = currentProjectId && (!currentProject || currentProject.id !== currentProjectId);
-        
-        if (needsLoad && token) {
-            projectService.getProject(currentProjectId!).then(p => {
+        if (currentProjectId && token && (currentProjectId !== prevProjectIdRef.current || !currentProject)) {
+            projectService.getProject(currentProjectId).then(p => {
                 setCurrentProject(p);
                 if (p.settings) setSystemSettings(p.settings);
             }).catch(err => {
@@ -383,11 +380,11 @@ export default function App() {
                     showToast(t('error_project_load') || 'Failed to load project', 'info');
                 }
             });
-        } else if (!currentProjectId && prevProjectIdRef.current) {
-            // Only nullify if we actually switched to a null ID (logout/exit)
-            setCurrentProject(null);
+        } else {
+            // Only nullify if we actually switched to a null ID (logout/exit), not on init
+            if (!currentProjectId && prevProjectIdRef.current) setCurrentProject(null);
         }
-    }, [currentProjectId, token, currentProject?.id]);
+    }, [currentProjectId, token]);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
@@ -433,18 +430,11 @@ export default function App() {
         } catch (error) {
             console.error('Failed to end support session remotely', error);
         } finally {
-            try {
-                await authService.logout();
-            } catch (authErr) {
-                console.error('Logout API call failed', authErr);
-            }
             localStorage.removeItem('ftth_support_token');
             localStorage.removeItem('ftth_current_project_id');
-            localStorage.removeItem(STORAGE_KEY_USER); 
+            // We keep USER and TOKEN (cookie) to stay logged in as admin
             setCurrentProjectId(null);
             setProjects([]);
-            setUser(null);
-            setUserPlan('Plano Grátis');
             setIsSupportMode(false);
             window.location.href = '/';
         }

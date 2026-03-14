@@ -13,8 +13,8 @@ export interface AuthRequest extends Request {
 }
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-    // Tenta ler do cookie primeiro, depois do header (fallback para compatibilidade)
-    const token = req.cookies?.auth_token || (req.headers['authorization']?.split(' ')[1]);
+    // Tenta ler do header primeiro (prioridade para Modo Suporte), depois do cookie
+    const token = (req.headers['authorization']?.split(' ')[1]) || req.cookies?.auth_token;
     
     if (token == null) {
         console.log(`[Auth] No token found in cookies or headers`);
