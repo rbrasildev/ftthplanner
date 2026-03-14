@@ -1,13 +1,14 @@
 import { prisma as defaultPrisma } from '../lib/prisma';
+import logger from '../lib/logger';
 
 export const cloneTemplatesToCompany = async (companyId: string, prisma: any = defaultPrisma) => {
     try {
-        console.log(`Cloning templates for company ${companyId}...`);
+        logger.info(`Cloning templates for company ${companyId}...`);
 
         // VERIFY COMPANY EXISTS FIRST
         const company = await prisma.company.findUnique({ where: { id: companyId } });
         if (!company) {
-            console.error(`Company ${companyId} not found. Aborting template cloning.`);
+            logger.error(`Company ${companyId} not found. Aborting template cloning.`);
             return;
         }
 
@@ -122,8 +123,8 @@ export const cloneTemplatesToCompany = async (companyId: string, prisma: any = d
             await prisma.catalogOLT.createMany({ data });
         }
 
-        console.log(`Successfully cloned templates for company ${companyId}`);
-    } catch (error) {
-        console.error("Error cloning templates:", error);
+        logger.info(`Successfully cloned templates for company ${companyId}`);
+    } catch (error: any) {
+        logger.error(`Error cloning templates: ${error.message}`);
     }
 };

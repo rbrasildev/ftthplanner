@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
+import logger from '../lib/logger';
 
 // Get Audit Logs
 export const getAuditLogs = async (req: AuthRequest, res: Response) => {
@@ -23,8 +24,8 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
         });
 
         res.json(logs);
-    } catch (error) {
-        console.error('Error fetching audit logs:', error);
+    } catch (error: any) {
+        logger.error(`Error fetching audit logs: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch audit logs' });
     }
 };
@@ -42,7 +43,7 @@ export const logAudit = async (userId: string, action: string, entity: string, e
                 ipAddress
             }
         });
-    } catch (error) {
-        console.error('Failed to create audit log:', error);
+    } catch (error: any) {
+        logger.error(`Failed to create audit log: ${error.message}`);
     }
 };

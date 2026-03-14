@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logAudit } from './auditController';
 import { AuthRequest } from '../middleware/auth';
+import logger from '../lib/logger';
 
 // Get all videos (Admin - includes inactive)
 export const getVideos = async (req: AuthRequest, res: Response) => {
@@ -10,9 +11,10 @@ export const getVideos = async (req: AuthRequest, res: Response) => {
             orderBy: { order: 'asc' }
         });
         res.json(videos);
-    } catch (error) {
+    } catch (error: any) {
+        logger.error(`[VideoController] Error: ${error.message}`);
         res.status(500).json({
-            error: 'Failed to fetch demo videos',
+            error: 'Failed',
             details: error instanceof Error ? error.message : String(error)
         });
     }

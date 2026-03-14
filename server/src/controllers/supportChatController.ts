@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { SocketService } from '../services/SocketService';
+import logger from '../lib/logger';
 
 
 
@@ -35,9 +36,9 @@ export const getConversations = async (req: Request, res: Response) => {
         });
 
         res.json(conversations);
-    } catch (error) {
-        console.error("Get Conversations Error:", error);
-        res.status(500).json({ error: 'Erro ao carregar conversas' });
+    } catch (error: any) {
+        logger.error(`Support Chat Error: ${error.message}`);
+        res.status(500).json({ error: 'Erro no servidor' });
     }
 };
 

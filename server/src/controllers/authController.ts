@@ -6,6 +6,7 @@ import crypto from 'crypto';
 
 import { cloneTemplatesToCompany } from '../services/templateService';
 import { sendEmail } from '../services/emailService';
+import logger from '../lib/logger';
 
 
 // Helper to get Plans
@@ -26,7 +27,7 @@ export const register = async (req: Request, res: Response) => {
 
         let selectedPlan = await getPlanByName(initialPlanName);
         if (!selectedPlan) {
-            console.warn(`Plan ${initialPlanName} not found, falling back to Trial`);
+            logger.warn(`Plan ${initialPlanName} not found, falling back to Trial`);
             selectedPlan = await getPlanByName('Plano Trial');
         }
 
@@ -77,19 +78,19 @@ export const register = async (req: Request, res: Response) => {
         await cloneTemplatesToCompany(result.company.id, prisma);
 
         // Send Welcome Email (Fail silently to not break registration)
-        console.log(`[Registration] Triggering welcome email for ${email} with slug welcome-email`);
+        logger.info(`[Registration] Triggering welcome email for ${email} with slug welcome-email`);
         sendEmail('welcome-email', email, {
             username: username,
             company_name: result.company.name,
-            login_url: process.env.FRONTEND_URL || 'https://ftthplanner.com.br'
-        }).then(info => console.log(`[Registration] Welcome email sent successfully to ${email}. MessageId: ${info?.messageId || 'N/A'}`))
-            .catch(err => console.error(`[Registration] Welcome email failed for ${email}:`, err));
+            login_url: process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br'
+        }).then(info => logger.info(`[Registration] Welcome email sent successfully to ${email}. MessageId: ${info?.messageId || 'N/A'}`))
+            .catch(err => logger.error(`[Registration] Welcome email failed for ${email}: ${err.message}`));
 
         // Send Admin Notification (Fail silently)
-        console.log(`[Registration] Fetching SaaS config for admin notification...`);
+        logger.info(`[Registration] Fetching SaaS config for admin notification...`);
         prisma.saaSConfig.findUnique({ where: { id: 'global' } }).then(saasConfig => {
             if (saasConfig?.supportEmail) {
-                console.log(`[Registration] Admin support email found: ${saasConfig.supportEmail}. Triggering notification...`);
+                logger.info(`[Registration] Admin support email found: ${saasConfig.supportEmail}. Triggering notification...`);
                 sendEmail('admin-new-client-notification', saasConfig.supportEmail, {
                     username: username,
                     company: result.company.name,
@@ -97,12 +98,12 @@ export const register = async (req: Request, res: Response) => {
                     phone: phone || 'N/A',
                     plan: selectedPlan?.name || 'Trial',
                     source: source || 'Direct'
-                }).then(info => console.log(`[Registration] Admin notification sent successfully to ${saasConfig.supportEmail}. MessageId: ${info?.messageId || 'N/A'}`))
-                    .catch(err => console.error(`[Registration] Admin notification failed for ${saasConfig.supportEmail}:`, err));
+                }).then(info => logger.info(`[Registration] Admin notification sent successfully to ${saasConfig.supportEmail}. MessageId: ${info?.messageId || 'N/A'}`))
+                    .catch(err => logger.error(`[Registration] Admin notification failed for ${saasConfig.supportEmail}: ${err.message}`));
             } else {
-                console.warn(`[Registration] No support email configured in SaaSConfig. Admin notification skipped.`);
+                logger.warn(`[Registration] No support email configured in SaaSConfig. Admin notification skipped.`);
             }
-        }).catch(err => console.error('[Registration] Failed to fetch SaaS config for admin notification:', err));
+        }).catch(err => logger.error(`[Registration] Failed to fetch SaaS config for admin notification: ${err.message}`));
 
 
         const token = jwt.sign(
@@ -120,8 +121,8 @@ export const register = async (req: Request, res: Response) => {
 
         res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
 
-    } catch (error) {
-        console.error(error);
+    } catch (error: any) {
+        logger.error(`Registration Error: ${error.message}`);
         res.status(400).json({ error: 'Username or Email already exists or invalid data' });
     }
 };
@@ -153,10 +154,10 @@ export const login = async (req: Request, res: Response) => {
                 // if (user.company.status === 'SUSPENDED' && user.role !== 'SUPER_ADMIN') {
                 //     return res.status(403).json({ error: 'Company subscription is suspended' });
                 // }
-
+ 
                 // CHECK TRIAL / SUBSCRIPTION EXPIRATION
                 if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                    console.log(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
+                    logger.info(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
                     // We don't downgrade anymore to ensure the trial remains expired and blocked
                 }
             }
@@ -197,8 +198,8 @@ export const login = async (req: Request, res: Response) => {
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
         }
-    } catch (e) {
-        console.error(e);
+    } catch (e: any) {
+        logger.error(`Login Error: ${e.message}`);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -207,11 +208,11 @@ export const getMe = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
         if (!userId) {
-            console.log("[getMe] No userId in request");
+            logger.debug("[getMe] No userId in request");
             return res.sendStatus(401);
         }
 
-        console.log(`[getMe] Fetching user ${userId}...`);
+        logger.debug(`[getMe] Fetching user ${userId}...`);
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
@@ -226,21 +227,21 @@ export const getMe = async (req: Request, res: Response) => {
             return res.sendStatus(404);
         }
 
-        console.log(`[getMe] User found: ${user.username}. Checking expiration...`);
+        logger.debug(`[getMe] User found: ${user.username}. Checking expiration...`);
 
         // --- REPEAT EXPIRATION CHECK LOGIC ---
         if (user.company) {
             if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                console.log(`[getMe] Subscription/Trial for ${user.company.name} expired. Blocking access.`);
+                logger.info(`[getMe] Subscription/Trial for ${user.company.name} expired. Blocking access.`);
                 // Downgrade removed for consistency
             }
         }
 
-        console.log("[getMe] Checking Plan Type logic...");
+        logger.debug("[getMe] Checking Plan Type logic...");
         // -------------------------------------
         // (Stripe Trial logic removed)
 
-        console.log("[getMe] Sending response.");
+        logger.debug("[getMe] Sending response.");
         res.json({
             user: {
                 id: user.id,
@@ -253,7 +254,7 @@ export const getMe = async (req: Request, res: Response) => {
         });
 
     } catch (e: any) {
-        console.error("[getMe] CRITIAL ERROR:", e);
+        logger.error(`[getMe] CRITICAL ERROR: ${e.message}`);
         res.status(500).json({ error: 'Failed to fetch user profile', details: e.message });
     }
 };
@@ -283,8 +284,8 @@ export const changePassword = async (req: Request, res: Response) => {
         });
 
         res.json({ message: 'Password updated successfully' });
-    } catch (e) {
-        console.error(e);
+    } catch (e: any) {
+        logger.error(`Change Password Error: ${e.message}`);
         res.status(500).json({ error: 'Failed to update password' });
     }
 };
@@ -310,9 +311,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
             }
         });
 
-        const resetUrl = `${process.env.FRONTEND_URL || 'https://ftthplanner.com.br'}/reset-password?token=${token}`;
+        const resetUrl = `${process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br'}/reset-password?token=${token}`;
 
-        console.log(`[ForgotPassword] Sending reset email to ${email}`);
+        logger.info(`[ForgotPassword] Sending reset email to ${email}`);
 
         await sendEmail('password-reset', email, {
             username: user.username,
@@ -321,8 +322,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
         });
 
         res.json({ message: 'Se este e-mail estiver cadastrado, você receberá um link de recuperação.' });
-    } catch (error) {
-        console.error('[ForgotPassword] Error:', error);
+    } catch (error: any) {
+        logger.error(`[ForgotPassword] Error: ${error.message}`);
         res.status(500).json({ error: 'Erro ao processar recuperação de senha' });
     }
 };
@@ -353,8 +354,8 @@ export const resetPassword = async (req: Request, res: Response) => {
         });
 
         res.json({ message: 'Senha atualizada com sucesso!' });
-    } catch (error) {
-        console.error('[ResetPassword] Error:', error);
+    } catch (error: any) {
+        logger.error(`[ResetPassword] Error: ${error.message}`);
         res.status(500).json({ error: 'Erro ao redefinir senha' });
     }
 };

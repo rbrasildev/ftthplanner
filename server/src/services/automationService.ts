@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { RetentionAutomationRule } from '@prisma/client';
+import logger from '../lib/logger';
 
 export const executeAutomations = async () => {
     try {
@@ -32,8 +33,8 @@ export const executeAutomations = async () => {
                 await dispatchMessage(userId, rule);
             }
         }
-    } catch (error) {
-        console.error('Error executing retention automations:', error);
+    } catch (error: any) {
+        logger.error(`Error executing retention automations: ${error.message}`);
     }
 };
 
@@ -57,7 +58,7 @@ const dispatchMessage = async (userId: string, rule: RetentionAutomationRule) =>
 
         // TODO: Send via appropriate channel (Email or Whatsapp)
         // Here we simulate the dispatch
-        console.log(`[Retention Automation] Sending ${rule.channel} to ${user.email || user.username}: Trigger = ${rule.triggerType}`);
+        logger.info(`[Retention Automation] Sending ${rule.channel} to ${user.email || user.username}: Trigger = ${rule.triggerType}`);
 
         // Log the message
         await prisma.retentionMessageLog.create({
@@ -68,7 +69,7 @@ const dispatchMessage = async (userId: string, rule: RetentionAutomationRule) =>
                 status: 'sent',
             }
         });
-    } catch (error) {
-        console.error(`Failed to dispatch message to user ${userId}:`, error);
+    } catch (error: any) {
+        logger.error(`Failed to dispatch message to user ${userId}: ${error.message}`);
     }
 };

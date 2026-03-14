@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
+import logger from '../lib/logger';
 
 interface AuthenticatedSocket extends Socket {
     user?: any;
@@ -44,7 +45,7 @@ export class SocketService {
                 const sockets = this.userSockets.get(userId) || [];
                 sockets.push(socket.id);
                 this.userSockets.set(userId, sockets);
-                console.log(`[Socket] Registered userId: ${userId} (Socket: ${socket.id})`);
+                logger.info(`[Socket] Registered userId: ${userId} (Socket: ${socket.id})`);
 
                 this.io.emit('user_presence_change', { userId, status: 'ONLINE' });
             }

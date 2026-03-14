@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
 
 export const sendEmail = async (templateSlug: string, to: string, variables: Record<string, string>) => {
     try {
-        console.log(`[EmailService] Starting sendEmail to ${to} for template ${templateSlug}`);
+        logger.info(`[EmailService] Starting sendEmail to ${to} for template ${templateSlug}`);
         const smtpConfig = await prisma.smtpConfig.findUnique({
             where: { id: 'global' }
         });
@@ -41,7 +42,7 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
         let renderedBody = template.body;
         let renderedSubject = template.subject;
 
-        const baseUrl = (process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
+        const baseUrl = (process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
 
         const formatUrl = (url: string | null) => {
             if (!url) return '';
@@ -88,7 +89,7 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
             normalizedVars[key.toLowerCase()] = val || '';
         });
 
-        console.log('[EmailService] Final variables for substitution:', Object.keys(normalizedVars));
+        logger.debug(`[EmailService] Final variables for substitution: ${Object.keys(normalizedVars).join(', ')}`);
 
         const replaceTags = (text: string) => {
             if (!text) return '';
@@ -98,7 +99,7 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
                 if (normalizedVars[tagLower] !== undefined) {
                     return normalizedVars[tagLower];
                 }
-                console.warn(`[EmailService] Warning: Tag {{${tag}}} not found in variables.`);
+                logger.warn(`[EmailService] Warning: Tag {{${tag}}} not found in variables.`);
                 return match;
             });
         };
@@ -118,10 +119,10 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
             html: htmlBody
         });
 
-        console.log(`[EmailService] Email sent successfully to ${to}`);
+        logger.info(`[EmailService] Email sent successfully to ${to}`);
         return info;
     } catch (error) {
-        console.error('[EmailService] Fatal sending error:', error);
+        logger.error('[EmailService] Fatal sending error:', error);
         throw error;
     }
 };
@@ -144,7 +145,7 @@ export const testSmtpConnection = async (config: any) => {
         await transporter.verify();
         return true;
     } catch (error) {
-        console.error('SMTP testing error:', error);
+        logger.error('SMTP testing error:', error);
         throw error;
     }
 };

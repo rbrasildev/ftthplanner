@@ -4,18 +4,7 @@ import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 
-// =========================================================
-// GLOBAL LOG SILENCER (BACKEND)
-// =========================================================
-// Remove or set to false to see all backend logs again
-const MUTE_LOGS = false;
-
-if (MUTE_LOGS) {
-    // Only muting log, info and debug. Keeping warn and error.
-    console.log = function () { };
-    console.info = function () { };
-    console.debug = function () { };
-}
+import logger from './lib/logger';
 
 import express from 'express';
 import cors from 'cors';
@@ -38,10 +27,11 @@ import { SocketService } from './services/SocketService';
 
 // Tratamento de erros globais para debug em produção
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
+    logger.error(`Uncaught Exception: ${err.message}`);
+    logger.error(err.stack || '');
 });
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error(`Unhandled Rejection at: ${promise} reason: ${reason}`);
 });
 
 const app = express();
@@ -60,7 +50,7 @@ app.use(cors({
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.warn('CORS bloqueado para a origem:', origin);
+            logger.warn(`CORS bloqueado para a origem: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -141,11 +131,12 @@ app.use('/api/backups', backupRoutes);
 // Error Handler - DEVE SER O ÚLTIMO
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
-        console.error('Bad JSON received:', err.message);
+        logger.error(`Bad JSON received: ${err.message}`);
         return res.status(400).json({ error: 'Invalid JSON request', details: err.message });
     }
 
-    console.error(`[Global Error] ${req.method} ${req.url}:`, err);
+    logger.error(`[Global Error] ${req.method} ${req.url}: ${err.message}`);
+    logger.error(err.stack || '');
     if (res.headersSent) {
         return next(err);
     }
@@ -167,5 +158,5 @@ const httpServer = createServer(app);
 SocketService.init(httpServer);
 
 httpServer.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`[Server] API and Socket.io running on port ${PORT} (0.0.0.0)`);
+    logger.info(`[Server] API and Socket.io running on port ${PORT} (0.0.0.0)`);
 });

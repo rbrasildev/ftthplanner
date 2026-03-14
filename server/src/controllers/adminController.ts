@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
 import bcrypt from 'bcryptjs';
 
 // Get Users (in same company)
@@ -22,8 +23,8 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
         });
 
         res.json(users);
-    } catch (error) {
-        console.error('Error fetching users:', error);
+    } catch (error: any) {
+        logger.error(`Error fetching users: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch users' });
     }
 };
@@ -97,8 +98,8 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             createdAt: newUser.createdAt
         });
 
-    } catch (error) {
-        console.error('Error creating user:', error);
+    } catch (error: any) {
+        logger.error(`Error creating user: ${error.message}`);
         res.status(500).json({ error: 'Failed to create user' });
     }
 };
@@ -133,8 +134,8 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
         res.json(updatedUser);
 
-    } catch (error) {
-        console.error('Error updating user:', error);
+    } catch (error: any) {
+        logger.error(`Error updating user: ${error.message}`);
         res.status(500).json({ error: 'Failed to update user' });
     }
 };
@@ -158,8 +159,8 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
         res.json({ message: 'User deleted successfully' });
 
-    } catch (error) {
-        console.error('Error deleting user:', error);
+    } catch (error: any) {
+        logger.error(`Error deleting user: ${error.message}`);
         res.status(500).json({ error: 'Failed to delete user' });
     }
 };

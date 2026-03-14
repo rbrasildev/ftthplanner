@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 
 import { processRetentionMetrics } from '../services/retentionService';
+import logger from '../lib/logger';
 
 export const processRetentionManual = async (req: Request, res: Response) => {
     try {
         await processRetentionMetrics();
         res.json({ success: true, message: 'Retention metrics processed successfully.' });
-    } catch (error) {
-        console.error('Error manually processing retention metrics:', error);
+    } catch (error: any) {
+        logger.error(`Error manually processing retention metrics: ${error.message}`);
         res.status(500).json({ error: 'Failed to process retention metrics manually.' });
     }
 };
@@ -99,8 +100,8 @@ export const getRetentionDashboard = async (req: Request, res: Response) => {
             alerts,
             users: tableData
         });
-    } catch (error) {
-        console.error('Error fetching retention dashboard:', error);
+    } catch (error: any) {
+        logger.error(`Error fetching retention dashboard: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch retention metrics' });
     }
 };

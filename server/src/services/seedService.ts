@@ -1,8 +1,10 @@
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
+import bcrypt from 'bcryptjs';
 
 export const seedDefaultPlans = async () => {
     try {
-        console.log('Seeding default plans...');
+        logger.info('Seeding default plans...');
 
         const plans = [
             {
@@ -48,15 +50,14 @@ export const seedDefaultPlans = async () => {
             const existing = await prisma.plan.findFirst({ where: { name: plan.name } });
             if (!existing) {
                 await prisma.plan.create({ data: plan });
-                console.log(`Created plan: ${plan.name}`);
+                logger.info(`Created plan: ${plan.name}`);
             }
         }
-    } catch (error) {
-        console.error('Error seeding plans:', error);
+    } catch (error: any) {
+        logger.error(`Error seeding plans: ${error.message}`);
     }
 };
 
-import bcrypt from 'bcryptjs';
 
 export const seedSuperAdmin = async () => {
     try {
@@ -74,7 +75,7 @@ export const seedSuperAdmin = async () => {
         });
 
         if (!existingAdmin) {
-            console.log('Seeding Super Admin user...');
+            logger.info('Seeding Super Admin user...');
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
             await prisma.user.create({
@@ -86,11 +87,11 @@ export const seedSuperAdmin = async () => {
                     active: true
                 }
             });
-            console.log(`Created Super Admin: ${adminEmail} / ${adminPassword}`);
+            logger.info(`Created Super Admin: ${adminEmail}`);
         } else {
-            console.log('Super Admin already exists. Skipping seed.');
+            logger.info('Super Admin already exists. Skipping seed.');
         }
-    } catch (error) {
-        console.error('Error seeding admin:', error);
+    } catch (error: any) {
+        logger.error(`Error seeding admin: ${error.message}`);
     }
 };

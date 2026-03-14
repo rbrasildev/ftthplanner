@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/auth';
+import logger from '../lib/logger';
 
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
@@ -70,8 +71,8 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
             createdAt: p.createdAt.getTime()
         }));
         res.json(formatted);
-    } catch (error) {
-        console.error('Error fetching map data:', error);
+    } catch (error: any) {
+        logger.error(`Error fetching map data: ${error.message}`);
         res.status(500).json({
             error: 'Failed to fetch map data',
             details: error instanceof Error ? error.message : String(error)
@@ -216,7 +217,7 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
             const nextYear = new Date();
             nextYear.setFullYear(nextYear.getFullYear() + 1);
             data.subscriptionExpiresAt = nextYear;
-            console.log(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()}`);
+            logger.info(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()}`);
         } else if (subscriptionExpiresAt) {
             data.subscriptionExpiresAt = new Date(subscriptionExpiresAt);
         }
@@ -225,15 +226,14 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
             where: { id },
             data
         });
-        console.log(`[saasController] âœ… Company ${id} updated successfully`);
+        logger.info(`[saasController] ✅ Company ${id} updated successfully`);
         res.json(company);
     } catch (error: any) {
-        console.error("Critical Update Company Error:", {
+        logger.error(`Critical Update Company Error: ${JSON.stringify({
             id: req.params.id,
             errorMessage: error?.message,
-            errorStack: error?.stack,
             prismaCode: error?.code
-        });
+        })}`);
         res.status(500).json({
             error: 'Failed to update company',
             details: error instanceof Error ? error.message : String(error),
@@ -283,8 +283,8 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         }
 
         res.json({ message: 'Company and all associated data deleted successfully' });
-    } catch (error) {
-        console.error("Delete company error:", error);
+    } catch (error: any) {
+        logger.error(`Delete company error: ${error.message}`);
         res.status(500).json({
             error: 'Failed to delete company',
             details: error instanceof Error ? error.message : String(error)
@@ -346,8 +346,8 @@ export const updateGlobalUser = async (req: AuthRequest, res: Response) => {
 
         const { passwordHash, ...rest } = user;
         res.json(rest);
-    } catch (error) {
-        console.error("Update user error:", error);
+    } catch (error: any) {
+        logger.error(`Update user error: ${error.message}`);
         res.status(500).json({
             error: 'Failed to update user',
             details: error instanceof Error ? error.message : String(error)

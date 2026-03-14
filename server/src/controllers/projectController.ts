@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
+import logger from '../lib/logger';
 
 export const getProjects = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
     if (!user || !user.companyId) {
-        console.log("[getProjects] Unauthorized: No user/companyId");
+        logger.warn("[getProjects] Unauthorized: No user/companyId");
         return res.status(401).send();
     }
 
     try {
-        console.log(`[getProjects] Fetching projects for company ${user.companyId}...`);
+        logger.info(`[getProjects] Fetching projects for company ${user.companyId}...`);
 
         // Fetch projects summaries
         const projects = await prisma.project.findMany({
@@ -60,7 +61,7 @@ export const getProjects = async (req: Request, res: Response) => {
             deployedMap[c.projectId].cables += c._count.id;
         });
 
-        console.log(`[getProjects] Found ${projects.length} projects.`);
+        logger.info(`[getProjects] Found ${projects.length} projects.`);
 
         res.json(projects.map((p: any) => ({
             id: p.id,
@@ -82,7 +83,7 @@ export const getProjects = async (req: Request, res: Response) => {
             settings: p.settings
         })));
     } catch (error: any) {
-        console.error("Get Projects Error:", error);
+        logger.error(`Get Projects Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch projects', details: error.message });
     }
 };
@@ -139,8 +140,8 @@ export const createProject = async (req: Request, res: Response) => {
             mapState: { center: { lat: project.centerLat, lng: project.centerLng }, zoom: project.zoom },
             settings: project.settings || { snapDistance: 30 }
         });
-    } catch (error) {
-        console.error("Create Project Error:", error);
+    } catch (error: any) {
+        logger.error(`Create Project Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to create project' });
     }
 };
@@ -246,8 +247,8 @@ export const getProject = async (req: Request, res: Response) => {
             settings: project.settings
         });
 
-    } catch (error) {
-        console.error(error);
+    } catch (error: any) {
+        logger.error(`Get Project Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch project' });
     }
 }
@@ -278,8 +279,8 @@ export const updateProject = async (req: Request, res: Response) => {
             mapState: { center: { lat: project.centerLat, lng: project.centerLng }, zoom: project.zoom },
             settings: project.settings
         });
-    } catch (error) {
-        console.error("Update project error:", error);
+    } catch (error: any) {
+        logger.error(`Update project error: ${error.message}`);
         res.status(500).json({ error: 'Failed to update project' });
     }
 };
@@ -305,8 +306,8 @@ export const deleteProject = async (req: Request, res: Response) => {
         // Delete the project
         await prisma.project.delete({ where: { id } }); // We already verified checks above
         res.json({ success: true });
-    } catch (e) {
-        console.error("Delete project error:", e);
+    } catch (e: any) {
+        logger.error(`Delete project error: ${e.message}`);
         res.status(500).json({ error: 'Failed' });
     }
 }
@@ -353,17 +354,17 @@ export const syncProject = async (req: Request, res: Response) => {
             return !duplicate;
         });
     }
-
+ 
     try {
-        console.log(`[Sync] Project ${id} | User ${user.username} | Company ${user.companyId}`);
+        logger.info(`[Sync] Project ${id} | User ${user.username} | Company ${user.companyId}`);
 
         if (network.ctos && network.ctos.length > 0) {
             const sampleCTO = network.ctos[0];
-            console.log(`[Sync Debug] Sample CTO: ${sampleCTO.name} (${sampleCTO.id})`);
-            console.log(`[Sync Debug] Fusions: ${sampleCTO.fusions?.length}, Layout Keys: ${Object.keys(sampleCTO.layout || {}).length}`);
+            logger.debug(`[Sync Debug] Sample CTO: ${sampleCTO.name} (${sampleCTO.id})`);
+            logger.debug(`[Sync Debug] Fusions: ${sampleCTO.fusions?.length}, Layout Keys: ${Object.keys(sampleCTO.layout || {}).length}`);
             if (sampleCTO.fusions?.length > 0) {
-                console.log(`[Sync Debug] First Fusion ID: ${sampleCTO.fusions[0].id}`);
-                console.log(`[Sync Debug] Layout Entry:`, sampleCTO.layout?.[sampleCTO.fusions[0].id]);
+                logger.debug(`[Sync Debug] First Fusion ID: ${sampleCTO.fusions[0].id}`);
+                logger.debug(`[Sync Debug] Layout Entry: ${JSON.stringify(sampleCTO.layout?.[sampleCTO.fusions[0].id])}`);
             }
         }
 
@@ -413,17 +414,17 @@ export const syncProject = async (req: Request, res: Response) => {
             const maxCTOs = Number(limits.maxCTOs || 0);
             const maxPOPs = Number(limits.maxPOPs || 0);
 
-            console.log(`[Sync Check] Comp: ${company.name}, Plan: ${company.plan?.name}`);
-            console.log(`[Sync Check] Global CTOs: ${totalGlobalCTOs}, Proj: ${currentProjectCTOs}, Pay: ${payloadCTOCount}, Delta: ${deltaCTO}`);
-            console.log(`[Sync Check] Limits: MaxCTOs ${maxCTOs}, MaxPOPs ${maxPOPs}`);
+            logger.info(`[Sync Check] Comp: ${company.name}, Plan: ${company.plan?.name}`);
+            logger.info(`[Sync Check] Global CTOs: ${totalGlobalCTOs}, Proj: ${currentProjectCTOs}, Pay: ${payloadCTOCount}, Delta: ${deltaCTO}`);
+            logger.info(`[Sync Check] Limits: MaxCTOs ${maxCTOs}, MaxPOPs ${maxPOPs}`);
 
             if (deltaCTO > 0 && maxCTOs > 0 && (totalGlobalCTOs + deltaCTO) > maxCTOs) {
-                console.error(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${maxCTOs}`);
+                logger.warn(`[Sync Blocked] CTO Limit: Global ${totalGlobalCTOs} + Delta ${deltaCTO} > ${maxCTOs}`);
                 return res.status(403).json({ error: `Limite de CTOs excedido. Máximo: ${maxCTOs}. Você tem: ${totalGlobalCTOs}. Tentando adicionar: ${deltaCTO}.` });
             }
 
             if (deltaPOP > 0 && maxPOPs > 0 && (totalGlobalPOPs + deltaPOP) > maxPOPs) {
-                console.error(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${maxPOPs}`);
+                logger.warn(`[Sync Blocked] POP Limit: Global ${totalGlobalPOPs} + Delta ${deltaPOP} > ${maxPOPs}`);
                 return res.status(403).json({ error: `Limite de POPs excedido (${maxPOPs})` });
             }
         }
@@ -488,7 +489,7 @@ export const syncProject = async (req: Request, res: Response) => {
         // Remap Logic if collisions exist
         const idMap = new Map<string, string>(); // oldId -> newId
         if (collidingIds.size > 0) {
-            console.log(`[Sync] Found ${collidingIds.size} ID collisions. Remapping...`);
+            logger.info(`[Sync] Found ${collidingIds.size} ID collisions. Remapping...`);
 
             // Generate new IDs
             collidingIds.forEach(oldId => {

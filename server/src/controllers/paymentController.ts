@@ -4,13 +4,14 @@ import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import Stripe from 'stripe';
+import logger from '../lib/logger';
 
 // Initialize Stripe lazily to ensure process.env is fully loaded via dotenv
 let stripeInstance: Stripe | null = null;
 const getStripe = () => {
     if (!stripeInstance) {
         if (!process.env.STRIPE_SECRET_KEY) {
-            console.error('WARNING: STRIPE_SECRET_KEY is missing in env!');
+            logger.error('CRITICAL: STRIPE_SECRET_KEY is missing in env!');
         }
         stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
             apiVersion: '2023-10-16' as any,
@@ -21,7 +22,7 @@ const getStripe = () => {
 
 // Initialize the client object with the access token from environment variables
 if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-    console.warn('WARNING: MERCADOPAGO_ACCESS_TOKEN is not set in environment variables.');
+    logger.warn('WARNING: MERCADOPAGO_ACCESS_TOKEN is not set in environment variables.');
 }
 
 const client = new MercadoPagoConfig({
@@ -74,7 +75,7 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
                     where: { id: companyId },
                     data: { stripeCustomerId: customer.id }
                 });
-            } catch (e) { console.log("Could not save stripeCustomerId, column might not exist."); }
+            } catch (e) { logger.debug("Could not save stripeCustomerId, column might not exist."); }
         }
 
         // Check if plan has a pre-existing Stripe Price ID
@@ -132,8 +133,8 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Stripe Intent Error:', error);
-        require('fs').writeFileSync('stripe-error.log', String(error.stack || error.message) + '\\n' + JSON.stringify(error, null, 2));
+        logger.error(`Stripe Intent Error: ${error.message}`);
+        require('fs').writeFileSync('stripe-error.log', String(error.stack || error.message) + '\n' + JSON.stringify(error, null, 2));
         res.status(500).json({ error: 'Stripe Error: ' + (error.message || 'Unknown'), details: error.message });
     }
 };
@@ -143,7 +144,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!sig || !webhookSecret) {
-        console.error('Webhook missing signature or secret');
+        logger.error('Stripe Webhook missing signature or secret');
         return res.status(400).send('Webhook Error: Missing signature or secret');
     }
 
@@ -158,7 +159,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
         const payload = (req as any).rawBody || req.body;
         event = stripe.webhooks.constructEvent(payload, sig as string, webhookSecret);
     } catch (err: any) {
-        console.error(`Webhook Error: ${err.message}`);
+        logger.error(`Stripe Webhook Signature Verification Failed: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -190,14 +191,14 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         subscriptionExpiresAt: nextMonth
                     }
                 });
-                console.log(`Stripe Webhook: Activated company ${companyId} on plan ${planId}`);
+                logger.info(`Stripe Webhook: Activated company ${companyId} on plan ${planId}`);
             } else {
-                console.log(`Stripe Webhook: Unhandled invoice ${invoice.id} payment_succeeded (missing companyId/planId)`);
+                logger.info(`Stripe Webhook: Unhandled invoice ${invoice.id} payment_succeeded (missing companyId/planId)`);
             }
         }
     } catch (error) {
         const errMsg = error instanceof Error ? error.stack || error.message : String(error);
-        console.error('Error processing Stripe webhook:', errMsg);
+        logger.error(`Error processing Stripe webhook: ${errMsg}`);
         require('fs').appendFileSync(require('path').join(__dirname, '../../stripe-error.log'), `\n[WEBHOOK ERR] ${new Date().toISOString()}:\n${errMsg}\n`);
         return res.status(500).json({ error: 'Failed to process webhook', details: errMsg });
     }
@@ -280,7 +281,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                     payer_first_name: firstName,
                     payer_last_name: lastName,
                     card_token_id: token,
-                    back_url: process.env.VITE_API_URL || 'https://ftthplanner.com.br',
+                    back_url: process.env.APP_URL || process.env.VITE_API_URL || 'https://ftthplanner.com.br',
                     status: 'authorized',
                     external_reference: companyId,
                 } as any,
@@ -291,7 +292,7 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                 // Note: 'create' for PreApproval might verify the card and set up recurrence
                 result = await preapproval.create(subscriptionBody);
             } catch (subError: any) {
-                console.error('PreApproval Create Error:', subError);
+                logger.error(`Mercado Pago PreApproval Create Error: ${subError.message}`);
                 // Fallback or re-throw
                 throw subError;
             }
@@ -385,14 +386,14 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Subscription Error:', error);
+        logger.error(`Mercado Pago Subscription Error: ${error.message}`);
 
         let errorMessage = error.message || 'Unknown error during subscription';
         let errorDetails = error;
 
         // Try to extract more details from Mercado Pago error
         if (error.response?.data) {
-            console.error('Mercado Pago API Error Details:', JSON.stringify(error.response.data, null, 2));
+            logger.error(`Mercado Pago API Error Details: ${JSON.stringify(error.response.data)}`);
             errorMessage = error.response.data.message || errorMessage;
             errorDetails = error.response.data;
         }
@@ -455,7 +456,7 @@ export const processPayment = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Mercado Pago Error:', error);
+        logger.error(`Mercado Pago Payment Error: ${error.message}`);
 
         // Handle specific Mercado Pago errors if possible, otherwise generic
         const errorMessage = error.message || 'Unknown error occurred during payment processing';
@@ -570,7 +571,7 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Create Pix Error Deep Trace:', JSON.stringify(error.response?.data || error.message, null, 2));
+        logger.error(`Mercado Pago Create Pix Error: ${error.message}`);
         return res.status(500).json({
             error: 'Error generating Pix payment',
             details: error.response?.data || { message: error.message },
@@ -586,7 +587,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         const topic = query.topic || query.type;
         const id = query.id || body.data?.id; // Payment ID or Preapproval ID
 
-        console.log('Webhook received:', { topic, id });
+        logger.info(`Mercado Pago Webhook received: topic=${topic}, id=${id}`);
 
         if (!id) {
             return res.status(200).send('OK (No ID)');
@@ -619,7 +620,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                     });
                 }
 
-                console.log(`Company ${companyId} subscription EXTENDED via payment webhook. ID: ${id}`);
+                logger.info(`Company ${companyId} subscription EXTENDED via payment webhook. ID: ${id}`);
             }
         } else if (topic === 'subscription_preapproval') {
             // Handle Subscription events (e.g., cancelled, paused)
@@ -630,7 +631,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                 if (preapprovalInfo.status === 'cancelled') {
                     // Optionally set status to CANCELLED or similar, but maybe just let it expire?
                     // Let's just log for now, or maybe remove the planId?
-                    console.log(`Subscription ${id} for company ${externalRef} was CANCELLED.`);
+                    logger.info(`Mercado Pago Subscription ${id} for company ${externalRef} was CANCELLED.`);
                     // Potentially update DB to reflect cancellation pending
                 }
             }
@@ -639,7 +640,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         return res.status(200).send('OK');
 
     } catch (error) {
-        console.error('Webhook Error:', error);
+        logger.error(`Mercado Pago Webhook Logic Error: ${error instanceof Error ? error.message : String(error)}`);
         // Always return 200 to avoid retries from MP if it's just our logic failing
         return res.status(200).send('OK (Error handled)');
     }
@@ -675,7 +676,7 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
         res.json({ message: 'Subscription cancelled successfully.' });
 
     } catch (error: any) {
-        console.error('Cancel Subscription Error:', error);
+        logger.error(`Mercado Pago Cancel Subscription Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
     }
 };
@@ -696,7 +697,7 @@ export const getInvoiceStatus = async (req: AuthRequest, res: Response) => {
 
         return res.json({ status: invoice.status });
     } catch (error) {
-        console.error('Get Invoice Status Error:', error);
+        logger.error(`Get Invoice Status Error: ${error instanceof Error ? error.message : String(error)}`);
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -730,7 +731,7 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
             mercadopagoPaymentId: inv.mercadopagoPaymentId
         })));
     } catch (error) {
-        console.error('Get Invoices Error:', error);
+        logger.error(`Get Invoices Error: ${error instanceof Error ? error.message : String(error)}`);
         return res.status(500).json({ error: 'Failed to fetch invoices' });
     }
 };

@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
 const BACKUP_DIR = path.join(__dirname, '../../backups');
 
 // Ensure backup directory exists
@@ -51,7 +52,7 @@ export class BackupService {
 
             const stats = await fs.promises.stat(filepath);
 
-            console.log(`[BackupService] Backup created: ${filename} (Company: ${companyId})`);
+            logger.info(`[BackupService] Backup created: ${filename} (Company: ${companyId})`);
 
             return {
                 filename,
@@ -59,8 +60,8 @@ export class BackupService {
                 createdAt: stats.birthtime
             };
 
-        } catch (error) {
-            console.error('[BackupService] Failed to create backup:', error);
+        } catch (error: any) {
+            logger.error(`[BackupService] Failed to create backup: ${error.message}`);
             throw error;
         }
     }
@@ -78,14 +79,8 @@ export class BackupService {
             // Order matters due to Foreign Keys. 
             // Cables depend on Nodes (CTO/POP). CTO/POP depend on Project.
             // But simpler: Cascade delete on Project usually handles it?
-            // Schema check: Project->onDelete:Cascade -> Cto/Pop/Cable?
-            // Cto: project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-            // Cable: project Project @relation(...) onDelete: Cascade
-            // So deleting Projects should clear most things.
-            // However, orphan items (not in project?) might exist if we allow that.
-            // Ideally we query items by companyId and delete.
-
-            console.log(`[Restore] Clearing data for company ${companyId}...`);
+            // ...
+            logger.info(`[Restore] Clearing data for company ${companyId}...`);
 
             // Delete Cables first (refers to Nodes)
             await tx.cable.deleteMany({ where: { companyId } });
@@ -98,7 +93,7 @@ export class BackupService {
             // Delete Projects (which would cascade delete anyway, but explicit is safe)
             await tx.project.deleteMany({ where: { companyId } });
 
-            console.log(`[Restore] inserting data...`);
+            logger.info(`[Restore] inserting data...`);
 
             // 2. Insert Data
             // Projects
@@ -126,7 +121,7 @@ export class BackupService {
                 await tx.cable.createMany({ data: jsonData.cables });
             }
 
-            console.log(`[Restore] Restore complete for company ${companyId}`);
+            logger.info(`[Restore] Restore complete for company ${companyId}`);
         });
     }
 
@@ -151,8 +146,8 @@ export class BackupService {
             // Sort by newst first
             return fileStats.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-        } catch (error) {
-            console.error('[BackupService] Failed to list backups:', error);
+        } catch (error: any) {
+            logger.error(`[BackupService] Failed to list backups: ${error.message}`);
             return [];
         }
     }
@@ -173,8 +168,8 @@ export class BackupService {
                 return true;
             }
             return false;
-        } catch (error) {
-            console.error('[BackupService] Failed to delete backup:', error);
+        } catch (error: any) {
+            logger.error(`[BackupService] Failed to delete backup: ${error.message}`);
             throw error;
         }
     }
@@ -213,8 +208,8 @@ export class BackupService {
                     for (const comp of companies) {
                         await this.createBackup(comp.id, false);
                     }
-                } catch (err) {
-                    console.error("Scheduled backup failed", err);
+                } catch (err: any) {
+                    logger.error(`Scheduled backup failed: ${err.message}`);
                 }
             }
         }, 60 * 1000);

@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { testSmtpConnection, sendEmail } from '../services/emailService';
+import logger from '../lib/logger';
 
 // SMTP Config
 export const getSmtpConfig = async (req: AuthRequest, res: Response) => {
@@ -62,7 +63,7 @@ export const testSmtp = async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, message: 'Conexão e e-mail de teste enviados com sucesso!' });
     } catch (error) {
-        console.error('SMTP test error:', error);
+        logger.error(`SMTP test error: ${error instanceof Error ? error.message : String(error)}`);
         res.status(400).json({
             success: false,
             message: 'Falha no teste de SMTP',
@@ -120,7 +121,7 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
         });
         res.json(template);
     } catch (error: any) {
-        console.error('[EmailController] Update template error:', error);
+        logger.error(`[EmailController] Update template error: ${error.message}`);
         if (error.code === 'P2002') {
             return res.status(400).json({ error: 'Slug já está em uso por outro template' });
         }
@@ -177,7 +178,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Nenhum destinatário encontrado para o alvo selecionado' });
         }
 
-        const loginUrl = (process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
+        const loginUrl = (process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
 
         // Send emails
         await Promise.all(users.map(user =>
@@ -187,7 +188,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
                 company_logo: user.company?.logoUrl || '',
                 login_url: loginUrl,
                 app_url: loginUrl
-            }).catch((err: Error) => console.error(`Failed to send targeted email to ${user.email}:`, err))
+            }).catch((err: Error) => logger.error(`Failed to send targeted email to ${user.email}: ${err.message}`))
         ));
 
         res.json({
@@ -202,7 +203,7 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
         }
 
     } catch (error) {
-        console.error('Send template failed:', error);
+        logger.error(`Send template failed: ${error instanceof Error ? error.message : String(error)}`);
         res.status(500).json({ error: 'Falha ao processar o envio do template' });
     }
 };

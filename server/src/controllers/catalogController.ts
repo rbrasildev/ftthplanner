@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
+import logger from '../lib/logger';
 
 export const getSplitters = async (req: Request, res: Response) => {
     try {
@@ -12,9 +13,9 @@ export const getSplitters = async (req: Request, res: Response) => {
             orderBy: { name: 'asc' }
         });
         res.json(splitters);
-    } catch (error) {
-        console.error("Error fetching splitters:", error);
-        res.status(500).json({ error: "Failed to fetch splitters" });
+    } catch (error: any) {
+        logger.error(`[CatalogController] Error: ${error.message}`);
+        res.status(500).json({ error: "Failed" });
     }
 };
 

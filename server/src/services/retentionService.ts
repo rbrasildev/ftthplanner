@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import logger from '../lib/logger';
 
 export const calculateChurnRisk = (
     daysSinceLogin: number,
@@ -114,8 +115,8 @@ export const processRetentionMetrics = async () => {
             // Generate retention alerts based on conditions
             await evaluateAlerts(user.id, user.companyId, daysSinceLogin, projectsCount, planDaysRemaining, paymentFailed);
         }
-    } catch (error) {
-        console.error('Error processing retention metrics:', error);
+    } catch (error: any) {
+        logger.error(`Error processing retention metrics: ${error.message}`);
     }
 };
 
