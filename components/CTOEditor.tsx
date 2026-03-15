@@ -1,18 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
 import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check } from 'lucide-react';
-// ... (lines 5-520 preserved by context logic of replace_file_content if targeted correctly, but here I am targeting start of file for import and then specific block for function?)
-// No, replace_file_content is single block. I have to do multiple edits or one large edit.
-// Let's do imports first, then function body.
-// Wait, I can use multi_replace_file_content.
-// But first let me check line numbers again from view_file.
-
-// Line 2: imports.
-// Line 534: FIBER_COLORS usage.
-// Line 601: FIBER_COLORS usage (likely).
-
-// I will use multi_replace_file_content.
-
 import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
 import { CustomInput } from './common/CustomInput';
@@ -705,31 +693,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         forceUpdate(n => n + 1);
     }, [incomingCables, localCTO.connections, viewState.zoom]);
 
-    // CONFLICT: This cleanup competes with reconcileOrphans. 
-    // If runs before migration, it deletes useful connections.
-    // useEffect(() => {
-    //     setLocalCTO(prev => {
-    //         const currentCableIds = new Set(incomingCables.map(c => c.id));
-    //         const validConnections = prev.connections.filter(c => {
-    //             // Check Source
-    //             if (c.sourceId.includes('-fiber-')) {
-    //                 const cableId = c.sourceId.split('-fiber-')[0];
-    //                 if (!currentCableIds.has(cableId)) return false;
-    //             }
-    //             // Check Target
-    //             if (c.targetId.includes('-fiber-')) {
-    //                 const cableId = c.targetId.split('-fiber-')[0];
-    //                 if (!currentCableIds.has(cableId)) return false;
-    //             }
-    //             return true;
-    //         });
-    //
-    //         if (validConnections.length !== prev.connections.length) {
-    //             return { ...prev, connections: validConnections };
-    //         }
-    //         return prev;
-    //     });
-    // }, [incomingCables]);
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -1410,7 +1373,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleExportPNG = async () => {
         // --- GATEKEEPING ---
-        // --- GATEKEEPING ---
         // Logic Update: subscriptionExpiresAt exists for ALL plans (Trial and Paid).
         // We only want to block if it's "Plano Grátis" or explicitly a generic restricted trial (if applicable).
         // But "Plano Ilimitado" is paid, so it should pass.
@@ -1480,7 +1442,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     // --- OPTICAL POWER CALCULATION HANDLER ---
     const handleSplitterDoubleClick = (splitterId: string) => {
-        console.log("Double click detected on splitter:", splitterId);
         const splitter = localCTO.splitters.find(s => s.id === splitterId);
         if (!splitter) {
             console.error("Splitter not found in localCTO:", splitterId);
@@ -1498,7 +1459,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
             console.log("Tracing path for:", splitter.name);
             const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
-            console.log("Trace result:", result);
             setOpticalResult(result);
             setSelectedSplitterName(splitter.name);
             setIsOpticalModalOpen(true);
@@ -1558,8 +1518,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // Read current visual transform
             const style = window.getComputedStyle(domEl);
             const matrix = new WebKitCSSMatrix(style.transform);
-            initialX = matrix.m41;
-            initialY = matrix.m42;
             initialX = matrix.m41;
             initialY = matrix.m42;
 
