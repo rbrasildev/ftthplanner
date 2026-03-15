@@ -355,7 +355,11 @@ export default function App() {
                     setUserBackupEnabled(false);
                 }
             } catch (err: any) {
-                console.error("Session hydration failed", err);
+                // Only log if it's NOT a 401 (which is normal for unauthenticated users)
+                if (err?.response?.status !== 401) {
+                    console.error("Session hydration failed", err);
+                }
+                
                 setUserBackupEnabled(false);
                 if (err.response && err.response.status === 401) {
                     setUser(null);

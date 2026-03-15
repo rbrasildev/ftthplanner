@@ -2263,6 +2263,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 // FIND CLOSEST CONNECTION (PRECISION UPDATE)
                 let closestConnection: FiberConnection | null = null;
                 let minDistance = 5; // Tolerance - Reduced from 20 to 5 per user request
+                let closestSegmentIndex = 0; // Index of the closest segment
 
                 localCTO.connections.forEach(conn => {
                     if (conn.sourceId.startsWith(fusionId) || conn.targetId.startsWith(fusionId)) return;
@@ -2277,12 +2278,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         if (dist < minDistance) {
                             minDistance = dist;
                             closestConnection = conn;
+                            closestSegmentIndex = i; // Save segment index of best match
                         }
                     }
                 });
 
                 if (closestConnection) {
                     const hitConnection = closestConnection as FiberConnection;
+                    let hitSegmentIndex = closestSegmentIndex; // Use segment index from PASS 1
 
                     // SNAP TO FIBER LOGIC
                     const p1_seg = getPortCenter(hitConnection.sourceId);
@@ -2312,6 +2315,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                                 newX = snapX - 12;
                                 newY = snapY - 6;
+                                hitSegmentIndex = i;
                                 break;
                             }
                         }
@@ -2325,7 +2329,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         sourceId: hitConnection.sourceId,
                         targetId: portA,
                         color: hitConnection.color,
-                        points: []
+                        points: (hitConnection.points || []).slice(0, hitSegmentIndex)
                     };
 
                     const conn2: FiberConnection = {
@@ -2333,7 +2337,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         sourceId: portB,
                         targetId: hitConnection.targetId,
                         color: hitConnection.color,
-                        points: []
+                        points: (hitConnection.points || []).slice(hitSegmentIndex)
                     };
 
                     // CALCULATE ROTATION
@@ -2743,6 +2747,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             let intersectedConnection: FiberConnection | null = null;
             let splitPoint: { x: number, y: number } | null = null;
             let minDistance = SNAP_RADIUS; // Track best distance
+            let splitSegmentIndex = 0; // Index of the waypoint segment that was hit
 
             // Helper to get point geometry (Duplicated from handleMouseUp logic implicitly)
             const getPortCenterHelper = (portId: string, currentLayout: Record<string, ElementLayout>) => {
@@ -2813,6 +2818,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             else initialLayout.rotation = dy > 0 ? 90 : 270;
 
                             splitPoint = { x: snapX, y: snapY };
+                            splitSegmentIndex = i; // Save the segment index for waypoint splitting
                             break;
                         }
                     }
@@ -2828,22 +2834,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 // 1. Remove original
                 updatedConnections = updatedConnections.filter(c => c.id !== connToSplit.id);
 
-                // 2. Create Left Side (Source -> Fusion A)
+                // 2. Create Left Side (Source -> Fusion A) — keep waypoints BEFORE the split segment
                 updatedConnections.push({
                     id: `conn-${Date.now()}-1`,
                     sourceId: connToSplit.sourceId,
                     targetId: `${id}-a`,
                     color: resolvePortColor(connToSplit.sourceId) || connToSplit.color,
-                    points: []
+                    points: (connToSplit.points || []).slice(0, splitSegmentIndex)
                 });
 
-                // 3. Create Right Side (Fusion B -> Target)
+                // 3. Create Right Side (Fusion B -> Target) — keep waypoints FROM the split segment onward
                 updatedConnections.push({
                     id: `conn-${Date.now()}-2`,
                     sourceId: `${id}-b`,
                     targetId: connToSplit.targetId,
                     color: resolvePortColor(connToSplit.targetId) || connToSplit.color,
-                    points: []
+                    points: (connToSplit.points || []).slice(splitSegmentIndex)
                 });
             }
 

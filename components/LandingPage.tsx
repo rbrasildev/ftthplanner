@@ -392,7 +392,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
             {/* --- PERFORMANCE SECTION --- */}
             <section id="performance" className="py-24 bg-slate-900 text-white relative overflow-hidden" >
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+                <div className="absolute inset-0 bg-slate-900/50 opacity-10"></div>
                 <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-emerald-600/20 blur-[100px] rounded-full"></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
