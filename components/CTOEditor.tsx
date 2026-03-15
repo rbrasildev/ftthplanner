@@ -2081,7 +2081,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             localCTORef.current = updated;
             setLocalCTO(updated);
         } else if (dragState?.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
-            const { x, y } = screenToCanvas(e.clientX, e.clientY);
+            const raw = screenToCanvas(e.clientX, e.clientY);
+            const x = isSnapping ? Math.round(raw.x / GRID_SIZE) * GRID_SIZE : raw.x;
+            const y = isSnapping ? Math.round(raw.y / GRID_SIZE) * GRID_SIZE : raw.y;
             const updated = {
                 ...localCTORef.current,
                 connections: localCTORef.current.connections.map(c => {
