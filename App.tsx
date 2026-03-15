@@ -179,6 +179,7 @@ export default function App() {
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanId, setUserPlanId] = useState<string | null>(null); // NEW: Track Plan ID for accurate comparison
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
+    const [userBackupEnabled, setUserBackupEnabled] = useState<boolean>(false);
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
     const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
@@ -322,6 +323,7 @@ export default function App() {
                     if (data.user.company?.plan?.name) setUserPlan(data.user.company.plan.name);
                     if (data.user.company?.plan?.id) setUserPlanId(data.user.company.plan.id);
                     if (data.user.company?.plan?.type) setUserPlanType(data.user.company.plan.type);
+                    if (data.user.company?.plan?.backupEnabled !== undefined) setUserBackupEnabled(!!data.user.company.plan.backupEnabled);
                     if (data.user.company?.subscriptionExpiresAt) setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
                     else if (data.user.company?.subscription?.currentPeriodEnd) setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
                     
@@ -2198,6 +2200,7 @@ export default function App() {
                 companyName={companyName}
                 saasName={saasConfig?.appName}
                 saasLogo={saasConfig?.appLogoUrl}
+                userBackupEnabled={userBackupEnabled}
             />
 
             {!currentProjectId ? (
@@ -2207,6 +2210,7 @@ export default function App() {
                         userRole={userRole || 'MEMBER'}
                         userPlan={userPlan}
                         userPlanType={userPlanType}
+                        userBackupEnabled={userBackupEnabled}
                         subscriptionExpiresAt={subscriptionExpiresAt}
                         cancelAtPeriodEnd={cancelAtPeriodEnd}
                         projects={projects}

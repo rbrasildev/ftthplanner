@@ -26,6 +26,7 @@ interface DashboardPageProps {
   userRole?: string;
   userPlan?: string;
   userPlanType?: string;
+  userBackupEnabled?: boolean;
   subscriptionExpiresAt?: string | null;
   cancelAtPeriodEnd?: boolean;
   projects: Project[];
@@ -96,6 +97,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   userRole, // Receive role
   userPlan = 'Plano Grátis',
   userPlanType = 'STANDARD',
+  userBackupEnabled = false,
   subscriptionExpiresAt,
   cancelAtPeriodEnd = false,
   projects,
@@ -342,6 +344,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
     { id: 'backup', label: t('backup') || 'Backup', icon: Database },
   ].filter(item => {
+    if (item.id === 'backup' && !userBackupEnabled) return false;
+
     // Only show Users, Backup and Registrations to ADMIN or OWNER or SUPPORT
     if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
       return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
@@ -677,8 +681,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
 
         {/* --- BACKUP MANAGER --- */}
-        {currentView === 'backup' && (
-          <BackupManager />
+        {currentView === 'backup' && userBackupEnabled && (
+          <BackupManager backupEnabled={userBackupEnabled} />
         )}
 
         {/* --- SPLITTER REGISTRATION --- */}

@@ -52,6 +52,7 @@ interface SidebarProps {
     companyName?: string | null;
     saasName?: string | null;
     saasLogo?: string | null;
+    userBackupEnabled?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -86,7 +87,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     companyLogo,
     companyName,
     saasName,
-    saasLogo
+    saasLogo,
+    userBackupEnabled
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -120,7 +122,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'settings', label: t('company_settings_title') || 'Configurações', icon: Settings },
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
-        if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
+        if (item.id === 'backup') {
+            return userBackupEnabled && (userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support');
+        }
+        if (item.id === 'users' || item.id === 'registrations') {
             return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
         }
         return true;

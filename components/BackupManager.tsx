@@ -4,7 +4,7 @@ import { useLanguage } from '../LanguageContext';
 import * as backupService from '../services/backupService';
 import { Save, Download, Trash2, Clock, FileJson, AlertCircle, Loader2 } from 'lucide-react';
 
-export const BackupManager: React.FC = () => {
+export const BackupManager: React.FC<{ backupEnabled?: boolean }> = ({ backupEnabled = false }) => {
     const { t } = useLanguage();
     const [backups, setBackups] = useState<backupService.BackupFile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -111,30 +111,32 @@ export const BackupManager: React.FC = () => {
                         {t('backup_desc')}
                     </p>
                 </div>
-                <div>
-                    <input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        id="backup-upload"
-                        onChange={handleUploadRestore}
-                    />
-                    <label
-                        htmlFor="backup-upload"
-                        className={`px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg flex items-center gap-2 font-bold text-sm transition cursor-pointer shadow-sm mr-2 inline-flex ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        <FileJson className="w-4 h-4" />
-                        {t('upload_restore') || 'Upload & Restore'}
-                    </label>
-                    <button
-                        onClick={handleCreateBackup}
-                        disabled={isCreating || isLoading}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg inline-flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {t('create_backup')}
-                    </button>
-                </div>
+                {backupEnabled && (
+                    <div>
+                        <input
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            id="backup-upload"
+                            onChange={handleUploadRestore}
+                        />
+                        <label
+                            htmlFor="backup-upload"
+                            className={`px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg flex items-center gap-2 font-bold text-sm transition cursor-pointer shadow-sm mr-2 inline-flex ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <FileJson className="w-4 h-4" />
+                            {t('upload_restore') || 'Upload & Restore'}
+                        </label>
+                        <button
+                            onClick={handleCreateBackup}
+                            disabled={isCreating || isLoading}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg inline-flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {t('create_backup')}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isLoading ? (
