@@ -440,6 +440,7 @@ const translations = {
     'meters': 'meters',
     'saved': 'Saved',
     'done': 'Done',
+    'all': 'All',
 
     // Statuses
     'status_PLANNED': 'Em projeto',
@@ -797,6 +798,8 @@ const translations = {
     'saas_plan_edit': 'Edit SaaS Plan',
     'saas_plan_create': 'Create New Plan',
     'saas_plan_name': 'Plan Name',
+    'saas_plan_backup_enabled': 'Backup Enabled',
+    'saas_plan_backup_enabled_desc': 'Enable backup system for this plan',
     'saas_delete_plan': 'Delete Plan',
     'saas_confirm_delete_plan': 'Are you sure you want to delete this plan? This action cannot be undone.',
     'saas_plan_deleted_success': 'Plan deleted successfully!',
@@ -1286,6 +1289,8 @@ const translations = {
     'feature_projects_unlimited': 'Projetos Ilimitados',
     'feature_users_unlimited': 'Usuários Ilimitados',
     'feature_ctos_unlimited': 'CTOs Ilimitadas',
+    'saas_plan_backup_enabled': 'Backup Habilitado',
+    'saas_plan_backup_enabled_desc': 'Habilitar sistema de backup para este plano',
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',
@@ -1725,6 +1730,7 @@ const translations = {
     'meters': 'metros',
     'saved': 'Salvo',
     'done': 'Concluir',
+    'all': 'Todos',
     'clear_all': 'Limpar tudo',
     'confirm_clear_title': 'Confirmar Limpeza',
     'confirm_clear_msg': 'Tem certeza que deseja remover todas as conexões?',

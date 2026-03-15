@@ -1,4 +1,4 @@
-﻿
+
 import { Request, Response } from 'express';
 import { BackupService } from '../services/BackupService';
 
@@ -11,6 +11,15 @@ import { BackupService } from '../services/BackupService';
 //     }
 // }
 // We can use (req as any).user
+import { prisma } from '../lib/prisma';
+
+const checkBackupPermission = async (companyId: string) => {
+    const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        include: { plan: true }
+    });
+    return company?.plan?.backupEnabled || false;
+};
 
 export const listBackups = async (req: Request, res: Response) => {
     try {
@@ -18,6 +27,11 @@ export const listBackups = async (req: Request, res: Response) => {
         if (!user || !user.companyId) {
             return res.status(401).json({ error: 'Unauthorized: No company ID' });
         }
+
+        if (!(await checkBackupPermission(user.companyId)) && user.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Seu plano atual não inclui a funcionalidade de backup.' });
+        }
+
         const backups = await BackupService.listBackups(user.companyId);
         res.json(backups);
     } catch (error) {
@@ -31,6 +45,11 @@ export const createBackup = async (req: Request, res: Response) => {
         if (!user || !user.companyId) {
             return res.status(401).json({ error: 'Unauthorized: No company ID' });
         }
+
+        if (!(await checkBackupPermission(user.companyId)) && user.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Seu plano atual não inclui a funcionalidade de backup.' });
+        }
+
         const backup = await BackupService.createBackup(user.companyId, true); // true = manual
         res.json(backup);
     } catch (error) {
@@ -85,6 +104,10 @@ export const restoreBackup = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
+        if (!(await checkBackupPermission(user.companyId)) && user.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Seu plano atual não inclui a funcionalidade de backup.' });
+        }
+
         // Security check: ensure file belongs to company
         if (!filename.includes(user.companyId)) {
             return res.status(403).json({ error: 'Invalid backup file for this company' });
@@ -107,6 +130,10 @@ export const uploadAndRestore = async (req: Request, res: Response) => {
         const user = (req as any).user;
         if (!user || !user.companyId) {
             return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        if (!(await checkBackupPermission(user.companyId)) && user.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Seu plano atual não inclui a funcionalidade de backup.' });
         }
 
         if (!req.body || !req.body.data) {

@@ -204,9 +204,16 @@ export class BackupService {
             // Run at 02:00 AM
             if (now.getHours() === 2 && now.getMinutes() === 0) {
                 try {
-                    const companies = await prisma.company.findMany({ where: { status: 'ACTIVE' } });
+                    const companies = await prisma.company.findMany({ 
+                        where: { status: 'ACTIVE' },
+                        include: { plan: true }
+                    });
                     for (const comp of companies) {
-                        await this.createBackup(comp.id, false);
+                        if (comp.plan?.backupEnabled) {
+                            await this.createBackup(comp.id, false);
+                        } else {
+                            logger.debug(`[BackupService] Skipping scheduled backup for company ${comp.id} (Plan: ${comp.plan?.name || 'No Plan'})`);
+                        }
                     }
                 } catch (err: any) {
                     logger.error(`Scheduled backup failed: ${err.message}`);

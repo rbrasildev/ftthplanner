@@ -83,9 +83,9 @@ export const getGlobalMapData = async (req: AuthRequest, res: Response) => {
 
 export const createPlan = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description } = req.body;
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description, backupEnabled } = req.body;
         const plan = await prisma.plan.create({
-            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description }
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description, backupEnabled }
         });
 
         // Audit Log
@@ -105,10 +105,10 @@ export const createPlan = async (req: AuthRequest, res: Response) => {
 export const updatePlan = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description } = req.body;
+        const { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description, backupEnabled } = req.body;
         const plan = await prisma.plan.update({
             where: { id },
-            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description }
+            data: { name, price, priceYearly, type, trialDurationDays, limits, features, isRecommended, mercadopagoId, stripeId, active, description, backupEnabled }
         });
 
         if (req.user?.id) {

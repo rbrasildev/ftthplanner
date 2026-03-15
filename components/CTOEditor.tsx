@@ -640,6 +640,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
     const [showSplitterDropdown, setShowSplitterDropdown] = useState(false);
+    const [splitterFilter, setSplitterFilter] = useState<'all' | 'Balanced' | 'Unbalanced'>('all');
     const [isSmartAlignMode, setIsSmartAlignMode] = useState(false);
     const [isRotateMode, setIsRotateMode] = useState(false);
     const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -3458,7 +3459,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             <button
                                 onClick={handleApply}
                                 disabled={savingAction !== 'idle'}
-                                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
+                                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-sm transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
                             >
                                 {savingAction === 'apply' ? (
                                     <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -3471,7 +3472,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         <button
                             onClick={userRole === 'MEMBER' ? onClose : handleCloseRequest}
                             disabled={savingAction !== 'idle'}
-                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[150px] justify-center"
+                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-sm shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[150px] justify-center"
                         >
                             {savingAction === 'save_close' ? (
                                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -3583,13 +3584,42 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </button>
                             </div>
 
+                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-3 gap-1">
+                                <button
+                                    onClick={() => setSplitterFilter('all')}
+                                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${splitterFilter === 'all' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    {t('all')}
+                                </button>
+                                <button
+                                    onClick={() => setSplitterFilter('Balanced')}
+                                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${splitterFilter === 'Balanced' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    {t('splitter_mode_balanced')}
+                                </button>
+                                <button
+                                    onClick={() => setSplitterFilter('Unbalanced')}
+                                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${splitterFilter === 'Unbalanced' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                >
+                                    {t('splitter_mode_unbalanced')}
+                                </button>
+                            </div>
+
                             <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                {availableSplitters.length === 0 ? (
-                                    <div className="px-4 py-4 text-center text-xs text-slate-500 italic">
-                                        {t('no_templates') || 'No templates available'}
-                                    </div>
-                                ) : (
-                                    availableSplitters.map(item => (
+                                {(() => {
+                                    const filteredSplitters = availableSplitters.filter(s =>
+                                        splitterFilter === 'all' || s.mode === splitterFilter
+                                    );
+
+                                    if (filteredSplitters.length === 0) {
+                                        return (
+                                            <div className="px-4 py-8 text-center text-xs text-slate-500 italic">
+                                                {t('no_templates') || 'No templates available'}
+                                            </div>
+                                        );
+                                    }
+
+                                    return filteredSplitters.map(item => (
                                         <button
                                             key={item.id}
                                             onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
@@ -3602,8 +3632,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                                 {item.outputs} {t('outputs') || 'outputs'}
                                             </span>
                                         </button>
-                                    ))
-                                )}
+                                    ));
+                                })()}
                             </div>
                         </div>
                     </div>

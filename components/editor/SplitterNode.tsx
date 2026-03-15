@@ -55,6 +55,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     const skewPercent = (shiftPx / width) * 100;
 
     const isLitIn = litPorts.has(splitter.inputPortId);
+    const isConnectorized = splitter.connectorType === 'Connectorized';
 
     return (
         <div
@@ -96,13 +97,13 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
 
                 {/* Triangle Body - Spans from Y=12 to Y=60 */}
                 <div
-                    style={{ height: 48, top: 12 }}
+                    style={{ height: 46, top: 12 }}
                     className="absolute inset-x-0 z-10 pointer-events-none"
                 >
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
-                            points={`${50 + skewPercent},0 ${0 + skewPercent},100 ${100 + skewPercent},100`}
-                            className={`transition-colors duration-300 fill-white dark:fill-slate-800 ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-600'} cursor-pointer pointer-events-auto`}
+                            points={`${50 + skewPercent},0 ${2 + skewPercent},100 ${98 + skewPercent},100`}
+                            className={`transition-colors duration-300 ${isConnectorized ? 'fill-white dark:fill-slate-800' : 'fill-[#949494] dark:fill-slate-600'} ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
@@ -117,8 +118,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             }}
                         />
                     </svg>
-                    <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-2" style={{ paddingLeft: `${shiftPx}px` }}>
-                        <span className={`text-[8px] font-normal leading-none ${isLitIn ? 'text-red-500' : 'text-slate-500 dark:text-slate-100'}`}>{splitter.type}</span>
+                    <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-3" style={{ paddingLeft: `${shiftPx}px` }}>
+                        <span className={`text-[8px] font-normal leading-none ${isLitIn ? 'text-red-500' : (!isConnectorized ? 'text-white' : 'text-slate-500 dark:text-slate-100')}`}>{splitter.type}</span>
                     </div>
                 </div>
 
@@ -141,18 +142,20 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             e.stopPropagation();
                             if (onContextMenu) onContextMenu(e, splitter.id);
                         }}
-                        className={`w-2.5 h-2.5 rounded-full border bg-white dark:bg-slate-800 cursor-pointer pointer-events-auto
+                        className={`w-2.5 h-2.5 rounded-full border cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                         ${isLitIn
                                 ? 'border-red-500 bg-red-900 text-white'
-                                : 'border-slate-900 dark:border-slate-600 text-slate-900 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
+                                : !isConnectorized
+                                    ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
+                                    : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
                     `}
                     >
                         1
                     </div>
-                    <span className="absolute left-1/2 ml-3 text-[6px] text-slate-400 dark:text-slate-500 font-extrabold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase">In</span>
+                    <span className={`absolute left-1/2 ml-3 text-[6px] font-extrabold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase ${!isConnectorized ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>In</span>
                 </div>
 
                 {/* Output Ports (Y=60) - Shifted 6px */}
@@ -165,7 +168,6 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         const leftPos = (idx * 12) + 6 - 5;
 
                         const customerName = attachedCustomers[idx];
-                        const isConnectorized = splitter.connectorType === 'Connectorized';
 
                         return (
                             <div
@@ -187,7 +189,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     : (t('port_label') || 'Porta {number}').replace('{number}', (idx + 1).toString())
                                 }
                                 className={`
-                                w-2.5 h-2.5 border bg-white dark:bg-slate-800 cursor-pointer pointer-events-auto
+                                w-2.5 h-2.5 border cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute top-[5px]
                                 text-[6.5px] font-normal select-none  flex items-center justify-center
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
@@ -196,7 +198,9 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                         ? 'border-red-500 bg-red-900 text-white'
                                         : customerName
                                             ? 'border-green-500 bg-green-50 text-green-700 font-bold' // Customer Style
-                                            : 'border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
+                                            : !isConnectorized
+                                                ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
+                                                : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
                                     }
                             `}
                                 style={{

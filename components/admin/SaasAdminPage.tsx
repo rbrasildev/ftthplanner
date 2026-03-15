@@ -359,6 +359,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             active: formData.get('active') === 'on',
             mercadopagoId: formData.get('mercadopagoId') as string,
             stripeId: formData.get('stripeId') as string,
+            backupEnabled: formData.get('backupEnabled') === 'on',
             description: formData.get('description') as string,
             limits: {
                 maxProjects: formData.get('maxProjects') ? parseInt(formData.get('maxProjects') as string) : 999999,
@@ -1789,6 +1790,21 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                                             />
                                             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Active (Visible to users)</span>
+                                        </label>
+                                    </div>
+
+                                    <div>
+                                        <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                name="backupEnabled"
+                                                defaultChecked={editingPlan?.backupEnabled}
+                                                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{t('saas_plan_backup_enabled')}</span>
+                                                <span className="text-[10px] text-slate-500">{t('saas_plan_backup_enabled_desc')}</span>
+                                            </div>
                                         </label>
                                     </div>
 

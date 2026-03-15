@@ -72,7 +72,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 {/* Center Body - Compact Circle (10px to fit in 12px with border) */}
                 <div className={`
                     w-2.5 h-2.5 rounded-full border border-black dark:border-slate-400 z-20 shadow-sm transition-colors duration-300
-                    ${isLitA || isLitB ? 'bg-red-500' : 'bg-slate-400 dark:bg-slate-500'}
+                    ${isLitA || isLitB ? 'bg-red-500' : 'bg-[#949494] dark:bg-slate-500'}
                 `} />
 
                 {/* Left Port - Edge */}
