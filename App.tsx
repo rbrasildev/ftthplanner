@@ -52,14 +52,18 @@ import { SupportChatBubble } from './components/support/SupportChatBubble';
 // --- GEOMETRY HELPERS MOVED TO utils/geometryUtils.ts ---
 
 const parseJwt = (token: string) => {
+    if (!token) return null;
     try {
-        const base64Url = token.split('.')[1];
+        const parts = token.split('.');
+        if (parts.length < 2) return null;
+        const base64Url = parts[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
         return JSON.parse(jsonPayload);
     } catch (e) {
+        console.warn("JWT parse failed", e);
         return null;
     }
 };
@@ -311,7 +315,7 @@ export default function App() {
 
             try {
                 const data = await authService.getMe();
-                if (data.user) {
+                if (data && data.user) {
                     setUser(data.user.username);
                     setToken("session"); // Compatibility placeholder for cookies
                     
@@ -320,10 +324,16 @@ export default function App() {
                     }
 
                     // Populate other user fields
-                    if (data.user.company?.plan?.name) setUserPlan(data.user.company.plan.name);
-                    if (data.user.company?.plan?.id) setUserPlanId(data.user.company.plan.id);
-                    if (data.user.company?.plan?.type) setUserPlanType(data.user.company.plan.type);
-                    if (data.user.company?.plan?.backupEnabled !== undefined) setUserBackupEnabled(!!data.user.company.plan.backupEnabled);
+                    const plan = data.user.company?.plan;
+                    if (plan?.name) setUserPlan(plan.name);
+                    if (plan?.id) setUserPlanId(plan.id);
+                    if (plan?.type) setUserPlanType(plan.type);
+                    if (plan?.backupEnabled !== undefined) {
+                        setUserBackupEnabled(!!plan.backupEnabled);
+                    } else {
+                        setUserBackupEnabled(false);
+                    }
+                    
                     if (data.user.company?.subscriptionExpiresAt) setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
                     else if (data.user.company?.subscription?.currentPeriodEnd) setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
                     
@@ -342,9 +352,11 @@ export default function App() {
                     // Fail-safe: if getMe returns no user but we have hit in localStorage, clear it
                     setUser(null);
                     setToken(null);
+                    setUserBackupEnabled(false);
                 }
             } catch (err: any) {
                 console.error("Session hydration failed", err);
+                setUserBackupEnabled(false);
                 if (err.response && err.response.status === 401) {
                     setUser(null);
                     setToken(null);
@@ -2170,6 +2182,7 @@ export default function App() {
                 user={user}
                 userRole={userRole}
                 userPlan={userPlan}
+                userBackupEnabled={userBackupEnabled}
                 userPlanType={userPlanType}
                 subscriptionExpiresAt={subscriptionExpiresAt}
                 cancelAtPeriodEnd={cancelAtPeriodEnd}
@@ -2200,7 +2213,6 @@ export default function App() {
                 companyName={companyName}
                 saasName={saasConfig?.appName}
                 saasLogo={saasConfig?.appLogoUrl}
-                userBackupEnabled={userBackupEnabled}
             />
 
             {!currentProjectId ? (
