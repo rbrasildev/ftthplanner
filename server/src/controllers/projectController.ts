@@ -28,10 +28,10 @@ export const getProjects = async (req: Request, res: Response) => {
                 settings: true,
                 _count: {
                     select: {
-                        ctos: true,
-                        cables: true,
-                        pops: true,
-                        poles: true
+                        ctos: { where: { deletedAt: null } },
+                        cables: { where: { deletedAt: null } },
+                        pops: { where: { deletedAt: null } },
+                        poles: { where: { deletedAt: null } }
                     }
                 }
             }
@@ -594,9 +594,9 @@ export const syncProject = async (req: Request, res: Response) => {
                 const payloadCTOs = network.ctos;
                 const payloadIds = new Set(payloadCTOs.map((c: any) => c.id));
 
-                // Fetch ALL existing CTOs in this project to compute diff
+                // Fetch ALL existing ACTIVE CTOs in this project to compute diff
                 const existingCTOsInDB = await tx.cto.findMany({
-                    where: { projectId: id },
+                    where: { projectId: id, deletedAt: null },
                 });
                 const dbCTOMap = new Map(existingCTOsInDB.map((c: any) => [c.id, c]));
 
@@ -699,7 +699,7 @@ export const syncProject = async (req: Request, res: Response) => {
             // 3. INSERT/UPDATE PHASE - POPs (Optimized with Diffing)
             if (network.pops) {
                 const payloadIds = new Set(network.pops.map((p: any) => p.id));
-                const existingInDB = await tx.pop.findMany({ where: { projectId: id } });
+                const existingInDB = await tx.pop.findMany({ where: { projectId: id, deletedAt: null } });
                 const dbMap = new Map(existingInDB.map((p: any) => [p.id, p]));
 
                 const toDelete = existingInDB.filter((p: any) => !payloadIds.has(p.id)).map((p: any) => p.id);
@@ -775,7 +775,7 @@ export const syncProject = async (req: Request, res: Response) => {
             // 4. INSERT/UPDATE PHASE - Cables (Optimized with Diffing)
             if (network.cables) {
                 const payloadIds = new Set(network.cables.map((c: any) => c.id));
-                const existingInDB = await tx.cable.findMany({ where: { projectId: id } });
+                const existingInDB = await tx.cable.findMany({ where: { projectId: id, deletedAt: null } });
                 const dbMap = new Map(existingInDB.map((c: any) => [c.id, c]));
 
                 const toDelete = existingInDB.filter((c: any) => !payloadIds.has(c.id)).map((c: any) => c.id);
@@ -850,7 +850,7 @@ export const syncProject = async (req: Request, res: Response) => {
             // 5. INSERT/UPDATE PHASE - Poles (Optimized with Diffing)
             if (network.poles) {
                 const payloadIds = new Set(network.poles.map((p: any) => p.id));
-                const existingInDB = await tx.pole.findMany({ where: { projectId: id } });
+                const existingInDB = await tx.pole.findMany({ where: { projectId: id, deletedAt: null } });
                 const dbMap = new Map(existingInDB.map((p: any) => [p.id, p]));
 
                 const toDelete = existingInDB.filter((p: any) => !payloadIds.has(p.id)).map((p: any) => p.id);

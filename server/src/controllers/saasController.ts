@@ -406,9 +406,39 @@ export const restoreProject = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        const project = await prisma.project.update({
-            where: { id },
-            data: { deletedAt: null }
+        // Restore project and all its related resources in a transaction
+        const project = await prisma.$transaction(async (tx) => {
+            // Restore related resources
+            await tx.cto.updateMany({
+                where: { projectId: id, deletedAt: { not: null } },
+                data: { deletedAt: null }
+            });
+
+            await tx.pop.updateMany({
+                where: { projectId: id, deletedAt: { not: null } },
+                data: { deletedAt: null }
+            });
+
+            await tx.cable.updateMany({
+                where: { projectId: id, deletedAt: { not: null } },
+                data: { deletedAt: null }
+            });
+
+            await tx.pole.updateMany({
+                where: { projectId: id, deletedAt: { not: null } },
+                data: { deletedAt: null }
+            });
+
+            await tx.customer.updateMany({
+                where: { projectId: id, deletedAt: { not: null } },
+                data: { deletedAt: null }
+            });
+
+            // Restore project itself
+            return await tx.project.update({
+                where: { id },
+                data: { deletedAt: null }
+            });
         });
 
         // Audit Log
