@@ -584,28 +584,40 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
 export const handleWebhook = async (req: Request, res: Response) => {
     try {
         const { query, body } = req;
-        const topic = query.topic || query.type;
-        const id = query.id || body.data?.id; // Payment ID or Preapproval ID
+        // Mercado Pago can send notifications via IPN (query params) or Webhooks (body)
+        const topic = query.topic || query.type || body.type || body.action?.split('.')[0];
+        const id = query.id || body.data?.id || body.id;
 
-        logger.info(`Mercado Pago Webhook received: topic=${topic}, id=${id}`);
+        logger.info(`Mercado Pago Webhook received: topic=${topic}, id=${id}, body.action=${body.action}`);
+        
+        // Log body for debugging purposes if needed (careful with sensitive data)
+        if (process.env.NODE_ENV === 'development') {
+            logger.debug(`MP Webhook Body: ${JSON.stringify(body)}`);
+        }
 
         if (!id) {
             return res.status(200).send('OK (No ID)');
         }
 
+        // We only process 'payment' topic for PIX and one-time payments activation
         if (topic === 'payment') {
             const paymentInfo = await payment.get({ id: String(id) });
             const companyId = paymentInfo.metadata?.company_id || paymentInfo.external_reference;
+            const planId = paymentInfo.metadata?.plan_id;
+
+            logger.info(`Processing payment ${id} for company ${companyId}. Status: ${paymentInfo.status}`);
 
             if (companyId && paymentInfo.status === 'approved') {
                 const nextMonth = new Date();
                 nextMonth.setMonth(nextMonth.getMonth() + 1);
 
+                // Update company status, expiration AND planId
                 await prisma.company.update({
                     where: { id: companyId },
                     data: {
                         status: 'ACTIVE',
-                        subscriptionExpiresAt: nextMonth
+                        subscriptionExpiresAt: nextMonth,
+                        planId: planId || undefined // Only update if planId is present in metadata
                     }
                 });
 
@@ -620,7 +632,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                     });
                 }
 
-                logger.info(`Company ${companyId} subscription EXTENDED via payment webhook. ID: ${id}`);
+                logger.info(`Company ${companyId} subscription ACTIVATED/EXTENDED via payment webhook. ID: ${id}, Plan: ${planId}`);
             }
         } else if (topic === 'subscription_preapproval') {
             // Handle Subscription events (e.g., cancelled, paused)
@@ -629,10 +641,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
             if (externalRef) {
                 if (preapprovalInfo.status === 'cancelled') {
-                    // Optionally set status to CANCELLED or similar, but maybe just let it expire?
-                    // Let's just log for now, or maybe remove the planId?
                     logger.info(`Mercado Pago Subscription ${id} for company ${externalRef} was CANCELLED.`);
-                    // Potentially update DB to reflect cancellation pending
                 }
             }
         }
