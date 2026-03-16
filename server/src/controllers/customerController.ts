@@ -167,7 +167,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         // Update CTO client count (outside transaction to avoid locking unrelated stuff if possible, or inside if strict)
         if (ctoId) {
             console.log("[CreateCustomer] Updating CTO count...");
-            const count = await prisma.customer.count({ where: { ctoId } });
+            const count = await prisma.customer.count({ where: { ctoId, deletedAt: null } });
             await prisma.cto.update({
                 where: { id: ctoId },
                 data: { clientCount: count }
@@ -289,7 +289,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
 
         // Update counts logic
         if (ctoId) {
-            const count = await prisma.customer.count({ where: { ctoId } });
+            const count = await prisma.customer.count({ where: { ctoId, deletedAt: null } });
             await prisma.cto.update({ where: { id: ctoId }, data: { clientCount: count } });
         }
         // Also update old CTO count if changed (simplified here)

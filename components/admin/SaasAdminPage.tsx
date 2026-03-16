@@ -96,7 +96,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat'>(() => {
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat' | 'trash'>(() => {
         return (localStorage.getItem('saasAdminActiveView') as any) || 'dashboard';
     });
     const [plans, setPlans] = useState<any[]>([]);
@@ -106,6 +106,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [auditLogs, setAuditLogs] = useState<any[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [saasConfig, setSaasConfig] = useState<SaaSConfig | null>(null);
+    const [deletedProjects, setDeletedProjects] = useState<any[]>([]);
     const [isCollapsed, setIsCollapsed] = useState(() => {
         return localStorage.getItem('saasAdminSidebarCollapsed') === 'true';
     });
@@ -188,6 +189,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         { id: 'audit', label: t('saas_nav_audit'), icon: <Settings className="w-5 h-5" /> },
         { id: 'support_chat', label: 'Suporte Chat', icon: <MessageSquare className="w-5 h-5" /> },
         { id: 'config', label: t('saas_nav_config'), icon: <Shield className="w-5 h-5" /> },
+        { id: 'trash', label: 'Lixeira', icon: <Trash2 className="w-5 h-5" /> },
     ];
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
@@ -217,6 +219,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             } else if (activeView === 'config') {
                 const config = await saasService.getSaaSConfig();
                 setSaasConfig(config);
+            } else if (activeView === 'trash') {
+                const projects = await saasService.getDeletedProjects();
+                setDeletedProjects(projects);
             } else {
                 const promises: Promise<any>[] = [
                     saasService.getCompanies(),
@@ -501,6 +506,50 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             await loadData();
         } catch (error) {
             alert('Failed to delete video');
+        }
+    };
+
+    const handleRestoreProject = async (id: string) => {
+        if (!confirm('Deseja realmente restaurar este projeto?')) return;
+        try {
+            await saasService.restoreProject(id);
+            setAlertConfig({
+                isOpen: true,
+                type: 'success',
+                title: 'Sucesso',
+                message: 'Projeto restaurado com sucesso!'
+            });
+            const projects = await saasService.getDeletedProjects();
+            setDeletedProjects(projects);
+        } catch (error) {
+            setAlertConfig({
+                isOpen: true,
+                type: 'error',
+                title: 'Erro',
+                message: 'Falha ao restaurar projeto.'
+            });
+        }
+    };
+
+    const handlePermanentDeleteProject = async (id: string) => {
+        if (!confirm('AVISO: Esta ação é irreversível e excluirá TODOS os dados do projeto (CTOs, Clientes, Cabos, etc). Deseja excluir permanentemente?')) return;
+        try {
+            await saasService.permanentlyDeleteProject(id);
+            setAlertConfig({
+                isOpen: true,
+                type: 'success',
+                title: 'Sucesso',
+                message: 'Projeto excluído permanentemente!'
+            });
+            const projects = await saasService.getDeletedProjects();
+            setDeletedProjects(projects);
+        } catch (error) {
+            setAlertConfig({
+                isOpen: true,
+                type: 'error',
+                title: 'Erro',
+                message: 'Falha ao excluir projeto permanentemente.'
+            });
         }
     };
 
@@ -1643,34 +1692,80 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 placeholder="/dashboard-preview.png"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_cta')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.ctaBgImageUrl || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ ctaBgImageUrl: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="URL da imagem de fundo"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_footer')}</label>
-                                            <textarea
-                                                defaultValue={saasConfig?.footerDesc || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ footerDesc: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
-                                                placeholder="Software profissional para planejamento..."
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_copyright')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.copyrightText || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ copyrightText: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="© 2024 Todos os direitos reservados."
-                                            />
-                                        </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeView === 'trash' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Lixeira de Projetos</h2>
+                                    <p className="text-sm text-slate-500">Gerencie projetos deletados (Soft-delete). Projetos aqui não contam para o limite do plano.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                            <tr>
+                                                <th className="px-6 py-4">Nome do Projeto</th>
+                                                <th className="px-6 py-4">Empresa</th>
+                                                <th className="px-6 py-4">Usuário</th>
+                                                <th className="px-6 py-4">Deletado em</th>
+                                                <th className="px-6 py-4 text-right">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {deletedProjects.map(project => (
+                                                <tr key={project.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-slate-900 dark:text-white">{project.name}</div>
+                                                        <div className="text-[10px] text-slate-400 font-mono">ID: {project.id}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                                                        {project.company?.name || '---'}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                                                        {project.user?.username || '---'}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500 text-xs">
+                                                        {project.deletedAt ? new Date(project.deletedAt).toLocaleString() : '---'}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => handleRestoreProject(project.id)}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors border border-emerald-100 dark:border-emerald-800"
+                                                                title="Restaurar Projeto"
+                                                            >
+                                                                <RotateCcw className="w-3.5 h-3.5" />
+                                                                Restaurar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handlePermanentDeleteProject(project.id)}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 dark:border-red-800"
+                                                                title="Excluir Permanentemente"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                Excluir Permanente
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {deletedProjects.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                                                        Nenhum projeto na lixeira.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

@@ -100,7 +100,7 @@ export const createProject = async (req: Request, res: Response) => {
             where: { id: user.companyId },
             include: {
                 plan: true,
-                _count: { select: { projects: true } }
+                _count: { select: { projects: { where: { deletedAt: null } } } }
             }
         });
 
@@ -418,8 +418,8 @@ export const syncProject = async (req: Request, res: Response) => {
             const deltaPOP = payloadPOPCount - currentProjectPOPs;
 
             // d) Global Items (All Projects)
-            const totalGlobalCTOs = await prisma.cto.count({ where: { companyId: user.companyId } });
-            const totalGlobalPOPs = await prisma.pop.count({ where: { companyId: user.companyId } });
+            const totalGlobalCTOs = await prisma.cto.count({ where: { companyId: user.companyId, deletedAt: null } });
+            const totalGlobalPOPs = await prisma.pop.count({ where: { companyId: user.companyId, deletedAt: null } });
 
             // e) Check Limit: If Delta > 0 AND (Global + Delta) > Limit
             // Note: 'totalGlobal' includes 'currentProject'. 

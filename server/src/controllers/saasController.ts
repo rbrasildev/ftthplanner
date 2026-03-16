@@ -377,3 +377,84 @@ export const updateGlobalUser = async (req: AuthRequest, res: Response) => {
         });
     }
 };
+
+// --- PROJECTS MANAGEMENT (TRASH BIN) ---
+export const getDeletedProjects = async (req: AuthRequest, res: Response) => {
+    try {
+        const projects = await prisma.project.findMany({
+            where: { deletedAt: { not: null } },
+            include: {
+                company: {
+                    select: { id: true, name: true }
+                },
+                user: {
+                    select: { id: true, username: true }
+                }
+            },
+            orderBy: { deletedAt: 'desc' }
+        });
+        res.json(projects);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to fetch deleted projects',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const restoreProject = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const project = await prisma.project.update({
+            where: { id },
+            data: { deletedAt: null }
+        });
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'RESTORE_PROJECT', 'Project', id, { name: project.name }, req.ip);
+        }
+
+        res.json({ message: 'Project restored successfully', project });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to restore project',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+export const permanentlyDeleteProject = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch project info for audit before deletion
+        const project = await prisma.project.findUnique({
+            where: { id },
+            select: { name: true }
+        });
+
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        // Permanent delete
+        // Thanks to onDelete: Cascade, this should remove related elements
+        await prisma.project.delete({
+            where: { id }
+        });
+
+        // Audit Log
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'PERMANENTLY_DELETE_PROJECT', 'Project', id, { name: project.name }, req.ip);
+        }
+
+        res.json({ message: 'Project permanently deleted' });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to delete project permanently',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};

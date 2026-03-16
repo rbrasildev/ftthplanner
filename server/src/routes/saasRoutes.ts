@@ -1,6 +1,6 @@
-﻿import express from 'express';
+import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
-import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans } from '../controllers/saasController';
+import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject } from '../controllers/saasController';
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
@@ -35,6 +35,11 @@ router.delete('/companies/:id', authenticateToken, requireSuperAdmin, deleteComp
 // Users (Super Admin)
 router.get('/users', authenticateToken, requireSuperAdmin, getGlobalUsers);
 router.put('/users/:id', authenticateToken, requireSuperAdmin, updateGlobalUser);
+
+// Projects (Trash Bin)
+router.get('/projects/deleted', authenticateToken, requireSuperAdmin, getDeletedProjects);
+router.post('/projects/:id/restore', authenticateToken, requireSuperAdmin, restoreProject);
+router.delete('/projects/:id/permanent', authenticateToken, requireSuperAdmin, permanentlyDeleteProject);
 
 // Demo Videos
 router.get('/public/videos', getPublicVideos);

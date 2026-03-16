@@ -50,6 +50,22 @@ export const deleteCompany = async (id: string) => {
     return response.data;
 };
 
+// Projects Trash Bin
+export const getDeletedProjects = async () => {
+    const response = await api.get('/saas/projects/deleted');
+    return response.data;
+};
+
+export const restoreProject = async (id: string) => {
+    const response = await api.post(`/saas/projects/${id}/restore`);
+    return response.data;
+};
+
+export const permanentlyDeleteProject = async (id: string) => {
+    const response = await api.delete(`/saas/projects/${id}/permanent`);
+    return response.data;
+};
+
 export const getUsers = async () => {
     const response = await api.get('/saas/users');
     return response.data;
