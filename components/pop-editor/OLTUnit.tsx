@@ -56,7 +56,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10">
                 {/* Header */}
                 <div
-                    className="h-9 bg-gradient-to-r from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
+                    className="h-9 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
                     onMouseDown={(e) => onDragStart(e, olt.id)}
                 >
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">

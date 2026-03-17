@@ -46,7 +46,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Viewport State
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const [isSnapping, setIsSnapping] = useState(true);
-    const [viewMode, setViewMode] = useState<'canvas' | 'logical'>('canvas');
+    const [viewMode, setViewMode] = useState<'canvas' | 'logical'>('logical');
 
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
@@ -799,8 +799,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     return (
-        <div className="pop-editor-modal fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center backdrop-blur-sm">
-            <div className="w-[95vw] h-[95vh] bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+        <div className="pop-editor-modal fixed inset-0 z-[2000] bg-black flex items-center justify-center">
+            <div className="w-full h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden relative">
 
                 {/* 1. HEADER (Title + Close) */}
                 <PopHeader
@@ -902,7 +902,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                     <div
                                         key={cable.id}
                                         style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
-                                        className="absolute w-28 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-20 flex flex-col opacity-50 hover:opacity-100 transition-opacity clickable-element select-none"
+                                        className="absolute w-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-20 flex flex-col opacity-60 hover:opacity-100 transition-opacity clickable-element select-none"
                                         onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
                                         onMouseLeave={() => onHoverCable && onHoverCable(null)}
                                         onDoubleClick={(e) => {
@@ -911,10 +911,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         }}
                                     >
                                         <div
-                                            className="h-6 bg-slate-800 border-b border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
+                                            className="h-7 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
                                             onMouseDown={(e) => handleElementDragStart(e, cable.id)}
                                         >
-                                            <span className="text-[10px] font-bold text-slate-200 truncate flex-1">{cable.name}</span>
+                                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1">{cable.name}</span>
                                             <div className="flex items-center gap-1">
                                                 <Button
                                                     variant="ghost"

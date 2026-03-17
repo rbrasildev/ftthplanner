@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { POPData, CableData, FiberConnection, DIO } from '../types';
-import { X, Save, AlertCircle, Link2, Check, Split, Ruler, Flashlight } from 'lucide-react';
+import { X, Save, AlertCircle, Link2, Search, Check, Cable as CableIcon, Split, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { CustomInput } from './common/CustomInput';
 import { LogicalSplicingView } from './pop-editor/LogicalSplicingView';
@@ -103,21 +103,21 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[2200] bg-black/60 flex items-center justify-center backdrop-blur-md select-none"
+            className="fixed inset-0 z-[2200] bg-black flex items-center justify-center select-none"
             onContextMenu={(e) => e.preventDefault()}
         >
-            <div className="w-[95vw] h-[95vh] bg-slate-950/80 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl">
+            <div className="w-full h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden relative">
 
                 {/* Toolbar */}
-                <div className="h-16 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 shadow-md">
-                    <div className="flex items-center gap-6 min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                                <Split className="w-6 h-6 text-orange-500" />
+                <div className="h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 shrink-0 z-50 shadow-sm">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-700">
+                            <div className="p-1.5 rounded-lg bg-orange-600 text-white">
+                                <Split className="w-4 h-4" />
                             </div>
                             <div className="select-none">
-                                <h2 className="font-bold text-white text-lg leading-none mb-1">{dio.name}</h2>
-                                <p className="text-xs text-slate-400 font-medium">{t('manage_splicing')}</p>
+                                <h2 className="font-bold text-slate-900 dark:text-white text-sm leading-none">{dio.name}</h2>
+                                <p className="text-[10px] text-slate-500 font-medium">{t('manage_splicing')}</p>
                             </div>
                         </div>
 
@@ -128,11 +128,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         {onUpdateDio && (
                             <button
                                 onClick={() => setIsLinkModalOpen(true)}
-                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-emerald-600/20 hover:border-emerald-500/50 rounded-lg text-xs font-bold text-slate-300 hover:text-emerald-400 flex items-center gap-2 border border-white/10 transition-all select-none"
+                                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600/10 hover:border-emerald-500/50 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all select-none"
                             >
                                 <Link2 className="w-3.5 h-3.5" />
                                 {t('link_cables')}
-                                <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-400">{relevantCables.length}</span>
+                                <span className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded text-[10px] text-slate-500">{relevantCables.length}</span>
                             </button>
                         )}
 
@@ -142,10 +142,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                     setIsOtdrToolActive(!isOtdrToolActive);
                                     setIsVflToolActive(false);
                                 }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
+                                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
                                     ${isOtdrToolActive
-                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20'
-                                        : 'bg-slate-800/50 border-white/10 text-slate-300 hover:bg-slate-800 hover:text-white'}
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
+                                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
                                 `}
                                 title={t('tooltip_otdr')}
                             >
@@ -160,10 +160,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                     setIsVflToolActive(!isVflToolActive);
                                     setIsOtdrToolActive(false);
                                 }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
+                                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
                                     ${isVflToolActive
-                                        ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-900/20'
-                                        : 'bg-slate-800/50 border-white/10 text-slate-300 hover:bg-slate-800 hover:text-white'}
+                                        ? 'bg-red-600 border-red-500 text-white shadow-sm'
+                                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
                                 `}
                                 title={t('tooltip_vfl')}
                             >
@@ -173,16 +173,16 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => onSave(currentConnections)}
-                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/20 flex items-center gap-2 text-sm transition-all transform hover:scale-105 active:scale-95 select-none"
+                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-sm flex items-center gap-2 text-sm transition-all transform active:scale-95 select-none"
                         >
                             <Save className="w-4 h-4" /> {t('save')}
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -207,25 +207,26 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                     />
                 </div>
 
-                {/* --- ADD NEW CABLE MODAL --- */}
                 {isLinkModalOpen && (
                     <div className="absolute inset-0 z-[2400] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setIsLinkModalOpen(false)}>
-                        <div className="bg-slate-900 border border-white/10 rounded-2xl w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="h-14 bg-gradient-to-r from-slate-900 to-slate-800 px-5 flex items-center justify-between border-b border-white/5">
-                                <h3 className="text-white font-bold flex items-center gap-2">
-                                    <Link2 className="w-5 h-5 text-emerald-400" />
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="h-12 bg-slate-50 dark:bg-slate-800/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                                <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2 text-sm">
+                                    <div className="p-1 rounded bg-emerald-600 text-white">
+                                        <Link2 className="w-3.5 h-3.5" />
+                                    </div>
                                     {t('link_cables')}
                                 </h3>
-                                <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+                                <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"><X className="w-5 h-5" /></button>
                             </div>
-                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-slate-950/50">
+                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-white dark:bg-slate-950">
                                 {incomingCables.length === 0 && (
                                     <div className="text-center p-8 text-slate-500">
                                         <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                         <p>{t('no_cables_available')}</p>
                                     </div>
                                 )}
-                                {incomingCables.map(cable => {
+                                 {incomingCables.map(cable => {
                                     const isLinked = dio.inputCableIds?.includes(cable.id);
                                     const assignedToWho = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cable.id));
 
@@ -234,20 +235,21 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                             key={cable.id}
                                             onClick={() => handleToggleCableLink(cable.id)}
                                             disabled={!!assignedToWho}
-                                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group
-                                        ${isLinked
-                                                    ? 'bg-emerald-500/10 border-emerald-500/50 text-white shadow-[0_0_10px_rgba(14,165,233,0.1)]'
-                                                    : (assignedToWho ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:border-slate-500')}
-                                    `}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left
+                                                ${isLinked
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-500 text-emerald-900 dark:text-white'
+                                                    : (assignedToWho ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400')}
+                                            `}
                                         >
-                                            <div>
-                                                <div className="font-bold text-sm mb-0.5 flex items-center gap-2">
+                                            <div className="flex-1">
+                                                <div className="font-bold text-xs mb-0.5 flex items-center gap-2">
+                                                    <CableIcon className="w-3.5 h-3.5 text-slate-400" />
                                                     {cable.name}
-                                                    {assignedToWho && <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-500">{t('linked_to_dio', { name: assignedToWho.name })}</span>}
+                                                    {assignedToWho && <span className="text-[10px] text-red-500 dark:text-red-400 font-bold uppercase ml-auto">{t('linked_to_dio', { name: assignedToWho.name })}</span>}
                                                 </div>
-                                                <div className="text-[10px] opacity-60 font-mono">{cable.fiberCount} Fibers</div>
+                                                <div className="text-[10px] opacity-60 font-mono ml-5.5">{cable.fiberCount} {t('fibers')}</div>
                                             </div>
-                                            {isLinked && <Check className="w-4 h-4 text-emerald-400" />}
+                                            {isLinked && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 ml-4 shrink-0" />}
                                         </button>
                                     );
                                 })}
@@ -259,14 +261,14 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                 {/* OTDR INPUT MODAL */}
                 {otdrTargetPort && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }}>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                                     <Ruler className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">{t('otdr_title')}</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('otdr_trace_msg')}</p>
+                                    <h3 className="text-slate-900 dark:text-white font-bold text-sm leading-none mb-1">{t('otdr_title')}</h3>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{t('otdr_trace_msg')}</p>
                                 </div>
                             </div>
 

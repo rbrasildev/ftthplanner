@@ -3,6 +3,8 @@ import { Move, X, Server, Box, Layers, PlayCircle, Settings2 } from 'lucide-reac
 import { useLanguage } from '../../../LanguageContext';
 import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
 import { Button } from '../../common/Button';
+import { CustomInput } from '../../common/CustomInput';
+import { CustomSelect } from '../../common/CustomSelect';
 
 interface AddEquipmentModalsProps {
     showAddOLT: boolean;
@@ -32,74 +34,94 @@ const DraggableModal: React.FC<{
     headerColor: string; // Tailwind class
     children: React.ReactNode;
 }> = ({ title, icon, initialPos, onClose, headerColor, children }) => {
-    const [pos, setPos] = useState(initialPos);
+    const modalRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const dragOffset = useRef({ x: 0, y: 0 });
+    const currentPos = useRef(initialPos);
 
     useEffect(() => {
+        let rafId: number;
+
         const handleMouseMove = (e: MouseEvent) => {
-            if (!isDragging) return;
-            setPos({
-                x: e.clientX - dragOffset.current.x,
-                y: e.clientY - dragOffset.current.y
+            if (!isDragging || !modalRef.current) return;
+            
+            const newX = e.clientX - dragOffset.current.x;
+            const newY = e.clientY - dragOffset.current.y;
+            
+            currentPos.current = { x: newX, y: newY };
+            
+            cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                if (modalRef.current) {
+                    modalRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+                }
             });
         };
 
         const handleMouseUp = () => {
             setIsDragging(false);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
         };
 
         if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mousemove', handleMouseMove, { passive: true });
             window.addEventListener('mouseup', handleMouseUp);
+            // Lock cursor and prevent text selection during drag
+            document.body.style.cursor = 'grabbing';
+            document.body.style.userSelect = 'none';
         }
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
+            cancelAnimationFrame(rafId);
         };
     }, [isDragging]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
         dragOffset.current = {
-            x: e.clientX - pos.x,
-            y: e.clientY - pos.y
+            x: e.clientX - currentPos.current.x,
+            y: e.clientY - currentPos.current.y
         };
     };
 
     return (
         <div
-            className="absolute z-[2200] flex flex-col overflow-hidden rounded-xl shadow-2xl border border-white/20 dark:border-slate-600/50 backdrop-blur-md"
+            ref={modalRef}
+            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
             style={{
-                left: pos.x,
-                top: pos.y,
+                transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
                 width: 320,
-                backgroundColor: 'rgba(15, 23, 42, 0.95)' // Dark theme glass base
+                willChange: 'transform',
+                transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, scale 0.2s ease'
             }}
             onMouseDown={(e) => e.stopPropagation()}
         >
             {/* Header */}
             <div
-                className={`h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-white/10 ${headerColor}`}
+                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-t-xl"
                 onMouseDown={handleMouseDown}
             >
-                <div className="flex items-center gap-2 text-white font-bold text-shadow-sm">
-                    {icon}
-                    <span>{title}</span>
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold">
+                    <div className={`p-1.5 rounded-lg ${headerColor} text-white`}>
+                        {icon}
+                    </div>
+                    <span className="text-sm">{title}</span>
                 </div>
                 <Button
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
-                    className="w-8 h-8 rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                    className="w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
                 >
                     <X className="w-5 h-5" />
                 </Button>
             </div>
 
-            {/* Content */}
-            <div className="p-5 space-y-5 bg-gradient-to-b from-transparent to-black/20">
+            {/* Content area */}
+            <div className="p-5 space-y-5">
                 {children}
             </div>
         </div>
@@ -158,112 +180,82 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
         <>
             {showAddOLT && (
                 <DraggableModal
-                    title={t('modal_add_olt_title')}
-                    icon={<Server className="w-5 h-5 text-indigo-200" />}
+                    title={t('modal_add_olt_title') || "Adicionar OLT"}
+                    icon={<Server className="w-4 h-4" />}
                     initialPos={oltModalPos}
                     onClose={onCloseOLT}
-                    headerColor="bg-gradient-to-r from-indigo-600 to-indigo-800"
+                    headerColor="bg-indigo-600"
                 >
                     <div className="space-y-4">
                         {/* Catalog Selection */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
-                                <Server className="w-3.5 h-3.5" /> {t('model')}
-                            </label>
-                            <select
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-                                onChange={handleOltPresetChange}
-                                defaultValue="custom"
-                            >
-                                <option value="custom">{t('custom_configuration')}</option>
-                                {catalogOLTs.length > 0 && <optgroup label={t('catalog_label')}>
-                                    {catalogOLTs.map(olt => (
-                                        <option key={olt.id} value={olt.id}>
-                                            {olt.name} ({olt.slots || 1}x{olt.portsPerSlot || 16})
-                                        </option>
-                                    ))}
-                                </optgroup>}
-                            </select>
-                        </div>
+                        <CustomSelect
+                            label={t('model')}
+                            value={newOLTConfig.modelName ? catalogOLTs.find(o => o.name === newOLTConfig.modelName)?.id || 'custom' : 'custom'}
+                            onChange={(val) => handleOltPresetChange({ target: { value: val } } as any)}
+                            options={[
+                                { value: 'custom', label: t('custom_configuration') },
+                                ...catalogOLTs.map(olt => ({
+                                    value: olt.id,
+                                    label: olt.name,
+                                    sublabel: `${olt.slots || 1}x${olt.portsPerSlot || 16}`
+                                }))
+                            ]}
+                        />
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
-                                <Settings2 className="w-3.5 h-3.5" /> {t('equipment_type')}
-                            </label>
-                            <select
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-indigo-500"
-                                value={newOLTConfig.type || 'OLT'}
-                                onChange={e => setNewOLTConfig({ ...newOLTConfig, type: e.target.value })}
-                            >
-                                <option value="OLT">{t('type_olt')}</option>
-                                <option value="SWITCH">{t('type_switch')}</option>
-                                <option value="ROUTER">{t('type_router')}</option>
-                                <option value="SERVER">{t('type_server')}</option>
-                                <option value="OTHER">{t('type_other')}</option>
-                            </select>
-                        </div>
+                        <CustomSelect
+                            label={t('equipment_type')}
+                            value={newOLTConfig.type || 'OLT'}
+                            onChange={val => setNewOLTConfig({ ...newOLTConfig, type: val })}
+                            options={[
+                                { value: 'OLT', label: t('type_olt') },
+                                { value: 'SWITCH', label: t('type_switch') },
+                                { value: 'ROUTER', label: t('type_router') },
+                                { value: 'SERVER', label: t('type_server') },
+                                { value: 'OTHER', label: t('type_other') }
+                            ]}
+                        />
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
+                        <div className="space-y-4">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                                 <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
                             </label>
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 items-end mb-2">
-                                {/* Row 1: Labels */}
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">{t('total_slots')}</span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">
-                                    {newOLTConfig.type === 'OLT' ? t('olt_ports') : t('active_ports')}
-                                </span>
-
-                                {/* Row 2: Inputs */}
-                                <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="16"
-                                        value={newOLTConfig.slots}
-                                        onChange={e => setNewOLTConfig({ ...newOLTConfig, slots: parseInt(e.target.value) })}
-                                        className="w-full bg-transparent text-white font-mono text-lg font-bold focus:outline-none"
-                                    />
-                                </div>
-                                <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <input
-                                        type="number"
-                                        min="8"
-                                        max="16"
-                                        step="8"
-                                        value={newOLTConfig.portsPerSlot}
-                                        onChange={e => setNewOLTConfig({ ...newOLTConfig, portsPerSlot: parseInt(e.target.value) })}
-                                        className="w-full bg-transparent text-white font-mono text-lg font-bold focus:outline-none"
-                                    />
-                                </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <CustomInput
+                                    label={t('total_slots')}
+                                    type="number"
+                                    min="1"
+                                    max="16"
+                                    value={newOLTConfig.slots}
+                                    onChange={e => setNewOLTConfig({ ...newOLTConfig, slots: parseInt(e.target.value) })}
+                                />
+                                <CustomInput
+                                    label={newOLTConfig.type === 'OLT' ? t('olt_ports') : t('active_ports')}
+                                    type="number"
+                                    min="8"
+                                    max="16"
+                                    step="8"
+                                    value={newOLTConfig.portsPerSlot}
+                                    onChange={e => setNewOLTConfig({ ...newOLTConfig, portsPerSlot: parseInt(e.target.value) })}
+                                />
                             </div>
                         </div>
 
-                        {newOLTConfig.type === 'OLT' && (
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-indigo-300 uppercase flex items-center gap-1.5">
-                                    <Settings2 className="w-3.5 h-3.5" /> {t('uplink_ports') || 'Uplinks'}
-                                </label>
-                                <div className="bg-slate-800/50 p-2 rounded border border-slate-700">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="8"
-                                        value={newOLTConfig.uplinkPorts ?? 2}
-                                        onChange={e => setNewOLTConfig({ ...newOLTConfig, uplinkPorts: parseInt(e.target.value) })}
-                                        className="w-full bg-transparent text-white font-mono text-sm font-bold focus:outline-none"
-                                    />
-                                </div>
-                            </div>
-                        )}
+                            <CustomInput
+                                label={t('uplink_ports') || 'Uplinks'}
+                                type="number"
+                                min="0"
+                                max="8"
+                                value={newOLTConfig.uplinkPorts ?? 2}
+                                onChange={e => setNewOLTConfig({ ...newOLTConfig, uplinkPorts: parseInt(e.target.value) })}
+                            />
 
-                        <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-3 flex items-start gap-3">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/30 rounded-lg p-3 flex items-start gap-3">
                             <div className="mt-0.5">
-                                <PlayCircle className="w-4 h-4 text-indigo-400" />
+                                <PlayCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-indigo-300">{t('preview')}</h4>
-                                <p className="text-[11px] text-indigo-200/70 leading-tight">
+                                <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-300">{t('preview')}</h4>
+                                <p className="text-[11px] text-slate-600 dark:text-indigo-200/70 leading-tight">
                                     {t('equipment_preview_msg', {
                                         type: t(`type_${(newOLTConfig.type || 'OLT').toLowerCase()}`),
                                         total: newOLTConfig.slots * newOLTConfig.portsPerSlot,
@@ -288,43 +280,34 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
             {showAddDIO && (
                 <DraggableModal
-                    title={t('modal_add_dio_title')}
-                    icon={<Box className="w-5 h-5 text-emerald-200" />}
+                    title="Adicionar DIO"
+                    icon={<Box className="w-4 h-4" />}
                     initialPos={dioModalPos}
                     onClose={onCloseDIO}
-                    headerColor="bg-gradient-to-r from-emerald-600 to-emerald-800"
+                    headerColor="bg-emerald-600"
                 >
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
-                                <Settings2 className="w-3.5 h-3.5" /> {t('specifications')}
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={newDIOConfig.ports}
-                                    onChange={e => setNewDIOConfig({ ...newDIOConfig, ports: parseInt(e.target.value) })}
-                                    className="w-full h-12 bg-slate-800 border-2 border-slate-700 rounded-lg px-3 text-white font-bold appearance-none hover:border-emerald-500/50 focus:border-emerald-500 transition-colors cursor-pointer"
-                                >
-                                    <option value="12">12 {t('ports_label')} (1 {t('tray')})</option>
-                                    <option value="24">24 {t('ports_label')} (2 {t('trays')})</option>
-                                    <option value="36">36 {t('ports_label')} (3 {t('trays')})</option>
-                                    <option value="48">48 {t('ports_label')} (4 {t('trays')})</option>
-                                    <option value="72">72 {t('ports_label')} (6 {t('trays')})</option>
-                                    <option value="144">144 {t('ports_label')} (12 {t('trays')})</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <Settings2 className="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
+                        <CustomSelect
+                            label={t('specifications')}
+                            value={newDIOConfig.ports.toString()}
+                            onChange={val => setNewDIOConfig({ ...newDIOConfig, ports: parseInt(val) })}
+                            options={[
+                                { value: "12", label: `12 ${t('ports_label') || "Portas"} (1 ${t('tray') === 'tray' ? 'bandeja' : t('tray')})` },
+                                { value: "24", label: `24 ${t('ports_label') || "Portas"} (2 ${t('trays') === 'trays' ? 'bandejas' : t('trays')})` },
+                                { value: "36", label: `36 ${t('ports_label') || "Portas"} (3 ${t('bandejas') || "bandejas"})` },
+                                { value: "48", label: `48 ${t('ports_label') || "Portas"} (4 ${t('bandejas') || "bandejas"})` },
+                                { value: "72", label: `72 ${t('ports_label') || "Portas"} (6 ${t('bandejas') || "bandejas"})` },
+                                { value: "144", label: `144 ${t('ports_label') || "Portas"} (12 ${t('bandejas') || "bandejas"})` }
+                            ]}
+                        />
 
-                        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-3 flex items-start gap-3">
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-500/30 rounded-lg p-3 flex items-start gap-3">
                             <div className="mt-0.5">
-                                <PlayCircle className="w-4 h-4 text-emerald-400" />
+                                <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
-                                <h4 className="text-xs font-bold text-emerald-300">{t('preview')}</h4>
-                                <p className="text-[11px] text-emerald-200/70 leading-tight">
+                                <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{t('preview')}</h4>
+                                <p className="text-[11px] text-slate-600 dark:text-emerald-200/70 leading-tight">
                                     {t('dio_preview_msg', {
                                         ports: newDIOConfig.ports,
                                         trays: Math.ceil(newDIOConfig.ports / 12)

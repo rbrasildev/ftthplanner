@@ -51,16 +51,6 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                 {/* GROUP 2: VIEW / MODE */}
                 <div className="flex items-center gap-1 px-2 mx-auto bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg border border-slate-200 dark:border-slate-700/50">
                     <Button
-                        variant={viewMode === 'canvas' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => onViewModeChange('canvas')}
-                        className={`h-7 px-3 text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'canvas' ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : ''}`}
-                        title="Visão Livre 2D"
-                        icon={<Zap className="w-3.5 h-3.5" />}
-                    >
-                        2D Canvas
-                    </Button>
-                    <Button
                         variant={viewMode === 'logical' ? 'emerald' : 'ghost'}
                         size="sm"
                         onClick={() => onViewModeChange('logical')}
@@ -69,6 +59,16 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                         icon={<Network className="w-3.5 h-3.5" />}
                     >
                         Patching
+                    </Button>
+                    <Button
+                        variant={viewMode === 'canvas' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => onViewModeChange('canvas')}
+                        className={`h-7 px-3 text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'canvas' ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : ''}`}
+                        title="Visão Livre 2D"
+                        icon={<Zap className="w-3.5 h-3.5" />}
+                    >
+                        2D Canvas
                     </Button>
                 </div>
 

@@ -73,7 +73,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
 
                 {/* Header */}
                 <div
-                    className="h-9 bg-gradient-to-r from-slate-100 to-white dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
+                    className="h-9 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
                     onMouseDown={(e) => onDragStart(e, dio.id)}
                 >
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
