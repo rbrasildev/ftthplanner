@@ -1130,9 +1130,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                 ...drawingCustomerDrop,
                                 points: [...(drawingCustomerDrop.points || []), { lat, lng }]
                             });
-                        } else if (mode === 'add_customer' || mode === 'add_poste') {
+                        } else if (mode === 'add_customer') {
                             handleMapClickForCustomer(lat, lng);
-                        } else {
+                        } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                             onAddPoint(lat, lng);
                         }
                     }}

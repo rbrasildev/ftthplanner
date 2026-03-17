@@ -1648,7 +1648,7 @@ export default function App() {
                         initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
                         onMapMoveEnd={handleMapMoveEnd}
                         onToggleLabels={() => setShowLabels(!showLabels)}
-                        onAddPoint={handleAddPoint}
+                        onAddPoint={(lat, lng) => handleAddPoint(lat, lng, toolMode)}
                         onUndoDrawingPoint={handleUndoDrawingPoint}
                         onNodeClick={handleNodeClick}
                         onMoveNode={handleMoveNode}
