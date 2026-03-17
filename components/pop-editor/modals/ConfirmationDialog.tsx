@@ -11,6 +11,7 @@ interface ConfirmationDialogProps {
     cancelLabel?: string;
     secondaryActionLabel?: string;
     type?: 'danger' | 'warning' | 'info';
+    isLoading?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
     onSecondaryAction?: () => void;
@@ -25,6 +26,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     cancelLabel = 'Cancel',
     secondaryActionLabel,
     type = 'info',
+    isLoading = false,
     onConfirm,
     onCancel,
     onSecondaryAction
@@ -98,8 +100,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                     </Button>
                     <Button
                         onClick={onConfirm}
-                        variant={type === 'danger' ? 'destructive' : type === 'warning' ? 'secondary' : 'emerald'}
-                        className={`px-4 py-2 text-white font-bold text-sm shadow-lg ${style.shadow} transition-all active:scale-95`}
+                        isLoading={isLoading}
+                        className={`px-4 py-2 text-white font-bold text-sm shadow-lg ${style.btn} ${style.shadow} transition-all active:scale-95 border-none`}
                     >
                         {confirmLabel}
                     </Button>

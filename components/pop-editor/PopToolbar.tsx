@@ -1,5 +1,5 @@
 import React from 'react';
-import { Router, Server, AlignJustify, Scissors, Zap, Magnet, Network } from 'lucide-react';
+import { Router, Server, AlignJustify, Scissors, Zap, Magnet, Network, Save, X } from 'lucide-react';
 import { Button } from '../common/Button';
 
 interface PopToolbarProps {
@@ -8,6 +8,7 @@ interface PopToolbarProps {
     onViewModeChange: (mode: 'canvas' | 'logical') => void;
     viewMode: 'canvas' | 'logical';
     onClearAll: () => void;
+    onSave: () => void;
     userRole?: string | null;
     t: (key: string) => string;
 }
@@ -18,6 +19,7 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
     onViewModeChange,
     viewMode,
     onClearAll,
+    onSave,
     userRole,
     t
 }) => {
@@ -72,7 +74,17 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                     </Button>
                 </div>
 
-                <div className="flex items-center ml-auto">
+                <div className="flex items-center ml-auto gap-2">
+                    <Button
+                        variant={userRole === 'MEMBER' ? 'outline' : 'emerald'}
+                        size="sm"
+                        onClick={onSave}
+                        className="h-8 px-4 font-bold active:scale-95 shadow-sm"
+                        icon={userRole === 'MEMBER' ? <X className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                    >
+                        {userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Concluir')}
+                    </Button>
+
                     {userRole !== 'MEMBER' && (
                         <Button
                             variant="outline"

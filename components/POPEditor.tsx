@@ -76,6 +76,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Confirmation States
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const GRID_SIZE = 20;
     const EQUIPMENT_WIDTH = 340; // Standard visual width for OLT/DIO
@@ -758,11 +759,14 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     };
 
     const handleSaveAndClose = async () => {
+        setIsSaving(true);
         try {
             await onSave(localPOP);
             onClose();
         } catch (e) {
             console.error("Failed to save and close POP", e);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -816,6 +820,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     onViewModeChange={handleViewModeChange}
                     viewMode={viewMode}
                     onClearAll={() => setShowClearConfirm(true)}
+                    onSave={userRole === 'MEMBER' ? onClose : handleCloseRequest}
                     t={t}
                     userRole={userRole}
                 />
@@ -987,61 +992,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                         </div>
                     )}
 
-                    {/* Footer (Floating) */}
-                    {/* Floating Navigation Controls */}
-                    <div className="absolute bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
-
-                        {/* Zoom & Center Panel */}
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2 pointer-events-auto">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setViewState(s => ({ ...s, zoom: Math.min(4, s.zoom + 0.1) }))}
-                                className="text-slate-500 dark:text-slate-400"
-                                title={t('zoom_in')}
-                            >
-                                <ZoomIn className="w-5 h-5" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
-                                className="text-slate-500 dark:text-slate-400"
-                                title={t('zoom_out')}
-                            >
-                                <ZoomOut className="w-5 h-5" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleCenterView}
-                                className="text-slate-500 dark:text-slate-400"
-                                title={t('show_all')}
-                            >
-                                <Box className="w-5 h-5" />
-                            </Button>
-                            <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setViewState({ x: 50, y: 50, zoom: 1 })}
-                                className="text-slate-500 dark:text-slate-400"
-                                title={t('center_view')}
-                            >
-                                <Maximize className="w-5 h-5" />
-                            </Button>
-                        </div>
-
-                        {/* Save Button */}
-                        <Button
-                            variant={userRole === 'MEMBER' ? 'secondary' : 'emerald'}
-                            onClick={userRole === 'MEMBER' ? onClose : handleSaveAndClose}
-                            className="px-6 py-2 shadow-lg transition-all transform hover:scale-105 active:scale-95 font-bold"
-                            icon={userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                        >
-                            {userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Concluir')}
-                        </Button>
-                    </div>
 
                 </div> {/* End Canvas */}
 
@@ -1138,6 +1088,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     confirmLabel={t('save_and_close')}
                     secondaryActionLabel={t('discard')}
                     type="warning"
+                    isLoading={isSaving}
                     onConfirm={handleSaveAndClose}
                     onCancel={() => setShowCloseConfirm(false)}
                     onSecondaryAction={onClose}
