@@ -72,7 +72,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 {/* Center Body - Compact Circle (10px to fit in 12px with border) */}
                 <div className={`
                     w-2.5 h-2.5 rounded-full border border-black dark:border-slate-400 z-20 shadow-sm transition-colors duration-300
-                    ${isLitA || isLitB ? 'bg-red-500' : 'bg-[#949494] dark:bg-slate-500'}
+                    ${isLitA || isLitB ? 'bg-red-400' : 'bg-[#949494] dark:bg-slate-500'}
                 `} />
 
                 {/* Left Port - Edge */}
@@ -85,7 +85,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-slate-700 border-[#2E2D39] dark:border-slate-500 border
                         cursor-pointer select-none transition-all z-30 absolute left-[2px]
                         ${hoveredPortId === portA ? 'ring-2 ring-emerald-400 scale-125' : ''} 
-                        ${isLitA ? 'ring-2 ring-red-500 bg-red-600' : ''}
+                        ${isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
                     {!isLitA && isConnectedA && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
@@ -101,7 +101,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-slate-700 border-[#2E2D39] dark:border-slate-500 border
                         cursor-pointer select-none transition-all z-30 absolute right-[2px]
                         ${hoveredPortId === portB ? 'ring-2 ring-emerald-400 scale-125' : ''} 
-                        ${isLitB ? 'ring-2 ring-red-500 bg-red-600' : ''}
+                        ${isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
                     {!isLitB && isConnectedB && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}

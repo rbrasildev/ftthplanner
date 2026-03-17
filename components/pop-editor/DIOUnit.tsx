@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Server, Link2, Plug, Pencil, Trash2, Layers } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { Button } from '../common/Button';
 import { getFiberColor } from '../../types';
 
 interface DIOUnitProps {
@@ -84,32 +85,40 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
 
                     {/* Actions Toolbar */}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onLinkCables(e, dio.id)}
-                            className="p-1 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             title="Link Cables"
                         >
                             <Link2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onSplice(e, dio.id)}
-                            className="p-1 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                             title="Manage Splices"
                         >
                             <Plug className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onEdit(e, dio)}
-                            className="p-1 text-slate-400 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                         >
                             <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onDelete(e, dio)}
-                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 

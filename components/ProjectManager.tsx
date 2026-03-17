@@ -2,6 +2,7 @@
 import React from 'react';
 import { Project } from '../types';
 import { FolderOpen, X, Trash2 } from 'lucide-react';
+import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 
 interface ProjectManagerProps {
@@ -90,9 +91,14 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
           <FolderOpen className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
           {t('project_manager')}
         </h2>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-          <X className="w-6 h-6" />
-        </button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose} 
+          className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </Button>
       </div>
 
       <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
@@ -131,17 +137,19 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                 </div>
 
                 {!isActive && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(t('confirm_delete_project') || 'Deletar projeto?')) {
-                        onDeleteProject(project.id);
-                      }
-                    }}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(t('confirm_delete_project') || 'Deletar projeto?')) {
+                          onDeleteProject(project.id);
+                        }
+                      }}
+                      className="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                 )}
 
                 {isActive && (

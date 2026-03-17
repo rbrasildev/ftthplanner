@@ -1,6 +1,7 @@
 import React from 'react';
 import { Router, Pencil, Trash2, Zap, Server } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { Button } from '../common/Button';
 
 interface OLTUnitProps {
     olt: any; // Using any for agility, ideally would be the specific OLT type
@@ -71,18 +72,22 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                         {olt.name}
                     </span>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onEdit(e, olt)}
-                            className="p-1 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                         >
                             <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => onDelete(e, olt)}
-                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="h-7 w-7 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 

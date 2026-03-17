@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Router, Server, Link2, Link2Off, Cable as CableIcon, X, Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { Button } from '../../common/Button';
 import { useLanguage } from '../../../LanguageContext';
 
 interface PatchPanelModalProps {
@@ -53,7 +54,14 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                         <Router className="w-4 h-4 text-emerald-400" />
                         {t('connection_slot_port') || 'Connection for Slot/Port'}
                     </h3>
-                    <button onClick={() => setConfiguringOltPortId(null)}><X className="w-4 h-4 text-slate-400 hover:text-white" /></button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setConfiguringOltPortId(null)}
+                        className="w-6 h-6 p-0 hover:bg-white/10"
+                    >
+                        <X className="w-4 h-4 text-slate-400 hover:text-white" />
+                    </Button>
                 </div>
 
                 <div className="p-4 flex-1 overflow-y-auto max-h-[60vh] space-y-4">
@@ -64,9 +72,15 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                 <div className="text-xs text-green-400 font-bold flex items-center gap-2">
                                     <Link2 className="w-4 h-4" /> {t('connected') || 'Connected'}
                                 </div>
-                                <button onClick={handleDisconnectPort} className="px-2 py-1 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-white rounded text-xs border border-red-900/50 flex items-center gap-1 transition">
-                                    <Link2Off className="w-3 h-3" /> {t('disconnect') || 'Disconnect'}
-                                </button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDisconnectPort}
+                                    className="h-7 text-[10px] bg-red-900/10 text-red-500 hover:bg-red-900/20 border-red-500/20"
+                                    icon={<Link2Off className="w-3 h-3" />}
+                                >
+                                    {t('disconnect') || 'Disconnect'}
+                                </Button>
                             </div>
                         ) : (
                             <div className="text-xs text-slate-500 font-bold flex items-center gap-2">
@@ -86,14 +100,16 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
 
                                 return (
                                     <div key={dio.id} className="bg-slate-900/50 rounded border border-slate-700/50 overflow-hidden">
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() => toggleDio(dio.id)}
-                                            className="w-full px-3 py-2 bg-slate-800 text-xs font-bold text-slate-300 border-b border-slate-700/50 flex items-center gap-2 hover:bg-slate-750 transition-colors"
+                                            className="w-full px-3 py-2 bg-slate-800 text-xs font-bold text-slate-300 border-b border-slate-700/50 flex items-center gap-2 hover:bg-slate-750 transition-colors justify-start rounded-none"
                                         >
                                             {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                                             <Server className="w-3 h-3" />
                                             <span className="flex-1 text-left">{dio.name}</span>
-                                        </button>
+                                        </Button>
 
                                         {isExpanded && (
                                             <div className="p-3 space-y-3 animate-in slide-in-from-top-2 duration-200">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, AlertTriangle, X, Server, Box, Layers, PlayCircle, Settings2, Save, Lock, Unlock, Zap, Router } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
+import { Button } from '../../common/Button';
 
 interface EditEquipmentModalsProps {
     editingOLT: any;
@@ -59,7 +60,14 @@ const DraggableModal: React.FC<{
         >
             <div className={`h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-white/10 ${headerColor}`} onMouseDown={handleMouseDown}>
                 <div className="flex items-center gap-2 text-white font-bold text-shadow-sm">{icon}<span>{title}</span></div>
-                <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="w-8 h-8 rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </Button>
             </div>
             <div className="p-5 space-y-5 bg-gradient-to-b from-transparent to-black/20">{children}</div>
         </div>
@@ -120,13 +128,15 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                             <span className="text-[9px] text-slate-500 block">{t('type_locked')}</span>
                                         </div>
                                     </div>
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={() => setIsTypeUnlocked(true)}
-                                        className="p-1.5 text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
+                                        className="h-8 w-8 text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
                                         title={t('unlock') || "Desbloquear"}
                                     >
                                         <Lock className="w-4 h-4" />
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
@@ -229,12 +239,14 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                             </div>
                         )}
 
-                        <button
+                        <Button
                             onClick={handleSaveEditedOLT}
-                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
+                            size="lg"
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all font-bold"
+                            icon={<Save className="w-4 h-4" />}
                         >
-                            <Save className="w-4 h-4" /> {t('update')}
-                        </button>
+                            {t('update')}
+                        </Button>
                     </div>
                 </DraggableModal>
             )}
@@ -286,12 +298,14 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                             </p>
                         </div>
 
-                        <button
+                        <Button
                             onClick={handleSaveEditedDIO}
-                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
+                            size="lg"
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all font-bold"
+                            icon={<Save className="w-4 h-4" />}
                         >
-                            <Save className="w-4 h-4" /> {t('save_changes')}
-                        </button>
+                            {t('save_changes')}
+                        </Button>
                     </div>
                 </DraggableModal>
             )}

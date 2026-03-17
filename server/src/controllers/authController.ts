@@ -119,7 +119,12 @@ export const register = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        res.json({ id: result.user.id, username: result.user.username, companyId: result.company.id });
+        res.json({ 
+            id: result.user.id, 
+            username: result.user.username, 
+            companyId: result.company.id,
+            token // Retornando para suporte ao modo anônimo (Header fallback)
+        });
 
     } catch (error: any) {
         logger.error(`Registration Error: ${error.message}`);
@@ -193,7 +198,8 @@ export const login = async (req: Request, res: Response) => {
                     companyId: user.companyId,
                     role: user.role,
                     company: user.company
-                }
+                },
+                token // Retornando para suporte ao modo anônimo (Header fallback)
             });
         } else {
             res.status(401).json({ error: 'Invalid credentials' });

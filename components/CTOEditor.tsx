@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
 import { CustomInput } from './common/CustomInput';
@@ -2906,24 +2907,34 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                         <div className="flex gap-1 pointer-events-auto items-center">
                             {!isMaximized && (
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setIsCollapsed(!isCollapsed)}
                                     title={isCollapsed ? t('expand') : t('collapse')}
-                                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white"
                                 >
                                     {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                                </button>
+                                </Button>
                             )}
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={toggleMaximize}
                                 title={isMaximized ? t('restore') : t('maximize')}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                                className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white"
                             >
                                 {isMaximized ? <Minimize2 className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                            </button>
-                            <button onClick={handleCloseRequest} title={t('cancel')} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={handleCloseRequest} 
+                                title={t('cancel')} 
+                                className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:text-rose-500 dark:hover:text-rose-400"
+                            >
                                 <X className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -2933,53 +2944,63 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                             {/* GROUP 1: EDIT MODES */}
                             <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
-                                <button
+                                <Button
+                                    variant={isRotateMode ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isRotateMode ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className="h-8 w-8"
                                     title={t('rotate_mode')}
                                 >
-                                    <RotateCw className={`w-4 h-4 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
-                                </button>
-                                <button
+                                    <RotateCw className={`w-3.5 h-3.5 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
+                                </Button>
+                                <Button
+                                    variant={isDeleteMode ? 'destructive' : 'outline'}
+                                    size="icon"
                                     onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isDeleteMode ? 'bg-red-500 border-red-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className="h-8 w-8"
                                     title={t('delete_mode')}
                                 >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                             </div>
 
                             {/* GROUP 2: CREATION */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <button
+                                <Button
+                                    variant={showSplitterDropdown ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={() => setShowSplitterDropdown(true)}
-                                    className={`p-1.5 rounded border transition ${showSplitterDropdown ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
+                                    className="h-8 w-8"
                                     title={t('splitters')}
                                 >
-                                    <Triangle className="w-4 h-4 -rotate-90" />
-                                </button>
-                                <button
+                                    <Triangle className="w-3.5 h-3.5 -rotate-90" />
+                                </Button>
+                                <Button
+                                    variant={isFusionToolActive ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={handleAddFusion}
+                                    className={`h-8 w-8 ${isFusionToolActive ? 'ring-2 ring-emerald-400' : ''}`}
                                     title={t('add_fusion')}
-                                    className={`p-1 rounded border transition ${isFusionToolActive ? 'bg-yellow-500 border-yellow-600 text-white shadow-sm ring-2 ring-yellow-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                                 >
-                                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
                                         <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
                                         <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
                                     </svg>
-                                </button>
+                                </Button>
                             </div>
 
                             {/* GROUP 3: CONNECTIONS */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <button
+                                <Button
+                                    variant={isAutoSpliceOpen ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={() => setIsAutoSpliceOpen(true)}
+                                    className="h-8 w-8"
                                     title={t('auto_splice')}
-                                    className={`p-1.5 rounded border transition ${isAutoSpliceOpen ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
                                 >
-                                    <ArrowRightLeft className="w-4 h-4" />
-                                </button>
+                                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                                </Button>
                                 <button
 
                                     onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
@@ -2989,17 +3010,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <AlignCenter className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
                                 </button>
 
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="icon"
                                     onClick={() => {
                                         if (window.confirm(t('clear_connections_confirm'))) {
                                             setLocalCTO(prev => ({ ...prev, connections: [] }));
                                         }
                                     }}
-                                    className="p-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-red-500 rounded hover:bg-red-50 transition"
+                                    className="h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-slate-300 dark:border-slate-600"
                                     title={t('reset_connections')}
                                 >
-                                    <Eraser className="w-4 h-4" />
-                                </button>
+                                    <Eraser className="w-3.5 h-3.5" />
+                                </Button>
                             </div>
 
                             {/* GROUP 4: ANALYSIS */}
@@ -3024,27 +3047,41 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                             {/* GROUP 5: VIEW */}
                             <div className="flex items-center gap-1.5 pl-2">
-                                <button
+                                <Button
+                                    variant={isSnapping ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={() => setIsSnapping(!isSnapping)}
-                                    className={`p-1.5 rounded border transition ${isSnapping ? 'bg-emerald-500 border-emerald-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className="h-8 w-8"
                                     title={t('snap_grid')}
                                 >
-                                    <Magnet className="w-4 h-4" />
-                                </button>
+                                    <Magnet className="w-3.5 h-3.5" />
+                                </Button>
                             </div>
 
                         </div>
 
                         <div className="flex gap-2 pointer-events-auto items-center">
-                            <button onClick={handleExportPNG} disabled={!!exportingType} className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-1.5 text-[11px] border border-slate-300 dark:border-slate-600 transition">
-                                {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <ImageIcon className="w-3.5 h-3.5" />}
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={handleExportPNG} 
+                                disabled={!!exportingType} 
+                                className="font-bold text-[11px] h-7 px-2.5"
+                            >
+                                {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
                                 PNG
-                            </button>
+                            </Button>
 
-                            <button onClick={handleExportPDF} disabled={!!exportingType} className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold rounded flex items-center gap-1.5 text-[11px] border border-slate-300 dark:border-slate-600 transition">
-                                {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full"></span> : <FileDown className="w-3.5 h-3.5" />}
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={handleExportPDF} 
+                                disabled={!!exportingType} 
+                                className="font-bold text-[11px] h-7 px-2.5"
+                            >
+                                {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
                                 PDF
-                            </button>
+                            </Button>
 
 
                         </div>
@@ -3149,14 +3186,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <ZoomOut className="w-5 h-5" />
                             </button>
                             <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={handleCenterView}
                                 onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('center_view') || "Center View"}
                             >
                                 <Maximize className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -3188,7 +3227,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
 
                                 const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
-                                const finalWidth = isLit ? 4 : 2.5;
+                                const finalWidth = isLit ? 3.5 : 2.5;
 
                                 let d = `M ${p1.x} ${p1.y} `;
                                 if (conn.points && conn.points.length > 0) {
@@ -3209,7 +3248,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             fill="none"
                                             strokeLinejoin="round"
                                             strokeLinecap="round"
-                                            style={{ filter: isLit ? 'drop-shadow(0 0 4px #ef4444)' : 'none' }}
+                                            style={{ filter: isLit ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.45))' : 'none' }}
                                             className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
                                             onClick={(e) => {
                                                 if (isSmartAlignMode) handleSmartAlignConnection(conn.id);

@@ -47,6 +47,9 @@ const translations = {
     'reset_password_error_length': 'Password must be at least 6 characters.',
     'reset_password_error_connection': 'Server connection error.',
     'reset_password_success_redirect': 'Password saved! Redirecting to login...',
+    'connection_lost': 'Connection Lost',
+    'connection_lost_desc': 'We are having trouble reaching the server. Please check your internet or wait a moment.',
+    'connection_restored': 'Connection Restored',
     'login_feature_label': 'Feature',
     'login_feature_title': 'Fusion Editor',
     'back_to_home': 'Back to Home',
@@ -93,6 +96,7 @@ const translations = {
     'error_project_update': 'Failed to update project.',
     'error_project_delete': 'Failed to delete project.',
     'error_saving_changes': 'Error saving changes. Please try again.',
+
     'error_permission_denied': 'Access denied: you do not have permission to perform this action.',
 
     // App / Sidebar
@@ -901,6 +905,11 @@ const translations = {
     'trial_expired_error': 'Trial Expired',
     'trial_expired_desc': 'Your trial period has ended. Please subscribe to a plan to continue accessing your projects.',
     'error_email_required': 'Email is required.',
+    'import_poles_success': 'Poles imported successfully!',
+    'import_poles_error': 'Failed to import poles.',
+    'import_success': 'Import completed successfully!',
+
+    'import_advanced': 'Advanced Import',
 
     // --- LANDING PAGE ---
     'landing_features': 'Features',
@@ -1370,6 +1379,7 @@ const translations = {
     'error_project_update': 'Falha ao atualizar projeto.',
     'error_project_delete': 'Falha ao excluir projeto.',
     'error_saving_changes': 'Erro ao salvar as alterações. Tente novamente.',
+
 
     // App / Sidebar
     'app_title': 'Planejador FTTx',

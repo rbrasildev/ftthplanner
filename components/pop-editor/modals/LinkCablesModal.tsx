@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link2, X, Cable as CableIcon, Check } from 'lucide-react';
+import { Button } from '../../common/Button';
 
 interface LinkCablesModalProps {
     configuringDioCablesId: string | null;
@@ -28,7 +29,14 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                         <Link2 className="w-4 h-4 text-emerald-400" />
                         {t('link_cables')}
                     </h3>
-                    <button onClick={() => setConfiguringDioCablesId(null)}><X className="w-4 h-4 text-slate-400 hover:text-white" /></button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setConfiguringDioCablesId(null)}
+                        className="w-6 h-6 p-0 hover:bg-white/10"
+                    >
+                        <X className="w-4 h-4 text-slate-400 hover:text-white" />
+                    </Button>
                 </div>
                 <div className="p-4 space-y-2">
                     <p className="text-xs text-slate-400 mb-2">{t('link_cables_help')}</p>

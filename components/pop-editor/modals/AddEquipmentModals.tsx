@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Move, X, Server, Box, Layers, PlayCircle, Settings2 } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
 import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
+import { Button } from '../../common/Button';
 
 interface AddEquipmentModalsProps {
     showAddOLT: boolean;
@@ -87,12 +88,14 @@ const DraggableModal: React.FC<{
                     {icon}
                     <span>{title}</span>
                 </div>
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={onClose}
-                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                    className="w-8 h-8 rounded-full hover:bg-white/20 text-white/70 hover:text-white transition-colors"
                 >
                     <X className="w-5 h-5" />
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
@@ -271,12 +274,14 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             onClick={onAddOLT}
-                            className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
+                            size="lg"
+                            className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-900/30 transition-all font-bold"
+                            icon={<Server className="w-4 h-4" />}
                         >
-                            <Server className="w-4 h-4" /> {t('create_device')}
-                        </button>
+                            {t('create_device')}
+                        </Button>
                     </div>
                 </DraggableModal>
             )}
@@ -328,12 +333,14 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             onClick={onAddDIO}
-                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all transform hover:translate-y-[-1px] active:translate-y-[0px] flex items-center justify-center gap-2"
+                            size="lg"
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all font-bold"
+                            icon={<Box className="w-4 h-4" />}
                         >
-                            <Box className="w-4 h-4" /> {t('create_device')}
-                        </button>
+                            {t('create_device')}
+                        </Button>
                     </div>
                 </DraggableModal>
             )}

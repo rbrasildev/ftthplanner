@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, X } from 'lucide-react';
+import { Button } from '../common/Button';
 
 interface PopHeaderProps {
     title: string;
@@ -19,12 +20,14 @@ export const PopHeader: React.FC<PopHeaderProps> = ({ title, onClose, userRole }
                 </h2>
             </div>
             <div className="flex gap-2">
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={onClose}
-                    className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    className="h-8 w-8 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400"
                 >
                     <X className="w-5 h-5" />
-                </button>
+                </Button>
             </div>
         </div>
     );

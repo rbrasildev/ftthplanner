@@ -177,7 +177,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                 >
                                     {/* Connecting line */}
                                     <div
-                                        style={{ backgroundColor: isLit ? '#ef4444' : color, opacity: 1 }}
+                                        style={{ backgroundColor: isLit ? '#f87171' : color, opacity: 1 }}
                                         className={`w-full h-[1px] ${isMirrored ? 'ml-2' : 'mr-2'}`}
                                     ></div>
 
@@ -194,7 +194,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         absolute ${isMirrored ? '-left-[3px]' : '-right-[3px]'} shadow-sm ${textColor} text-[7px] font-bold leading-none pb-[0.5px]
                                         flex items-center justify-center
                                         ${hoveredPortId === fiberId ? 'ring-2 ring-emerald-500' : ''}
-                                        ${isLit ? 'ring-2 ring-red-500 border-red-500' : ''}
+                                        ${isLit ? 'ring-2 ring-red-400 border-red-400' : ''}
                                     `}
                                         style={{
                                             backgroundColor: color

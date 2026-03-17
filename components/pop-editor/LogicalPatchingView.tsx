@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { POPData, OLT, DIO } from '../../types';
 import { Network, Zap, Server, ArrowRight, ChevronDown, ChevronRight, Layers, GitMerge, GripVertical } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { Button } from '../common/Button';
 
 interface LogicalPatchingViewProps {
     localPOP: POPData;
@@ -396,16 +397,18 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                         </div>
                         <div className="flex items-center gap-3">
                             {onManageFusions && (
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onManageFusions(dio.id);
                                     }}
-                                    className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-1 rounded hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors flex items-center gap-1 border border-indigo-200 dark:border-indigo-800/50"
+                                    className="h-7 text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50"
+                                    icon={<GitMerge className="w-3 h-3" />}
                                 >
-                                    <GitMerge className="w-3 h-3" />
                                     {t('manage_fusions')}
-                                </button>
+                                </Button>
                             )}
                             {collapsedDIOs.has(dio.id) ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                         </div>
@@ -521,7 +524,14 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                 </>
                             );
                         })()}
-                        <button onClick={() => setSelectedPortA(null)} className="ml-auto text-xs bg-indigo-200 hover:bg-indigo-300 dark:bg-indigo-800 dark:hover:bg-indigo-700 text-indigo-900 dark:text-indigo-100 transition-colors px-2 py-1 rounded">{t('cancel_btn')}</button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setSelectedPortA(null)}
+                            className="ml-auto h-7 px-2 text-xs"
+                        >
+                            {t('cancel_btn')}
+                        </Button>
                     </div>
                 )}
                 {viewingConnection && (
@@ -538,16 +548,25 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                         })()}
 
                         <div className="ml-auto flex items-center gap-2">
-                            <button
+                            <Button
+                                variant="destructive"
+                                size="sm"
                                 onClick={() => {
                                     onRemoveConnection(viewingConnection.sourceId, viewingConnection.targetId);
                                     setViewingConnection(null);
                                 }}
-                                className="text-xs bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-3 py-1.5 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors font-bold"
+                                className="h-8 shadow-sm font-bold"
                             >
                                 {t('disconnect_btn')}
-                            </button>
-                            <button onClick={() => setViewingConnection(null)} className="text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">{t('close_btn')}</button>
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setViewingConnection(null)}
+                                className="h-8"
+                            >
+                                {t('close_btn')}
+                            </Button>
                         </div>
                     </div>
                 )}

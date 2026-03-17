@@ -1,5 +1,6 @@
 import React from 'react';
 import { Router, Server, AlignJustify, Scissors, Zap, Magnet, Network } from 'lucide-react';
+import { Button } from '../common/Button';
 
 interface PopToolbarProps {
     onAddOLT: () => void;
@@ -26,54 +27,62 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                 {/* GROUP 1: CREATION */}
                 {userRole !== 'MEMBER' && (
                     <div className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-700">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={onAddOLT}
-                            className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow hover:border-indigo-500/30 active:scale-95"
+                            className="bg-white dark:bg-slate-800 hover:shadow hover:border-indigo-500/30 font-bold active:scale-95"
+                            icon={<Zap className="w-3.5 h-3.5 text-indigo-500" />}
                         >
-                            <Zap className="w-3.5 h-3.5 text-indigo-500" /> {t('add_active_equipment')}
-                        </button>
-                        <button
+                            {t('add_active_equipment')}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={onAddDIO}
-                            className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow hover:border-emerald-500/30 active:scale-95"
+                            className="bg-white dark:bg-slate-800 hover:shadow hover:border-emerald-500/30 font-bold active:scale-95"
+                            icon={<Server className="w-3.5 h-3.5 text-emerald-500" />}
                         >
-                            <Server className="w-3.5 h-3.5 text-emerald-500" /> {t('add_dio')}
-                        </button>
+                            {t('add_dio')}
+                        </Button>
                     </div>
                 )}
 
                 {/* GROUP 2: VIEW / MODE */}
                 <div className="flex items-center gap-1 px-2 mx-auto bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg border border-slate-200 dark:border-slate-700/50">
-                    <button
+                    <Button
+                        variant={viewMode === 'canvas' ? 'secondary' : 'ghost'}
+                        size="sm"
                         onClick={() => onViewModeChange('canvas')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'canvas'
-                            ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm border border-slate-200 dark:border-slate-600'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border border-transparent'
-                            }`}
+                        className={`h-7 px-3 text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'canvas' ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : ''}`}
                         title="Visão Livre 2D"
+                        icon={<Zap className="w-3.5 h-3.5" />}
                     >
-                        <Zap className="w-3.5 h-3.5" /> 2D Canvas
-                    </button>
-                    <button
+                        2D Canvas
+                    </Button>
+                    <Button
+                        variant={viewMode === 'logical' ? 'emerald' : 'ghost'}
+                        size="sm"
                         onClick={() => onViewModeChange('logical')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'logical'
-                            ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20 border border-emerald-500'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border border-transparent'
-                            }`}
+                        className={`h-7 px-3 text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'logical' ? 'shadow-sm shadow-emerald-500/20' : ''}`}
                         title="Matriz de Manobra"
+                        icon={<Network className="w-3.5 h-3.5" />}
                     >
-                        <Network className="w-3.5 h-3.5" /> Patching
-                    </button>
+                        Patching
+                    </Button>
                 </div>
 
                 <div className="flex items-center ml-auto">
                     {userRole !== 'MEMBER' && (
-                        <button
+                        <Button
+                            variant="outline"
+                            size="icon"
                             onClick={onClearAll}
-                            className="p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                            className="h-8 w-8 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400"
                             title={t('clear_all')}
                         >
                             <Scissors className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

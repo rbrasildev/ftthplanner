@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { POPData, FiberConnection, CableData, DIO, getFiberColor } from '../../types';
 import { Layers, Cable as CableIcon, Split, Unplug, ArrowRight, ArrowRightLeft, Check, ChevronRight, ChevronDown, GripVertical, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import { Button } from '../common/Button';
 
 interface LogicalSplicingViewProps {
     dio: DIO;
@@ -419,7 +420,14 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                         <div className="mt-3 px-3 py-2 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50 rounded-lg text-sm text-orange-700 dark:text-orange-300 font-medium flex items-center gap-2 animate-pulse">
                             <ArrowRight className="w-4 h-4" />
                             <strong>{label} {displayId}</strong>: {t('waiting_b_side')}
-                            <button onClick={() => setSelectedFiberId(null)} className="ml-auto text-xs bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded hover:bg-orange-300 dark:hover:bg-orange-700">{t('cancel_btn')}</button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setSelectedFiberId(null)}
+                                className="ml-auto h-7 px-2 text-xs"
+                            >
+                                {t('cancel_btn')}
+                            </Button>
                         </div>
                     );
                 })()}
@@ -456,17 +464,26 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                 <strong>{pNum}</strong>
                             </div>
 
-                            <div className="ml-auto flex items-center gap-2">
-                                <button
+                             <div className="ml-auto flex items-center gap-2">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
                                     onClick={() => {
                                         onRemoveConnection(viewingConnectionStr.sourceId, viewingConnectionStr.targetId);
                                         setViewingConnectionStr(null);
                                     }}
-                                    className="text-xs bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 px-3 py-1.5 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                                    className="h-8 shadow-sm font-bold"
                                 >
                                     {t('disconnect_btn')}
-                                </button>
-                                <button onClick={() => setViewingConnectionStr(null)} className="text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">{t('close_btn')}</button>
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setViewingConnectionStr(null)}
+                                    className="h-8"
+                                >
+                                    {t('close_btn')}
+                                </Button>
                             </div>
                         </div>
                     );

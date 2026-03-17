@@ -103,7 +103,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
                             points={`${50 + skewPercent},0 ${2 + skewPercent},100 ${98 + skewPercent},100`}
-                            className={`transition-colors duration-300 ${isConnectorized ? 'fill-white dark:fill-slate-800' : 'fill-[#949494] dark:fill-slate-600'} ${isLitIn ? 'stroke-red-500' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
+                            className={`transition-colors duration-300 ${isConnectorized ? 'fill-white dark:fill-slate-800' : 'fill-[#949494] dark:fill-slate-600'} ${isLitIn ? 'stroke-red-400' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
                             onClick={(e) => onAction(e, splitter.id)}
@@ -147,7 +147,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         text-[6.5px] font-bold select-none shadow-sm
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                         ${isLitIn
-                                ? 'border-red-500 bg-red-900 text-white'
+                                ? 'border-red-400 bg-red-600 text-white'
                                 : !isConnectorized
                                     ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
                                     : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
@@ -195,7 +195,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
                                 ${hoveredPortId === pid ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
-                                        ? 'border-red-500 bg-red-900 text-white'
+                                        ? 'border-red-400 bg-red-600 text-white'
                                         : customerName
                                             ? 'border-green-500 bg-green-50 text-green-700 font-bold' // Customer Style
                                             : !isConnectorized

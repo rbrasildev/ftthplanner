@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Info, CheckCircle2, X } from 'lucide-react';
+import { Button } from '../../common/Button';
 
 interface ConfirmationDialogProps {
     isOpen: boolean;
@@ -61,26 +62,29 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 </div>
                 <div className="flex gap-2 justify-end mt-6">
                     {onSecondaryAction && secondaryActionLabel && (
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={onSecondaryAction}
-                            className="px-4 py-2 text-red-400 hover:bg-red-900/20 font-medium text-sm rounded-lg transition-colors mr-auto"
+                            className="text-red-400 hover:bg-red-900/20 font-medium text-sm mr-auto"
                         >
                             {secondaryActionLabel}
-                        </button>
+                        </Button>
                     )}
 
-                    <button
+                    <Button
+                        variant="secondary"
                         onClick={onCancel}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm rounded-lg transition-colors"
+                        className="px-4 py-2 font-medium text-sm"
                     >
                         {cancelLabel}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={onConfirm}
-                        className={`px-4 py-2 ${style.btn} text-white rounded-lg font-bold text-sm shadow-lg ${style.shadow} transition-all active:scale-95`}
+                        variant={type === 'danger' ? 'destructive' : type === 'warning' ? 'secondary' : 'emerald'}
+                        className={`px-4 py-2 text-white font-bold text-sm shadow-lg ${style.shadow} transition-all active:scale-95`}
                     >
                         {confirmLabel}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

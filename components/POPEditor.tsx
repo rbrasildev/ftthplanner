@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
 import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X } from 'lucide-react';
+import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
 
@@ -915,16 +916,18 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         >
                                             <span className="text-[10px] font-bold text-slate-200 truncate flex-1">{cable.name}</span>
                                             <div className="flex items-center gap-1">
-                                                <button
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         onEditCable && onEditCable(cable);
                                                     }}
-                                                    className="text-slate-400 hover:text-white p-0.5"
+                                                    className="h-6 w-6 text-slate-400 hover:text-white"
                                                     title={t('edit_cable') || "Editar Cabo"}
                                                 >
                                                     <Pencil className="w-3 h-3" />
-                                                </button>
+                                                </Button>
                                                 <GripHorizontal className="w-3 h-3 text-slate-600" />
                                             </div>
                                         </div>
@@ -990,45 +993,54 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                         {/* Zoom & Center Panel */}
                         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2 pointer-events-auto">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setViewState(s => ({ ...s, zoom: Math.min(4, s.zoom + 0.1) }))}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('zoom_in')}
                             >
                                 <ZoomIn className="w-5 h-5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('zoom_out')}
                             >
                                 <ZoomOut className="w-5 h-5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={handleCenterView}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('show_all')}
                             >
                                 <Box className="w-5 h-5" />
-                            </button>
+                            </Button>
                             <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setViewState({ x: 50, y: 50, zoom: 1 })}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('center_view')}
                             >
                                 <Maximize className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         {/* Save Button */}
-                        <button
+                        <Button
+                            variant={userRole === 'MEMBER' ? 'secondary' : 'emerald'}
                             onClick={userRole === 'MEMBER' ? onClose : handleSaveAndClose}
-                            className="px-6 py-2 pointer-events-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95"
+                            className="px-6 py-2 shadow-lg transition-all transform hover:scale-105 active:scale-95 font-bold"
+                            icon={userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                         >
-                            {userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                             {userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Concluir')}
-                        </button>
+                        </Button>
                     </div>
 
                 </div> {/* End Canvas */}
