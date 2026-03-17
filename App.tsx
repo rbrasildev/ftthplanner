@@ -1520,6 +1520,7 @@ export default function App() {
                         projects={projects}
                         currentView={dashboardView}
                         onViewChange={setDashboardView}
+                        showToast={showToast}
                         onOpenProject={(id) => {
                             const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {

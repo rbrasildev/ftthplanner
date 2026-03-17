@@ -40,6 +40,7 @@ interface DashboardPageProps {
   currentView?: DashboardView;
   onViewChange?: (view: DashboardView) => void;
   currentProjectId?: string;
+  showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 // Helper to fix Leaflet size inside Modals
@@ -110,7 +111,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   isLoading = false,
   currentView: externalView,
   onViewChange: onExternalViewChange,
-  currentProjectId
+  currentProjectId,
+  showToast
 }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -170,7 +172,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<adminService.AdminUser | null>(null); // New state for editing
-  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', role: 'MEMBER' });
+  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
   const [userToDelete, setUserToDelete] = useState<adminService.AdminUser | null>(null);
 
   // Fetch users when view changes to 'users'
@@ -186,11 +188,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (userFormData.password !== userFormData.confirmPassword) {
+      if (showToast) showToast(t('error_passwords_dont_match') || "As senhas não coincidem", 'error');
+      else alert(t('error_passwords_dont_match') || "As senhas não coincidem");
+      return;
+    }
     try {
       const newUser = await adminService.createUser(userFormData);
       setUsersList(prev => [newUser, ...prev]);
       setIsUserModalOpen(false);
-      setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+      if (showToast) showToast(t('toast_user_created') || "Usuário criado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to create user", error);
       const backendMsg = error.response?.data?.error || "";
@@ -201,18 +209,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       else if (backendMsg.includes('Email and password are required') || backendMsg.includes('Email is required')) errorKey = 'error_email_required';
       else if (backendMsg) console.warn("Unmapped backend error:", backendMsg);
 
-      alert(t(errorKey));
+      if (showToast) showToast(t(errorKey), 'error');
+      else alert(t(errorKey));
     }
   };
 
   const handleEditUserClick = (user: adminService.AdminUser) => {
     setEditingUser(user);
-    setUserFormData({ username: user.username, email: user.email, password: '', role: user.role }); // Password empty means no change
+    setUserFormData({ username: user.username, email: user.email, password: '', confirmPassword: '', role: user.role }); // Password empty means no change
     setIsUserModalOpen(true);
   };
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
+    if (userFormData.password && userFormData.password !== userFormData.confirmPassword) {
+      if (showToast) showToast(t('error_passwords_dont_match') || "As senhas não coincidem", 'error');
+      else alert(t('error_passwords_dont_match') || "As senhas não coincidem");
+      return;
+    }
     try {
       const updateData: any = { role: userFormData.role };
       if (userFormData.password) updateData.password = userFormData.password;
@@ -221,13 +235,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       setUsersList(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
       setIsUserModalOpen(false);
       setEditingUser(null);
-      setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+      if (showToast) showToast(t('toast_user_updated') || "Usuário atualizado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to update user", error);
       const backendMsg = error.response?.data?.error || "";
       let errorKey = 'error_generic';
       if (backendMsg.includes('Password must be at least 6 characters')) errorKey = 'error_password_length';
-      alert(t(errorKey));
+      
+      if (showToast) showToast(t(errorKey), 'error');
+      else alert(t(errorKey));
     }
   };
 
@@ -237,6 +254,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         await adminService.deleteUser(userToDelete.id);
         setUsersList(prev => prev.filter(u => u.id !== userToDelete.id));
         setUserToDelete(null);
+        if (showToast) showToast(t('toast_user_deleted') || "Usuário excluído com sucesso", 'success');
       } catch (error: any) {
         console.error("Failed to delete user", error);
         const backendMsg = error.response?.data?.error || "";
@@ -244,7 +262,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         if (backendMsg.includes('Cannot delete yourself')) errorKey = 'error_cannot_delete_self';
 
-        alert(t(errorKey));
+        if (showToast) showToast(t(errorKey), 'error');
+        else alert(t(errorKey));
       }
     }
   };
@@ -776,7 +795,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => {
                   setEditingUser(null);
-                  setUserFormData({ username: '', email: '', password: '', role: 'MEMBER' });
+                  setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
                   setIsUserModalOpen(true);
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
@@ -878,13 +897,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 type="password"
                 value={userFormData.password}
                 onChange={e => setUserFormData({ ...userFormData, password: e.target.value })}
+                placeholder={editingUser ? "••••••••" : ""}
               />
+              {(userFormData.password || !editingUser) && (
+                <CustomInput
+                  label={t('confirm_password') || 'Confirmar Senha'}
+                  type="password"
+                  value={userFormData.confirmPassword}
+                  onChange={e => setUserFormData({ ...userFormData, confirmPassword: e.target.value })}
+                  placeholder={editingUser ? "••••••••" : ""}
+                />
+              )}
               <CustomSelect
                 label={t('role')}
                 value={userFormData.role}
                 options={[
                   { value: 'MEMBER', label: t('role_member') },
-                  { value: 'ADMIN', label: t('role_admin') }
+                  { value: 'ADMIN', label: t('role_admin') },
+                  ...(editingUser && editingUser.role === 'OWNER' ? [{ value: 'OWNER', label: t('saas_role_owner') || 'Proprietário' }] : [])
                 ]}
                 onChange={val => setUserFormData({ ...userFormData, role: val })}
                 showSearch={false}
