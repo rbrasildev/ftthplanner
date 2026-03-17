@@ -2982,7 +2982,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     className={`h-8 w-8 ${isFusionToolActive ? 'ring-2 ring-emerald-400' : ''}`}
                                     title={t('add_fusion')}
                                 >
-                                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
                                         <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
                                         <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
@@ -3001,14 +3001,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     <ArrowRightLeft className="w-3.5 h-3.5" />
                                 </Button>
-                                <button
-
+                                <Button
+                                    variant={isSmartAlignMode ? 'primary' : 'outline'}
+                                    size="icon"
                                     onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`h-8 w-8 ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-400' : ''}`}
                                     title={t('smart_align')}
                                 >
-                                    <AlignCenter className={`w-4 h-4 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
-                                </button>
+                                    <AlignCenter className={`w-3.5 h-3.5 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
+                                </Button>
 
                                 <Button
                                     variant="outline"
@@ -3018,7 +3019,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             setLocalCTO(prev => ({ ...prev, connections: [] }));
                                         }
                                     }}
-                                    className="h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-slate-300 dark:border-slate-600"
+                                    className="h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                                     title={t('reset_connections')}
                                 >
                                     <Eraser className="w-3.5 h-3.5" />
@@ -3027,22 +3028,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                             {/* GROUP 4: ANALYSIS */}
                             <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <button
-
+                                <Button
+                                    variant={isVflToolActive ? 'destructive' : 'outline'}
+                                    size="icon"
                                     onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isVflToolActive ? 'bg-red-600 border-red-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`h-8 w-8 ${isVflToolActive ? 'bg-red-600 border-red-700 text-white hover:bg-red-500' : ''}`}
                                     title={t('tool_vfl')}
                                 >
-                                    <Flashlight className={`w-4 h-4 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
-                                </button>
-                                <button
-
+                                    <Flashlight className={`w-3.5 h-3.5 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
+                                </Button>
+                                <Button
+                                    variant={isOtdrToolActive ? 'emerald' : 'outline'}
+                                    size="icon"
                                     onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
-                                    className={`p-1.5 rounded border transition ${isOtdrToolActive ? 'bg-emerald-600 border-emerald-700 text-white shadow-sm' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50'}`}
+                                    className={`h-8 w-8 ${isOtdrToolActive ? 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-500' : ''}`}
                                     title={t('otdr_trace_tool')}
                                 >
-                                    <Ruler className="w-4 h-4" />
-                                </button>
+                                    <Ruler className="w-3.5 h-3.5" />
+                                </Button>
                             </div>
 
                             {/* GROUP 5: VIEW */}
@@ -3169,22 +3172,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto">
                         {/* Navigation Panel (Zoom & Center) */}
                         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setViewState(s => ({ ...s, zoom: s.zoom + 0.1 }))}
                                 onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('zoom_in')}
                             >
                                 <ZoomIn className="w-5 h-5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setViewState(s => ({ ...s, zoom: Math.max(0.1, s.zoom - 0.1) }))}
                                 onMouseDown={(e) => e.stopPropagation()}
-                                className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition rounded-md flex items-center justify-center"
+                                className="text-slate-500 dark:text-slate-400"
                                 title={t('zoom_out')}
                             >
                                 <ZoomOut className="w-5 h-5" />
-                            </button>
+                            </Button>
                             <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
                             <Button
                                 variant="ghost"
@@ -3461,31 +3468,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                     <div className="flex items-center gap-3">
                         {userRole !== 'MEMBER' && (
-                            <button
+                            <Button
                                 onClick={handleApply}
+                                isLoading={savingAction === 'apply'}
                                 disabled={savingAction !== 'idle'}
-                                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-sm transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[120px] justify-center"
+                                variant="primary"
+                                className="px-5 font-bold min-w-[120px]"
+                                icon={<Check className="w-4 h-4" />}
                             >
-                                {savingAction === 'apply' ? (
-                                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                                ) : (
-                                    <Check className="w-4 h-4 shrink-0" />
-                                )}
-                                <span>{t('apply') || 'Aplicar'}</span>
-                            </button>
+                                {t('apply') || 'Aplicar'}
+                            </Button>
                         )}
-                        <button
+                        <Button
                             onClick={userRole === 'MEMBER' ? onClose : handleCloseRequest}
+                            isLoading={savingAction === 'save_close'}
                             disabled={savingAction !== 'idle'}
-                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-2 text-sm shadow-sm shadow-emerald-900/20 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed min-w-[150px] justify-center"
+                            variant="emerald"
+                            className="px-6 font-bold min-w-[150px] shadow-sm shadow-emerald-900/20"
+                            icon={userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                         >
-                            {savingAction === 'save_close' ? (
-                                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                            ) : (
-                                userRole === 'MEMBER' ? <X className="w-4 h-4 shrink-0" /> : <Save className="w-4 h-4 shrink-0" />
-                            )}
                             <span className="whitespace-nowrap">{userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Salvar / Sair')}</span>
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -3505,31 +3508,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </div>
                             </div>
                             <div className="flex flex-row gap-3 mt-6">
-                                <button
+                                <Button
                                     onClick={handleSaveAndClose}
+                                    isLoading={savingAction === 'save_close'}
                                     disabled={savingAction !== 'idle'}
-                                    className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95"
+                                    variant="emerald"
+                                    className="flex-1 font-bold shadow-lg"
+                                    icon={<Save className="w-4 h-4" />}
                                 >
-                                    {savingAction === 'save_close' ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Save className="w-4 h-4" />
-                                    )}
                                     {t('save_and_close')}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={onClose}
                                     disabled={savingAction !== 'idle'}
-                                    className="flex-1 py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-900/30 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                    variant="secondary"
+                                    className="flex-1 font-medium hover:bg-red-600 dark:hover:bg-red-900/30 hover:text-white dark:hover:text-red-400 border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50"
                                 >
                                     {t('discard')}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="ghost"
                                     onClick={() => setShowCloseConfirm(false)}
-                                    className="px-3 py-2.5 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-medium transition-colors whitespace-nowrap"
+                                    className="px-3 text-slate-500 text-xs font-medium"
                                 >
                                     {t('cancel')}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -3543,20 +3546,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                     {t('select_fusion_type')}
                                 </h3>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setShowFusionTypeModal(false)}
-                                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                                 >
                                     <X className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
 
                             <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {(availableFusions.length > 0 ? availableFusions : network.fusionTypes)?.map((ft: any) => (
-                                    <button
+                                    <Button
                                         key={ft.id}
+                                        variant="ghost"
                                         onClick={() => activateFusionTool(ft.id)}
-                                        className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
+                                        className="w-full justify-between items-center group transition-colors px-3 py-6 h-auto"
                                     >
                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                                             {ft.name}
@@ -3566,7 +3572,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                                 {ft.attenuation}dB
                                             </span>
                                         )}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </div>
@@ -3625,10 +3631,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     }
 
                                     return filteredSplitters.map(item => (
-                                        <button
+                                        <Button
                                             key={item.id}
+                                            variant="ghost"
                                             onClick={(e) => { handleAddSplitter(e, item); setShowSplitterDropdown(false); }}
-                                            className="w-full text-left px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex justify-between items-center group transition-colors"
+                                            className="w-full justify-between items-center group transition-colors px-3 py-6 h-auto"
                                         >
                                             <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                                                 {item.name}
@@ -3636,7 +3643,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             <span className="text-xs text-slate-400 font-mono">
                                                 {item.outputs} {t('outputs') || 'outputs'}
                                             </span>
-                                        </button>
+                                        </Button>
                                     ));
                                 })()}
                             </div>
@@ -3689,14 +3696,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </div>
 
                             <div className="flex gap-2">
-                                <button onClick={() => setIsAutoSpliceOpen(false)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                                <button
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setIsAutoSpliceOpen(false)}
+                                    className="flex-1"
+                                >
+                                    {t('cancel')}
+                                </Button>
+                                <Button
+                                    variant="emerald"
                                     onClick={performAutoSplice}
                                     disabled={!autoSourceId || !autoTargetId || autoSourceId === autoTargetId}
-                                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition"
+                                    className="flex-1 font-bold shadow-lg"
                                 >
                                     {t('perform_splice')}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -3728,8 +3742,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </div>
 
                             <div className="flex gap-2">
-                                <button onClick={() => setOtdrTargetPort(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                                <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition">{t('otdr_locate')}</button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setOtdrTargetPort(null)}
+                                    className="flex-1"
+                                >
+                                    {t('cancel')}
+                                </Button>
+                                <Button
+                                    variant="emerald"
+                                    onClick={handleOtdrSubmit}
+                                    className="flex-1 font-bold shadow-lg"
+                                >
+                                    {t('otdr_locate')}
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -3759,22 +3785,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </div>
                             </div>
                             <div className="flex flex-row gap-3 mt-6">
-                                <button
+                                <Button
+                                    variant="destructive"
                                     onClick={() => {
                                         if (onDisconnectCable) onDisconnectCable(cableToRemove);
                                         setCableToRemove(null);
                                     }}
-                                    className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap transform active:scale-95"
+                                    className="flex-1 font-bold shadow-lg"
+                                    icon={<Link className="w-4 h-4 rotate-45" />}
                                 >
-                                    <Link className="w-4 h-4 rotate-45" />
                                     {t('action_remove') || 'Remover'}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="secondary"
                                     onClick={() => setCableToRemove(null)}
-                                    className="flex-1 py-2.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-sm transition-all whitespace-nowrap"
+                                    className="flex-1 font-medium"
                                 >
                                     {t('cancel')}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -3789,20 +3817,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     >
                         {contextMenu.type === 'cable' ? (
                             <>
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => {
                                         if (onDisconnectCable) {
                                             setCableToRemove(contextMenu.id);
                                             setContextMenu(null);
                                         }
                                     }}
-                                    className="w-full px-4 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2"
+                                    className="w-full justify-start px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors gap-2 h-auto border-0"
+                                    icon={<Link className="w-3.5 h-3.5 rotate-45" />}
                                 >
-                                    <Link className="w-3.5 h-3.5 rotate-45" />
                                     {t('ctx_remove_cable')}
-                                </button>
+                                </Button>
                                 <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => {
                                         const cable = incomingCables.find(c => c.id === contextMenu.id);
                                         if (cable) {
@@ -3810,52 +3840,55 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             setContextMenu(null);
                                         }
                                     }}
-                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                    className="w-full justify-start px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                                    icon={<Pencil className="w-3.5 h-3.5" />}
                                 >
-                                    <Pencil className="w-3.5 h-3.5" />
                                     {t('ctx_edit_cable')}
-                                </button>
+                                </Button>
 
                                 <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={(e) => {
                                         // Trigger Mirror Action manually
                                         handleMirrorElement(e, contextMenu.id);
                                         setContextMenu(null);
                                     }}
-                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                    className="w-full justify-start px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                                    icon={<ArrowRightLeft className="w-3.5 h-3.5" />}
                                 >
-                                    <ArrowRightLeft className="w-3.5 h-3.5" />
                                     {t('action_flip')}
-                                </button>
+                                </Button>
 
                                 <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => {
                                         if (onSelectNextNode) {
                                             onSelectNextNode(contextMenu.id);
                                             setContextMenu(null);
                                         }
                                     }}
-                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                    className="w-full justify-start px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                                    icon={<ExternalLink className="w-3.5 h-3.5" />}
                                 >
-                                    <ExternalLink className="w-3.5 h-3.5" />
                                     {t('ctx_next_box')}
-                                </button>
+                                </Button>
                             </>
                         ) : (
                             <>
                                 {/* SPLITTER ACTIONS */}
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => {
                                         handleSplitterDoubleClick(contextMenu.id); // Reusing existing double-click logic for "Details"
                                         setContextMenu(null);
                                     }}
-                                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                                    className="w-full justify-start px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                                    icon={<Activity className="w-3.5 h-3.5" />}
                                 >
-                                    <Activity className="w-3.5 h-3.5" />
                                     {t('ctx_details')}
-                                </button>
+                                </Button>
                             </>
                         )}
                     </div>
