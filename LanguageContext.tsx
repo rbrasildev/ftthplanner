@@ -50,6 +50,7 @@ const translations = {
     'connection_lost': 'Connection Lost',
     'connection_lost_desc': 'We are having trouble reaching the server. Please check your internet or wait a moment.',
     'connection_restored': 'Connection Restored',
+    'try_again': 'Try Again',
     'login_feature_label': 'Feature',
     'login_feature_title': 'Fusion Editor',
     'back_to_home': 'Back to Home',
@@ -1172,6 +1173,10 @@ const translations = {
     'trial_expired_error': 'Trial Expirado',
     'trial_expired_desc': 'Seu período de teste terminou. Por favor, assine um plano para continuar acessando seus projetos.',
     'theme_dark': 'Modo Escuro',
+    'connection_lost': 'Conexão Perdida',
+    'connection_lost_desc': 'Estamos com dificuldade para contatar o servidor. Verifique sua conexão ou aguarde um momento.',
+    'connection_restored': 'Conexão Restaurada',
+    'try_again': 'Tentar Novamente',
 
     // --- LANDING PAGE ---
     'landing_features': 'Recursos',

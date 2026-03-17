@@ -77,7 +77,7 @@ export const ConnectionStatus: React.FC = () => {
                                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-amber-600 font-bold text-xs flex items-center gap-1"
                                 >
                                     <RefreshCw className="w-3 h-3" />
-                                    Tentar Novamente
+                                    {t('try_again')}
                                 </button>
                             )}
                         </div>
