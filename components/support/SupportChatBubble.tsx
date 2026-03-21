@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { MessageCircle, X, Send, Minus, Loader2, SmilePlus } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import api from '../../services/api';
+import { useLanguage } from '../../LanguageContext';
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
 
@@ -62,6 +63,8 @@ export const SupportChatBubble: React.FC = () => {
     const [isClosed, setIsClosed] = useState(false);
     const [supportPhone, setSupportPhone] = useState('');
     const [companyLogo, setCompanyLogo] = useState('');
+    const [myUserId, setMyUserId] = useState<string | null>(null);
+    const { t } = useLanguage();
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +91,7 @@ export const SupportChatBubble: React.FC = () => {
     useEffect(() => {
         const supportToken = localStorage.getItem('ftth_support_token');
         const mainToken = localStorage.getItem('ftth_planner_token_v1');
-        const token = supportToken || mainToken;
+        const token = supportToken || mainToken || 'session'; // Fallback for cookie-based auth
 
         loadSaaSConfig();
 
@@ -104,6 +107,7 @@ export const SupportChatBubble: React.FC = () => {
 
             socketRef.current = io(socketUrl, {
                 auth: { token },
+                withCredentials: true,
                 transports: ['polling', 'websocket'],
                 reconnection: true,
                 reconnectionAttempts: 10,
@@ -195,6 +199,7 @@ export const SupportChatBubble: React.FC = () => {
                 const activeConv = res.data.find((c: any) => c.status === 'OPEN');
                 if (activeConv) {
                     setIsClosed(false);
+                    setMyUserId(activeConv.user?.id || activeConv.userId || null);
                     const msgRes = await api.get(`/support/chat/messages/${activeConv.id}`);
                     setMessages(msgRes.data);
                     socketRef.current?.emit('join_conversation', activeConv.id);
@@ -202,6 +207,7 @@ export const SupportChatBubble: React.FC = () => {
                     const lastConv = res.data[0];
                     if (lastConv.status === 'CLOSED') {
                         setIsClosed(true);
+                        setMyUserId(lastConv.user?.id || lastConv.userId || null);
                         const msgRes = await api.get(`/support/chat/messages/${lastConv.id}`);
                         setMessages(msgRes.data);
                     }
@@ -217,24 +223,43 @@ export const SupportChatBubble: React.FC = () => {
     const handleSend = async () => {
         if (!message.trim() || isClosed) return;
 
+        const content = message.trim();
+        const tempId = `temp-${Date.now()}`;
+        const currentConvId = (!isClosed && messages.length > 0) ? messages[0].conversationId : undefined;
+
+        // Optimistic update
+        const optimisticMsg: Message = {
+            id: tempId,
+            content: content,
+            senderId: myUserId || 'pending',
+            createdAt: new Date().toISOString(),
+            conversationId: currentConvId || 'pending'
+        };
+
+        setMessages(prev => [...prev, optimisticMsg]);
+        setMessage('');
+
         try {
-            const currentConvId = (!isClosed && messages.length > 0) ? messages[0].conversationId : undefined;
             const res = await api.post('/support/chat/messages', {
-                content: message,
+                content: content,
                 conversationId: currentConvId
             });
 
             if (res.data) {
                 const newMsg = res.data;
                 setIsClosed(false);
-                setMessage('');
+                if (!myUserId) setMyUserId(newMsg.senderId);
                 if (messages.length === 0 || isClosed) {
                     socketRef.current?.emit('join_conversation', newMsg.conversationId);
                 }
-                setMessages(prev => [...prev.filter(m => m.id !== newMsg.id), newMsg]);
+                // Replace temp message with real one
+                setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
             }
         } catch (err) {
             console.error("[SupportChat] Failed to send message", err);
+            // Remove optimistic message and restore input on error
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            setMessage(content);
         }
     };
 
@@ -273,8 +298,8 @@ export const SupportChatBubble: React.FC = () => {
                         <div className={`w-2 h-2 rounded-full ${isAgentOnline ? 'bg-green-400 animate-pulse' : 'bg-slate-300'}`} />
                     )}
                     <div className="flex flex-col">
-                        <span className="font-bold text-sm leading-tight text-white">Suporte ao Cliente</span>
-                        <span className="text-[10px] text-emerald-100">{isAgentOnline ? 'Disponível Agora' : 'Aguardando Atendente'}</span>
+                        <span className="font-bold text-sm leading-tight text-white">{t('chat_support')}</span>
+                        <span className="text-[10px] text-emerald-100">{isAgentOnline ? t('chat_available') : t('chat_waiting')}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -313,12 +338,12 @@ export const SupportChatBubble: React.FC = () => {
                         ) : messages.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
                                 <MessageCircle className="w-12 h-12 mb-2 text-emerald-600" />
-                                <p className="text-sm font-medium">Olá! Como podemos ajudar hoje?</p>
+                                <p className="text-sm font-medium">{t('chat_started')}</p>
                             </div>
                         ) : (
                             <>
                                 {messages.map((msg) => {
-                                    const isMe = msg.senderId !== 'admin';
+                                    const isMe = myUserId ? msg.senderId === myUserId : msg.senderId !== 'admin';
                                     return (
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${isMe
@@ -336,12 +361,12 @@ export const SupportChatBubble: React.FC = () => {
                                 {isClosed && (
                                     <div className="flex flex-col items-center gap-2 py-4">
                                         <div className="h-px w-full bg-slate-200 dark:bg-slate-800" />
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-900 px-2 -mt-3.5">Atendimento Encerrado</span>
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-900 px-2 -mt-3.5">{t('chat_closed')}</span>
                                         <button
                                             onClick={() => { setMessages([]); setIsClosed(false); }}
                                             className="text-[10px] text-emerald-600 hover:underline font-bold"
                                         >
-                                            Iniciar nova conversa
+                                            {t('chat_started')}
                                         </button>
                                     </div>
                                 )}
@@ -363,7 +388,7 @@ export const SupportChatBubble: React.FC = () => {
                                         handleSend();
                                     }
                                 }}
-                                placeholder={isClosed ? "Encerramos este atendimento" : "Digite sua dúvida..."}
+                                placeholder={isClosed ? t('chat_closed') : t('chat_type_message')}
                                 className="flex-1 min-h-[40px] max-h-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white resize-none disabled:opacity-50"
                                 rows={1}
                             />

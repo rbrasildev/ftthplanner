@@ -12,9 +12,10 @@ export class SocketService {
     private static userSockets: Map<string, string[]> = new Map(); // userId -> socketIds
 
     public static init(httpServer: HttpServer) {
+        const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
         this.io = new SocketIOServer(httpServer, {
             cors: {
-                origin: "*",
+                origin: allowedOrigins.length > 0 ? allowedOrigins : true,
                 methods: ["GET", "POST"],
                 credentials: true
             },
@@ -26,8 +27,16 @@ export class SocketService {
         });
 
         this.io.use((socket: AuthenticatedSocket, next) => {
-            const token = socket.handshake.auth.token;
-            if (!token) return next();
+            let token = socket.handshake.auth.token;
+            
+            // Check cookie if token is missing or generic 'session'
+            if (!token || token === 'session') {
+                const cookieHeader = socket.handshake.headers.cookie || '';
+                const match = cookieHeader.match(/(?:^|;)\s*auth_token=([^;]+)/);
+                if (match) token = match[1];
+            }
+
+            if (!token || token === 'session') return next();
 
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET as string);

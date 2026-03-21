@@ -4,6 +4,7 @@ import { MessageSquare, Send, User, Clock, CheckCircle, Loader2, SmilePlus, User
 const EmojiPicker = lazy(() => import('emoji-picker-react'));
 import { io, Socket } from 'socket.io-client';
 import api from '../../services/api';
+import { useLanguage } from '../../LanguageContext';
 import * as saasService from '../../services/saasService';
 import { CustomSelect } from '../common/CustomSelect';
 
@@ -113,18 +114,18 @@ export const SupportAdminPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'chats' | 'online'>('chats');
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'OPEN' | 'CLOSED'>('OPEN');
+    const { t } = useLanguage();
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Helper to format time relative
     const formatRelativeTime = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
         const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-        if (diffInSeconds < 60) return 'agora';
-        if (diffInSeconds < 3600) return `há ${Math.floor(diffInSeconds / 60)}m`;
-        if (diffInSeconds < 86400) return `há ${Math.floor(diffInSeconds / 3600)}h`;
+        if (diffInSeconds < 60) return t('chat_now');
+        if (diffInSeconds < 3600) return t('chat_ago').replace('{val}', `${Math.floor(diffInSeconds / 60)}m`);
+        if (diffInSeconds < 86400) return t('chat_ago').replace('{val}', `${Math.floor(diffInSeconds / 3600)}h`);
         return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
     };
 
@@ -167,7 +168,8 @@ export const SupportAdminPanel: React.FC = () => {
             : (window.location.hostname === 'localhost' ? 'http://127.0.0.1:3001' : window.location.origin);
 
         socketRef.current = io(socketUrl, {
-            auth: { token },
+            auth: { token: token || 'session' },
+            withCredentials: true,
             transports: ['polling', 'websocket'],
             reconnection: true,
             reconnectionAttempts: 5,
@@ -339,8 +341,25 @@ export const SupportAdminPanel: React.FC = () => {
     const handleSend = async () => {
         if (!reply.trim()) return;
 
+        const content = reply.trim();
+        const tempId = `temp-${Date.now()}`;
+
+        // Optimistic update only if we have a selected conversation
+        if (selectedConv) {
+            const optimisticMsg: Message = {
+                id: tempId,
+                content: content,
+                senderId: 'admin',
+                createdAt: new Date().toISOString(),
+                conversationId: selectedConv.id
+            };
+            setMessages(prev => [...prev, optimisticMsg]);
+        }
+
+        setReply('');
+
         try {
-            const body: any = { content: reply };
+            const body: any = { content: content };
             if (selectedConv) body.conversationId = selectedConv.id;
             else if (selectedOnlineUser) body.targetUserId = selectedOnlineUser.id;
             else return;
@@ -364,11 +383,17 @@ export const SupportAdminPanel: React.FC = () => {
                     loadMessages(newConv.id);
                     setActiveTab('chats');
                 }
+            } else if (selectedConv) {
+                // Replace temp message with real one
+                const newMsg = res.data;
+                setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
             }
-
-            setReply('');
         } catch (err) {
             console.error("[AdminChat] Failed to send reply", err);
+            if (selectedConv) {
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+                setReply(content);
+            }
         }
     };
 
@@ -379,15 +404,15 @@ export const SupportAdminPanel: React.FC = () => {
                 <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
                     <div className="flex justify-between items-center mb-5">
                         <div className="flex flex-col">
-                            <h2 className="font-extrabold dark:text-white uppercase tracking-widest text-[10px] text-slate-400">Atendimento</h2>
+                            <h2 className="font-extrabold dark:text-white uppercase tracking-widest text-[10px] text-slate-400">{t('chat_support')}</h2>
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Central de Ajuda</span>
                         </div>
                         <div className="w-36 relative z-10">
                             <CustomSelect
                                 options={[
-                                    { value: 'OFFLINE', label: 'Offline', sublabel: 'Não disponível' },
-                                    { value: 'ONLINE', label: 'Disponível', sublabel: 'Receber chats' },
-                                    { value: 'AWAY', label: 'Ausente', sublabel: 'Pausado' }
+                                    { value: 'OFFLINE', label: t('chat_status_offline'), sublabel: 'Não disponível' },
+                                    { value: 'ONLINE', label: t('chat_status_online'), sublabel: 'Receber chats' },
+                                    { value: 'AWAY', label: t('chat_status_away'), sublabel: 'Pausado' }
                                 ]}
                                 value={availability}
                                 onChange={handleToggleAvailability}
@@ -402,19 +427,19 @@ export const SupportAdminPanel: React.FC = () => {
                             onClick={() => { setActiveTab('chats'); setFilterStatus('OPEN'); }}
                             className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'chats' && filterStatus === 'OPEN' ? 'bg-white dark:bg-slate-700 shadow-sm dark:text-white' : 'text-slate-500'}`}
                         >
-                            Abertos
+                            {t('chat_open')}
                         </button>
                         <button
                             onClick={() => { setActiveTab('chats'); setFilterStatus('CLOSED'); }}
                             className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'chats' && filterStatus === 'CLOSED' ? 'bg-white dark:bg-slate-700 shadow-sm dark:text-white' : 'text-slate-500'}`}
                         >
-                            Resolvidos
+                            {t('chat_resolved')}
                         </button>
                         <button
                             onClick={() => setActiveTab('online')}
                             className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'online' ? 'bg-white dark:bg-slate-700 shadow-sm dark:text-white' : 'text-slate-500'}`}
                         >
-                            Online ({onlineUsersList.length})
+                            {t('chat_online')} ({onlineUsersList.length})
                         </button>
                     </div>
 
@@ -423,7 +448,7 @@ export const SupportAdminPanel: React.FC = () => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar cliente..."
+                            placeholder={t('chat_search_placeholder')}
                             className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                         />
                         <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
@@ -437,7 +462,7 @@ export const SupportAdminPanel: React.FC = () => {
                         filteredConversations.length === 0 ? (
                             <div className="p-8 text-center text-slate-400 opacity-40">
                                 <Clock className="w-10 h-10 mx-auto mb-2" />
-                                <p className="text-xs">Nenhum atendimento {filterStatus === 'CLOSED' ? 'resolvido' : 'em aberto'}</p>
+                                <p className="text-xs">{t('chat_no_tickets')}</p>
                             </div>
                         ) : (
                             filteredConversations.map((conv) => {
@@ -480,7 +505,7 @@ export const SupportAdminPanel: React.FC = () => {
                         filteredOnlineUsers.length === 0 ? (
                             <div className="p-8 text-center text-slate-400 opacity-40">
                                 <User className="w-10 h-10 mx-auto mb-2" />
-                                <p className="text-xs">Nenhum usuário encontrado</p>
+                                <p className="text-xs">{t('no_results')}</p>
                             </div>
                         ) : (
                             filteredOnlineUsers.map((user) => {
@@ -534,7 +559,7 @@ export const SupportAdminPanel: React.FC = () => {
                                         {selectedConv?.user?.email || (selectedOnlineUser as any)?.email || ''}
                                     </p>
                                     <p className="text-[10px] text-emerald-600 uppercase font-bold tracking-tighter mt-0.5">
-                                        {onlineUsers.has(selectedConv?.userId || selectedOnlineUser?.id || '') ? '• Disponível Online' : '• Offline'}
+                                        {onlineUsers.has(selectedConv?.userId || selectedOnlineUser?.id || '') ? `• ${t('chat_status_online')}` : `• ${t('chat_status_offline')}`}
                                     </p>
                                 </div>
                             </div>
@@ -544,17 +569,17 @@ export const SupportAdminPanel: React.FC = () => {
                                     <button
                                         onClick={() => handleEntrarSuporte(selectedConv?.userId || selectedOnlineUser?.id || '')}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold transition-all"
-                                        title="Acessar conta do cliente"
+                                        title={t('chat_support_mode')}
                                     >
                                         <UserCheck className="w-4 h-4" />
-                                        Modo Suporte
+                                        {t('chat_support_mode')}
                                     </button>
                                     <button
                                         onClick={handleCloseTicket}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold transition-all"
                                     >
                                         <CheckCircle className="w-4 h-4" />
-                                        Resolver
+                                        {t('chat_resolve_btn')}
                                     </button>
                                 </div>
                             )}
@@ -568,7 +593,7 @@ export const SupportAdminPanel: React.FC = () => {
                             ) : messages.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-20">
                                     <MessageSquare className="w-12 h-12 mb-2" />
-                                    <p className="text-sm font-medium">Inicie o atendimento por aqui.</p>
+                                    <p className="text-sm font-medium">{t('chat_started')}</p>
                                 </div>
                             ) : (
                                 messages.map((msg) => {
@@ -606,7 +631,7 @@ export const SupportAdminPanel: React.FC = () => {
                                                 handleSend();
                                             }
                                         }}
-                                        placeholder="Digite sua resposta..."
+                                        placeholder={t('chat_type_reply')}
                                         className="flex-1 min-h-[44px] max-h-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white shadow-inner resize-none"
                                         rows={1}
                                     />
@@ -621,15 +646,15 @@ export const SupportAdminPanel: React.FC = () => {
                             </div>
                         ) : (
                             <div className="p-4 bg-slate-100 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest py-3">
-                                Atendimento encerrado
+                                {t('chat_closed')}
                             </div>
                         )}
                     </>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-center p-12 text-slate-400 opacity-20">
                         <MessageSquare className="w-16 h-16 mb-4" />
-                        <h3 className="font-bold text-lg">Suporte Proativo</h3>
-                        <p className="text-sm max-w-xs mt-2">Selecione uma conversa ou veja os usuários online para interagir.</p>
+                        <h3 className="font-bold text-lg">{t('chat_proactive_title')}</h3>
+                        <p className="text-sm max-w-xs mt-2">{t('chat_proactive_desc')}</p>
                     </div>
                 )}
             </div>

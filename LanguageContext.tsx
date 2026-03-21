@@ -1186,7 +1186,30 @@ const translations = {
     'mp_err_default': 'Error processing payment.',
     'mp_success': 'Payment processed successfully! Welcome.',
     'mp_pix_success': 'Pix payment confirmed! Welcome.',
-    'mp_pix_error': 'Error generating Pix.'
+    'mp_pix_error': 'Error generating Pix.',
+
+    // Support Chat
+    'chat_support': 'Customer Support',
+    'chat_available': 'Available Now',
+    'chat_waiting': 'Waiting for Agent',
+    'chat_closed': 'Chat Closed',
+    'chat_started': 'Started conversation',
+    'chat_type_message': 'Type a message...',
+    'chat_open': 'Open',
+    'chat_resolved': 'Resolved',
+    'chat_online': 'Online',
+    'chat_search_placeholder': 'Search client...',
+    'chat_no_tickets': 'No tickets found',
+    'chat_support_mode': 'Support Mode',
+    'chat_resolve_btn': 'Resolve',
+    'chat_proactive_title': 'Proactive Support',
+    'chat_proactive_desc': 'Select a conversation or see online users to interact.',
+    'chat_type_reply': 'Type your reply...',
+    'chat_status_online': 'Online',
+    'chat_status_offline': 'Offline',
+    'chat_status_away': 'Away',
+    'chat_now': 'now',
+    'chat_ago': '{val} ago'
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -2379,7 +2402,30 @@ const translations = {
     'mp_err_default': 'Erro ao processar pagamento.',
     'mp_success': 'Pagamento processado com sucesso! Bem-vindo.',
     'mp_pix_success': 'Pagamento Pix confirmado! Bem-vindo.',
-    'mp_pix_error': 'Erro ao gerar Pix.'
+    'mp_pix_error': 'Erro ao gerar Pix.',
+
+    // Support Chat
+    'chat_support': 'Suporte ao Cliente',
+    'chat_available': 'Disponível Agora',
+    'chat_waiting': 'Aguardando Atendente',
+    'chat_closed': 'Atendimento Encerrado',
+    'chat_started': 'Iniciou conversa',
+    'chat_type_message': 'Digite uma mensagem...',
+    'chat_open': 'Abertos',
+    'chat_resolved': 'Resolvidos',
+    'chat_online': 'Online',
+    'chat_search_placeholder': 'Buscar cliente...',
+    'chat_no_tickets': 'Nenhum atendimento encontrado',
+    'chat_support_mode': 'Modo Suporte',
+    'chat_resolve_btn': 'Resolver',
+    'chat_proactive_title': 'Suporte Proativo',
+    'chat_proactive_desc': 'Selecione uma conversa ou veja os usuários online para interagir.',
+    'chat_type_reply': 'Digite sua resposta...',
+    'chat_status_online': 'Disponível',
+    'chat_status_offline': 'Offline',
+    'chat_status_away': 'Ausente',
+    'chat_now': 'agora',
+    'chat_ago': 'há {val}'
   },
 };
 
