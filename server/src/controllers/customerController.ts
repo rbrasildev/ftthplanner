@@ -7,7 +7,7 @@ export const getCustomers = async (req: Request, res: Response) => {
     if (!user || !user.companyId) return res.status(401).send();
 
     try {
-        const { minLat, maxLat, minLng, maxLng, ctoId, search, projectId } = req.query;
+        const { minLat, maxLat, minLng, maxLng, ctoId, search, projectId, page, limit } = req.query;
 
         const where: any = {
             companyId: user.companyId,
@@ -35,13 +35,41 @@ export const getCustomers = async (req: Request, res: Response) => {
             where.ctoId = ctoId as string;
         }
 
-        // Search by Name or Document
+        // Search by Name, Document, Email or Phone
         if (search) {
             const searchStr = search as string;
             where.OR = [
                 { name: { contains: searchStr, mode: 'insensitive' } },
-                { document: { contains: searchStr, mode: 'insensitive' } }
+                { document: { contains: searchStr, mode: 'insensitive' } },
+                { email: { contains: searchStr, mode: 'insensitive' } },
+                { phone: { contains: searchStr, mode: 'insensitive' } }
             ];
+        }
+
+        // Pagination Support
+        if (page && limit) {
+            const pPage = Math.max(1, parseInt(page as string, 10) || 1);
+            const pLimit = Math.max(1, parseInt(limit as string, 10) || 50);
+            const skip = (pPage - 1) * pLimit;
+
+            const [customers, total] = await Promise.all([
+                prisma.customer.findMany({
+                    where,
+                    include: { drop: true },
+                    orderBy: { createdAt: 'desc' },
+                    skip,
+                    take: pLimit
+                }),
+                prisma.customer.count({ where })
+            ]);
+
+            return res.json({
+                data: customers,
+                total,
+                page: pPage,
+                limit: pLimit,
+                totalPages: Math.ceil(total / pLimit)
+            });
         }
 
         const customers = await prisma.customer.findMany({
@@ -58,17 +86,17 @@ export const getCustomers = async (req: Request, res: Response) => {
 };
 
 export const createCustomer = async (req: Request, res: Response) => {
-    console.log("[CreateCustomer] Request received");
+
     const user = (req as AuthRequest).user;
-    console.log("[CreateCustomer] User:", user ? user.username : 'No user');
+
 
     if (!user || !user.companyId) {
-        console.warn("[CreateCustomer] Unauthorized: No user or companyId");
+
         return res.status(401).send();
     }
 
     try {
-        console.log("[CreateCustomer] Body:", JSON.stringify(req.body));
+
 
         if (!req.body) {
             throw new Error("Request body is empty or undefined");
@@ -79,10 +107,11 @@ export const createCustomer = async (req: Request, res: Response) => {
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
-            projectId
+            projectId,
+            connectionStatus
         } = req.body;
 
-        console.log(`[CreateCustomer] Extracting data: name=${name}, lat=${lat}, lng=${lng}`);
+
 
         // Parse logic
         const pLat = parseFloat(lat);
@@ -90,13 +119,13 @@ export const createCustomer = async (req: Request, res: Response) => {
         const pOnuPower = onuPower ? parseFloat(onuPower) : null;
 
         if (isNaN(pLat) || isNaN(pLng)) {
-            console.error("[CreateCustomer] Invalid Coordinates:", { lat, lng });
+
             return res.status(400).json({ error: "Coordenadas inválidas. Lat/Lng devem ser números." });
         }
 
         // Validation: Check if port is already occupied
         if (ctoId && splitterId && splitterPortIndex !== undefined) {
-            console.log("[CreateCustomer] Checking port occupancy...");
+
             const existing = await prisma.customer.findFirst({
                 where: {
                     companyId: user.companyId,
@@ -108,7 +137,7 @@ export const createCustomer = async (req: Request, res: Response) => {
             });
 
             if (existing) {
-                console.warn("[CreateCustomer] Port occupied by:", existing.name);
+
                 return res.status(409).json({
                     error: 'Porta ocupada',
                     details: `Esta porta já está em uso pelo cliente ${existing.name}`
@@ -119,7 +148,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         // New Drop Logic: Extract drop coordinates if present
         const { dropCoordinates } = req.body; // Expecting array of {lat, lng}
 
-        console.log("[CreateCustomer] Creating in DB...");
+
 
         // Transaction to ensure Customer and Drop are created together
         const result = await prisma.$transaction(async (tx) => {
@@ -142,13 +171,15 @@ export const createCustomer = async (req: Request, res: Response) => {
                     status: status || 'ACTIVE',
                     onuSerial,
                     onuMac,
-                    pppoeService
+                    pppoeService,
+                    onuPower: onuPower ? parseFloat(onuPower) : null,
+                    connectionStatus
                 }
             });
 
             // If drop coordinates are provided (Phase 2 of flow), create Drop record
             if (dropCoordinates && Array.isArray(dropCoordinates) && dropCoordinates.length >= 2 && ctoId) {
-                console.log("[CreateCustomer] Creating Drop record...");
+
                 await tx.drop.create({
                     data: {
                         customerId: customer.id,
@@ -157,16 +188,33 @@ export const createCustomer = async (req: Request, res: Response) => {
                         length: 0 // TODO: Calculate length if needed
                     }
                 });
+            } else if (ctoId) {
+                // If NO dropCoordinates but ctoId is present, create a straight-line default drop
+
+                const targetCto = await tx.cto.findUnique({ where: { id: ctoId } });
+                if (targetCto) {
+                   await tx.drop.create({
+                       data: {
+                           customerId: customer.id,
+                           ctoId: ctoId,
+                           coordinates: [
+                               { lat: pLat, lng: pLng },
+                               { lat: targetCto.lat, lng: targetCto.lng }
+                           ],
+                           length: 0
+                       }
+                   });
+                }
             }
 
             return customer;
         });
 
-        console.log("[CreateCustomer] Created:", result.id);
+
 
         // Update CTO client count (outside transaction to avoid locking unrelated stuff if possible, or inside if strict)
         if (ctoId) {
-            console.log("[CreateCustomer] Updating CTO count...");
+
             const count = await prisma.customer.count({ where: { ctoId, deletedAt: null } });
             await prisma.cto.update({
                 where: { id: ctoId },
@@ -200,7 +248,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
             lat, lng,
             ctoId, splitterId, splitterPortIndex, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
-            projectId
+            projectId,
+            connectionStatus
         } = req.body;
 
         // Verify ownership
@@ -259,11 +308,12 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     onuMac,
                     pppoeService,
                     onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined,
-                    projectId: projectId !== undefined ? (projectId || null) : undefined
+                    projectId: projectId !== undefined ? (projectId || null) : undefined,
+                    connectionStatus
                 }
             });
 
-            // Update Drop if provided
+            // Update Drop if coordinates are provided
             if (dropCoordinates && Array.isArray(dropCoordinates) && dropCoordinates.length >= 2 && ctoId) {
                 // Upsert drop
                 const existingDrop = await tx.drop.findUnique({ where: { customerId: id } });
@@ -281,6 +331,50 @@ export const updateCustomer = async (req: Request, res: Response) => {
                             length: 0
                         }
                     });
+                }
+            } else if (ctoId) {
+                // No dropCoordinates provided, but we have a ctoId. Check if we need to update based on CTO change or MOVE
+                const existingDrop = await tx.drop.findUnique({ where: { customerId: id } });
+                const targetCto = await tx.cto.findUnique({ where: { id: ctoId } });
+                
+                const newLat = lat !== undefined ? parseFloat(lat) : currentHelper.lat;
+                const newLng = lng !== undefined ? parseFloat(lng) : currentHelper.lng;
+                
+                if (targetCto) {
+                    if (existingDrop) {
+                        // If CTO changed OR position changed, regenerate/update coords
+                        const ctoChanged = ctoId !== currentHelper.ctoId;
+                        const positionChanged = (lat !== undefined || lng !== undefined);
+                        
+                        if (ctoChanged) {
+                            // CTO Changed: Regenerate straight line to new CTO
+                            await tx.drop.update({
+                                where: { id: existingDrop.id },
+                                data: { 
+                                    coordinates: [{ lat: newLat, lng: newLng }, { lat: targetCto.lat, lng: targetCto.lng }],
+                                    ctoId 
+                                }
+                            });
+                        } else if (positionChanged && Array.isArray(existingDrop.coordinates) && existingDrop.coordinates.length > 0) {
+                            // Only position changed: Update just the first point of the existing drop
+                            const newCoords = [...existingDrop.coordinates as any[]];
+                            newCoords[0] = { lat: newLat, lng: newLng };
+                            await tx.drop.update({
+                                where: { id: existingDrop.id },
+                                data: { coordinates: newCoords }
+                            });
+                        }
+                    } else {
+                        // Create NEW default drop
+                        await tx.drop.create({
+                            data: {
+                                customerId: id,
+                                ctoId,
+                                coordinates: [{ lat: newLat, lng: newLng }, { lat: targetCto.lat, lng: targetCto.lng }],
+                                length: 0
+                            }
+                        });
+                    }
                 }
             }
 

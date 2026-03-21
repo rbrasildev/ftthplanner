@@ -11,7 +11,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project } from '../types';
 
-export type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
+export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
 
 interface MenuItem {
     id: DashboardView;
@@ -120,13 +120,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]
         },
         { id: 'users', label: t('users') || 'Usuários', icon: Users },
+        { id: 'integrations', label: 'Integrações', icon: Server },
         { id: 'settings', label: t('company_settings_title') || 'Configurações', icon: Settings },
         { id: 'backup', label: t('backup') || 'Backup', icon: Database },
     ].filter(item => {
         if (item.id === 'backup') {
             return userBackupEnabled && (userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support');
         }
-        if (item.id === 'users' || item.id === 'registrations') {
+        if (item.id === 'users' || item.id === 'registrations' || item.id === 'integrations') {
             return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
         }
         return true;

@@ -292,7 +292,7 @@ export interface SaaSConfig {
   updatedAt: string;
 }
 
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'PLANNED';
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'PLANNED' | 'SUSPENDED';
 
 export interface Drop {
   id: string;
@@ -326,4 +326,13 @@ export interface Customer {
   onuPower?: number | null; // Signal power (e.g., -20.0 dBm)
   dropCoordinates?: Coordinates[]; // Optional for API updates
   projectId?: string | null;
+  connectionStatus?: 'online' | 'offline' | null;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

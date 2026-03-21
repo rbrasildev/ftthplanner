@@ -178,6 +178,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
 
     const handleSaveCTO = async (updatedCTO: CTOData) => {
         if (!currentProject) return;
+        const hasPendingSync = !!syncTimeoutRef.current;
         if (syncTimeoutRef.current) {
             clearTimeout(syncTimeoutRef.current);
             syncTimeoutRef.current = null;
@@ -188,7 +189,10 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
         };
         setCurrentProject(prev => prev ? { ...prev, network: newNetwork, updatedAt: Date.now() } : null);
         setEditingCTO(updatedCTO);
-        skipNextAutoSyncRef.current = true;
+        
+        if (!hasPendingSync) {
+            skipNextAutoSyncRef.current = true;
+        }
         setIsSaving(true);
         try {
             await projectService.updateCTO(currentProject.id, updatedCTO.id, updatedCTO);
@@ -197,12 +201,13 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
             showToast(t('error_saving_changes'), 'error');
             throw e;
         } finally {
-            setIsSaving(false);
+            if (!hasPendingSync) setIsSaving(false);
         }
     };
 
     const handleSavePOP = async (updatedPOP: POPData) => {
         if (!currentProject) return;
+        const hasPendingSync = !!syncTimeoutRef.current;
         if (syncTimeoutRef.current) {
             clearTimeout(syncTimeoutRef.current);
             syncTimeoutRef.current = null;
@@ -214,7 +219,10 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
         setCurrentProject(prev => prev ? { ...prev, network: newNetwork, updatedAt: Date.now() } : null);
         setEditingPOP(updatedPOP);
         setHighlightedCableId(null);
-        skipNextAutoSyncRef.current = true;
+        
+        if (!hasPendingSync) {
+            skipNextAutoSyncRef.current = true;
+        }
         setIsSaving(true);
         try {
             await projectService.updatePOP(currentProject.id, updatedPOP.id, updatedPOP);
@@ -223,7 +231,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
             showToast(t('error_saving_changes'), 'error');
             throw e;
         } finally {
-            setIsSaving(false);
+            if (!hasPendingSync) setIsSaving(false);
         }
     };
 

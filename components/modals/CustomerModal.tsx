@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Customer, CTOData, Splitter } from '../../types';
 import { useLanguage } from '../../LanguageContext';
-import { X, Save, MapPin, User, Phone, FileText, Search, Network } from 'lucide-react';
+import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle } from 'lucide-react';
 import { CustomInput } from '../common/CustomInput';
 import { CustomSelect } from '../common/CustomSelect';
 
@@ -14,6 +14,7 @@ interface CustomerModalProps {
     allCustomers: Customer[]; // To check port occupancy
     onStartDrawingDrop?: (customerId: string, coords?: { lat: number, lng: number }) => void;
     onReposition?: (customer: Partial<Customer>) => void;
+    showToast?: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
 const TABS = {
@@ -22,9 +23,10 @@ const TABS = {
 };
 
 import { CustomerSearchInput } from '../interactions/CustomerSearchInput';
+import { searchSgpCustomer } from '../../services/customerService';
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({
-    isOpen, onClose, onSave, initialData, ctos, allCustomers, onStartDrawingDrop, onReposition
+    isOpen, onClose, onSave, initialData, ctos, allCustomers, onStartDrawingDrop, onReposition, showToast
 }) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState(TABS.DATA);
@@ -32,19 +34,24 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
     // Form State
     const [formData, setFormData] = useState<Partial<Customer>>({
-        name: '',
-        document: '',
-        phone: '',
-        email: '',
-        address: '',
-        status: 'ACTIVE',
-        lat: 0,
-        lng: 0,
-        onuSerial: '',
-        onuMac: '',
-        pppoeService: '',
-        onuPower: '',
-        ...initialData
+        ...initialData,
+        name: initialData?.name || '',
+        document: initialData?.document || '',
+        phone: initialData?.phone || '',
+        email: initialData?.email || '',
+        address: initialData?.address || '',
+        lat: initialData?.lat || 0,
+        lng: initialData?.lng || 0,
+        ctoId: initialData?.ctoId || null,
+        splitterId: initialData?.splitterId || null,
+        splitterPortIndex: initialData?.splitterPortIndex ?? null,
+        fiberId: initialData?.fiberId || null,
+        status: initialData?.status || 'ACTIVE',
+        onuSerial: initialData?.onuSerial || '',
+        onuMac: initialData?.onuMac || '',
+        pppoeService: initialData?.pppoeService || '',
+        onuPower: initialData?.onuPower ? String(initialData?.onuPower) : '',
+        connectionStatus: initialData?.connectionStatus || null
     });
 
     // Connection State
@@ -57,19 +64,24 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         if (initialData) {
             // Reset to defaults first, then apply initialData
             setFormData({
-                name: '',
-                document: '',
-                phone: '',
-                email: '',
-                address: '',
-                status: 'ACTIVE',
-                lat: 0,
-                lng: 0,
-                onuSerial: '',
-                onuMac: '',
-                pppoeService: '',
-                onuPower: '',
-                ...initialData
+                ...initialData,
+                name: initialData.name || '',
+                document: initialData.document || '',
+                phone: initialData.phone || '',
+                email: initialData.email || '',
+                address: initialData.address || '',
+                lat: initialData.lat || 0,
+                lng: initialData.lng || 0,
+                ctoId: initialData.ctoId || null,
+                splitterId: initialData.splitterId || null,
+                splitterPortIndex: initialData.splitterPortIndex ?? null,
+                fiberId: initialData.fiberId || null,
+                status: initialData.status || 'ACTIVE',
+                onuSerial: initialData.onuSerial || '',
+                onuMac: initialData.onuMac || '',
+                pppoeService: initialData.pppoeService || '',
+                onuPower: initialData.onuPower ? String(initialData.onuPower) : '',
+                connectionStatus: initialData.connectionStatus || null
             });
             setSelectedCtoId(initialData.ctoId || null);
             setSelectedSplitterId(initialData.splitterId || null);
@@ -87,26 +99,158 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 Math.pow(cto.coordinates.lng - formData.lng!, 2)
             );
             return { ...cto, distance: dist };
-        }).sort((a, b) => a.distance - b.distance).slice(0, 10); // Top 10 nearest
-    }, [ctos, formData.lat, formData.lng]);
+        }).sort((a, b) => a.distance - b.distance);
+    }, [formData.lat, formData.lng, ctos]);
 
-    // Selected CTO Data
-    const selectedCto = useMemo(() =>
-        ctos.find(c => c.id === selectedCtoId),
-        [ctos, selectedCtoId]);
+    // SGP Search State
+    const [isSearchingSgp, setIsSearchingSgp] = useState(false);
+    const [sgpSearchError, setSgpSearchError] = useState<string | null>(null);
+    const [sgpSuggestedPort, setSgpSuggestedPort] = useState<number | null>(null);
+    const [sgpServicesList, setSgpServicesList] = useState<any[]>([]);
+    const [sgpCustomerRaw, setSgpCustomerRaw] = useState<any>(null);
 
-    // Available Splitters in Selected CTO
-    const splitters = useMemo(() => {
-        if (!selectedCto?.splitters) return [];
-        return selectedCto.splitters; // Return all splitters, we disabled the blocked ones in UI
-    }, [selectedCto]);
+    const applySgpService = (sgpCustomer: any, contract: any, service: any, silent = false) => {
+        const onuData = service.onu || {};
+        const contactData = sgpCustomer.contatos || {};
+        
+        // Get formatted address from the service or main customer
+        const addrData = service.endereco || sgpCustomer.endereco || {};
+        
+        // Get coordinates if available
+        const latStr = addrData.latitude || "";
+        const lngStr = addrData.longitude || "";
+        const newLat = latStr !== "" ? parseFloat(latStr) : formData.lat;
+        const newLng = lngStr !== "" ? parseFloat(lngStr) : formData.lng;
 
-    // Selected Splitter
-    const selectedSplitter = useMemo(() =>
-        splitters.find(s => s.id === selectedSplitterId),
-        [splitters, selectedSplitterId]);
+        const servicoStatus = service.status || sgpCustomer.status;
 
-    // Port Occupancy Logic
+        const updatedData = {
+            ...formData,
+            name: sgpCustomer.nome || formData.name,
+            email: contactData.emails?.[0] || sgpCustomer.email || formData.email,
+            phone: contactData.celulares?.[0] || sgpCustomer.telefone || sgpCustomer.celular || formData.phone,
+            address: addrData, 
+            onuSerial: onuData.serial || formData.onuSerial,
+            onuMac: service.mac || onuData.mac || formData.onuMac || "",
+            pppoeService: service.login || formData.pppoeService,
+            onuPower: onuData.rx ? String(onuData.rx) : formData.onuPower,
+            status: servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' : 
+                    (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' : 
+                    (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : formData.status)),
+            connectionStatus: onuData.conexao?.status 
+                ? String(onuData.conexao.status).toLowerCase().trim() 
+                : (onuData.serial || service.mac ? 'offline' : formData.connectionStatus),
+            lat: !isNaN(newLat) && latStr !== "" ? newLat : formData.lat,
+            lng: !isNaN(newLng) && lngStr !== "" ? newLng : formData.lng
+        };
+
+        // Auto-assign port if available in SGP
+        const sgpPortStr = onuData.splitter?.porta || service.onu?.splitter?.porta;
+        const sgpPort = sgpPortStr ? parseInt(String(sgpPortStr), 10) : null;
+
+        if (sgpPort !== null && !isNaN(sgpPort)) {
+            updatedData.splitterPortIndex = sgpPort - 1;
+            setSgpSuggestedPort(sgpPort - 1);
+        } else {
+            setSgpSuggestedPort(null);
+        }
+
+        // Sincronizar estados locais de conexão com os dados do SGP
+        const finalCtoId = updatedData.ctoId || selectedCtoId;
+        if (finalCtoId) {
+            setSelectedCtoId(finalCtoId);
+            
+            // Se encontrou porta no SGP mas não há splitter selecionado localmente,
+            // tenta selecionar o primeiro splitter da CTO que PERMITA conexões para mostrar a porta.
+            if (updatedData.splitterPortIndex !== null && !selectedSplitterId) {
+                const targetCto = ctos.find(c => c.id === finalCtoId);
+                if (targetCto && targetCto.splitters && targetCto.splitters.length > 0) {
+                    // Filtra apenas por splitters que permitam conexão
+                    const validSplitters = targetCto.splitters.filter(s => s.allowCustomConnections !== false);
+                    
+                    if (validSplitters.length > 0) {
+                        const firstSplitter = validSplitters[0];
+                        setSelectedSplitterId(firstSplitter.id);
+                        // Também atualizamos o formData para garantir consistência no salvamento
+                        updatedData.splitterId = firstSplitter.id;
+                    }
+                }
+            } else if (updatedData.splitterId) {
+                setSelectedSplitterId(updatedData.splitterId);
+            }
+        }
+
+        if (updatedData.splitterPortIndex !== null && updatedData.splitterPortIndex !== undefined) {
+            setSelectedPortIndex(updatedData.splitterPortIndex);
+        }
+        
+        // Re-alimentar formData com possíveis mudanças de auto-seleção de splitter
+        setFormData(updatedData);
+
+        // If we got new coordinates, notify parent to reposition marker
+        if (onReposition && !formData.id && !isNaN(newLat) && !isNaN(newLng) && latStr !== "" && lngStr !== "") {
+            onReposition(updatedData);
+        }
+
+        if (showToast && !silent) showToast(t('customer_imported_sgp') || "Cliente importado do SGP!", 'success');
+        
+        // Clear selection view
+        setSgpServicesList([]);
+        setSgpCustomerRaw(null);
+    };
+
+    const handleSgpSearch = async (silent = false) => {
+        if (!formData.document || formData.document.length < 11) {
+            if (showToast && !silent) showToast(t('invalid_document_error') || "Documento inválido", 'error');
+            return;
+        }
+
+        setIsSearchingSgp(true);
+        setSgpServicesList([]);
+        setSgpCustomerRaw(null);
+        try {
+            const sgpCustomer = await searchSgpCustomer(formData.document);
+            if (sgpCustomer) {
+                // Collect all services
+                const allServices: any[] = [];
+                if (sgpCustomer.contratos && Array.isArray(sgpCustomer.contratos)) {
+                    sgpCustomer.contratos.forEach((contrato: any) => {
+                        if (contrato.servicos && Array.isArray(contrato.servicos)) {
+                            contrato.servicos.forEach((servico: any) => {
+                                allServices.push({ contrato, servico });
+                            });
+                        }
+                    });
+                }
+                
+                if (allServices.length > 1) {
+                    // Show selection UI
+                    setSgpCustomerRaw(sgpCustomer);
+                    setSgpServicesList(allServices);
+                    if (showToast && !silent) showToast("Cliente possui múltiplos contratos. Selecione um abaixo.", 'info');
+                } else {
+                    // Apply immediately if 1 or 0
+                    const mainContract = sgpCustomer.contratos?.[0] || {};
+                    const mainService = mainContract.servicos?.[0] || {};
+                    applySgpService(sgpCustomer, mainContract, mainService, silent);
+                }
+            } else {
+                if (showToast && !silent) showToast(t('customer_not_found_sgp') || "Cliente não encontrado no SGP", 'info');
+            }
+        } catch (error: any) {
+            console.error("SGP Search error:", error);
+            const errorMsg = error.response?.data?.error || t('customer_not_found_sgp') || "Cliente não encontrado no SGP";
+            if (showToast && !silent) showToast(errorMsg, 'error');
+            setSgpSearchError(error.message);
+        } finally {
+            setIsSearchingSgp(false);
+        }
+    };
+
+    const selectedCto = useMemo(() => ctos.find(cto => cto.id === selectedCtoId), [ctos, selectedCtoId]);
+    const splitters = useMemo(() => selectedCto?.splitters || [], [selectedCto]);
+    const selectedSplitter = useMemo(() => splitters.find(s => s.id === selectedSplitterId), [splitters, selectedSplitterId]);
+
     const ports = useMemo(() => {
         if (!selectedSplitter) return [];
 
@@ -140,8 +284,18 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     const handleSave = async () => {
         setLoading(true);
         try {
+            // Ensure address is a string for the backend if it's currently an object
+            let finalAddress = formData.address;
+            if (typeof formData.address === 'object' && formData.address !== null) {
+                const addr = formData.address as any;
+                finalAddress = `${addr.logradouro || ''}, ${addr.numero || ''} - ${addr.bairro || ''}, ${addr.cidade || ''} - ${addr.uf || ''}, ${addr.cep || ''}`;
+                // Clean up double commas or spaces if fields were empty
+                finalAddress = finalAddress.replace(/, ,/g, ',').replace(/^, /, '').replace(/ -  - /, ' - ').trim();
+            }
+
             await onSave({
                 ...formData,
+                address: finalAddress, // Use the processed address
                 ctoId: selectedCtoId,
                 splitterId: selectedSplitterId,
                 splitterPortIndex: selectedPortIndex,
@@ -155,18 +309,32 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             setLoading(false);
         }
     };
-
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 w-[600px] max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div 
+                className="bg-white dark:bg-slate-900 w-[600px] max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
+                onClick={(e) => e.stopPropagation()}
+            >
+
 
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                    <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                        <User className="w-5 h-5 text-indigo-500" />
-                        {t('customer_modal_title')}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                            <User className="w-5 h-5 text-indigo-500" />
+                            {t('customer_modal_title')}
+                        </h2>
+                        {formData.connectionStatus && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
+                                String(formData.connectionStatus).toLowerCase() === 'online' 
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'
+                            }`}>
+                                {String(formData.connectionStatus).toLowerCase() === 'online' ? 'Online' : 'Offline'}
+                            </span>
+                        )}
+                    </div>
                     <button onClick={onClose} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
                         <X size={20} />
                     </button>
@@ -215,7 +383,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                             onuSerial: c.onuSerial,
                                             onuMac: c.onuMac,
                                             pppoeService: c.pppoeService,
-                                            onuPower: c.onuPower
+                                            onuPower: c.onuPower,
+                                            connectionStatus: c.connectionStatus
                                         }));
                                     }}
                                 />
@@ -227,13 +396,95 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     placeholder={t('customer_name')}
                                 />
-                                <CustomInput
-                                    label={t('customer_doc')}
-                                    value={formData.document || ''}
-                                    onChange={e => setFormData({ ...formData, document: e.target.value })}
-                                    placeholder={t('customer_doc_placeholder') || 'CPF / CNPJ'}
-                                />
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <CustomInput
+                                            label={t('customer_doc')}
+                                            value={formData.document || ''}
+                                            onChange={e => setFormData({ ...formData, document: e.target.value })}
+                                            placeholder={t('customer_doc_placeholder') || 'CPF / CNPJ'}
+                                        />
+                                    </div>
+                                    <div className="flex items-end pb-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={handleSgpSearch}
+                                            disabled={isSearchingSgp}
+                                            className={`p-2.5 rounded-lg border flex items-center justify-center transition-all ${isSearchingSgp
+                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
+                                                : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                                                }`}
+                                            title="Buscar no SGP"
+                                        >
+                                            <Search className={`w-5 h-5 ${isSearchingSgp ? 'animate-pulse' : ''}`} />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                            
+                            {sgpServicesList.length > 0 && (
+                                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl mb-4 animate-fade-in shadow-sm dark:bg-indigo-900/20 dark:border-indigo-800">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                                            <AlertTriangle className="w-4 h-4" />
+                                            Múltiplos Contratos no SGP
+                                        </h4>
+                                        <button 
+                                            onClick={() => setSgpServicesList([])}
+                                            className="text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                                            title="Cancelar"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-indigo-600 dark:text-indigo-300 mb-3 font-medium">
+                                        Foram encontrados múltiplos serviços para o cliente {sgpCustomerRaw?.nome}. Qual você deseja importar?
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
+                                        {sgpServicesList.map((item, idx) => (
+                                            <button
+                                                key={`sgp-svc-${idx}`}
+                                                type="button"
+                                                onClick={() => applySgpService(sgpCustomerRaw, item.contrato, item.servico)}
+                                                className="w-full text-left bg-white dark:bg-slate-800 border border-indigo-100 dark:border-indigo-800 p-3 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all flex flex-col gap-1 group"
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                                        Contrato {item.contrato.id || '-'}
+                                                    </span>
+                                                    {item.servico.status && (
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                            item.servico.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' : 
+                                                            item.servico.status === 'Suspenso' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {item.servico.status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                                    <span className="font-semibold text-slate-600 dark:text-slate-300">Plano:</span> {item.servico.plano?.nome || 'Não definido'}
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 mt-1 border-t border-slate-100 dark:border-slate-700 pt-2">
+                                                    <div className="text-xs text-slate-500 truncate" title={item.servico.login}>
+                                                        <span className="font-semibold">PPPoE:</span> {item.servico.login || '-'}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">
+                                                        <span className="font-semibold">MAC:</span> {item.servico.mac || item.servico.onu?.mac || '-'}
+                                                    </div>
+                                                </div>
+                                                {(item.servico.endereco?.logradouro || item.contrato.endereco?.logradouro) && (
+                                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-start gap-1">
+                                                        <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                                        <span className="truncate">
+                                                            {item.servico.endereco?.logradouro || item.contrato.endereco?.logradouro}, {item.servico.endereco?.numero || item.contrato.endereco?.numero}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <CustomInput
@@ -256,7 +507,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 <div className="flex gap-2">
                                     <MapPin className="text-slate-400 mt-3" size={16} />
                                     <textarea
-                                        value={formData.address || ''}
+                                        value={typeof formData.address === 'object' && formData.address !== null 
+                                            ? `${(formData.address as any).logradouro || ''}, ${(formData.address as any).numero || ''}${(formData.address as any).bairro ? ` - ${(formData.address as any).bairro}` : ''}` 
+                                            : formData.address || ''}
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
                                         className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
                                         rows={2}
@@ -281,6 +534,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 value={formData.status || 'ACTIVE'}
                                 onChange={val => setFormData({ ...formData, status: val as any })}
                                 showSearch={false}
+                                placement="top"
                                 options={[
                                     { value: 'ACTIVE', label: t('customer_status_active') },
                                     { value: 'INACTIVE', label: t('customer_status_inactive') },
@@ -325,7 +579,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                             ctoId: null,
                                                             splitterId: null,
                                                             splitterPortIndex: null
-                                                        }));
+                                                         }));
                                                         setSelectedCtoId(null);
                                                         setSelectedSplitterId(null);
                                                         setSelectedPortIndex(null);
@@ -350,7 +604,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                     onClick={() => {
                                                         setSelectedCtoId(cto.id);
                                                         setSelectedSplitterId(null);
-                                                        setSelectedPortIndex(null);
+                                                        setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
                                                     }}
                                                     className={`p-2 text-left rounded text-sm flex justify-between items-center ${selectedCtoId === cto.id
                                                         ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-600'
@@ -378,7 +632,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                     disabled={splitter.allowCustomConnections === false}
                                                     onClick={() => {
                                                         setSelectedSplitterId(splitter.id);
-                                                        setSelectedPortIndex(null);
+                                                        setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
                                                     }}
                                                     title={splitter.allowCustomConnections === false ? (t('splitter_blocked_desc') || "Este splitter não permite conexão de clientes") : ""}
                                                     className={`px-3 py-1.5 rounded text-sm border transition-all ${selectedSplitterId === splitter.id
@@ -395,9 +649,16 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     </div>
 
                                     {selectedSplitterId && (
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 mb-1">{t('select_port')}</label>
-                                            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1 flex justify-between items-center">
+                                                    <span>{t('select_port')}</span>
+                                                    {sgpSuggestedPort !== null && (
+                                                        <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold border border-indigo-200">
+                                                            SGP Sugere: Porta {sgpSuggestedPort + 1}
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                                                 {ports.map(port => (
                                                     <button
                                                         key={port.index}
@@ -409,7 +670,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                                 ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-400 cursor-not-allowed'
                                                                 : selectedPortIndex === port.index
                                                                     ? 'bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-200 dark:ring-green-900'
-                                                                    : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
+                                                                    : port.index === sgpSuggestedPort
+                                                                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-200 hover:bg-indigo-100'
+                                                                        : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
                                                             }
                                                         `}
                                                         title={port.occupied ? t('port_occupied_by', { name: port.occupantName || '' }) : t('port_free')}
@@ -430,6 +693,37 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     <User className="w-4 h-4 text-indigo-500" />
                                     {t('onu_data_section')}
                                 </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="relative group">
+                                        <CustomInput
+                                            label={t('customer_document')}
+                                            value={formData.document || ''}
+                                            onChange={e => setFormData({ ...formData, document: e.target.value })}
+                                            placeholder={t('customer_document_placeholder')}
+                                            icon={FileText}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSgpSearch}
+                                            disabled={isSearchingSgp || !formData.document}
+                                            className="absolute right-2 top-[30px] p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-all disabled:opacity-50"
+                                            title={t('search_in_sgp') || "Buscar no SGP"}
+                                        >
+                                            {isSearchingSgp ? (
+                                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Search className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    </div>
+                                    <CustomInput
+                                        label={t('customer_phone')}
+                                        value={formData.phone || ''}
+                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        placeholder="(00) 00000-0000"
+                                        icon={Phone}
+                                    />
+                                </div>
                                 <div className="space-y-4">
                                     <CustomInput
                                         label={t('onu_serial')}

@@ -21,6 +21,7 @@ interface UpgradePlanModalProps {
     currentPlanName?: string;
     currentPlanId?: string; // NEW
     limitDetails?: string;
+    limitTitle?: string;
 }
 
 // Icon mapping helper (unchanged)
@@ -38,7 +39,7 @@ const getPlanIcon = (index: number, name: string) => {
 
 
 
-export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, limitDetails, companyId, email }) => {
+export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, limitDetails, limitTitle, companyId, email }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true); // Ensure loading is initialized properly
@@ -139,6 +140,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                             <button
                                 onClick={onClose}
                                 className="absolute top-6 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors z-20"
+                                aria-label={t('close_btn')}
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -151,7 +153,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                 className="absolute top-6 left-4 flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-emerald-600 hover:text-emerald-700 dark:hover:text-white transition-colors z-20"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                                <span className="text-sm font-bold">Voltar</span>
+                                <span className="text-sm font-bold">{t('back_btn')}</span>
                             </button>
                         )}
 
@@ -165,12 +167,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                 </div>
 
                                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
-                                    {limitDetails ? "Limite Atingido!" : (currentPlanName && !currentPlanName.toLowerCase().includes('grátis') ? "Gerenciar Assinatura" : "Faça um Upgrade")}
+                                    {limitTitle ? limitTitle : (limitDetails ? t('limit_reached') : (currentPlanName && !currentPlanName.toLowerCase().includes('grátis') ? t('manage_subscription') : t('upgrade_now')))}
                                 </h2>
                                 <p className="text-slate-600 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
                                     {limitDetails
-                                        ? <>{limitDetails} <br /> Escolha um plano ideal para continuar expandindo.</>
-                                        : "Confira as opções disponíveis e escolha o plano ideal para o seu crescimento."
+                                        ? <>{limitDetails} <br /> {t('upgrade_desc')}</>
+                                        : t('upgrade_disclaimer')
                                     }
                                 </p>
                             </>
@@ -187,15 +189,15 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                         <Check className="w-12 h-12 text-white stroke-[3px]" />
                                     </div>
                                 </div>
-                                <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">Assinatura Confirmada!</h3>
+                                <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{t('success_title')}</h3>
                                 <p className="text-slate-500 dark:text-slate-400 text-lg max-w-md mx-auto mb-10 leading-relaxed">
-                                    Seu plano foi atualizado com sucesso. Prepare-se para elevar o nível dos seus projetos.
+                                    {t('success_desc')}
                                 </p>
                                 <button
                                     onClick={() => window.location.reload()}
                                     className="px-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-2xl shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] text-lg uppercase tracking-wider"
                                 >
-                                    Acessar Plataforma
+                                    {t('access_platform')}
                                 </button>
 
                                 <div className="mt-12 opacity-30">
@@ -222,13 +224,13 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
                                     // Calculate display price
                                     let displayPrice = plan.price; // Default monthly
-                                    let priceSubtext = '/mês';
+                                    let priceSubtext = t('per_month');
 
                                     if (billingCycle === 'yearly' && plan.priceYearlyRaw) {
                                         // Yearly display
                                         const yearlyTotal = plan.priceYearlyRaw;
                                         displayPrice = `R$ ${yearlyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                                        priceSubtext = '/ano';
+                                        priceSubtext = t('per_year');
                                     } else if (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) {
                                         // Plan doesn't have yearly option
                                         displayPrice = 'N/A';
@@ -248,7 +250,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                         >
                                             {plan.highlight && (
                                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                                                    Recomendado
+                                                    {t('recommended_plan')}
                                                 </div>
                                             )}
 
@@ -259,7 +261,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
                                                 <div className="mt-2 flex items-baseline">
                                                     <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                                        {displayPrice === 'Grátis' ? 'Grátis' : displayPrice.replace('/mês', '').replace('R$ ', '')}
+                                                        {displayPrice === 'Grátis' ? t('free') : displayPrice.replace('/mês', '').replace('R$ ', '')}
                                                     </span>
                                                     {displayPrice !== 'Grátis' && (
                                                         <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">
@@ -290,7 +292,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                                     }
                                             `}
                                             >
-                                                {isCurrent ? 'Plano Atual' : (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? 'Indisponível Anual' : 'Assinar Agora'}
+                                                {isCurrent ? t('plan_current') : (billingCycle === 'yearly' && !plan.priceYearlyRaw && plan.priceRaw > 0) ? t('yearly_unavailable') : t('subscribe_now')}
                                             </button>
 
                                         </div>

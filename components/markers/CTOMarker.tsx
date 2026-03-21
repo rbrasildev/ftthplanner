@@ -10,22 +10,25 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18) => {
+const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18, isOnline?: boolean) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(18 * zoomScale);
     const borderSize = Math.max(1.5, Math.round(2.5 * zoomScale));
     const pulseSize = Math.round(36 * zoomScale);
 
-    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}`;
+    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}-${isOnline}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
     }
 
     // Prioritize custom catalog color if available, otherwise fallback to status color
-    // @ts-ignore
-    const color = customColor || CTO_STATUS_COLORS[status] || CTO_STATUS_COLORS['PLANNED'];
+    // If online status is explicitly known, it overrides the status color
+    let color = customColor || CTO_STATUS_COLORS[status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+    
+    if (isOnline === true) color = '#22c55e'; // Green for online
+    else if (isOnline === false) color = '#ef4444'; // Red for offline
 
     const icon = L.divIcon({
         className: 'custom-icon',
@@ -85,15 +88,16 @@ interface CTOMarkerProps {
     onDragEnd: () => void;
     onContextMenu: (e: any, id: string, type: 'CTO') => void;
     userRole?: string | null;
+    isOnline?: boolean;
 }
 
 export const CTOMarker = React.memo(({
     cto, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline
 }: CTOMarkerProps) => {
     const icon = useMemo(() =>
-        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom),
-        [cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom]);
+        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline),
+        [cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {

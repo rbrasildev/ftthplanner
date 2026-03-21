@@ -60,16 +60,17 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
 
     return (
-        <div className={`relative ${className}`} ref={wrapperRef}>
+        <div className={className} ref={wrapperRef}>
             {label && (
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1.5">
                     {label}
                 </label>
             )}
 
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
+            <div className="relative">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
                 className={`
                     w-full flex items-center justify-between px-4 py-2.5 
                     bg-white dark:bg-slate-800 border rounded-lg transition-all duration-300
@@ -146,6 +147,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     </div>
                 </div>
             )}
+            </div>
 
             {error && (
                 <p className="mt-1.5 text-xs text-red-500 font-medium">{error}</p>

@@ -8,8 +8,8 @@ import { Home } from 'lucide-react';
 // Cache for icons
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCustomerIcon = (status: string, isSelected: boolean) => {
-    const key = `cust-${status}-${isSelected}`;
+const createCustomerIcon = (status: string, isSelected: boolean, connectionStatus?: string | null) => {
+    const key = `cust-${status}-${isSelected}-${connectionStatus || 'none'}`;
     // console.log(`[CustomersLayer] Rendering ${customers.length} customers. Visible: ${visible}, Zoom: ${mapZoom}`);
 
     // The variables 'visible', 'map', 'mapZoom' are not defined in this scope.
@@ -18,7 +18,11 @@ const createCustomerIcon = (status: string, isSelected: boolean) => {
 
     if (iconCache.has(key)) return iconCache.get(key)!;
 
-    const color = status === 'ACTIVE' ? '#22c55e' : (status === 'INACTIVE' ? '#ef4444' : '#eab308');
+    let color = status === 'ACTIVE' ? '#22c55e' : (status === 'SUSPENDED' ? '#eab308' : '#ef4444');
+    
+    // connectionStatus overrides the default status color
+    if (connectionStatus === 'online') color = '#22c55e';
+    else if (connectionStatus === 'offline') color = '#ef4444';
 
     // Render the Lucide icon to string
     const iconHtml = renderToString(<Home color="white" size={10} />);
@@ -74,7 +78,7 @@ export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ custo
                 <Marker
                     key={customer.id}
                     position={[customer.lat, customer.lng]}
-                    icon={createCustomerIcon(customer.status, selectedId === customer.id)}
+                    icon={createCustomerIcon(customer.status, selectedId === customer.id, customer.connectionStatus)}
                     eventHandlers={{
                         click: (e) => {
                             L.DomEvent.stopPropagation(e);

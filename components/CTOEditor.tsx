@@ -109,7 +109,7 @@ interface CTOEditorProps {
 
     // Hover Highlight
     onHoverCable?: (cableId: string | null) => void;
-    onDisconnectCable?: (cableId: string) => void;
+    onDisconnectCable?: (cableId: string, nodeId: string) => void;
     onSelectNextNode?: (cableId: string) => void;
 
     // Plan Props for Gatekeeping
@@ -3095,7 +3095,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 <div
                     ref={containerRef}
                     className="flex-1 bg-[#E6E6E6] dark:bg-slate-900 relative overflow-hidden"
-                    style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'cursor-crosshair' : 'default' }}
+                    style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                 >
@@ -3376,7 +3376,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             // Map customers to ports for this splitter
                             const attachedCustomers = ctoCustomers
                                 .filter(c => c.splitterId === splitter.id && c.splitterPortIndex !== null && c.splitterPortIndex !== undefined)
-                                .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: c.name }), {} as Record<number, string>);
+                                .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: { name: c.name, status: c.connectionStatus } }), {} as Record<number, { name: string; status?: string }>);
 
                             return (
                                 <SplitterNode
@@ -3403,7 +3403,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
-                <div className={`h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50 ${isMaximized ? 'pr-24' : ''}`}>
+                <div className={`h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50 cursor-default ${isMaximized ? 'pr-24' : ''}`}>
                     <div className="flex items-center gap-8">
                         {/* Model Select */}
                         <div className="flex items-center gap-3">
@@ -3516,7 +3516,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     className="flex-1 font-bold shadow-lg"
                                     icon={<Save className="w-4 h-4" />}
                                 >
-                                    {t('save_and_close')}
+                                    <span className="whitespace-nowrap">{t('save_and_close')}</span>
                                 </Button>
                                 <Button
                                     onClick={onClose}
@@ -3524,7 +3524,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     variant="secondary"
                                     className="flex-1 font-medium hover:bg-red-600 dark:hover:bg-red-900/30 hover:text-white dark:hover:text-red-400 border-slate-200 dark:border-slate-700 hover:border-red-600 dark:hover:border-red-900/50"
                                 >
-                                    {t('discard')}
+                                    <span className="whitespace-nowrap">{t('discard')}</span>
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -3788,7 +3788,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <Button
                                     variant="destructive"
                                     onClick={() => {
-                                        if (onDisconnectCable) onDisconnectCable(cableToRemove);
+                                        if (onDisconnectCable) onDisconnectCable(cableToRemove, localCTO.id);
+                                        setLocalCTO(prev => ({
+                                            ...prev,
+                                            inputCableIds: prev.inputCableIds?.filter(id => id !== cableToRemove),
+                                            connections: prev.connections?.filter(conn => 
+                                                !conn.sourceId.startsWith(`${cableToRemove}-`) && 
+                                                !conn.targetId.startsWith(`${cableToRemove}-`)
+                                            ) || []
+                                        }));
                                         setCableToRemove(null);
                                     }}
                                     className="flex-1 font-bold shadow-lg"

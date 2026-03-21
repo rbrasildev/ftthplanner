@@ -590,6 +590,24 @@ export const MapView: React.FC<MapViewProps> = ({
         points: L.LatLng[]
     } | null>(null);
 
+    const ctoOnlineStatus = useMemo(() => {
+        const statusMap: Record<string, boolean> = {};
+        allCustomers.forEach(customer => {
+            if (!customer.ctoId || !customer.connectionStatus) return;
+
+            // If already marked as online, keep it
+            if (statusMap[customer.ctoId] === true) return;
+
+            if (customer.connectionStatus === 'online') {
+                statusMap[customer.ctoId] = true;
+            } else if (customer.connectionStatus === 'offline') {
+                // Only mark as offline if not already online
+                statusMap[customer.ctoId] = false;
+            }
+        });
+        return statusMap;
+    }, [allCustomers]);
+
     // Performance optimizations state (Moved here)
     const [mapBoundsState, setMapBoundsState] = useState<L.LatLngBounds | null>(null);
     const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || 15);
@@ -618,12 +636,14 @@ export const MapView: React.FC<MapViewProps> = ({
                 const updatedCustomer = await updateCustomer(customer.id, customer);
                 setCustomerModalOpen(false);
                 setSelectedCustomer(null); // Clear placement marker
+                setDrawingCustomerDrop(null); // Explicitly clear any residual drawing state
                 if (onCustomerSaved) onCustomerSaved(updatedCustomer);
             } else {
                 // CREATE NEW CUSTOMER
                 const newCustomer = await createCustomer({ ...customer, projectId });
                 setCustomerModalOpen(false);
                 setSelectedCustomer(null); // Clear placement marker
+                setDrawingCustomerDrop(null); // Explicitly clear any residual drawing state
                 if (onCustomerSaved) onCustomerSaved(newCustomer);
             }
         } catch (error) {
@@ -648,7 +668,7 @@ export const MapView: React.FC<MapViewProps> = ({
             startLng: coords?.lng ?? customer?.lng ?? 0,
             points: []
         });
-        console.log("[MapView] Explicitly starting drop drawing for:", customerId, "at", coords || "stored coords");
+
     }, [allCustomers]);
 
 
@@ -657,6 +677,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
         const cto = ctos.find(c => c.id === ctoId);
         if (!cto) return;
+
+        // VERIFY: If CTO has no splitters that allow connections, block it
+        const hasValidSplitters = cto.splitters?.some(s => s.allowCustomConnections !== false);
+        if (!hasValidSplitters) {
+            alert("Esta CTO não possui splitters que permitem novas conexões de clientes.");
+            return;
+        }
 
         // Open Modal to select splitter/port
         setPendingConnection({
@@ -1297,6 +1324,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={cto.id}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
+                                isOnline={ctoOnlineStatus[cto.id]}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}
@@ -1363,6 +1391,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={cto.id}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
+                                isOnline={ctoOnlineStatus[cto.id]}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}
@@ -1609,7 +1638,6 @@ export const MapView: React.FC<MapViewProps> = ({
                     </Marker>
                 )}
 
-                {/* Customer Drop Drawing Interaction */}
                 {drawingCustomerDrop && (
                     <CustomerDropDrawer
                         drawingState={drawingCustomerDrop}
@@ -1696,6 +1724,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     setPendingConnection(null);
                 }}
                 allCustomers={allCustomers}
+                customerId={drawingCustomerDrop?.customerId}
                 onConnect={async (ctoId, splitterId, portIndex) => {
                     if (!pendingConnection) return;
 
@@ -1824,6 +1853,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 initialData={selectedCustomer}
                 ctos={ctos}
                 allCustomers={allCustomers}
+                showToast={showToast}
             />
         </div >
     );

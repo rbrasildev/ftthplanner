@@ -16,7 +16,7 @@ interface SplitterNodeProps {
     onPortMouseLeave: () => void;
     onDoubleClick?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
-    attachedCustomers?: Record<number, string>; // portIndex -> Customer Name
+    attachedCustomers?: Record<number, { name: string; status?: string }>; // portIndex -> Customer Data
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -167,7 +167,9 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         // (idx * 12) + 6 - 5 (to center 10px circle)
                         const leftPos = (idx * 12) + 6 - 5;
 
-                        const customerName = attachedCustomers[idx];
+                        const customerData = attachedCustomers[idx];
+                        const customerName = customerData?.name;
+                        const isOffline = customerData?.status === 'offline';
 
                         return (
                             <div
@@ -197,7 +199,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 ${isLitOut
                                         ? 'border-red-400 bg-red-600 text-white'
                                         : customerName
-                                            ? 'border-green-500 bg-green-50 text-green-700 font-bold' // Customer Style
+                                            ? (isOffline ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-green-500 bg-green-50 text-green-700 font-bold') // Customer Style
                                             : !isConnectorized
                                                 ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
                                                 : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
@@ -207,6 +209,28 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     left: `${leftPos}px`,
                                 }}
                             >
+                                {customerName && (
+                                    <div
+                                        className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none"
+                                        style={{ 
+                                            top: `15px`,
+                                            zIndex: 40 
+                                        }}
+                                    >
+                                        <div className={`w-0 h-0 border-l-[2px] border-l-transparent border-r-[2px] border-r-transparent border-b-[3px] ${isOffline ? 'border-b-red-500/80' : 'border-b-green-500/80'} mb-[-1px]`} />
+                                        <div className={`${isOffline ? 'bg-red-500/90 dark:bg-red-600/90' : 'bg-green-500/90 dark:bg-green-600/90'} text-white rounded-[1px] shadow-sm flex items-center justify-center p-[1px] min-w-[8px]`}>
+                                            <span 
+                                                className="text-[6px] font-black uppercase tracking-tighter whitespace-nowrap"
+                                                style={{ 
+                                                    writingMode: 'vertical-rl',
+                                                    textOrientation: 'mixed'
+                                                }}
+                                            >
+                                                {customerName}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                                 {idx + 1}
                             </div>
                         );

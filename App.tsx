@@ -181,6 +181,7 @@ export default function App() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
+    const [upgradeModalTitle, setUpgradeModalTitle] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
     const [userPlanId, setUserPlanId] = useState<string | null>(null); // NEW: Track Plan ID for accurate comparison
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
@@ -212,6 +213,18 @@ export default function App() {
         } else {
             setGlobalCustomers([]);
         }
+    }, [currentProjectId]);
+
+    useEffect(() => {
+        const handleSync = () => {
+            if (currentProjectId) {
+                import('./services/customerService').then(service => {
+                    service.getCustomers({ projectId: currentProjectId }).then(setGlobalCustomers).catch(console.error);
+                });
+            }
+        };
+        window.addEventListener('customers-synced', handleSync);
+        return () => window.removeEventListener('customers-synced', handleSync);
     }, [currentProjectId]);
 
     const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -392,7 +405,16 @@ export default function App() {
                 console.error(err);
                 if (err.response && err.response.status === 403) {
                     const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
-                    setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : (err.response.data?.error || t('error_permission_denied')));
+                    const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
+                    
+                    if (isExpired) {
+                        setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
+                        setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
+                    } else {
+                        setUpgradeModalTitle(t('limit_reached'));
+                        setUpgradeModalDetails(err.response.data?.error || t('error_permission_denied'));
+                    }
+                    
                     setShowUpgradeModal(true);
                     setCurrentProjectId(null); // Return to dashboard
                 } else {
@@ -500,7 +522,8 @@ export default function App() {
         }
 
         setIsSaving(true);
-        const timer = setTimeout(() => {
+        syncTimeoutRef.current = setTimeout(() => {
+            syncTimeoutRef.current = null;
             projectService.syncProject(currentProject.id, currentProject.network, currentProject.mapState, systemSettings)
                 .then(() => {
                     console.log(`[Sync] Project ${currentProject.name} saved.`);
@@ -523,7 +546,17 @@ export default function App() {
                             return;
                         }
 
-                        setUpgradeModalDetails(errorMsg);
+                        const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                        const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
+
+                        if (isExpired) {
+                            setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
+                            setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
+                        } else {
+                            setUpgradeModalTitle(t('limit_reached'));
+                            setUpgradeModalDetails(errorMsg);
+                        }
+                        
                         setShowUpgradeModal(true);
                         return; // Exit early
                     }
@@ -539,7 +572,12 @@ export default function App() {
                     }
                 });
         }, 800); // Reduced delay for faster saving (was 1000)
-        return () => clearTimeout(timer);
+        return () => {
+            if (syncTimeoutRef.current) {
+                clearTimeout(syncTimeoutRef.current);
+                syncTimeoutRef.current = null;
+            }
+        };
     }, [currentProject, token]);
 
     // PROTECT AGAINST DATA LOSS (Refreshes/Closes while Saving)
@@ -751,10 +789,11 @@ export default function App() {
     const editingCTOIncomingCables = useMemo(() => {
         if (!editingCTO || !currentProject) return [];
         const net = currentProject.network;
+        const currentCTOState = net.ctos.find(c => c.id === editingCTO.id) || editingCTO;
         return net.cables.filter(c =>
             c.fromNodeId === editingCTO.id ||
             c.toNodeId === editingCTO.id ||
-            editingCTO.inputCableIds?.includes(c.id)
+            currentCTOState.inputCableIds?.includes(c.id)
         );
     }, [editingCTO, currentProject]);
 
@@ -1549,7 +1588,7 @@ export default function App() {
                                     setUpgradeModalDetails(e.response.data?.details || "Você atingiu o limite de projetos do seu plano.");
                                     setShowUpgradeModal(true);
                                 } else {
-                                    showToast('Failed to create project', 'info');
+                                    showToast(t('error_project_create'), 'info');
                                 }
                             }
                         }}
@@ -2052,6 +2091,7 @@ export default function App() {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 limitDetails={upgradeModalDetails}
+                limitTitle={upgradeModalTitle}
                 companyId={companyId || undefined}
                 email={userEmail || undefined}
                 currentPlanName={userPlan}

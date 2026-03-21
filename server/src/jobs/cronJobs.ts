@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { processRetentionMetrics } from '../services/retentionService';
 import { executeAutomations } from '../services/automationService';
 import { prisma } from '../lib/prisma';
+import { SgpService } from '../integrations/sgp/sgp.service';
 
 export const initCronJobs = () => {
     // Run daily at 02:00 AM for retention
@@ -13,6 +14,13 @@ export const initCronJobs = () => {
         await executeAutomations();
 
         console.log('[Cron] Daily retention tasks completed.');
+    });
+
+    // Run daily at 03:00 AM for SGP Synchronization
+    cron.schedule('0 3 * * *', async () => {
+        console.log('[Cron] Running daily SGP synchronization...');
+        await SgpService.runDailySync();
+        console.log('[Cron] SGP daily sync completed.');
     });
 
     // Run every hour to check for expired invoices and subscriptions

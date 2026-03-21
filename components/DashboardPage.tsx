@@ -9,6 +9,7 @@ import { SplitterRegistration } from './registrations/SplitterRegistration';
 import CableRegistration from './registrations/CableRegistration';
 import BoxRegistration from './registrations/BoxRegistration';
 import { CompanySettings } from './settings/CompanySettings';
+import { IntegrationsPage } from './integrations/IntegrationsPage';
 
 
 import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List } from 'lucide-react';
@@ -91,7 +92,7 @@ const LocationPickerMap = ({
   );
 };
 
-type DashboardView = 'projects' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
+type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
@@ -360,6 +361,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       ]
     },
     { id: 'users', label: t('users') || 'Usuários', icon: Users },
+    { id: 'integrations', label: 'Integrações', icon: Server },
     { id: 'settings', label: t('settings') || 'Configurações', icon: Settings },
     { id: 'backup', label: t('backup') || 'Backup', icon: Database },
   ].filter(item => {
@@ -684,8 +686,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <CompanySettings />
         )}
 
+        {/* --- INTEGRATIONS --- */}
+        {currentView === 'integrations' && (
+          <IntegrationsPage />
+        )}
+
         {/* Placeholders for other views */}
-        {currentView !== 'projects' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
+        {currentView !== 'projects' && currentView !== 'integrations' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
@@ -739,22 +746,29 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <CustomerRegistration
             projectId={currentProjectId}
             onLocate={(customer) => {
-              // Try to find which project this customer belongs to (by ctoId)
-              if (customer.ctoId) {
-                const project = projects.find(p =>
+              // Try to find which project this customer belongs to
+              let project = null;
+              
+              if (customer.projectId) {
+                project = projects.find(p => p.id === customer.projectId);
+              }
+
+              // Fallback: search by ctoId if projectId didn't match or is missing
+              if (!project && customer.ctoId) {
+                project = projects.find(p =>
                   p.network?.ctos?.some(c => c.id === customer.ctoId) ||
-                  (p as any).counts?.ctoIds?.includes(customer.ctoId) // Fallback for optimized summaries
+                  (p as any).counts?.ctoIds?.includes(customer.ctoId)
                 );
-                if (project) {
-                  onOpenProject(project.id);
-                  // Map will need to pan to customer.lat/lng after opening
-                  // We can store this in localStorage or a shared state if needed
-                  localStorage.setItem('map_jump_to_coords', JSON.stringify({ lat: customer.lat, lng: customer.lng }));
-                } else {
-                  alert(t('project_not_found_for_customer') || 'Projeto não encontrado para este cliente.');
-                }
-              } else {
+              }
+
+              if (project) {
+                onOpenProject(project.id);
+                // Map will need to pan to customer.lat/lng after opening
+                localStorage.setItem('map_jump_to_coords', JSON.stringify({ lat: customer.lat, lng: customer.lng }));
+              } else if (!customer.ctoId && !customer.projectId) {
                 alert(t('customer_not_connected_to_map') || 'Cliente não está conectado a nenhuma CTO no mapa.');
+              } else {
+                alert(t('project_not_found_for_customer') || 'Projeto não encontrado para este cliente.');
               }
             }}
           />

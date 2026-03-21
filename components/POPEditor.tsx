@@ -279,11 +279,16 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             }
         }
 
-        // Clean existing for both ends
-        let cleanedConnections = localPOP.connections.filter(c =>
-            c.sourceId !== sourceId && c.targetId !== sourceId &&
-            c.sourceId !== targetId && c.targetId !== targetId
-        );
+        // Clean existing for both ends, but ONLY if they are not fibers
+        let cleanedConnections = localPOP.connections.filter(c => {
+            const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
+            if (isFiber) return true; // Keep fibers
+
+            const involvesSource = c.sourceId === sourceId || c.targetId === sourceId;
+            const involvesTarget = c.sourceId === targetId || c.targetId === targetId;
+
+            return !involvesSource && !involvesTarget;
+        });
 
         const newConn: FiberConnection = {
             id: `patch-${Date.now()}`,
@@ -313,17 +318,14 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             slotColor = getFiberColor(trayIndex, 'ABNT');
         }
 
-        let cleanedConnections = localPOP.connections.filter(c =>
-            c.sourceId !== configuringOltPortId && c.targetId !== configuringOltPortId
-        );
+        let cleanedConnections = localPOP.connections.filter(c => {
+            const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
+            if (isFiber) return true; // Keep fibers
 
-        cleanedConnections = cleanedConnections.filter(c => {
-            if (c.sourceId === targetDioPortId || c.targetId === targetDioPortId) {
-                const partner = c.sourceId === targetDioPortId ? c.targetId : c.sourceId;
-                if (partner.includes('olt')) return false;
-                return true;
-            }
-            return true;
+            const involvesOltPort = c.sourceId === configuringOltPortId || c.targetId === configuringOltPortId;
+            const involvesDioPort = c.sourceId === targetDioPortId || c.targetId === targetDioPortId;
+
+            return !involvesOltPort && !involvesDioPort;
         });
 
         const newConn: FiberConnection = {
@@ -855,6 +857,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 onRemoveConnection={handleRemoveLogicalConnection}
                                 onManageFusions={setSpliceDioId}
                                 onUpdatePatchingLayout={handleUpdatePatchingLayout}
+                                onDeleteEquipment={(type, id, name) => setItemToDelete({ type, id, name })}
                             />
                         </div>
                     ) : (

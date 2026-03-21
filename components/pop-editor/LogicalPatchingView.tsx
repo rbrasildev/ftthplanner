@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { POPData, OLT, DIO } from '../../types';
-import { Network, Zap, Server, ArrowRight, ChevronDown, ChevronRight, Layers, GitMerge, GripVertical } from 'lucide-react';
+import { Network, Zap, Server, ArrowRight, ChevronDown, ChevronRight, Layers, GitMerge, GripVertical, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { Button } from '../common/Button';
 
@@ -10,6 +10,7 @@ interface LogicalPatchingViewProps {
     onRemoveConnection: (sourceId: string, targetId: string) => void;
     onManageFusions?: (dioId: string) => void;
     onUpdatePatchingLayout?: (newLayout: { col1: string[]; col2: string[]; col3: string[] }) => void;
+    onDeleteEquipment?: (type: 'OLT' | 'DIO', id: string, name: string) => void;
 }
 
 export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
@@ -17,7 +18,8 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     onAddConnection,
     onRemoveConnection,
     onManageFusions,
-    onUpdatePatchingLayout
+    onUpdatePatchingLayout,
+    onDeleteEquipment
 }) => {
     const { t } = useLanguage();
     const [selectedPortA, setSelectedPortA] = useState<string | null>(null);
@@ -133,8 +135,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     const connectionMap = useMemo(() => {
         const map: Record<string, string> = {};
         localPOP.connections.forEach(c => {
-            map[c.sourceId] = c.targetId;
-            map[c.targetId] = c.sourceId;
+            // Only include non-fiber connections (patch cords)
+            if (!c.sourceId.includes('fiber') && !c.targetId.includes('fiber')) {
+                map[c.sourceId] = c.targetId;
+                map[c.targetId] = c.sourceId;
+            }
         });
         return map;
     }, [localPOP.connections]);
@@ -274,7 +279,23 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                             <span>{olt.name}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">{olt.ports} ports</span>
                         </div>
-                        {collapsedOLTs.has(olt.id) ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                        <div className="flex items-center gap-3">
+                            {onDeleteEquipment && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteEquipment('OLT', olt.id, olt.name);
+                                    }}
+                                    className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    title={t('delete')}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            )}
+                            {collapsedOLTs.has(olt.id) ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                        </div>
                     </button>
                 </div>
 
@@ -297,27 +318,35 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                             const target = connectionMap[pId];
                                             const targetDetail = isConnected ? resolvePortDetail(target) : null;
 
-                                            return (
-                                                <button
-                                                    key={pId}
-                                                    onClick={() => handlePortClick(pId)}
-                                                    className={`h-8 rounded-md border text-xs font-bold transition-all relative group
-                                                        ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
-                                                            isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                                isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
-                                                                    'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
-                                                    title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
-                                                >
-                                                    {localIdx + 1}
-                                                    {isConnected && !isSelected && !isViewed && <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
+                                                const isSpliced = localPOP.connections.some(c =>
+                                                    (c.sourceId === pId && c.targetId.includes('fiber')) ||
+                                                    (c.targetId === pId && c.sourceId.includes('fiber'))
+                                                );
 
-                                                    {isConnected && (
-                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                                                            → {targetDetail?.eqName}
+                                                return (
+                                                    <button
+                                                        key={pId}
+                                                        onClick={() => handlePortClick(pId)}
+                                                        className={`h-8 rounded-md border text-xs font-bold transition-all relative group
+                                                            ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
+                                                                isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
+                                                                    isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
+                                                                        'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                        title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
+                                                    >
+                                                        {localIdx + 1}
+                                                        <div className="absolute top-1 right-1 flex gap-0.5 pointer-events-none">
+                                                            {isSpliced && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title={t('type_FUSION')}></div>}
+                                                            {isConnected && !isSelected && !isViewed && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>}
                                                         </div>
-                                                    )}
-                                                </button>
-                                            );
+
+                                                        {isConnected && (
+                                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                                                                → {targetDetail?.eqName}
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
                                         })}
                                     </div>
                                 </div>
@@ -410,6 +439,20 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                     {t('manage_fusions')}
                                 </Button>
                             )}
+                            {onDeleteEquipment && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteEquipment('DIO', dio.id, dio.name);
+                                    }}
+                                    className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    title={t('delete')}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            )}
                             {collapsedDIOs.has(dio.id) ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                         </div>
                     </button>
@@ -435,26 +478,34 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                             const target = connectionMap[pId];
                                             const targetDetail = isConnected ? resolvePortDetail(target) : null;
 
-                                            return (
-                                                <button
-                                                    key={pId}
-                                                    onClick={() => handlePortClick(pId)}
-                                                    className={`h-8 rounded-md border text-xs font-bold transition-all relative group
+                                                const isSpliced = localPOP.connections.some(c =>
+                                                    (c.sourceId === pId && c.targetId.includes('fiber')) ||
+                                                    (c.targetId === pId && c.sourceId.includes('fiber'))
+                                                );
+
+                                                return (
+                                                    <button
+                                                        key={pId}
+                                                        onClick={() => handlePortClick(pId)}
+                                                        className={`h-8 rounded-md border text-xs font-bold transition-all relative group
                                                             ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
-                                                            isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                                isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
-                                                                    'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
-                                                    title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
-                                                >
-                                                    {absIdx + 1}
-                                                    {isConnected && !isSelected && !isViewed && <div className="absolute top-1 right-1 w-1 h-1 rounded-full bg-blue-500"></div>}
-                                                    {isConnected && (
-                                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                                                            → {targetDetail?.eqName}
+                                                                isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
+                                                                    isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                                                                        'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                        title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
+                                                    >
+                                                        {absIdx + 1}
+                                                        <div className="absolute top-1 right-1 flex gap-0.5 pointer-events-none">
+                                                            {isSpliced && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title={t('type_FUSION')}></div>}
+                                                            {isConnected && !isSelected && !isViewed && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}
                                                         </div>
-                                                    )}
-                                                </button>
-                                            );
+                                                        {isConnected && (
+                                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                                                                → {targetDetail?.eqName}
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
                                         })}
                                     </div>
                                 </div>

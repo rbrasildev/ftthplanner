@@ -188,11 +188,11 @@ export const getProject = async (req: Request, res: Response) => {
                 inputCableIds: c.inputCableIds,
                 layout: c.layout || {},
                 clientCount: c.clientCount,
-                catalogId: c.catalogId,
+                catalogId: c.catalogId || null,
                 type: c.type,
                 color: c.color,
                 reserveLoopLength: c.reserveLoopLength,
-                poleId: c.poleId
+                poleId: c.poleId || null
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id,
@@ -207,7 +207,7 @@ export const getProject = async (req: Request, res: Response) => {
                 layout: p.layout || {},
                 color: p.color,
                 size: p.size,
-                poleId: p.poleId
+                poleId: p.poleId || null
             })),
             cables: project.cables.map((c: any) => ({
                 id: c.id,
@@ -218,9 +218,9 @@ export const getProject = async (req: Request, res: Response) => {
                 color: c.color,
                 colorStandard: c.colorStandard,
                 coordinates: c.coordinates, // Json
-                fromNodeId: c.fromNodeId,
-                toNodeId: c.toNodeId,
-                catalogId: c.catalogId,
+                fromNodeId: c.fromNodeId || null,
+                toNodeId: c.toNodeId || null,
+                catalogId: c.catalogId || null,
                 technicalReserve: c.technicalReserve,
                 reserveLocation: c.reserveLocation,
                 showReserveLabel: c.showReserveLabel
@@ -230,7 +230,7 @@ export const getProject = async (req: Request, res: Response) => {
                 name: p.name,
                 status: p.status,
                 coordinates: { lat: p.lat, lng: p.lng },
-                catalogId: p.catalogId,
+                catalogId: p.catalogId || null,
                 type: p.type,
                 height: p.height,
                 linkedCableIds: p.linkedCableIds
@@ -624,11 +624,11 @@ export const syncProject = async (req: Request, res: Response) => {
                             inputCableIds: c.inputCableIds || [],
                             layout: c.layout || {},
                             clientCount: c.clientCount || 0,
-                            catalogId: c.catalogId,
+                            catalogId: c.catalogId || null,
                             type: c.type,
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
-                            poleId: c.poleId
+                            poleId: c.poleId || null
                         });
                     } else {
                         // DIFFING: Compare crucial fields to decide if update is needed
@@ -684,11 +684,11 @@ export const syncProject = async (req: Request, res: Response) => {
                                 inputCableIds: c.inputCableIds || [],
                                 layout: c.layout || {},
                                 clientCount: c.clientCount || 0,
-                                catalogId: c.catalogId,
+                                catalogId: c.catalogId || null,
                                 type: c.type,
                                 color: c.color,
                                 reserveLoopLength: c.reserveLoopLength,
-                                poleId: c.poleId
+                                poleId: c.poleId || null
                             }
                         });
                     }
@@ -725,7 +725,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             layout: p.layout || {},
                             color: p.color,
                             size: p.size,
-                            poleId: p.poleId
+                            poleId: p.poleId || null
                         });
                     } else {
                         const hasChanged =
@@ -765,7 +765,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             layout: p.layout || {},
                             color: p.color,
                             size: p.size,
-                            poleId: p.poleId
+                            poleId: p.poleId || null
                         }
                     });
                 }
@@ -796,9 +796,9 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             colorStandard: c.colorStandard || 'ABNT',
                             coordinates: c.coordinates,
-                            fromNodeId: c.fromNodeId,
-                            toNodeId: c.toNodeId,
-                            catalogId: c.catalogId,
+                            fromNodeId: c.fromNodeId || null,
+                            toNodeId: c.toNodeId || null,
+                            catalogId: c.catalogId || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
@@ -835,9 +835,9 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             colorStandard: c.colorStandard || 'ABNT',
                             coordinates: c.coordinates,
-                            fromNodeId: c.fromNodeId,
-                            toNodeId: c.toNodeId,
-                            catalogId: c.catalogId,
+                            fromNodeId: c.fromNodeId || null,
+                            toNodeId: c.toNodeId || null,
+                            catalogId: c.catalogId || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
@@ -959,11 +959,11 @@ export const updateCTO = async (req: Request, res: Response) => {
                 inputCableIds: cto.inputCableIds || [],
                 layout: cto.layout || {},
                 clientCount: cto.clientCount || 0,
-                catalogId: cto.catalogId,
+                catalogId: cto.catalogId || null,
                 type: cto.type,
                 color: cto.color,
                 reserveLoopLength: cto.reserveLoopLength,
-                poleId: cto.poleId
+                poleId: cto.poleId || null
             }
         });
 
@@ -1023,7 +1023,7 @@ export const updatePOP = async (req: Request, res: Response) => {
                 layout: pop.layout || {},
                 color: pop.color,
                 size: pop.size,
-                poleId: pop.poleId
+                poleId: pop.poleId || null
             }
         });
 

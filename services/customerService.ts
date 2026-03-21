@@ -1,13 +1,15 @@
 import api from './api';
-import { Customer } from '../types';
+import { Customer, PaginatedResponse } from '../types';
 
 export const getCustomers = async (params?: {
     minLat?: number, maxLat?: number, minLng?: number, maxLng?: number,
     ctoId?: string,
     search?: string,
-    projectId?: string
+    projectId?: string,
+    page?: number,
+    limit?: number
 }) => {
-    const response = await api.get<Customer[]>('/customers', { params });
+    const response = await api.get<Customer[] | PaginatedResponse<Customer>>('/customers', { params });
     return response.data;
 };
 
@@ -23,5 +25,10 @@ export const updateCustomer = async (id: string, data: Partial<Customer>) => {
 
 export const deleteCustomer = async (id: string) => {
     const response = await api.delete<void>(`/customers/${id}`);
+    return response.data;
+};
+
+export const searchSgpCustomer = async (cpfCnpj: string) => {
+    const response = await api.post<any>('/integrations/sgp/search-customer/auto', { cpfCnpj });
     return response.data;
 };

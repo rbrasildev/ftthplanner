@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { CTOData, Customer } from '../../types';
-import { Network, Server, Router, Unplug, X } from 'lucide-react';
+import { Network, Server, Router, Unplug, X, Loader2 } from 'lucide-react';
 
 interface ConnectCustomerModalProps {
     isOpen: boolean;
@@ -9,12 +9,14 @@ interface ConnectCustomerModalProps {
     onConnect: (ctoId: string, splitterId: string | null, portIndex: number | null) => void;
     cto: CTOData | null;
     allCustomers: Customer[];
+    customerId?: string;
 }
 
-export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOpen, onClose, onConnect, cto, allCustomers }) => {
+export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOpen, onClose, onConnect, cto, allCustomers, customerId }) => {
     const { t } = useLanguage();
     const [selectedSplitterId, setSelectedSplitterId] = useState<string>('none');
     const [selectedPortIndex, setSelectedPortIndex] = useState<string>('');
+    const [isConnecting, setIsConnecting] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -32,11 +34,17 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
         }
     }, [isOpen, cto]);
 
-    const handleConnect = () => {
+    const handleConnect = async () => {
         if (!cto) return;
-        const splitterId = selectedSplitterId === 'none' ? null : selectedSplitterId;
-        const portIndex = selectedPortIndex ? parseInt(selectedPortIndex) : null;
-        onConnect(cto.id, splitterId, portIndex);
+        setIsConnecting(true);
+        try {
+            const splitterId = selectedSplitterId === 'none' ? null : selectedSplitterId;
+            const portIndex = selectedPortIndex ? parseInt(selectedPortIndex) : null;
+            await onConnect(cto.id, splitterId, portIndex);
+        } finally {
+            // Usually the modal will be closed by the parent, but we reset for robustness
+            setIsConnecting(false);
+        }
     };
 
     if (!isOpen || !cto) return null;
@@ -95,17 +103,25 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                                 <Network className="w-3 h-3" />
                                 {t('select_splitter')}
                             </label>
-                            <select
-                                className="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                value={selectedSplitterId}
-                                onChange={(e) => setSelectedSplitterId(e.target.value)}
-                            >
-                                {cto.splitters.map(s => (
-                                    <option key={s.id} value={s.id} disabled={s.allowCustomConnections === false}>
-                                        {s.name} ({s.type}) {s.allowCustomConnections === false ? ` - ${t('connector_blocked')}` : ''}
-                                    </option>
-                                ))}
-                            </select>
+                            {cto.splitters.every(s => s.allowCustomConnections === false) ? (
+                                <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800 flex gap-2 items-start">
+                                    <X className="w-4 h-4 mt-0.5" />
+                                    <div>{t('no_valid_splitters_error') || "Nenhum splitter nesta CTO permite conexões de clientes."}</div>
+                                </div>
+                            ) : (
+                                <select
+                                    className="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    value={selectedSplitterId}
+                                    onChange={(e) => setSelectedSplitterId(e.target.value)}
+                                >
+                                    <option value="none" disabled>{t('select_an_option') || "Selecione uma opção"}</option>
+                                     {cto.splitters.filter(s => s.allowCustomConnections !== false).map(s => (
+                                         <option key={s.id} value={s.id}>
+                                             {s.name} ({s.type})
+                                         </option>
+                                     ))}
+                                </select>
+                            )}
                         </div>
                     ) : (
                         <div className="text-sm text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md border border-yellow-200 dark:border-yellow-800 flex gap-2 items-start">
@@ -133,7 +149,8 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                                     const occupant = allCustomers.find(c =>
                                         c.ctoId === cto.id &&
                                         c.splitterId === currentSplitter.id &&
-                                        c.splitterPortIndex === portIndex
+                                        c.splitterPortIndex === portIndex &&
+                                        c.id !== customerId
                                     );
 
                                     const isOccupied = !!occupant;
@@ -188,10 +205,11 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                     </button>
                     <button
                         onClick={handleConnect}
-                        disabled={!currentSplitter || !selectedPortIndex}
-                        className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                        disabled={!currentSplitter || !selectedPortIndex || isConnecting}
+                        className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-2"
                     >
-                        {t('confirm')}
+                        {isConnecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isConnecting ? t('saving') || 'Salvando...' : t('confirm')}
                     </button>
                 </div>
             </div>

@@ -167,6 +167,10 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                             const trayColor = getFiberColor(trayIndex, 'ABNT');
                             const isWhiteFiber = trayColor.toLowerCase() === '#ffffff';
 
+                            const isSpliced = existingConns.some((c: any) =>
+                                c.sourceId.includes('fiber') || c.targetId.includes('fiber')
+                            );
+
                             return (
                                 <React.Fragment key={pid}>
                                     {isTrayStart && (
@@ -185,24 +189,27 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                         onMouseEnter={() => handlePortEnter(pid)}
                                         onMouseLeave={handlePortLeave}
                                         className={`
-                                            aspect-square rounded-full border-2 flex items-center justify-center text-[8px] font-mono transition-all select-none font-bold
+                                            aspect-square rounded-full border-2 flex flex-col items-center justify-center text-[8px] font-mono transition-all select-none font-bold
                                             ${highlightForActiveOLT ? 'ring-2 ring-indigo-500 scale-125 z-50 shadow-lg' : ''}
                                             ${hoveredPortId === pid ? 'scale-125 border-slate-400 z-10 shadow' : ''}
                                             ${!isConnected ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700' : ''}
                                         `}
                                         style={isConnected ? {
                                             backgroundColor: portColor || '#cbd5e1',
-                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor, // Ensure visibility for white fibers
+                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor,
                                             color: '#000',
                                             boxShadow: highlightForActiveOLT ? `0 0 10px ${portColor}` : `0 0 2px ${portColor}80`
                                         } : {
                                             borderColor: isWhiteFiber ? '#cbd5e1' : trayColor,
-                                            color: isWhiteFiber ? '#475569' : trayColor, // Use darker text for white fiber
+                                            color: isWhiteFiber ? '#475569' : trayColor,
                                             backgroundColor: isWhiteFiber ? '#f8fafc' : `${trayColor}15`
                                         }}
-                                        title={`Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})`}
+                                        title={isSpliced ? `Spliced - Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})` : `Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})`}
                                     >
                                         {(idx % 12) + 1}
+                                        <div className="flex gap-0.5 mt-[1px]">
+                                            {isSpliced && <div className="w-1 h-1 rounded-full bg-orange-500" title={t('type_FUSION')}></div>}
+                                        </div>
                                     </div>
                                 </React.Fragment>
                             );

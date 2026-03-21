@@ -39,6 +39,11 @@ model User {
   retentionAlerts      RetentionAlert[]
   retentionMessageLogs RetentionMessageLog[]
 
+  integrationMappings  IntegrationMapping[]
+  integrationConflicts IntegrationConflict[]
+  integrationLogs      IntegrationLog[]
+  integrationSettings  IntegrationSettings[]
+
   @@index([companyId])
   @@map("users")
 }
@@ -582,6 +587,7 @@ model Customer {
   pppoeService      String?  @map("pppoe_service")
   onuPower          Float?   @map("onu_power")
   projectId         String?  @map("project_id")
+  connectionStatus  String?  @map("connection_status")
 
   cto     Cto?     @relation(fields: [ctoId], references: [id])
   project Project? @relation(fields: [projectId], references: [id])
@@ -760,4 +766,72 @@ model SupportMessage {
   sender       User                @relation("sender_messages", fields: [senderId], references: [id])
 
   @@map("support_messages")
+}
+
+model IntegrationMapping {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id") // tenant
+  sgpType            String   @map("sgp_type") // IXC, GENERIC
+  externalCustomerId String   @map("external_customer_id")
+  internalCustomerId String?  @map("internal_customer_id")
+  ctoId              String?  @map("cto_id")
+  splitterPort       Int?     @map("splitter_port")
+  fiberId            String?  @map("fiber_id")
+  lastSyncAt         DateTime @default(now()) @map("last_sync_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, externalCustomerId])
+  @@index([internalCustomerId])
+  @@map("integration_mappings")
+}
+
+model IntegrationConflict {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  customerId String?  @map("customer_id")
+  type       String   // PORT_CONFLICT, NOT_FOUND, INVALID_DATA
+  payload    Json     @default("{}")
+  status     String   @default("pending") // pending, resolved
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("integration_conflicts")
+}
+
+model IntegrationLog {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  event        String
+  direction    String   // INBOUND, OUTBOUND
+  payload      Json     @default("{}")
+  status       String   // current process status (success, error)
+  errorMessage String?  @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("integration_logs")
+}
+
+model IntegrationSettings {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  sgpType       String   @map("sgp_type") // IXC, GENERIC
+  apiUrl        String?  @map("api_url")
+  apiApp        String?  @map("api_app")
+  apiToken      String?  @map("api_token")
+  webhookSecret String?  @map("webhook_secret")
+  active        Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sgpType], name: "userId_sgpType")
+  @@map("integration_settings")
 }

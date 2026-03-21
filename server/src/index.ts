@@ -111,6 +111,8 @@ app.use((req, res, next) => {
 });
 
 // Routes
+import sgpRoutes from './routes/sgpRoutes';
+
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/admin', adminRoutes);
@@ -122,6 +124,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/support/chat', supportChatRoutes);
+app.use('/api/integrations/sgp', sgpRoutes);
 
 // Backup and Cron
 import backupRoutes from './routes/backupRoutes';
