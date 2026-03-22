@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cd44fa75-e1bb-46db-99c3-2ab9dbfad759",
+    "userId": "1f20425a-07ff-4477-9d4a-d9f6c1725ff3",
+    "sgpType": "GENERIC",
+    "active": true,
+    "apiUrl": "https://sgptins.redeconexaonet.com",
+    "updatedAt": "2026-03-21T03:16:20.623Z"
+  },
+  {
+    "id": "ac563266-ef8d-4ba8-bb3c-437ae92d67b4",
+    "userId": "1f20425a-07ff-4477-9d4a-d9f6c1725ff3",
+    "sgpType": "IXC",
+    "active": false,
+    "apiUrl": "https://177.74.157.11/api/v1",
+    "updatedAt": "2026-03-22T17:06:18.560Z"
+  },
+  {
+    "id": "9632fc38-f71b-4e73-a51b-711e922d99b1",
+    "userId": "a86e868c-139c-41e0-8c5d-22a88d8e9dc8",
+    "sgpType": "IXC",
+    "active": false,
+    "apiUrl": "https://177.74.157.11/webservice/v1/",
+    "updatedAt": "2026-03-22T17:25:27.373Z"
+  }
+]

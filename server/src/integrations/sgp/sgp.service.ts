@@ -264,28 +264,41 @@ export class SgpService {
             throw new Error('User company not found');
         }
 
-        // Find any settings for this company
-        // We prioritize active settings, but allow inactive ones for search if credentials exist
-        const settings = await prisma.integrationSettings.findFirst({
+        // Find settings for this company
+        // If sgpType is 'auto', we try to find an active one first
+        // If no active one, we try to find any one that has credentials
+        let settings = await prisma.integrationSettings.findFirst({
             where: {
                 user: { companyId: user.companyId },
                 apiUrl: { not: null },
                 apiToken: { not: null },
+                active: true,
                 ...(sgpType && sgpType !== 'auto' ? { sgpType } : {})
             },
-            orderBy: [
-                { active: 'desc' }, // Active ones first
-                { updatedAt: 'desc' } // Most recent ones second
-            ],
+            orderBy: { updatedAt: 'desc' },
             include: { user: true }
         });
 
         if (!settings) {
-            logger.warn(`[SGP Service] No active integration settings found for company ${user.companyId}`);
-            throw new Error('SGP integration not configured or inactive');
+            // Fallback: try to find an inactive one if no active one exists
+            settings = await prisma.integrationSettings.findFirst({
+                where: {
+                    user: { companyId: user.companyId },
+                    apiUrl: { not: null },
+                    apiToken: { not: null },
+                    ...(sgpType && sgpType !== 'auto' ? { sgpType } : {})
+                },
+                orderBy: { updatedAt: 'desc' },
+                include: { user: true }
+            });
         }
 
-        logger.info(`[SGP Service] Searching customer using ${settings.sgpType} provider for company ${user.companyId}`);
+        if (!settings) {
+            logger.warn(`[SGP Service] No integration settings found for company ${user.companyId}`);
+            throw new Error('Integration not configured (URL and Token required)');
+        }
+
+        logger.info(`[SGP Service] Searching customer using ${settings.sgpType} provider (Active: ${settings.active}) for company ${user.companyId}`);
 
         const baseUrl = settings.apiUrl?.replace(/\/$/, '');
         if (!baseUrl || !settings.apiToken) {
@@ -293,13 +306,20 @@ export class SgpService {
         }
 
         const adapter = this.getAdapter(settings.sgpType);
-        const result = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, cpfCnpj);
-        
-        if (result) {
-            logger.info(`[SGP Service] Search result for ${cpfCnpj}: ${JSON.stringify(result)}`);
+        try {
+            const result = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, cpfCnpj);
+            if (result) {
+                logger.info(`[SGP Service] Search found customer via ${settings.sgpType} for ${cpfCnpj}`);
+            } else {
+                logger.info(`[SGP Service] No customer found via ${settings.sgpType} for ${cpfCnpj}`);
+            }
+            return result;
+        } catch (error: any) {
+            logger.error(`[SGP Service] Provider ${settings.sgpType} error: ${error.message}`);
+            // If it's the auto-search and we have another provider, we could try the other one here
+            // but for now let's just throw up the error clearly
+            throw error;
         }
-        
-        return result;
     }
 
     static async syncAllStatuses(userId: string, sgpType: string) {

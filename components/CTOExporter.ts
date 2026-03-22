@@ -168,9 +168,9 @@ const getSplitterGeometry = (splitter: Splitter) => {
     // Polygon Points (Absolute within Size x Size)
     // Original: width/2,12 shiftPx,60 width+shiftPx,60
     // Adjusted:
-    const p1 = `${offsetX + (width / 2) + shiftPx},${offsetY + 12}`; // Added shiftPx to align with Input Port
-    const p2 = `${offsetX + shiftPx},${offsetY + 60}`;
-    const p3 = `${offsetX + width + shiftPx},${offsetY + 60}`;
+    const p1 = `${offsetX + (width / 2) + shiftPx},${offsetY + 14}`; // Recuado para dentro do círculo (Topo)
+    const p2 = `${offsetX + shiftPx + 2},${offsetY + 58}`; // Recuado 2px da lateral (Base Esq)
+    const p3 = `${offsetX + width + shiftPx - 2},${offsetY + 58}`; // Recuado 2px da lateral (Base Dir)
     const polygonPoints = `${p1} ${p2} ${p3}`;
 
     // Label Position
@@ -382,8 +382,6 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
         // Fallback to Text
         content += renderText(x + 20, y + 35, 'FTTH PLANNER', 18, 'bold', '#0f172a');
     }
-    content += renderText(x + 20, y + 60, 'PROJETO TÉCNICO EXECUTIVO', 10, 'normal', ENG.colors.textLabel);
-
     // 2. Project Info (Center-Left)
     const col2X = x + 250;
     content += renderText(col2X, y + 25, 'PROJETO', 9, 'normal', ENG.colors.textLabel);
@@ -482,6 +480,7 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
 
     // --- CARIMBO (Bottom Right Corner) ---
     // Signature area
+    content += renderText(x + w - 15, y + h - 22, 'PROJETO TÉCNICO EXECUTIVO', 9, 'bold', '#0f172a', 'end');
     content += renderText(x + w - 15, y + h - 10, 'FTTH PLANNER SYS 1.0', 7, 'normal', '#94a3b8', 'end');
 
     return content;
@@ -685,8 +684,8 @@ export const generateCTOSVG = (
         }
 
         // MANIPULE AQUI: Espessura da linha da fibra (Padrão era 2)
-        const manualFiberThickness = 1.2;
-        const width = isLit ? (manualFiberThickness + 0.5) : manualFiberThickness;
+        const manualFiberThickness = 2.5;
+        const width = isLit ? 3.5 : manualFiberThickness;
         diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
     });
 

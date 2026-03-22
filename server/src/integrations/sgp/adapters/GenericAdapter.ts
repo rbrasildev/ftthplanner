@@ -55,11 +55,23 @@ export class GenericAdapter implements ISgpAdapter {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`SGP API error (${response.status}): ${errorText}`);
+            let errorDetail = '';
+            try {
+                const errorData = await response.json();
+                errorDetail = JSON.stringify(errorData);
+            } catch (e) {
+                errorDetail = await response.text();
+            }
+            throw new Error(`SGP API error (${response.status}): ${errorDetail.substring(0, 200)}`);
         }
 
-        const data: any = await response.json();
+        let data: any;
+        try {
+            data = await response.json();
+        } catch (e) {
+            const text = await response.text();
+            throw new Error(`SGP API returned invalid JSON: ${text.substring(0, 100)}`);
+        }
         const clientes = data?.clientes || [];
         return clientes[0] || null;
     }
