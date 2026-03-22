@@ -96,7 +96,7 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             </clipPath>
         </defs>
         <g transform="translate(${boxX}, 0)" clip-path="url(#${clipId})">
-            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />
+            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#334155" stroke-width="1.2" />
             <!-- Centering Fix: Use Center of bundleHeight -->
             <text x="84" y="${verticalOffset + bundleHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
             <text x="84" y="${verticalOffset + bundleHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount} FIBRAS</text>
@@ -686,7 +686,7 @@ export const generateCTOSVG = (
         // MANIPULE AQUI: Espessura da linha da fibra (Padrão era 2)
         const manualFiberThickness = 2.5;
         const width = isLit ? 3.5 : manualFiberThickness;
-        diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />`;
+        diagramContent += `<path d="${pathD}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round" />`;
     });
 
     // RENDER COMPONENTS

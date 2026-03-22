@@ -127,6 +127,100 @@ interface CTOEditorProps {
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
 
+
+// --- COMPONENT: ConnectionsLayer (Memoized to prevent SVG re-renders on Pan) ---
+const ConnectionsLayer = React.memo(({
+    connections,
+    litConnections,
+    hoveredPortId,
+    isVflToolActive,
+    isOtdrToolActive,
+    dragState,
+    getPortCenter,
+    handleSmartAlignConnection,
+    handlePathMouseDown,
+    handlePointMouseDown,
+    removeConnection,
+    removePoint,
+    connectionRefs,
+    connectionPointRefs,
+    isSmartAlignMode
+}: any) => {
+    return (
+        <>
+            {connections.map((conn: any) => {
+                if (dragState?.mode === 'reconnect' && dragState.connectionId === conn.id) return null;
+
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+                if (!p1 || !p2) return null;
+
+                const isLit = litConnections.has(conn.id);
+
+                // THEME AWARE SPLITTER COLOR:
+                const isSplitterConn = conn.sourceId.includes('spl-') || conn.targetId.includes('spl-');
+                const isDefaultSplitterColor = conn.color === '#0f172a' || conn.color === '#94a3b8';
+                const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
+
+                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
+                const finalWidth = isLit ? 3.5 : 2.5;
+
+                let d = `M ${p1.x} ${p1.y} `;
+                if (conn.points && conn.points.length > 0) {
+                    conn.points.forEach((p: any) => {
+                        d += `L ${p.x} ${p.y} `;
+                    });
+                }
+                d += `L ${p2.x} ${p2.y}`;
+
+                return (
+                    <g key={conn.id} className="pointer-events-auto group">
+                        <path
+                            ref={el => { connectionRefs.current[conn.id] = el; }}
+                            d={d}
+                            stroke={finalColor}
+                            strokeWidth={finalWidth}
+                            fill="none"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            style={{ filter: isLit ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.45))' : 'none' }}
+                            className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
+                            onClick={(e) => {
+                                if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
+                            }}
+                            onMouseDown={(e) => handlePathMouseDown(e, conn.id)}
+                            onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                removeConnection(conn.id);
+                            }}
+                            onDoubleClick={() => removeConnection(conn.id)}
+                        />
+                        {!isVflToolActive && !isOtdrToolActive && conn.points?.map((pt: any, idx: number) => {
+                            const isDraggingThisConnection = dragState?.mode === 'point' && dragState.connectionId === conn.id;
+                            return (
+                                <circle
+                                    key={idx}
+                                    ref={el => { connectionPointRefs.current[`${conn.id}-${idx}`] = el; }}
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r={5}
+                                    fill="#fff"
+                                    stroke={conn.color}
+                                    strokeWidth={2}
+                                    className={`cursor-move hover:r-6 transition-opacity duration-200 ${isDraggingThisConnection ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                    onMouseDown={(e) => handlePointMouseDown(e as any, conn.id, idx)}
+                                    onDoubleClick={(e) => removePoint(e as any, conn.id, idx)}
+                                />
+                            );
+                        })}
+                    </g>
+                );
+            })}
+        </>
+    );
+});
+
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
     litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
@@ -578,6 +672,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
         return getInitialViewState(localCTO);
     });
+    const viewStateRef = useRef(viewState);
+    useLayoutEffect(() => { viewStateRef.current = viewState; }, [viewState]);
 
     // Track if we have used the initial persisted state so we don't overwrite it with auto-calc
     // unless it was missing.
@@ -880,7 +976,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const portCenterCache = useRef<Record<string, { x: number, y: number }>>({});
     const containerRectCache = useRef<DOMRect | null>(null);
 
-    const getPortCenter = (portId: string): { x: number, y: number } | null => {
+    const getPortCenter = useCallback((portId: string): { x: number, y: number } | null => {
         if (portCenterCache.current[portId]) return portCenterCache.current[portId];
 
         const el = document.getElementById(portId);
@@ -893,14 +989,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const relX = rect.left + rect.width / 2 - containerRect.left;
             const relY = rect.top + rect.height / 2 - containerRect.top;
             const result = {
-                x: (relX - viewState.x) / viewState.zoom,
-                y: (relY - viewState.y) / viewState.zoom
+                x: (relX - viewStateRef.current.x) / viewStateRef.current.zoom,
+                y: (relY - viewStateRef.current.y) / viewStateRef.current.zoom
             };
             portCenterCache.current[portId] = result;
             return result;
         }
         return null;
-    };
+    }, [viewState.zoom]);
 
     const handleSmartAlignConnection = (connId: string) => {
         setLocalCTO(prev => ({
@@ -2914,10 +3010,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     useLayoutEffect(() => {
         portCenterCache.current = {};
         containerRectCache.current = null;
-        // Force re-render specifically when layout changes (rotation/mirror) so getPortCenter reads updated DOM
-        // This fixes the "delay" or "stale line" issue when rotating elements.
         setForceUpdate(n => n + 1);
-    }, [viewState, localCTO.layout, localCTO.splitters, localCTO.fusions]);
+    }, [viewState.zoom, localCTO.layout, localCTO.splitters, localCTO.fusions]);
 
     return (
         <div
@@ -3288,78 +3382,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     >
                         {/* SVG Connections Layer */}
                         <svg className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible z-10">
-                            {localCTO.connections.map(conn => {
-                                if (dragState?.mode === 'reconnect' && dragState.connectionId === conn.id) return null;
-
-                                const p1 = getPortCenter(conn.sourceId);
-                                const p2 = getPortCenter(conn.targetId);
-                                if (!p1 || !p2) return null;
-
-                                const isLit = litConnections.has(conn.id);
-
-                                // THEME AWARE SPLITTER COLOR:
-                                // If it matches the default 'Black' or legacy 'Gray' splitter color, use CSS classes instead of inline stroke.
-                                const isSplitterConn = conn.sourceId.includes('spl-') || conn.targetId.includes('spl-');
-                                const isDefaultSplitterColor = conn.color === '#0f172a' || conn.color === '#94a3b8';
-                                const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
-
-                                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
-                                const finalWidth = isLit ? 3.5 : 2.5;
-
-                                let d = `M ${p1.x} ${p1.y} `;
-                                if (conn.points && conn.points.length > 0) {
-                                    conn.points.forEach(p => {
-                                        d += `L ${p.x} ${p.y} `;
-                                    });
-                                }
-                                d += `L ${p2.x} ${p2.y}`;
-
-                                return (
-                                    <g key={conn.id} className="pointer-events-auto group">
-                                        <path
-                                            ref={el => { connectionRefs.current[conn.id] = el; }}
-                                            d={d}
-
-                                            stroke={finalColor}
-                                            strokeWidth={finalWidth}
-                                            fill="none"
-                                            strokeLinejoin="round"
-                                            strokeLinecap="round"
-                                            style={{ filter: isLit ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.45))' : 'none' }}
-                                            className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
-                                            onClick={(e) => {
-                                                if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
-                                            }}
-                                            onMouseDown={(e) => handlePathMouseDown(e, conn.id)}
-                                            onContextMenu={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                removeConnection(conn.id);
-                                            }}
-                                            onDoubleClick={() => removeConnection(conn.id)}
-                                        />
-                                        {!isVflToolActive && !isOtdrToolActive && conn.points?.map((pt, idx) => {
-                                            const isDraggingThisConnection = dragState?.mode === 'point' && dragState.connectionId === conn.id;
-                                            return (
-                                                <circle
-                                                    key={idx}
-                                                    ref={el => { connectionPointRefs.current[`${conn.id}-${idx}`] = el; }}
-                                                    cx={pt.x}
-
-                                                    cy={pt.y}
-                                                    r={5}
-                                                    fill="#fff"
-                                                    stroke={conn.color}
-                                                    strokeWidth={2}
-                                                    className={`cursor-move hover:r-6 transition-opacity duration-200 ${isDraggingThisConnection ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                                                    onMouseDown={(e) => handlePointMouseDown(e as any, conn.id, idx)}
-                                                    onDoubleClick={(e) => removePoint(e as any, conn.id, idx)}
-                                                />
-                                            );
-                                        })}
-                                    </g>
-                                );
-                            })}
+                            <ConnectionsLayer
+                                connections={localCTO.connections}
+                                litConnections={litConnections}
+                                hoveredPortId={hoveredPortId}
+                                isVflToolActive={isVflToolActive}
+                                isOtdrToolActive={isOtdrToolActive}
+                                dragState={dragState}
+                                getPortCenter={getPortCenter}
+                                handleSmartAlignConnection={handleSmartAlignConnection}
+                                handlePathMouseDown={handlePathMouseDown}
+                                handlePointMouseDown={handlePointMouseDown}
+                                removeConnection={removeConnection}
+                                removePoint={removePoint}
+                                connectionRefs={connectionRefs}
+                                connectionPointRefs={connectionPointRefs}
+                                isSmartAlignMode={isSmartAlignMode}
+                            />
 
                             <path
                                 ref={dragLineRef}
