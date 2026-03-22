@@ -17,4 +17,9 @@ export interface ISgpAdapter {
      * Validates the webhook signature if applicable.
      */
     validateIncomingRequest?(headers: any, body: any, secret?: string): boolean;
+
+    /**
+     * Searches for a customer in the external system by CPF/CNPJ.
+     */
+    searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any>;
 }

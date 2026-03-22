@@ -110,6 +110,10 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve frontend in production
+const frontendPath = path.resolve(__dirname, '..', '..', 'dist');
+app.use(express.static(frontendPath));
+
 // Routes
 import sgpRoutes from './routes/sgpRoutes';
 
@@ -132,6 +136,15 @@ import { BackupService } from './services/BackupService';
 
 app.use('/api/backups', backupRoutes);
 
+// Catch-all for SPA
+app.get('*', (req, res, next) => {
+    // If it's an API route that somehow reached here, let it 404
+    if (req.url.startsWith('/api')) {
+        return next();
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 // Error Handler - DEVE SER O ÚLTIMO
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
@@ -148,10 +161,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
         error: 'Internal Server Error',
         details: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
     });
-});
-
-app.get('/', (req, res) => {
-    res.send('FTTx Planner API is active');
 });
 
 // Initialize Scheduler

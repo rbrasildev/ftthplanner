@@ -55,4 +55,70 @@ export class IxcAdapter implements ISgpAdapter {
         
         return token === secret || token === `Basic ${secret}` || token === `Bearer ${secret}`;
     }
+
+    async searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any> {
+        // IXC API typically expects only numbers for CPF/CNPJ queries
+        const cleanCpfCnpj = query.replace(/\D/g, '');
+
+        const bodyData = {
+            qtype: 'cliente.cnpj_cpf',
+            query: cleanCpfCnpj,
+            oper: '=',
+            page: '1',
+            rp: '1',
+            sortname: 'cliente.id',
+            sortorder: 'desc'
+        };
+
+        const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/v1/cliente`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'ixctoken': token,
+                'Authorization': `Basic ${Buffer.from(token).toString('base64')}` // Some IXC installs use Basic
+            },
+            body: JSON.stringify(bodyData)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`IXC API error (${response.status}): ${errorText}`);
+        }
+
+        const data: any = await response.json();
+        const registros = data?.registros || [];
+        const ixcClient = registros[0] || null;
+
+        if (!ixcClient) return null;
+
+        // Normalize IXC client to SGP-like format for the frontend
+        // This avoids breaking the frontend which is already used to SGP fields
+        return {
+            id: ixcClient.id,
+            nome: ixcClient.razao,
+            cpfcnpj: ixcClient.cnpj_cpf,
+            email: ixcClient.email,
+            telefone: ixcClient.telefone_celular || ixcClient.telefone_fixo,
+            endereco: `${ixcClient.endereco}, ${ixcClient.numero} - ${ixcClient.bairro}`,
+            cidade: ixcClient.cidade,
+            status: ixcClient.ativo === 'S' ? 'Ativo' : 'Inativo',
+            // Mocking contratos structure to keep frontend compatibility
+            contratos: [
+                {
+                    id: 'ixc-' + ixcClient.id,
+                    status: ixcClient.ativo === 'S' ? 'Ativo' : 'Inativo',
+                    servicos: [
+                        {
+                            status: ixcClient.ativo === 'S' ? 'Ativo' : 'Inativo',
+                            onu: {
+                                conexao: {
+                                    status: ixcClient.status_internet === 'A' ? 'online' : 'offline'
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+    }
 }

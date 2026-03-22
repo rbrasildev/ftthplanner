@@ -37,4 +37,30 @@ export class GenericAdapter implements ISgpAdapter {
         
         return token === secret || token === `Bearer ${secret}`;
     }
+
+    async searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any> {
+        const bodyData = {
+            app: apiApp,
+            token: token,
+            cpfcnpj: query,
+            exibir_conexao: true
+        };
+
+        const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/ura/clientes/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(bodyData)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`SGP API error (${response.status}): ${errorText}`);
+        }
+
+        const data: any = await response.json();
+        const clientes = data?.clientes || [];
+        return clientes[0] || null;
+    }
 }

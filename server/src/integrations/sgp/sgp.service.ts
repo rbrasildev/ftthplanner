@@ -292,41 +292,8 @@ export class SgpService {
             throw new Error('Integration settings are incomplete (URL or Token missing)');
         }
 
-        const bodyData = {
-            app: settings.apiApp,
-            token: settings.apiToken,
-            cpfcnpj: cpfCnpj,
-            exibir_conexao: true
-        };
-
-        const response = await fetch(`${baseUrl}/api/ura/clientes/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(bodyData)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            let jsonError;
-            try { jsonError = JSON.parse(errorText); } catch(e) {}
-            
-            const detailedError = jsonError?.error || jsonError?.message || errorText;
-            logger.error(`[SGP Service] Search failed: ${response.status} ${detailedError}`);
-            throw new Error(`SGP API error (${response.status}): ${detailedError}`);
-        }
-
-        const data: any = await response.json();
-        const clientes = data?.clientes || [];
-        
-        if (clientes.length > 0) {
-            logger.info(`[SGP Service] Full First Customer Data for ${cpfCnpj}: ${JSON.stringify(clientes[0])}`);
-        } else {
-            logger.info(`[SGP Service] No customers found for ${cpfCnpj}. Full Response: ${JSON.stringify(data)}`);
-        }
-
-        const result = clientes[0] || null;
+        const adapter = this.getAdapter(settings.sgpType);
+        const result = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, cpfCnpj);
         
         if (result) {
             logger.info(`[SGP Service] Search result for ${cpfCnpj}: ${JSON.stringify(result)}`);

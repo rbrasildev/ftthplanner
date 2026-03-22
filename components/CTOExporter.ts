@@ -28,6 +28,20 @@ const getPortColor = (portId: string, cables: CableData[]): string => {
     return '#94a3b8';
 };
 
+const escapeXML = (str: string): string => {
+    if (!str) return '';
+    return str.replace(/[<>&"']/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '"': return '&quot;';
+            case "'": return '&apos;';
+            default: return c;
+        }
+    });
+};
+
 // --- SVG HELPERS ---
 const createSVGElement = (type: string, attrs: Record<string, string | number>, children: string = '') => {
     const attrStr = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
@@ -74,15 +88,18 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     const fibersOffsetX = isMirrored ? 0 : 168;
 
     // 1. LABEL BOX
+    const clipId = `clip-cable-${cable.id.replace(/[^a-zA-Z0-9]/g, '-')}`;
     content += `
-        <g transform="translate(${boxX}, 0)">
-            <rect x="0" y="0" width="168" height="${totalHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />
-            <!-- Centering Fix: Use Center Y for First Line, Offset Second Line Down -->
-            <!-- Adding dominant-baseline to ensure PDF alignment logic kicks in -->
-            <!-- ADDED data-pdf-align="correction" to fix vertical offset in PDF export (User Request: Match PNG) -->
-            <!-- DYNAMIC ALIGNMENT: Check rotation to separate Vertical vs Horizontal logic -->
-            <text x="84" y="${totalHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.name}</text>
-            <text x="84" y="${totalHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount} FIBRAS</text>
+        <defs>
+            <clipPath id="${clipId}">
+                <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" />
+            </clipPath>
+        </defs>
+        <g transform="translate(${boxX}, 0)" clip-path="url(#${clipId})">
+            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#cbd5e1" stroke-width="1" />
+            <!-- Centering Fix: Use Center of bundleHeight -->
+            <text x="84" y="${verticalOffset + bundleHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
+            <text x="84" y="${verticalOffset + bundleHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount} FIBRAS</text>
         </g>
     `;
 
@@ -188,28 +205,52 @@ const getFusionGeometry = (fusion: FusionPoint) => {
 
 const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
     const geo = getSplitterGeometry(splitter);
+    const isConnectorized = splitter.connectorType === 'Connectorized';
+    const isLitIn = litPorts.has(splitter.inputPortId);
 
     let content = '';
 
-    // No Inner Translate Group - Use Absolute Geometry directly
+    // Triangle Colors
+    const strokeColor = '#000000';
+    const triangleFill = isConnectorized ? 'white' : '#949494';
+    const triangleStroke = isLitIn ? '#ef4444' : strokeColor;
+
+    // Label Color
+    const labelColor = isLitIn ? '#ef4444' : (isConnectorized ? '#64748b' : 'white');
+
+    // Port Colors
+    const portBorder = strokeColor;
+    const portFill = isConnectorized ? 'white' : 'black';
+    const portTextColor = isConnectorized ? '#94a3b8' : 'white';
 
     // Triangle
-    const strokeColor = '#000000';
-    const isLitIn = litPorts.has(splitter.inputPortId);
-    content += `<polygon points="${geo.polygonPoints}" fill="white" stroke="${isLitIn ? '#ef4444' : strokeColor}" stroke-width="1" />`;
+    content += `<polygon points="${geo.polygonPoints}" fill="${triangleFill}" stroke="${triangleStroke}" stroke-width="1" />`;
 
     // Label
-    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="#64748b" data-pdf-align="splitter-label">${splitter.type}</text>`;
+    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="${labelColor}" data-pdf-align="splitter-label">${escapeXML(splitter.type)}</text>`;
 
-    // Input Port
-    content += `<circle cx="${geo.inputPort.x}" cy="${geo.inputPort.y}" r="5" fill="white" stroke="${strokeColor}" stroke-width="1" />`;
-    content += `<text x="${geo.inputPort.x}" y="${geo.inputPort.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8" data-pdf-align="splitter-port-number">1</text>`;
+    // Input Port (Always Circle)
+    const inputLit = isLitIn;
+    const inputFill = inputLit ? '#ef4444' : portFill;
+    const inputTextColor = inputLit ? 'white' : portTextColor;
+
+    content += `<circle cx="${geo.inputPort.x}" cy="${geo.inputPort.y}" r="5" fill="${inputFill}" stroke="${portBorder}" stroke-width="1" />`;
+    content += `<text x="${geo.inputPort.x}" y="${geo.inputPort.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="${inputTextColor}" data-pdf-align="splitter-port-number">1</text>`;
 
     // Output Ports
     geo.outputPorts.forEach((port, idx) => {
         const isLit = litPorts.has(port.id);
-        content += `<circle cx="${port.x}" cy="${port.y}" r="5" fill="white" stroke="${isLit ? '#ef4444' : strokeColor}" stroke-width="1" />`;
-        content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="#94a3b8" data-pdf-align="splitter-port-number">${idx + 1}</text>`;
+        const fill = isLit ? '#ef4444' : portFill;
+        const textColor = isLit ? 'white' : portTextColor;
+
+        if (isConnectorized) {
+            // Square (Rect) for connectorized
+            content += `<rect x="${port.x - 5}" y="${port.y - 5}" width="10" height="10" rx="1" fill="${fill}" stroke="${isLit ? '#ef4444' : portBorder}" stroke-width="1" />`;
+        } else {
+            // Circle for balanced
+            content += `<circle cx="${port.x}" cy="${port.y}" r="5" fill="${fill}" stroke="${isLit ? '#ef4444' : portBorder}" stroke-width="1" />`;
+        }
+        content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="${textColor}" data-pdf-align="splitter-port-number">${idx + 1}</text>`;
     });
 
     const cx = geo.size / 2;
@@ -244,6 +285,8 @@ export interface FooterData {
     pole: string;
     obs: string;
     mapImage?: string; // Data URL
+    logo?: string; // Data URL (Company Logo)
+    qrCode?: string; // Data URL (QR Code)
 }
 
 const breakText = (text: string, maxChars: number): string[] => {
@@ -296,13 +339,27 @@ const ABNT_COLORS = [
     { name: 'Laranja', color: '#FF6600' },
     { name: 'Aqua', color: '#00CCFF' }
 ];
+const EIA_COLORS = [
+    { name: 'Azul', color: '#0033CC' },
+    { name: 'Laranja', color: '#FF6600' },
+    { name: 'Verde', color: '#009933' },
+    { name: 'Marrom', color: '#663300' },
+    { name: 'Cinza', color: '#94a3b8' }, // Slate
+    { name: 'Branco', color: '#ffffff' },
+    { name: 'Vermelho', color: '#CC0000' },
+    { name: 'Preto', color: '#000000' },
+    { name: 'Amarelo', color: '#FFCC00' },
+    { name: 'Violeta', color: '#993399' },
+    { name: 'Rosa', color: '#FF99CC' },
+    { name: 'Aqua', color: '#00CCFF' }
+];
 
 // --- RENDER HELPERS ---
 
 const renderText = (x: number, y: number, text: string, size: number, weight: 'normal' | 'bold' = 'normal', color: string = ENG.colors.textMain, anchor: 'start' | 'middle' | 'end' = 'start') => {
     // Manual baseline adjustment for PDF compatibility
     // y is baseline.
-    return `<text x="${x}" y="${y}" font-family="${ENG.fontFamily}" font-weight="${weight}" font-size="${size}" fill="${color}" text-anchor="${anchor}">${text}</text>`;
+    return `<text x="${x}" y="${y}" font-family="${ENG.fontFamily}" font-weight="${weight}" font-size="${size}" fill="${color}" text-anchor="${anchor}">${escapeXML(text)}</text>`;
 };
 
 const renderBox = (x: number, y: number, w: number, h: number, bg: string = 'none', border: string = 'none') => {
@@ -318,18 +375,24 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
     content += renderBox(x, y, w, h, ENG.colors.headerBg, ENG.colors.border);
 
     // 1. System Logo / Name (Left)
-    content += renderText(x + 20, y + 30, 'FTTH PLANNER', 18, 'bold', '#0f172a');
-    content += renderText(x + 20, y + 50, 'PROJETO TÉCNICO EXECUTIVO', 10, 'normal', ENG.colors.textLabel);
+    if (data.logo) {
+        // Render Image if available (Base64)
+        content += `<image x="${x + 20}" y="${y + 10}" width="160" height="40" href="${data.logo}" preserveAspectRatio="xMinYMid meet" />`;
+    } else {
+        // Fallback to Text
+        content += renderText(x + 20, y + 35, 'FTTH PLANNER', 18, 'bold', '#0f172a');
+    }
+    content += renderText(x + 20, y + 60, 'PROJETO TÉCNICO EXECUTIVO', 10, 'normal', ENG.colors.textLabel);
 
     // 2. Project Info (Center-Left)
     const col2X = x + 250;
     content += renderText(col2X, y + 25, 'PROJETO', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col2X, y + 45, (data.projectName || 'SEM NOME').toUpperCase(), 14, 'bold', '#0f172a');
+    content += renderText(col2X, y + 45, (escapeXML(data.projectName) || 'SEM NOME').toUpperCase(), 14, 'bold', '#0f172a');
 
     // 3. Box Info (Center-Right)
     const col3X = x + w * 0.55;
     content += renderText(col3X, y + 25, 'CAIXA / CTO', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col3X, y + 45, (data.boxName || '-').toUpperCase(), 14, 'bold', '#0f172a');
+    content += renderText(col3X, y + 45, (escapeXML(data.boxName) || '-').toUpperCase(), 14, 'bold', '#0f172a');
 
     // 4. Meta Info (Right)
     const col4X = x + w - 20;
@@ -343,7 +406,7 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
 const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterData) => {
     let content = '';
     const h = ENG.sizes.footerH;
-    const LEGEND_W = 350; // Width for color legend
+    const LEGEND_W = 600; // Expanded for ABNT + International
     const INFO_W = w - LEGEND_W;
 
     // Outer Border
@@ -351,20 +414,29 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
 
     // --- ZONE 1: ABNT COLOR LEGEND (Left) ---
     content += renderBox(x, y, LEGEND_W, h, 'none', ENG.colors.border);
-    content += renderText(x + 15, y + 20, 'LEGENDA DE FIBRAS (PADRÃO ABNT)', 9, 'bold', ENG.colors.textLabel);
+    content += renderText(x + 15, y + 20, 'LEGENDA DE FIBRAS (ABNT)', 9, 'bold', ENG.colors.textLabel);
 
-    // Grid of colors (2 columns x 6 rows)
+    // ABNT Grid (2 columns x 6 rows)
     const startY = y + 40;
-    const colW = 140;
+    const colW = 120;
     const rowH = 15;
 
     ABNT_COLORS.forEach((item, i) => {
         const cx = x + 20 + (i >= 6 ? colW : 0);
         const cy = startY + ((i % 6) * rowH);
-
-        // Color Swatch
         content += `<rect x="${cx}" y="${cy - 8}" width="12" height="8" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
-        // Label
+        content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
+    });
+
+    // --- ZONE 1.5: INTERNATIONAL COLOR LEGEND ---
+    const internX = x + 300;
+    content += `<line x1="${internX}" y1="${y}" x2="${internX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="1" />`;
+    content += renderText(internX + 15, y + 20, 'LEGENDA (INTERNACIONAL)', 9, 'bold', ENG.colors.textLabel);
+
+    EIA_COLORS.forEach((item, i) => {
+        const cx = internX + 20 + (i >= 6 ? colW : 0);
+        const cy = startY + ((i % 6) * rowH);
+        content += `<rect x="${cx}" y="${cy - 8}" width="12" height="8" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
         content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
     });
 
@@ -398,6 +470,15 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
     obsLines.slice(0, 2).forEach((l, i) => {
         content += renderText(col2X, r2y + 18 + (i * 12), l, 10, 'normal', '#0f172a');
     });
+
+    // --- QR CODE AREA (Right) ---
+    if (data.qrCode) {
+        const qrSize = 65;
+        const qrX = x + w - qrSize - 20;
+        const qrY = y + 20;
+        content += renderText(qrX + qrSize/2, qrY - 5, 'SCANNIEAR UNIFILAR', 7, 'bold', ENG.colors.textLabel, 'middle');
+        content += `<image x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}" href="${data.qrCode}" />`;
+    }
 
     // --- CARIMBO (Bottom Right Corner) ---
     // Signature area
@@ -690,6 +771,12 @@ export const exportToPDF = async (svgString: string, filename: string) => {
     const doc = parser.parseFromString(svgString, "image/svg+xml");
     const svg = doc.documentElement;
 
+    // Check for parsing errors
+    if (svg.tagName === 'parsererror' || svg.querySelector('parsererror')) {
+        console.error("SVG Parsing Error:", svg.textContent);
+        throw new Error("SVG_PARSE_ERROR");
+    }
+
     // Robust ViewBox Parsing
     // Robust ViewBox Parsing
     let viewBoxAttrs = svg.getAttribute('viewBox') || svg.getAttribute('viewbox');
@@ -913,48 +1000,29 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                     const pdfAlign = getAttr('data-pdf-align'); // Check for correction flag
 
                     if (baseline === 'middle' || baseline === 'central') {
-                        // User Request: Cable Labels (correction) need different offset to match PNG.
-                        // Standard (Fiber Numbers) uses 0.4.
-                        // Correction (Cable Labels) uses 0.30 (Lifts text slightly).
                         // Standard (Fiber Numbers) uses 0.4.
                         // --- AJUSTE FINO MANUAL (PDF ONLY) ---
-                        let offsetFactor = 0.5;
-                        let extraPixelShiftY = 0; // Mexe no eixo Y local (Pode ser Horizontal visual se girado)
-                        let extraPixelShiftX = 0; // Mexe no eixo X local (Pode ser Vertical visual se girado)
+                        let offsetFactor = 0.5; // Padrão para alinhamento central em jsPDF
+                        let extraPixelShiftY = 0; 
+                        let extraPixelShiftX = 0;
 
-                        if (pdfAlign === 'correction') {
-                            offsetFactor = 0.3;     // Legacy fallback
-                        }
                         if (pdfAlign === 'cable-label-horizontal' || pdfAlign === 'cable-label-vertical') {
-                            offsetFactor = 0.3;
-                            extraPixelShiftY = 0;
-                            extraPixelShiftX = 0;
+                            offsetFactor = 0.5;
                         }
-                        if (pdfAlign === 'cable-port-number-horizontal') {
-                            offsetFactor = 0.4;
-                            extraPixelShiftY = 0;
-                            extraPixelShiftX = 0;
-                        }
-                        if (pdfAlign === 'cable-port-number-vertical') {
-                            offsetFactor = 0.4;
-                            extraPixelShiftY = -2;   // Ajuste H
-                            extraPixelShiftX = -1;   // Ajuste V -> TENTE AQUI PARA BOLINHAS DO CABO EM PÉ
+                        if (pdfAlign === 'cable-port-number-horizontal' || pdfAlign === 'cable-port-number-vertical') {
+                            offsetFactor = 0.45;
                         }
                         if (pdfAlign === 'splitter-label') {
-                            offsetFactor = 1.3;
-                            extraPixelShiftY = 0;
-                            extraPixelShiftX = -20; // TENTE AQUI: Se Y mexeu na horizontal, X mexerá na vertical!
+                            offsetFactor = 1.0;
                         }
                         if (pdfAlign === 'splitter-port-number') {
-                            // Ajuste Fino para Números das Portas (Bolinhas)
-                            offsetFactor = 0.4;
-                            extraPixelShiftY = 1.3; // AXIS Y (Vertical visualmente se não girado)
-                            extraPixelShiftX = -3; // AXIS X
+                            offsetFactor = 0.45;
+                            extraPixelShiftY = 0.5;
                         }
 
-                        const PX_TO_PT = 0.75;
+                        const PX_TO_PT_FACTOR = 0.75;
                         localX += extraPixelShiftX;
-                        localY += (fontSize * offsetFactor * PX_TO_PT) + extraPixelShiftY;
+                        localY += (fontSize * offsetFactor * PX_TO_PT_FACTOR) + extraPixelShiftY;
 
                     }
                     const pAdjusted = applyToPoint(finalMatrix, localX, localY);
@@ -1028,50 +1096,14 @@ export const exportToPDF = async (svgString: string, filename: string) => {
                     const targetW = (w > 0 ? w : 100) * scaleM;
                     const targetH = (h > 0 ? h : 100) * scaleM;
 
-                    // Try to use cache first
-                    if (imageCache[href]) {
-                        const srcImg = imageCache[href];
-                        const sRatio = srcImg.width / srcImg.height;
-                        const tRatio = targetW / targetH;
-
-                        // Avoid division by zero
-                        if (srcImg.height > 0 && srcImg.width > 0) {
-                            let drawW, drawH, dx, dy;
-                            if (sRatio > tRatio) {
-                                drawH = targetH;
-                                drawW = srcImg.width * (targetH / srcImg.height);
-                                dx = p.x - (drawW - targetW) / 2;
-                                dy = p.y;
-                            } else {
-                                drawW = targetW;
-                                drawH = srcImg.height * (targetW / srcImg.width);
-                                dx = p.x;
-                                dy = p.y - (drawH - targetH) / 2;
-                            }
-
-                            pdf.saveGraphicsState();
-                            pdf.rect(p.x, p.y, targetW, targetH, 'clip');
-                            try {
-                                pdf.addImage(srcImg, 'PNG', dx, dy, drawW, drawH);
-                            } catch (e) {
-                                console.warn('PDF AddImage HTMLImageElement failed', e);
-                                try {
-                                    pdf.addImage(srcImg.src, 'PNG', dx, dy, drawW, drawH);
-                                } catch (e2) {
-                                    try {
-                                        pdf.addImage(href, 'PNG', p.x, p.y, targetW, targetH);
-                                    } catch (e3) { }
-                                }
-                            }
-                            pdf.restoreGraphicsState();
-                        }
-                    } else {
-                        // Fallback if cache missing
-                        try {
-                            pdf.addImage(href, 'PNG', p.x, p.y, targetW, targetH);
-                        } catch (e) {
-                            console.error('PDF AddImage Direct failed', e);
-                        }
+                    // Simplified image rendering to ensure Logo and QR Code visible
+                    const drawImg = imageCache[href] || href;
+                    try {
+                        // Use the provided SVG width/height scaled by current matrix
+                        // No clipping or manual aspect ratio calculation to avoid hidden images
+                        pdf.addImage(drawImg, 'PNG', p.x, p.y, targetW, targetH);
+                    } catch (e) {
+                        console.error('PDF AddImage failed for', href, e);
                     }
                 }
             }

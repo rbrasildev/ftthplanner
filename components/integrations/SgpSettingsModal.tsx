@@ -117,10 +117,10 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                 </div>
 
                 <CustomInput
-                    label="URL da API Local (Base)"
+                    label={t('api_url_label')}
                     type="url"
                     icon={Globe}
-                    placeholder="https://api.sgp.net.br ou https://ixc.provedor.com.br"
+                    placeholder={providerType === 'IXC' ? t('ixc_url_placeholder') : t('sgp_url_placeholder')}
                     value={settings.apiUrl}
                     onChange={(e) => setSettings({ ...settings, apiUrl: e.target.value })}
                     required
@@ -128,21 +128,21 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
 
                 {providerType === 'GENERIC' && (
                     <CustomInput
-                        label="App (Usado na Autenticação)"
+                        label={t('sgp_app_label')}
                         type="text"
                         icon={KeyRound}
                         placeholder="Informe o Application ID do seu SGP"
                         value={settings.apiApp || ''}
                         onChange={(e) => setSettings({ ...settings, apiApp: e.target.value })}
-                        required
+                        required={providerType === 'GENERIC'}
                     />
                 )}
 
                 <CustomInput
-                    label="Token de Acesso (Bearer Auth / FormData)"
+                    label={providerType === 'IXC' ? t('ixc_token_label') : t('sgp_token_label')}
                     type="password"
                     icon={KeyRound}
-                    placeholder="Cole seu token exclusivo de integração aqui..."
+                    placeholder={providerType === 'IXC' ? t('ixc_token_placeholder') : t('sgp_token_placeholder')}
                     value={settings.apiToken}
                     onChange={(e) => setSettings({ ...settings, apiToken: e.target.value })}
                     required
@@ -161,7 +161,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                         </div>
                         <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
                             <Webhook className="w-3 h-3" />
-                            Copie esta URL e cole na configuração de Webhooks do seu IXC.
+                            Copie esta URL e cole na configuração de Webhooks do seu ERP (IXC).
                         </p>
                     </div>
                 )}

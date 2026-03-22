@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
@@ -22,6 +22,7 @@ import {
     OLTCatalogItem
 } from '../services/catalogService';
 import { OpticalPowerModal } from './modals/OpticalPowerModal';
+import { QRCodeModal } from './modals/QRCodeModal';
 import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
@@ -119,18 +120,43 @@ interface CTOEditorProps {
     userRole?: string | null;
     network: NetworkState;
     projectId?: string;
+    companyLogo?: string | null;
+    saasLogo?: string | null;
+    autoDownload?: boolean; // NEW: To trigger export on load
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
 
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
-    litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
+    litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole,
-    projectId
+    projectId, companyLogo, saasLogo,
+    autoDownload
 }) => {
     const { t } = useLanguage();
     const [ctoCustomers, setCtoCustomers] = useState<Customer[]>([]);
+    const [litPorts, setLitPorts] = useState<Set<string>>(incomingLitPorts);
+    const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
+
+    // Auto-download logic for deep links
+    useEffect(() => {
+        if (autoDownload) {
+            console.log("[CTOEditor] Auto-download triggered via deep link");
+            const timer = setTimeout(() => {
+                // If the URL has downloadType=pdf, we honor it, otherwise default to PNG as requested
+                // PDF export is disabled for production due to visual inconsistencies
+                // Defaulting everything to PNG
+                const params = new URLSearchParams(window.location.search);
+                handleExportPNG();
+            }, 3000); // 3 seconds to be safe with all renders
+            return () => clearTimeout(timer);
+        }
+    }, [autoDownload]);
+
+    useEffect(() => {
+        setLitPorts(incomingLitPorts);
+    }, [incomingLitPorts]);
 
     useEffect(() => {
         if (cto.id) {
@@ -1334,7 +1360,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 level: 'CTO',
                 pole: '-',
                 obs: '',
-                mapImage: '' // Placeholder
+                mapImage: '', // Placeholder
+                logo: '' // NEW: Company/SaaS Logo
             };
 
             // Loading Map Image (Static OpenStreetMap/Carto)
@@ -1358,15 +1385,30 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 // Preload
                 const mapBase64 = await preloadImage(mapUrl);
                 if (mapBase64) footerData.mapImage = mapBase64;
+
+                // Load Company/SaaS Logo
+                const logoUrlToUse = companyLogo || saasLogo || '/logo.png';
+                const logoBase64 = await preloadImage(logoUrlToUse);
+                if (logoBase64) footerData.logo = logoBase64;
+
+                // Load QR Code (Link to CTO with Auto-Download PNG)
+                const qrUrl = `${window.location.origin}/cto/${localCTO.id}?projectId=${projectId}&download=true&downloadType=png`;
+                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
+                const qrBase64 = await preloadImage(qrCodeApiUrl);
+                if (qrBase64) (footerData as any).qrCode = qrBase64;
             } catch (e) {
-                console.warn("Could not load static map", e);
+                console.warn("Could not load static assets for export", e);
             }
 
             const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
             await exportToPDF(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.pdf`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Export failed", error);
-            alert("Failed to export PDF.");
+            if (error?.message === 'SVG_PARSE_ERROR') {
+                alert(t('export_parser_error'));
+            } else {
+                alert(t('export_pdf_error'));
+            }
         } finally {
             setExportingType(null);
         }
@@ -1418,7 +1460,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 level: 'CTO',
                 pole: '-',
                 obs: '',
-                mapImage: ''
+                mapImage: '',
+                logo: '' // NEW: Company/SaaS Logo
             };
 
             try {
@@ -1427,15 +1470,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
                 const mapBase64 = await preloadImage(mapUrl);
                 if (mapBase64) footerData.mapImage = mapBase64;
+
+                // Load Company/SaaS Logo
+                const logoUrlToUse = companyLogo || saasLogo || '/logo.png';
+                const logoBase64 = await preloadImage(logoUrlToUse);
+                if (logoBase64) footerData.logo = logoBase64;
+
+                // Load QR Code (Link to CTO with Auto-Download PNG)
+                const qrUrl = `${window.location.origin}/cto/${localCTO.id}?projectId=${projectId}&download=true&downloadType=png`;
+                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
+                const qrBase64 = await preloadImage(qrCodeApiUrl);
+                if (qrBase64) (footerData as any).qrCode = qrBase64;
             } catch (e) {
-                console.warn("Could not load static map", e);
+                console.warn("Could not load static assets for export", e);
             }
 
             const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
             await exportToPNG(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.png`);
         } catch (error) {
             console.error("Export PNG failed", error);
-            alert("Failed to export PNG.");
+            alert(t('export_png_error'));
         } finally {
             setExportingType(null);
         }
@@ -3075,16 +3129,32 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 PNG
                             </Button>
 
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                onClick={handleExportPDF} 
-                                disabled={!!exportingType} 
-                                className="font-bold text-[11px] h-7 px-2.5"
-                            >
-                                {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
-                                PDF
-                            </Button>
+                             {/* 
+3133:                              <Button 
+3134:                                  variant="secondary" 
+3135:                                  size="sm" 
+3136:                                  onClick={handleExportPDF} 
+3137:                                  disabled={!!exportingType} 
+3138:                                  className="font-bold text-[11px] h-7 px-2.5"
+3139:                              >
+3140:                                  {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
+3141:                                  PDF
+3142:                              </Button>
+3143:                              */}
+ 
+                             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+ 
+                             <Button 
+                                 variant="secondary" 
+                                 size="sm" 
+                                 onClick={() => setIsQRCodeModalOpen(true)} 
+                                 disabled={!!exportingType} 
+                                 className="font-bold text-[11px] h-7 px-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/20"
+                                 title={t('qr_maintenance')}
+                             >
+                                 <QrCode className="w-3.5 h-3.5 mr-1.5" />
+                                 {t('qr_code')}
+                             </Button>
 
 
                         </div>
@@ -3767,6 +3837,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     onClose={() => setIsOpticalModalOpen(false)}
                     result={opticalResult}
                     splitterName={selectedSplitterName}
+                />
+
+                <QRCodeModal
+                    isOpen={isQRCodeModalOpen}
+                    onClose={() => setIsQRCodeModalOpen(false)}
+                    ctoId={cto.id}
+                    projectId={projectId || ''}
+                    ctoName={cto.name || ''}
                 />
 
                 {/* CONFIRM CABLE REMOVAL MODAL */}

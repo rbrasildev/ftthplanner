@@ -202,6 +202,24 @@ export default function App() {
         if (window.location.pathname === '/reset-password') {
             setAuthView('reset-password');
         }
+
+        // --- DEEP LINK / QR CODE HANDLER ---
+        const path = window.location.pathname;
+        const search = window.location.search;
+        const params = new URLSearchParams(search);
+
+        if (path.startsWith('/cto/')) {
+            const ctoId = path.split('/')[2];
+            const pId = params.get('projectId');
+            if (ctoId) {
+                if (pId) setCurrentProjectId(pId);
+                setTargetCTOId(ctoId);
+                if (params.get('download') === 'true') {
+                    setAutoDownloadCTO(true);
+                }
+            }
+        }
+
         // Load Global SaaS Config
         saasService.getSaaSConfig().then(setSaasConfig).catch(console.error);
 
@@ -247,6 +265,8 @@ export default function App() {
     });
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [targetCTOId, setTargetCTOId] = useState<string | null>(null); // NEW: For deep links
+    const [autoDownloadCTO, setAutoDownloadCTO] = useState(false); // NEW: For auto-export
     const [editingCTO, setEditingCTO] = useState<CTOData | null>(null);
     const [editingPOP, setEditingPOP] = useState<POPData | null>(null);
     const [editingCable, setEditingCable] = useState<CableData | null>(null);
@@ -421,11 +441,19 @@ export default function App() {
                     showToast(t('error_project_load') || 'Failed to load project', 'info');
                 }
             });
-        } else {
-            // Only nullify if we actually switched to a null ID (logout/exit), not on init
-            if (!currentProjectId && prevProjectIdRef.current) setCurrentProject(null);
         }
     }, [currentProjectId, token]);
+
+    // Handle targeting CTO after project loads
+    useEffect(() => {
+        if (currentProject && targetCTOId) {
+            const foundCTO = currentProject.network.ctos.find(c => c.id === targetCTOId);
+            if (foundCTO) {
+                setEditingCTO(foundCTO);
+                setTargetCTOId(null);
+            }
+        }
+    }, [currentProject, targetCTOId]);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
@@ -1860,6 +1888,9 @@ export default function App() {
                     onShowUpgrade={handleCTOShowUpgrade}
                     network={editingCTONetwork}
                     projectId={currentProjectId || undefined}
+                    companyLogo={companyLogo}
+                    saasLogo={saasConfig?.appLogoUrl}
+                    autoDownload={autoDownloadCTO}
                 />
             )}
 
