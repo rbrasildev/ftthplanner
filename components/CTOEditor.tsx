@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
-import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp } from 'lucide-react';
+import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus, Note } from '../types';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
@@ -125,7 +125,7 @@ interface CTOEditorProps {
     autoDownload?: boolean; // NEW: To trigger export on load
 }
 
-type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window';
+type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note';
 
 
 // --- COMPONENT: ConnectionsLayer (Memoized to prevent SVG re-renders on Pan) ---
@@ -861,6 +861,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
     const [hoveredElement, setHoveredElement] = useState<{ id: string, type: 'cable' | 'connection' | 'splitter' | 'fusion' } | null>(null);
     const [showHotkeys, setShowHotkeys] = useState(false);
+    const svgRef = useRef<SVGSVGElement>(null);
+    const diagramRef = useRef<HTMLDivElement>(null);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
     const hotkeysRef = useRef<HTMLDivElement>(null);
     // Generic Context Menu State: { x, y, id, type }
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'cable' | 'splitter' } | null>(null);
@@ -868,6 +871,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // Close menu on click elsewhere
     useEffect(() => {
         const handleClick = (e: MouseEvent) => {
+            // IF clicking inside context menu, don't close it (let the button handlers do it)
+            if (contextMenuRef.current && contextMenuRef.current.contains(e.target as Node)) {
+                return;
+            }
+            
             setContextMenu(null);
             if (showHotkeys && hotkeysRef.current && !hotkeysRef.current.contains(e.target as Node)) {
                 setShowHotkeys(false);
@@ -1647,8 +1655,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        // If we are already dragging something (like a new sticky element), don't start panning!
+        // If we already dragging something, ignore
         if (dragState) return;
+
+        // NOTE DETECTION
+        const noteId = (e.target as Element).closest('[data-note-id]')?.getAttribute('data-note-id');
+        if (noteId) {
+            const note = localCTO.notes?.find(n => n.id === noteId);
+            if (note) {
+                setDragState({
+                    mode: 'note',
+                    targetId: noteId,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    initialLayout: { x: note.x, y: note.y, rotation: 0 }
+                });
+                return;
+            }
+        }
 
         // FUSION TOOL: Create Fusion on Click
         if (isFusionToolActive && e.button === 0) {
@@ -2052,7 +2076,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
 
         // 3. ELEMENT DRAG (Direct DOM)
-        if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+            if (dragState.mode === 'note') {
+                const dy = (e.clientY - dragState.startY) / viewState.zoom;
+                const dx = (e.clientX - dragState.startX) / viewState.zoom;
+                
+                const newX = (dragState.initialLayout?.x || 0) + dx;
+                const newY = (dragState.initialLayout?.y || 0) + dy;
+
+                setLocalCTO(prev => ({
+                    ...prev,
+                    notes: (prev.notes || []).map(n => n.id === dragState.targetId ? {
+                        ...n,
+                        x: Math.round(newX / GRID_SIZE) * GRID_SIZE,
+                        y: Math.round(newY / GRID_SIZE) * GRID_SIZE
+                    } : n)
+                }));
+                return;
+            }
+
+            if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
@@ -2745,6 +2787,38 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
 
+    const handleAddNote = (e: React.MouseEvent) => {
+        const { x, y } = screenToCanvas(e.clientX, e.clientY);
+        const newNote: Note = {
+            id: `note-${Date.now()}`,
+            text: '',
+            x: Math.round(x / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(y / GRID_SIZE) * GRID_SIZE,
+            width: 140,
+            height: 100,
+            color: '#fef08a'
+        };
+
+        setLocalCTO(prev => ({
+            ...prev,
+            notes: [...(prev.notes || []), newNote]
+        }));
+    };
+
+    const handleUpdateNoteText = (id: string, text: string) => {
+        setLocalCTO(prev => ({
+            ...prev,
+            notes: (prev.notes || []).map(n => n.id === id ? { ...n, text } : n)
+        }));
+    };
+
+    const handleDeleteNote = (id: string) => {
+        setLocalCTO(prev => ({
+            ...prev,
+            notes: (prev.notes || []).filter(n => n.id !== id)
+        }));
+    };
+
     const handleAddFusion = (e: React.MouseEvent) => {
         e.stopPropagation();
 
@@ -3179,11 +3253,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <Button
                                     variant={showSplitterDropdown ? 'emerald' : 'outline'}
                                     size="icon"
-                                    onClick={() => setShowSplitterDropdown(true)}
+                                    onClick={() => { setShowSplitterDropdown(!showSplitterDropdown); setIsRotateMode(false); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className="h-8 w-8"
-                                    title={t('splitters')}
+                                    title={t('splitter_tool')}
                                 >
-                                    <Triangle className="w-3.5 h-3.5 -rotate-90" />
+                                    <Box className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                     variant={isFusionToolActive ? 'emerald' : 'outline'}
@@ -3197,6 +3271,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
                                         <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
                                     </svg>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => handleAddNote(e)}
+                                    className="h-8 w-8"
+                                    title={t('add_note')}
+                                >
+                                    <StickyNote className="w-3.5 h-3.5" />
                                 </Button>
                             </div>
 
@@ -3245,7 +3328,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     className={`h-8 w-8 ${isVflToolActive ? 'bg-red-600 border-red-700 text-white hover:bg-red-500' : ''}`}
                                     title={t('tool_vfl')}
                                 >
-                                    <Flashlight className={`w-3.5 h-3.5 ${isVflToolActive ? 'fill-white animate-pulse' : ''}`} />
+                                    <Flashlight className="w-3.5 h-3.5 animate-pulse" />
                                 </Button>
                                 <Button
                                     variant={isOtdrToolActive ? 'emerald' : 'outline'}
@@ -3315,11 +3398,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
 
                         <div className="flex gap-2 pointer-events-auto items-center">
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                onClick={handleExportPNG} 
-                                disabled={!!exportingType} 
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleExportPNG}
+                                disabled={!!exportingType}
                                 className="font-bold text-[11px] h-7 px-2.5"
                             >
                                 {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
@@ -3327,25 +3410,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </Button>
 
                              {/* 
-3133:                              <Button 
-3134:                                  variant="secondary" 
-3135:                                  size="sm" 
-3136:                                  onClick={handleExportPDF} 
-3137:                                  disabled={!!exportingType} 
-3138:                                  className="font-bold text-[11px] h-7 px-2.5"
-3139:                              >
-3140:                                  {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
-3141:                                  PDF
-3142:                              </Button>
-3143:                              */}
- 
-                             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
- 
                              <Button 
                                  variant="secondary" 
                                  size="sm" 
-                                 onClick={() => setIsQRCodeModalOpen(true)} 
+                                 onClick={handleExportPDF} 
                                  disabled={!!exportingType} 
+                                 className="font-bold text-[11px] h-7 px-2.5"
+                             >
+                                 {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
+                                 PDF
+                             </Button>
+                             */}
+
+                             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+
+                             <Button
+                                 variant="secondary"
+                                 size="sm"
+                                 onClick={() => setIsQRCodeModalOpen(true)}
+                                 disabled={!!exportingType}
                                  className="font-bold text-[11px] h-7 px-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/20"
                                  title={t('qr_maintenance')}
                              >
@@ -3596,6 +3679,47 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </div>
                             );
                         })}
+
+                            {/* NOTES LAYER (HTML implementation for better layout integration) */}
+                            {localCTO.notes?.map(note => (
+                                <div 
+                                    key={note.id} 
+                                    data-note-id={note.id}
+                                    className="absolute z-50 group/note select-none cursor-move flex flex-col pt-1"
+                                    style={{
+                                        transform: `translate(${note.x}px, ${note.y}px)`,
+                                        width: note.width,
+                                        height: note.height,
+                                        backgroundColor: note.color,
+                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                                        borderRadius: '2px',
+                                        border: '1px solid #eab308',
+                                        pointerEvents: 'auto'
+                                    }}
+                                >
+                                    {/* Drag Handle (Top Bar) */}
+                                    <div className="h-3 w-full flex items-center justify-center opacity-30 group-hover/note:opacity-100 transition-opacity">
+                                        <div className="w-8 h-0.5 bg-yellow-900/20 rounded-full" />
+                                    </div>
+
+                                    <div className="flex-1 px-2 pb-2">
+                                        <textarea
+                                            className="w-full h-full bg-transparent border-none outline-none font-sans resize-none text-[11px] leading-tight text-yellow-900 font-medium placeholder:text-yellow-700/30"
+                                            value={note.text}
+                                            onChange={(e) => handleUpdateNoteText(note.id, e.target.value)}
+                                            placeholder={t('note_placeholder') || '...'}
+                                            onMouseDown={(e) => e.stopPropagation()} 
+                                        />
+                                    </div>
+                                    
+                                    <button
+                                        onClick={() => handleDeleteNote(note.id)}
+                                        className="absolute top-0.5 right-0.5 p-0.5 text-yellow-900/20 hover:text-red-500 opacity-0 group-hover/note:opacity-100 transition-all pointer-events-auto"
+                                    >
+                                        <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                </div>
+                            ))}
 
                         {localCTO.splitters.map(splitter => {
                             const layout = getLayout(splitter.id);
@@ -4061,6 +4185,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* CONTEXT MENU */}
                 {contextMenu && (
                     <div
+                        ref={contextMenuRef}
                         className="fixed z-[9999] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 w-48 animate-in fade-in zoom-in-95 duration-100"
                         style={{ top: contextMenu.y, left: contextMenu.x }}
                         onClick={(e) => e.stopPropagation()}

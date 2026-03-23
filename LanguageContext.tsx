@@ -1238,7 +1238,10 @@ const translations = {
     'hotkey_a': '(A) Smart Align',
     'hotkey_r': '(R) Rotate (Hovered)',
     'hotkey_d': '(D) Delete (Hovered)',
-    'hotkeys_hint': 'Shortcuts for faster editing'
+    'hotkeys_hint': 'Shortcuts for faster editing',
+    'add_note': 'Add Note',
+    'note_placeholder': 'Type your note here...',
+    'delete_note': 'Delete Note'
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -2483,7 +2486,10 @@ const translations = {
     'hotkey_a': '(A) Alinhamento Inteligente',
     'hotkey_r': '(R) Girar (Mouse sobre)',
     'hotkey_d': '(D) Deletar (Mouse sobre)',
-    'hotkeys_hint': 'Atalhos para edição rápida'
+    'hotkeys_hint': 'Atalhos para edição rápida',
+    'add_note': 'Adicionar Nota',
+    'note_placeholder': 'Digite sua anotação aqui...',
+    'delete_note': 'Excluir Nota'
   },
 };
 

@@ -73,6 +73,16 @@ export interface SlotConfig {
   portCount: number;
 }
 
+export interface Note {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  color?: string;
+}
+
 // --- NEW EQUIPMENT TYPES ---
 
 export interface OLT {
@@ -116,6 +126,7 @@ export interface POPData {
   inputCableIds: string[];
   layout?: Record<string, ElementLayout>;
   patchingLayout?: { col1: string[]; col2: string[]; col3: string[] };
+  notes?: Note[];
   // Customization
   color?: string; // Hex color for the marker
   size?: number; // Size/radius of the marker (default 24)
@@ -137,6 +148,7 @@ export interface CTOData {
   // Simulating physical structure
   inputCableIds: string[];
   clientCount: number;
+  notes?: Note[];
   // Visual layout storage (ID -> Position)
   layout?: Record<string, ElementLayout>;
   // Persisted View State

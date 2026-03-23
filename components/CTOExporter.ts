@@ -1,5 +1,5 @@
 
-import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint } from '../types';
+import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note } from '../types';
 import jsPDF from 'jspdf';
 
 // --- CONSTANTS ---
@@ -272,6 +272,29 @@ const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: numbe
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${geo.cx}, ${geo.cy})">${content}</g>`;
 };
 
+const renderNote = (note: Note): string => {
+    const width = note.width || 120;
+    const height = note.height || 80;
+    const color = note.color || '#fef08a'; // Yellow 200
+    const textColor = '#854d0e'; // Yellow 900 
+
+    let content = '';
+    // Shadow
+    content += `<rect x="2" y="2" width="${width}" height="${height}" fill="#000000" fill-opacity="0.1" rx="2" />`;
+    // Main
+    content += `<rect x="0" y="0" width="${width}" height="${height}" fill="${color}" stroke="#eab308" stroke-width="0.5" rx="2" />`;
+
+    // Text wrap
+    const lines = breakText(note.text, 22);
+    lines.forEach((line, i) => {
+        if (i < 5) { // Limit lines to fit
+            content += `<text x="8" y="${18 + (i * 14)}" font-family="Arial, sans-serif" font-size="10" fill="${textColor}">${escapeXML(line)}</text>`;
+        }
+    });
+
+    return `<g transform="translate(${note.x}, ${note.y})">${content}</g>`;
+};
+
 // --- MAIN EXPORT FUNCTION ---
 
 export interface FooterData {
@@ -534,6 +557,12 @@ export const generateCTOSVG = (
         cto.connections.forEach(c => {
             if (c.points) c.points.forEach(p => checkPt(p.x, p.y));
         });
+        if (cto.notes) {
+            cto.notes.forEach(n => {
+                checkPt(n.x, n.y);
+                checkPt(n.x + (n.width || 120), n.y + (n.height || 80));
+            });
+        }
     }
 
     if (minX === Infinity) { minX = 0; minY = 0; maxX = 800; maxY = 600; }
@@ -704,6 +733,12 @@ export const generateCTOSVG = (
         const l = cto.layout![f.id];
         if (l) diagramContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts);
     });
+
+    if (cto.notes) {
+        cto.notes.forEach(n => {
+            diagramContent += renderNote(n);
+        });
+    }
 
     // Wrap Diagram in Translation Group
     // Wrap Diagram in Translation/Scale Group

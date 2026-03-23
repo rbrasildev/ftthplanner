@@ -95,7 +95,7 @@ export const IntegrationsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                 {/* IXC Card */}
-                <div
+                {/* <div
                     onClick={() => { setSelectedProvider('IXC'); setActiveTab('settings'); }}
                     className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
                 >
@@ -116,7 +116,7 @@ export const IntegrationsPage: React.FC = () => {
                             <Settings className="w-4 h-4" /> Configurar
                         </span>
                     </div>
-                </div>
+                </div> */}
 
 
                 {/* Generic SGP Card */}
