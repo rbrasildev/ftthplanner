@@ -3255,9 +3255,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     size="icon"
                                     onClick={() => { setShowSplitterDropdown(!showSplitterDropdown); setIsRotateMode(false); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
                                     className="h-8 w-8"
-                                    title={t('splitter_tool')}
+                                    title={t('splitters')}
                                 >
-                                    <Box className="w-3.5 h-3.5" />
+                                    <Triangle className="w-3.5 h-3.5 -rotate-90" />
                                 </Button>
                                 <Button
                                     variant={isFusionToolActive ? 'emerald' : 'outline'}
