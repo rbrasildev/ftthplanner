@@ -6,7 +6,6 @@ import { Button } from '../common/Button';
 import { CustomInput } from '../common/CustomInput';
 import api from '../../services/api';
 import { SgpSettingsModal } from './SgpSettingsModal';
-import { SgpLogsTab } from './SgpLogsTab';
 import { SgpConflictsTab } from './SgpConflictsTab';
 
 type ProviderType = 'IXC' | 'GENERIC';
@@ -30,10 +29,10 @@ export const IntegrationsPage: React.FC = () => {
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                    Integração {selectedProvider}
+                                    {t('integration_modal_title', { provider: selectedProvider })}
                                 </h2>
                                 <p className="text-sm text-slate-500">
-                                    Gerencie configurações, logs e conflitos.
+                                    {t('integration_modal_subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -51,26 +50,19 @@ export const IntegrationsPage: React.FC = () => {
                             onClick={() => setActiveTab('settings')}
                             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'settings' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                         >
-                            Configurações
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('logs')}
-                            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'logs' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                        >
-                            Logs de Sincronização
+                            {t('integration_tab_settings')}
                         </button>
                         <button
                             onClick={() => setActiveTab('conflicts')}
                             className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'conflicts' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                         >
-                            Conflitos Pendentes
+                            {t('integration_tab_conflicts')}
                         </button>
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 dark:bg-slate-900/50">
                         {activeTab === 'settings' && <SgpSettingsModal providerType={selectedProvider} />}
-                        {activeTab === 'logs' && <SgpLogsTab providerType={selectedProvider} />}
                         {activeTab === 'conflicts' && <SgpConflictsTab providerType={selectedProvider} />}
                     </div>
                 </div>
@@ -84,10 +76,10 @@ export const IntegrationsPage: React.FC = () => {
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <LinkIcon className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
-                        Integrações Externas
+                        {t('integrations_title')}
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        Conecte o FTTH Planner ao seu ERP ou sistema de gestão para automação de portas.
+                        {t('integrations_description')}
                     </p>
                 </div>
             </div>
@@ -107,13 +99,13 @@ export const IntegrationsPage: React.FC = () => {
                             Webhook
                         </span>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">IXC Provedor</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t('ixc_provider_title')}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
-                        Integração Real-Time através de Webhooks. Atualiza portas automaticamente no mapa quando operado no sistema gerencial.
+                        {t('ixc_provider_description')}
                     </p>
                     <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto">
                         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <Settings className="w-4 h-4" /> Configurar
+                            <Settings className="w-4 h-4" /> {t('configure_button')}
                         </span>
                     </div>
                 </div> */}
@@ -134,11 +126,11 @@ export const IntegrationsPage: React.FC = () => {
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">SGP</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
-                        Sincronização agendada todas as madrugadas buscando clientes diretamente via Rota de API externa do seu provedor.
+                        {t('sgp_provider_description')}
                     </p>
                     <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 mt-auto">
                         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <Settings className="w-4 h-4" /> Configurar
+                            <Settings className="w-4 h-4" /> {t('configure_button')}
                         </span>
                     </div>
                 </div>

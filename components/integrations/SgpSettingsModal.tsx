@@ -52,12 +52,10 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
         e.preventDefault();
         setIsSaving(true);
         try {
-            console.log("Saving settings:", settings);
             await api.post(`/integrations/sgp/settings/${providerType}`, settings);
-            alert("Configurações salvas com sucesso!");
+            alert(t('sgp_save_success'));
         } catch (error) {
-            console.error("Failed to save settings", error);
-            alert("Erro ao salvar configurações.");
+            alert(t('sgp_save_error'));
         } finally {
             setIsSaving(false);
         }
@@ -67,13 +65,10 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
         setIsSyncing(true);
         try {
             const res = await api.post(`/integrations/sgp/sync-all/${providerType}`);
-            alert(`Sincronização concluída! ${res.data.updated} de ${res.data.total} clientes atualizados.`);
-            // Refresh map or other components if needed - though map usually fetches from global state
-            // If this modal is in App.tsx, we could trigger a global refresh.
+            alert(t('sgp_sync_success', { updated: res.data.updated, total: res.data.total }));
             window.dispatchEvent(new CustomEvent('customers-synced'));
         } catch (error: any) {
-            console.error("Failed to sync statuses", error);
-            alert("Erro ao sincronizar status: " + (error.response?.data?.error || error.message));
+            alert(t('sgp_sync_error') + (error.response?.data?.error || error.message));
         } finally {
             setIsSyncing(false);
         }
@@ -81,7 +76,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        alert("Copiado para a área de transferência!");
+        alert(t('sgp_copy_success'));
     };
 
     if (isLoading) {
@@ -94,16 +89,16 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0" />
                 <div className="text-sm text-amber-800 dark:text-amber-200">
-                    <p className="font-semibold mb-1">Atenção com as credenciais</p>
-                    <p>Você pode revogar estas credenciais a qualquer momento. Para provedores API Polling, as chamadas são feitas automaticamente uma vez por dia.</p>
+                    <p className="font-semibold mb-1">{t('sgp_credentials_warning_title')}</p>
+                    <p>{t('sgp_credentials_warning_text')}</p>
                 </div>
             </div>
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl">
                     <div>
-                        <h4 className="font-semibold text-slate-900 dark:text-white">Ativar Integração</h4>
-                        <p className="text-sm text-slate-500">Habilita ou desabilita a rotina automática/recebimento de Webhooks.</p>
+                        <h4 className="font-semibold text-slate-900 dark:text-white">{t('sgp_activate_label')}</h4>
+                        <p className="text-sm text-slate-500">{t('sgp_activate_help')}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -131,7 +126,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                         label={t('sgp_app_label')}
                         type="text"
                         icon={KeyRound}
-                        placeholder="Informe o Application ID do seu SGP"
+                        placeholder={t('sgp_app_id_placeholder')}
                         value={settings.apiApp || ''}
                         onChange={(e) => setSettings({ ...settings, apiApp: e.target.value })}
                         required={providerType === 'GENERIC'}
@@ -150,7 +145,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
 
                 {providerType === 'IXC' && settings.customWebhookUrl && (
                     <div className="mt-6">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Webhook URL Configurada no ERP</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t('sgp_webhook_url_label')}</label>
                         <div className="flex items-center gap-2">
                             <div className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-600 dark:text-slate-300 font-mono overflow-x-auto whitespace-nowrap">
                                 {settings.customWebhookUrl}
@@ -161,7 +156,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                         </div>
                         <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
                             <Webhook className="w-3 h-3" />
-                            Copie esta URL e cole na configuração de Webhooks do seu ERP (IXC).
+                            {t('sgp_webhook_url_help')}
                         </p>
                     </div>
                 )}
@@ -177,12 +172,12 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                     className="gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                 >
                     <Globe className="w-4 h-4" />
-                    Sincronizar Todos os Status Agora
+                    {t('sgp_sync_button')}
                 </Button>
 
                 <Button type="submit" isLoading={isSaving} disabled={isSaving} className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white">
                     <Save className="w-4 h-4" />
-                    Salvar Configurações
+                    {t('sgp_save_button')}
                 </Button>
             </div>
         </form>

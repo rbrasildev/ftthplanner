@@ -34,19 +34,8 @@ export class SgpService {
             throw new Error('Unauthorized webhook request');
         }
 
-        // Normalize
+        // Normalized
         const normalizedEvent = adapter.normalizeWebhookPayload(payload);
-
-        // Log Inbound
-        await prisma.integrationLog.create({
-            data: {
-                userId: tenantId,
-                event: normalizedEvent.event,
-                direction: 'INBOUND',
-                payload: payload,
-                status: 'PROCESSING'
-            }
-        });
 
         if (!normalizedEvent.externalCustomerId) {
             await this.registerConflict(tenantId, null, 'INVALID_DATA', payload, 'Missing externalCustomerId');
@@ -203,13 +192,71 @@ export class SgpService {
         await prisma.integrationConflict.create({
             data: {
                 userId: tenantId,
-                customerId: externalCustomerId, // keeping external in this generic field
+                customerId: externalCustomerId, // keeping external in this graphic field
                 type: type,
                 payload: payload,
                 status: 'PENDING'
             }
         });
     }
+
+    public static async applyConflict(userId: string, conflictId: string): Promise<{ applied: boolean; message: string }> {
+        const conflict = await prisma.integrationConflict.findFirst({
+            where: { id: conflictId, userId, status: 'PENDING' }
+        });
+
+        if (!conflict) {
+            throw new Error('Conflito não encontrado ou já resolvido.');
+        }
+
+        const payload = conflict.payload as any;
+        const sgpPort = payload?.sgpPort;
+
+        if (conflict.type !== 'PORT_MISMATCH' || typeof sgpPort !== 'number') {
+            throw new Error('Este tipo de conflito não suporta aplicação automática.');
+        }
+
+        // Find the user's company
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { companyId: true } });
+        if (!user?.companyId) throw new Error('Empresa do usuário não encontrada.');
+
+        // Find the internal customer by CPF/CNPJ (stored in conflict.customerId as external ID)
+        const customer = await prisma.customer.findFirst({
+            where: { document: conflict.customerId ?? '', companyId: user.companyId }
+        });
+
+        if (!customer) {
+            throw new Error('Cliente interno não encontrado para aplicar a alteração.');
+        }
+
+        const newPortIndex = sgpPort - 1; // 1-based → 0-based
+
+        // Check if that port is already taken by another customer
+        if (customer.ctoId) {
+            const portConflict = await prisma.customer.findFirst({
+                where: { ctoId: customer.ctoId, splitterPortIndex: newPortIndex, id: { not: customer.id } }
+            });
+            if (portConflict) {
+                throw new Error(`Porta ${sgpPort} já está ocupada pelo cliente "${portConflict.name}".`);
+            }
+        }
+
+        // Apply the port change
+        await prisma.customer.update({
+            where: { id: customer.id },
+            data: { splitterPortIndex: newPortIndex }
+        });
+
+        // Mark conflict as resolved
+        await prisma.integrationConflict.update({
+            where: { id: conflictId },
+            data: { status: 'RESOLVED' }
+        });
+
+        logger.info(`[SGP Conflict] Applied PORT_MISMATCH for customer ${customer.id}: port → ${sgpPort}`);
+        return { applied: true, message: `Porta atualizada para ${sgpPort} com sucesso.` };
+    }
+
 
     // Example of outbound sync
     public static async pushExternalEvent(tenantId: string, sgpType: string, internalEvent: Omit<NormalizedSgpEvent, 'rawPayload'>) {
@@ -227,29 +274,8 @@ export class SgpService {
         try {
            // send request
            // await axios.post(settings.apiUrl, payload, { headers: { Authorization: `Bearer ${settings.apiToken}` } });
-           
-           await prisma.integrationLog.create({
-               data: {
-                   userId: tenantId,
-                   event: internalEvent.event,
-                   direction: 'OUTBOUND',
-                   payload: payload as any,
-                   status: 'SUCCESS'
-               }
-           });
         } catch (error: any) {
             logger.error(`[SGP Push] Error sending to external SGP: ${error.message}`);
-            // Log error
-            await prisma.integrationLog.create({
-                data: {
-                    userId: tenantId,
-                    event: internalEvent.event,
-                    direction: 'OUTBOUND',
-                    payload: payload as any,
-                    status: 'ERROR',
-                    errorMessage: error.message
-                }
-           });
         }
     }
     

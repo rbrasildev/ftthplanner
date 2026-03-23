@@ -82,24 +82,6 @@ export const saveIntegrationSettings = async (req: Request, res: Response) => {
     }
 };
 
-export const getIntegrationLogs = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).user?.id || (req as any).user?.userId;
-        const { sgpType } = req.params;
-        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-        const logs = await prisma.integrationLog.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            take: 100
-        });
-
-        res.json(logs);
-    } catch (error: any) {
-        logger.error(`[SGP Controller] Error fetching logs: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
 
 export const getIntegrationConflicts = async (req: Request, res: Response) => {
     try {
@@ -111,21 +93,27 @@ export const getIntegrationConflicts = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Enrich with real customer name from the DB using CPF/CNPJ
+        // Enrich with customer name and CTO name from the DB
         const user = await prisma.user.findUnique({ where: { id: userId } });
         const enriched = await Promise.all(conflicts.map(async (conflict) => {
             let customerName = (conflict.payload as any)?.customerName || null;
-            if (!customerName && conflict.customerId) {
+            let ctoName = (conflict.payload as any)?.ctoName || null;
+
+            if ((!customerName || !ctoName) && conflict.customerId) {
                 const customer = await prisma.customer.findFirst({
-                    where: { document: conflict.customerId, companyId: user?.companyId ?? undefined }
+                    where: { document: conflict.customerId, companyId: user?.companyId ?? undefined },
+                    include: { cto: true }
                 });
-                customerName = customer?.name || null;
+                if (!customerName) customerName = customer?.name || null;
+                if (!ctoName && customer?.cto) ctoName = customer.cto.name || null;
             }
+
             return {
                 ...conflict,
                 payload: {
                     ...(conflict.payload as object),
-                    customerName: customerName || conflict.customerId
+                    customerName: customerName || conflict.customerId,
+                    ctoName: ctoName || null
                 }
             };
         }));
@@ -154,6 +142,21 @@ export const resolveIntegrationConflict = async (req: Request, res: Response) =>
     } catch (error: any) {
         logger.error(`[SGP Controller] Error resolving conflict: ${error.message}`);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const applyIntegrationConflict = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const { id } = req.params;
+
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const result = await SgpService.applyConflict(userId, id);
+        res.json(result);
+    } catch (error: any) {
+        logger.error(`[SGP Controller] Error applying conflict: ${error.message}`);
+        res.status(400).json({ error: error.message || 'Erro ao aplicar conflito' });
     }
 };
 
