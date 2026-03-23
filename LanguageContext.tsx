@@ -1923,6 +1923,7 @@ const translations = {
     'use_catalog_model': 'Usar modelo do catálogo',
     'loading_catalog': 'Carregando catálogo...',
     'select_model': '-- Selecione um modelo --',
+    'loose_tubes': 'Tubos Looses',
     'tube': 'Tubo',
     'free_fiber': 'Fibra Livre',
     'spliced_to_port': 'Fundida na Porta {port}',

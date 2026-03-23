@@ -535,6 +535,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
             if (prev.viewState) merged.viewState = prev.viewState;
 
+            // FIX: Preserve local inputCableIds to prevent removed cables from being restored
+            // when prop 'cto' is re-propagated after onDisconnectCable + onSave
+            if (prev.inputCableIds !== undefined) merged.inputCableIds = prev.inputCableIds;
+
             // Run Reconciler on MERGED state (Fixes ID shifts while keeping positions)
             reconcileOrphans(merged, incomingCables);
 
@@ -2788,14 +2792,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
     const handleAddNote = (e: React.MouseEvent) => {
-        const { x, y } = screenToCanvas(e.clientX, e.clientY);
+        // Calculate canvas center from container dimensions and current viewState
+        const NOTE_W = 140;
+        const NOTE_H = 100;
+        let cx = 300;
+        let cy = 200;
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            // Convert container center to canvas coordinates
+            const screenCX = rect.width / 2;
+            const screenCY = rect.height / 2;
+            cx = (screenCX - viewState.x) / viewState.zoom - NOTE_W / 2;
+            cy = (screenCY - viewState.y) / viewState.zoom - NOTE_H / 2;
+        }
+
         const newNote: Note = {
             id: `note-${Date.now()}`,
             text: '',
-            x: Math.round(x / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(y / GRID_SIZE) * GRID_SIZE,
-            width: 140,
-            height: 100,
+            x: Math.round(cx / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(cy / GRID_SIZE) * GRID_SIZE,
+            width: NOTE_W,
+            height: NOTE_H,
             color: '#fef08a'
         };
 

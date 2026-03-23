@@ -262,7 +262,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               />
 
               <CustomSelect
-                label={t('Status')}
+                label={t('status')}
                 value={formData.status}
                 onChange={(val) => setFormData({ ...formData, status: val as CableStatus })}
                 disabled={userRole === 'MEMBER'}
