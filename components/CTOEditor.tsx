@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus } from '../types';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
@@ -138,13 +138,15 @@ const ConnectionsLayer = React.memo(({
     dragState,
     getPortCenter,
     handleSmartAlignConnection,
+    onDisconnectConnection,
     handlePathMouseDown,
     handlePointMouseDown,
     removeConnection,
     removePoint,
     connectionRefs,
     connectionPointRefs,
-    isSmartAlignMode
+    isSmartAlignMode,
+    onHoverConnection
 }: any) => {
     return (
         <>
@@ -189,6 +191,8 @@ const ConnectionsLayer = React.memo(({
                                 if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
                             }}
                             onMouseDown={(e) => handlePathMouseDown(e, conn.id)}
+                            onMouseEnter={() => onHoverConnection && onHoverConnection(conn.id)}
+                            onMouseLeave={() => onHoverConnection && onHoverConnection(null)}
                             onContextMenu={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -855,15 +859,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         initialConnectionPoints?: { x: number, y: number }[];
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+    const [hoveredElement, setHoveredElement] = useState<{ id: string, type: 'cable' | 'connection' | 'splitter' | 'fusion' } | null>(null);
+    const [showHotkeys, setShowHotkeys] = useState(false);
+    const hotkeysRef = useRef<HTMLDivElement>(null);
     // Generic Context Menu State: { x, y, id, type }
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'cable' | 'splitter' } | null>(null);
 
     // Close menu on click elsewhere
     useEffect(() => {
-        const handleClick = () => setContextMenu(null);
-        window.addEventListener('click', handleClick);
-        return () => window.removeEventListener('click', handleClick);
-    }, []);
+        const handleClick = (e: MouseEvent) => {
+            setContextMenu(null);
+            if (showHotkeys && hotkeysRef.current && !hotkeysRef.current.contains(e.target as Node)) {
+                setShowHotkeys(false);
+            }
+        };
+        window.addEventListener('mousedown', handleClick);
+        return () => window.removeEventListener('mousedown', handleClick);
+    }, [showHotkeys]);
 
     const handleCableContextMenu = useCallback((e: React.MouseEvent, cableId: string) => {
         e.preventDefault();
@@ -1255,7 +1267,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (portId.includes('spl-')) return '#0f172a'; // Black/Dark for splitter pigtails
         return null;
     };
-
     const removeConnection = (connId: string) => {
         setLocalCTO(prev => ({
             ...prev,
@@ -1263,7 +1274,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }));
     };
 
+
     const handleApply = async () => {
+
         setSavingAction('apply');
         try {
             // FIX: Use localCTO (React state) directly to ensure we save the most recent changes
@@ -1871,14 +1884,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, [isSmartAlignMode, isRotateMode]);
 
+
+
     const handleCableEditClick = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         const cable = incomingCables.find(c => c.id === id);
         if (cable) onEditCable(cable);
     }, [incomingCables, onEditCable]);
 
-    const handleRotateElement = useCallback((e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
+    const handleRotateElement = useCallback((e: React.MouseEvent | null, id: string) => {
+        if (e) e.stopPropagation();
         setLocalCTO(prev => {
             let layout = prev.layout?.[id];
 
@@ -1926,7 +1941,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             };
         });
-    }, []);
+    }, [incomingCables]);
+
+
+
+
 
     const handlePointMouseDown = (e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
@@ -2782,14 +2801,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // It seems 'type' is enum, but user wants to use configured types.
         // If `network.fusionTypes` exists, we should probably store the ID reference?
         // User Requirements: "modal com os tipos fusão".
-        // Let's store it in `catalogId` or `type`? 
-        // Looking at types.ts: FusionPoint has type?: 'generic'|'tray'.
-        // PoleData has catalogId. CableData has catalogId.
-        // FusionPoint interface in types.ts (Line 54) seems limited.
-        // "type?: 'generic' | 'tray'".
-        // However, I must not break code. I can add a new property if TS allows or coerce it.
-        // Or maybe the user *means* `type` as the name?
-        // The user said: "modal com os tipos fusão".
         // If I look at FusionType interface: { id, name, attenuation }.
         // Use `catalogId` is safe pattern if I can extend the type, but I can't change types.ts easily without verify.
         // Let's assume for now we use `type` field if compatible, or just add `catalogId` loosely (JS).
@@ -2804,9 +2815,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // So I cannot store the ID there easily. 
         // I might need to cast or add a property.
         // "NÃO quebrar código existente".
-        // I will add `catalogId` and cast as `any` when creating if necessary, or just rely on the name matching?
-        // Usually `catalogId` is the pattern.
-        // I'll add `catalogId` to the object and `as any` to bypass strict check for this feature.
+        // I will add `catalogId` to the object and `as any` to bypass strict check for this feature.
 
         const newFusion: FusionPoint & { catalogId?: string } = {
             id,
@@ -3013,6 +3022,59 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setForceUpdate(n => n + 1);
     }, [viewState.zoom, localCTO.layout, localCTO.splitters, localCTO.fusions]);
 
+    // --- KEYBOARD SHORTCUTS ---
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if user is typing in an input
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+
+            // (S) Add Splitter
+            if (key === 's') {
+                e.preventDefault();
+                setShowSplitterDropdown(prev => !prev);
+            }
+            // (F) Fusion Tool
+            else if (key === 'f') {
+                e.preventDefault();
+                setIsFusionToolActive(prev => !prev);
+            }
+            // (A) Smart Align
+            else if (key === 'a') {
+                e.preventDefault();
+                setIsSmartAlignMode(prev => !prev);
+            }
+            // (R) Rotate Hovered
+            else if (key === 'r') {
+                if (hoveredElement && (hoveredElement.type === 'cable' || hoveredElement.type === 'splitter' || hoveredElement.type === 'fusion')) {
+                    e.preventDefault();
+                    handleRotateElement(null as any, hoveredElement.id);
+                }
+            }
+            // (D) Delete Hovered
+            else if (key === 'd') {
+                if (hoveredElement) {
+                    e.preventDefault();
+                    if (hoveredElement.type === 'splitter') {
+                        handleDeleteSplitter(hoveredElement.id);
+                    } else if (hoveredElement.type === 'fusion') {
+                        handleDeleteFusion(hoveredElement.id);
+                    } else if (hoveredElement.type === 'connection') {
+                        removeConnection(hoveredElement.id);
+                    }
+                    setHoveredElement(null);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, setShowSplitterDropdown, setIsFusionToolActive, setIsSmartAlignMode]);
+
     return (
         <div
             id="cto-editor-modal"
@@ -3209,6 +3271,47 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </Button>
                             </div>
 
+                            {/* GROUP 6: HELP / SHORTCUTS */}
+                            <div ref={hotkeysRef} className="flex items-center gap-1.5 pl-2 relative">
+                                <Button
+                                    variant={showHotkeys ? 'emerald' : 'outline'}
+                                    size="icon"
+                                    onClick={() => setShowHotkeys(!showHotkeys)}
+                                    className="h-8 w-8"
+                                    title={t('hotkeys_title')}
+                                >
+                                    <Keyboard className="w-3.5 h-3.5" />
+                                </Button>
+
+                                {showHotkeys && (
+                                    <div className="absolute top-10 right-0 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                                            <CircleHelp className="w-4 h-4 text-emerald-500" />
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">{t('hotkeys_title')}</span>
+                                        </div>
+                                        <div className="space-y-2.5">
+                                            {[
+                                                { key: 'S', label: t('hotkey_s') },
+                                                { key: 'F', label: t('hotkey_f') },
+                                                { key: 'A', label: t('hotkey_a') },
+                                                { key: 'R', label: t('hotkey_r') },
+                                                { key: 'D', label: t('hotkey_d') }
+                                            ].map(item => (
+                                                <div key={item.key} className="flex items-center gap-3">
+                                                    <kbd className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-sm">
+                                                        {item.key}
+                                                    </kbd>
+                                                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">{item.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="mt-4 text-[10px] text-slate-400 italic text-center">
+                                            {t('hotkeys_hint')}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
 
                         <div className="flex gap-2 pointer-events-auto items-center">
@@ -3390,6 +3493,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 isOtdrToolActive={isOtdrToolActive}
                                 dragState={dragState}
                                 getPortCenter={getPortCenter}
+                                onHoverConnection={(id: string | null) => setHoveredElement(id ? { id, type: 'connection' } : null)}
                                 handleSmartAlignConnection={handleSmartAlignConnection}
                                 handlePathMouseDown={handlePathMouseDown}
                                 handlePointMouseDown={handlePointMouseDown}
@@ -3436,25 +3540,32 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 currentEmergencyY += totalHeight + 10;
 
                                 return (
-                                    <FiberCableNode
+                                    <div
                                         key={cable.id}
-                                        cable={cable}
-                                        layout={layout}
-                                        connections={localCTO.connections}
-                                        litPorts={litPorts}
-                                        hoveredPortId={hoveredPortId}
-                                        onDragStart={handleElementDragStart}
-                                        onRotate={handleRotateElement}
-                                        onMirror={handleMirrorElement}
-                                        onPortMouseDown={handlePortMouseDown}
-                                        onPortMouseEnter={setHoveredPortId}
-                                        onPortMouseLeave={handlePortMouseLeave}
-                                        onCableMouseEnter={handleCableMouseEnter}
-                                        onCableMouseLeave={handleCableMouseLeave}
-                                        onCableClick={handleCableClick}
-                                        onEdit={handleCableEditClick}
-                                        onContextMenu={handleCableContextMenu}
-                                    />
+                                        onMouseEnter={() => setHoveredElement({ id: cable.id, type: 'cable' })}
+                                        onMouseLeave={() => setHoveredElement(null)}
+                                        className="contents" // Important: contents so it doesn't break absolute positioning of children if needed, though they are already absolute
+                                    >
+                                        <FiberCableNode
+                                            key={cable.id}
+                                            cable={cable}
+                                            layout={layout}
+                                            connections={localCTO.connections}
+                                            litPorts={litPorts}
+                                            hoveredPortId={hoveredPortId}
+                                            onDragStart={handleElementDragStart}
+                                            onRotate={handleRotateElement}
+                                            onMirror={handleMirrorElement}
+                                            onPortMouseDown={handlePortMouseDown}
+                                            onPortMouseEnter={setHoveredPortId}
+                                            onPortMouseLeave={handlePortMouseLeave}
+                                            onCableMouseEnter={handleCableMouseEnter}
+                                            onCableMouseLeave={handleCableMouseLeave}
+                                            onCableClick={handleCableClick}
+                                            onEdit={handleCableEditClick}
+                                            onContextMenu={handleCableContextMenu}
+                                        />
+                                    </div>
                                 );
                             });
                         })()}
@@ -3462,9 +3573,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         {localCTO.fusions.map(fusion => {
                             const layout = getLayout(fusion.id);
                             return (
-                                <FusionNode
+                                <div
                                     key={fusion.id}
-                                    fusion={fusion}
+                                    onMouseEnter={() => setHoveredElement({ id: fusion.id, type: 'fusion' })}
+                                    onMouseLeave={() => setHoveredElement(null)}
+                                    className="contents"
+                                >
+                                    <FusionNode
+                                        key={fusion.id}
+                                        fusion={fusion}
                                     layout={layout}
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
@@ -3475,7 +3592,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
-                                />
+                                    />
+                                </div>
                             );
                         })}
 
@@ -3488,9 +3606,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: { name: c.name, status: c.connectionStatus } }), {} as Record<number, { name: string; status?: string }>);
 
                             return (
-                                <SplitterNode
+                                <div
                                     key={splitter.id}
-                                    splitter={splitter}
+                                    onMouseEnter={() => setHoveredElement({ id: splitter.id, type: 'splitter' })}
+                                    onMouseLeave={() => setHoveredElement(null)}
+                                    className="contents"
+                                >
+                                    <SplitterNode
+                                        key={splitter.id}
+                                        splitter={splitter}
                                     layout={layout}
                                     connections={localCTO.connections}
                                     litPorts={litPorts}
@@ -3504,7 +3628,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     onDoubleClick={handleSplitterDoubleClick}
                                     onContextMenu={handleSplitterContextMenu}
                                     attachedCustomers={attachedCustomers}
-                                />
+                                    />
+                                </div>
                             );
                         })}
 

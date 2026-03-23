@@ -1229,7 +1229,16 @@ const translations = {
     'chat_status_offline': 'Offline',
     'chat_status_away': 'Away',
     'chat_now': 'now',
-    'chat_ago': '{val} ago'
+    'chat_ago': '{val} ago',
+
+    // Hotkeys
+    'hotkeys_title': 'Keyboard Shortcuts',
+    'hotkey_s': '(S) Add Splitter',
+    'hotkey_f': '(F) Fusion Tool',
+    'hotkey_a': '(A) Smart Align',
+    'hotkey_r': '(R) Rotate (Hovered)',
+    'hotkey_d': '(D) Delete (Hovered)',
+    'hotkeys_hint': 'Shortcuts for faster editing'
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -2465,7 +2474,16 @@ const translations = {
     'chat_status_offline': 'Offline',
     'chat_status_away': 'Ausente',
     'chat_now': 'agora',
-    'chat_ago': 'há {val}'
+    'chat_ago': '{val} atrás',
+
+    // Hotkeys
+    'hotkeys_title': 'Atalhos de Teclado',
+    'hotkey_s': '(S) Adicionar Splitter',
+    'hotkey_f': '(F) Ferramenta de Fusão',
+    'hotkey_a': '(A) Alinhamento Inteligente',
+    'hotkey_r': '(R) Girar (Mouse sobre)',
+    'hotkey_d': '(D) Deletar (Mouse sobre)',
+    'hotkeys_hint': 'Atalhos para edição rápida'
   },
 };
 
