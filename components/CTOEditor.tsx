@@ -4150,6 +4150,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     ctoId={cto.id}
                     projectId={projectId || ''}
                     ctoName={cto.name || ''}
+                    logo={saasLogo}
                 />
 
                 {/* CONFIRM CABLE REMOVAL MODAL */}

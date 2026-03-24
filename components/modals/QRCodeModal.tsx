@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X, QrCode, Printer, Download, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
+import html2canvas from 'html2canvas';
 
 interface QRCodeModalProps {
     isOpen: boolean;
@@ -8,15 +9,18 @@ interface QRCodeModalProps {
     ctoId: string;
     projectId: string;
     ctoName: string;
+    logo?: string | null;
 }
 
-export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId, projectId, ctoName }) => {
+export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId, projectId, ctoName, logo }) => {
     const { t } = useLanguage();
+    const qrContainerRef = useRef<HTMLDivElement>(null);
 
     if (!isOpen) return null;
 
-    const qrUrl = `${window.location.origin}/cto/${ctoId}?projectId=${projectId}&download=true&downloadType=png`;
-    const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+    const diagramUrl = `${window.location.origin}/cto/${ctoId}?projectId=${projectId}&download=true&downloadType=png`;
+    const qrCodeContent = ctoName;
+    const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrCodeContent)}&ecc=H`;
 
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
@@ -35,7 +39,10 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId
                         body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; padding: 20px; }
                         .container { border: 2px dashed #ccc; padding: 40px; border-radius: 20px; text-align: center; }
                         h1 { margin-bottom: 20px; font-size: 28px; color: #333; }
-                        img { width: 300px; height: 300px; margin: 20px 0; }
+                        .qr-wrapper { position: relative; display: inline-block; }
+                        img.qr { width: 300px; height: 300px; margin: 20px 0; }
+                        .logo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 6px; border-radius: 8px; border: 1px solid #eee; display: ${logo ? 'block' : 'none'}; }
+                        .logo-overlay img { width: 50px; height: 50px; object-fit: contain; }
                         p { color: #666; font-size: 16px; margin-top: 10px; }
                         .footer { margin-top: 30px; font-size: 12px; color: #999; }
                     </style>
@@ -43,7 +50,14 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId
                 <body>
                     <div class="container">
                         <h1>${t('cto_label')}: ${ctoName}</h1>
-                        <img src="${qrCodeApiUrl}" />
+                        <div class="qr-wrapper">
+                            <img src="${qrCodeApiUrl}" class="qr" />
+                            ${logo ? `
+                            <div class="logo-overlay">
+                                <img src="${logo}" />
+                            </div>
+                            ` : ''}
+                        </div>
                         <p>${t('cto_diagram_scan')}</p>
                         <div class="footer">${generatedAt}</div>
                     </div>
@@ -61,13 +75,24 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId
         printWindow.document.close();
     };
 
-    const handleDownload = () => {
-        const link = document.createElement('a');
-        link.href = qrCodeApiUrl;
-        link.download = `qrcode-${ctoName}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleDownload = async () => {
+        if (!qrContainerRef.current) return;
+        
+        try {
+            const canvas = await html2canvas(qrContainerRef.current, {
+                backgroundColor: null,
+                scale: 2, // Better quality
+                useCORS: true
+            });
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `qr-${ctoName}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error generating QR code image:', error);
+        }
     };
 
     return (
@@ -90,12 +115,26 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId
 
                 {/* Content */}
                 <div className="p-8 flex flex-col items-center gap-6">
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 shadow-inner group transition-all hover:bg-white dark:hover:bg-slate-800">
+                    <div 
+                        ref={qrContainerRef}
+                        className="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 shadow-inner group transition-all relative"
+                    >
                         <img 
                             src={qrCodeApiUrl} 
                             alt="QR Code" 
-                            className="w-48 h-48 sm:w-64 sm:h-64 rounded-lg bg-white p-2 shadow-sm"
+                            className="w-48 h-48 sm:w-64 sm:h-64 rounded-lg bg-white p-2"
                         />
+                        {logo && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="bg-white p-1 rounded-lg shadow-md border border-slate-100">
+                                    <img 
+                                        src={logo} 
+                                        alt="Logo" 
+                                        className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-md"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-center">
@@ -123,13 +162,13 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, ctoId
                     </div>
 
                     <a 
-                        href={qrUrl} 
+                        href={diagramUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-[10px] text-slate-400 hover:text-emerald-500 font-medium transition-colors flex items-center gap-1 group"
                     >
                         <ExternalLink className="w-2.5 h-2.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        {t('test_link')}
+                        {t('download_diagram_png')}
                     </a>
                 </div>
             </div>
