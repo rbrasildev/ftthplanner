@@ -137,12 +137,23 @@ import { BackupService } from './services/BackupService';
 app.use('/api/backups', backupRoutes);
 
 // Catch-all for SPA
+app.get(['/reset-password', '/login', '/register'], (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 app.get('*', (req, res, next) => {
     // If it's an API route that somehow reached here, let it 404
     if (req.url.startsWith('/api')) {
         return next();
     }
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    
+    const indexPath = path.join(frontendPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            logger.error(`Error sending index.html: ${err.message}`);
+            res.status(404).send('Not Found');
+        }
+    });
 });
 
 // Error Handler - DEVE SER O ÚLTIMO

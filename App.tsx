@@ -199,14 +199,16 @@ export default function App() {
 
     // Initial Route Check for Password Reset
     useEffect(() => {
-        if (window.location.pathname === '/reset-password') {
+        const params = new URLSearchParams(window.location.search);
+        const isResetPath = window.location.pathname === '/reset-password';
+        const hasResetToken = params.has('token');
+
+        if (isResetPath || (hasResetToken && !user)) {
             setAuthView('reset-password');
         }
 
         // --- DEEP LINK / QR CODE HANDLER ---
         const path = window.location.pathname;
-        const search = window.location.search;
-        const params = new URLSearchParams(search);
 
         if (path.startsWith('/cto/')) {
             const ctoId = path.split('/')[2];
