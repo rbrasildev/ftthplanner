@@ -318,7 +318,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
             }
         });
 
-        const resetUrl = `${process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br'}/reset-password?token=${token}`;
+        const baseUrl = (process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
+        const resetUrl = `${baseUrl}/?token=${token}`;
 
         logger.info(`[ForgotPassword] Sending reset email to ${email}`);
 
