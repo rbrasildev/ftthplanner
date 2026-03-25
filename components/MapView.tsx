@@ -1203,14 +1203,6 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <BoundsUpdater setBounds={setMapBoundsState} setZoom={setCurrentZoom} />
 
-                <CustomersLayer
-                    customers={allCustomers}
-                    onCustomerClick={handleCustomerClick}
-                    selectedId={selectedCustomer && (selectedCustomer as any).id}
-                    visible={isCustomersVisible}
-                    mapZoom={currentZoom}
-                    onContextMenu={handleCustomerContextMenu}
-                />
                 <DropsLayer
                     customers={allCustomers}
                     visible={isCustomersVisible}
@@ -1383,6 +1375,14 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onContextMenu={handleNodeContextMenu}
                             />
                         ))}
+                        <CustomersLayer
+                            customers={allCustomers}
+                            onCustomerClick={handleCustomerClick}
+                            selectedId={selectedCustomer && (selectedCustomer as any).id}
+                            visible={isCustomersVisible}
+                            mapZoom={currentZoom}
+                            onContextMenu={handleCustomerContextMenu}
+                        />
                     </MarkerClusterGroup>
                 ) : (
                     <>
@@ -1450,6 +1450,14 @@ export const MapView: React.FC<MapViewProps> = ({
                                 onContextMenu={handleNodeContextMenu}
                             />
                         ))}
+                        <CustomersLayer
+                            customers={allCustomers}
+                            onCustomerClick={handleCustomerClick}
+                            selectedId={selectedCustomer && (selectedCustomer as any).id}
+                            visible={isCustomersVisible}
+                            mapZoom={currentZoom}
+                            onContextMenu={handleCustomerContextMenu}
+                        />
                     </>
                 )}
 
