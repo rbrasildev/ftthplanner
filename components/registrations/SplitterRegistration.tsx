@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
 
-export const SplitterRegistration: React.FC = () => {
+interface SplitterRegistrationProps {
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
     const [splitters, setSplitters] = useState<SplitterCatalogItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -12,6 +16,7 @@ export const SplitterRegistration: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<SplitterCatalogItem | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -21,7 +26,7 @@ export const SplitterRegistration: React.FC = () => {
         inputs: 1,
         outputs: 8,
         connectorType: 'Unconnectorized',
-        allowCustomConnections: true,
+        allowCustomConnections: false,
         attenuation: '', // We will parse this to JSON if needed, or store as string in JSON
         port1: '', // New field for Unbalanced Port 1
         port2: '', // New field for Unbalanced Port 2
@@ -121,7 +126,7 @@ export const SplitterRegistration: React.FC = () => {
                 inputs: 1,
                 outputs: 8,
                 connectorType: 'Unconnectorized',
-                allowCustomConnections: true,
+                allowCustomConnections: false,
                 attenuation: '',
                 port1: '',
                 port2: '',
@@ -132,6 +137,7 @@ export const SplitterRegistration: React.FC = () => {
     };
 
     const handleSave = async () => {
+        setSaving(true);
         try {
             // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
             let attenuationValue: any = formData.attenuation;
@@ -172,11 +178,16 @@ export const SplitterRegistration: React.FC = () => {
             } else {
                 await createSplitter(payload);
             }
+            if (showToast) {
+                showToast(t('toast_applied_success'), 'success');
+            }
             setIsModalOpen(false);
             loadSplitters();
         } catch (error) {
             console.error("Failed to save splitter", error);
             alert(t('error_saving_splitter'));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -470,9 +481,10 @@ export const SplitterRegistration: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
+                                disabled={saving}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
                             >
-                                <Save className="w-4 h-4" />
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 {t('save')}
                             </button>
                         </div>

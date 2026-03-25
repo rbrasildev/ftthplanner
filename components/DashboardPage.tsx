@@ -713,7 +713,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* --- SPLITTER REGISTRATION --- */}
         {currentView === 'reg_splitter' && (
-          <SplitterRegistration />
+          <SplitterRegistration showToast={showToast} />
         )}
 
         {/* --- CABLE REGISTRATION --- */}

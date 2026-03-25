@@ -33,8 +33,8 @@ export const createSplitter = async (req: Request, res: Response) => {
                 mode,
                 inputs: Number(inputs),
                 outputs: Number(outputs),
-                connectorType,
-                allowCustomConnections: allowCustomConnections !== undefined ? allowCustomConnections : true,
+                connectorType: connectorType || 'Unconnectorized',
+                allowCustomConnections: allowCustomConnections !== undefined ? allowCustomConnections : false,
                 attenuation: attenuation || {},
                 description
             }
@@ -71,6 +71,45 @@ export const updateSplitter = async (req: Request, res: Response) => {
                 description
             }
         });
+
+        // Propagate changes to existing splitters in CTOs
+        try {
+            const ctos = await prisma.cto.findMany({
+                where: { companyId: user.companyId, deletedAt: null }
+            });
+
+            for (const cto of ctos) {
+                let splitters = cto.splitters as any[];
+                if (!Array.isArray(splitters)) continue;
+
+                let changed = false;
+                const updatedSplitters = splitters.map(s => {
+                    // Match by catalogId (preferred) or by type/name fallback (for existing objects)
+                    const isMatch = s.catalogId === id || (!s.catalogId && s.type === exists.name);
+
+                    if (isMatch) {
+                        changed = true;
+                        return {
+                            ...s,
+                            catalogId: id, // Ensure it's now linked for future updates
+                            type: name,    // Update model name if changed
+                            connectorType: connectorType,
+                            allowCustomConnections: allowCustomConnections
+                        };
+                    }
+                    return s;
+                });
+
+                if (changed) {
+                    await prisma.cto.update({
+                        where: { id: cto.id },
+                        data: { splitters: updatedSplitters }
+                    });
+                }
+            }
+        } catch (propError) {
+            logger.error(`[CatalogController] Error propagating splitter changes: ${propError}`);
+        }
 
         res.json(updatedSplitter);
     } catch (error) {
@@ -175,6 +214,25 @@ export const updateCable = async (req: Request, res: Response) => {
             }
         });
 
+        // Propagate color changes to existing cables
+        try {
+            if (deployedSpec?.color) {
+                await prisma.cable.updateMany({
+                    where: { catalogId: id, companyId: user.companyId, status: 'DEPLOYED', deletedAt: null },
+                    data: { color: deployedSpec.color }
+                });
+            }
+            if (plannedSpec?.color) {
+                await prisma.cable.updateMany({
+                    where: { catalogId: id, companyId: user.companyId, status: 'PLANNED', deletedAt: null },
+                    data: { color: plannedSpec.color }
+                });
+            }
+        } catch (propError) {
+            logger.error(`[CatalogController] Error propagating cable color: ${propError}`);
+            // Non-blocking error
+        }
+
         res.json(updatedCable);
     } catch (error) {
         console.error("Error updating cable:", error);
@@ -262,6 +320,21 @@ export const updateBox = async (req: Request, res: Response) => {
                 description
             }
         });
+
+        // Propagate changes to existing CTOs (color, type, reserveLoopLength)
+        try {
+            await prisma.cto.updateMany({
+                where: { catalogId: id, companyId: user.companyId, deletedAt: null },
+                data: { 
+                    color: color || '#64748b',
+                    type: type || 'CTO',
+                    reserveLoopLength: reserveLoopLength ? Number(reserveLoopLength) : null
+                }
+            });
+        } catch (propError) {
+            logger.error(`[CatalogController] Error propagating box changes: ${propError}`);
+            // Non-blocking error
+        }
 
         res.json(updatedBox);
     } catch (error) {

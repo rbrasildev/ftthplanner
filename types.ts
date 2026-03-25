@@ -48,6 +48,7 @@ export interface Splitter {
   id: string;
   name: string;
   type: string;
+  catalogId?: string; // Link to CatalogSplitter for propagation
   inputPortId: string;
   outputPortIds: string[];
   connectorType?: string; // 'Connectorized' | 'Unconnectorized'

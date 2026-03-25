@@ -187,8 +187,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     if (onContextMenu) onContextMenu(e, splitter.id);
                                 }}
                                 title={customerName
-                                    ? (t('customer_port_tooltip') || 'Cliente: {name}').replace('{name}', customerName)
-                                    : (t('port_label') || 'Porta {number}').replace('{number}', (idx + 1).toString())
+                                    ? t('customer_port_tooltip', { name: customerName })
+                                    : t('port_label', { number: idx + 1 })
                                 }
                                 className={`
                                 w-2.5 h-2.5 border cursor-pointer pointer-events-auto

@@ -2754,6 +2754,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             id,
             name: `${localCTO.splitters.length + 1}`,
             type: catalogItem.name,
+            catalogId: catalogItem.id,
             inputPortId: `${id}-in`,
             outputPortIds: outputIds,
             connectorType: catalogItem.connectorType,

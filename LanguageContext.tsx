@@ -417,6 +417,7 @@ const translations = {
     'otdr_traversing_pole': 'Traversing pole {name}...',
 
     // Common
+    'port_label': 'Port {number}',
     'save': 'Save',
     'cancel': 'Cancel',
     'delete': 'Delete',
@@ -1875,6 +1876,7 @@ const translations = {
     'column_name': 'Coluna',
     'tray': 'Bandeja',
     'close_btn': 'Fechar',
+    'port_label': 'Porta {number}',
     'save': 'Salvar',
     'cancel': 'Cancelar',
     'edit': 'Editar',

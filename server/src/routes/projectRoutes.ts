@@ -8,13 +8,15 @@ import {
     syncProject,
     updateProject,
     updateCTO,
-    updatePOP
+    updatePOP,
+    searchCTO
 } from '../controllers/projectController';
 
 const router = Router();
 
 router.use(authenticateToken);
 
+router.get('/ctos/search', searchCTO);
 router.get('/', getProjects);
 router.post('/', requireAdminOrOwner, createProject);
 router.get('/:id', getProject);

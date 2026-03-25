@@ -1041,3 +1041,36 @@ export const updatePOP = async (req: Request, res: Response) => {
     }
 };
 
+export const searchCTO = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    if (!user || !user.companyId) return res.status(401).send();
+
+    const name = (req.query.name as string || '').trim();
+    if (!name) return res.status(400).json({ error: 'Name query parameter is required' });
+
+    try {
+        const cto = await prisma.cto.findFirst({
+            where: {
+                companyId: user.companyId,
+                name: { equals: name, mode: 'insensitive' },
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                name: true,
+                projectId: true,
+                status: true,
+                lat: true,
+                lng: true,
+            },
+        });
+
+        if (!cto) return res.status(404).json({ error: 'CTO not found' });
+
+        res.json(cto);
+    } catch (error: any) {
+        console.error("Search CTO Error:", error);
+        res.status(500).json({ error: 'Failed to search CTO' });
+    }
+};
+
