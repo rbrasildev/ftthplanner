@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useMap } from 'react-leaflet';
 import * as d3 from 'd3';
 import L from 'leaflet';
@@ -40,8 +40,18 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     const svgRef = useRef<SVGSVGElement | null>(null);
     const gRef = useRef<SVGGElement | null>(null);
 
+    // Stable refs for callbacks to avoid re-running the main useEffect on callback changes
+    const onClickRef = useRef(onClick);
+    const onDoubleClickRef = useRef(onDoubleClick);
+    const onContextMenuRef = useRef(onContextMenu);
+    const modeRef = useRef(mode);
+    useEffect(() => { onClickRef.current = onClick; }, [onClick]);
+    useEffect(() => { onDoubleClickRef.current = onDoubleClick; }, [onDoubleClick]);
+    useEffect(() => { onContextMenuRef.current = onContextMenu; }, [onContextMenu]);
+    useEffect(() => { modeRef.current = mode; }, [mode]);
+
     // Cache for simplified geometries to avoid re-calculating on every render
-    // Key: cableId-zoomLevelOrThreshold
+    // Key: cableId-zoomBucket
     const geometryCache = useRef<Map<string, any[]>>(new Map());
 
     // Effect: Lifecycle (Create/Destroy SVG)
@@ -76,25 +86,22 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     }, [map, visible]);
 
     // Helper: Geometry Simplification (Simple Point Reduction)
-    const getRenderCoordinates = (cable: CableData) => {
-        const currentZoom = map.getZoom(); // Use direct map zoom for immediate responsiveness
-
+    const getRenderCoordinates = (cable: CableData, currentZoom: number) => {
         // Full detail if zoomed in
         if (currentZoom >= LOD_SIMPLIFY_THRESHOLD_ZOOM) {
             return cable.coordinates;
         }
 
-        const cacheKey = `${cable.id}-lowzoom`;
-        if (geometryCache.current.has(cacheKey)) {
-            return geometryCache.current.get(cacheKey);
-        }
-
-        // Simplify: Keep first, last, and every Nth point
-        // Heuristic: For very low zoom, skip many more points to reduce CPU/GPU load.
+        // Bucket zoom into step ranges so cache doesn't thrash
         let step = 1;
         if (currentZoom < 10) step = 15;
         else if (currentZoom < 12) step = 8;
         else if (currentZoom < 14) step = 3;
+
+        const cacheKey = `${cable.id}-step${step}`;
+        if (geometryCache.current.has(cacheKey)) {
+            return geometryCache.current.get(cacheKey);
+        }
 
         const coords = cable.coordinates;
         if (coords.length <= 2 || step === 1) return coords;
@@ -146,13 +153,12 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
 
             // Helper to get projected points with clipping
             const getProjectedPoints = (d: CableData) => {
-                const coords = getRenderCoordinates(d);
+                const coords = getRenderCoordinates(d, currentZoom);
                 if (!coords || coords.length < 2) return null;
 
                 let points = coords.map(c => projectPoint(c.lat, c.lng));
 
                 // Smart Clipping: Shorten line slightly if connected to a Box (CTO/POP)
-                // This creates the "plugged in" look without overlapping the marker's center.
                 const radius = 10; // Box radius in px
 
                 // Start point clipping
@@ -187,7 +193,6 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             };
 
             // 3. Data Join - Visual Paths
-            // We separate Visuals (Stroke) from Interaction (Hit Area) for layering
 
             // --- VISUAL LAYER ---
             const paths = g.selectAll<SVGPathElement, CableData>('path.cable-path')
@@ -204,16 +209,11 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 .attr('pointer-events', 'none');
 
             // UPDATE + ENTER (Merge)
-            // Optimize: Split geometry updates from style updates if possible, 
-            // but D3 merge chains them. We trust D3 is fast enough for 1000s nodes if attrs are minimal.
-
             pathsEnter.merge(paths)
-                // Geometry - Re-calculate based on LOD + Smart Clipping
                 .attr('d', (d: CableData) => {
                     const points = getProjectedPoints(d);
                     return points ? localPathGenerator(points) : null;
                 })
-                // Styling - Dynamic
                 .attr('stroke', (d: any) => {
                     if (litCableIds.has(d.id)) return '#ef4444';
                     if (highlightedCableId === d.id) return '#22c55e';
@@ -227,14 +227,13 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     if (isLit) return currentZoom < 14 ? 2.5 : 4;
                     if (isHigh) return currentZoom < 14 ? 3 : 5;
 
-                    // More aggressive thinning to match street lines
                     if (currentZoom < 12) return 1;
                     if (currentZoom < 14) return 1.5;
                     if (currentZoom < 16) return 2;
-                    return 2.5; // New thinner standard for better elegance
+                    return 2.5;
                 })
                 .attr('stroke-dasharray', (d: any) => {
-                    if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null; // Simplify rendering
+                    if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null;
                     if (d.status === 'NOT_DEPLOYED') return '5, 5';
                     return null;
                 })
@@ -243,100 +242,85 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     return 0.8;
                 });
 
-            // --- CLEANUP ---
-            // Remove any old technical reserve labels that might be orphan (from previous version)
-            g.selectAll('text.cable-label:not(.cable-label-group text)').remove();
-
-            // --- LABEL LAYER (Technical Reserve) ---
-            // Disabled in favor of interactive TechnicalReserveMarker in MapView.tsx
-            g.selectAll('g.cable-label-group').remove();
-            /*
-            const labels = g.selectAll<SVGGElement, CableData>('g.cable-label-group')
-                .data(cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)), (d: any) => d.id);
-            ...
-            */
-
             // --- HIT AREA LAYER (Transparent, wider) ---
             const hitPaths = g.selectAll<SVGPathElement, CableData>('path.cable-hit')
                 .data(cables, (d: any) => d.id);
 
             hitPaths.exit().remove();
 
+            // ENTER: Create new hit paths with event handlers (bound via refs for stability)
             const hitPathsEnter = hitPaths.enter().append('path')
                 .attr('class', 'cable-hit')
                 .attr('fill', 'none')
-                .attr('stroke', 'rgba(0,0,0,0)') // Fully transparent
-                .attr('stroke-width', Math.max(10, 20 - (18 - currentZoom) * 2)) // Scale hit area with zoom
+                .attr('stroke', 'rgba(0,0,0,0)')
                 .attr('stroke-linecap', 'round')
                 .style('pointer-events', 'auto')
                 .style('cursor', 'pointer')
-                .on("mouseover", function () { d3.select(this).style("cursor", "pointer"); });
-
-            // Attach Events only on Enter (or re-attach if handlers change - which they might via closure)
-            // Better to re-attach merge to ensure closure freshness? 
-            // Yes, overhead is low for event binding.
-            hitPathsEnter.merge(hitPaths)
-                .attr('d', (d: CableData) => {
-                    const points = getProjectedPoints(d);
-                    return points ? localPathGenerator(points) : null;
-                })
                 .on("dblclick", (event, d: any) => {
-                    if (onDoubleClick) {
+                    if (onDoubleClickRef.current) {
                         const latlng = map.mouseEventToLatLng(event);
                         const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
-                        onDoubleClick(leafletEvent, d);
+                        onDoubleClickRef.current(leafletEvent, d);
                         L.DomEvent.stopPropagation(event);
                     }
                 })
                 .on("click", (event, d) => {
                     const latlng = map.mouseEventToLatLng(event);
                     const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
-                    onClick(leafletEvent, d);
+                    onClickRef.current(leafletEvent, d);
 
-                    const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
-                    if (mode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(event);
+                    const currentMode = modeRef.current || '';
+                    const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(currentMode);
+                    if (currentMode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(event);
                 })
                 .on("contextmenu", (event, d) => {
-                    // Prevent default browser context menu
                     event.preventDefault();
-                    if (onContextMenu) {
+                    if (onContextMenuRef.current) {
                         const latlng = map.mouseEventToLatLng(event);
                         const leafletEvent = {
                             originalEvent: event,
                             latlng: latlng,
                             target: { getLatLng: () => latlng },
-                            // Add raw mouse coordinates for menu positioning
                             containerPoint: map.mouseEventToContainerPoint(event)
                         };
-                        onContextMenu(leafletEvent, d);
-                        if (mode !== 'ruler') L.DomEvent.stopPropagation(event);
+                        onContextMenuRef.current(leafletEvent, d);
+                        if (modeRef.current !== 'ruler') L.DomEvent.stopPropagation(event);
                     }
                 });
+
+            // UPDATE only: geometry + hit area width (no re-binding events)
+            hitPathsEnter.merge(hitPaths)
+                .attr('d', (d: CableData) => {
+                    const points = getProjectedPoints(d);
+                    return points ? localPathGenerator(points) : null;
+                })
+                .attr('stroke-width', Math.max(10, 20 - (18 - currentZoom) * 2));
         };
 
         // Initial Draw
         update();
 
-        // Handle Map Moves (Zoom/Pan)
-        // Optimization: Use 'viewreset' for hard resets, 'move' for pans
-        // D3 with Leaflet usually requires full re-project on zoom. Pan could be transform-only if SVGs were massive content,
-        // but here we project relative to top-left.
+        // Deduplicated map event: moveend fires after both pan and zoom
+        // Use a single listener to avoid double-work
+        let updateScheduled = false;
         const handleUpdate = () => {
-            update();
+            if (updateScheduled) return;
+            updateScheduled = true;
+            requestAnimationFrame(() => {
+                updateScheduled = false;
+                update();
+            });
         };
 
-        map.on('zoomend', handleUpdate);
         map.on('moveend', handleUpdate);
-        // 'viewreset' is sometimes needed for older Leaflet or specific transitions
         map.on('viewreset', handleUpdate);
 
         return () => {
-            map.off('zoomend', handleUpdate);
             map.off('moveend', handleUpdate);
             map.off('viewreset', handleUpdate);
         };
 
-    }, [map, cables, litCableIds, highlightedCableId, visible, onClick, onDoubleClick, mode, showLabels, userRole]);
+    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, showLabels, userRole]);
 
     return null;
 };

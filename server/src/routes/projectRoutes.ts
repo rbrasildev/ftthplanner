@@ -9,7 +9,8 @@ import {
     updateProject,
     updateCTO,
     updatePOP,
-    searchCTO
+    searchCTO,
+    getCTOPower
 } from '../controllers/projectController';
 
 const router = Router();
@@ -23,6 +24,7 @@ router.get('/:id', getProject);
 router.put('/:id', requireAdminOrOwner, updateProject);
 router.delete('/:id', requireAdminOrOwner, deleteProject);
 router.post('/:id/sync', requireAdminOrOwner, syncProject);
+router.get('/:id/ctos/:ctoId/power', getCTOPower);
 router.put('/:id/ctos/:ctoId', requireAdminOrOwner, updateCTO);
 router.put('/:id/pops/:popId', requireAdminOrOwner, updatePOP);
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Customer } from '../../types';
@@ -10,16 +10,11 @@ const iconCache = new Map<string, L.DivIcon>();
 
 const createCustomerIcon = (status: string, isSelected: boolean, connectionStatus?: string | null) => {
     const key = `cust-${status}-${isSelected}-${connectionStatus || 'none'}`;
-    // console.log(`[CustomersLayer] Rendering ${customers.length} customers. Visible: ${visible}, Zoom: ${mapZoom}`);
-
-    // The variables 'visible', 'map', 'mapZoom' are not defined in this scope.
-    // This line will cause a runtime error if uncommented as is.
-    // if (!visible || !map || mapZoom < 14) return null;iconCache.get(key)!;
 
     if (iconCache.has(key)) return iconCache.get(key)!;
 
     let color = status === 'ACTIVE' ? '#22c55e' : (status === 'SUSPENDED' ? '#eab308' : '#ef4444');
-    
+
     // connectionStatus overrides the default status color
     if (connectionStatus === 'online') color = '#22c55e';
     else if (connectionStatus === 'offline') color = '#ef4444';
@@ -54,6 +49,51 @@ const createCustomerIcon = (status: string, isSelected: boolean, connectionStatu
     return icon;
 };
 
+// Individual customer marker - memoized to avoid re-render when parent callbacks change
+const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, onContextMenu }: {
+    customer: Customer;
+    isSelected: boolean;
+    onCustomerClick: (customer: Customer) => void;
+    onContextMenu?: (e: L.LeafletMouseEvent, customer: Customer) => void;
+}) => {
+    const icon = useMemo(() =>
+        createCustomerIcon(customer.status, isSelected, customer.connectionStatus),
+        [customer.status, isSelected, customer.connectionStatus]
+    );
+
+    // Stable event handlers using refs - prevents Marker re-bindeing on parent re-render
+    const onClickRef = useRef(onCustomerClick);
+    const onCtxRef = useRef(onContextMenu);
+    useEffect(() => { onClickRef.current = onCustomerClick; }, [onCustomerClick]);
+    useEffect(() => { onCtxRef.current = onContextMenu; }, [onContextMenu]);
+
+    const eventHandlers = useMemo(() => ({
+        click: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            onClickRef.current(customer);
+        },
+        contextmenu: (e: any) => {
+            if (onCtxRef.current) {
+                L.DomEvent.stopPropagation(e);
+                onCtxRef.current(e, customer);
+            }
+        }
+    }), [customer]);
+
+    return (
+        <Marker
+            position={[customer.lat, customer.lng]}
+            icon={icon}
+            eventHandlers={eventHandlers}
+        >
+            <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
+                <div className="font-bold text-xs">{customer.name}</div>
+                {customer.address && <div className="text-[10px] opacity-80 max-w-[150px] truncate">{customer.address}</div>}
+            </Tooltip>
+        </Marker>
+    );
+});
+
 interface CustomersLayerProps {
     customers: Customer[];
     selectedId?: string | null;
@@ -64,39 +104,19 @@ interface CustomersLayerProps {
 }
 
 export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ customers, selectedId, onCustomerClick, visible, mapZoom, onContextMenu }) => {
-
-    // Debug: Force visible if zoom is close enough, just to be sure
     if (!visible) return null;
-    if (mapZoom < 14) {
-        // console.log("[CustomersLayer] Hidden due to zoom level");
-        return null;
-    }
+    if (mapZoom < 14) return null;
 
     return (
         <>
             {customers.map(customer => (
-                <Marker
+                <CustomerMarkerItem
                     key={customer.id}
-                    position={[customer.lat, customer.lng]}
-                    icon={createCustomerIcon(customer.status, selectedId === customer.id, customer.connectionStatus)}
-                    eventHandlers={{
-                        click: (e) => {
-                            L.DomEvent.stopPropagation(e);
-                            onCustomerClick(customer);
-                        },
-                        contextmenu: (e) => {
-                            if (onContextMenu) {
-                                L.DomEvent.stopPropagation(e);
-                                onContextMenu(e, customer);
-                            }
-                        }
-                    }}
-                >
-                    <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
-                        <div className="font-bold text-xs">{customer.name}</div>
-                        {customer.address && <div className="text-[10px] opacity-80 max-w-[150px] truncate">{customer.address}</div>}
-                    </Tooltip>
-                </Marker>
+                    customer={customer}
+                    isSelected={selectedId === customer.id}
+                    onCustomerClick={onCustomerClick}
+                    onContextMenu={onContextMenu}
+                />
             ))}
         </>
     );

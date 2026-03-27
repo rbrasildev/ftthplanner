@@ -957,7 +957,93 @@ export const MapView: React.FC<MapViewProps> = ({
         }
     }, [mode, onUpdateCableGeometry]);
 
+    // Stable callback for CTO click that handles drop drawing intercept
+    // This prevents creating a new function per CTO in the JSX .map()
+    const handleCTONodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        if (drawingCustomerDrop && type === 'CTO') {
+            handleConnectToCTO(id);
+        } else {
+            onNodeClick(id, type);
+        }
+    }, [drawingCustomerDrop, handleConnectToCTO, onNodeClick]);
 
+    // Stable callback for MapEvents onMapClick - avoids inline closure recreation
+    const handleMapClickInternal = useCallback((lat: number, lng: number) => {
+        setMapContextMenu(null);
+        if (mode === 'ruler') {
+            onRulerPointsChange([...rulerPoints, { lat, lng }]);
+        } else if (repositioningCustomer) {
+            const existingCustomer = allCustomers.find(c => c.id === repositioningCustomer.id);
+            const updates: Partial<Customer> = { lat, lng };
+            if (existingCustomer?.ctoId) {
+                updates.ctoId = existingCustomer.ctoId;
+            }
+            if (existingCustomer && existingCustomer.drop && existingCustomer.drop.coordinates && existingCustomer.drop.coordinates.length > 0) {
+                const newDropCoords = [...existingCustomer.drop.coordinates];
+                newDropCoords[0] = { lat, lng };
+                updates.dropCoordinates = newDropCoords;
+            }
+            updateCustomer(repositioningCustomer.id, updates)
+                .then((updatedCustomer) => {
+                    showToast(t('customer_updated_success') || "Cliente atualizado", 'success');
+                    if (onCustomerSaved) onCustomerSaved(updatedCustomer);
+                })
+                .catch(err => {
+                    console.error("Failed to move customer:", err);
+                    showToast(t('error_save_customer'), 'error');
+                })
+                .finally(() => {
+                    setRepositioningCustomer(null);
+                });
+        } else if (drawingCustomerDrop) {
+            setDrawingCustomerDrop({
+                ...drawingCustomerDrop,
+                points: [...(drawingCustomerDrop.points || []), { lat, lng }]
+            });
+        } else if (mode === 'add_customer') {
+            handleMapClickForCustomer(lat, lng);
+        } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+            onAddPoint(lat, lng);
+        }
+    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t]);
+
+    const handleMapClearSelection = useCallback(() => {
+        setActiveCableId(null);
+        setMapContextMenu(null);
+    }, []);
+
+    const handleUndoDrawingPoint = useCallback(() => {
+        if (mode === 'ruler') {
+            onRulerPointsChange(rulerPoints.slice(0, -1));
+        } else if (onUndoDrawingPoint) {
+            onUndoDrawingPoint();
+        }
+    }, [mode, rulerPoints, onRulerPointsChange, onUndoDrawingPoint]);
+
+    const handleMapContextMenuInternal = useCallback((e: L.LeafletMouseEvent) => {
+        if (drawingCustomerDrop) {
+            setDrawingCustomerDrop(null);
+        }
+        L.DomEvent.preventDefault(e as any);
+        setMapContextMenu(prev => {
+            if (prev) return null; // Toggle: close if already open
+            setContextMenu(null);
+            return {
+                x: e.originalEvent.clientX,
+                y: e.originalEvent.clientY,
+                lat: e.latlng.lat,
+                lng: e.latlng.lng
+            };
+        });
+    }, [drawingCustomerDrop]);
+
+    // Cached ruler dot icon (avoids recreating L.divIcon on every render)
+    const rulerDotIcon = useMemo(() => L.divIcon({
+        className: 'ruler-dot',
+        html: `<div style="width: 10px; height: 10px; background: #ec4899; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [10, 10],
+        iconAnchor: [5, 5]
+    }), []);
 
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve'].includes(mode) ? 'drawing-cursor' : ''}`}>
@@ -1116,87 +1202,11 @@ export const MapView: React.FC<MapViewProps> = ({
                     mode={mode}
                     isRepositioning={!!repositioningCustomer}
                     isDrawingDrop={!!drawingCustomerDrop}
-                    onMapClick={(lat, lng) => {
-                        setMapContextMenu(null); // Close map menu on click
-                        if (mode === 'ruler') {
-                            onRulerPointsChange([...rulerPoints, { lat, lng }]);
-                        } else if (repositioningCustomer) {
-                            // Find the customer to check for existing drop
-                            const existingCustomer = allCustomers.find(c => c.id === repositioningCustomer.id);
-                            const updates: Partial<Customer> = { lat, lng };
-
-                            // Backend requires ctoId to verify/update drop connection
-                            if (existingCustomer?.ctoId) {
-                                updates.ctoId = existingCustomer.ctoId;
-                            }
-
-                            // If customer has a drop, update its first point (Customer side) to the new location
-                            if (existingCustomer && existingCustomer.drop && existingCustomer.drop.coordinates && existingCustomer.drop.coordinates.length > 0) {
-                                const newDropCoords = [...existingCustomer.drop.coordinates];
-                                newDropCoords[0] = { lat, lng };
-                                updates.dropCoordinates = newDropCoords;
-                                console.log("[Reposition] Updates payload:", updates);
-                            }
-
-                            // Handle Repositioning
-                            updateCustomer(repositioningCustomer.id, updates)
-                                .then((updatedCustomer) => {
-                                    showToast(t('customer_updated_success') || "Cliente atualizado", 'success');
-                                    if (onCustomerSaved) onCustomerSaved(updatedCustomer);
-                                })
-                                .catch(err => {
-                                    console.error("Failed to move customer:", err);
-                                    showToast(t('error_save_customer'), 'error');
-                                })
-                                .finally(() => {
-                                    setRepositioningCustomer(null);
-                                });
-                        } else if (drawingCustomerDrop) {
-                            // If we are drawing a drop, clicks add points to it
-                            setDrawingCustomerDrop({
-                                ...drawingCustomerDrop,
-                                points: [...(drawingCustomerDrop.points || []), { lat, lng }]
-                            });
-                        } else if (mode === 'add_customer') {
-                            handleMapClickForCustomer(lat, lng);
-                        } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
-                            onAddPoint(lat, lng);
-                        }
-                    }}
-                    onClearSelection={() => {
-                        setActiveCableId(null);
-                        setMapContextMenu(null);
-                    }}
-                    onUndoDrawingPoint={() => {
-                        if (mode === 'ruler') {
-                            onRulerPointsChange(rulerPoints.slice(0, -1));
-                        } else if (onUndoDrawingPoint) {
-                            onUndoDrawingPoint();
-                        }
-                    }}
-
+                    onMapClick={handleMapClickInternal}
+                    onClearSelection={handleMapClearSelection}
+                    onUndoDrawingPoint={handleUndoDrawingPoint}
                     onMapMoveEnd={onMapMoveEnd}
-                    onContextMenu={(e) => {
-                        if (drawingCustomerDrop) {
-                            // Right click to cancel?
-                            setDrawingCustomerDrop(null);
-                        }
-                        L.DomEvent.preventDefault(e as any);
-
-                        // Toggle behavior: If map menu is already open, close it and return
-                        if (mapContextMenu) {
-                            setMapContextMenu(null);
-                            return;
-                        }
-
-                        setContextMenu(null); // Close other menus
-                        setMapContextMenu({
-                            x: e.originalEvent.clientX,
-                            y: e.originalEvent.clientY,
-                            lat: e.latlng.lat,
-                            lng: e.latlng.lng
-                        });
-                    }}
+                    onContextMenu={handleMapContextMenuInternal}
                 />
 
                 <MapController bounds={mapBounds || null} viewKey={viewKey} center={initialCenter} zoom={initialZoom} />
@@ -1288,12 +1298,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             <Marker
                                 key={`ruler-pt-${idx}`}
                                 position={[p.lat, p.lng]}
-                                icon={L.divIcon({
-                                    className: 'ruler-dot',
-                                    html: `<div style="width: 10px; height: 10px; background: #ec4899; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
-                                    iconSize: [10, 10],
-                                    iconAnchor: [5, 5]
-                                })}
+                                icon={rulerDotIcon}
                             />
                         ))}
                     </>
@@ -1320,13 +1325,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}
-                                onNodeClick={(id, type) => {
-                                    if (drawingCustomerDrop && type === 'CTO') {
-                                        handleConnectToCTO(id);
-                                    } else {
-                                        onNodeClick(id, type);
-                                    }
-                                }}
+                                onNodeClick={handleCTONodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
@@ -1395,13 +1394,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}
-                                onNodeClick={(id, type) => {
-                                    if (drawingCustomerDrop && type === 'CTO') {
-                                        handleConnectToCTO(id);
-                                    } else {
-                                        onNodeClick(id, type);
-                                    }
-                                }}
+                                onNodeClick={handleCTONodeClick}
                                 onMoveNode={onMoveNode || noOp}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}

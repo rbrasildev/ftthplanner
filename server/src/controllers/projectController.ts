@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import logger from '../lib/logger';
+import { traceOpticalPower } from '../services/opticalCalcService';
 
 export const getProjects = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
@@ -671,25 +672,31 @@ export const syncProject = async (req: Request, res: Response) => {
                 if (toUpdate.length > 0) {
                     // Updates still need to be individual in Prisma for now, but we only do them for CHANGED items
                     for (const c of toUpdate as any[]) {
+                        // Only include fields that were actually sent to avoid overwriting diagram data
+                        const data: any = {
+                            name: c.name,
+                            status: c.status,
+                            lat: c.coordinates?.lat ?? c.lat,
+                            lng: c.coordinates?.lng ?? c.lng,
+                            clientCount: c.clientCount || 0,
+                            catalogId: c.catalogId || null,
+                            type: c.type,
+                            color: c.color,
+                            reserveLoopLength: c.reserveLoopLength,
+                            poleId: c.poleId || null
+                        };
+                        // Only overwrite diagram fields if explicitly provided (not undefined)
+                        if (c.splitters !== undefined) data.splitters = c.splitters;
+                        if (c.fusions !== undefined) data.fusions = c.fusions;
+                        if (c.connections !== undefined) data.connections = c.connections;
+                        if (c.inputCableIds !== undefined) data.inputCableIds = c.inputCableIds;
+                        if (c.layout !== undefined) data.layout = c.layout;
+                        if (c.notes !== undefined) data.notes = c.notes;
+                        if (c.viewState !== undefined) data.viewState = c.viewState;
+
                         await tx.cto.update({
                             where: { id: c.id },
-                            data: {
-                                name: c.name,
-                                status: c.status,
-                                lat: c.coordinates?.lat ?? c.lat,
-                                lng: c.coordinates?.lng ?? c.lng,
-                                splitters: c.splitters || [],
-                                fusions: c.fusions || [],
-                                connections: c.connections || [],
-                                inputCableIds: c.inputCableIds || [],
-                                layout: c.layout || {},
-                                clientCount: c.clientCount || 0,
-                                catalogId: c.catalogId || null,
-                                type: c.type,
-                                color: c.color,
-                                reserveLoopLength: c.reserveLoopLength,
-                                poleId: c.poleId || null
-                            }
+                            data,
                         });
                     }
                 }
@@ -750,24 +757,25 @@ export const syncProject = async (req: Request, res: Response) => {
                 if (toDelete.length > 0) await tx.pop.deleteMany({ where: { id: { in: toDelete } } });
                 if (toCreate.length > 0) await tx.pop.createMany({ data: toCreate });
                 for (const p of toUpdate as any[]) {
-                    await tx.pop.update({
-                        where: { id: p.id },
-                        data: {
-                            name: p.name,
-                            status: p.status,
-                            lat: p.coordinates?.lat ?? p.lat,
-                            lng: p.coordinates?.lng ?? p.lng,
-                            olts: p.olts || [],
-                            dios: p.dios || [],
-                            fusions: p.fusions || [],
-                            connections: p.connections || [],
-                            inputCableIds: p.inputCableIds || [],
-                            layout: p.layout || {},
-                            color: p.color,
-                            size: p.size,
-                            poleId: p.poleId || null
-                        }
-                    });
+                    const data: any = {
+                        name: p.name,
+                        status: p.status,
+                        lat: p.coordinates?.lat ?? p.lat,
+                        lng: p.coordinates?.lng ?? p.lng,
+                        color: p.color,
+                        size: p.size,
+                        poleId: p.poleId || null
+                    };
+                    if (p.olts !== undefined) data.olts = p.olts;
+                    if (p.dios !== undefined) data.dios = p.dios;
+                    if (p.fusions !== undefined) data.fusions = p.fusions;
+                    if (p.connections !== undefined) data.connections = p.connections;
+                    if (p.inputCableIds !== undefined) data.inputCableIds = p.inputCableIds;
+                    if (p.layout !== undefined) data.layout = p.layout;
+                    if (p.notes !== undefined) data.notes = p.notes;
+                    if (p.patchingLayout !== undefined) data.patchingLayout = p.patchingLayout;
+
+                    await tx.pop.update({ where: { id: p.id }, data });
                 }
                 console.log(`[Sync Diff] POPs: ${toCreate.length} created, ${toUpdate.length} updated, ${toDelete.length} deleted.`);
             }
@@ -1038,6 +1046,99 @@ export const updatePOP = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error("Update POP Error:", error);
         res.status(500).json({ error: 'Failed to update POP', details: error.message || 'Unknown error' });
+    }
+};
+
+export const getCTOPower = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id, ctoId } = req.params;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        // Load project with full network
+        const project = await prisma.project.findFirst({
+            where: { id, companyId: user.companyId, deletedAt: null },
+            include: {
+                ctos: { where: { deletedAt: null } },
+                pops: { where: { deletedAt: null } },
+                cables: { where: { deletedAt: null } },
+            }
+        });
+
+        if (!project) return res.status(404).json({ error: 'Project not found' });
+
+        // Load catalogs for this company
+        const [catSplitters, catCables, catFusions, catOlts] = await Promise.all([
+            prisma.catalogSplitter.findMany({ where: { companyId: user.companyId } }),
+            prisma.catalogCable.findMany({ where: { companyId: user.companyId } }),
+            prisma.catalogFusion.findMany({ where: { companyId: user.companyId } }),
+            prisma.catalogOLT.findMany({ where: { companyId: user.companyId } }),
+        ]);
+
+        // Build network state
+        const network = {
+            ctos: project.ctos.map((c: any) => ({
+                id: c.id, name: c.name, splitters: c.splitters || [], fusions: c.fusions || [],
+                connections: c.connections || [], inputCableIds: c.inputCableIds || [],
+            })),
+            pops: project.pops.map((p: any) => ({
+                id: p.id, name: p.name, olts: p.olts || [], dios: p.dios || [],
+                fusions: p.fusions || [], connections: p.connections || [], inputCableIds: p.inputCableIds || [],
+            })),
+            cables: project.cables.map((c: any) => ({
+                id: c.id, name: c.name, fiberCount: c.fiberCount,
+                coordinates: c.coordinates || [], fromNodeId: c.fromNodeId, toNodeId: c.toNodeId,
+                catalogId: c.catalogId,
+            })),
+        };
+
+        const catalogs = {
+            splitters: catSplitters.map((s: any) => ({ id: s.id, name: s.name, outputs: s.outputs, attenuation: s.attenuation })),
+            cables: catCables.map((c: any) => ({ id: c.id, name: c.name, attenuation: c.attenuation })),
+            fusions: catFusions.map((f: any) => ({ id: f.id, name: f.name, attenuation: f.attenuation })),
+            olts: catOlts.map((o: any) => ({ id: o.id, name: o.name, outputPower: o.outputPower })),
+        };
+
+        // Find the CTO and trace each splitter
+        const cto = network.ctos.find(c => c.id === ctoId);
+        if (!cto) return res.status(404).json({ error: 'CTO not found' });
+
+        const results = cto.splitters.map((sp: any) => {
+            try {
+                const result = traceOpticalPower(sp.id, ctoId, network, catalogs);
+                return { splitterId: sp.id, splitterName: sp.name, ...result };
+            } catch (e: any) {
+                logger.warn(`[getCTOPower] Trace failed for splitter ${sp.name}: ${e.message}`);
+                return { splitterId: sp.id, splitterName: sp.name, finalPower: null, oltPower: 0, totalLoss: 0, status: 'FAIL', sourceName: 'ERROR', path: [] };
+            }
+        });
+
+        // Find the deepest splitter (lowest power = most loss = service/atendimento splitter)
+        // This is the final power that matters to customers
+        const validResults = results.filter((r: any) => r.finalPower !== null && isFinite(r.finalPower) && r.finalPower > -Infinity);
+        const main = validResults.length > 0
+            ? validResults.reduce((best: any, r: any) => (r.totalLoss > best.totalLoss ? r : best), validResults[0])
+            : (results.length > 0 ? results[0] : null);
+
+        // Sanitize -Infinity for JSON
+        const safePower = (v: any) => (v === null || v === undefined || !isFinite(v)) ? null : v;
+
+        res.json({
+            ctoId,
+            ctoName: cto.name,
+            finalPower: safePower(main?.finalPower),
+            oltPower: main?.oltPower ?? 0,
+            totalLoss: main?.totalLoss ?? 0,
+            status: main?.status ?? 'FAIL',
+            sourceName: main?.sourceName ?? 'NO_SIGNAL',
+            oltDetails: main?.oltDetails ?? null,
+            splitters: results.map((r: any) => ({ ...r, finalPower: safePower(r.finalPower) })),
+        });
+
+    } catch (error: any) {
+        logger.error(`[getCTOPower] Error: ${error.message}`);
+        res.status(500).json({ error: 'Failed to calculate power' });
     }
 };
 
