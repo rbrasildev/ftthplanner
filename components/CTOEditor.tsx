@@ -1832,19 +1832,54 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             return;
         }
 
-        // 4. CONNECTION POINT DRAG (Direct DOM)
+        // 4. CONNECTION POINT DRAG (Direct DOM) with live orthogonal snapping
         if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
-            const { x, y } = screenToCanvas(e.clientX, e.clientY);
+            let { x, y } = screenToCanvas(e.clientX, e.clientY);
+            const modes = toolModesRef.current;
 
-            const pathEl = connectionRefs.current[dragState.connectionId];
-            if (pathEl) {
-                const conn = localCTO.connections.find(c => c.id === dragState.connectionId);
-                if (conn) {
-                    const p1 = getPortCenter(conn.sourceId);
-                    const p2 = getPortCenter(conn.targetId);
-                    if (p1 && p2) {
+            // Grid snap
+            if (modes.isSnapping) {
+                x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+                y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+            }
+
+            // Use ref (not state) to get the latest connections - state may be stale
+            // when a point was just created by handlePathMouseDown
+            const conn = localCTORef.current.connections.find(c => c.id === dragState.connectionId);
+            if (conn) {
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+
+                if (p1 && p2) {
+                    const points = conn.points || [];
+                    // Build full path: [source, ...waypoints, target]
+                    const allPoints = [p1, ...points, p2];
+                    const idx = dragState.pointIndex! + 1; // +1 because source is at index 0
+
+                    // Orthogonal snap: align to the CLOSEST neighbor axis when near
+                    const SNAP_THRESHOLD = GRID_SIZE * 2; // 12px
+                    const prevPt = allPoints[idx - 1];
+                    const nextPt = allPoints[idx + 1];
+
+                    // X-axis snap
+                    const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
+                    const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
+                    if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
+                        x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
+                    }
+
+                    // Y-axis snap
+                    const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
+                    const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
+                    if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
+                        y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                    }
+
+                    // Rebuild path with snapped position
+                    const pathEl = connectionRefs.current[dragState.connectionId];
+                    if (pathEl) {
                         let d = `M ${p1.x} ${p1.y} `;
-                        conn.points?.forEach((p, i) => {
+                        points.forEach((p, i) => {
                             if (i === dragState.pointIndex) {
                                 d += `L ${x} ${y} `;
                             } else {
@@ -1857,7 +1892,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             }
 
-            // Also move the handle circle itself
+            // Move the handle circle to snapped position
             const dotEl = connectionPointRefs.current[`${dragState.connectionId}-${dragState.pointIndex}`];
             if (dotEl) {
                 dotEl.setAttribute('cx', String(x));
@@ -1927,8 +1962,35 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setLocalCTO(updated);
         } else if (dragState?.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
             const raw = screenToCanvas(e.clientX, e.clientY);
-            const x = isSnapping ? Math.round(raw.x / GRID_SIZE) * GRID_SIZE : raw.x;
-            const y = isSnapping ? Math.round(raw.y / GRID_SIZE) * GRID_SIZE : raw.y;
+            let x = isSnapping ? Math.round(raw.x / GRID_SIZE) * GRID_SIZE : raw.x;
+            let y = isSnapping ? Math.round(raw.y / GRID_SIZE) * GRID_SIZE : raw.y;
+
+            // Apply same orthogonal snap as during drag (closest neighbor wins)
+            const conn = localCTORef.current.connections.find(c => c.id === dragState.connectionId);
+            if (conn) {
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+                if (p1 && p2) {
+                    const allPoints = [p1, ...(conn.points || []), p2];
+                    const idx = dragState.pointIndex! + 1;
+                    const SNAP_THRESHOLD = GRID_SIZE * 2;
+                    const prevPt = allPoints[idx - 1];
+                    const nextPt = allPoints[idx + 1];
+
+                    const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
+                    const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
+                    if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
+                        x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
+                    }
+
+                    const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
+                    const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
+                    if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
+                        y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                    }
+                }
+            }
+
             const updated = {
                 ...localCTORef.current,
                 connections: localCTORef.current.connections.map(c => {
