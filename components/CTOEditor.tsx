@@ -3009,17 +3009,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     )}
 
-                    {/* FUSION TOOL BANNER */}
-                    {isFusionToolActive && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-full border border-yellow-600 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none animate-bounce">
-                            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
-                                <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
-                                <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
-                            </svg>
-                            {t('fusion_tool_active')}
-                        </div>
-                    )}
 
                     {/* VFL Info Banner */}
                     {isVflToolActive && (
