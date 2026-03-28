@@ -1896,6 +1896,15 @@ export default function App() {
                     companyLogo={companyLogo}
                     saasLogo={saasConfig?.appLogoUrl}
                     autoDownload={autoDownloadCTO}
+                    onUpdateCableStreetNames={(updates) => {
+                        updateCurrentNetwork(prev => ({
+                            ...prev,
+                            cables: prev.cables.map(c => {
+                                const street = updates.get(c.id);
+                                return street ? { ...c, streetName: street } : c;
+                            })
+                        }));
+                    }}
                 />
             )}
 

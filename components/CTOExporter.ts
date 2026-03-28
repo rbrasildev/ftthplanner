@@ -96,10 +96,13 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
             </clipPath>
         </defs>
         <g transform="translate(${boxX}, 0)" clip-path="url(#${clipId})">
-            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#334155" stroke-width="1.2" />
-            <!-- Centering Fix: Use Center of bundleHeight -->
-            <text x="84" y="${verticalOffset + bundleHeight / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
-            <text x="84" y="${verticalOffset + bundleHeight / 2 + 10}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount} FIBRAS</text>
+            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#1e293b" stroke-width="1" />
+            <!-- Cable Name -->
+            <text x="84" y="${verticalOffset + bundleHeight / 2 - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
+            <!-- Fiber Count -->
+            <text x="84" y="${verticalOffset + bundleHeight / 2 + 10 - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount}F</text>
+            <!-- Street Name -->
+            ${cable.streetName ? `<text x="84" y="${verticalOffset + bundleHeight / 2 + 21}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="500" font-size="7" fill="#64748b" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.streetName.length > 25 ? '155' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.streetName)}</text>` : ''}
         </g>
     `;
 
@@ -340,7 +343,7 @@ const ENG = {
     },
     sizes: {
         headerH: 80,
-        footerH: 140, // Expanded for Legend + Tech Data
+        footerH: 170, // Expanded for Legend + Tech Data + Map
         margin: 40,
         minWidth: 1191, // A3 Landscape
         width: 1191,
@@ -397,28 +400,39 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
     // Background
     content += renderBox(x, y, w, h, ENG.colors.headerBg, ENG.colors.border);
 
-    // 1. System Logo / Name (Left)
+    // Column positions
+    const logoEnd = x + 220;
+    const col2X = logoEnd + 20;
+    const col3X = x + w * 0.52;
+    const col4X = x + w * 0.78;
+
+    // Vertical dividers
+    content += `<line x1="${logoEnd}" y1="${y}" x2="${logoEnd}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+    content += `<line x1="${col3X - 15}" y1="${y}" x2="${col3X - 15}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+    content += `<line x1="${col4X - 15}" y1="${y}" x2="${col4X - 15}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+
+    // 1. Logo (Left)
     if (data.logo) {
-        // Render Image if available (Base64)
-        content += `<image x="${x + 20}" y="${y + 10}" width="160" height="40" href="${data.logo}" preserveAspectRatio="xMinYMid meet" />`;
+        content += `<image x="${x + 20}" y="${y + 15}" width="180" height="50" href="${data.logo}" preserveAspectRatio="xMidYMid meet" />`;
     } else {
-        // Fallback to Text
-        content += renderText(x + 20, y + 35, 'FTTH PLANNER', 18, 'bold', '#0f172a');
+        content += renderText(x + 20, y + 30, 'FTTH PLANNER', 16, 'bold', '#0f172a');
+        content += renderText(x + 20, y + 48, 'DIAGRAMA UNIFILAR', 9, 'normal', ENG.colors.textLabel);
     }
-    // 2. Project Info (Center-Left)
-    const col2X = x + 250;
-    content += renderText(col2X, y + 25, 'PROJETO', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col2X, y + 45, (escapeXML(data.projectName) || 'SEM NOME').toUpperCase(), 14, 'bold', '#0f172a');
 
-    // 3. Box Info (Center-Right)
-    const col3X = x + w * 0.55;
-    content += renderText(col3X, y + 25, 'CAIXA / CTO', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col3X, y + 45, (escapeXML(data.boxName) || '-').toUpperCase(), 14, 'bold', '#0f172a');
+    // 2. Project (Center-Left)
+    content += renderText(col2X, y + 22, 'PROJETO', 8, 'bold', ENG.colors.textLabel);
+    content += renderText(col2X, y + 42, (data.projectName || 'SEM NOME').toUpperCase(), 13, 'bold', '#0f172a');
+    content += renderText(col2X, y + 58, 'DIAGRAMA UNIFILAR', 8, 'normal', ENG.colors.textLabel);
 
-    // 4. Meta Info (Right)
-    const col4X = x + w - 20;
-    content += renderText(col4X, y + 25, 'DATA DE EMISSÃO', 9, 'normal', ENG.colors.textLabel, 'end');
-    content += renderText(col4X, y + 45, data.date, 12, 'bold', '#0f172a', 'end');
+    // 3. CTO (Center-Right)
+    content += renderText(col3X, y + 22, 'CAIXA / CTO', 8, 'bold', ENG.colors.textLabel);
+    content += renderText(col3X, y + 42, (data.boxName || '-').toUpperCase(), 13, 'bold', '#0f172a');
+    content += renderText(col3X, y + 58, `${data.lat}, ${data.lng}`, 7, 'normal', ENG.colors.textLabel);
+
+    // 4. Date & Rev (Right)
+    content += renderText(col4X, y + 22, 'DATA DE EMISSÃO', 8, 'bold', ENG.colors.textLabel);
+    content += renderText(col4X, y + 42, data.date, 12, 'bold', '#0f172a');
+    content += renderText(col4X, y + 58, 'REV. 01', 8, 'normal', ENG.colors.textLabel);
 
     return content;
 };
@@ -461,50 +475,58 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
         content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
     });
 
-    // --- ZONE 2: TECHNICAL DATA (Right) ---
+    // --- ZONE 2: TECHNICAL DATA + MAP (Right) ---
     const infoX = x + LEGEND_W;
+    const MAP_W = 180; // Width reserved for minimap
+    const dataW = INFO_W - MAP_W;
 
-    // Grid Setup
-    const col1X = infoX + 20;
-    const col2X = infoX + (INFO_W / 2);
+    // --- SUB-ZONE: Technical Data (Center) ---
+    const col1X = infoX + 15;
 
     // Row 1: Location
-    const r1y = y + 25;
-    content += renderText(col1X, r1y, 'LOCALIZAÇÃO (LAT/LNG)', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col1X, r1y + 18, `${data.lat}, ${data.lng}`, 11, 'bold', '#0f172a');
-
-    content += renderText(col2X, r1y, 'MUNICÍPIO / UF', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col2X, r1y + 18, 'NÃO INFORMADO', 11, 'bold', '#0f172a'); // Placeholder or from Obs
+    const r1y = y + 22;
+    content += renderText(col1X, r1y, 'LOCALIZAÇÃO', 8, 'bold', ENG.colors.textLabel);
+    content += renderText(col1X, r1y + 16, `${data.lat}, ${data.lng}`, 10, 'bold', '#0f172a');
 
     // Divider
-    content += `<line x1="${infoX}" y1="${y + 60}" x2="${x + w}" y2="${y + 60}" stroke="${ENG.colors.border}" stroke-width="1" stroke-dasharray="2,2" />`;
+    content += `<line x1="${infoX}" y1="${y + 50}" x2="${infoX + dataW}" y2="${y + 50}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
 
-    // Row 2: Tech Specs
-    const r2y = y + 85;
-    content += renderText(col1X, r2y, 'STATUS / NÍVEL', 9, 'normal', ENG.colors.textLabel);
-    content += renderText(col1X, r2y + 18, `${data.status} / ${data.level}`, 11, 'bold', '#0f172a');
+    // Row 2: Status
+    const r2y = y + 62;
+    content += renderText(col1X, r2y, 'STATUS / NÍVEL', 8, 'bold', ENG.colors.textLabel);
+    content += renderText(col1X, r2y + 16, `${data.status} / ${data.level}`, 10, 'bold', '#0f172a');
 
-    content += renderText(col2X, r2y, 'OBSERVAÇÕES', 9, 'normal', ENG.colors.textLabel);
+    // Divider
+    content += `<line x1="${infoX}" y1="${y + 90}" x2="${infoX + dataW}" y2="${y + 90}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
 
-    // Obs wrap
-    const obsLines = breakText(data.obs || '-', 50);
+    // Row 3: Observations
+    const r3y = y + 102;
+    content += renderText(col1X, r3y, 'OBSERVAÇÕES', 8, 'bold', ENG.colors.textLabel);
+    const obsLines = breakText(data.obs || '-', 40);
     obsLines.slice(0, 2).forEach((l, i) => {
-        content += renderText(col2X, r2y + 18 + (i * 12), l, 10, 'normal', '#0f172a');
+        content += renderText(col1X, r3y + 16 + (i * 12), l, 9, 'normal', '#0f172a');
     });
 
-    // --- QR CODE AREA (Right) ---
-    if (data.qrCode) {
-        const qrSize = 65;
-        const qrX = x + w - qrSize - 20;
-        const qrY = y + 20;
-        content += renderText(qrX + qrSize/2, qrY - 5, 'SCANNIEAR UNIFILAR', 7, 'bold', ENG.colors.textLabel, 'middle');
-        content += `<image x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}" href="${data.qrCode}" />`;
+    // --- SUB-ZONE: Minimap (Right Column) ---
+    const rightColX = infoX + dataW;
+    content += `<line x1="${rightColX}" y1="${y}" x2="${rightColX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+
+    if (data.mapImage) {
+        const mapX = rightColX + 5;
+        const mapY = y + 5;
+        const mapW = MAP_W - 10;
+        const mapH = h - 10;
+        content += renderText(mapX + mapW / 2, mapY + 8, 'LOCALIZAÇÃO', 7, 'bold', ENG.colors.textLabel, 'middle');
+        content += `<rect x="${mapX}" y="${mapY + 12}" width="${mapW}" height="${mapH - 12}" fill="#e2e8f0" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+        content += `<image x="${mapX}" y="${mapY + 12}" width="${mapW}" height="${mapH - 12}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
     }
 
-    // --- CARIMBO (Bottom Right Corner) ---
-    // Signature area
-    content += renderText(x + w - 15, y + h - 22, 'PROJETO TÉCNICO EXECUTIVO', 9, 'bold', '#0f172a', 'end');
-    content += renderText(x + w - 15, y + h - 10, 'FTTH PLANNER SYS 1.0', 7, 'normal', '#94a3b8', 'end');
+    // --- CARIMBO (Bottom of data zone) ---
+    const carY = y + h - 30;
+    content += `<line x1="${infoX}" y1="${carY}" x2="${rightColX}" y2="${carY}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+    content += renderText(col1X, carY + 12, 'PROJETO TÉCNICO EXECUTIVO', 8, 'bold', '#0f172a');
+    content += renderText(col1X, carY + 23, 'FTTH PLANNER v1.0', 7, 'normal', '#94a3b8');
+    content += renderText(infoX + dataW - 10, carY + 23, data.date?.split(' ')[0] || '', 7, 'normal', '#94a3b8', 'end');
 
     return content;
 };
@@ -606,7 +628,11 @@ export const generateCTOSVG = (
     // Construct Transform: Move PageCenter, Scale, Move Back DiagramCenter
     const finalTransform = `translate(${pageCenterX}, ${pageContentCenterY}) scale(${scale}) translate(${-diaCenterX}, ${-diaCenterY})`;
 
-    // 5. RENDER FRAME (Header & Footer)
+    // 5. RENDER FRAME (Border, Header & Footer)
+    // Engineering drawing border (double line)
+    svgContent += `<rect x="4" y="4" width="${PAGE_W - 8}" height="${PAGE_H - 8}" fill="none" stroke="${ENG.colors.border}" stroke-width="1.5" />`;
+    svgContent += `<rect x="10" y="10" width="${PAGE_W - 20}" height="${PAGE_H - 20}" fill="none" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+
     if (footerData) {
         svgContent += renderEngineeringHeader(0, 0, PAGE_W, footerData);
         svgContent += renderEngineeringFooter(0, PAGE_H - ENG.sizes.footerH, PAGE_W, footerData);

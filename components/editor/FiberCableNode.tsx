@@ -9,6 +9,7 @@ interface FiberCableNodeProps {
     connections: FiberConnection[];
     litPorts: Set<string>;
     hoveredPortId: string | null;
+    streetName?: string;
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onRotate: (e: React.MouseEvent, id: string) => void;
     onMirror: (e: React.MouseEvent, id: string) => void;
@@ -28,6 +29,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     connections,
     litPorts,
     hoveredPortId,
+    streetName,
     onDragStart,
     onRotate,
     onMirror,
@@ -140,9 +142,14 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         <span className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight line-clamp-2 uppercase select-none pointer-events-none">
                             {cable.name}
                         </span>
-                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-1 uppercase tracking-wider select-none pointer-events-none">
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-0.5 uppercase tracking-wider select-none pointer-events-none">
                             {cable.fiberCount} {t('unit_fibers')}
                         </span>
+                        {(streetName || cable.streetName) && (
+                            <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium mt-1 leading-tight line-clamp-2 select-none pointer-events-none" title={streetName || cable.streetName}>
+                                {streetName || cable.streetName}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

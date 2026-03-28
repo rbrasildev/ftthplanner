@@ -9,7 +9,7 @@ import { FiberCableNode } from './editor/FiberCableNode';
 import { CTOEditorToolbar } from './editor/CTOEditorToolbar';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
-import { generateCTOSVG, exportToPNG, exportToPDF } from './CTOExporter';
+import { generateCTOSVG, exportToPNG } from './CTOExporter';
 import {
     SplitterCatalogItem,
     BoxCatalogItem,
@@ -28,6 +28,7 @@ import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
 import { useCTOEditorState } from '../hooks/useCTOEditorState';
+import { getCableStreetNames } from '../utils/geocodingUtils';
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
     const A = p.x - a.x;
@@ -61,13 +62,12 @@ function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: 
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Helper to preload image for canvas
+// Helper to preload image for canvas (with CORS support)
 const preloadImage = (url: string): Promise<string | null> => {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "Anonymous";
         img.onload = () => {
-            // Draw to canvas to get data URL (bypass potential CORS display issues if tainted, though crossorigin should fix)
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
@@ -78,8 +78,7 @@ const preloadImage = (url: string): Promise<string | null> => {
                     const dataURL = canvas.toDataURL('image/png');
                     resolve(dataURL);
                 } catch (e) {
-                    // Canvas tainted
-                    console.warn("Canvas tainted by map image, skipping map in PDF.");
+                    console.warn("Canvas tainted, skipping image.");
                     resolve(null);
                 }
             } else {
@@ -87,10 +86,80 @@ const preloadImage = (url: string): Promise<string | null> => {
             }
         };
         img.onerror = () => {
-            console.warn("Failed to load map image for PDF.");
+            console.warn("Failed to load image:", url.substring(0, 80));
             resolve(null);
         };
         img.src = url;
+    });
+};
+
+// Generate a static map by stitching OSM tiles (CORS-friendly)
+const generateStaticMap = (lat: number, lng: number, zoom: number, width: number, height: number): Promise<string | null> => {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+
+        // Convert lat/lng to tile coordinates
+        const n = Math.pow(2, zoom);
+        const centerTileX = ((lng + 180) / 360) * n;
+        const centerTileY = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
+
+        const tileSize = 256;
+        const tilesX = Math.ceil(width / tileSize) + 1;
+        const tilesY = Math.ceil(height / tileSize) + 1;
+
+        // Offset within the center tile
+        const offsetX = (centerTileX % 1) * tileSize;
+        const offsetY = (centerTileY % 1) * tileSize;
+
+        const startTileX = Math.floor(centerTileX) - Math.floor(tilesX / 2);
+        const startTileY = Math.floor(centerTileY) - Math.floor(tilesY / 2);
+
+        let loaded = 0;
+        const totalTiles = tilesX * tilesY;
+
+        const drawX = width / 2 - offsetX - (Math.floor(centerTileX) - startTileX) * tileSize;
+        const drawY = height / 2 - offsetY - (Math.floor(centerTileY) - startTileY) * tileSize;
+
+        for (let tx = 0; tx < tilesX; tx++) {
+            for (let ty = 0; ty < tilesY; ty++) {
+                const tileXi = startTileX + tx;
+                const tileYi = startTileY + ty;
+
+                const tileImg = new Image();
+                tileImg.crossOrigin = "Anonymous";
+                tileImg.onload = () => {
+                    ctx.drawImage(tileImg, drawX + tx * tileSize, drawY + ty * tileSize);
+                    loaded++;
+                    if (loaded === totalTiles) {
+                        // Draw center marker
+                        ctx.beginPath();
+                        ctx.arc(width / 2, height / 2, 6, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fill();
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        try {
+                            resolve(canvas.toDataURL('image/png'));
+                        } catch {
+                            resolve(null);
+                        }
+                    }
+                };
+                tileImg.onerror = () => {
+                    loaded++;
+                    if (loaded === totalTiles) {
+                        try { resolve(canvas.toDataURL('image/png')); } catch { resolve(null); }
+                    }
+                };
+                tileImg.src = `https://tile.openstreetmap.org/${zoom}/${tileXi}/${tileYi}.png`;
+            }
+        }
     });
 };
 
@@ -114,6 +183,9 @@ interface CTOEditorProps {
     onHoverCable?: (cableId: string | null) => void;
     onDisconnectCable?: (cableId: string, nodeId: string) => void;
     onSelectNextNode?: (cableId: string) => void;
+
+    // Cable street name persistence
+    onUpdateCableStreetNames?: (updates: Map<string, string>) => void;
 
     // Plan Props for Gatekeeping
     userPlan?: string;
@@ -229,7 +301,7 @@ const ConnectionsLayer = React.memo(({
 
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
-    litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode,
+    litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole,
     projectId, companyLogo, saasLogo,
     autoDownload
@@ -274,6 +346,35 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             getCustomers({ ctoId: cto.id, projectId }).then(setCtoCustomers).catch(console.error);
         }
     }, [cto.id, projectId]);
+
+    // Auto-fetch street names for cables that don't have one yet
+    const cableStreetNamesRef = useRef<Map<string, string>>(new Map());
+
+    useEffect(() => {
+        if (!cto.id || incomingCables.length === 0) return;
+        const cablesWithoutStreet = incomingCables.filter(c => !c.streetName && c.coordinates?.length >= 2);
+        if (cablesWithoutStreet.length === 0) return;
+
+        getCableStreetNames(incomingCables, cto.id).then(streetMap => {
+            if (streetMap.size === 0) return;
+
+            // Store in ref for immediate display
+            cableStreetNamesRef.current = streetMap;
+            forceRender(n => n + 1);
+
+            // Persist to network/database via callback (only new ones)
+            const newStreetNames = new Map<string, string>();
+            streetMap.forEach((name, cableId) => {
+                const cable = incomingCables.find(c => c.id === cableId);
+                if (cable && !cable.streetName) {
+                    newStreetNames.set(cableId, name);
+                }
+            });
+            if (newStreetNames.size > 0 && onUpdateCableStreetNames) {
+                onUpdateCableStreetNames(newStreetNames);
+            }
+        }).catch(err => console.warn('[CTOEditor] Street name fetch failed:', err));
+    }, [cto.id, incomingCables.length]);
 
     // (withDefaults moved to useCTOEditorState hook)
 
@@ -1154,48 +1255,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const lat = localCTO.coordinates.lat;
                 const lng = localCTO.coordinates.lng;
 
-                // PDF uses satellite at z17 with larger size; PNG uses map at z19
-                const mapUrl = type === 'pdf'
-                    ? `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=17&l=sat&size=650,450&pt=${lng},${lat},pm2rdm`
-                    : `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
-
-                const mapBase64 = await preloadImage(mapUrl);
+                // Generate static map from OSM tiles (CORS-friendly, no external API needed)
+                const mapZoom = type === 'pdf' ? 16 : 17;
+                const mapBase64 = await generateStaticMap(lat, lng, mapZoom, 400, 250);
                 if (mapBase64) footerData.mapImage = mapBase64;
 
                 const logoUrlToUse = companyLogo || saasLogo || '/logo.png';
                 const logoBase64 = await preloadImage(logoUrlToUse);
                 if (logoBase64) footerData.logo = logoBase64;
 
-                const qrUrl = `${window.location.origin}/cto/${localCTO.id}?projectId=${projectId}&download=true&downloadType=png`;
-                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
-                const qrBase64 = await preloadImage(qrCodeApiUrl);
-                if (qrBase64) (footerData as any).qrCode = qrBase64;
+                // QR code removed from export
             } catch (e) {
                 console.warn("Could not load static assets for export", e);
             }
 
             const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
             const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
-
-            if (type === 'pdf') {
-                await exportToPDF(svg, `${fileName}.pdf`);
-            } else {
-                await exportToPNG(svg, `${fileName}.png`);
-            }
+            await exportToPNG(svg, `${fileName}.png`);
         } catch (error: any) {
-            console.error(`Export ${type.toUpperCase()} failed`, error);
-            if (type === 'pdf' && error?.message === 'SVG_PARSE_ERROR') {
-                alert(t('export_parser_error'));
-            } else {
-                alert(t(type === 'pdf' ? 'export_pdf_error' : 'export_png_error'));
-            }
+            console.error('Export PNG failed', error);
+            alert(t('export_png_error'));
         } finally {
             setExportingType(null);
         }
     };
 
-    // Convenience wrappers to preserve existing call sites
-    const handleExportPDF = () => handleExport('pdf');
     const handleExportPNG = () => handleExport('png');
 
     // --- OPTICAL POWER CALCULATION HANDLER ---
@@ -2995,6 +3079,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             connections={localCTO.connections}
                                             litPorts={litPorts}
                                             hoveredPortId={hoveredPortId}
+                                            streetName={cableStreetNamesRef.current.get(cable.id)}
                                             onDragStart={handleElementDragStart}
                                             onRotate={handleRotateElement}
                                             onMirror={handleMirrorElement}

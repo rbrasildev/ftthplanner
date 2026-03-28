@@ -176,6 +176,7 @@ export interface CableData {
   technicalReserve?: number; // Comprimento em metros de reserva tÃ©cnica
   reserveLocation?: Coordinates; // LocalizaÃ§Ã£o especÃ­fica para a label de reserva
   showReserveLabel?: boolean; // Toggle individual para mostrar/ocultar a label
+  streetName?: string; // Nome da rua/direção do cabo (reverse geocoded)
 }
 
 
