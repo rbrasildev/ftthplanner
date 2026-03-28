@@ -2129,6 +2129,7 @@ export default function App() {
                 email={userEmail || undefined}
                 currentPlanName={userPlan}
                 currentPlanId={userPlanId || undefined}
+                companyStatus={companyStatus}
             />
 
             <ProjectReportModal

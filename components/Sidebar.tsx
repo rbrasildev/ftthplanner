@@ -397,11 +397,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         {(() => {
                                             const isTrialPlan = userPlanType?.toUpperCase() === 'TRIAL' || userPlan?.toLowerCase().includes('trial') || userPlan?.toLowerCase().includes('teste');
                                             const isFree = userPlan === 'Plano Grátis';
-                                            const shouldShowExp = subscriptionExpiresAt && !isFree && (isTrialPlan || cancelAtPeriodEnd);
+                                            // Show countdown for: trials, cancelled subscriptions, OR any paid plan with expiration (PIX)
+                                            const shouldShowExp = subscriptionExpiresAt && !isFree;
                                             if (!shouldShowExp) return null;
 
                                             const days = Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                                            const isExpiringSoon = days <= 3;
+                                            const isExpiringSoon = days <= 7;
+                                            const isExpired = days === 0;
+
+                                            if (isExpired) {
+                                                return (
+                                                    <p className="text-[9px] font-extrabold uppercase tracking-wide leading-tight mt-0.5 text-rose-500">
+                                                        {t('expired') || 'Expirado'}
+                                                    </p>
+                                                );
+                                            }
 
                                             return (
                                                 <p className={`text-[9px] font-extrabold uppercase tracking-wide leading-tight mt-0.5 ${isExpiringSoon || cancelAtPeriodEnd ? 'text-rose-500' : 'text-amber-500'}`}>

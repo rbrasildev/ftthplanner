@@ -6,7 +6,15 @@
       "Bash(grep -r \"CTOExporter\\\\|CTOData\\\\|CTO_STATUS\" /d/ftthplanner --include=*.tsx --include=*.ts -l)",
       "Bash(find /d/ftthplanner -path */node_modules -prune -o -type f \\\\\\(-name *CTO* -o -name *cto* \\\\\\) -print)",
       "Bash(grep -l \"interface CTOEditorProps\\\\|type CTOEditorProps\" /d/ftthplanner/**/*.ts*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(grep -r \"subscriptionExpiresAt\\\\|expiresAt\" /d/ftthplanner/server/src --include=*.ts)",
+      "Bash(grep -r \"Compartilhar\\\\|upgrade\\\\|Upgrade\" /d/ftthplanner/components --include=*.tsx --include=*.ts)",
+      "Bash(grep -r cancelAtPeriodEnd /d/ftthplanner --include=*.ts --include=*.tsx)",
+      "Bash(mv check-db.ts scripts/)",
+      "Bash(mv check-stripe-metadata.ts scripts/)",
+      "Bash(mv sync_plans.ts scripts/)",
+      "Bash(mv test-stripe.ts scripts/)",
+      "Bash(mv migration.sql scripts/)"
     ]
   }
 }

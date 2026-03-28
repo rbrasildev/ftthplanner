@@ -19,7 +19,8 @@ interface UpgradePlanModalProps {
     isOpen: boolean;
     onClose: () => void;
     currentPlanName?: string;
-    currentPlanId?: string; // NEW
+    currentPlanId?: string;
+    companyStatus?: string;
     limitDetails?: string;
     limitTitle?: string;
 }
@@ -39,7 +40,7 @@ const getPlanIcon = (index: number, name: string) => {
 
 
 
-export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, limitDetails, limitTitle, companyId, email }) => {
+export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, companyStatus, limitDetails, limitTitle, companyId, email }) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true); // Ensure loading is initialized properly
@@ -220,7 +221,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         ) : (
                             <div className="flex flex-wrap justify-center gap-6">
                                 {plans.map((plan) => {
-                                    const isCurrent = (currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase());
+                                    // Allow renewing the same plan if subscription is expired, cancelled, or suspended
+                                    const isExpiredOrCancelled = companyStatus === 'SUSPENDED' || companyStatus === 'CANCELLED';
+                                    const isCurrent = !isExpiredOrCancelled && ((currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase()));
 
                                     // Calculate display price
                                     let displayPrice = plan.price; // Default monthly

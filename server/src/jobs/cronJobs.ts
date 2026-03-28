@@ -45,10 +45,10 @@ export const initCronJobs = () => {
                 console.log(`[Cron] Expired ${expiredInvoices.count} pending invoices.`);
             }
 
-            // 2. Suspend Companies with expired subscriptions
+            // 2. Suspend Companies with expired subscriptions (ACTIVE or CANCELLED)
             const suspendedCompanies = await prisma.company.updateMany({
                 where: {
-                    status: 'ACTIVE',
+                    status: { in: ['ACTIVE', 'CANCELLED'] },
                     subscriptionExpiresAt: { lt: now }
                 },
                 data: {
