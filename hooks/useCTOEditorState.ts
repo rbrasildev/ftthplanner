@@ -207,7 +207,24 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
             if (prev.layout) merged.layout = JSON.parse(JSON.stringify(prev.layout));
             else merged.layout = {};
             if (prev.connections) merged.connections = JSON.parse(JSON.stringify(prev.connections));
-            if (prev.splitters) merged.splitters = JSON.parse(JSON.stringify(prev.splitters));
+            if (prev.splitters) {
+                // Preserve local splitters but merge catalog-level properties from backend
+                // (connectorType, allowCustomConnections, type) so catalog updates propagate
+                const nextSplittersMap = new Map((next.splitters || []).map(s => [s.id, s]));
+                merged.splitters = JSON.parse(JSON.stringify(prev.splitters)).map((s: any) => {
+                    const fromBackend = nextSplittersMap.get(s.id);
+                    if (fromBackend) {
+                        return {
+                            ...s,
+                            connectorType: fromBackend.connectorType,
+                            allowCustomConnections: fromBackend.allowCustomConnections,
+                            type: fromBackend.type,
+                            catalogId: fromBackend.catalogId ?? s.catalogId,
+                        };
+                    }
+                    return s;
+                });
+            }
             if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
             if (prev.viewState) merged.viewState = prev.viewState;
             if (prev.inputCableIds !== undefined) merged.inputCableIds = prev.inputCableIds;
