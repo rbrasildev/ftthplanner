@@ -138,8 +138,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
                                 <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Status</span>
-                                    <span className={`font-bold px-2 py-1 rounded-full text-xs ${isTrial ? 'bg-amber-100 text-amber-700' : isFree ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                        {isTrial ? 'Período de Teste' : isFree ? 'Gratuito' : 'Ativo'}
+                                    <span className={`font-bold px-2 py-1 rounded-full text-xs ${userData.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : isTrial ? 'bg-amber-100 text-amber-700' : isFree ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                        {userData.status === 'CANCELLED' ? 'Cancelado' : isTrial ? 'Período de Teste' : isFree ? 'Gratuito' : 'Ativo'}
                                     </span>
                                 </div>
                             </div>
@@ -154,7 +154,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     {t('upgrade_plan') || 'Fazer Upgrade / Trocar Plano'}
                                 </button>
 
-                                {!isFree && !isTrial && (
+                                {!isFree && !isTrial && userData.status !== 'CANCELLED' && (
                                     <button
                                         onClick={async () => {
                                             if (!confirm('Tem certeza que deseja cancelar sua assinatura ativa? Você manterá o acesso até o fim do período já pago.')) return;
