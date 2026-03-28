@@ -661,31 +661,35 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
         if (!companyId) return res.status(401).json({ error: 'Company not found' });
 
         const company = await prisma.company.findUnique({ where: { id: companyId } });
-        if (!company || !company.mercadopagoSubscriptionId) {
-            return res.status(400).json({ error: 'No active subscription found to cancel.' });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        // If there's a MercadoPago recurring subscription, cancel it remotely
+        if (company.mercadopagoSubscriptionId) {
+            try {
+                await preapproval.update({
+                    id: company.mercadopagoSubscriptionId,
+                    body: { status: 'cancelled' }
+                });
+            } catch (mpError: any) {
+                // Log but don't block - subscription may already be cancelled on MP side
+                logger.warn(`MP cancel failed (may be already cancelled): ${mpError.message}`);
+            }
         }
 
-        // Cancel on Mercado Pago
-        await preapproval.update({
-            id: company.mercadopagoSubscriptionId,
-            body: { status: 'cancelled' }
-        });
-
-        // Update local DB
-        // We might want to keep the plan active until subscriptionExpiresAt
-        // But remove the subscription ID so we don't try to cancel again
+        // Deactivate locally: clear subscription ID, set status to CANCELLED
+        // Keep subscriptionExpiresAt so they finish the paid period
         await prisma.company.update({
             where: { id: companyId },
             data: {
-                mercadopagoSubscriptionId: null
-                // We keep status ACTIVE and subscriptionExpiresAt as is, so they finish the paid period
+                mercadopagoSubscriptionId: null,
+                status: 'CANCELLED'
             }
         });
 
         res.json({ message: 'Subscription cancelled successfully.' });
 
     } catch (error: any) {
-        logger.error(`Mercado Pago Cancel Subscription Error: ${error.message}`);
+        logger.error(`Cancel Subscription Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to cancel subscription', details: error.message });
     }
 };
@@ -699,10 +703,48 @@ export const getInvoiceStatus = async (req: AuthRequest, res: Response) => {
 
         const invoice = await prisma.invoice.findFirst({
             where: { id: id, companyId: companyId },
-            select: { status: true }
+            select: { status: true, mercadopagoPaymentId: true, planId: true, createdAt: true }
         });
 
         if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+        // Fallback: If still PENDING and has a MercadoPago payment ID,
+        // check directly with MercadoPago in case the webhook was missed.
+        // Only check if invoice is older than 30 seconds (avoid hammering MP API on initial polls).
+        if (invoice.status === 'PENDING' && invoice.mercadopagoPaymentId) {
+            const ageMs = Date.now() - new Date(invoice.createdAt).getTime();
+            if (ageMs > 30_000) {
+                try {
+                    const paymentInfo = await payment.get({ id: invoice.mercadopagoPaymentId });
+                    if (paymentInfo.status === 'approved') {
+                        logger.info(`[getInvoiceStatus] Fallback: Payment ${invoice.mercadopagoPaymentId} approved (webhook missed). Activating...`);
+
+                        // Activate subscription
+                        const nextMonth = new Date();
+                        nextMonth.setMonth(nextMonth.getMonth() + 1);
+                        await prisma.company.update({
+                            where: { id: companyId },
+                            data: {
+                                status: 'ACTIVE',
+                                subscriptionExpiresAt: nextMonth,
+                                planId: invoice.planId || undefined
+                            }
+                        });
+
+                        // Mark invoice as PAID
+                        await prisma.invoice.update({
+                            where: { id },
+                            data: { status: 'PAID' }
+                        });
+
+                        return res.json({ status: 'PAID' });
+                    }
+                } catch (mpError) {
+                    // If MP API fails, just return current DB status (don't block the user)
+                    logger.warn(`[getInvoiceStatus] Fallback MP check failed: ${mpError instanceof Error ? mpError.message : String(mpError)}`);
+                }
+            }
+        }
 
         return res.json({ status: invoice.status });
     } catch (error) {

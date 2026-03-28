@@ -212,7 +212,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         if (pixData?.invoiceId && !status) {
             interval = setInterval(async () => {
                 try {
-                    const res = await api.get(`/ payments / invoice / ${pixData.invoiceId}/status`);
+                    const res = await api.get(`/payments/invoice/${pixData.invoiceId}/status`);
                     if (res.data.status === 'PAID') {
                         setStatus({ type: 'success', message: t('mp_pix_success') });
                         clearInterval(interval);
