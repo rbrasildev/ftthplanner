@@ -691,8 +691,7 @@ export const syncProject = async (req: Request, res: Response) => {
                         if (c.connections !== undefined) data.connections = c.connections;
                         if (c.inputCableIds !== undefined) data.inputCableIds = c.inputCableIds;
                         if (c.layout !== undefined) data.layout = c.layout;
-                        if (c.notes !== undefined) data.notes = c.notes;
-                        if (c.viewState !== undefined) data.viewState = c.viewState;
+                        // notes and viewState are frontend-only fields (not in Prisma schema), do not send to DB
 
                         await tx.cto.update({
                             where: { id: c.id },

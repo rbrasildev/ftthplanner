@@ -6,6 +6,7 @@ import { useLanguage } from '../LanguageContext';
 import { CustomSelect } from './common/CustomSelect';
 import { CustomInput } from './common/CustomInput';
 import { FiberCableNode } from './editor/FiberCableNode';
+import { CTOEditorToolbar } from './editor/CTOEditorToolbar';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
 import { generateCTOSVG, exportToPNG, exportToPDF } from './CTOExporter';
@@ -26,6 +27,7 @@ import { QRCodeModal } from './modals/QRCodeModal';
 import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
+import { useCTOEditorState } from '../hooks/useCTOEditorState';
 // Helper function to find distance from point P to segment AB
 function getDistanceFromSegment(p: { x: number, y: number }, a: { x: number, y: number }, b: { x: number, y: number }) {
     const A = p.x - a.x;
@@ -233,6 +235,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     autoDownload
 }) => {
     const { t } = useLanguage();
+
+    // --- CTO STATE MANAGEMENT (extracted hook) ---
+    const {
+        localCTO, setLocalCTO, localCTORef,
+        savingAction,
+        showCloseConfirm, setShowCloseConfirm,
+        handleApply: _handleApply,
+        handleSaveAndClose: _handleSaveAndClose,
+        handleCloseRequest,
+    } = useCTOEditorState({ cto, incomingCables, onSave, onClose });
+
     const [ctoCustomers, setCtoCustomers] = useState<Customer[]>([]);
     const [litPorts, setLitPorts] = useState<Set<string>>(incomingLitPorts);
     const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
@@ -262,316 +275,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, [cto.id, projectId]);
 
-    // --- HELPER: Normalize CTO with Defaults for Dirty Check ---
-    const withDefaults = (data: CTOData): CTOData => {
-        const next = JSON.parse(JSON.stringify(data)) as CTOData;
-        if (!next.layout) next.layout = {};
+    // (withDefaults moved to useCTOEditorState hook)
 
-        // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
-        // Must match useEffect logic to ensure comparison is fair
-        const migratedConnections = next.connections?.map(c => {
-            if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
-                return { ...c, color: '#0f172a' };
-            }
-            return c;
-        }) || [];
-        next.connections = migratedConnections;
-
-        // Apply Defaults (Mirroring useEffect logic)
-        let currentCableY = 42;
-        incomingCables.forEach((cable) => {
-            if (!next.layout![cable.id]) {
-                const looseTubeCount = cable.looseTubeCount || 1;
-                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-                const remainder = fibersHeight % 24;
-                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
-                currentCableY += totalHeight + 10;
-            }
-            // Do NOT recalculate currentCableY based on existing layouts
-        });
-        next.splitters.forEach((split, idx) => {
-            if (!next.layout![split.id]) next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
-        });
-        next.fusions.forEach((fusion, idx) => {
-            if (!next.layout![fusion.id]) next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-        });
-
-        // Sort connections to ensure order doesn't affect JSON.stringify
-        next.connections.sort((a, b) => a.id.localeCompare(b.id));
-
-        return next;
-    };
-
-    // --- PERSISTENCE FIX REUSABLE LOGIC ---
-    const reconcileOrphans = useCallback((data: CTOData, incomingCables: CableData[]) => {
-        if (!data.layout) data.layout = {};
-        if (!data.connections) data.connections = [];
-
-        // 1. Reconcile Fusions
-        // Backend uses UUIDs while client may have Temp IDs (fus-...)
-        const fusionLayoutKeys = Object.keys(data.layout).filter(k => k.includes('fus-'));
-        const fusionsWithoutLayout = data.fusions.filter(f => !data.layout![f.id]);
-        const orphanFusionKeys = fusionLayoutKeys.filter(k => !data.fusions.some(f => f.id === k));
-
-        if (fusionsWithoutLayout.length > 0 && orphanFusionKeys.length > 0) {
-            fusionsWithoutLayout.forEach((fusion, idx) => {
-                if (idx < orphanFusionKeys.length) {
-                    const orphanKey = orphanFusionKeys[idx];
-                    data.layout![fusion.id] = data.layout![orphanKey];
-                    // Update connections using this fusion as source/target
-                    data.connections = data.connections.map(conn => {
-                        let nextConn = { ...conn };
-                        let changed = false;
-                        if (conn.sourceId === orphanKey) nextConn.sourceId = fusion.id;
-                        if (conn.targetId === orphanKey) nextConn.targetId = fusion.id;
-                        return nextConn;
-                    });
-                    delete data.layout![orphanKey];
-                }
-            });
-        }
-
-        // 2. Reconcile Splitters
-        const splitterLayoutKeys = Object.keys(data.layout).filter(k => k.includes('spl-'));
-        const splittersWithoutLayout = data.splitters.filter(s => !data.layout![s.id]);
-        const orphanSplitterKeys = splitterLayoutKeys.filter(k => !data.splitters.some(s => s.id === k));
-
-        if (splittersWithoutLayout.length > 0 && orphanSplitterKeys.length > 0) {
-            splittersWithoutLayout.forEach((split, idx) => {
-                if (idx < orphanSplitterKeys.length) {
-                    const orphanKey = orphanSplitterKeys[idx];
-                    data.layout![split.id] = data.layout![orphanKey];
-
-                    // Repair splitter port connections
-                    data.connections = data.connections.map(conn => {
-                        let nextConn = { ...conn };
-                        // Repair Splitter Input Input
-                        if (conn.sourceId === `${orphanKey}-in`) nextConn.sourceId = `${split.id}-in`;
-                        if (conn.targetId === `${orphanKey}-in`) nextConn.targetId = `${split.id}-in`;
-                        // Repair Splitter Outputs
-                        if (conn.sourceId.startsWith(`${orphanKey}-out-`)) {
-                            nextConn.sourceId = conn.sourceId.replace(`${orphanKey}-out-`, `${split.id}-out-`);
-                        }
-                        if (conn.targetId.startsWith(`${orphanKey}-out-`)) {
-                            nextConn.targetId = conn.targetId.replace(`${orphanKey}-out-`, `${split.id}-out-`);
-                        }
-                        return nextConn;
-                    });
-
-                    delete data.layout![orphanKey];
-                }
-            });
-        }
-
-
-        // 3. Reconcile Cables - INTELLIGENT MAPPING (Temp IDs -> Real UUIDs)
-        // When a CTO is opened for the first time, cables get temporary IDs like "cable-XXX-split"
-        // After saving, these IDs should be replaced with real UUIDs from incomingCables
-        // This reconciliation maps old temp IDs to current real IDs
-        const cableLayoutKeys = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
-        const cablesWithoutLayout = incomingCables.filter(c => !data.layout![c.id]);
-
-        // Find orphan keys (layouts with IDs that don't match current cables)
-        const orphanCableKeys = cableLayoutKeys.filter(k => !incomingCables.some(c => c.id === k));
-
-        // INTELLIGENT RECONCILIATION: Only map if:
-        // 1. There are cables without layouts AND orphan layouts
-        // 2. Orphan keys look like temp IDs (contain "cable-" and "-split")
-        // 3. Counts match (to avoid mapping wrong cables)
-        if (cablesWithoutLayout.length > 0 && cableLayoutKeys.length > 0) {
-            const orphanLayouts = cableLayoutKeys.filter(k => !incomingCables.some(c => c.id === k));
-
-            if (orphanLayouts.length > 0) {
-                orphanLayouts.forEach((orphanId, index) => {
-                    const newCable = cablesWithoutLayout[index];
-                    if (newCable) {
-
-                        // 1. Move Layout
-                        data.layout![newCable.id] = data.layout![orphanId];
-                        delete data.layout![orphanId];
-
-                        // 2. Move Fiber Connections
-                        data.connections = data.connections.map(conn => {
-                            let nextConn = { ...conn };
-
-                            // Replace Source
-                            if (conn.sourceId.startsWith(`${orphanId}-fiber-`)) {
-                                nextConn.sourceId = conn.sourceId.replace(`${orphanId}-fiber-`, `${newCable.id}-fiber-`);
-                            }
-                            // Replace Target
-                            if (conn.targetId.startsWith(`${orphanId}-fiber-`)) {
-                                nextConn.targetId = conn.targetId.replace(`${orphanId}-fiber-`, `${newCable.id}-fiber-`);
-                            }
-                            return nextConn;
-                        });
-                    }
-                });
-            }
-        }
-
-        // 4. CLEANUP - Remove ONLY genuinely orphan cable layouts
-        const finalCableLayoutsToCheck = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
-        const finalCurrentCableIds = incomingCables.map(c => c.id);
-
-        // 5. Force Save Check
-        const prevJSON = JSON.stringify(cto);
-        const nextJSON = JSON.stringify(data);
-
-        // CLEANUP: Remove old layouts that are no longer in use
-        // Use loose comparison or trim to ensure match
-        const layoutKeysToRemove = finalCableLayoutsToCheck.filter(layoutKey => {
-            // Keep if it matches ANY current ID
-            const isKept = finalCurrentCableIds.some(id => id === layoutKey || id.trim() === layoutKey.trim());
-            return !isKept;
-        });
-
-        layoutKeysToRemove.forEach(key => delete data.layout![key]);
-    }, []);
-
-    const [savingAction, setSavingAction] = useState<'idle' | 'apply' | 'save_close'>('idle');
-    const [localCTO, setLocalCTO] = useState<CTOData>(() => {
-        const next = JSON.parse(JSON.stringify(cto)) as CTOData;
-        if (!next.layout) next.layout = {};
-
-        // Run reconciler first to recover positions from any ID shifts
-        reconcileOrphans(next, incomingCables);
-
-        // Position Incoming Cables on the Left if missing (Stacking with 10px gap)
-        // FIX: Only calculate positions for new cables, never recalculate existing layouts
-        let currentCableY = 42;
-        incomingCables.forEach((cable) => {
-            if (!next.layout![cable.id]) {
-                // Calculate height only for new cables
-                const looseTubeCount = cable.looseTubeCount || 1;
-                const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-                const remainder = fibersHeight % 24;
-                const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-
-                next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
-                currentCableY += totalHeight + 10;
-            }
-            // Do NOT recalculate currentCableY based on existing layouts
-            // This preserves saved positions unconditionally
-        });
-
-        // Position Existing Splitters if missing (Fallback)
-        next.splitters.forEach((split, idx) => {
-            if (!next.layout![split.id]) {
-                next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
-            }
-        });
-
-        // Position Existing Fusions if missing (Fallback)
-        next.fusions.forEach((fusion, idx) => {
-            if (!next.layout![fusion.id]) {
-                next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-            }
-        });
-
-        return next;
-    });
-
-    // SYNC LOCAL STATE WHEN PROP UPDATES (e.g. after Save or External Change)
-    useEffect(() => {
-        setLocalCTO(prev => {
-            const next = JSON.parse(JSON.stringify(cto)) as CTOData;
-
-            // 1. If CTO ID Changed, full reset (New Context)
-            if (prev.id !== next.id) {
-                // MIGRATION: Auto-update legacy splitter connection colors (Gray -> Black)
-                const migratedConnections = next.connections?.map(c => {
-                    if ((c.sourceId.includes('spl-') || c.targetId.includes('spl-')) && c.color === '#94a3b8') {
-                        return { ...c, color: '#0f172a' };
-                    }
-                    return c;
-                }) || [];
-                next.connections = migratedConnections;
-
-                if (!next.layout) next.layout = {};
-
-                // Ensure we initialize viewState if saved, or calc default
-                let vs = next.viewState;
-                if (!vs) {
-                    vs = getInitialViewState(next);
-                }
-                next.viewState = vs;
-                setViewState(vs); // SYNC VIEW STATE
-
-                reconcileOrphans(next, incomingCables);
-
-                // Defaults Logic (Inline)
-                let currentCableY = 42;
-                incomingCables.forEach((cable) => {
-                    if (!next.layout![cable.id]) {
-                        const looseTubeCount = cable.looseTubeCount || 1;
-                        const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-                        const remainder = fibersHeight % 24;
-                        const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-                        next.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
-                        currentCableY += totalHeight + 10;
-                    }
-                    // Do NOT recalculate currentCableY based on existing layouts
-                });
-                next.splitters.forEach((split, idx) => {
-                    if (!next.layout![split.id]) next.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
-                });
-                next.fusions.forEach((fusion, idx) => {
-                    if (!next.layout![fusion.id]) next.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-                });
-
-                return next;
-            }
-
-            // 2. SAME CTO - SMART MERGE (Preserve Unsaved Work)
-            const merged = { ...next }; // Start with fresh structure
-
-            // Preserve Unsaved Layout & Connections from Prev
-            if (prev.layout) merged.layout = JSON.parse(JSON.stringify(prev.layout));
-            else merged.layout = {};
-
-            if (prev.connections) merged.connections = JSON.parse(JSON.stringify(prev.connections));
-            if (prev.splitters) merged.splitters = JSON.parse(JSON.stringify(prev.splitters));
-            if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
-            if (prev.viewState) merged.viewState = prev.viewState;
-
-            // FIX: Preserve local inputCableIds to prevent removed cables from being restored
-            // when prop 'cto' is re-propagated after onDisconnectCable + onSave
-            if (prev.inputCableIds !== undefined) merged.inputCableIds = prev.inputCableIds;
-
-            // Run Reconciler on MERGED state (Fixes ID shifts while keeping positions)
-            reconcileOrphans(merged, incomingCables);
-
-            // Apply Defaults ONLY for NEW items
-            let currentCableY = 42;
-            incomingCables.forEach((cable) => {
-                if (!merged.layout![cable.id]) {
-                    const looseTubeCount = cable.looseTubeCount || 1;
-                    const fibersHeight = 6 + (looseTubeCount * 12) + (cable.fiberCount * 12);
-                    const remainder = fibersHeight % 24;
-                    const totalHeight = fibersHeight + (remainder > 0 ? 24 - remainder : 0);
-                    merged.layout![cable.id] = { x: 42, y: currentCableY, rotation: 0 };
-                    currentCableY += totalHeight + 10;
-                }
-            });
-            merged.splitters.forEach((split, idx) => {
-                if (!merged.layout![split.id]) merged.layout![split.id] = { x: 378, y: 78 + (idx * 120), rotation: 0 };
-            });
-            merged.fusions.forEach((fusion, idx) => {
-                if (!merged.layout![fusion.id]) merged.layout![fusion.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-            });
-
-            if (JSON.stringify(prev) !== JSON.stringify(merged)) return merged;
-            return prev;
-        });
-    }, [cto, incomingCables, reconcileOrphans]);
-
-
-    // SYNC REF for performance-critical handlers
-    const localCTORef = useRef(localCTO);
-    useLayoutEffect(() => {
-        localCTORef.current = localCTO;
-    }, [localCTO]);
+    // (reconcileOrphans, localCTO state, sync logic, localCTORef, snapshot — all in useCTOEditorState hook)
 
     // --- View Centering Logic (Pure Math) ---
     const getElementBounds = (x: number, y: number, w: number, h: number, rotation: number) => {
@@ -746,7 +452,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [autoSourceId, setAutoSourceId] = useState<string>('');
     const [autoTargetId, setAutoTargetId] = useState<string>('');
     const [exportingType, setExportingType] = useState<'png' | 'pdf' | null>(null);
-    const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+    // (showCloseConfirm from useCTOEditorState hook)
     const [propertiesName, setPropertiesName] = useState('');
     const [propertiesStatus, setPropertiesStatus] = useState<CTOStatus>('PLANNED');
     const [cableToRemove, setCableToRemove] = useState<string | null>(null);
@@ -770,8 +476,63 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [showFusionTypeModal, setShowFusionTypeModal] = useState(false);
     const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
 
+    // --- CENTRALIZED TOOL MODE MANAGEMENT ---
+    // All tool modes are mutually exclusive. This function clears ALL tool modes.
+    const clearAllToolModes = useCallback(() => {
+        setIsRotateMode(false);
+        setIsDeleteMode(false);
+        setIsSmartAlignMode(false);
+        setIsVflToolActive(false);
+        setIsOtdrToolActive(false);
+        setIsFusionToolActive(false);
+        setShowSplitterDropdown(false);
+    }, []);
+
+    // Toggle a specific tool mode. If it was active, deactivate it (clear all).
+    // If it was inactive, clear all others and activate it.
+    type ToolMode = 'rotate' | 'delete' | 'smartAlign' | 'vfl' | 'otdr' | 'fusion' | 'splitterDropdown';
+    const toolModeSetters: Record<ToolMode, React.Dispatch<React.SetStateAction<boolean>>> = {
+        rotate: setIsRotateMode,
+        delete: setIsDeleteMode,
+        smartAlign: setIsSmartAlignMode,
+        vfl: setIsVflToolActive,
+        otdr: setIsOtdrToolActive,
+        fusion: setIsFusionToolActive,
+        splitterDropdown: setShowSplitterDropdown
+    };
+    const toolModeGetters: Record<ToolMode, boolean> = {
+        rotate: isRotateMode,
+        delete: isDeleteMode,
+        smartAlign: isSmartAlignMode,
+        vfl: isVflToolActive,
+        otdr: isOtdrToolActive,
+        fusion: isFusionToolActive,
+        splitterDropdown: showSplitterDropdown
+    };
+    const toggleToolMode = useCallback((mode: ToolMode) => {
+        const wasActive = toolModeGetters[mode];
+        clearAllToolModes();
+        if (!wasActive) {
+            toolModeSetters[mode](true);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isRotateMode, isDeleteMode, isSmartAlignMode, isVflToolActive, isOtdrToolActive, isFusionToolActive, showSplitterDropdown, clearAllToolModes]);
+
     const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Stable ref for tool modes - allows useCallback handlers to read current tool states
+    // without being recreated when modes toggle (prevents ConnectionsLayer re-renders)
+    const toolModesRef = useRef({
+        isVflToolActive, isOtdrToolActive, isFusionToolActive,
+        isSmartAlignMode, isRotateMode, isDeleteMode, isSnapping: true
+    });
+    useLayoutEffect(() => {
+        toolModesRef.current = {
+            isVflToolActive, isOtdrToolActive, isFusionToolActive,
+            isSmartAlignMode, isRotateMode, isDeleteMode, isSnapping
+        };
+    });
 
     // --- CATALOG INTEGRATION ---
     const [availableCables, setAvailableCables] = useState<CableCatalogItem[]>([]);
@@ -811,18 +572,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         loadCatalogs();
     }, []);
 
-    // FORCE RENDER & CACHE CLEAR
-    // Fixes "Ghost Connections" where SVG tries to draw lines before DOM elements exist
-    const [, forceUpdate] = useState(0);
+    // UNIFIED FORCE RENDER & CACHE CLEAR
+    // Single useLayoutEffect that clears geometric caches and forces re-render
+    // whenever structure, layout, zoom, or window state changes.
+    // This replaces 3 separate useLayoutEffects that were causing 2-3 extra renders per interaction.
+    const [, forceRender] = useState(0);
 
     useLayoutEffect(() => {
-        // Clear geometric caches whenever structure changes
         portCenterCache.current = {};
         containerRectCache.current = null;
-
-        // Force a re-render to ensure SVG lines are drawn based on the NEW DOM elements
-        forceUpdate(n => n + 1);
-    }, [incomingCables, localCTO.connections, viewState.zoom]);
+        forceRender(n => n + 1);
+    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, viewState, isMaximized]);
 
 
     useEffect(() => {
@@ -923,37 +683,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const diagramContentRef = useRef<HTMLDivElement>(null);
 
-    const [, setForceUpdate] = useState(0);
-    useLayoutEffect(() => {
-        portCenterCache.current = {};
-        containerRectCache.current = null;
-        setForceUpdate(n => n + 1);
-    }, [viewState, localCTO.layout, localCTO.connections, isMaximized]);
-
-    // FIX: Force re-calculation after mount to ensure getBoundingClientRect is correct
-    // The Modal animation (zoom-in) causes initial rects to be invalid.
-    // FIX: Force re-calculation after mount and use opacity transition to mask initial glitch
+    // (Force-update logic unified above)
     // --- ESCAPE KEY HANDLER ---
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 // Cancel all active tools
-                setIsRotateMode(false);
-                setIsDeleteMode(false);
-                setIsSmartAlignMode(false);
-                setIsVflToolActive(false);
-                setIsOtdrToolActive(false);
-
-                // Cancel Fusion Tool
-                setIsFusionToolActive(false);
+                clearAllToolModes();
                 setShowFusionTypeModal(false);
                 setCursorPosition(null);
 
                 // If dragging something, cancel it
                 setDragState(null);
-
-                // Close dropdowns
-                setShowSplitterDropdown(false);
 
                 // Clear selections if needed (Optional: user asked to "forget selection")
                 // setSelectedSplitterName(''); 
@@ -970,7 +711,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const timer = setTimeout(() => {
             portCenterCache.current = {};
             containerRectCache.current = null;
-            setForceUpdate(n => n + 1);
+            forceRender(n => n + 1);
             setIsContentReady(true);
         }, 350); // Wait for animate-in duration
         return () => clearTimeout(timer);
@@ -1279,81 +1020,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (portId.includes('spl-')) return '#0f172a'; // Black/Dark for splitter pigtails
         return null;
     };
-    const removeConnection = (connId: string) => {
+    const removeConnection = useCallback((connId: string) => {
         setLocalCTO(prev => ({
             ...prev,
             connections: prev.connections.filter(c => c.id !== connId)
         }));
-    };
+    }, [setLocalCTO]);
 
 
-    const handleApply = async () => {
-
-        setSavingAction('apply');
-        try {
-            // FIX: Use localCTO (React state) directly to ensure we save the most recent changes
-            // This prevents race conditions where the ref hasn't been synchronized yet
-            const finalCTO = JSON.parse(JSON.stringify(localCTO)) as CTOData;
-            finalCTO.viewState = viewState;
-            await onSave(finalCTO);
-        } catch (e) {
-            console.error("Apply failed", e);
-        } finally {
-            setSavingAction('idle');
-        }
-    };
-
-    const handleCloseRequest = () => {
-        // Exclude viewState from dirty check
-        const stripViewState = (data: CTOData) => {
-            const { viewState, ...rest } = data;
-            // Sort connections for stable comparison
-            if (rest.connections) {
-                rest.connections = [...rest.connections].sort((a, b) => a.id.localeCompare(b.id));
-            }
-            return rest;
-        };
-
-        // Compare Local State vs Normalized Prop (with defaults applied)
-        // This ensures that auto-generated layouts are NOT considered as user changes.
-        const normalizedLocal = stripViewState(localCTO);
-        const normalizedProp = stripViewState(withDefaults(cto));
-
-        const hasChanges = JSON.stringify(normalizedLocal) !== JSON.stringify(normalizedProp);
-
-        if (hasChanges) setShowCloseConfirm(true);
-        else onClose();
-    };
+    // (handleApply, handleCloseRequest, handleSaveAndClose — in useCTOEditorState hook)
+    // Wrappers that pass viewState to the hook's functions
+    const handleApply = () => _handleApply(viewState);
+    const handleSaveAndClose = () => _handleSaveAndClose(viewState);
 
     // --- View Centering ---
     const handleCenterView = () => {
         setViewState(getInitialViewState(localCTO));
-    };
-
-    const handleSaveAndClose = async () => {
-        setSavingAction('save_close');
-        try {
-            // FIX: Use localCTO (React state) directly to ensure we save the most recent changes
-            // This prevents race conditions where the ref hasn't been synchronized yet
-            const finalCTO = JSON.parse(JSON.stringify(localCTO)) as CTOData;
-            finalCTO.viewState = viewState;
-
-            // SAFEGUARD: Ensure all fusions have a layout entry before saving
-            // This prevents "reset to defaults" on next load if valid positions were somehow missing
-            if (!finalCTO.layout) finalCTO.layout = {};
-            finalCTO.fusions.forEach((f, idx) => {
-                if (!finalCTO.layout![f.id]) {
-                    finalCTO.layout![f.id] = { x: 500, y: 100 + (idx * 50), rotation: 0 };
-                }
-            });
-
-            await onSave(finalCTO);
-            onClose();
-        } catch (e) {
-            console.error("SaveAndClose failed", e);
-        } finally {
-            setSavingAction('idle');
-        }
     };
 
     // --- Auto Pass-Through Logic ---
@@ -1428,135 +1110,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return null;
     };
 
-    // Instead of complex DOM traversal, I'll update the node components to simply have an ID.
-    // This is a minimal, safe change.
-    const handleExportPDF = async () => {
-        // --- GATEKEEPING: Block Export for Trial or Free Users ---
-        // Trial Users have an expiration date. Free Users have 'Plano Grátis'.
-        // Only Paid Permanent Users (or maybe we allow Trial but Block? User said "Implement Block")
-        // User Request: "se ele importar o projeto... em 15 dias ele vai usar sem pagar". -> BLOCK TRIAL.
-
-        // Logic Update: subscriptionExpiresAt exists for ALL plans.
-        // We only want to block if "Plano Grátis".
-        // Assuming "Plano Ilimitado" implies paid/allowed.
-
+    // --- UNIFIED EXPORT (PNG / PDF) ---
+    const handleExport = async (type: 'png' | 'pdf') => {
+        // Gatekeeping: Block free users
         const isFree = userPlan === 'Plano Grátis';
-
-        if (isFree) {
-            // Trigger Upgrade Modal if passed, or just Alert
-            if (onShowUpgrade) {
-                onShowUpgrade();
-                // Optional: Show specific toast explaining why
-                // alert("Recurso disponível apenas para assinantes. (Trial não exporta)");
-            } else {
-                alert("Exportação disponível apenas para planos pagos.");
-            }
-            return;
-        }
-
-        setExportingType('pdf');
-        try {
-            // Harvest Port Positions
-            const portPositions: Record<string, { x: number, y: number }> = {};
-            localCTO.connections.forEach(c => {
-                const s = getPortCenter(c.sourceId);
-                if (s) portPositions[c.sourceId] = s;
-                const t = getPortCenter(c.targetId);
-                if (t) portPositions[c.targetId] = t;
-            });
-
-            // Harvest Node Metrics (REMOVED - Using accurate math in Exporter now)
-
-            // Prepare Footer Data
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            const footerData = {
-                projectName: projectName || '',
-                boxName: localCTO.name,
-                date: dateStr,
-                lat: localCTO.coordinates.lat.toFixed(6),
-                lng: localCTO.coordinates.lng.toFixed(6),
-                status: 'Implantada',
-                level: 'CTO',
-                pole: '-',
-                obs: '',
-                mapImage: '', // Placeholder
-                logo: '' // NEW: Company/SaaS Logo
-            };
-
-            // Loading Map Image (Static OpenStreetMap/Carto)
-            // Using a public static map generator or tile stitching is hard without API.
-            // Alternative: Use a generic map marker image or try to fetch a single tile?
-            // Tile URL: https://tile.openstreetmap.org/{z}/{x}/{y}.png
-            // We need to convert Lat/Lng to Tile X/Y.
-
-            try {
-                // Simple APPROXIMATION using a static map service if allowed,
-                // OR construct a URL from a free service that returns an image.
-                // Mapbox/Google require keys. 
-                // Let's use a reliable placeholder or a free static service if one exists.
-                // 'https://static-maps.yandex.ru/1.x/?lang=en_US&ll=' + lng + ',' + lat + '&z=16&l=map&size=450,300&pt=' + lng + ',' + lat + ',pm2rdm';
-                // Note: Yandex Static Maps is often free/open.
-
-                const lat = localCTO.coordinates.lat;
-                const lng = localCTO.coordinates.lng;
-                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=17&l=sat&size=650,450&pt=${lng},${lat},pm2rdm`;
-
-                // Preload
-                const mapBase64 = await preloadImage(mapUrl);
-                if (mapBase64) footerData.mapImage = mapBase64;
-
-                // Load Company/SaaS Logo
-                const logoUrlToUse = companyLogo || saasLogo || '/logo.png';
-                const logoBase64 = await preloadImage(logoUrlToUse);
-                if (logoBase64) footerData.logo = logoBase64;
-
-                // Load QR Code (Link to CTO with Auto-Download PNG)
-                const qrUrl = `${window.location.origin}/cto/${localCTO.id}?projectId=${projectId}&download=true&downloadType=png`;
-                const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
-                const qrBase64 = await preloadImage(qrCodeApiUrl);
-                if (qrBase64) (footerData as any).qrCode = qrBase64;
-            } catch (e) {
-                console.warn("Could not load static assets for export", e);
-            }
-
-            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
-            await exportToPDF(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.pdf`);
-        } catch (error: any) {
-            console.error("Export failed", error);
-            if (error?.message === 'SVG_PARSE_ERROR') {
-                alert(t('export_parser_error'));
-            } else {
-                alert(t('export_pdf_error'));
-            }
-        } finally {
-            setExportingType(null);
-        }
-    };
-
-    const handleExportPNG = async () => {
-        // --- GATEKEEPING ---
-        // Logic Update: subscriptionExpiresAt exists for ALL plans (Trial and Paid).
-        // We only want to block if it's "Plano Grátis" or explicitly a generic restricted trial (if applicable).
-        // But "Plano Ilimitado" is paid, so it should pass.
-
-        const isFree = userPlan === 'Plano Grátis';
-        // If it's not free, we assume it's paid (Ilimitado, Advanced, etc) or a valid Trial that allows export?
-        // Actually, Trial might NOT allow export.
-        // But the user has "Plano Ilimitado".
-
-        // Strict check: Block ONLY if Free.
-        // If we want to block Trial too, we should check userPlan === 'Trial' or similar.
-        // Assuming "Plano Ilimitado" implies paid/allowed.
-
         if (isFree) {
             if (onShowUpgrade) onShowUpgrade();
             else alert("Exportação disponível apenas para planos pagos.");
             return;
         }
 
-        setExportingType('png');
+        setExportingType(type);
         try {
             // Harvest Port Positions
             const portPositions: Record<string, { x: number, y: number }> = {};
@@ -1582,22 +1146,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 pole: '-',
                 obs: '',
                 mapImage: '',
-                logo: '' // NEW: Company/SaaS Logo
+                logo: ''
             };
 
+            // Load static assets (map, logo, QR code)
             try {
                 const lat = localCTO.coordinates.lat;
                 const lng = localCTO.coordinates.lng;
-                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
+
+                // PDF uses satellite at z17 with larger size; PNG uses map at z19
+                const mapUrl = type === 'pdf'
+                    ? `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=17&l=sat&size=650,450&pt=${lng},${lat},pm2rdm`
+                    : `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lng},${lat}&z=19&l=map&size=450,300&pt=${lng},${lat},pm2rdm`;
+
                 const mapBase64 = await preloadImage(mapUrl);
                 if (mapBase64) footerData.mapImage = mapBase64;
 
-                // Load Company/SaaS Logo
                 const logoUrlToUse = companyLogo || saasLogo || '/logo.png';
                 const logoBase64 = await preloadImage(logoUrlToUse);
                 if (logoBase64) footerData.logo = logoBase64;
 
-                // Load QR Code (Link to CTO with Auto-Download PNG)
                 const qrUrl = `${window.location.origin}/cto/${localCTO.id}?projectId=${projectId}&download=true&downloadType=png`;
                 const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
                 const qrBase64 = await preloadImage(qrCodeApiUrl);
@@ -1607,14 +1175,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
 
             const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
-            await exportToPNG(svg, `CTO-${localCTO.name.replace(/\s+/g, '_')}.png`);
-        } catch (error) {
-            console.error("Export PNG failed", error);
-            alert(t('export_png_error'));
+            const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
+
+            if (type === 'pdf') {
+                await exportToPDF(svg, `${fileName}.pdf`);
+            } else {
+                await exportToPNG(svg, `${fileName}.png`);
+            }
+        } catch (error: any) {
+            console.error(`Export ${type.toUpperCase()} failed`, error);
+            if (type === 'pdf' && error?.message === 'SVG_PARSE_ERROR') {
+                alert(t('export_parser_error'));
+            } else {
+                alert(t(type === 'pdf' ? 'export_pdf_error' : 'export_png_error'));
+            }
         } finally {
             setExportingType(null);
         }
     };
+
+    // Convenience wrappers to preserve existing call sites
+    const handleExportPDF = () => handleExport('pdf');
+    const handleExportPNG = () => handleExport('png');
 
     // --- OPTICAL POWER CALCULATION HANDLER ---
     const handleSplitterDoubleClick = (splitterId: string) => {
@@ -1885,6 +1467,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleCableMouseEnter = useCallback((id: string) => onHoverCable && onHoverCable(id), [onHoverCable]);
     const handleCableMouseLeave = useCallback((id: string) => onHoverCable && onHoverCable(null), [onHoverCable]);
 
+    const handleHoverConnection = useCallback((id: string | null) => {
+        setHoveredElement(id ? { id, type: 'connection' } : null);
+    }, []);
+
     // Optimize handleCableClick explicitly to avoid re-renders during drag
     const smartAlignFnRef = useRef(handleSmartAlignCable);
     useLayoutEffect(() => { smartAlignFnRef.current = handleSmartAlignCable; });
@@ -1975,8 +1561,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
 
-    const handlePointMouseDown = (e: React.MouseEvent, connId: string, pointIndex: number) => {
+    const handlePointMouseDown = useCallback((e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
+        const { isVflToolActive, isOtdrToolActive } = toolModesRef.current;
         if (isVflToolActive || isOtdrToolActive) return;
         setDragState({
             mode: 'point',
@@ -1985,7 +1572,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             startX: e.clientX,
             startY: e.clientY
         });
-    };
+    }, []);
 
     const handleConnectionClick = (e: React.MouseEvent, connId: string) => {
         e.stopPropagation();
@@ -2645,10 +2232,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     // --- GLOBAL EVENT LISTENERS FOR DRAG & TOOLS ---
+    // Use refs for handlers to avoid re-binding window listeners on every render.
+    // The handlers read all state via refs/closures that are always fresh.
+    const handleMouseMoveRef = useRef(handleMouseMove);
+    const handleMouseUpRef = useRef(handleMouseUp);
+    useLayoutEffect(() => { handleMouseMoveRef.current = handleMouseMove; });
+    useLayoutEffect(() => { handleMouseUpRef.current = handleMouseUp; });
+
     useEffect(() => {
         if (dragState || isFusionToolActive) {
-            const onMove = (e: MouseEvent) => handleMouseMove(e as unknown as React.MouseEvent);
-            const onUp = (e: MouseEvent) => handleMouseUp(e as unknown as React.MouseEvent);
+            const onMove = (e: MouseEvent) => handleMouseMoveRef.current(e as unknown as React.MouseEvent);
+            const onUp = (e: MouseEvent) => handleMouseUpRef.current(e as unknown as React.MouseEvent);
 
             window.addEventListener('mousemove', onMove);
             window.addEventListener('mouseup', onUp);
@@ -2658,13 +2252,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 window.removeEventListener('mouseup', onUp);
             };
         }
-    }, [dragState, isFusionToolActive, handleMouseMove, handleMouseUp]);
+    }, [dragState, isFusionToolActive]);
 
 
 
-    const removePoint = (e: React.MouseEvent, connId: string, pointIndex: number) => {
+    const removePoint = useCallback((e: React.MouseEvent, connId: string, pointIndex: number) => {
         e.stopPropagation();
-        if (isVflToolActive) return;
+        if (toolModesRef.current.isVflToolActive) return;
         setLocalCTO(prev => ({
             ...prev,
             connections: prev.connections.map(c => {
@@ -2673,18 +2267,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return { ...c, points: newPoints };
             })
         }));
-    };
+    }, [setLocalCTO]);
 
-    const handlePathMouseDown = (e: React.MouseEvent, connId: string) => {
+    const handlePathMouseDown = useCallback((e: React.MouseEvent, connId: string) => {
         if (e.button !== 0) return;
-        // Fix: If Fusion Tool is active, let the event bubble to container to create fusion (auto-splice)
-        // Do not stop propagation.
-        if (isFusionToolActive) return;
+        const modes = toolModesRef.current;
+        if (modes.isFusionToolActive) return;
 
-        e.stopPropagation(); // prevent window drag
-        e.preventDefault();  // prevent text selection
+        e.stopPropagation();
+        e.preventDefault();
 
-        if (isVflToolActive || isOtdrToolActive || isSmartAlignMode) return;
+        if (modes.isVflToolActive || modes.isOtdrToolActive || modes.isSmartAlignMode) return;
 
         const { x, y } = screenToCanvas(e.clientX, e.clientY);
         const clickPt = { x, y };
@@ -2739,7 +2332,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 startY: e.clientY
             });
         }
-    };
+    }, [getPortCenter, setLocalCTO]);
 
     const handleAddSplitter = (e: React.MouseEvent, catalogItem: SplitterCatalogItem) => {
         const id = `spl-${Date.now()}`;
@@ -2853,14 +2446,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const activateFusionTool = (typeId: string | null) => {
+        clearAllToolModes();
         setIsFusionToolActive(true);
         setSelectedFusionTypeId(typeId);
-        // Reset others
-        setIsDeleteMode(false);
-        setIsRotateMode(false);
-        setIsSmartAlignMode(false);
-        setIsVflToolActive(false);
-        setIsOtdrToolActive(false);
         setShowFusionTypeModal(false);
     };
 
@@ -3107,12 +2695,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setIsOtdrToolActive(false);
     };
 
-    // Clear cache AND force update on layout change to ensure connections sync with new DOM transforms
-    useLayoutEffect(() => {
-        portCenterCache.current = {};
-        containerRectCache.current = null;
-        setForceUpdate(n => n + 1);
-    }, [viewState.zoom, localCTO.layout, localCTO.splitters, localCTO.fusions]);
+    // (Cache clear & force-update logic unified at top of component)
 
     // --- KEYBOARD SHORTCUTS ---
     useEffect(() => {
@@ -3184,280 +2767,38 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'w-[1100px] h-auto rounded-xl' : 'w-[1100px] h-[750px] rounded-xl'} bg-white dark:bg-slate-900 border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
-                {/* Toolbar / Draggable Header */}
-                <div
-                    className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex flex-col shrink-0 z-50 cursor-move select-none"
-                    onMouseDown={handleWindowDragStart}
-                >
-                    {/* Line 1: Title and Main Actions */}
-                    <div className="h-14 flex items-center justify-between px-6">
-                        <div className="flex items-center gap-4 min-w-0 flex-1">
-                            <h2 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-2 whitespace-nowrap truncate min-w-0">
-                                <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                                <input
-                                    type="text"
-                                    value={propertiesName}
-                                    onChange={(e) => {
-                                        const newName = e.target.value;
-                                        setPropertiesName(newName);
-                                        setLocalCTO(prev => ({ ...prev, name: newName }));
-                                    }}
-                                    className="bg-transparent border-0 border-b-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 px-1 py-0.5 outline-none transition-all w-full max-w-[400px] text-slate-900 dark:text-white font-bold placeholder:text-slate-400"
-                                    placeholder={t('name')}
-                                />
-                            </h2>
-                        </div>
-                        <div className="flex gap-1 pointer-events-auto items-center">
-                            {!isMaximized && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsCollapsed(!isCollapsed)}
-                                    title={isCollapsed ? t('expand') : t('collapse')}
-                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                                >
-                                    {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-                                </Button>
-                            )}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={toggleMaximize}
-                                title={isMaximized ? t('restore') : t('maximize')}
-                                className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                            >
-                                {isMaximized ? <Minimize2 className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={handleCloseRequest} 
-                                title={t('cancel')} 
-                                className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:text-rose-500 dark:hover:text-rose-400"
-                            >
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Line 2: All Tools and Exports — hidden when collapsed */}
-                    <div style={{ display: isCollapsed ? 'none' : undefined }} className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
-                        <div className="flex gap-1.5 pointer-events-auto items-center">
-
-                            {/* GROUP 1: EDIT MODES */}
-                            <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
-                                <Button
-                                    variant={isRotateMode ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setIsRotateMode(!isRotateMode); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className="h-8 w-8"
-                                    title={t('rotate_mode')}
-                                >
-                                    <RotateCw className={`w-3.5 h-3.5 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
-                                </Button>
-                                <Button
-                                    variant={isDeleteMode ? 'destructive' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setIsDeleteMode(!isDeleteMode); setIsRotateMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className="h-8 w-8"
-                                    title={t('delete_mode')}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-
-                            {/* GROUP 2: CREATION */}
-                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <Button
-                                    variant={showSplitterDropdown ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setShowSplitterDropdown(!showSplitterDropdown); setIsRotateMode(false); setIsDeleteMode(false); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className="h-8 w-8"
-                                    title={t('splitters')}
-                                >
-                                    <Triangle className="w-3.5 h-3.5 -rotate-90" />
-                                </Button>
-                                <Button
-                                    variant={isFusionToolActive ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={handleAddFusion}
-                                    className={`h-8 w-8 ${isFusionToolActive ? 'ring-2 ring-emerald-400' : ''}`}
-                                    title={t('add_fusion')}
-                                >
-                                    <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
-                                        <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
-                                        <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
-                                    </svg>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) => handleAddNote(e)}
-                                    className="h-8 w-8"
-                                    title={t('add_note')}
-                                >
-                                    <StickyNote className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-
-                            {/* GROUP 3: CONNECTIONS */}
-                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <Button
-                                    variant={isAutoSpliceOpen ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => setIsAutoSpliceOpen(true)}
-                                    className="h-8 w-8"
-                                    title={t('auto_splice')}
-                                >
-                                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                    variant={isSmartAlignMode ? 'primary' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setIsSmartAlignMode(!isSmartAlignMode); setIsVflToolActive(false); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
-                                    className={`h-8 w-8 ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-400' : ''}`}
-                                    title={t('smart_align')}
-                                >
-                                    <AlignCenter className={`w-3.5 h-3.5 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
-                                </Button>
-
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => {
-                                        if (window.confirm(t('clear_connections_confirm'))) {
-                                            setLocalCTO(prev => ({ ...prev, connections: [] }));
-                                        }
-                                    }}
-                                    className="h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                                    title={t('reset_connections')}
-                                >
-                                    <Eraser className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-
-                            {/* GROUP 4: ANALYSIS */}
-                            <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
-                                <Button
-                                    variant={isVflToolActive ? 'destructive' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setIsVflToolActive(!isVflToolActive); setIsOtdrToolActive(false); setIsRotateMode(false); setIsDeleteMode(false); setIsSmartAlignMode(false); setIsFusionToolActive(false); }}
-                                    className={`h-8 w-8 ${isVflToolActive ? 'bg-red-600 border-red-700 text-white hover:bg-red-500' : ''}`}
-                                    title={t('tool_vfl')}
-                                >
-                                    <Flashlight className="w-3.5 h-3.5 animate-pulse" />
-                                </Button>
-                                <Button
-                                    variant={isOtdrToolActive ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => { setIsOtdrToolActive(!isOtdrToolActive); setIsVflToolActive(false); setIsSmartAlignMode(false); setIsRotateMode(false); setIsDeleteMode(false); setIsFusionToolActive(false); }}
-                                    className={`h-8 w-8 ${isOtdrToolActive ? 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-500' : ''}`}
-                                    title={t('otdr_trace_tool')}
-                                >
-                                    <Ruler className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-
-                            {/* GROUP 5: VIEW */}
-                            <div className="flex items-center gap-1.5 pl-2">
-                                <Button
-                                    variant={isSnapping ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => setIsSnapping(!isSnapping)}
-                                    className="h-8 w-8"
-                                    title={t('snap_grid')}
-                                >
-                                    <Magnet className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-
-                            {/* GROUP 6: HELP / SHORTCUTS */}
-                            <div ref={hotkeysRef} className="flex items-center gap-1.5 pl-2 relative">
-                                <Button
-                                    variant={showHotkeys ? 'emerald' : 'outline'}
-                                    size="icon"
-                                    onClick={() => setShowHotkeys(!showHotkeys)}
-                                    className="h-8 w-8"
-                                    title={t('hotkeys_title')}
-                                >
-                                    <Keyboard className="w-3.5 h-3.5" />
-                                </Button>
-
-                                {showHotkeys && (
-                                    <div className="absolute top-10 right-0 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
-                                            <CircleHelp className="w-4 h-4 text-emerald-500" />
-                                            <span className="text-sm font-bold text-slate-900 dark:text-white">{t('hotkeys_title')}</span>
-                                        </div>
-                                        <div className="space-y-2.5">
-                                            {[
-                                                { key: 'S', label: t('hotkey_s') },
-                                                { key: 'F', label: t('hotkey_f') },
-                                                { key: 'A', label: t('hotkey_a') },
-                                                { key: 'R', label: t('hotkey_r') },
-                                                { key: 'D', label: t('hotkey_d') }
-                                            ].map(item => (
-                                                <div key={item.key} className="flex items-center gap-3">
-                                                    <kbd className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-sm">
-                                                        {item.key}
-                                                    </kbd>
-                                                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">{item.label}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="mt-4 text-[10px] text-slate-400 italic text-center">
-                                            {t('hotkeys_hint')}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                        </div>
-
-                        <div className="flex gap-2 pointer-events-auto items-center">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={handleExportPNG}
-                                disabled={!!exportingType}
-                                className="font-bold text-[11px] h-7 px-2.5"
-                            >
-                                {exportingType === 'png' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <ImageIcon className="w-3.5 h-3.5 mr-1.5" />}
-                                PNG
-                            </Button>
-
-                             {/* 
-                             <Button 
-                                 variant="secondary" 
-                                 size="sm" 
-                                 onClick={handleExportPDF} 
-                                 disabled={!!exportingType} 
-                                 className="font-bold text-[11px] h-7 px-2.5"
-                             >
-                                 {exportingType === 'pdf' ? <span className="animate-spin w-3 h-3 border-2 border-slate-400 border-t-slate-800 rounded-full mr-1.5"></span> : <FileDown className="w-3.5 h-3.5 mr-1.5" />}
-                                 PDF
-                             </Button>
-                             */}
-
-                             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
-
-                             <Button
-                                 variant="secondary"
-                                 size="sm"
-                                 onClick={() => setIsQRCodeModalOpen(true)}
-                                 disabled={!!exportingType}
-                                 className="font-bold text-[11px] h-7 px-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/20"
-                                 title={t('qr_maintenance')}
-                             >
-                                 <QrCode className="w-3.5 h-3.5 mr-1.5" />
-                                 {t('qr_code')}
-                             </Button>
-
-
-                        </div>
-                    </div>
-                </div>
+                <CTOEditorToolbar
+                    t={t}
+                    propertiesName={propertiesName}
+                    onNameChange={(name) => { setPropertiesName(name); setLocalCTO(prev => ({ ...prev, name })); }}
+                    isMaximized={isMaximized}
+                    isCollapsed={isCollapsed}
+                    onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+                    onToggleMaximize={toggleMaximize}
+                    onClose={handleCloseRequest}
+                    onWindowDragStart={handleWindowDragStart}
+                    isRotateMode={isRotateMode}
+                    isDeleteMode={isDeleteMode}
+                    showSplitterDropdown={showSplitterDropdown}
+                    isFusionToolActive={isFusionToolActive}
+                    isSmartAlignMode={isSmartAlignMode}
+                    isVflToolActive={isVflToolActive}
+                    isOtdrToolActive={isOtdrToolActive}
+                    isSnapping={isSnapping}
+                    onToggleSnapping={() => setIsSnapping(!isSnapping)}
+                    toggleToolMode={toggleToolMode}
+                    onAddFusion={handleAddFusion}
+                    onAddNote={handleAddNote}
+                    isAutoSpliceOpen={isAutoSpliceOpen}
+                    onOpenAutoSplice={() => setIsAutoSpliceOpen(true)}
+                    onClearConnections={() => { if (window.confirm(t('clear_connections_confirm'))) setLocalCTO(prev => ({ ...prev, connections: [] })); }}
+                    showHotkeys={showHotkeys}
+                    onToggleHotkeys={() => setShowHotkeys(!showHotkeys)}
+                    hotkeysRef={hotkeysRef}
+                    onExportPNG={handleExportPNG}
+                    exportingType={exportingType}
+                    onOpenQRCode={() => setIsQRCodeModalOpen(true)}
+                />
 
                 {/* Canvas */}
                 <div
@@ -3594,7 +2935,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 isOtdrToolActive={isOtdrToolActive}
                                 dragState={dragState}
                                 getPortCenter={getPortCenter}
-                                onHoverConnection={(id: string | null) => setHoveredElement(id ? { id, type: 'connection' } : null)}
+                                onHoverConnection={handleHoverConnection}
                                 handleSmartAlignConnection={handleSmartAlignConnection}
                                 handlePathMouseDown={handlePathMouseDown}
                                 handlePointMouseDown={handlePointMouseDown}
