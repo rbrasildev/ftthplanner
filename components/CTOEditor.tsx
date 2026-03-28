@@ -1616,27 +1616,46 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             let newRot = (currentRot + 90) % 360;
             let mirrored = layout.mirrored || false;
 
-            // Auto-orientation for cables:
-            // Ensures F1 is always UP (horizontal casing) or RIGHT (vertical casing)
-            // and text is never upside down (avoiding 180 and 270 degrees).
-            // Logic: 0(Std) -> 90(Std) -> 0(Mir) -> 90(Mir) -> loop
             const isCable = incomingCables.some(c => c.id === id);
             if (isCable) {
-                if (newRot === 180) { // Step 3: Becomes 0(Mir)
-                    newRot = 0;
-                    mirrored = !mirrored;
-                } else if (newRot === 270) { // Step 4: Becomes 90(Mir)
-                    newRot = 90;
-                    mirrored = !mirrored;
-                }
+                if (newRot === 180) { newRot = 0; mirrored = !mirrored; }
+                else if (newRot === 270) { newRot = 90; mirrored = !mirrored; }
             }
+
+            let newLayout = { ...layout, rotation: newRot, mirrored };
+
+            // To prevent visual jumping when rotating during a drag, sync x and y with DOM
+            const domEl = document.getElementById(id);
+            if (domEl) {
+                const style = window.getComputedStyle(domEl);
+                const matrix = new WebKitCSSMatrix(style.transform);
+                newLayout.x = matrix.m41;
+                newLayout.y = matrix.m42;
+            }
+
+            // If this element is currently being dragged (sticky drag),
+            // sync dragState so the element rotates in place under the mouse.
+            // Read current DOM position, set as new initialLayout,
+            // and set startX/startY to current mouse so delta = 0.
+            setDragState(ds => {
+                if (ds?.mode === 'element' && ds.targetId === id && ds.initialLayout) {
+                    const domEl = document.getElementById(id);
+                    if (domEl) {
+                        const m = new WebKitCSSMatrix(window.getComputedStyle(domEl).transform);
+                        return {
+                            ...ds,
+                            initialLayout: { ...newLayout, x: m.m41, y: m.m42 },
+                            startX: lastMouseScreenPos.current.x,
+                            startY: lastMouseScreenPos.current.y
+                        };
+                    }
+                }
+                return ds;
+            });
 
             return {
                 ...prev,
-                layout: {
-                    ...prev.layout,
-                    [id]: { ...layout, rotation: newRot, mirrored }
-                }
+                layout: { ...prev.layout, [id]: newLayout }
             };
         });
     }, [incomingCables]);
@@ -1711,9 +1730,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     // RAF throttling for mouse move
     const rafIdRef = useRef<number | null>(null);
+    const lastMouseScreenPos = useRef({ x: 0, y: 0 });
 
     // OPTIMIZED: Direct DOM Manipulation for smooth 60FPS dragging
     const handleMouseMove = (e: React.MouseEvent) => {
+        // Track mouse screen position for rotation-during-drag
+        lastMouseScreenPos.current = { x: e.clientX, y: e.clientY };
+
         // Track Cursor for Fusion Ghost
         if (isFusionToolActive) {
             const { x, y } = screenToCanvas(e.clientX, e.clientY);
