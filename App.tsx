@@ -1382,7 +1382,7 @@ export default function App() {
 
 
 
-    const handleConvertPinToNode = (type: 'CTO' | 'Pole') => {
+    const handleConvertPinToNode = (type: 'CTO' | 'Pole' | 'Customer') => {
         if (!pinnedLocation || !currentProject) return;
 
         const newId = crypto.randomUUID();
@@ -1399,7 +1399,7 @@ export default function App() {
             };
             updateCurrentNetwork(prev => ({ ...prev, ctos: [...prev.ctos, newCTO] }));
             showToast(t('toast_cto_added') || "CTO Adicionada", 'success');
-        } else {
+        } else if (type === 'Pole') {
             const newPole: PoleData = {
                 id: newId,
                 name: `Poste ${getCurrentNetwork().poles.length + 1}`,
@@ -1409,6 +1409,9 @@ export default function App() {
             };
             updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
             showToast(t('toast_pole_added') || "Poste Adicionado", 'success');
+        } else if (type === 'Customer') {
+            // Don't clear pin - MapView will handle opening CustomerModal at this location
+            return;
         }
         setPinnedLocation(null);
     };

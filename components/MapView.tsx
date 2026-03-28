@@ -542,7 +542,7 @@ interface MapViewProps {
     onDeleteNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onMoveNodeStart?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onPropertiesNode?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
-    onConvertPin?: (type: 'CTO' | 'Pole') => void;
+    onConvertPin?: (type: 'CTO' | 'Pole' | 'Customer') => void;
     onClearPin?: () => void;
     onUndoDrawingPoint?: () => void;
     pinnedLocation?: (Coordinates & { viability?: { active: boolean, distance: number } }) | null;
@@ -1594,46 +1594,68 @@ export const MapView: React.FC<MapViewProps> = ({
                         icon={createSearchPinIcon(selectedId === 'pin-location')}
                     >
                         <Popup>
-                            <div className="flex flex-col gap-2 min-w-[150px]">
-                                <h3 className="text-sm font-bold text-slate-800">{t('pinned_location')}</h3>
-                                <div className="text-xs text-slate-500 font-mono mb-1">
+                            <div className="flex flex-col min-w-[200px] -mx-1 -my-0.5">
+                                {/* Header */}
+                                <div className="flex items-center gap-1.5 mb-2">
+                                    <LocateFixed className="w-3.5 h-3.5 text-red-500" />
+                                    <span className="text-xs font-bold text-slate-800">{t('pinned_location')}</span>
+                                </div>
+
+                                {/* Coordinates */}
+                                <div className="text-[10px] text-slate-400 font-mono bg-slate-50 rounded px-2 py-1 mb-3 select-all text-center tracking-tight">
                                     {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => onConvertPin && onConvertPin('CTO')}
-                                        title={t('convert_to_cto')}
-                                        className="flex items-center justify-center px-2 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
-                                    >
-                                        <Box className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => onConvertPin && onConvertPin('Pole')}
-                                        title={t('convert_to_pole')}
-                                        className="flex items-center justify-center px-2 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors"
-                                    >
-                                        <UtilityPole className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={() => onClearPin && onClearPin()}
-                                    className="w-full mt-1 px-2 py-1 text-red-500 text-[10px] font-bold hover:bg-red-50 rounded"
-                                >
-                                    {t('remove_pin')}
-                                </button>
+
+                                {/* Viability Badge */}
                                 {pinnedLocation.viability && (
-                                    <div className={`mt-2 p-2 rounded-lg border flex items-center gap-2 ${pinnedLocation.viability.active ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'}`}>
-                                        {pinnedLocation.viability.active ? <CheckCircle2 className={`w-5 h-5 ${pinnedLocation.viability.active ? 'text-emerald-600 dark:text-emerald-400' : ''}`} /> : <XCircle className="w-5 h-5 text-red-500" />}
-                                        <div className="flex flex-col">
-                                            <span className={`text-[10px] font-bold uppercase ${pinnedLocation.viability.active ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                                    <div className={`mb-3 px-2.5 py-1.5 rounded-lg flex items-center gap-2 ${pinnedLocation.viability.active ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                                        {pinnedLocation.viability.active ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={`text-[10px] font-bold uppercase leading-tight ${pinnedLocation.viability.active ? 'text-emerald-700' : 'text-red-700'}`}>
                                                 {pinnedLocation.viability.active ? t('viability_available') : t('viability_unavailable')}
                                             </span>
-                                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                            <span className="text-[10px] text-slate-500 leading-tight">
                                                 {t('distance_nearest', { dist: Math.round(pinnedLocation.viability.distance) })}
                                             </span>
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Action Label */}
+                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">{t('add_at_location')}</div>
+
+                                {/* Action Buttons */}
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    <button
+                                        onClick={() => onConvertPin && onConvertPin('CTO')}
+                                        title={t('convert_to_cto')}
+                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all group"
+                                    >
+                                        <Box className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                                        <span className="text-[9px] font-bold text-blue-700">CTO</span>
+                                    </button>
+                                    <button
+                                        onClick={() => onConvertPin && onConvertPin('Pole')}
+                                        title={t('convert_to_pole')}
+                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all group"
+                                    >
+                                        <UtilityPole className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
+                                        <span className="text-[9px] font-bold text-amber-700">{t('pole')}</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (pinnedLocation) {
+                                                handleMapClickForCustomer(pinnedLocation.lat, pinnedLocation.lng);
+                                                if (onClearPin) onClearPin();
+                                            }
+                                        }}
+                                        title={t('customer')}
+                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition-all group"
+                                    >
+                                        <User className="w-4 h-4 text-green-600 group-hover:scale-110 transition-transform" />
+                                        <span className="text-[9px] font-bold text-green-700">{t('customer')}</span>
+                                    </button>
+                                </div>
                             </div>
                         </Popup>
                     </Marker>

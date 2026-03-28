@@ -10,49 +10,54 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(baseSize * zoomScale);
-    const pulseSize = Math.round(baseSize * 2 * zoomScale);
+    const borderSize = Math.max(2, Math.round(2.5 * zoomScale));
+    const pulseSize = Math.round(size * 2.2);
+    const iconSize = Math.round(size * 0.5);
 
     const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${baseSize}-${effectiveZoom}`;
-
-    if (iconCache.has(cacheKey)) {
-        return iconCache.get(cacheKey)!;
-    }
+    if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
 
     const icon = L.divIcon({
         className: 'custom-icon',
         html: `
-      ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${pulseSize}px; height: ${pulseSize}px; background: rgba(99, 102, 241, 0.4); border-radius: 50%; animation: pulse-indigo 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
+      ${isSelected ? `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:${pulseSize}px;height:${pulseSize}px;background:rgba(99,102,241,0.3);border-radius:50%;animation:pulse-indigo 2s infinite;pointer-events:none;z-index:5;"></div>` : ''}
       <div style="
-        position: relative;
-        background-color: ${color};
-        border: ${Math.max(2, Math.round(3 * zoomScale))}px solid ${isSelected ? '#818cf8' : 'white'};
-        border-radius: ${Math.round(6 * zoomScale)}px;
-        width: ${size}px;
-        height: ${size}px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 15;
+        position:relative;
+        width:${size}px;
+        height:${size}px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:15;
+        filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));
       ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="${size * 0.6}" height="${size * 0.6}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${isSelected ? '#a5b4fc' : 'white'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+          <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+          <path d="M10 6h4" stroke="white" stroke-width="2"/>
+          <path d="M10 10h4" stroke="white" stroke-width="2"/>
+          <path d="M10 14h4" stroke="white" stroke-width="2"/>
+          <path d="M10 18h4" stroke="white" stroke-width="2"/>
+        </svg>
       </div>
       <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: ${size + 4}px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15, 23, 42, 0.9);
-        color: white;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-size: ${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
-        font-weight: 600;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
+        display:${showLabels ? 'block' : 'none'};
+        position:absolute;
+        top:${size + 3}px;
+        left:50%;
+        transform:translateX(-50%);
+        background:rgba(15,23,42,0.92);
+        color:white;
+        padding:2px 6px;
+        border-radius:4px;
+        font-size:${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
+        font-weight:700;
+        letter-spacing:0.01em;
+        white-space:nowrap;
+        pointer-events:none;
+        box-shadow:0 1px 3px rgba(0,0,0,0.3);
+        z-index:20;
       ">${name}</div>
 `,
         iconSize: [size, size],
