@@ -1880,22 +1880,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     const idx = dragState.pointIndex! + 1; // +1 because source is at index 0
 
                     // Orthogonal snap: align to the CLOSEST neighbor axis when near
-                    const SNAP_THRESHOLD = GRID_SIZE * 2; // 12px
-                    const prevPt = allPoints[idx - 1];
-                    const nextPt = allPoints[idx + 1];
+                    if (modes.isSnapping) {
+                        const SNAP_THRESHOLD = GRID_SIZE * 2; // 12px
+                        const prevPt = allPoints[idx - 1];
+                        const nextPt = allPoints[idx + 1];
 
-                    // X-axis snap
-                    const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
-                    const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
-                    if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
-                        x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
-                    }
+                        // X-axis snap
+                        const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
+                        const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
+                        if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
+                            x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
+                        }
 
-                    // Y-axis snap
-                    const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
-                    const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
-                    if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
-                        y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                        // Y-axis snap
+                        const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
+                        const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
+                        if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
+                            y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                        }
                     }
 
                     // Rebuild path with snapped position
@@ -1989,27 +1991,29 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             let y = isSnapping ? Math.round(raw.y / GRID_SIZE) * GRID_SIZE : raw.y;
 
             // Apply same orthogonal snap as during drag (closest neighbor wins)
-            const conn = localCTORef.current.connections.find(c => c.id === dragState.connectionId);
-            if (conn) {
-                const p1 = getPortCenter(conn.sourceId);
-                const p2 = getPortCenter(conn.targetId);
-                if (p1 && p2) {
-                    const allPoints = [p1, ...(conn.points || []), p2];
-                    const idx = dragState.pointIndex! + 1;
-                    const SNAP_THRESHOLD = GRID_SIZE * 2;
-                    const prevPt = allPoints[idx - 1];
-                    const nextPt = allPoints[idx + 1];
+            if (isSnapping) {
+                const conn = localCTORef.current.connections.find(c => c.id === dragState.connectionId);
+                if (conn) {
+                    const p1 = getPortCenter(conn.sourceId);
+                    const p2 = getPortCenter(conn.targetId);
+                    if (p1 && p2) {
+                        const allPoints = [p1, ...(conn.points || []), p2];
+                        const idx = dragState.pointIndex! + 1;
+                        const SNAP_THRESHOLD = GRID_SIZE * 2;
+                        const prevPt = allPoints[idx - 1];
+                        const nextPt = allPoints[idx + 1];
 
-                    const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
-                    const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
-                    if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
-                        x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
-                    }
+                        const prevDx = prevPt ? Math.abs(x - prevPt.x) : Infinity;
+                        const nextDx = nextPt ? Math.abs(x - nextPt.x) : Infinity;
+                        if (prevDx < SNAP_THRESHOLD || nextDx < SNAP_THRESHOLD) {
+                            x = prevDx <= nextDx ? prevPt!.x : nextPt!.x;
+                        }
 
-                    const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
-                    const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
-                    if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
-                        y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                        const prevDy = prevPt ? Math.abs(y - prevPt.y) : Infinity;
+                        const nextDy = nextPt ? Math.abs(y - nextPt.y) : Infinity;
+                        if (prevDy < SNAP_THRESHOLD || nextDy < SNAP_THRESHOLD) {
+                            y = prevDy <= nextDy ? prevPt!.y : nextPt!.y;
+                        }
                     }
                 }
             }
@@ -2478,8 +2482,32 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             }
 
+            // Project clickPt onto the closest segment to prevent visual jumping
+            const pStart = fullPath[insertIndex];
+            const pEnd = fullPath[insertIndex + 1];
+            const A = clickPt.x - pStart.x;
+            const B = clickPt.y - pStart.y;
+            const C = pEnd.x - pStart.x;
+            const D = pEnd.y - pStart.y;
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq !== 0) param = dot / len_sq;
+
+            let projectedPt = { ...clickPt };
+            if (param >= 0 && param <= 1) {
+                projectedPt.x = pStart.x + param * C;
+                projectedPt.y = pStart.y + param * D;
+            } else if (param < 0) {
+                projectedPt.x = pStart.x;
+                projectedPt.y = pStart.y;
+            } else if (param > 1) {
+                projectedPt.x = pEnd.x;
+                projectedPt.y = pEnd.y;
+            }
+
             const newPoints = [...currentPoints];
-            newPoints.splice(insertIndex, 0, clickPt);
+            newPoints.splice(insertIndex, 0, projectedPt);
             insertedPointIndex = insertIndex;
             return { ...c, points: newPoints };
         });
