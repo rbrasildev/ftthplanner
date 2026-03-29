@@ -226,18 +226,44 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                     min="1"
                                     max="16"
                                     value={newOLTConfig.slots}
-                                    onChange={e => setNewOLTConfig({ ...newOLTConfig, slots: parseInt(e.target.value) })}
+                                    onChange={e => {
+                                        const slots = parseInt(e.target.value) || 1;
+                                        setNewOLTConfig({ ...newOLTConfig, slots });
+                                    }}
                                 />
                                 <CustomInput
                                     label={newOLTConfig.type === 'OLT' ? t('olt_ports') : t('active_ports')}
                                     type="number"
-                                    min="8"
-                                    max="16"
-                                    step="8"
+                                    min="1"
+                                    max="128"
                                     value={newOLTConfig.portsPerSlot}
                                     onChange={e => setNewOLTConfig({ ...newOLTConfig, portsPerSlot: parseInt(e.target.value) })}
                                 />
                             </div>
+
+                            {/* Slot name preview */}
+                            {newOLTConfig.slots > 1 && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase">{t('slot_names') || 'Nomes dos Slots'}</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {Array.from({ length: Math.min(newOLTConfig.slots, 16) }).map((_, i) => (
+                                            <input
+                                                key={i}
+                                                type="text"
+                                                maxLength={6}
+                                                placeholder={`S${i + 1}`}
+                                                defaultValue={(newOLTConfig as any).slotNames?.[i] || ''}
+                                                onChange={e => {
+                                                    const names = [...((newOLTConfig as any).slotNames || [])];
+                                                    names[i] = e.target.value;
+                                                    setNewOLTConfig({ ...newOLTConfig, slotNames: names });
+                                                }}
+                                                className="w-14 h-7 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500"
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                             <CustomInput

@@ -820,7 +820,7 @@ export const MapView: React.FC<MapViewProps> = ({
             .map(({ cable }) => cable);
     }, [showCables, cablesWithBBox, mapBoundsState]);
 
-    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole' } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole', targetType?: "CTO" | "POP" } | null>(null);
 
     const [mapContextMenu, setMapContextMenu] = useState<{
         x: number,
@@ -916,17 +916,35 @@ export const MapView: React.FC<MapViewProps> = ({
     }, [mode, onCableClick]);
 
     const handleCableContextMenu = useCallback((e: any, cable: CableData) => {
-        // e.containerPoint comes from D3 layer or needs to be calculated
-        // Use clientX/Y directly for fixed position menu if using Portal or fixed overlay
         const domEvent = e.originalEvent || e;
         L.DomEvent.stopPropagation(domEvent);
         setMapContextMenu(null); // Close map menu if open
 
         const clientX = e.originalEvent.clientX;
         const clientY = e.originalEvent.clientY;
+        const latlng = e.latlng;
 
-        setContextMenu({ x: clientX, y: clientY, id: cable.id, type: 'CABLE' });
-    }, []);
+        // Tenta detectar se o clique foi perto de um POP para mudar o rótulo de conexão
+        let targetType: "CTO" | "POP" | undefined = undefined;
+        if (latlng) {
+            const snapLimit = 15; // 15 metros de tolerância para o rótulo
+            const nearPOP = pops.some(p => {
+                const pLatLng = L.latLng(p.coordinates.lat, p.coordinates.lng);
+                return latlng.distanceTo(pLatLng) < snapLimit;
+            });
+            if (nearPOP) {
+                targetType = "POP";
+            } else {
+                const nearCTO = ctos.some(c => {
+                    const cLatLng = L.latLng(c.coordinates.lat, c.coordinates.lng);
+                    return latlng.distanceTo(cLatLng) < snapLimit;
+                });
+                if (nearCTO) targetType = "CTO";
+            }
+        }
+
+        setContextMenu({ x: clientX, y: clientY, id: cable.id, type: 'CABLE', targetType });
+    }, [pops, ctos]);
 
     const handleNodeContextMenu = useCallback((e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => {
         L.DomEvent.stopPropagation(e.originalEvent || e); // Ensure propagation stops
@@ -1684,6 +1702,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     <CableContextMenu
                         x={contextMenu.x}
                         y={contextMenu.y}
+                        targetType={contextMenu.targetType}
                         onEdit={userRole !== 'MEMBER' ? () => {
                             // "Editar Cabo" -> Geometry Edit (Select ID)
                             if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
@@ -1811,7 +1830,12 @@ export const MapView: React.FC<MapViewProps> = ({
                 mapContextMenu && (
                     <div
                         className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
-                        style={{ top: mapContextMenu.y, left: mapContextMenu.x }}
+                        style={{ 
+                            top: mapContextMenu.y > window.innerHeight / 2 ? 'auto' : mapContextMenu.y,
+                            bottom: mapContextMenu.y > window.innerHeight / 2 ? window.innerHeight - mapContextMenu.y : 'auto',
+                            left: mapContextMenu.x > window.innerWidth / 2 ? 'auto' : mapContextMenu.x,
+                            right: mapContextMenu.x > window.innerWidth / 2 ? window.innerWidth - mapContextMenu.x : 'auto'
+                        }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 mb-1">

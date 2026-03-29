@@ -277,7 +277,15 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                     >
                         <div className="flex items-center gap-2">
                             <span>{olt.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">{olt.ports} ports</span>
+                            {(() => {
+                                const usedCount = (olt.portIds || []).filter((p: string) => !!connectionMap[p]).length;
+                                const total = olt.portIds?.length || 0;
+                                return (
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                        {usedCount}/{total}
+                                    </span>
+                                );
+                            })()}
                         </div>
                         <div className="flex items-center gap-3">
                             {onDeleteEquipment && (
@@ -305,12 +313,15 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                             const slotPorts = olt.portIds.slice(slotIdx * portsPerSlot, (slotIdx + 1) * portsPerSlot);
                             if (slotPorts.length === 0) return null;
 
+                            const slotConfig = olt.structure?.slotsConfig?.[slotIdx];
+                            const slotLabel = slotConfig?.name || `Slot ${slotIdx + 1}`;
+
                             return (
                                 <div key={slotIdx} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                                     <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase flex items-center gap-2">
-                                        <Server className="w-3 h-3 text-emerald-500" /> Slot {slotIdx + 1}
+                                        <Server className="w-3 h-3 text-emerald-500" /> {slotLabel}
                                     </div>
-                                    <div className="p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 bg-white dark:bg-slate-900/30">
+                                    <div className="p-2 bg-white dark:bg-slate-900/30" style={{ display: 'grid', gridTemplateColumns: `repeat(${slotPorts.length}, 1fr)`, gap: '3px' }}>
                                         {slotPorts.map((pId, localIdx) => {
                                             const isConnected = !!connectionMap[pId];
                                             const isSelected = selectedPortA === pId;
@@ -422,7 +433,15 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                     >
                         <div className="flex items-center gap-2">
                             <span>{dio.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">{dio.ports} ports</span>
+                            {(() => {
+                                const usedCount = (dio.portIds || []).filter((p: string) => !!connectionMap[p]).length;
+                                const total = dio.portIds?.length || 0;
+                                return (
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                        {usedCount}/{total}
+                                    </span>
+                                );
+                            })()}
                         </div>
                         <div className="flex items-center gap-3">
                             {onManageFusions && (
@@ -624,9 +643,16 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {renderColumn('col1', `${t('column_name')} 1`, <Server className="w-4 h-4 text-emerald-500" />, 'bg-slate-50 dark:bg-slate-900')}
-                {renderColumn('col2', `${t('column_name')} 2`, <Network className="w-4 h-4 text-indigo-500" />, 'bg-white dark:bg-slate-950')}
-                {renderColumn('col3', `${t('column_name')} 3`, <Zap className="w-4 h-4 text-blue-500" />, 'bg-slate-100/50 dark:bg-slate-900/50')}
+                {renderColumn('col1', t('col_olts') || 'OLTs', <Zap className="w-4 h-4 text-indigo-500" />, 'bg-slate-50 dark:bg-slate-900')}
+                {/* Flow arrow between columns */}
+                <div className="flex items-center px-0 shrink-0 text-slate-300 dark:text-slate-600">
+                    <ArrowRight className="w-4 h-4" />
+                </div>
+                {renderColumn('col2', t('col_switches') || 'Switches', <Network className="w-4 h-4 text-emerald-500" />, 'bg-white dark:bg-slate-950')}
+                <div className="flex items-center px-0 shrink-0 text-slate-300 dark:text-slate-600">
+                    <ArrowRight className="w-4 h-4" />
+                </div>
+                {renderColumn('col3', t('col_dios') || 'DIOs', <Server className="w-4 h-4 text-blue-500" />, 'bg-slate-100/50 dark:bg-slate-900/50')}
             </div>
         </div>
     );

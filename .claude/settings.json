@@ -14,7 +14,9 @@
       "Bash(mv check-stripe-metadata.ts scripts/)",
       "Bash(mv sync_plans.ts scripts/)",
       "Bash(mv test-stripe.ts scripts/)",
-      "Bash(mv migration.sql scripts/)"
+      "Bash(mv migration.sql scripts/)",
+      "Bash(grep -r pop-editor d:/ftthplanner --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
+      "Bash(grep -r \"POPEditor\\\\|PopEditor\" d:/ftthplanner --include=*.tsx --include=*.ts)"
     ]
   }
 }

@@ -4,7 +4,7 @@ import { useLanguage } from '../../LanguageContext';
 import { Button } from '../common/Button';
 
 interface OLTUnitProps {
-    olt: any; // Using any for agility, ideally would be the specific OLT type
+    olt: any;
     position: { x: number; y: number };
     width: number;
     connections: any[];
@@ -16,6 +16,7 @@ interface OLTUnitProps {
     onPortClick: (e: React.MouseEvent, portId: string) => void;
     onPortHover: (portId: string | null) => void;
     getFiberColor: (index: number, standard: string) => string;
+    getPortConnectionInfo?: (portId: string) => string | undefined;
 }
 
 export const OLTUnit: React.FC<OLTUnitProps> = ({
@@ -30,13 +31,13 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
     onDelete,
     onPortClick,
     onPortHover,
-    getFiberColor
+    getFiberColor,
+    getPortConnectionInfo
 }) => {
     const { t } = useLanguage();
     const slots = olt.structure?.slots || 1;
     const portsPerSlot = olt.structure?.portsPerSlot || 8;
 
-    // --- Performance Optimization ---
     const portConnectionsMap = React.useMemo(() => {
         const map = new Map<string, any>();
         connections.forEach(c => {
@@ -46,104 +47,97 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
         return map;
     }, [connections]);
 
-    // Premium Look: Gradients, better borders, depth effects
+    // Dynamic width: label area + (port width + gap) * ports + padding
+    const maxPorts = Math.max(portsPerSlot, ...(olt.structure?.slotsConfig || []).map((s: any) => s.active ? s.portCount : 0));
+    const portW = 26; // port cell width
+    const labelW = 44; // slot label width
+    const pad = 24; // total horizontal padding
+    const dynamicWidth = Math.max(width, labelW + pad + maxPorts * (portW + 2));
+
+    const TypeIcon = olt.type === 'SWITCH' ? Zap : olt.type === 'ROUTER' ? Router : Server;
+
     return (
         <div
-            style={{ transform: `translate(${position.x}px, ${position.y}px)`, width }}
-            className="absolute z-20 flex flex-col group clickable-element transition-transform duration-75 select-none"
+            id={olt.id}
+            style={{ transform: `translate(${position.x}px, ${position.y}px)`, width: dynamicWidth }}
+            className="absolute z-20 flex flex-col group clickable-element select-none"
         >
-            {/* Card Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10">
-                {/* Header */}
+            {/* Chassis */}
+            <div className="bg-[#1a1d23] rounded-lg shadow-xl overflow-hidden border border-slate-700/50 ring-1 ring-black/20">
+
+                {/* Front Panel - Header */}
                 <div
-                    className="h-9 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
+                    className="h-8 bg-[#22262e] border-b border-slate-700/50 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
                     onMouseDown={(e) => onDragStart(e, olt.id)}
                 >
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                        <div className="p-1 bg-indigo-100 dark:bg-indigo-500/20 rounded-md">
-                            {olt.type === 'SWITCH' ? (
-                                <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                            ) : olt.type === 'ROUTER' ? (
-                                <Router className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                            ) : (
-                                <Server className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                            )}
-                        </div>
-                        {olt.name}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        {/* Power LED */}
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_4px_#22c55e]" />
+                        <TypeIcon className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-[11px] font-bold text-slate-300 tracking-wide">{olt.name}</span>
+                    </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onEdit(e, olt)}
-                            className="h-7 w-7 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onEdit(e, olt)} className="h-6 w-6 text-slate-500 hover:text-emerald-400">
+                            <Pencil className="w-3 h-3" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onDelete(e, olt)}
-                            className="h-7 w-7 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onDelete(e, olt)} className="h-6 w-6 text-slate-500 hover:text-rose-400">
+                            <Trash2 className="w-3 h-3" />
                         </Button>
                     </div>
                 </div>
 
-                {/* Body (Slots) */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-950/50 space-y-2.5">
+                {/* Slots (Line Cards) */}
+                <div className="p-1.5 space-y-1">
                     {Array.from({ length: slots }).map((_, sIdx) => {
                         const slotConfig = olt.structure?.slotsConfig?.[sIdx] || { active: true, portCount: portsPerSlot };
-                        const currentPortsPerSlot = slotConfig.portCount;
-                        const slotColor = '#6366f1'; // Indigo-500
+                        const currentPorts = slotConfig.portCount;
+                        const slotLabel = slotConfig.name || `${sIdx + 1}`;
 
                         if (!slotConfig.active) {
                             return (
-                                <div key={sIdx} className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-900/40 p-1.5 rounded border border-dashed border-slate-300 dark:border-slate-800 opacity-60">
-                                    <div className="w-8 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-200/50 dark:bg-black/50 text-slate-400">
-                                        S{sIdx + 1}
-                                    </div>
-                                    <div className="flex-1 text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center py-1">
-                                        {t('slot_empty')}
-                                    </div>
+                                <div key={sIdx} className="flex items-center h-7 bg-[#15171c] rounded border border-dashed border-slate-700/40 px-2">
+                                    <span className="text-[8px] font-mono text-slate-600 w-8 shrink-0 text-center">{slotLabel}</span>
+                                    <span className="flex-1 text-[7px] text-slate-600 text-center uppercase tracking-[0.2em]">{t('slot_empty')}</span>
                                 </div>
                             );
                         }
 
                         return (
-                            <div key={sIdx} className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1.5 rounded border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <div
-                                    className="w-8 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-100 dark:bg-black select-none"
-                                    style={{ color: slotColor, borderLeft: `2px solid ${slotColor}` }}
-                                >
-                                    S{sIdx + 1}
+                            <div key={sIdx} className="flex items-center bg-[#2a2e38] rounded border border-slate-600/30 px-1 py-1 gap-1">
+                                {/* Slot Label */}
+                                <div className="w-8 shrink-0 text-[8px] font-mono font-bold text-indigo-400 text-center truncate" title={slotLabel}>
+                                    {slotLabel}
                                 </div>
-                                <div className="flex-1 grid grid-cols-8 gap-1">
-                                    {Array.from({ length: currentPortsPerSlot }).map((_, pIdx) => {
+                                {/* Separator */}
+                                <div className="w-px h-4 bg-slate-600/50 shrink-0" />
+                                {/* Ports */}
+                                <div className="flex-1 flex gap-[2px]">
+                                    {Array.from({ length: currentPorts }).map((_, pIdx) => {
                                         const portId = `${olt.id}-s${sIdx + 1}-p${pIdx + 1}`;
                                         const isConnected = portConnectionsMap.has(portId);
-                                        const isBeingConfigured = configuringOltPortId === portId;
+                                        const isConfiguring = configuringOltPortId === portId;
+                                        const isHovered = hoveredPortId === portId;
+                                        const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(portId) : undefined;
 
                                         return (
                                             <div
                                                 key={portId}
                                                 id={portId}
+                                                title={connInfo ? `→ ${connInfo}` : `P${pIdx + 1} (${t('free')})`}
                                                 onMouseDown={(e) => onPortClick(e, portId)}
                                                 onMouseEnter={() => onPortHover(portId)}
                                                 onMouseLeave={() => onPortHover(null)}
                                                 className={`
-                                                    aspect-square rounded border cursor-pointer select-none flex items-center justify-center text-[8px] font-mono transition-all
-                                                    ${isBeingConfigured ? 'ring-2 ring-indigo-500 scale-125 z-10' : ''}
-                                                    ${hoveredPortId === portId ? 'scale-125 border-slate-400 z-10 shadow' : ''}
+                                                    flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
+                                                    ${isConfiguring ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
+                                                    ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
                                                 style={{
-                                                    backgroundColor: isConnected ? slotColor : 'transparent',
-                                                    borderColor: isConnected ? slotColor : 'inherit',
-                                                    color: isConnected ? '#fff' : 'inherit',
-                                                    boxShadow: isConnected ? `0 0 5px ${slotColor}80` : 'none'
+                                                    backgroundColor: isConnected ? '#6366f1' : '#1e2028',
+                                                    border: `1px solid ${isConnected ? '#818cf8' : '#3f4451'}`,
+                                                    color: isConnected ? '#fff' : '#6b7280',
+                                                    boxShadow: isConnected ? '0 0 4px rgba(99,102,241,0.4)' : 'none'
                                                 }}
-                                                title={`Slot ${sIdx + 1} Port ${pIdx + 1}`}
                                             >
                                                 {pIdx + 1}
                                             </div>
@@ -154,41 +148,37 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                         );
                     })}
 
-                    {/* Uplink Ports */}
+                    {/* Uplink Section */}
                     {(olt.uplinkPorts || 0) > 0 && (
-                        <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded border border-slate-300 dark:border-slate-700 shadow-sm mt-3">
-                            <div
-                                className="w-14 text-[9px] font-mono text-center font-bold px-1 py-0.5 rounded bg-slate-300 dark:bg-slate-900 select-none text-slate-700 dark:text-slate-300"
-                                style={{ borderLeft: `2px solid #94a3b8` }}
-                            >
-                                {t('uplinks') || 'UPLINK'}
-                            </div>
-                            <div className="flex-1 flex gap-2">
+                        <div className="flex items-center h-7 bg-[#1e2028] rounded border border-slate-600/30 px-1 gap-1 mt-0.5">
+                            <div className="w-8 shrink-0 text-[7px] font-mono font-bold text-amber-500 text-center uppercase">UP</div>
+                            <div className="w-px h-4 bg-slate-600/50 shrink-0" />
+                            <div className="flex-1 flex gap-1">
                                 {Array.from({ length: olt.uplinkPorts }).map((_, pIdx) => {
                                     const portId = `${olt.id}-uplink-${pIdx + 1}`;
                                     const isConnected = portConnectionsMap.has(portId);
-                                    const isBeingConfigured = configuringOltPortId === portId;
-                                    const slotColor = '#94a3b8'; // Slate 400
+                                    const isConfiguring = configuringOltPortId === portId;
+                                    const isHovered = hoveredPortId === portId;
+                                    const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(portId) : undefined;
 
                                     return (
                                         <div
                                             key={portId}
                                             id={portId}
+                                            title={connInfo ? `→ ${connInfo}` : `Uplink ${pIdx + 1} (${t('free')})`}
                                             onMouseDown={(e) => onPortClick(e, portId)}
                                             onMouseEnter={() => onPortHover(portId)}
                                             onMouseLeave={() => onPortHover(null)}
                                             className={`
-                                                w-6 h-6 rounded border cursor-pointer select-none flex items-center justify-center text-[8px] font-mono transition-all
-                                                ${isBeingConfigured ? 'ring-2 ring-slate-500 scale-125 z-10' : ''}
-                                                ${hoveredPortId === portId ? 'scale-125 border-white z-10 shadow' : ''}
+                                                w-7 h-5 shrink-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
+                                                ${isConfiguring ? 'ring-1 ring-amber-400 scale-110 z-10' : ''}
+                                                ${isHovered ? 'scale-110 z-10' : ''}
                                             `}
                                             style={{
-                                                backgroundColor: isConnected ? slotColor : 'transparent',
-                                                borderColor: isConnected ? slotColor : 'inherit',
-                                                color: isConnected ? '#fff' : 'inherit',
-                                                boxShadow: isConnected ? `0 0 5px ${slotColor}80` : 'none'
+                                                backgroundColor: isConnected ? '#94a3b8' : '#1e2028',
+                                                border: `1px solid ${isConnected ? '#cbd5e1' : '#3f4451'}`,
+                                                color: isConnected ? '#0f172a' : '#6b7280',
                                             }}
-                                            title={`Uplink Port ${pIdx + 1}`}
                                         >
                                             U{pIdx + 1}
                                         </div>
@@ -199,12 +189,10 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                     )}
                 </div>
 
-                {/* Footer/Meta (Model Info) */}
-                <div className="bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-[9px] text-slate-400 font-mono select-none">
-                    <span>{slots} Slot{slots > 1 ? 's' : ''} {olt.type || 'OLT'}</span>
-                    <span className="uppercase tracking-wider">
-                        {olt.type === 'OLT' ? 'GPON' : 'ETHERNET'}
-                    </span>
+                {/* Bottom Bar (Model/Type) */}
+                <div className="h-5 bg-[#15171c] border-t border-slate-700/30 px-3 flex justify-between items-center text-[8px] text-slate-500 font-mono select-none">
+                    <span>{slots} Slot{slots > 1 ? 's' : ''}</span>
+                    <span className="uppercase tracking-wider text-slate-600">{olt.type === 'OLT' ? 'GPON' : olt.type || 'ETH'}</span>
                 </div>
             </div>
         </div>

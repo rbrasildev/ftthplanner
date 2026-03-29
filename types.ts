@@ -72,6 +72,7 @@ export interface ElementLayout {
 export interface SlotConfig {
   active: boolean;
   portCount: number;
+  name?: string; // Alphanumeric slot identifier (e.g. "A", "B", "GPON1")
 }
 
 export interface Note {

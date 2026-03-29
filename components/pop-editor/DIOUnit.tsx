@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Server, Link2, Plug, Pencil, Trash2, Layers } from 'lucide-react';
+import { Server, Link2, Plug, Pencil, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { Button } from '../common/Button';
-import { getFiberColor } from '../../types';
 
 interface DIOUnitProps {
     dio: any;
@@ -18,6 +17,7 @@ interface DIOUnitProps {
     onDelete: (e: React.MouseEvent, dio: any) => void;
     onPortClick: (e: React.MouseEvent, portId: string) => void;
     onHoverPort: (portId: string | null) => void;
+    getPortConnectionInfo?: (portId: string) => string | undefined;
 }
 
 export const DIOUnit: React.FC<DIOUnitProps> = ({
@@ -33,7 +33,8 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     onEdit,
     onDelete,
     onPortClick,
-    onHoverPort
+    onHoverPort,
+    getPortConnectionInfo
 }) => {
     const { t } = useLanguage();
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
@@ -48,173 +49,152 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
         onHoverPort(null);
     };
 
-    // --- Performance Optimization ---
     const portConnectionsMap = React.useMemo(() => {
         const map = new Map<string, any[]>();
-
-        // Fast grouping
-        connections.forEach(c => {
+        connections.forEach((c: any) => {
             if (!map.has(c.sourceId)) map.set(c.sourceId, []);
             if (!map.has(c.targetId)) map.set(c.targetId, []);
             map.get(c.sourceId)!.push(c);
             map.get(c.targetId)!.push(c);
         });
-
         return map;
     }, [connections]);
 
+    const TRAY_SIZE = 12;
+    const trayCount = Math.ceil((dio.portIds?.length || 0) / TRAY_SIZE);
+
+    // Dynamic width based on ports per tray (all in one row)
+    const portW = 24;
+    const labelW = 40;
+    const pad = 20;
+    const dynamicWidth = Math.max(width, labelW + pad + TRAY_SIZE * (portW + 2));
+
     return (
         <div
-            style={{ transform: `translate(${position.x}px, ${position.y}px)`, width }}
-            className="absolute z-20 flex flex-col group clickable-element transition-transform duration-75 select-none"
+            id={dio.id}
+            style={{ transform: `translate(${position.x}px, ${position.y}px)`, width: dynamicWidth }}
+            className="absolute z-20 flex flex-col group clickable-element select-none"
         >
-            {/* Card Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10">
+            {/* Chassis */}
+            <div className="bg-[#1a1d23] rounded-lg shadow-xl overflow-hidden border border-slate-700/50 ring-1 ring-black/20">
 
                 {/* Header */}
                 <div
-                    className="h-9 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
+                    className="h-8 bg-[#22262e] border-b border-slate-700/50 px-3 flex items-center justify-between cursor-grab active:cursor-grabbing"
                     onMouseDown={(e) => onDragStart(e, dio.id)}
                 >
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                        <div className="p-1 bg-emerald-100 dark:bg-emerald-500/20 rounded-md">
-                            <Server className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        {dio.name}
-                    </span>
-
-                    {/* Actions Toolbar */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_4px_#06b6d4]" />
+                        <Server className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-[11px] font-bold text-slate-300 tracking-wide">{dio.name}</span>
+                        <span className="text-[9px] text-slate-500 font-mono">{dio.ports}P</span>
+                    </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onLinkCables(e, dio.id)}
-                            className="h-7 w-7 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                            title="Link Cables"
-                        >
-                            <Link2 className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onLinkCables(e, dio.id)} className="h-6 w-6 text-slate-500 hover:text-cyan-400" title={t('link_cables') || 'Vincular Cabos'}>
+                            <Link2 className="w-3 h-3" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onSplice(e, dio.id)}
-                            className="h-7 w-7 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                            title="Manage Splices"
-                        >
-                            <Plug className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onSplice(e, dio.id)} className="h-6 w-6 text-slate-500 hover:text-indigo-400" title={t('manage_fusions') || 'Fusões'}>
+                            <Plug className="w-3 h-3" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onEdit(e, dio)}
-                            className="h-7 w-7 text-slate-400 hover:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onEdit(e, dio)} className="h-6 w-6 text-slate-500 hover:text-emerald-400">
+                            <Pencil className="w-3 h-3" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => onDelete(e, dio)}
-                            className="h-7 w-7 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
+                        <Button variant="ghost" size="icon" onClick={(e) => onDelete(e, dio)} className="h-6 w-6 text-slate-500 hover:text-rose-400">
+                            <Trash2 className="w-3 h-3" />
                         </Button>
                     </div>
                 </div>
 
-                {/* Body */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-950/50">
-
-                    {/* Linked Cables Chips */}
-                    <div className="mb-3">
-                        {linkedCables.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5 select-none">
-                                {linkedCables.map(c => (
-                                    <span key={c.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800/50">
-                                        {c.name}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded border border-dashed border-slate-300 dark:border-slate-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                                <span className="text-[9px] text-slate-400 italic">No cables linked</span>
-                            </div>
-                        )}
+                {/* Linked Cables Bar */}
+                {linkedCables.length > 0 && (
+                    <div className="px-2 py-1 bg-[#1e2028] border-b border-slate-700/30 flex items-center gap-1.5">
+                        <Link2 className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                        <div className="flex flex-wrap gap-1">
+                            {linkedCables.map((c: any) => (
+                                <span key={c.id} className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-cyan-900/40 text-cyan-400 border border-cyan-800/40">
+                                    {c.name}
+                                </span>
+                            ))}
+                        </div>
                     </div>
+                )}
 
-                    {/* Ports Grid */}
-                    <div className="grid grid-cols-12 gap-1.5">
-                        {dio.portIds.map((pid: string, idx: number) => {
-                            const existingConns = portConnectionsMap.get(pid) || [];
-                            const patchConn = existingConns.find((c: any) => {
-                                const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                return partner.includes('olt');
-                            });
+                {/* Trays */}
+                <div className="p-1.5 space-y-1">
+                    {Array.from({ length: trayCount }).map((_, tIdx) => {
+                        const trayPorts = dio.portIds.slice(tIdx * TRAY_SIZE, (tIdx + 1) * TRAY_SIZE);
+                        if (trayPorts.length === 0) return null;
 
-                            const isConnected = !!patchConn;
+                        return (
+                            <div key={tIdx} className="flex items-center bg-[#2a2e38] rounded border border-slate-600/30 px-1 py-1 gap-1">
+                                {/* Tray Label */}
+                                <div className="w-7 shrink-0 text-[7px] font-mono font-bold text-cyan-500 text-center" title={`${t('tray')} ${tIdx + 1}`}>
+                                    T{tIdx + 1}
+                                </div>
+                                <div className="w-px h-4 bg-slate-600/50 shrink-0" />
+                                {/* Ports */}
+                                <div className="flex-1 flex gap-[2px]">
+                                    {trayPorts.map((pid: string, localIdx: number) => {
+                                        const existingConns = portConnectionsMap.get(pid) || [];
+                                        const patchConn = existingConns.find((c: any) => {
+                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
+                                            return partner.includes('olt');
+                                        });
+                                        const isConnected = !!patchConn;
+                                        const isSpliced = existingConns.some((c: any) =>
+                                            c.sourceId.includes('fiber') || c.targetId.includes('fiber')
+                                        );
 
-                            let highlightForActiveOLT = false;
-                            if (configuringOltPortId) {
-                                if (patchConn && (patchConn.sourceId === configuringOltPortId || patchConn.targetId === configuringOltPortId)) {
-                                    highlightForActiveOLT = true;
-                                }
-                            }
+                                        const isHovered = hoveredPortId === pid;
+                                        let highlightForActiveOLT = false;
+                                        if (configuringOltPortId && patchConn) {
+                                            highlightForActiveOLT = patchConn.sourceId === configuringOltPortId || patchConn.targetId === configuringOltPortId;
+                                        }
 
-                            const portColor = patchConn ? patchConn.color : null;
-                            const isTrayStart = idx % 12 === 0;
-                            const trayIndex = Math.floor(idx / 12);
-                            const trayColor = getFiberColor(trayIndex, 'ABNT');
-                            const isWhiteFiber = trayColor.toLowerCase() === '#ffffff';
+                                        const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(pid) : undefined;
 
-                            const isSpliced = existingConns.some((c: any) =>
-                                c.sourceId.includes('fiber') || c.targetId.includes('fiber')
-                            );
+                                        return (
+                                            <div
+                                                key={pid}
+                                                id={pid}
+                                                title={(() => {
+                                                    const label = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
+                                                    if (connInfo) return `${label} → ${connInfo}`;
+                                                    if (isSpliced) return `${label} - Spliced`;
+                                                    return `${label} (${t('free')})`;
+                                                })()}
+                                                onMouseDown={(e) => onPortClick(e, pid)}
+                                                onMouseEnter={() => handlePortEnter(pid)}
+                                                onMouseLeave={handlePortLeave}
+                                                className={`
+                                                    flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all relative
+                                                    ${highlightForActiveOLT ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
+                                                    ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
+                                                `}
+                                                style={{
+                                                    backgroundColor: isConnected ? '#06b6d4' : '#1e2028',
+                                                    border: `1px solid ${isConnected ? '#22d3ee' : '#3f4451'}`,
+                                                    color: isConnected ? '#fff' : '#6b7280',
+                                                    boxShadow: isConnected ? '0 0 4px rgba(6,182,212,0.4)' : 'none'
+                                                }}
+                                            >
+                                                {localIdx + 1}
+                                                {isSpliced && (
+                                                    <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
 
-                            return (
-                                <React.Fragment key={pid}>
-                                    {isTrayStart && (
-                                        <div className="col-span-12 flex items-center gap-2 mt-2 mb-1">
-                                            <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1 select-none">
-                                                <Layers className="w-2.5 h-2.5" />
-                                                {t('tray')} {Math.floor(idx / 12) + 1}
-                                            </span>
-                                            <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
-                                        </div>
-                                    )}
-                                    <div
-                                        id={pid}
-                                        onMouseDown={(e) => onPortClick(e, pid)}
-                                        onMouseEnter={() => handlePortEnter(pid)}
-                                        onMouseLeave={handlePortLeave}
-                                        className={`
-                                            aspect-square rounded-full border-2 flex flex-col items-center justify-center text-[8px] font-mono transition-all select-none font-bold
-                                            ${highlightForActiveOLT ? 'ring-2 ring-indigo-500 scale-125 z-50 shadow-lg' : ''}
-                                            ${hoveredPortId === pid ? 'scale-125 border-slate-400 z-10 shadow' : ''}
-                                            ${!isConnected ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700' : ''}
-                                        `}
-                                        style={isConnected ? {
-                                            backgroundColor: portColor || '#cbd5e1',
-                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor,
-                                            color: '#000',
-                                            boxShadow: highlightForActiveOLT ? `0 0 10px ${portColor}` : `0 0 2px ${portColor}80`
-                                        } : {
-                                            borderColor: isWhiteFiber ? '#cbd5e1' : trayColor,
-                                            color: isWhiteFiber ? '#475569' : trayColor,
-                                            backgroundColor: isWhiteFiber ? '#f8fafc' : `${trayColor}15`
-                                        }}
-                                        title={isSpliced ? `Spliced - Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})` : `Port ${(idx % 12) + 1} (${t('tray')} ${trayIndex + 1})`}
-                                    >
-                                        {(idx % 12) + 1}
-                                        <div className="flex gap-0.5 mt-[1px]">
-                                            {isSpliced && <div className="w-1 h-1 rounded-full bg-orange-500" title={t('type_FUSION')}></div>}
-                                        </div>
-                                    </div>
-                                </React.Fragment>
-                            );
-                        })}
-                    </div>
+                {/* Bottom Bar */}
+                <div className="h-5 bg-[#15171c] border-t border-slate-700/30 px-3 flex justify-between items-center text-[8px] text-slate-500 font-mono select-none">
+                    <span>{trayCount} {t('tray')}{trayCount > 1 ? 's' : ''}</span>
+                    <span className="uppercase tracking-wider text-slate-600">DIO</span>
                 </div>
             </div>
         </div>

@@ -207,20 +207,27 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                                     {Array.from({ length: editingOLT.structure?.slots || 1 }).map((_, idx) => {
                                         const slotConfig = editingOLT.structure?.slotsConfig?.[idx] || { active: true, portCount: editingOLT.structure?.portsPerSlot || 16 };
+                                        const updateSlotConfig = (patch: any) => {
+                                            const newSlotsConfig = [...(editingOLT.structure?.slotsConfig || Array.from({ length: editingOLT.structure?.slots || 1 }).map(() => ({ active: true, portCount: editingOLT.structure?.portsPerSlot || 16 })))];
+                                            newSlotsConfig[idx] = { ...slotConfig, ...patch };
+                                            setEditingOLT({ ...editingOLT, structure: { ...editingOLT.structure, slotsConfig: newSlotsConfig } as any });
+                                        };
                                         return (
-                                            <div key={idx} className="flex items-center justify-between gap-3 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
-                                                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
-                                                    {t('slot_label', { n: idx + 1 })}
-                                                </span>
-                                                <div className="flex items-center gap-2">
+                                            <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
+                                                <input
+                                                    type="text"
+                                                    maxLength={6}
+                                                    value={slotConfig.name || ''}
+                                                    placeholder={`S${idx + 1}`}
+                                                    onChange={e => updateSlotConfig({ name: e.target.value || undefined })}
+                                                    className="w-14 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 py-1 outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    title={t('slot_names') || 'Nome do Slot'}
+                                                />
+                                                <div className="flex items-center gap-2 ml-auto">
                                                     <select
                                                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
                                                         value={slotConfig.active ? 'active' : 'empty'}
-                                                        onChange={e => {
-                                                            const newSlotsConfig = [...(editingOLT.structure?.slotsConfig || Array.from({ length: editingOLT.structure?.slots || 1 }).map(() => ({ active: true, portCount: editingOLT.structure?.portsPerSlot || 16 })))];
-                                                            newSlotsConfig[idx] = { ...slotConfig, active: e.target.value === 'active' };
-                                                            setEditingOLT({ ...editingOLT, structure: { ...editingOLT.structure, slotsConfig: newSlotsConfig } as any });
-                                                        }}
+                                                        onChange={e => updateSlotConfig({ active: e.target.value === 'active' })}
                                                     >
                                                         <option value="active">{t('slot_active')}</option>
                                                         <option value="empty">{t('slot_empty')}</option>
@@ -229,11 +236,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                                         <select
                                                             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
                                                             value={slotConfig.portCount}
-                                                            onChange={e => {
-                                                                const newSlotsConfig = [...(editingOLT.structure?.slotsConfig || Array.from({ length: editingOLT.structure?.slots || 1 }).map(() => ({ active: true, portCount: editingOLT.structure?.portsPerSlot || 16 })))];
-                                                                newSlotsConfig[idx] = { ...slotConfig, portCount: parseInt(e.target.value) };
-                                                                setEditingOLT({ ...editingOLT, structure: { ...editingOLT.structure, slotsConfig: newSlotsConfig } as any });
-                                                            }}
+                                                            onChange={e => updateSlotConfig({ portCount: parseInt(e.target.value) })}
                                                         >
                                                             <option value="8">8 {t('port_count')}</option>
                                                             <option value="16">16 {t('port_count')}</option>

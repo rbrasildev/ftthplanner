@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
 import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X } from 'lucide-react';
 import { Button } from './common/Button';
@@ -46,7 +46,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Viewport State
     const [viewState, setViewState] = useState({ x: 0, y: 0, zoom: 1 });
     const [isSnapping, setIsSnapping] = useState(true);
-    const [viewMode, setViewMode] = useState<'canvas' | 'logical'>('logical');
+    const [viewMode, setViewMode] = useState<'canvas' | 'logical'>('canvas');
 
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
@@ -78,6 +78,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Auto-patch modal state
+    const [showAutoPatchModal, setShowAutoPatchModal] = useState(false);
+    const [autoPatchSourceId, setAutoPatchSourceId] = useState<string>('');
+    const [autoPatchTargetId, setAutoPatchTargetId] = useState<string>('');
+
     const GRID_SIZE = 20;
     const EQUIPMENT_WIDTH = 340; // Standard visual width for OLT/DIO
 
@@ -93,11 +98,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const [, setForceUpdate] = useState(0);
-    useLayoutEffect(() => {
-        setForceUpdate(n => n + 1);
-    }, [viewState]);
 
     // --- Initialization ---
     useEffect(() => {
@@ -224,7 +224,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     }, [localPOP.layout, localPOP.olts.length, localPOP.dios.length, handleCenterView]);
 
     // --- Helpers ---
-    const getLayout = (id: string) => localPOP.layout?.[id] || { x: 0, y: 0, rotation: 0 };
+    const getLayout = useCallback((id: string) => localPOP.layout?.[id] || { x: 0, y: 0, rotation: 0 }, [localPOP.layout]);
 
     const handleViewModeChange = (targetMode: 'canvas' | 'logical') => {
         setViewMode(targetMode);
@@ -481,6 +481,37 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             setDragState(prev => ({ ...prev!, startX: e.clientX, startY: e.clientY }));
         }
         else if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+            // Direct DOM manipulation for smooth 60fps dragging (no React state updates)
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+            let newX = dragState.initialLayout.x + dx;
+            let newY = dragState.initialLayout.y + dy;
+
+            if (isSnapping) {
+                newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+                newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+            }
+
+            const el = document.getElementById(dragState.targetId);
+            if (el) {
+                el.style.transform = `translate(${newX}px, ${newY}px)`;
+            }
+        }
+        else if (dragState.mode === 'modal_olt' && dragState.initialPos) {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            setOltModalPos({ x: dragState.initialPos.x + dx, y: dragState.initialPos.y + dy });
+        }
+        else if (dragState.mode === 'modal_dio' && dragState.initialPos) {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            setDioModalPos({ x: dragState.initialPos.x + dx, y: dragState.initialPos.y + dy });
+        }
+    };
+
+    const handleMouseUp = (e: React.MouseEvent) => {
+        // Commit element drag to React state (was only visual via DOM during drag)
+        if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
             let newX = dragState.initialLayout.x + dx;
@@ -496,19 +527,6 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 layout: { ...prev.layout, [dragState.targetId!]: { ...dragState.initialLayout!, x: newX, y: newY } }
             }));
         }
-        else if (dragState.mode === 'modal_olt' && dragState.initialPos) {
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            setOltModalPos({ x: dragState.initialPos.x + dx, y: dragState.initialPos.y + dy });
-        }
-        else if (dragState.mode === 'modal_dio' && dragState.initialPos) {
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            setDioModalPos({ x: dragState.initialPos.x + dx, y: dragState.initialPos.y + dy });
-        }
-    };
-
-    const handleMouseUp = () => {
         setDragState(null);
     };
 
@@ -533,10 +551,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleAddOLT = () => {
         const id = `olt-${Date.now()}`;
-        const { slots, portsPerSlot, type, uplinkPorts } = newOLTConfig as any;
-        const defaultSlotsConfig = Array.from({ length: slots || 1 }).map(() => ({
+        const { slots, portsPerSlot, type, uplinkPorts, slotNames } = newOLTConfig as any;
+        const defaultSlotsConfig = Array.from({ length: slots || 1 }).map((_, i) => ({
             active: true,
-            portCount: portsPerSlot || 16
+            portCount: portsPerSlot || 16,
+            name: slotNames?.[i] || undefined
         }));
 
         let totalPorts = 0;
@@ -731,8 +750,20 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleWheel = (e: React.WheelEvent) => {
         const scale = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(0.1, viewState.zoom * scale), 4);
-        setViewState(prev => ({ ...prev, zoom: newZoom }));
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        // Mouse position relative to container
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        setViewState(prev => {
+            const newZoom = Math.min(Math.max(0.1, prev.zoom * scale), 4);
+            // Adjust translation so the point under the cursor stays fixed
+            const newX = mouseX - (mouseX - prev.x) * (newZoom / prev.zoom);
+            const newY = mouseY - (mouseY - prev.y) * (newZoom / prev.zoom);
+            return { x: newX, y: newY, zoom: newZoom };
+        });
     };
 
     const handleCloseRequest = () => {
@@ -804,6 +835,175 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         setItemToDelete(null);
     };
 
+    // --- Keyboard Shortcuts ---
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+            // Ctrl+S - Save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (userRole !== 'MEMBER') handleCloseRequest();
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+
+            if (key === 'escape') {
+                if (showAddOLTModal) { setShowAddOLTModal(false); return; }
+                if (showAddDIOModal) { setShowAddDIOModal(false); return; }
+                if (editingOLT) { setEditingOLT(null); return; }
+                if (editingDIO) { setEditingDIO(null); return; }
+                if (configuringOltPortId) { setConfiguringOltPortId(null); return; }
+                if (configuringDioCablesId) { setConfiguringDioCablesId(null); return; }
+                if (spliceDioId) { setSpliceDioId(null); return; }
+                if (itemToDelete) { setItemToDelete(null); return; }
+                if (showClearConfirm) { setShowClearConfirm(false); return; }
+            }
+
+            // O - Add OLT
+            if (key === 'o' && !e.ctrlKey) {
+                e.preventDefault();
+                handleOpenAddOLT();
+            }
+            // D - Add DIO (only if not in delete confirm)
+            else if (key === 'd' && !e.ctrlKey && !itemToDelete) {
+                e.preventDefault();
+                handleOpenAddDIO();
+            }
+            // C - Center view
+            else if (key === 'c' && !e.ctrlKey) {
+                e.preventDefault();
+                handleCenterView();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showAddOLTModal, showAddDIOModal, editingOLT, editingDIO, configuringOltPortId, configuringDioCablesId, spliceDioId, itemToDelete, showClearConfirm, userRole]);
+
+    // --- Stable callbacks for child components (prevents re-render on parent state change) ---
+    const handleEditOLT = useCallback((e: React.MouseEvent, olt: any) => {
+        e.stopPropagation();
+        setEditingOLT(JSON.parse(JSON.stringify(olt)));
+    }, []);
+
+    const handleDeleteOLT = useCallback((e: React.MouseEvent, olt: any) => {
+        e.stopPropagation();
+        setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name });
+    }, []);
+
+    const handleEditDIOCallback = useCallback((e: React.MouseEvent, dio: any) => {
+        e.stopPropagation();
+        setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports });
+    }, []);
+
+    const handleDeleteDIOCallback = useCallback((e: React.MouseEvent, dio: any) => {
+        e.stopPropagation();
+        setItemToDelete({ type: 'DIO', id: dio.id, name: dio.name });
+    }, []);
+
+    const handleLinkCablesCallback = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setConfiguringDioCablesId(id);
+    }, []);
+
+    const handleSpliceCallback = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setSpliceDioId(id);
+    }, []);
+
+    // Helper: Get connection info for a port (used for tooltips)
+    const getPortConnectionInfo = useCallback((portId: string): string | undefined => {
+        const conn = localPOP.connections.find(c => c.sourceId === portId || c.targetId === portId);
+        if (!conn) return undefined;
+        const otherEnd = conn.sourceId === portId ? conn.targetId : conn.sourceId;
+
+        // Try to find the equipment name
+        for (const olt of localPOP.olts) {
+            if (olt.portIds?.includes(otherEnd) || olt.uplinkPortIds?.includes(otherEnd)) {
+                const portLabel = otherEnd.split('-').slice(-2).join('-'); // e.g. "s1-p3"
+                return `${olt.name} (${portLabel})`;
+            }
+        }
+        for (const dio of localPOP.dios) {
+            if (dio.portIds?.includes(otherEnd)) {
+                const idx = dio.portIds.indexOf(otherEnd) + 1;
+                return `${dio.name} (P${idx})`;
+            }
+        }
+        return otherEnd;
+    }, [localPOP.connections, localPOP.olts, localPOP.dios]);
+
+    const handlePortClickRef = useRef(handlePortClick);
+    handlePortClickRef.current = handlePortClick;
+    const handlePortClickCallback = useCallback((e: React.MouseEvent, portId: string) => {
+        handlePortClickRef.current(e, portId);
+    }, []);
+
+    const handleShowClearConfirm = useCallback(() => setShowClearConfirm(true), []);
+
+    // Auto-patch: open modal for user to select source OLT and target DIO
+    const handleOpenAutoPatch = useCallback(() => {
+        // Pre-select first OLT and first DIO if available
+        setAutoPatchSourceId(localPOP.olts[0]?.id || '');
+        setAutoPatchTargetId(localPOP.dios[0]?.id || '');
+        setShowAutoPatchModal(true);
+    }, [localPOP.olts, localPOP.dios]);
+
+    const handleExecuteAutoPatch = useCallback(() => {
+        if (!autoPatchSourceId || !autoPatchTargetId) return;
+
+        setLocalPOP(prev => {
+            const sourceOlt = prev.olts.find(o => o.id === autoPatchSourceId);
+            const targetDio = prev.dios.find(d => d.id === autoPatchTargetId);
+            if (!sourceOlt || !targetDio) return prev;
+
+            const oltPorts: string[] = sourceOlt.portIds || [];
+            const dioPorts: string[] = targetDio.portIds || [];
+
+            if (oltPorts.length === 0 || dioPorts.length === 0) return prev;
+
+            // Find already connected ports
+            const connectedPorts = new Set<string>();
+            prev.connections.forEach(c => {
+                connectedPorts.add(c.sourceId);
+                connectedPorts.add(c.targetId);
+            });
+
+            const freeOltPorts = oltPorts.filter(p => !connectedPorts.has(p));
+            const freeDioPorts = dioPorts.filter(p => !connectedPorts.has(p));
+
+            const count = Math.min(freeOltPorts.length, freeDioPorts.length);
+            if (count === 0) return prev;
+
+            const newConnections: FiberConnection[] = [];
+            for (let i = 0; i < count; i++) {
+                const dioPortId = freeDioPorts[i];
+                const portIndex = targetDio.portIds.indexOf(dioPortId);
+                const trayIndex = Math.floor(portIndex / 12);
+                const color = getFiberColor(trayIndex, 'ABNT');
+
+                newConnections.push({
+                    id: `patch-${Date.now()}-${i}`,
+                    sourceId: freeOltPorts[i],
+                    targetId: dioPortId,
+                    color,
+                    points: []
+                });
+            }
+
+            return { ...prev, connections: [...prev.connections, ...newConnections] };
+        });
+
+        setShowAutoPatchModal(false);
+    }, [autoPatchSourceId, autoPatchTargetId]);
+
+    const handleDeleteEquipmentFromLogical = useCallback((type: 'OLT' | 'DIO', id: string, name: string) => {
+        setItemToDelete({ type, id, name });
+    }, []);
+
     return (
         <div className="pop-editor-modal fixed inset-0 z-[2000] bg-black flex items-center justify-center">
             <div className="w-full h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden relative">
@@ -821,10 +1021,24 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     onAddDIO={handleOpenAddDIO}
                     onViewModeChange={handleViewModeChange}
                     viewMode={viewMode}
-                    onClearAll={() => setShowClearConfirm(true)}
+                    onClearAll={handleShowClearConfirm}
+                    onAutoPatch={handleOpenAutoPatch}
                     onSave={userRole === 'MEMBER' ? onClose : handleCloseRequest}
                     t={t}
                     userRole={userRole}
+                    stats={useMemo(() => {
+                        const totalPorts = localPOP.olts.reduce((a, o) => a + (o.portIds?.length || 0) + (o.uplinkPortIds?.length || 0), 0)
+                            + localPOP.dios.reduce((a, d) => a + (d.portIds?.length || 0), 0);
+                        const connectedPorts = new Set<string>();
+                        localPOP.connections.forEach(c => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
+                        return {
+                            olts: localPOP.olts.length,
+                            dios: localPOP.dios.length,
+                            connections: localPOP.connections.length,
+                            totalPorts,
+                            usedPorts: connectedPorts.size
+                        };
+                    }, [localPOP.olts, localPOP.dios, localPOP.connections])}
                 />
 
                 {/* Canvas */}
@@ -857,7 +1071,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 onRemoveConnection={handleRemoveLogicalConnection}
                                 onManageFusions={setSpliceDioId}
                                 onUpdatePatchingLayout={handleUpdatePatchingLayout}
-                                onDeleteEquipment={(type, id, name) => setItemToDelete({ type, id, name })}
+                                onDeleteEquipment={handleDeleteEquipmentFromLogical}
                             />
                         </div>
                     ) : (
@@ -908,6 +1122,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 const layout = getLayout(cable.id);
                                 return (
                                     <div
+                                        id={cable.id}
                                         key={cable.id}
                                         style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
                                         className="absolute w-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-20 flex flex-col opacity-60 hover:opacity-100 transition-opacity clickable-element select-none"
@@ -940,7 +1155,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                             </div>
                                         </div>
                                         <div className="p-2 text-[10px] text-slate-500 text-center">
-                                            Backbone Cable<br />(Splice inside DIO)
+                                            {t('backbone_cable')}<br />({t('splice_inside_dio')})
                                         </div>
                                     </div>
                                 );
@@ -959,11 +1174,12 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         configuringOltPortId={configuringOltPortId}
                                         hoveredPortId={hoveredPortId}
                                         onDragStart={handleElementDragStart}
-                                        onEdit={(e, olt) => { e.stopPropagation(); setEditingOLT(JSON.parse(JSON.stringify(olt))); }}
-                                        onDelete={(e, olt) => { e.stopPropagation(); setItemToDelete({ type: 'OLT', id: olt.id, name: olt.name }); }}
-                                        onPortClick={(e, portId) => handlePortClick(e, portId)}
+                                        onEdit={handleEditOLT}
+                                        onDelete={handleDeleteOLT}
+                                        onPortClick={handlePortClickCallback}
                                         onPortHover={setHoveredPortId}
                                         getFiberColor={getFiberColor}
+                                        getPortConnectionInfo={getPortConnectionInfo}
                                     />
                                 );
                             })}
@@ -982,12 +1198,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         connections={localPOP.connections}
                                         configuringOltPortId={configuringOltPortId}
                                         onDragStart={handleElementDragStart}
-                                        onLinkCables={(e, id) => { e.stopPropagation(); setConfiguringDioCablesId(id); }}
-                                        onSplice={(e, id) => { e.stopPropagation(); setSpliceDioId(id); }}
-                                        onEdit={(e, dio) => { e.stopPropagation(); setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports }); }}
-                                        onDelete={(e, dio) => { e.stopPropagation(); setItemToDelete({ type: 'DIO', id: dio.id, name: dio.name }); }}
-                                        onPortClick={(e, portId) => handlePortClick(e, portId)}
+                                        onLinkCables={handleLinkCablesCallback}
+                                        onSplice={handleSpliceCallback}
+                                        onEdit={handleEditDIOCallback}
+                                        onDelete={handleDeleteDIOCallback}
+                                        onPortClick={handlePortClickCallback}
                                         onHoverPort={setHoveredPortId}
+                                        getPortConnectionInfo={getPortConnectionInfo}
                                     />
                                 );
                             })}
@@ -1061,6 +1278,95 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                         />
                     );
                 })()}
+
+                {/* Auto-Patch Modal */}
+                {showAutoPatchModal && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('auto_patch')}</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">{t('auto_patch_desc')}</p>
+
+                            {/* Source: OLT */}
+                            <div className="mb-4">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">{t('source') || 'Origem'} (OLT/Switch)</label>
+                                <select
+                                    value={autoPatchSourceId}
+                                    onChange={e => setAutoPatchSourceId(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                >
+                                    <option value="">{t('select') || 'Selecione...'}</option>
+                                    {localPOP.olts.map((olt: any) => {
+                                        const connectedPorts = new Set<string>();
+                                        localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
+                                        const free = (olt.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                        return (
+                                            <option key={olt.id} value={olt.id}>
+                                                {olt.name} ({free} {t('free') || 'livres'})
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            </div>
+
+                            {/* Target: DIO */}
+                            <div className="mb-6">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">{t('target') || 'Destino'} (DIO)</label>
+                                <select
+                                    value={autoPatchTargetId}
+                                    onChange={e => setAutoPatchTargetId(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                >
+                                    <option value="">{t('select') || 'Selecione...'}</option>
+                                    {localPOP.dios.map((dio: any) => {
+                                        const connectedPorts = new Set<string>();
+                                        localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
+                                        const free = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                        return (
+                                            <option key={dio.id} value={dio.id}>
+                                                {dio.name} ({free} {t('free') || 'livres'})
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            </div>
+
+                            {/* Preview */}
+                            {autoPatchSourceId && autoPatchTargetId && (() => {
+                                const olt = localPOP.olts.find((o: any) => o.id === autoPatchSourceId);
+                                const dio = localPOP.dios.find((d: any) => d.id === autoPatchTargetId);
+                                if (!olt || !dio) return null;
+                                const connectedPorts = new Set<string>();
+                                localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
+                                const freeOlt = (olt.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                const freeDio = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                const willConnect = Math.min(freeOlt, freeDio);
+                                return (
+                                    <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
+                                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{willConnect}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">{t('connections_to_create') || 'conexões serão criadas'}</span>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowAutoPatchModal(false)}
+                                    className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    onClick={handleExecuteAutoPatch}
+                                    disabled={!autoPatchSourceId || !autoPatchTargetId}
+                                    className="flex-1 px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-bold transition-colors shadow-sm"
+                                >
+                                    {t('auto_patch')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Confirmations */}
                 <ConfirmationDialog

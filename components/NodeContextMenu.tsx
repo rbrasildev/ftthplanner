@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Edit, Trash2, Move, Settings, AlertTriangle, X, Check } from 'lucide-react';
+import { Edit, Trash2, Move, Settings, AlertTriangle, X, Check, Unplug } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface NodeContextMenuProps {
@@ -9,11 +9,12 @@ interface NodeContextMenuProps {
     onProperties?: () => void;
     onDelete?: () => void;
     onMove?: () => void;
+    onConnect?: () => void;
     onClose: () => void;
     type: 'CTO' | 'POP' | 'Pole';
 }
 
-export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, onProperties, onDelete, onMove, onClose, type }) => {
+export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, onProperties, onDelete, onMove, onConnect, onClose, type }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -36,7 +37,12 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({ x, y, onEdit, 
         <div
             ref={menuRef}
             className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[180px] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-            style={{ top: y, left: x }}
+            style={{ 
+                top: y > window.innerHeight / 2 ? 'auto' : y,
+                bottom: y > window.innerHeight / 2 ? window.innerHeight - y : 'auto',
+                left: x > window.innerWidth / 2 ? 'auto' : x,
+                right: x > window.innerWidth / 2 ? window.innerWidth - x : 'auto'
+            }}
             onContextMenu={(e) => e.preventDefault()}
         >
             {type !== 'Pole' && (

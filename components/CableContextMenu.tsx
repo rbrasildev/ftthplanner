@@ -13,11 +13,12 @@ interface CableContextMenuProps {
     showReserveLabel?: boolean;
     onToggleReserve?: () => void;
     onPositionReserve?: () => void;
+    targetType?: "CTO" | "POP";
 }
 
 export const CableContextMenu: React.FC<CableContextMenuProps> = ({
     x, y, onEdit, onProperties, onDelete, onConnect, onClose,
-    showReserveLabel, onToggleReserve, onPositionReserve
+    showReserveLabel, onToggleReserve, onPositionReserve, targetType
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
@@ -36,8 +37,13 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
     return (
         <div
             ref={menuRef}
-            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[200px] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-            style={{ top: y, left: x }}
+            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[180px] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+            style={{ 
+                top: y > window.innerHeight / 2 ? 'auto' : y,
+                bottom: y > window.innerHeight / 2 ? window.innerHeight - y : 'auto',
+                left: x > window.innerWidth / 2 ? 'auto' : x,
+                right: x > window.innerWidth / 2 ? window.innerWidth - x : 'auto'
+            }}
             onContextMenu={(e) => e.preventDefault()}
         >
             <button
@@ -111,7 +117,7 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
                 <div className="p-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-md group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
                     <Unplug className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <span className="text-sm font-medium">{t('connect_to_box')}</span>
+                <span className="text-sm font-medium">{targetType === 'POP' ? t('connect_to_pop') : t('connect_to_box')}</span>
             </button>
 
             {showDeleteConfirm ? (
