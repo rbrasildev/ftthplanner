@@ -720,6 +720,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         currentMouseX?: number;
         currentMouseY?: number;
         initialWindowPos?: { x: number, y: number };
+        offsetX?: number;
+        offsetY?: number;
         // Optimization: Cache initial connection points for delta calculation
         initialConnectionPoints?: { x: number, y: number }[];
     } | null>(null);
@@ -834,8 +836,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (!containerRef.current) return { x: 0, y: 0 };
         const rect = containerRef.current.getBoundingClientRect();
         return {
-            x: (sx - rect.left - viewState.x) / viewState.zoom,
-            y: (sy - rect.top - viewState.y) / viewState.zoom
+            x: (sx - rect.left - viewStateRef.current.x) / viewStateRef.current.zoom,
+            y: (sy - rect.top - viewStateRef.current.y) / viewStateRef.current.zoom
         };
     };
 
@@ -1668,12 +1670,31 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         e.stopPropagation();
         const { isVflToolActive, isOtdrToolActive } = toolModesRef.current;
         if (isVflToolActive || isOtdrToolActive) return;
+
+        let pOffsetX = 0;
+        let pOffsetY = 0;
+        const conn = localCTORef.current.connections.find(c => c.id === connId);
+        if (conn && conn.points && conn.points[pointIndex]) {
+             const pt = conn.points[pointIndex];
+             // Local screenToCanvas uses viewStateRef internally
+             if (containerRef.current) {
+                 const rect = containerRef.current.getBoundingClientRect();
+                 const vs = viewStateRef.current;
+                 const clickX = (e.clientX - rect.left - vs.x) / vs.zoom;
+                 const clickY = (e.clientY - rect.top - vs.y) / vs.zoom;
+                 pOffsetX = pt.x - clickX;
+                 pOffsetY = pt.y - clickY;
+             }
+        }
+
         setDragState({
             mode: 'point',
             connectionId: connId,
             pointIndex: pointIndex,
             startX: e.clientX,
-            startY: e.clientY
+            startY: e.clientY,
+            offsetX: pOffsetX,
+            offsetY: pOffsetY
         });
     }, []);
 
@@ -1858,6 +1879,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // 4. CONNECTION POINT DRAG (Direct DOM) with live orthogonal snapping
         if (dragState.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
             let { x, y } = screenToCanvas(e.clientX, e.clientY);
+
+            // Apply projection offset to prevent jump on initial drag
+            if (dragState.offsetX !== undefined && dragState.offsetY !== undefined) {
+                x += dragState.offsetX;
+                y += dragState.offsetY;
+            }
+
             const modes = toolModesRef.current;
 
             // Grid snap
@@ -1987,8 +2015,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setLocalCTO(updated);
         } else if (dragState?.mode === 'point' && dragState.connectionId && dragState.pointIndex !== undefined) {
             const raw = screenToCanvas(e.clientX, e.clientY);
-            let x = isSnapping ? Math.round(raw.x / GRID_SIZE) * GRID_SIZE : raw.x;
-            let y = isSnapping ? Math.round(raw.y / GRID_SIZE) * GRID_SIZE : raw.y;
+            let dropX = raw.x;
+            let dropY = raw.y;
+
+            if (dragState.offsetX !== undefined && dragState.offsetY !== undefined) {
+                dropX += dragState.offsetX;
+                dropY += dragState.offsetY;
+            }
+
+            let x = isSnapping ? Math.round(dropX / GRID_SIZE) * GRID_SIZE : dropX;
+            let y = isSnapping ? Math.round(dropY / GRID_SIZE) * GRID_SIZE : dropY;
 
             // Apply same orthogonal snap as during drag (closest neighbor wins)
             if (isSnapping) {
@@ -2458,6 +2494,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // 1. Calculate New State
         let newConnections = [...localCTORef.current.connections];
         let insertedPointIndex = -1;
+        let pOffsetX = 0;
+        let pOffsetY = 0;
 
         newConnections = newConnections.map(c => {
             if (c.id !== connId) return c;
@@ -2506,6 +2544,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 projectedPt.y = pEnd.y;
             }
 
+            pOffsetX = projectedPt.x - clickPt.x;
+            pOffsetY = projectedPt.y - clickPt.y;
+
             const newPoints = [...currentPoints];
             newPoints.splice(insertIndex, 0, projectedPt);
             insertedPointIndex = insertIndex;
@@ -2526,7 +2567,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 connectionId: connId,
                 pointIndex: insertedPointIndex,
                 startX: e.clientX,
-                startY: e.clientY
+                startY: e.clientY,
+                offsetX: pOffsetX,
+                offsetY: pOffsetY
             });
         }
     }, [getPortCenter, setLocalCTO]);
