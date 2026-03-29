@@ -2927,6 +2927,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     handleRotateElement(null as any, hoveredElement.id);
                 }
             }
+            // (T) Open Auto Passante
+            else if (key === 't') {
+                e.preventDefault();
+                setIsAutoSpliceOpen(prev => !prev);
+            }
             // (D) Delete Hovered
             else if (key === 'd') {
                 if (hoveredElement) {
@@ -2945,7 +2950,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, setShowSplitterDropdown, setIsFusionToolActive, setIsSmartAlignMode]);
+    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, setShowSplitterDropdown, setIsFusionToolActive, setIsSmartAlignMode, setIsAutoSpliceOpen]);
 
     return (
         <div

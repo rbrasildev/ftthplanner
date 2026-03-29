@@ -263,6 +263,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                                         { key: 'S', label: t('hotkey_s') },
                                         { key: 'F', label: t('hotkey_f') },
                                         { key: 'A', label: t('hotkey_a') },
+                                        { key: 'T', label: t('hotkey_t') },
                                         { key: 'R', label: t('hotkey_r') },
                                         { key: 'D', label: t('hotkey_d') }
                                     ].map(item => (
