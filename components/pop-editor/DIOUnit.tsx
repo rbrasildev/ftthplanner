@@ -161,7 +161,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                                     const label = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
                                                     if (connInfo) return `${label} → ${connInfo}`;
                                                     if (isSpliced) return `${label} - Spliced`;
-                                                    return `${label} (${t('free')})`;
+                                                    return `${label} (${t('available')})`;
                                                 })()}
                                                 onMouseDown={(e) => onPortClick(e, pid)}
                                                 onMouseEnter={() => handlePortEnter(pid)}

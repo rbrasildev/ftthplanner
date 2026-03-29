@@ -1098,6 +1098,7 @@ const translations = {
     'free': 'Free',
     'per_month': '/mo',
     'per_year': '/yr',
+    'available': 'Available',
 
     // Backup
     'backup_title': 'Backup Manager',
@@ -1477,6 +1478,7 @@ const translations = {
     'free': 'Grátis',
     'per_month': '/mês',
     'per_year': '/ano',
+    'available': 'Livre',
 
     // Login & Dashboard
     'enter_btn': 'Entrar no Sistema',

@@ -123,7 +123,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                             <div
                                                 key={portId}
                                                 id={portId}
-                                                title={connInfo ? `→ ${connInfo}` : `P${pIdx + 1} (${t('free')})`}
+                                                title={connInfo ? `→ ${connInfo}` : `P${pIdx + 1} (${t('available')})`}
                                                 onMouseDown={(e) => onPortClick(e, portId)}
                                                 onMouseEnter={() => onPortHover(portId)}
                                                 onMouseLeave={() => onPortHover(null)}
@@ -165,7 +165,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                         <div
                                             key={portId}
                                             id={portId}
-                                            title={connInfo ? `→ ${connInfo}` : `Uplink ${pIdx + 1} (${t('free')})`}
+                                            title={connInfo ? `→ ${connInfo}` : `Uplink ${pIdx + 1} (${t('available')})`}
                                             onMouseDown={(e) => onPortClick(e, portId)}
                                             onMouseEnter={() => onPortHover(portId)}
                                             onMouseLeave={() => onPortHover(null)}

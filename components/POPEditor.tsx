@@ -1301,7 +1301,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         const free = (olt.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
                                         return (
                                             <option key={olt.id} value={olt.id}>
-                                                {olt.name} ({free} {t('free') || 'livres'})
+                                                {olt.name} ({free} {t('available') || 'livres'})
                                             </option>
                                         );
                                     })}
@@ -1323,7 +1323,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         const free = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
                                         return (
                                             <option key={dio.id} value={dio.id}>
-                                                {dio.name} ({free} {t('free') || 'livres'})
+                                                {dio.name} ({free} {t('available') || 'livres'})
                                             </option>
                                         );
                                     })}
