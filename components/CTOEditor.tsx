@@ -616,30 +616,30 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
     const [isCatalogLoading, setIsCatalogLoading] = useState(true);
 
-    // Lazy-load catalogs on first interaction (not on mount — saves CPU/network on init)
-    const catalogsLoadedRef = useRef(false);
-    const loadCatalogsOnDemand = useCallback(async () => {
-        if (catalogsLoadedRef.current) return;
-        catalogsLoadedRef.current = true;
-        setIsCatalogLoading(true);
-        try {
-            const [splitters, fusions, cables, boxes, olts] = await Promise.all([
-                getSplitters(),
-                getFusions(),
-                getCables(),
-                getBoxes(),
-                getOLTs()
-            ]);
-            setAvailableSplitters(splitters);
-            setAvailableFusions(fusions);
-            setAvailableCables(cables);
-            setAvailableBoxes(boxes);
-            setAvailableOLTs(olts);
-        } catch (err) {
-            console.error("Failed to load catalogs", err);
-        } finally {
-            setIsCatalogLoading(false);
-        }
+    // Load catalogs on mount (splitters, fusions, cables, boxes, OLTs)
+    useEffect(() => {
+        const loadCatalogs = async () => {
+            setIsCatalogLoading(true);
+            try {
+                const [splitters, fusions, cables, boxes, olts] = await Promise.all([
+                    getSplitters(),
+                    getFusions(),
+                    getCables(),
+                    getBoxes(),
+                    getOLTs()
+                ]);
+                setAvailableSplitters(splitters);
+                setAvailableFusions(fusions);
+                setAvailableCables(cables);
+                setAvailableBoxes(boxes);
+                setAvailableOLTs(olts);
+            } catch (err) {
+                console.error("Failed to load catalogs", err);
+            } finally {
+                setIsCatalogLoading(false);
+            }
+        };
+        loadCatalogs();
     }, []);
 
     // --- CENTRALIZED TOOL MODE MANAGEMENT ---
@@ -680,13 +680,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         clearAllToolModes();
         if (!wasActive) {
             toolModeSetters[mode](true);
-            // Lazy-load catalogs when user first opens a tool that needs them
-            if (mode === 'splitterDropdown' || mode === 'fusion') {
-                loadCatalogsOnDemand();
-            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isRotateMode, isDeleteMode, isSmartAlignMode, isVflToolActive, isOtdrToolActive, isFusionToolActive, showSplitterDropdown, clearAllToolModes, loadCatalogsOnDemand]);
+    }, [isRotateMode, isDeleteMode, isSmartAlignMode, isVflToolActive, isOtdrToolActive, isFusionToolActive, showSplitterDropdown, clearAllToolModes]);
 
     const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
