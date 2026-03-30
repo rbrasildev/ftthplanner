@@ -164,21 +164,41 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
                     select: { id: true, username: true, role: true, lastLoginAt: true, createdAt: true }
                 },
                 _count: {
-                    select: { 
-                        projects: { where: { deletedAt: null } }, 
-                        users: { where: { deletedAt: null } }, 
-                        ctos: { where: { deletedAt: null } }, 
-                        pops: { where: { deletedAt: null } } 
+                    select: {
+                        projects: { where: { deletedAt: null } },
+                        users: { where: { deletedAt: null } },
+                        ctos: { where: { deletedAt: null } },
+                        pops: { where: { deletedAt: null } }
                     }
                 },
                 projects: {
                     where: { deletedAt: null },
                     select: { id: true, name: true }
+                },
+                invoices: {
+                    select: { id: true, status: true, amount: true, referenceStart: true, referenceEnd: true, createdAt: true }
                 }
             },
             orderBy: { createdAt: 'desc' }
         });
-        res.json(companies);
+
+        // Enrich with financial summary
+        const enriched = companies.map(c => {
+            const overdueInvoices = c.invoices.filter(inv => inv.status === 'OVERDUE');
+            const paidInvoices = c.invoices.filter(inv => inv.status === 'PAID');
+            return {
+                ...c,
+                _financial: {
+                    overdueCount: overdueInvoices.length,
+                    overdueTotal: overdueInvoices.reduce((sum, inv) => sum + inv.amount, 0),
+                    paidCount: paidInvoices.length,
+                    paidTotal: paidInvoices.reduce((sum, inv) => sum + inv.amount, 0),
+                    lastPayment: paidInvoices.length > 0 ? paidInvoices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt : null
+                }
+            };
+        });
+
+        res.json(enriched);
     } catch (error) {
         res.status(500).json({
             error: 'Failed to fetch companies',
@@ -205,6 +225,16 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
             website,
             subscriptionExpiresAt
         } = req.body;
+
+        // Validate that at least one field is being updated
+        if (!status && !planId && !name && phone === undefined && logoUrl === undefined && cnpj === undefined && address === undefined && city === undefined && state === undefined && zipCode === undefined && businessEmail === undefined && website === undefined && !subscriptionExpiresAt) {
+            return res.status(400).json({ error: 'No fields provided for update' });
+        }
+
+        // Validate status value if provided
+        if (status && !['ACTIVE', 'SUSPENDED', 'TRIAL', 'CANCELLED', 'OVERDUE'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
 
         const data: any = {};
         if (status) data.status = status;
@@ -482,6 +512,116 @@ export const permanentlyDeleteProject = async (req: AuthRequest, res: Response) 
     } catch (error) {
         res.status(500).json({
             error: 'Failed to delete project permanently',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+// --- COMPANY INVOICES (Admin view) ---
+export const getCompanyInvoices = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const company = await prisma.company.findUnique({ where: { id } });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        const invoices = await prisma.invoice.findMany({
+            where: { companyId: id },
+            include: { plan: { select: { name: true } } },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        return res.json(invoices.map(inv => ({
+            id: inv.id,
+            planName: inv.plan?.name || 'Assinatura',
+            amount: inv.amount,
+            status: inv.status,
+            paymentMethod: inv.paymentMethod,
+            createdAt: inv.createdAt,
+            expiresAt: inv.expiresAt,
+            referenceStart: inv.referenceStart,
+            referenceEnd: inv.referenceEnd,
+            mercadopagoPaymentId: inv.mercadopagoPaymentId
+        })));
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to fetch company invoices',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+// --- MANUAL INVOICE PAYMENT (Admin marks invoice as PAID) ---
+export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
+    try {
+        const { invoiceId } = req.params;
+
+        const invoice = await prisma.invoice.findUnique({
+            where: { id: invoiceId },
+            include: { company: { select: { id: true, name: true, subscriptionExpiresAt: true, planId: true, status: true } } }
+        });
+
+        if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+        if (invoice.status === 'PAID') return res.status(400).json({ error: 'Invoice is already paid' });
+        if (!invoice.company) return res.status(400).json({ error: 'Invoice has no associated company' });
+
+        // 1. Mark invoice as PAID
+        await prisma.invoice.update({
+            where: { id: invoiceId },
+            data: { status: 'PAID', paymentMethod: 'MANUAL' }
+        });
+
+        // 2. Recalculate subscription expiration (anchored to billing cycle)
+        const company = invoice.company;
+        const now = new Date();
+        const prevExpiry = company.subscriptionExpiresAt;
+        let nextBilling: Date;
+
+        if (prevExpiry) {
+            nextBilling = new Date(prevExpiry);
+            while (nextBilling <= now) {
+                nextBilling.setMonth(nextBilling.getMonth() + 1);
+            }
+        } else {
+            nextBilling = new Date(now);
+            nextBilling.setMonth(nextBilling.getMonth() + 1);
+        }
+
+        // 3. Check if there are still overdue invoices remaining
+        const remainingOverdue = await prisma.invoice.count({
+            where: { companyId: company.id, status: 'OVERDUE' }
+        });
+
+        // 4. Update company — reactivate if no more overdue invoices
+        await prisma.company.update({
+            where: { id: company.id },
+            data: {
+                subscriptionExpiresAt: nextBilling,
+                ...(remainingOverdue === 0 ? { status: 'ACTIVE' } : {})
+            }
+        });
+
+        // 5. Audit
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'MANUAL_INVOICE_PAYMENT', 'Invoice', invoiceId, {
+                companyId: company.id,
+                companyName: company.name,
+                amount: invoice.amount,
+                remainingOverdue
+            }, req.ip);
+        }
+
+        logger.info(`[saasController] Manual payment: Invoice ${invoiceId} for ${company.name}. Remaining overdue: ${remainingOverdue}. New expiry: ${nextBilling.toISOString()}`);
+
+        return res.json({
+            message: 'Invoice marked as paid',
+            remainingOverdue,
+            newExpiration: nextBilling,
+            companyReactivated: remainingOverdue === 0
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to mark invoice as paid',
             details: error instanceof Error ? error.message : String(error)
         });
     }

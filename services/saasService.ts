@@ -50,6 +50,16 @@ export const deleteCompany = async (id: string) => {
     return response.data;
 };
 
+export const getCompanyInvoices = async (companyId: string) => {
+    const response = await api.get(`/saas/companies/${companyId}/invoices`);
+    return response.data;
+};
+
+export const markInvoicePaid = async (invoiceId: string) => {
+    const response = await api.post(`/saas/invoices/${invoiceId}/mark-paid`);
+    return response.data;
+};
+
 // Projects Trash Bin
 export const getDeletedProjects = async () => {
     const response = await api.get('/saas/projects/deleted');

@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
-import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject } from '../controllers/saasController';
+import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject, getCompanyInvoices, markInvoicePaid } from '../controllers/saasController';
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
@@ -31,6 +31,8 @@ router.get('/map-data', authenticateToken, requireSuperAdmin, getGlobalMapData);
 router.get('/companies', authenticateToken, requireSuperAdmin, getCompanies);
 router.put('/companies/:id', authenticateToken, requireSuperAdmin, updateCompanyStatus);
 router.delete('/companies/:id', authenticateToken, requireSuperAdmin, deleteCompany);
+router.get('/companies/:id/invoices', authenticateToken, requireSuperAdmin, getCompanyInvoices);
+router.post('/invoices/:invoiceId/mark-paid', authenticateToken, requireSuperAdmin, markInvoicePaid);
 
 // Users (Super Admin)
 router.get('/users', authenticateToken, requireSuperAdmin, getGlobalUsers);

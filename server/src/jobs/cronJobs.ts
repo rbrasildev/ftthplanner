@@ -63,6 +63,10 @@ export const initCronJobs = () => {
             // 3. Generate OVERDUE invoices for each unpaid month
             // Finds SUSPENDED companies whose subscriptionExpiresAt is in the past,
             // and creates an invoice for each month that has passed without payment.
+            // Safety: MAX 3 invoices per company per cron run to prevent data bloat
+            // if a company has been suspended for a very long time.
+            const MAX_OVERDUE_PER_RUN = 3;
+
             const overdueCompanies = await prisma.company.findMany({
                 where: {
                     status: 'SUSPENDED',
@@ -75,18 +79,14 @@ export const initCronJobs = () => {
             for (const company of overdueCompanies) {
                 if (!company.plan || company.plan.price <= 0 || !company.subscriptionExpiresAt) continue;
 
-                // Calculate which months are missing invoices
                 let periodStart = new Date(company.subscriptionExpiresAt);
-                // Go back one month to get the start of the unpaid period
-                const cycleAnchor = new Date(periodStart);
-                cycleAnchor.setMonth(cycleAnchor.getMonth() - 1);
+                let generated = 0;
 
-                // Generate invoices for each unpaid month up to now
-                while (periodStart <= now) {
+                while (periodStart <= now && generated < MAX_OVERDUE_PER_RUN) {
                     const periodEnd = new Date(periodStart);
                     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-                    // Check if an invoice already exists for this period
+                    // Check if an invoice already exists for this period (idempotent)
                     const existingInvoice = await prisma.invoice.findFirst({
                         where: {
                             companyId: company.id,
@@ -103,15 +103,20 @@ export const initCronJobs = () => {
                                 amount: company.plan.price,
                                 status: 'OVERDUE',
                                 paymentMethod: company.paymentMethod || 'PIX',
-                                expiresAt: periodEnd, // Due by end of period
+                                expiresAt: periodEnd,
                                 referenceStart: periodStart,
                                 referenceEnd: periodEnd
                             }
                         });
+                        generated++;
                         console.log(`[Cron] Created OVERDUE invoice for ${company.name} (${company.id}): ${periodStart.toISOString()} → ${periodEnd.toISOString()}`);
                     }
 
                     periodStart = periodEnd;
+                }
+
+                if (generated >= MAX_OVERDUE_PER_RUN) {
+                    console.log(`[Cron] Hit max overdue limit (${MAX_OVERDUE_PER_RUN}) for ${company.name}. Remaining months will be generated next run.`);
                 }
             }
 

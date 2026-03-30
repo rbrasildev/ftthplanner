@@ -57,6 +57,7 @@ model Company {
   subscriptionExpiresAt     DateTime?         @map("subscription_expires_at")
   status                    String            @default("ACTIVE")
   mercadopagoSubscriptionId String?           @map("mercadopago_subscription_id")
+  stripeCustomerId          String?           @map("stripe_customer_id")
   phone                     String?
   address                   String?
   businessEmail             String?           @map("business_email")
@@ -131,6 +132,7 @@ model Invoice {
   company Company @relation(fields: [companyId], references: [id])
   plan    Plan    @relation(fields: [planId], references: [id])
 
+  @@unique([companyId, referenceStart, referenceEnd], name: "unique_billing_period")
   @@index([companyId])
   @@index([expiresAt])
   @@index([mercadopagoPaymentId])

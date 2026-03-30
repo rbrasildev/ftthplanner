@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
@@ -90,6 +90,137 @@ interface SaaSConfig {
     socialYoutube?: string | null;
 }
 
+// --- Company Invoices Section (used in company detail panel) ---
+const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdueCount: number, overdueTotal: number, paidCount: number, paidTotal: number, lastPayment: string | null } }> = ({ companyId, financial }) => {
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+    const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+
+    const handleMarkPaid = async (invoiceId: string) => {
+        if (!window.confirm('Confirma a baixa manual desta fatura?')) return;
+        setMarkingPaid(invoiceId);
+        try {
+            const result = await saasService.markInvoicePaid(invoiceId);
+            // Refresh the list
+            const data = await saasService.getCompanyInvoices(companyId);
+            setInvoices(data);
+            alert(result.companyReactivated
+                ? 'Fatura quitada! Empresa reativada.'
+                : `Fatura quitada! Ainda restam ${result.remainingOverdue} fatura(s) em atraso.`);
+        } catch (err) {
+            console.error('Failed to mark invoice as paid', err);
+            alert('Erro ao dar baixa na fatura.');
+        } finally {
+            setMarkingPaid(null);
+        }
+    };
+
+    const loadInvoices = async () => {
+        if (invoices.length > 0) { setExpanded(!expanded); return; }
+        setLoading(true);
+        try {
+            const data = await saasService.getCompanyInvoices(companyId);
+            setInvoices(data);
+            setExpanded(true);
+        } catch (err) {
+            console.error('Failed to load invoices', err);
+            alert('Failed to load invoices');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Receipt className="w-3.5 h-3.5" />
+                    Financeiro
+                </h3>
+                <button
+                    onClick={loadInvoices}
+                    className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
+                >
+                    {loading ? <RefreshCw className="w-3 h-3 animate-spin" /> : expanded ? 'Ocultar' : 'Ver faturas'}
+                </button>
+            </div>
+
+            {/* Quick Summary */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Pagos</p>
+                    <p className="text-sm font-black text-emerald-600">{financial?.paidCount || 0}</p>
+                </div>
+                <div className={`p-2.5 rounded-lg border text-center ${financial?.overdueCount ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800' : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800'}`}>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Em atraso</p>
+                    <p className={`text-sm font-black ${financial?.overdueCount ? 'text-red-600' : 'text-slate-400'}`}>{financial?.overdueCount || 0}</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Débito</p>
+                    <p className={`text-sm font-black ${financial?.overdueTotal ? 'text-red-600' : 'text-slate-400'}`}>
+                        {financial?.overdueTotal ? `R$ ${financial.overdueTotal.toFixed(2)}` : '—'}
+                    </p>
+                </div>
+            </div>
+
+            {financial?.lastPayment && (
+                <p className="text-[10px] text-slate-400 mb-3">
+                    Último pagamento: <span className="font-semibold text-slate-600 dark:text-slate-300">{new Date(financial.lastPayment).toLocaleDateString()}</span>
+                </p>
+            )}
+
+            {/* Invoice List (expandable) */}
+            {expanded && (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {invoices.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma fatura encontrada</p>
+                    ) : invoices.map((inv: any) => {
+                        const isOverdue = inv.status === 'OVERDUE';
+                        const isPaid = inv.status === 'PAID';
+                        const isPending = inv.status === 'PENDING';
+                        return (
+                            <div key={inv.id} className={`p-3 rounded-lg border text-xs ${isOverdue ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800'}`}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-900 dark:text-white">{inv.planName}</span>
+                                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isPaid ? 'bg-emerald-100 text-emerald-700' : isOverdue ? 'bg-red-100 text-red-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                                            {isPaid ? 'Pago' : isOverdue ? 'Atraso' : isPending ? 'Pendente' : inv.status}
+                                        </span>
+                                    </div>
+                                    <span className={`font-black ${isOverdue ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>
+                                        R$ {inv.amount?.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        {inv.referenceStart && inv.referenceEnd ? (
+                                            <span>Ref: {new Date(inv.referenceStart).toLocaleDateString()} → {new Date(inv.referenceEnd).toLocaleDateString()}</span>
+                                        ) : (
+                                            <span>{new Date(inv.createdAt).toLocaleDateString()}</span>
+                                        )}
+                                        <span>•</span>
+                                        <span className="capitalize">{inv.paymentMethod?.replace('_', ' ').toLowerCase()}</span>
+                                    </div>
+                                    {!isPaid && (
+                                        <button
+                                            onClick={() => handleMarkPaid(inv.id)}
+                                            disabled={markingPaid === inv.id}
+                                            className="ml-2 px-2 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50 shrink-0"
+                                        >
+                                            {markingPaid === inv.id ? '...' : 'Dar baixa'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
@@ -134,7 +265,26 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [isDeletePlanModalOpen, setIsDeletePlanModalOpen] = useState(false);
     const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
 
+    // Password Reset Modal State
+    const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
+    const [resetPasswordUserName, setResetPasswordUserName] = useState('');
+    const [resetPasswordValue, setResetPasswordValue] = useState('');
+    const [resetPasswordError, setResetPasswordError] = useState('');
+
     const [alertConfig, setAlertConfig] = useState<{ isOpen: boolean; title?: string; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+
+    // Generic confirmation dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        variant: 'danger' | 'warning' | 'info';
+        onConfirm: () => void;
+    }>({ isOpen: false, title: '', message: '', variant: 'danger', onConfirm: () => {} });
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
+        setConfirmDialog({ isOpen: true, title, message, variant, onConfirm });
+    };
 
     const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info', title?: string) => {
         setAlertConfig({ isOpen: true, message, type, title });
@@ -176,21 +326,48 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     };
     // ... (omitted) ...
 
-    const navItems = [
-        { id: 'dashboard', label: t('saas_nav_overview'), icon: <LayoutDashboard className="w-5 h-5" /> },
-        { id: 'analytics', label: t('saas_nav_analytics'), icon: <BarChart3 className="w-5 h-5" /> },
-        { id: 'retention', label: t('saas_nav_retention'), icon: <HeartPulse className="w-5 h-5" /> },
-        { id: 'global_map', label: t('saas_nav_global_map'), icon: <Map className="w-5 h-5" /> },
-        { id: 'companies', label: t('saas_nav_companies'), icon: <Building2 className="w-5 h-5" /> },
-        { id: 'users', label: t('saas_nav_users'), icon: <Users className="w-5 h-5" /> },
-        { id: 'plans', label: t('saas_nav_plans'), icon: <CreditCard className="w-5 h-5" /> },
-        { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
-        { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
-        { id: 'audit', label: t('saas_nav_audit'), icon: <Settings className="w-5 h-5" /> },
-        { id: 'support_chat', label: 'Suporte Chat', icon: <MessageSquare className="w-5 h-5" /> },
-        { id: 'config', label: t('saas_nav_config'), icon: <Shield className="w-5 h-5" /> },
-        { id: 'trash', label: 'Lixeira', icon: <Trash2 className="w-5 h-5" /> },
+    const navSections = [
+        {
+            label: null, // No label for top section
+            items: [
+                { id: 'dashboard', label: t('saas_nav_overview'), icon: <LayoutDashboard className="w-5 h-5" /> },
+            ]
+        },
+        {
+            label: 'Inteligência',
+            items: [
+                { id: 'analytics', label: t('saas_nav_analytics'), icon: <BarChart3 className="w-5 h-5" /> },
+                { id: 'retention', label: t('saas_nav_retention'), icon: <HeartPulse className="w-5 h-5" /> },
+                { id: 'global_map', label: t('saas_nav_global_map'), icon: <Map className="w-5 h-5" /> },
+            ]
+        },
+        {
+            label: 'Gestão',
+            items: [
+                { id: 'companies', label: t('saas_nav_companies'), icon: <Building2 className="w-5 h-5" /> },
+                { id: 'users', label: t('saas_nav_users'), icon: <Users className="w-5 h-5" /> },
+                { id: 'plans', label: t('saas_nav_plans'), icon: <CreditCard className="w-5 h-5" /> },
+            ]
+        },
+        {
+            label: 'Comunicação',
+            items: [
+                { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
+                { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
+                { id: 'support_chat', label: 'Suporte', icon: <MessageSquare className="w-5 h-5" /> },
+            ]
+        },
+        {
+            label: 'Sistema',
+            items: [
+                { id: 'audit', label: t('saas_nav_audit'), icon: <Activity className="w-5 h-5" /> },
+                { id: 'config', label: t('saas_nav_config'), icon: <Settings className="w-5 h-5" /> },
+                { id: 'trash', label: 'Lixeira', icon: <Trash2 className="w-5 h-5" /> },
+            ]
+        }
     ];
+    // Flat list for header title lookup
+    const navItems = navSections.flatMap(s => s.items);
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
     useEffect(() => {
@@ -247,6 +424,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             }
         } catch (error) {
             console.error('Failed to load data', error);
+            showAlert('Failed to load data. Please refresh the page.', 'error');
         } finally {
             setLoading(false);
         }
@@ -264,7 +442,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             }
         } catch (error) {
             console.error('Failed to update company', error);
-            alert('Failed to update company');
+            showAlert('Failed to update company', 'error');
         }
     };
 
@@ -274,17 +452,18 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             setSaasConfig(prev => prev ? { ...prev, ...updates } : null);
         } catch (error) {
             console.error('Failed to update SaaS config', error);
+            showAlert('Failed to update SaaS config', 'error');
         }
     };
 
     const handleUserUpdate = async (id: string, updates: any) => {
         try {
             await saasService.updateUser(id, updates);
-            alert('User updated successfully');
+            showAlert('User updated successfully', 'success');
             loadData();
         } catch (error) {
             console.error(error);
-            alert('Failed to update user');
+            showAlert('Failed to update user', 'error');
         }
     };
 
@@ -299,7 +478,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             }
         } catch (error: any) {
             console.error('Failed to create support session', error);
-            alert(error.response?.data?.error || 'Erro ao iniciar sessão de suporte');
+            showAlert(error.response?.data?.error || 'Erro ao iniciar sessão de suporte', 'error');
         }
     };
 
@@ -410,7 +589,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             setIsVideoModalOpen(false);
             setEditingVideo(null);
         } catch (error) {
-            alert('Failed to save video');
+            showAlert('Failed to save video', 'error');
         }
     };
 
@@ -428,9 +607,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         };
         try {
             await saasService.updateSmtpConfig(data);
-            alert('SMTP settings saved successfully');
+            showAlert('SMTP settings saved successfully', 'success');
         } catch (error) {
-            alert('Failed to save SMTP settings');
+            showAlert('Failed to save SMTP settings', 'error');
         }
     };
 
@@ -448,9 +627,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         };
         try {
             const res = await saasService.testSmtp(data);
-            alert(res.message);
+            showAlert(res.message, 'success');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'SMTP test failed');
+            showAlert(error.response?.data?.message || 'SMTP test failed', 'error');
         }
     };
 
@@ -474,17 +653,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             setIsTemplateModalOpen(false);
             setEditingTemplate(null);
         } catch (error) {
-            alert('Failed to save template');
+            showAlert('Failed to save template', 'error');
         }
     };
 
     const handleDeleteTemplate = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this template?')) return;
+        // Confirmation handled by showConfirm caller
         try {
             await saasService.deleteEmailTemplate(id);
             await loadData();
         } catch (error) {
-            alert('Failed to delete template');
+            showAlert('Failed to delete template', 'error');
         }
     };
 
@@ -500,17 +679,15 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
 
     const handleDeleteVideo = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this video?')) return;
         try {
             await saasService.deleteDemoVideo(id);
             await loadData();
         } catch (error) {
-            alert('Failed to delete video');
+            showAlert('Failed to delete video', 'error');
         }
     };
 
     const handleRestoreProject = async (id: string) => {
-        if (!confirm('Deseja realmente restaurar este projeto?')) return;
         try {
             await saasService.restoreProject(id);
             setAlertConfig({
@@ -532,7 +709,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     };
 
     const handlePermanentDeleteProject = async (id: string) => {
-        if (!confirm('AVISO: Esta ação é irreversível e excluirá TODOS os dados do projeto (CTOs, Clientes, Cabos, etc). Deseja excluir permanentemente?')) return;
         try {
             await saasService.permanentlyDeleteProject(id);
             setAlertConfig({
@@ -612,23 +788,38 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     )}
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    {navItems.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveView(item.id as any)}
-                            title={isCollapsed ? item.label : ''}
-                            className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${activeView === item.id
-                                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                                } `}
-                        >
-                            <span className={`shrink-0 transition-transform duration-200 ${activeView === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                {item.icon}
-                            </span>
-                            {!isCollapsed && <span className="truncate">{item.label}</span>}
-                            {activeView === item.id && !isCollapsed && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
-                        </button>
+                <nav className="flex-1 px-3 py-4 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-1">
+                    {navSections.map((section, sIdx) => (
+                        <div key={sIdx}>
+                            {/* Section Label */}
+                            {section.label && !isCollapsed && (
+                                <p className="px-4 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">
+                                    {section.label}
+                                </p>
+                            )}
+                            {section.label && isCollapsed && (
+                                <div className="mx-3 my-2 h-px bg-slate-200 dark:bg-slate-800" />
+                            )}
+
+                            {/* Items */}
+                            {section.items.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveView(item.id as any)}
+                                    title={isCollapsed ? item.label : ''}
+                                    className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-2.5'} ${activeView === item.id
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                                        }`}
+                                >
+                                    <span className={`shrink-0 transition-transform duration-200 ${activeView === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                        {item.icon}
+                                    </span>
+                                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                                    {activeView === item.id && !isCollapsed && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
+                                </button>
+                            ))}
+                        </div>
                     ))}
                 </nav>
 
@@ -667,17 +858,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 <header className="sticky top-0 z-10 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md px-8 py-6 flex justify-between items-center">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white capitalize">
-                            {activeView === 'audit' ? t('saas_nav_audit') :
-                                activeView === 'dashboard' ? t('saas_nav_overview') :
-                                    activeView === 'analytics' ? t('saas_nav_analytics') :
-                                        activeView === 'retention' ? t('saas_nav_retention') :
-                                            activeView === 'global_map' ? t('saas_nav_global_map') :
-                                                activeView === 'companies' ? t('saas_nav_companies') :
-                                                    activeView === 'users' ? t('saas_nav_users') :
-                                                        activeView === 'plans' ? t('saas_nav_plans') :
-                                                            activeView === 'email' ? t('saas_nav_email') :
-                                                                activeView === 'config' ? t('saas_nav_config') :
-                                                                    activeView === 'support_chat' ? 'Suporte ao Cliente' : activeView}
+                            {navItems.find(i => i.id === activeView)?.label || activeView}
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t('saas_dashboard_subtitle')}</p>
                     </div>
@@ -918,7 +1099,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <tr>
                                             <th className="px-6 py-4">{t('saas_company_name')}</th>
                                             <th className="px-6 py-4">{t('saas_current_plan')}</th>
-                                            <th className="px-6 py-4 text-center">{t('admin_col_phone')}</th>
+                                            <th className="px-6 py-4 text-center">Vencimento</th>
+                                            <th className="px-6 py-4 text-center">Financeiro</th>
                                             <th className="px-6 py-4 text-center">{t('admin_col_infrastructure')}</th>
                                             <th className="px-6 py-4">{t('status')}</th>
                                             <th className="px-6 py-4 text-right">{t('actions')}</th>
@@ -946,9 +1128,31 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </select>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                                        {company.phone || <span className="text-slate-400 italic">{t('admin_no_phone')}</span>}
-                                                    </div>
+                                                    {company.subscriptionExpiresAt ? (
+                                                        <div className={`text-xs font-bold ${new Date(company.subscriptionExpiresAt) < new Date() ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                            {new Date(company.subscriptionExpiresAt).toLocaleDateString()}
+                                                            {new Date(company.subscriptionExpiresAt) < new Date() && (
+                                                                <span className="block text-[10px] text-red-500 font-semibold">Vencido</span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    {(company as any)._financial?.overdueCount > 0 ? (
+                                                        <div className="inline-flex flex-col items-center">
+                                                            <span className="text-xs font-black text-red-600">R$ {(company as any)._financial.overdueTotal.toFixed(2)}</span>
+                                                            <span className="text-[10px] text-red-500">{(company as any)._financial.overdueCount} {(company as any)._financial.overdueCount === 1 ? 'fatura' : 'faturas'}</span>
+                                                        </div>
+                                                    ) : (company as any)._financial?.paidCount > 0 ? (
+                                                        <div className="inline-flex flex-col items-center">
+                                                            <span className="text-xs font-bold text-emerald-600">Em dia</span>
+                                                            <span className="text-[10px] text-slate-400">{(company as any)._financial.paidCount} pagos</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400">—</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="w-48 space-y-2 mx-auto">
@@ -981,17 +1185,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <div className="flex items-center justify-end gap-2">
                                                         {company.status === 'ACTIVE' ? (
                                                             <button
-                                                                onClick={() => handleCompanyUpdate(company.id, { status: 'SUSPENDED' })}
+                                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${company.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(company.id, { status: 'SUSPENDED' }), 'warning')}
                                                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800"
                                                             >
-                                                                Suspend Access
+                                                                Suspender
                                                             </button>
                                                         ) : (
                                                             <button
-                                                                onClick={() => handleCompanyUpdate(company.id, { status: 'ACTIVE' })}
+                                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${company.name}"? O acesso será liberado.`, () => handleCompanyUpdate(company.id, { status: 'ACTIVE' }), 'info')}
                                                                 className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
                                                             >
-                                                                Reactivate
+                                                                Reativar
                                                             </button>
                                                         )}
                                                         <button
@@ -1104,12 +1308,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 })()}
                                             </div>
 
-                                            <button className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${plan.isRecommended
-                                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
-                                                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500'
-                                                }`}>
-                                                Assign Plan
-                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -1118,15 +1316,40 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     }
 
                     {
-                        activeView === 'audit' && (
+                        activeView === 'audit' && (() => {
+                            const [auditSearch, setAuditSearch] = [searchTerm, setSearchTerm]; // Reuse searchTerm for audit
+                            const filteredLogs = auditLogs.filter(log => {
+                                if (!auditSearch) return true;
+                                const term = auditSearch.toLowerCase();
+                                return (log.user?.username || '').toLowerCase().includes(term)
+                                    || (log.action || '').toLowerCase().includes(term)
+                                    || (log.entity || '').toLowerCase().includes(term)
+                                    || JSON.stringify(log.details || {}).toLowerCase().includes(term);
+                            });
+                            return (
                             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-                                    <h3 className="font-bold text-lg">{t('saas_audit_title')}</h3>
-                                    <p className="text-sm text-slate-500">{t('saas_audit_subtitle')}</p>
+                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                    <div>
+                                        <h3 className="font-bold text-lg">{t('saas_audit_title')}</h3>
+                                        <p className="text-sm text-slate-500">{t('saas_audit_subtitle')}</p>
+                                    </div>
+                                    <div className="relative w-full sm:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar por usuário, ação..."
+                                            value={auditSearch}
+                                            onChange={(e) => setAuditSearch(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="overflow-x-auto">
+                                <div className="px-6 py-2 text-xs text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                                    Exibindo {filteredLogs.length} de {auditLogs.length} registros
+                                </div>
+                                <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                        <thead className="bg-slate-50/50 dark:bg-slate-950/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0">
                                             <tr>
                                                 <th className="px-6 py-4">{t('saas_audit_time')}</th>
                                                 <th className="px-6 py-4">{t('saas_audit_user')}</th>
@@ -1136,9 +1359,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                            {auditLogs.map(log => (
+                                            {filteredLogs.map(log => (
                                                 <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">
+                                                    <td className="px-6 py-4 text-slate-500 font-mono text-xs whitespace-nowrap">
                                                         {new Date(log.createdAt).toLocaleString()}
                                                     </td>
                                                     <td className="px-6 py-4 font-medium">
@@ -1150,10 +1373,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-slate-500">
-                                                        {log.entity} <span className="text-xs opacity-50">#{log.entityId.slice(0, 6)}</span>
+                                                        {log.entity} <span className="text-xs opacity-50">#{log.entityId?.slice(0, 6)}</span>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-950 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800 block w-full max-w-[200px] truncate">
+                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-950 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800 block w-full max-w-[200px] truncate" title={JSON.stringify(log.details)}>
                                                             {JSON.stringify(log.details)}
                                                         </code>
                                                     </td>
@@ -1163,7 +1386,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </table>
                                 </div>
                             </div>
-                        )
+                            );
+                        })()
                     }
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
@@ -1263,8 +1487,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => {
-                                                                const newPass = prompt("Enter new password for " + user.username);
-                                                                if (newPass) handleUserUpdate(user.id, { password: newPass });
+                                                                setResetPasswordUserId(user.id);
+                                                                setResetPasswordUserName(user.username);
+                                                                setResetPasswordValue('');
+                                                                setResetPasswordError('');
                                                             }}
                                                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                                                             title="Reset Password"
@@ -1352,7 +1578,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <button onClick={() => openVideoModal(video)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
                                                             <Settings className="w-4 h-4" />
                                                         </button>
-                                                        <button onClick={() => handleDeleteVideo(video.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                                                        <button onClick={() => showConfirm('Excluir Vídeo', `Deseja excluir o vídeo "${video.title}"?`, () => handleDeleteVideo(video.id))} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -1454,7 +1680,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <button onClick={() => openTemplateModal(template)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
                                                             <Settings className="w-4 h-4" />
                                                         </button>
-                                                        <button onClick={() => handleDeleteTemplate(template.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                                                        <button onClick={() => showConfirm('Excluir Template', `Deseja excluir o template "${template.name}"?`, () => handleDeleteTemplate(template.id))} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
@@ -1550,10 +1776,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_config_logo')}</label>
                                                     <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
                                                         onChange={async (e) => {
                                                             const file = e.target.files?.[0];
                                                             if (file) {
+                                                                const maxSize = 2 * 1024 * 1024; // 2MB
+                                                                const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+                                                                if (file.size > maxSize) {
+                                                                    showAlert('File size exceeds 2MB limit.', 'error');
+                                                                    e.target.value = '';
+                                                                    return;
+                                                                }
+                                                                if (!allowedTypes.includes(file.type)) {
+                                                                    showAlert('Invalid file type. Only PNG, JPEG, SVG and WebP are allowed.', 'error');
+                                                                    e.target.value = '';
+                                                                    return;
+                                                                }
                                                                 const reader = new FileReader();
                                                                 reader.onloadend = async () => {
                                                                     const base64 = reader.result as string;
@@ -1564,6 +1802,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                         }
                                                                     } catch (err) {
                                                                         console.error('Failed to upload SaaS logo:', err);
+                                                                        showAlert('Failed to upload logo.', 'error');
                                                                     }
                                                                 };
                                                                 reader.readAsDataURL(file);
@@ -1738,7 +1977,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2">
                                                             <button
-                                                                onClick={() => handleRestoreProject(project.id)}
+                                                                onClick={() => showConfirm('Restaurar Projeto', `Deseja restaurar o projeto "${project.name}"?`, () => handleRestoreProject(project.id), 'info')}
                                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors border border-emerald-100 dark:border-emerald-800"
                                                                 title="Restaurar Projeto"
                                                             >
@@ -1746,7 +1985,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 Restaurar
                                                             </button>
                                                             <button
-                                                                onClick={() => handlePermanentDeleteProject(project.id)}
+                                                                onClick={() => showConfirm('Excluir Permanentemente', `AVISO IRREVERSÍVEL: Todos os dados do projeto "${project.name}" (CTOs, Clientes, Cabos) serão excluídos. Confirma?`, () => handlePermanentDeleteProject(project.id))}
                                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors border border-red-100 dark:border-red-800"
                                                                 title="Excluir Permanentemente"
                                                             >
@@ -2076,10 +2315,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_logo')}</label>
                                                     <input
                                                         type="file"
-                                                        accept="image/*"
+                                                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
                                                         onChange={async (e) => {
                                                             const file = e.target.files?.[0];
                                                             if (file) {
+                                                                const maxSize = 2 * 1024 * 1024; // 2MB
+                                                                const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+                                                                if (file.size > maxSize) {
+                                                                    showAlert('File size exceeds 2MB limit.', 'error');
+                                                                    e.target.value = '';
+                                                                    return;
+                                                                }
+                                                                if (!allowedTypes.includes(file.type)) {
+                                                                    showAlert('Invalid file type. Only PNG, JPEG, SVG and WebP are allowed.', 'error');
+                                                                    e.target.value = '';
+                                                                    return;
+                                                                }
                                                                 const reader = new FileReader();
                                                                 reader.onloadend = async () => {
                                                                     const base64 = reader.result as string;
@@ -2245,7 +2496,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="grid grid-cols-2 gap-3">
                                         {selectedCompany.status === 'ACTIVE' ? (
                                             <button
-                                                onClick={() => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' })}
+                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${selectedCompany.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' }), 'warning')}
                                                 className="flex items-center justify-center gap-2 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-xl text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
                                             >
                                                 <Lock className="w-3.5 h-3.5" />
@@ -2253,7 +2504,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={() => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' })}
+                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${selectedCompany.name}"? O acesso será liberado.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' }), 'info')}
                                                 className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
                                             >
                                                 <Shield className="w-3.5 h-3.5" />
@@ -2324,6 +2575,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Financial History */}
+                                    <CompanyInvoicesSection companyId={selectedCompany.id} financial={(selectedCompany as any)._financial} />
                                 </div>
                             </div>
                         </div>
@@ -2336,6 +2590,39 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     onClose={() => setIsPasswordModalOpen(false)}
                 />
             </main >
+
+            {/* Generic Confirmation Dialog */}
+            {confirmDialog.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 p-6 animate-in zoom-in-95 duration-200">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className={`p-3 rounded-full ${confirmDialog.variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30 text-red-600' : confirmDialog.variant === 'warning' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'}`}>
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{confirmDialog.title}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{confirmDialog.message}</p>
+                            <div className="flex gap-3 w-full pt-2">
+                                <button
+                                    onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        confirmDialog.onConfirm();
+                                        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                    }}
+                                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-colors ${confirmDialog.variant === 'danger' ? 'bg-red-600 hover:bg-red-700' : confirmDialog.variant === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                >
+                                    Confirmar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Delete Confirmation Modal */}
             {
                 isDeleteModalOpen && companyToDelete && (
@@ -2467,6 +2754,69 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 >
                                     <Trash2 className="w-4 h-4" />
                                     {t('saas_delete_plan')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                resetPasswordUserId && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-100 p-6">
+                            <div className="flex flex-col space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30">
+                                        <RotateCcw className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Reset Password</h3>
+                                        <p className="text-xs text-slate-400">{resetPasswordUserName}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={resetPasswordValue}
+                                        onChange={(e) => {
+                                            setResetPasswordValue(e.target.value);
+                                            setResetPasswordError('');
+                                        }}
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="Min. 6 characters"
+                                        autoFocus
+                                    />
+                                    {resetPasswordError && (
+                                        <p className="text-xs text-red-500 mt-1">{resetPasswordError}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="mt-6 flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setResetPasswordUserId(null);
+                                        setResetPasswordValue('');
+                                        setResetPasswordError('');
+                                    }}
+                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (resetPasswordValue.length < 6) {
+                                            setResetPasswordError('Password must be at least 6 characters');
+                                            return;
+                                        }
+                                        await handleUserUpdate(resetPasswordUserId!, { password: resetPasswordValue });
+                                        setResetPasswordUserId(null);
+                                        setResetPasswordValue('');
+                                        setResetPasswordError('');
+                                    }}
+                                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors"
+                                >
+                                    Reset Password
                                 </button>
                             </div>
                         </div>

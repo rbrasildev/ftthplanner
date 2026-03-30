@@ -82,29 +82,21 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
         if (!plan) return res.status(404).json({ error: 'Plan not found.' });
 
         // Retrieve or create Stripe Customer
-        let stripeCustomerId = (company as any).stripeCustomerId as string | undefined;
+        let stripeCustomerId = company.stripeCustomerId;
         const stripe = getStripe();
 
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
                 email: company.users?.[0]?.email,
                 name: company.name,
-                metadata: {
-                    companyId: companyId
-                }
+                metadata: { companyId }
             });
             stripeCustomerId = customer.id;
-            
-            // Save customer ID for future use (requires adding this field to schema later, or saving in metadata. 
-            // For now, if schema doesn't have stripeCustomerId, we'll just create a new one each time to avoid crashing.
-            // Let's assume Prisma schema doesn't have it yet. We will just use the new customer.)
-            try {
-                // Ignore TS error if field doesn't exist yet, we will just silently fail to save it
-                await (prisma.company as any).update({
-                    where: { id: companyId },
-                    data: { stripeCustomerId: customer.id }
-                });
-            } catch (e) { logger.debug("Could not save stripeCustomerId, column might not exist."); }
+
+            await prisma.company.update({
+                where: { id: companyId },
+                data: { stripeCustomerId: customer.id }
+            });
         }
 
         // Check if plan has a pre-existing Stripe Price ID
