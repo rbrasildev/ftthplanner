@@ -126,6 +126,12 @@ const pinIcon = L.divIcon({
     popupAnchor: [0, -10]
 });
 
+const previewIcon = L.divIcon({
+    className: 'preview-icon',
+    html: `<div style="width: 14px; height: 14px; background: #f59e0b; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
+    iconSize: [14, 14]
+});
+
 // --- SUB COMPONENTS (Memoized for Performance) ---
 // Markers are imported from ./markers/ folder
 
@@ -575,6 +581,8 @@ export const MapView: React.FC<MapViewProps> = ({
     onCancelMode
 }) => {
     const { t } = useLanguage();
+    // Stable ref for optional callbacks — prevents `|| noOp` from creating new references every render
+    const stableMoveNode = useMemo(() => onMoveNode || noOp, [onMoveNode]);
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
 
     // Customer State
@@ -758,8 +766,19 @@ export const MapView: React.FC<MapViewProps> = ({
         setDragState({ isDragging: true, currentPosition: null, tetherPoints: tethers });
     }, []); // No dependency on 'cables'
 
+    const dragPositionRef = useRef<Coordinates | null>(null);
+    const dragRafRef = useRef<number | null>(null);
     const handleDrag = useCallback((lat: number, lng: number) => {
-        setDragState(prev => ({ ...prev, currentPosition: { lat, lng } }));
+        // Throttle drag updates to 1 per animation frame (prevents 60+ setState/sec)
+        dragPositionRef.current = { lat, lng };
+        if (!dragRafRef.current) {
+            dragRafRef.current = requestAnimationFrame(() => {
+                dragRafRef.current = null;
+                if (dragPositionRef.current) {
+                    setDragState(prev => ({ ...prev, currentPosition: dragPositionRef.current }));
+                }
+            });
+        }
     }, []);
 
     const handleDragEnd = useCallback(() => {
@@ -891,8 +910,29 @@ export const MapView: React.FC<MapViewProps> = ({
         return ids;
     }, [ctos, pops]);
 
+    // Pre-filter markers excluding the one being moved — avoids repeated .filter() in JSX
+    const renderableCTOs = useMemo(() =>
+        visibleCTOs.filter(c => !(mode === 'move_node' && c.id === selectedId)),
+        [visibleCTOs, mode, selectedId]);
+    const renderablePOPs = useMemo(() =>
+        visiblePOPs.filter(p => !(mode === 'move_node' && p.id === selectedId)),
+        [visiblePOPs, mode, selectedId]);
+    const renderablePoles = useMemo(() =>
+        visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)),
+        [visiblePoles, mode, selectedId]);
+
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
+
+    // Pre-filter cables with technical reserves (avoids inline .filter() in JSX)
+    const cablesWithReserves = useMemo(() =>
+        cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)),
+        [cables, showLabels]);
+
+    // Stable callback for reserve move (avoids inline arrow per cable)
+    const handleMoveReserve = useCallback((_id: string, lat: number, lng: number) => {
+        if (onReservePositionSet) onReservePositionSet(lat, lng);
+    }, [onReservePositionSet]);
 
     useEffect(() => {
         if (mode !== 'connect_cable') setActiveCableId(null);
@@ -1334,7 +1374,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         spiderfyOnMaxZoom={true}
                         showCoverageOnHover={false}
                     >
-                        {visibleCTOs.filter(c => !(mode === 'move_node' && c.id === selectedId)).map(cto => (
+                        {renderableCTOs.map(cto => (
                             <CTOMarker
                                 key={cto.id}
                                 cto={cto}
@@ -1344,7 +1384,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={handleCTONodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
                                 cableStartPoint={cableStartPoint}
@@ -1356,7 +1396,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
 
-                        {visiblePOPs.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pop => (
+                        {renderablePOPs.map(pop => (
                             <POPMarker
                                 key={pop.id}
                                 pop={pop}
@@ -1365,7 +1405,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
                                 cableStartPoint={cableStartPoint}
@@ -1376,7 +1416,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 userRole={userRole}
                             />
                         ))}
-                        {visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pole => (
+                        {renderablePoles.map(pole => (
                             <PoleMarker
                                 key={pole.id}
                                 pole={pole}
@@ -1385,7 +1425,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
@@ -1403,7 +1443,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     </MarkerClusterGroup>
                 ) : (
                     <>
-                        {visibleCTOs.filter(c => !(mode === 'move_node' && c.id === selectedId)).map(cto => (
+                        {renderableCTOs.map(cto => (
                             <CTOMarker
                                 key={cto.id}
                                 cto={cto}
@@ -1413,7 +1453,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={handleCTONodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
                                 cableStartPoint={cableStartPoint}
@@ -1425,7 +1465,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
 
-                        {visiblePOPs.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pop => (
+                        {renderablePOPs.map(pop => (
                             <POPMarker
                                 key={pop.id}
                                 pop={pop}
@@ -1434,7 +1474,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={onCableStart}
                                 onCableEnd={onCableEnd}
                                 cableStartPoint={cableStartPoint}
@@ -1445,7 +1485,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 userRole={userRole}
                             />
                         ))}
-                        {visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)).map(pole => (
+                        {renderablePoles.map(pole => (
                             <PoleMarker
                                 key={pole.id}
                                 pole={pole}
@@ -1454,7 +1494,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
@@ -1473,7 +1513,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
                 {/* TECHNICAL RESERVES (Draggable Markers) */}
-                {cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)).map(cable => {
+                {cablesWithReserves.map(cable => {
                     const position = cable.reserveLocation || (() => {
                         const coords = cable.coordinates;
                         if (coords && coords.length >= 2) {
@@ -1493,7 +1533,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             position={position}
                             mode={mode}
                             currentZoom={currentZoom}
-                            onMoveReserve={(id, lat, lng) => onReservePositionSet && onReservePositionSet(lat, lng)}
+                            onMoveReserve={handleMoveReserve}
                             onDragStart={handlePointDragStart}
                             onDrag={handleDrag}
                             onDragEnd={handleDragEnd}
@@ -1515,7 +1555,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={noOp}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={noOp}
                                 onCableEnd={noOp}
                                 cableStartPoint={null}
@@ -1535,7 +1575,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={noOp}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onCableStart={noOp}
                                 onCableEnd={noOp}
                                 cableStartPoint={null}
@@ -1555,7 +1595,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={noOp}
-                                onMoveNode={onMoveNode || noOp}
+                                onMoveNode={stableMoveNode}
                                 onDragStart={handleNodeDragStart}
                                 onDrag={handleDrag}
                                 onDragEnd={handleDragEnd}
@@ -1583,11 +1623,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 <Marker
                                     key={`preview-node-${idx}`}
                                     position={[lat, lng]}
-                                    icon={L.divIcon({
-                                        className: 'preview-icon',
-                                        html: `<div style="width: 14px; height: 14px; background: #f59e0b; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 4px black;"></div>`,
-                                        iconSize: [14, 14]
-                                    })}
+                                    icon={previewIcon}
                                 >
                                     <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
                                         <div className="text-xs font-bold text-amber-600 bg-white px-1 rounded shadow">{item.originalName}</div>

@@ -202,7 +202,28 @@ interface CTOEditorProps {
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note';
 
 
-// --- COMPONENT: ConnectionsLayer (Memoized to prevent SVG re-renders on Pan) ---
+// --- COMPONENT: ConnectionsLayer (Memoized with custom areEqual to prevent SVG re-renders) ---
+interface ConnectionsLayerProps {
+    connections: FiberConnection[];
+    litConnections: Set<string>;
+    hoveredPortId: string | null;
+    isVflToolActive: boolean;
+    isOtdrToolActive: boolean;
+    dragState: any;
+    cacheVersion: number;
+    getPortCenter: (portId: string) => { x: number; y: number } | null;
+    handleSmartAlignConnection: (connId: string) => void;
+    onDisconnectConnection?: (connId: string) => void;
+    handlePathMouseDown: (e: React.MouseEvent, connId: string) => void;
+    handlePointMouseDown: (e: React.MouseEvent, connId: string, idx: number) => void;
+    removeConnection: (connId: string) => void;
+    removePoint: (e: React.MouseEvent, connId: string, idx: number) => void;
+    connectionRefs: React.MutableRefObject<Record<string, SVGPathElement | null>>;
+    connectionPointRefs: React.MutableRefObject<Record<string, SVGCircleElement | null>>;
+    isSmartAlignMode: boolean;
+    onHoverConnection?: (id: string | null) => void;
+}
+
 const ConnectionsLayer = React.memo(({
     connections,
     litConnections,
@@ -212,7 +233,6 @@ const ConnectionsLayer = React.memo(({
     dragState,
     getPortCenter,
     handleSmartAlignConnection,
-    onDisconnectConnection,
     handlePathMouseDown,
     handlePointMouseDown,
     removeConnection,
@@ -221,10 +241,10 @@ const ConnectionsLayer = React.memo(({
     connectionPointRefs,
     isSmartAlignMode,
     onHoverConnection
-}: any) => {
+}: ConnectionsLayerProps) => {
     return (
         <>
-            {connections.map((conn: any) => {
+            {connections.map((conn) => {
                 if (dragState?.mode === 'reconnect' && dragState.connectionId === conn.id) return null;
 
                 const p1 = getPortCenter(conn.sourceId);
@@ -297,6 +317,17 @@ const ConnectionsLayer = React.memo(({
             })}
         </>
     );
+}, (prev, next) => {
+    // Custom areEqual — only re-render when data that affects visual output changes.
+    // Callbacks are stable (useCallback) or read via refs, so skip comparing them.
+    return prev.cacheVersion === next.cacheVersion
+        && prev.connections === next.connections
+        && prev.litConnections === next.litConnections
+        && prev.hoveredPortId === next.hoveredPortId
+        && prev.dragState === next.dragState
+        && prev.isSmartAlignMode === next.isSmartAlignMode
+        && prev.isVflToolActive === next.isVflToolActive
+        && prev.isOtdrToolActive === next.isOtdrToolActive;
 });
 
 export const CTOEditor: React.FC<CTOEditorProps> = ({
@@ -575,7 +606,41 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isFusionToolActive, setIsFusionToolActive] = useState(false);
     const [selectedFusionTypeId, setSelectedFusionTypeId] = useState<string | null>(null);
     const [showFusionTypeModal, setShowFusionTypeModal] = useState(false);
-    const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
+    // cursorPosition removed — fusion ghost is now positioned via cursorGhostRef (direct DOM)
+
+    // --- CATALOG INTEGRATION (declared early so toggleToolMode can reference loadCatalogsOnDemand) ---
+    const [availableCables, setAvailableCables] = useState<CableCatalogItem[]>([]);
+    const [availableFusions, setAvailableFusions] = useState<FusionCatalogItem[]>([]);
+    const [availableOLTs, setAvailableOLTs] = useState<OLTCatalogItem[]>([]);
+    const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
+    const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
+    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+
+    // Lazy-load catalogs on first interaction (not on mount — saves CPU/network on init)
+    const catalogsLoadedRef = useRef(false);
+    const loadCatalogsOnDemand = useCallback(async () => {
+        if (catalogsLoadedRef.current) return;
+        catalogsLoadedRef.current = true;
+        setIsCatalogLoading(true);
+        try {
+            const [splitters, fusions, cables, boxes, olts] = await Promise.all([
+                getSplitters(),
+                getFusions(),
+                getCables(),
+                getBoxes(),
+                getOLTs()
+            ]);
+            setAvailableSplitters(splitters);
+            setAvailableFusions(fusions);
+            setAvailableCables(cables);
+            setAvailableBoxes(boxes);
+            setAvailableOLTs(olts);
+        } catch (err) {
+            console.error("Failed to load catalogs", err);
+        } finally {
+            setIsCatalogLoading(false);
+        }
+    }, []);
 
     // --- CENTRALIZED TOOL MODE MANAGEMENT ---
     // All tool modes are mutually exclusive. This function clears ALL tool modes.
@@ -615,9 +680,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         clearAllToolModes();
         if (!wasActive) {
             toolModeSetters[mode](true);
+            // Lazy-load catalogs when user first opens a tool that needs them
+            if (mode === 'splitterDropdown' || mode === 'fusion') {
+                loadCatalogsOnDemand();
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isRotateMode, isDeleteMode, isSmartAlignMode, isVflToolActive, isOtdrToolActive, isFusionToolActive, showSplitterDropdown, clearAllToolModes]);
+    }, [isRotateMode, isDeleteMode, isSmartAlignMode, isVflToolActive, isOtdrToolActive, isFusionToolActive, showSplitterDropdown, clearAllToolModes, loadCatalogsOnDemand]);
 
     const GRID_SIZE = 6; // Reduced from 12 for finer granule control
     const splitterDropdownRef = useRef<HTMLDivElement>(null);
@@ -635,55 +704,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         };
     });
 
-    // --- CATALOG INTEGRATION ---
-    const [availableCables, setAvailableCables] = useState<CableCatalogItem[]>([]);
-    const [availableFusions, setAvailableFusions] = useState<FusionCatalogItem[]>([]);
-    const [availableOLTs, setAvailableOLTs] = useState<OLTCatalogItem[]>([]);
-    const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
-    const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
-    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
-
     // Optical Power Calculation State
     const [isOpticalModalOpen, setIsOpticalModalOpen] = useState(false);
     const [opticalResult, setOpticalResult] = useState<OpticalPathResult | null>(null);
     const [selectedSplitterName, setSelectedSplitterName] = useState('');
 
-    useEffect(() => {
-        const loadCatalogs = async () => {
-            setIsCatalogLoading(true);
-            try {
-                const [splitters, fusions, cables, boxes, olts] = await Promise.all([
-                    getSplitters(),
-                    getFusions(),
-                    getCables(),
-                    getBoxes(),
-                    getOLTs()
-                ]);
-                setAvailableSplitters(splitters);
-                setAvailableFusions(fusions);
-                setAvailableCables(cables);
-                setAvailableBoxes(boxes);
-                setAvailableOLTs(olts);
-            } catch (err) {
-                console.error("Failed to load catalogs", err);
-            } finally {
-                setIsCatalogLoading(false);
-            }
-        };
-        loadCatalogs();
-    }, []);
-
-    // UNIFIED FORCE RENDER & CACHE CLEAR
-    // Single useLayoutEffect that clears geometric caches and forces re-render
-    // whenever structure, layout, zoom, or window state changes.
-    // This replaces 3 separate useLayoutEffects that were causing 2-3 extra renders per interaction.
-    const [, forceRender] = useState(0);
+    // UNIFIED CACHE CLEAR
+    // Clears geometric caches when structure changes (NOT on pan/zoom — ports don't move relative to canvas).
+    // forceRender is needed so ConnectionsLayer can measure port positions after DOM paints.
+    // cacheVersion is passed to ConnectionsLayer so the custom areEqual doesn't block the re-render.
+    const [cacheVersion, forceRender] = useState(0);
 
     useLayoutEffect(() => {
         portCenterCache.current = {};
         containerRectCache.current = null;
         forceRender(n => n + 1);
-    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, viewState, isMaximized]);
+    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized]);
 
 
     useEffect(() => {
@@ -785,6 +821,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // Derived state for layout calculation
     const containerRef = useRef<HTMLDivElement>(null);
     const diagramContentRef = useRef<HTMLDivElement>(null);
+    const gridRef = useRef<HTMLDivElement>(null);
+    const cursorGhostRef = useRef<HTMLDivElement>(null);
 
     // (Force-update logic unified above)
     // --- ESCAPE KEY HANDLER ---
@@ -794,7 +832,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 // Cancel all active tools
                 clearAllToolModes();
                 setShowFusionTypeModal(false);
-                setCursorPosition(null);
+                if (cursorGhostRef.current) cursorGhostRef.current.style.display = 'none';
 
                 // If dragging something, cancel it
                 setDragState(null);
@@ -832,6 +870,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const getLayout = (id: string) => localCTO.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
+    // Viewport culling — compute visible canvas bounds to skip rendering off-screen elements
+    const visibleBounds = useMemo(() => {
+        // Use fixed viewport size (1100x750) as containerRef may not be mounted yet on first render
+        const vw = isMaximized ? window.innerWidth : 1100;
+        const vh = isMaximized ? window.innerHeight : 750;
+        const MARGIN = 200; // generous buffer so elements aren't clipped mid-scroll
+        return {
+            minX: (-viewState.x - MARGIN) / viewState.zoom,
+            minY: (-viewState.y - MARGIN) / viewState.zoom,
+            maxX: (-viewState.x + vw + MARGIN) / viewState.zoom,
+            maxY: (-viewState.y + vh + MARGIN) / viewState.zoom,
+        };
+    }, [viewState.x, viewState.y, viewState.zoom, isMaximized]);
+
+    const isElementVisible = useCallback((layout: { x: number; y: number }, width: number, height: number) => {
+        return layout.x + width > visibleBounds.minX
+            && layout.x < visibleBounds.maxX
+            && layout.y + height > visibleBounds.minY
+            && layout.y < visibleBounds.maxY;
+    }, [visibleBounds]);
+
     const screenToCanvas = (sx: number, sy: number) => {
         if (!containerRef.current) return { x: 0, y: 0 };
         const rect = containerRef.current.getBoundingClientRect();
@@ -866,7 +925,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return null;
     }, [viewState.zoom]);
 
-    const handleSmartAlignConnection = (connId: string) => {
+    const handleSmartAlignConnection = useCallback((connId: string) => {
         setLocalCTO(prev => ({
             ...prev,
             connections: prev.connections.map(c => {
@@ -976,7 +1035,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return { ...c, points: finalPoints };
             })
         }));
-    };
+    }, [getPortCenter, setLocalCTO]);
 
     const handleSmartAlignCable = (cableId: string) => {
         setLocalCTO(prev => {
@@ -1557,6 +1616,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setHoveredElement(id ? { id, type: 'connection' } : null);
     }, []);
 
+    // Stable hover handler via event delegation — avoids N inline arrows per .map() item
+    // Child wrappers use data-hover-id and data-hover-type attributes instead of onMouseEnter/Leave
+    const handleElementHover = useCallback((e: React.MouseEvent) => {
+        const target = (e.target as HTMLElement).closest('[data-hover-id]') as HTMLElement | null;
+        if (target) {
+            setHoveredElement({
+                id: target.dataset.hoverId!,
+                type: target.dataset.hoverType as 'cable' | 'connection' | 'splitter' | 'fusion'
+            });
+        }
+    }, []);
+    const handleElementHoverClear = useCallback((e: React.MouseEvent) => {
+        const related = (e.relatedTarget as HTMLElement)?.closest?.('[data-hover-id]');
+        if (!related) setHoveredElement(null);
+    }, []);
+    const handleFusionAction = useCallback((e: React.MouseEvent, fusionId: string) => {
+        handleElementAction(e, fusionId, 'fusion');
+    }, [handleElementAction]);
+    const handleSplitterAction = useCallback((e: React.MouseEvent, splitterId: string) => {
+        handleElementAction(e, splitterId, 'splitter');
+    }, [handleElementAction]);
+
     // Optimize handleCableClick explicitly to avoid re-renders during drag
     const smartAlignFnRef = useRef(handleSmartAlignCable);
     useLayoutEffect(() => { smartAlignFnRef.current = handleSmartAlignCable; });
@@ -1758,13 +1839,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // Track mouse screen position for rotation-during-drag
         lastMouseScreenPos.current = { x: e.clientX, y: e.clientY };
 
-        // Track Cursor for Fusion Ghost
+        // Track Cursor for Fusion Ghost (Direct DOM — no setState at 60fps)
         if (isFusionToolActive) {
             const { x, y } = screenToCanvas(e.clientX, e.clientY);
-            // Snap logic for ghost
             const snapX = isSnapping ? Math.round(x / GRID_SIZE) * GRID_SIZE : x;
             const snapY = isSnapping ? Math.round(y / GRID_SIZE) * GRID_SIZE : y;
-            setCursorPosition({ x: snapX, y: snapY });
+            if (cursorGhostRef.current) {
+                const vs = viewStateRef.current;
+                cursorGhostRef.current.style.transform =
+                    `translate(${vs.x + (snapX - 12) * vs.zoom}px, ${vs.y + (snapY - 6) * vs.zoom}px) scale(${vs.zoom})`;
+                cursorGhostRef.current.style.display = '';
+            }
         }
 
         if (!dragState) return;
@@ -1780,17 +1865,35 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             return;
         }
 
-        // 2. VIEW PAN (Direct DOM on Container)
+        // 2. VIEW PAN (Direct DOM — zero React re-renders for 60fps smoothness)
         if (dragState.mode === 'view') {
             const dx = e.clientX - dragState.startX;
             const dy = e.clientY - dragState.startY;
 
-            // Update React State immediately for view (it affects all calculations)
-            // View panning is less heavy than re-rendering 500 connections individually
-            // But we could optimize this too if needed. 
-            // For now, let's stick to state for View, as it triggers 'screenToCanvas' recalcs which we need.
-            setViewState(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
-            setDragState(prev => prev ? ({ ...prev, startX: e.clientX, startY: e.clientY }) : null);
+            // Update ref silently (no setState = no re-render)
+            viewStateRef.current = {
+                ...viewStateRef.current,
+                x: viewStateRef.current.x + dx,
+                y: viewStateRef.current.y + dy
+            };
+
+            // Mutate dragState start coords directly (ref-like, avoids setDragState)
+            dragState.startX = e.clientX;
+            dragState.startY = e.clientY;
+
+            // Direct DOM manipulation for transform container
+            if (diagramContentRef.current) {
+                const vs = viewStateRef.current;
+                diagramContentRef.current.style.transform =
+                    `translate(${vs.x}px, ${vs.y}px) scale(${vs.zoom})`;
+            }
+
+            // Direct DOM manipulation for grid background
+            if (gridRef.current) {
+                const vs = viewStateRef.current;
+                gridRef.current.style.backgroundPosition = `${vs.x}px ${vs.y}px`;
+            }
+
             return;
         }
 
@@ -2437,6 +2540,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         }
 
+        // COMMIT view pan ref → React state (single render at end of pan, not per-frame)
+        if (dragState?.mode === 'view') {
+            setViewState({ ...viewStateRef.current });
+        }
+
         setDragState(null);
     };
 
@@ -2919,11 +3027,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
 
-    const handleWheel = (e: React.WheelEvent) => {
-        const scale = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(0.1, viewState.zoom * scale), 4);
-        setViewState(prev => ({ ...prev, zoom: newZoom }));
-    };
+    const wheelRafRef = useRef<number | null>(null);
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+        // Throttle zoom to 1 update per animation frame (prevents trackpad flood)
+        const delta = e.deltaY;
+        if (wheelRafRef.current) cancelAnimationFrame(wheelRafRef.current);
+        wheelRafRef.current = requestAnimationFrame(() => {
+            wheelRafRef.current = null;
+            const scale = delta > 0 ? 0.9 : 1.1;
+            setViewState(prev => {
+                const newZoom = Math.min(Math.max(0.1, prev.zoom * scale), 4);
+                return { ...prev, zoom: newZoom };
+            });
+        });
+    }, []);
 
     const handleOtdrSubmit = () => {
         if (!otdrTargetPort || !otdrDistance) return;
@@ -3061,29 +3178,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     )}
 
-                    {/* FUSION GHOST / CURSOR */}
-                    {isFusionToolActive && cursorPosition && (
-                        <div
-                            className="absolute pointer-events-none z-[50] flex items-center justify-center opacity-80"
-                            style={{
-                                left: 0,
-                                top: 0,
-                                width: '24px',
-                                height: '12px',
-                                transform: `translate(${viewState.x + (cursorPosition.x - 12) * viewState.zoom}px, ${viewState.y + (cursorPosition.y - 6) * viewState.zoom}px) scale(${viewState.zoom})`,
-                                transformOrigin: 'top left'
-                            }}
-                        >
-                            {/* Center Body - Compact Circle (Standard Fusion Style) */}
-                            <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
+                    {/* FUSION GHOST / CURSOR — positioned via ref (no setState on mousemove) */}
+                    <div
+                        ref={cursorGhostRef}
+                        className="absolute pointer-events-none z-[50] flex items-center justify-center opacity-80"
+                        style={{
+                            left: 0,
+                            top: 0,
+                            width: '24px',
+                            height: '12px',
+                            display: isFusionToolActive ? '' : 'none',
+                            transformOrigin: 'top left'
+                        }}
+                    >
+                        {/* Center Body - Compact Circle (Standard Fusion Style) */}
+                        <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
 
-                            {/* Left Port - Edge */}
-                            <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
+                        {/* Left Port - Edge */}
+                        <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
 
-                            {/* Right Port - Edge */}
-                            <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
-                        </div>
-                    )}
+                        {/* Right Port - Edge */}
+                        <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
+                    </div>
 
 
                     {/* VFL Info Banner */}
@@ -3104,6 +3220,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                     {/* Grid Pattern - Adapts to Theme */}
                     <div
+                        ref={gridRef}
                         className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#475569_1px,transparent_1px),linear-gradient(to_bottom,#475569_1px,transparent_1px)] opacity-60 dark:opacity-20"
                         style={{
                             backgroundSize: `${(GRID_SIZE * 5) * viewState.zoom}px ${(GRID_SIZE * 5) * viewState.zoom}px`,
@@ -3168,6 +3285,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 isVflToolActive={isVflToolActive}
                                 isOtdrToolActive={isOtdrToolActive}
                                 dragState={dragState}
+                                cacheVersion={cacheVersion}
                                 getPortCenter={getPortCenter}
                                 onHoverConnection={handleHoverConnection}
                                 handleSmartAlignConnection={handleSmartAlignConnection}
@@ -3215,12 +3333,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 // This prevents "magnetic" behavior where dragging one cable pulls the uninitialized ones below it.
                                 currentEmergencyY += totalHeight + 10;
 
+                                // Viewport culling: skip rendering cables outside visible area
+                                if (!isElementVisible(layout, 192, totalHeight)) return null;
+
                                 return (
                                     <div
                                         key={cable.id}
-                                        onMouseEnter={() => setHoveredElement({ id: cable.id, type: 'cable' })}
-                                        onMouseLeave={() => setHoveredElement(null)}
-                                        className="contents" // Important: contents so it doesn't break absolute positioning of children if needed, though they are already absolute
+                                        data-hover-id={cable.id}
+                                        data-hover-type="cable"
+                                        onMouseEnter={handleElementHover}
+                                        onMouseLeave={handleElementHoverClear}
+                                        className="contents"
                                     >
                                         <FiberCableNode
                                             key={cable.id}
@@ -3249,11 +3372,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                         {localCTO.fusions.map(fusion => {
                             const layout = getLayout(fusion.id);
+                            // Viewport culling: skip off-screen fusions (48x24 bounding box)
+                            if (!isElementVisible(layout, 48, 24)) return null;
                             return (
                                 <div
                                     key={fusion.id}
-                                    onMouseEnter={() => setHoveredElement({ id: fusion.id, type: 'fusion' })}
-                                    onMouseLeave={() => setHoveredElement(null)}
+                                    data-hover-id={fusion.id}
+                                    data-hover-type="fusion"
+                                    onMouseEnter={handleElementHover}
+                                    onMouseLeave={handleElementHoverClear}
                                     className="contents"
                                 >
                                     <FusionNode
@@ -3265,7 +3392,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     hoveredPortId={hoveredPortId}
 
                                     onDragStart={handleElementDragStart}
-                                    onAction={(e) => handleElementAction(e, fusion.id, 'fusion')}
+                                    onAction={handleFusionAction}
                                     onPortMouseDown={handlePortMouseDown}
                                     onPortMouseEnter={setHoveredPortId}
                                     onPortMouseLeave={handlePortMouseLeave}
@@ -3317,6 +3444,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                         {localCTO.splitters.map(splitter => {
                             const layout = getLayout(splitter.id);
+                            // Viewport culling: skip off-screen splitters
+                            const splitterWidth = splitter.outputPortIds.length * 24;
+                            if (!isElementVisible(layout, splitterWidth, 72)) return null;
 
                             // Map customers to ports for this splitter
                             const attachedCustomers = ctoCustomers
@@ -3333,8 +3463,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             return (
                                 <div
                                     key={splitter.id}
-                                    onMouseEnter={() => setHoveredElement({ id: splitter.id, type: 'splitter' })}
-                                    onMouseLeave={() => setHoveredElement(null)}
+                                    data-hover-id={splitter.id}
+                                    data-hover-type="splitter"
+                                    onMouseEnter={handleElementHover}
+                                    onMouseLeave={handleElementHoverClear}
                                     className="contents"
                                 >
                                     <SplitterNode
@@ -3346,7 +3478,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                                 hoveredPortId={hoveredPortId}
                                                 catalogItem={catalogItem}
                                                 onDragStart={handleElementDragStart}
-                                                onAction={(e) => handleElementAction(e, splitter.id, 'splitter')}
+                                                onAction={handleSplitterAction}
                                                 onPortMouseDown={handlePortMouseDown}
                                                 onPortMouseEnter={setHoveredPortId}
                                                 onPortMouseLeave={handlePortMouseLeave}
