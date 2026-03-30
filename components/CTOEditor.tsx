@@ -871,25 +871,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const getLayout = (id: string) => localCTO.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
     // Viewport culling — compute visible canvas bounds to skip rendering off-screen elements
-    const visibleBounds = useMemo(() => {
-        // Use fixed viewport size (1100x750) as containerRef may not be mounted yet on first render
+    // Viewport culling — skip rendering off-screen elements to reduce DOM nodes.
+    // At high zoom (>1.5), culling is disabled: few elements are on screen anyway,
+    // and the margin becomes too tight (200px / zoom), causing false culling.
+    // Also reads from viewStateRef to stay accurate after DOM-direct panning.
+    const isElementVisible = useCallback((layout: { x: number; y: number }, width: number, height: number) => {
+        const vs = viewStateRef.current;
+        if (vs.zoom > 1.5) return true; // High zoom = few elements, culling not needed
         const vw = isMaximized ? window.innerWidth : 1100;
         const vh = isMaximized ? window.innerHeight : 750;
-        const MARGIN = 200; // generous buffer so elements aren't clipped mid-scroll
-        return {
-            minX: (-viewState.x - MARGIN) / viewState.zoom,
-            minY: (-viewState.y - MARGIN) / viewState.zoom,
-            maxX: (-viewState.x + vw + MARGIN) / viewState.zoom,
-            maxY: (-viewState.y + vh + MARGIN) / viewState.zoom,
-        };
-    }, [viewState.x, viewState.y, viewState.zoom, isMaximized]);
-
-    const isElementVisible = useCallback((layout: { x: number; y: number }, width: number, height: number) => {
-        return layout.x + width > visibleBounds.minX
-            && layout.x < visibleBounds.maxX
-            && layout.y + height > visibleBounds.minY
-            && layout.y < visibleBounds.maxY;
-    }, [visibleBounds]);
+        const MARGIN = 300;
+        const minX = (-vs.x - MARGIN) / vs.zoom;
+        const minY = (-vs.y - MARGIN) / vs.zoom;
+        const maxX = (-vs.x + vw + MARGIN) / vs.zoom;
+        const maxY = (-vs.y + vh + MARGIN) / vs.zoom;
+        return layout.x + width > minX && layout.x < maxX
+            && layout.y + height > minY && layout.y < maxY;
+    }, [isMaximized]);
 
     const screenToCanvas = (sx: number, sy: number) => {
         if (!containerRef.current) return { x: 0, y: 0 };
