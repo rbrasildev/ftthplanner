@@ -2,6 +2,7 @@
 import React from 'react';
 import { Splitter, ElementLayout, FiberConnection } from '../../types';
 import { useLanguage } from '../../LanguageContext';
+import { SplitterCatalogItem } from '../../services/catalogService';
 
 interface SplitterNodeProps {
     splitter: Splitter;
@@ -17,6 +18,7 @@ interface SplitterNodeProps {
     onDoubleClick?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     attachedCustomers?: Record<number, { name: string; status?: string }>; // portIndex -> Customer Data
+    catalogItem?: SplitterCatalogItem; // Metadata for identifying high-power ports
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -32,13 +34,14 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     onPortMouseLeave,
     onDoubleClick,
     onContextMenu,
-    attachedCustomers = {}
+    attachedCustomers = {},
+    catalogItem
 }) => {
     const { t } = useLanguage();
     const portCount = splitter.outputPortIds.length;
     // Dimensions aligned to 12px grid
     // Use 12px per port to match fiber pitch
-    const width = portCount * 12;
+    const width = portCount === 2 ? 18 : portCount * 12;
     const height = 72;
 
     // Grid-Safe Rotation Logic:
@@ -56,6 +59,42 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
 
     const isLitIn = litPorts.has(splitter.inputPortId);
     const isConnectorized = splitter.connectorType === 'Connectorized';
+
+    // Determine visual port order based on rotation (always Left-to-Right or Top-to-Bottom)
+    const rad = (layout.rotation || 0) * Math.PI / 180;
+    const cosTheta = Math.cos(rad);
+    const sinTheta = Math.sin(rad);
+    let shouldReverse = false;
+    if (Math.abs(cosTheta) >= Math.abs(sinTheta)) {
+        if (cosTheta < 0) shouldReverse = true;
+    } else {
+        if (sinTheta < 0) shouldReverse = true;
+    }
+
+    // --- High-Power Port Identification (Unbalanced Splitters) ---
+    // Rule: The port with the lowest attenuation (dB) has the highest power output.
+    const highPowerPortIndex = React.useMemo(() => {
+        if (!catalogItem || !catalogItem.attenuation) return -1;
+        
+        let att: any = catalogItem.attenuation;
+        if (typeof att === 'string' && att.trim().startsWith('{')) {
+            try {
+                att = JSON.parse(att);
+            } catch (e) {
+                return -1;
+            }
+        }
+
+        if (typeof att === 'object' && att !== null) {
+            const p1 = parseFloat(att.port1);
+            const p2 = parseFloat(att.port2);
+            if (!isNaN(p1) && !isNaN(p2)) {
+                // Return index of port with LOWER attenuation (Higher Power)
+                return p1 < p2 ? 0 : 1;
+            }
+        }
+        return -1;
+    }, [catalogItem]);
 
     return (
         <div
@@ -102,7 +141,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 >
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
-                            points={`${50 + skewPercent},0 ${2 + skewPercent},100 ${98 + skewPercent},100`}
+                            points={`${50 + skewPercent},0 ${ (portCount === 2 ? 10 : 2) + skewPercent},100 ${(portCount === 2 ? 90 : 98) + skewPercent},100`}
                             className={`transition-colors duration-300 ${isConnectorized ? 'fill-white dark:fill-slate-800' : 'fill-[#949494] dark:fill-slate-600'} ${isLitIn ? 'stroke-red-400' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
@@ -158,18 +197,33 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     <span className={`absolute left-1/2 ml-3 text-[6px] font-extrabold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase ${!isConnectorized ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>In</span>
                 </div>
 
-                {/* Output Ports (Y=60) - Shifted 6px */}
-                <div className="absolute top-12 left-1.5 w-full h-6 z-30">
+                {/* Output Ports (Y=60) - Shifted 6px and moved slightly lower for "half-out" effect */}
+                <div className="absolute top-[48px] left-1.5 w-full h-6 z-30">
                     {splitter.outputPortIds.map((pid, idx) => {
                         const isConnected = connections.some(c => c.sourceId === pid);
                         const isLitOut = litPorts.has(pid);
-                        // Uniform distribution: ports at 6, 18, 30... (centers of 12px blocks)
-                        // (idx * 12) + 6 - 5 (to center 10px circle)
-                        const leftPos = (idx * 12) + 6 - 5;
-
                         const customerData = attachedCustomers[idx];
                         const customerName = customerData?.name;
                         const isOffline = customerData?.status === 'offline';
+
+                        const isHighPower = idx === highPowerPortIndex;
+                        const is1x2 = portCount === 2;
+                        const isUnbalanced = highPowerPortIndex !== -1;
+                        const isSecondaryUnbalanced = is1x2 && isUnbalanced && !isHighPower;
+                        
+                        // Map physical index to visual order based on rotation
+                        const visualLayoutIdx = shouldReverse ? (portCount - 1 - idx) : idx;
+
+                        // Triangle Base Corners (Dynamic based on width and 6px skew):
+                        // For 1x2, we use 10% and 90% to avoid them being "glued".
+                        const baseL = is1x2 ? 10 : 2;
+                        const baseR = is1x2 ? 90 : 98;
+                        const leftCorner = ( (baseL / 100) * width + 6) - 6;
+                        const rightCorner = ( (baseR / 100) * width + 6) - 6;
+                        const targetCenter = is1x2 ? (visualLayoutIdx === 0 ? leftCorner : rightCorner) : (visualLayoutIdx * 12) + 6;
+                        
+                        const actualLeft = targetCenter - (isHighPower ? 7 : 5);
+                        const actualTop = is1x2 ? (isHighPower ? 4 : 6) : (isHighPower ? 3 : 5);
 
                         return (
                             <div
@@ -191,22 +245,26 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     : t('port_label', { number: idx + 1 })
                                 }
                                 className={`
-                                w-2.5 h-2.5 border cursor-pointer pointer-events-auto
-                                hover:scale-150 transition-all text-center absolute top-[5px]
-                                text-[6.5px] font-normal select-none  flex items-center justify-center
+                                border cursor-pointer pointer-events-auto
+                                hover:scale-150 transition-all text-center absolute
+                                text-[6.5px] font-semibold select-none flex items-center justify-center
+                                ${isHighPower ? 'w-3.5 h-3.5 z-40' : 'w-2.5 h-2.5'}
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
                                 ${hoveredPortId === pid ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-400 bg-red-600 text-white'
                                         : customerName
                                             ? (isOffline ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-green-500 bg-green-50 text-green-700 font-bold') // Customer Style
-                                            : !isConnectorized
-                                                ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
-                                                : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
+                                            : isSecondaryUnbalanced
+                                                ? 'border-slate-950 dark:border-slate-300 bg-white dark:bg-white text-slate-950 dark:text-slate-950 font-bold border-[1.5px]'
+                                                : !isConnectorized
+                                                    ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
+                                                    : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
                                     }
                             `}
                                 style={{
-                                    left: `${leftPos}px`,
+                                    left: `${actualLeft}px`,
+                                    top: `${actualTop}px`
                                 }}
                             >
                                 {customerName && (

@@ -71,7 +71,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
             >
                 {/* Center Body - Compact Circle (10px to fit in 12px with border) */}
                 <div className={`
-                    w-2.5 h-2.5 rounded-full border border-black dark:border-slate-400 z-20 shadow-sm transition-colors duration-300
+                    w-2.5 h-2.5 rounded-full border border-black dark:border-black z-20 shadow-sm transition-colors duration-300
                     ${isLitA || isLitB ? 'bg-red-400' : 'bg-[#949494] dark:bg-slate-500'}
                 `} />
 
@@ -82,7 +82,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-slate-700 border-[#2E2D39] dark:border-slate-500 border
+                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border
                         cursor-pointer select-none transition-all z-30 absolute left-[2px]
                         ${hoveredPortId === portA ? 'ring-2 ring-emerald-400 scale-125' : ''} 
                         ${isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
@@ -98,7 +98,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-slate-700 border-[#2E2D39] dark:border-slate-500 border
+                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border
                         cursor-pointer select-none transition-all z-30 absolute right-[2px]
                         ${hoveredPortId === portB ? 'ring-2 ring-emerald-400 scale-125' : ''} 
                         ${isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}

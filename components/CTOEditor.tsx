@@ -3323,6 +3323,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 .filter(c => c.splitterId === splitter.id && c.splitterPortIndex !== null && c.splitterPortIndex !== undefined)
                                 .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: { name: c.name, status: c.connectionStatus } }), {} as Record<number, { name: string; status?: string }>);
 
+                            // Find official catalog item to pass technical specs (attenuation)
+                            const catalogItem = availableSplitters.find(c =>
+                                c.name === splitter.type ||
+                                c.type === splitter.type ||
+                                (c.outputs === splitter.outputPortIds.length && splitter.type.includes(c.name))
+                            );
+
                             return (
                                 <div
                                     key={splitter.id}
@@ -3333,26 +3340,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     <SplitterNode
                                         key={splitter.id}
                                         splitter={splitter}
-                                    layout={layout}
-                                    connections={localCTO.connections}
-                                    litPorts={litPorts}
-                                    hoveredPortId={hoveredPortId}
+                                                layout={layout}
+                                                connections={localCTO.connections}
+                                                litPorts={litPorts}
+                                                hoveredPortId={hoveredPortId}
+                                                catalogItem={catalogItem}
+                                                onDragStart={handleElementDragStart}
+                                                onAction={(e) => handleElementAction(e, splitter.id, 'splitter')}
+                                                onPortMouseDown={handlePortMouseDown}
+                                                onPortMouseEnter={setHoveredPortId}
+                                                onPortMouseLeave={handlePortMouseLeave}
+                                                onDoubleClick={handleSplitterDoubleClick}
+                                                onContextMenu={handleSplitterContextMenu}
+                                                attachedCustomers={attachedCustomers}
+                                            />
+                                        </div>
+                                    );
+                                })}
 
-                                    onDragStart={handleElementDragStart}
-                                    onAction={(e) => handleElementAction(e, splitter.id, 'splitter')}
-                                    onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={setHoveredPortId}
-                                    onPortMouseLeave={handlePortMouseLeave}
-                                    onDoubleClick={handleSplitterDoubleClick}
-                                    onContextMenu={handleSplitterContextMenu}
-                                    attachedCustomers={attachedCustomers}
-                                    />
-                                </div>
-                            );
-                        })}
-
-                    </div>
-                </div>
+                            </div>
+                        </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
                 <div className={`h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
