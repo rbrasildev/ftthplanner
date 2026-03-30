@@ -16,7 +16,13 @@
       "Bash(mv test-stripe.ts scripts/)",
       "Bash(mv migration.sql scripts/)",
       "Bash(grep -r pop-editor d:/ftthplanner --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
-      "Bash(grep -r \"POPEditor\\\\|PopEditor\" d:/ftthplanner --include=*.tsx --include=*.ts)"
+      "Bash(grep -r \"POPEditor\\\\|PopEditor\" d:/ftthplanner --include=*.tsx --include=*.ts)",
+      "Bash(wc -l \"/d/ftthplanner/components/map/\"*.tsx)",
+      "Bash(grep -r \"Sidebar\\\\|navigation\\\\|drawer\\\\|NavBar\" /d/ftthplanner/*.tsx /d/ftthplanner/components/*.tsx --include=\"*.tsx\")",
+      "Bash(grep -l \"drawer\\\\|navigation\\\\|nav\\\\|Drawer\\\\|Navigation\\\\|Nav\" /d/ftthplanner/components/*.tsx)",
+      "Bash(grep -l \"drawer\\\\|Drawer\" /d/ftthplanner/components/**/*.tsx)",
+      "Bash(ls -la /d/ftthplanner/components/*.tsx)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

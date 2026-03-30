@@ -1136,83 +1136,23 @@ export const MapView: React.FC<MapViewProps> = ({
                 </button>
 
                 {/* Compact Layer Visibility Panel */}
-                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2.5">
-                    {/* CTO Toggle */}
-                    <button
-                        onClick={() => setShowCTOs(!showCTOs)}
-                        title={t('layer_ctos')}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showCTOs ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 border-blue-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Box className="w-5 h-5" />
-                        {!showCTOs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
+                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
+                    {/* Section: Elements */}
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-1 pb-0.5">{t('layer_panel_elements')}</span>
 
-                    {/* POP Toggle */}
-                    <button
-                        onClick={() => setShowPOPs(!showPOPs)}
-                        title={t('layer_pops')}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showPOPs ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 border-indigo-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Building2 className="w-5 h-5" />
-                        {!showPOPs && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
-
-                    {/* Pole Toggle */}
-                    <button
-                        onClick={() => setShowPoles(!showPoles)}
-                        title={t('layer_poles') || 'Postes'}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showPoles ? 'bg-stone-500 text-white shadow-lg shadow-stone-500/30 border-stone-500' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <UtilityPole className="w-5 h-5" />
-                        {!showPoles && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
-
-
-                    {/* Cable Toggle */}
-                    <button
-                        onClick={() => setShowCables(!showCables)}
-                        title={t('layer_cables')}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showCables ? 'bg-slate-800 text-white shadow-lg shadow-slate-800/30 border-slate-800' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Share2 className="w-5 h-5" />
-                        {!showCables && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
+                    <LayerToggle active={showCTOs} onClick={() => setShowCTOs(!showCTOs)} label={t('layer_ctos')} color="blue" icon={<Box className="w-5 h-5" />} />
+                    <LayerToggle active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-5 h-5" />} />
+                    <LayerToggle active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles') || 'Postes'} color="stone" icon={<UtilityPole className="w-5 h-5" />} />
+                    <LayerToggle active={showCables} onClick={() => setShowCables(!showCables)} label={t('layer_cables')} color="slate" icon={<Share2 className="w-5 h-5" />} />
+                    <LayerToggle active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers') || 'Clientes'} color="green" icon={<User className="w-5 h-5" />} />
 
                     <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
 
-                    {/* Labels Toggle */}
-                    <button
-                        onClick={() => onToggleLabels && onToggleLabels()}
-                        title={t('show_labels')}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${showLabels ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-emerald-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Tag className="w-5 h-5" />
-                        {!showLabels && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
+                    {/* Section: Display */}
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_display')}</span>
 
-                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
-
-                    {/* Clustering Toggle */}
-                    <button
-                        onClick={() => setEnableClustering(!enableClustering)}
-                        title="Toggle Clustering"
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${enableClustering ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Layers className="w-5 h-5" />
-                        {!enableClustering && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
-
-                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
-
-                    {/* Customers Toggle */}
-                    <button
-                        onClick={() => setIsCustomersVisible(!isCustomersVisible)}
-                        title={t('layer_customers') || "Clientes"}
-                        className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${isCustomersVisible ? 'bg-green-600 text-white shadow-lg shadow-green-600/30 border-green-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <User className="w-5 h-5" />
-                        {!isCustomersVisible && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-                    </button>
+                    <LayerToggle active={showLabels} onClick={() => onToggleLabels && onToggleLabels()} label={t('show_labels')} color="emerald" icon={<Tag className="w-5 h-5" />} />
+                    <LayerToggle active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering') || 'Agrupamento'} color="purple" icon={<Layers className="w-5 h-5" />} />
                 </div>
             </div>
 
@@ -1939,5 +1879,39 @@ export const MapView: React.FC<MapViewProps> = ({
                 showToast={showToast}
             />
         </div >
+    );
+};
+
+// --- Layer Toggle Sub-Component ---
+
+const LAYER_COLORS: Record<string, { active: string; shadow: string }> = {
+    blue: { active: 'bg-blue-500 border-blue-500 shadow-blue-500/30', shadow: 'shadow-lg' },
+    indigo: { active: 'bg-indigo-500 border-indigo-500 shadow-indigo-500/30', shadow: 'shadow-lg' },
+    stone: { active: 'bg-stone-500 border-stone-500 shadow-stone-500/30', shadow: 'shadow-lg' },
+    slate: { active: 'bg-slate-800 border-slate-800 shadow-slate-800/30', shadow: 'shadow-lg' },
+    green: { active: 'bg-green-600 border-green-600 shadow-green-600/30', shadow: 'shadow-lg' },
+    emerald: { active: 'bg-emerald-600 border-emerald-600 shadow-emerald-600/30', shadow: 'shadow-lg' },
+    purple: { active: 'bg-purple-600 border-purple-600 shadow-purple-600/30', shadow: 'shadow-lg' },
+};
+
+const LayerToggle: React.FC<{ active: boolean; onClick: () => void; label: string; color: string; icon: React.ReactNode }> = ({ active, onClick, label, color, icon }) => {
+    const [hovered, setHovered] = useState(false);
+    const c = LAYER_COLORS[color] || LAYER_COLORS.slate;
+
+    return (
+        <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+            <button
+                onClick={onClick}
+                className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${active ? `${c.active} ${c.shadow} text-white` : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+            >
+                {icon}
+                {!active && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
+            </button>
+            {hovered && (
+                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-bold shadow-lg whitespace-nowrap z-[9999] pointer-events-none animate-in fade-in duration-150">
+                    {label}
+                </div>
+            )}
+        </div>
     );
 };
