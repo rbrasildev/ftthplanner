@@ -197,24 +197,63 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     <p className="text-xs text-slate-400 mt-1">Seu histórico de pagamentos aparecerá aqui.</p>
                                 </div>
                             ) : (
+                                <>
+                                {/* Overdue Summary */}
+                                {(() => {
+                                    const overdueInvoices = invoices.filter((inv: any) => inv.status === 'OVERDUE');
+                                    if (overdueInvoices.length === 0) return null;
+                                    const totalDebt = overdueInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+                                    return (
+                                        <div className="p-4 bg-red-50 dark:bg-red-950/40 border-2 border-red-200 dark:border-red-800 rounded-xl mb-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-bold text-red-700 dark:text-red-400">
+                                                        {overdueInvoices.length} {overdueInvoices.length === 1 ? 'fatura em atraso' : 'faturas em atraso'}
+                                                    </p>
+                                                    <p className="text-xs text-red-500 mt-0.5">
+                                                        Regularize para reativar sua conta
+                                                    </p>
+                                                </div>
+                                                <span className="text-2xl font-black text-red-700 dark:text-red-400">
+                                                    R$ {totalDebt.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
                                 <div className="space-y-3">
-                                    {invoices.map((inv) => (
-                                        <div key={inv.id} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    {invoices.map((inv) => {
+                                        const isOverdue = inv.status === 'OVERDUE';
+                                        const isPending = inv.status === 'PENDING';
+                                        const isPaid = inv.status === 'PAID';
+                                        const hasReference = inv.referenceStart && inv.referenceEnd;
+
+                                        return (
+                                        <div key={inv.id} className={`p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isOverdue ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-bold text-slate-900 dark:text-white text-sm">{inv.planName}</span>
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${inv.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' :
-                                                            inv.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {inv.status === 'PAID' ? 'Pago' : inv.status === 'PENDING' ? 'Pendente' : 'Expirado'}
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                        isPaid ? 'bg-emerald-100 text-emerald-700' :
+                                                        isOverdue ? 'bg-red-100 text-red-700' :
+                                                        isPending ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-slate-100 text-slate-700'
+                                                    }`}>
+                                                        {isPaid ? 'Pago' : isOverdue ? 'Em atraso' : isPending ? 'Pendente' : 'Expirado'}
                                                     </span>
                                                 </div>
-                                                <div className="text-xs text-slate-500 flex items-center gap-2">
-                                                    <span>{new Date(inv.createdAt).toLocaleDateString()}</span>
+                                                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                                                    {hasReference ? (
+                                                        <span className={isOverdue ? 'font-semibold text-red-600' : ''}>
+                                                            Ref: {new Date(inv.referenceStart).toLocaleDateString()} → {new Date(inv.referenceEnd).toLocaleDateString()}
+                                                        </span>
+                                                    ) : (
+                                                        <span>{new Date(inv.createdAt).toLocaleDateString()}</span>
+                                                    )}
                                                     <span>•</span>
                                                     <span className="capitalize">{inv.paymentMethod.replace('_', ' ').toLowerCase()}</span>
-                                                    {inv.paymentMethod === 'PIX' && inv.status === 'PENDING' && (
+                                                    {inv.paymentMethod === 'PIX' && isPending && (
                                                         <>
                                                             <span>•</span>
                                                             <span className="text-amber-600">Expira em: {new Date(inv.expiresAt).toLocaleTimeString()}</span>
@@ -223,9 +262,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
-                                                <span className="font-black text-lg text-slate-900 dark:text-white">R$ {inv.amount?.toFixed(2)}</span>
+                                                <span className={`font-black text-lg ${isOverdue ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>R$ {inv.amount?.toFixed(2)}</span>
 
-                                                {inv.paymentMethod === 'PIX' && inv.status === 'PENDING' && (
+                                                {inv.paymentMethod === 'PIX' && isPending && (
                                                     <button
                                                         onClick={() => setSelectedInvoiceForPix(inv)}
                                                         className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg"
@@ -234,10 +273,21 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                                         Pagar Pix
                                                     </button>
                                                 )}
+                                                {isOverdue && (
+                                                    <button
+                                                        onClick={onManagePlan}
+                                                        className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+                                                    >
+                                                        <CreditCard className="w-3.5 h-3.5" />
+                                                        Pagar
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
+                                </>
                             )}
 
                             {selectedInvoiceForPix && (

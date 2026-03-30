@@ -68,9 +68,12 @@ function getExpirationInfo(subscriptionExpiresAt: string | null | undefined, can
 
     const isTrialPlan = userPlanType?.toUpperCase() === 'TRIAL' || userPlan?.toLowerCase().includes('trial') || userPlan?.toLowerCase().includes('teste');
     const days = Math.max(0, Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-    const isExpiringSoon = days <= 7;
     const isExpired = days === 0;
 
+    // For paid plans (not trial): only show info if expired. Hide the countdown.
+    if (!isTrialPlan && !isExpired) return null;
+
+    const isExpiringSoon = days <= 7;
     return { days, isExpired, isExpiringSoon, isTrialPlan, cancelAtPeriodEnd };
 }
 

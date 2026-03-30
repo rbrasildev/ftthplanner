@@ -220,14 +220,12 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
         if (businessEmail !== undefined) data.businessEmail = businessEmail;
         if (website !== undefined) data.website = website;
 
-        // --- NEW LOGIC: RENEW EXPIRATION ON MANUAL ACTIVATION/PLAN CHANGE ---
-        if (status === 'ACTIVE' || planId) {
-            const nextYear = new Date();
-            nextYear.setFullYear(nextYear.getFullYear() + 1);
-            data.subscriptionExpiresAt = nextYear;
-            logger.info(`[saasController] Manually renewing expiration for company ${id} until ${nextYear.toISOString()}`);
-        } else if (subscriptionExpiresAt) {
+        // --- EXPIRATION LOGIC: Only update if explicitly provided ---
+        // Previously, any status/planId change auto-set 1 year, which overwrote
+        // the correct monthly expiration set by payment webhooks (PIX, card, etc.)
+        if (subscriptionExpiresAt) {
             data.subscriptionExpiresAt = new Date(subscriptionExpiresAt);
+            logger.info(`[saasController] Manually setting expiration for company ${id} to ${data.subscriptionExpiresAt.toISOString()}`);
         }
 
         const company = await prisma.company.update({

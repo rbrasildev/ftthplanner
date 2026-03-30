@@ -179,11 +179,13 @@ export default function App() {
     const previousNetworkState = useRef<NetworkState | null>(null);
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [renewOnly, setRenewOnly] = useState(false);
     const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [upgradeModalTitle, setUpgradeModalTitle] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
-    const [userPlanId, setUserPlanId] = useState<string | null>(null); // NEW: Track Plan ID for accurate comparison
+    const [userPlanId, setUserPlanId] = useState<string | null>(null);
+    const [userPlanPrice, setUserPlanPrice] = useState<number>(0);
     const [userPlanType, setUserPlanType] = useState<string>('STANDARD');
     const [userBackupEnabled, setUserBackupEnabled] = useState<boolean>(false);
     const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string | null>(null);
@@ -363,6 +365,7 @@ export default function App() {
                     const plan = data.user.company?.plan;
                     if (plan?.name) setUserPlan(plan.name);
                     if (plan?.id) setUserPlanId(plan.id);
+                    if (plan?.price !== undefined) setUserPlanPrice(plan.price);
                     if (plan?.type) setUserPlanType(plan.type);
                     if (plan?.backupEnabled !== undefined) {
                         setUserBackupEnabled(!!plan.backupEnabled);
@@ -1526,6 +1529,36 @@ export default function App() {
                 </div>
             )}
 
+            {/* Subscription Expired Banner */}
+            {(() => {
+                if (!subscriptionExpiresAt || !user) return null;
+                const isFree = userPlan === 'Plano Grátis';
+                if (isFree) return null;
+                const isExpired = new Date() > new Date(subscriptionExpiresAt);
+                if (!isExpired && companyStatus !== 'SUSPENDED') return null;
+                return (
+                    <div className="fixed top-0 left-0 right-0 z-[99998] bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-lg">
+                        <div className="flex items-center justify-center gap-4 px-4 py-3">
+                            <AlertTriangle className="w-5 h-5 shrink-0 animate-pulse" />
+                            <span className="text-sm font-semibold">
+                                {userPlanType?.toUpperCase() === 'TRIAL'
+                                    ? t('trial_expired_desc')
+                                    : t('subscription_expired_desc')}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    setRenewOnly(true);
+                                    setShowUpgradeModal(true);
+                                }}
+                                className="shrink-0 px-4 py-1.5 bg-white text-rose-700 font-bold text-sm rounded-lg hover:bg-rose-50 transition-all hover:scale-105 active:scale-95 shadow"
+                            >
+                                {t('renew_now') || 'Renovar Agora'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Mobile TopBar */}
             <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
@@ -2134,14 +2167,16 @@ export default function App() {
 
             <UpgradePlanModal
                 isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+                onClose={() => { setShowUpgradeModal(false); setRenewOnly(false); }}
                 limitDetails={upgradeModalDetails}
                 limitTitle={upgradeModalTitle}
                 companyId={companyId || undefined}
                 email={userEmail || undefined}
                 currentPlanName={userPlan}
                 currentPlanId={userPlanId || undefined}
+                currentPlanPrice={userPlanPrice}
                 companyStatus={companyStatus}
+                renewOnly={renewOnly}
             />
 
             <ProjectReportModal

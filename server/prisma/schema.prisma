@@ -113,18 +113,20 @@ model Plan {
 }
 
 model Invoice {
-  id                   String   @id @default(uuid())
-  companyId            String   @map("company_id")
-  planId               String   @map("plan_id")
+  id                   String    @id @default(uuid())
+  companyId            String    @map("company_id")
+  planId               String    @map("plan_id")
   amount               Float
-  status               String   @default("PENDING") // PENDING, PAID, EXPIRED, CANCELLED
-  paymentMethod        String   @default("PIX") @map("payment_method")
-  mercadopagoPaymentId String?  @unique @map("mercadopago_payment_id")
-  qrCode               String?  @map("qr_code")
-  qrCodeBase64         String?  @map("qr_code_base64")
-  expiresAt            DateTime @map("expires_at")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+  status               String    @default("PENDING") // PENDING, PAID, EXPIRED, CANCELLED, OVERDUE
+  paymentMethod        String    @default("PIX") @map("payment_method")
+  mercadopagoPaymentId String?   @unique @map("mercadopago_payment_id")
+  qrCode               String?   @map("qr_code")
+  qrCodeBase64         String?   @map("qr_code_base64")
+  expiresAt            DateTime  @map("expires_at")
+  referenceStart       DateTime? @map("reference_start") // Billing period start (e.g. 2026-03-15)
+  referenceEnd         DateTime? @map("reference_end")   // Billing period end (e.g. 2026-04-15)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
 
   company Company @relation(fields: [companyId], references: [id])
   plan    Plan    @relation(fields: [planId], references: [id])

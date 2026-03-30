@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Check, X, Star, Zap, Shield, Globe, Crown, Sparkles } from 'lucide-react';
+import { Check, X, Star, Zap, Shield, Globe, Crown, Sparkles, Receipt } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { UpgradePaymentForm } from './UpgradePaymentForm';
 
@@ -20,9 +20,11 @@ interface UpgradePlanModalProps {
     onClose: () => void;
     currentPlanName?: string;
     currentPlanId?: string;
+    currentPlanPrice?: number;
     companyStatus?: string;
     limitDetails?: string;
     limitTitle?: string;
+    renewOnly?: boolean;
 }
 
 const getPlanIcon = (index: number, name: string) => {
@@ -35,15 +37,77 @@ const getPlanIcon = (index: number, name: string) => {
     return icons[index % icons.length];
 };
 
-export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, companyStatus, limitDetails, limitTitle, companyId, email }) => {
+export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, currentPlanPrice, companyStatus, limitDetails, limitTitle, companyId, email, renewOnly }) => {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlanForBilling, setSelectedPlanForBilling] = useState<Plan | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [overdueInfo, setOverdueInfo] = useState<{ count: number, total: number, invoices: any[] }>({ count: 0, total: 0, invoices: [] });
     const { t } = useLanguage();
 
+    // renewOnly mode: skip plan selection entirely, go straight to payment with current plan
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen || !renewOnly) return;
+
+        const resolveRenewPlan = async () => {
+            // 1. Fetch overdue invoices
+            try {
+                const invRes = await api.get('/payments/invoices');
+                const allInvoices = invRes.data || [];
+                const overdue = allInvoices.filter((inv: any) => inv.status === 'OVERDUE');
+                if (overdue.length > 0) {
+                    const total = overdue.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+                    setOverdueInfo({ count: overdue.length, total, invoices: overdue });
+                }
+            } catch (err) {
+                console.error('Failed to fetch overdue invoices', err);
+            }
+
+            // 2. Resolve plan and price
+            if (currentPlanId && currentPlanName && currentPlanPrice && currentPlanPrice > 0) {
+                setSelectedPlanForBilling({
+                    id: currentPlanId,
+                    name: currentPlanName,
+                    priceRaw: currentPlanPrice,
+                    price: `R$ ${currentPlanPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                    features: [],
+                    icon: Zap
+                });
+                setLoading(false);
+                return;
+            }
+
+            // Price is 0 or missing (trial/free plan expired) — fetch plans and pick current or recommended
+            try {
+                const response = await api.get('/saas/public/plans');
+                const dbPlans = response.data;
+
+                const match = currentPlanId
+                    ? dbPlans.find((p: any) => p.id === currentPlanId && p.price > 0)
+                    : null;
+                const fallback = match || dbPlans.find((p: any) => p.price > 0 && p.isRecommended) || dbPlans.find((p: any) => p.price > 0);
+
+                if (fallback) {
+                    setSelectedPlanForBilling({
+                        id: fallback.id,
+                        name: fallback.name,
+                        priceRaw: fallback.price,
+                        price: `R$ ${fallback.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                        features: [],
+                        icon: Zap
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to resolve renew plan', err);
+            }
+            setLoading(false);
+        };
+
+        resolveRenewPlan();
+    }, [isOpen, renewOnly, currentPlanId, currentPlanName, currentPlanPrice]);
+
+    useEffect(() => {
+        if (isOpen && !renewOnly) { // Skip fetch when renewOnly
             const fetchPlans = async () => {
                 try {
                     setLoading(true);
@@ -89,13 +153,22 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
             };
             fetchPlans();
         }
-    }, [isOpen, t]);
+    }, [isOpen, renewOnly, t]);
 
     const handleSelectPlan = (plan: Plan) => {
         if (plan.priceRaw === 0) { onClose(); return; }
         if (!companyId) { alert('Erro: ID da empresa não encontrado. Faça login novamente.'); return; }
         setSelectedPlanForBilling(plan);
     };
+
+    // Reset state when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setSelectedPlanForBilling(null);
+            setIsSuccess(false);
+            setLoading(true);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -118,7 +191,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                     {/* Back Button */}
                     {selectedPlanForBilling && !isSuccess && (
                         <button
-                            onClick={() => setSelectedPlanForBilling(null)}
+                            onClick={() => renewOnly ? onClose() : setSelectedPlanForBilling(null)}
                             className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors z-20 text-sm font-medium"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -166,11 +239,45 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         /* Payment Form */
                         <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <div className="w-full max-w-3xl">
+                                {/* Overdue Debt Summary (shown above payment form when renewing with outstanding debt) */}
+                                {overdueInfo.count > 0 && (
+                                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border-2 border-red-200 dark:border-red-800 rounded-xl">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
+                                                <Receipt className="w-5 h-5 text-red-600" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-red-700 dark:text-red-400">
+                                                    {overdueInfo.count} {overdueInfo.count === 1 ? 'fatura em atraso' : 'faturas em atraso'}
+                                                </p>
+                                                <div className="mt-2 space-y-1">
+                                                    {overdueInfo.invoices.map((inv: any) => (
+                                                        <div key={inv.id} className="flex items-center justify-between text-xs text-red-600 dark:text-red-400">
+                                                            <span>
+                                                                {inv.referenceStart && inv.referenceEnd
+                                                                    ? `${new Date(inv.referenceStart).toLocaleDateString()} → ${new Date(inv.referenceEnd).toLocaleDateString()}`
+                                                                    : new Date(inv.createdAt).toLocaleDateString()}
+                                                            </span>
+                                                            <span className="font-bold">R$ {inv.amount?.toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800 flex items-center justify-between">
+                                                    <span className="text-xs font-semibold text-red-600">Débito total</span>
+                                                    <span className="text-lg font-black text-red-700 dark:text-red-400">R$ {overdueInfo.total.toFixed(2)}</span>
+                                                </div>
+                                                <p className="text-[10px] text-red-500 mt-1">
+                                                    O pagamento abaixo quitará a fatura mais antiga. Repita para quitar as demais.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <UpgradePaymentForm
                                     plan={selectedPlanForBilling}
                                     email={email}
                                     onSuccess={() => setIsSuccess(true)}
-                                    onCancel={() => setSelectedPlanForBilling(null)}
+                                    onCancel={() => renewOnly ? onClose() : setSelectedPlanForBilling(null)}
                                 />
                             </div>
                         </div>
