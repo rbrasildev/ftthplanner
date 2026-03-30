@@ -60,17 +60,6 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     const isLitIn = litPorts.has(splitter.inputPortId);
     const isConnectorized = splitter.connectorType === 'Connectorized';
 
-    // Determine visual port order based on rotation (always Left-to-Right or Top-to-Bottom)
-    const rad = (layout.rotation || 0) * Math.PI / 180;
-    const cosTheta = Math.cos(rad);
-    const sinTheta = Math.sin(rad);
-    let shouldReverse = false;
-    if (Math.abs(cosTheta) >= Math.abs(sinTheta)) {
-        if (cosTheta < 0) shouldReverse = true;
-    } else {
-        if (sinTheta < 0) shouldReverse = true;
-    }
-
     // --- High-Power Port Identification (Unbalanced Splitters) ---
     // Rule: The port with the lowest attenuation (dB) has the highest power output.
     const highPowerPortIndex = React.useMemo(() => {
@@ -210,9 +199,6 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         const is1x2 = portCount === 2;
                         const isUnbalanced = highPowerPortIndex !== -1;
                         const isSecondaryUnbalanced = is1x2 && isUnbalanced && !isHighPower;
-                        
-                        // Map physical index to visual order based on rotation
-                        const visualLayoutIdx = shouldReverse ? (portCount - 1 - idx) : idx;
 
                         // Triangle Base Corners (Dynamic based on width and 6px skew):
                         // For 1x2, we use 10% and 90% to avoid them being "glued".
@@ -220,7 +206,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         const baseR = is1x2 ? 90 : 98;
                         const leftCorner = ( (baseL / 100) * width + 6) - 6;
                         const rightCorner = ( (baseR / 100) * width + 6) - 6;
-                        const targetCenter = is1x2 ? (visualLayoutIdx === 0 ? leftCorner : rightCorner) : (visualLayoutIdx * 12) + 6;
+                        const targetCenter = is1x2 ? (idx === 0 ? leftCorner : rightCorner) : (idx * 12) + 6;
                         
                         const actualLeft = targetCenter - (isHighPower ? 7 : 5);
                         const actualTop = is1x2 ? (isHighPower ? 4 : 6) : (isHighPower ? 3 : 5);
