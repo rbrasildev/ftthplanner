@@ -26,7 +26,10 @@
       "Bash(grep -l \"invoices\\\\|subscriptionExpiresAt\" /d/ftthplanner/server/prisma/migrations/*/migration.sql)",
       "Bash(grep -l \"renewal\\\\|refund\\\\|cancelAtPeriodEnd\" /d/ftthplanner/components/*.tsx /d/ftthplanner/server/src/**/*.ts)",
       "Bash(npx prisma:*)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(node -e \":*)",
+      "Bash(find /d/ftthplanner -type f -name *admin* -o -name *saas*)",
+      "Bash(grep -n \"activeView === ''companies''\" /d/ftthplanner/components/admin/SaasAdminPage.tsx)"
     ]
   }
 }
