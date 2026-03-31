@@ -435,11 +435,13 @@ export default function App() {
                     if (isExpired) {
                         setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
                         setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
+                        setRenewOnly(!isTrial && userPlanPrice > 0);
                     } else {
                         setUpgradeModalTitle(t('limit_reached'));
                         setUpgradeModalDetails(err.response.data?.error || t('error_permission_denied'));
+                        setRenewOnly(false);
                     }
-                    
+
                     setShowUpgradeModal(true);
                     setCurrentProjectId(null); // Return to dashboard
                 } else {
@@ -585,11 +587,13 @@ export default function App() {
                         if (isExpired) {
                             setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
                             setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
+                            setRenewOnly(!isTrial && userPlanPrice > 0);
                         } else {
                             setUpgradeModalTitle(t('limit_reached'));
                             setUpgradeModalDetails(errorMsg);
+                            setRenewOnly(false);
                         }
-                        
+
                         setShowUpgradeModal(true);
                         return; // Exit early
                     }
@@ -1637,7 +1641,16 @@ export default function App() {
                         onOpenProject={(id) => {
                             const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {
-                                setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                                const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
+                                if (isTrial || !userPlanPrice || userPlanPrice === 0) {
+                                    setUpgradeModalTitle(t('trial_expired_error'));
+                                    setUpgradeModalDetails(t('trial_expired_desc'));
+                                    setRenewOnly(false);
+                                } else {
+                                    setUpgradeModalTitle(t('subscription_expired_error'));
+                                    setUpgradeModalDetails(t('subscription_expired_desc'));
+                                    setRenewOnly(true);
+                                }
                                 setShowUpgradeModal(true);
                                 return;
                             }
@@ -1647,7 +1660,16 @@ export default function App() {
                         onCreateProject={async (name, center) => {
                             const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {
-                                setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para criar novos projetos.");
+                                const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
+                                if (isTrial || !userPlanPrice || userPlanPrice === 0) {
+                                    setUpgradeModalTitle(t('trial_expired_error'));
+                                    setUpgradeModalDetails(t('trial_expired_desc'));
+                                    setRenewOnly(false);
+                                } else {
+                                    setUpgradeModalTitle(t('subscription_expired_error'));
+                                    setUpgradeModalDetails(t('subscription_expired_desc'));
+                                    setRenewOnly(true);
+                                }
                                 setShowUpgradeModal(true);
                                 return;
                             }
@@ -2042,7 +2064,16 @@ export default function App() {
                     onSelectProject={(id) => {
                         const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
                         if (companyStatus === 'SUSPENDED' || isExpired) {
-                            setUpgradeModalDetails(isExpired ? t('trial_expired_desc') : "Sua conta está suspensa. Renove sua assinatura para acessar os projetos.");
+                            const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
+                            if (isTrial || !userPlanPrice || userPlanPrice === 0) {
+                                setUpgradeModalTitle(t('trial_expired_error'));
+                                setUpgradeModalDetails(t('trial_expired_desc'));
+                                setRenewOnly(false);
+                            } else {
+                                setUpgradeModalTitle(t('subscription_expired_error'));
+                                setUpgradeModalDetails(t('subscription_expired_desc'));
+                                setRenewOnly(true);
+                            }
                             setShowUpgradeModal(true);
                             return;
                         }

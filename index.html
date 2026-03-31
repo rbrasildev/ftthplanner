@@ -191,6 +191,11 @@
       border-color: rgba(51, 65, 85, 0.3);
     }
 
+    /* Dark mode map tiles - subtle inversion keeping colors readable */
+    .dark-tiles {
+      filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+    }
+
     .drawing-cursor .leaflet-container {
       cursor: crosshair !important;
     }

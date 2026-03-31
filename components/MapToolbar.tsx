@@ -63,7 +63,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
     };
 
     return (
-        <div className="bg-white/90 dark:bg-[#1a1d23]/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700/30/60 flex items-center gap-1 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="bg-white/90 dark:bg-[#1a1d23]/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700/30 flex items-center gap-1 animate-in fade-in slide-in-from-top-4 duration-300">
 
             {/* Group 1: Navigation */}
             <div className="flex items-center gap-1 pr-2 border-r border-slate-200 dark:border-slate-700/50">

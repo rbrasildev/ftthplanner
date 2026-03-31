@@ -216,7 +216,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                 </div>
 
                 {/* Content */}
-                <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+                <div className="overflow-y-auto flex-1 p-4 sm:p-6 flex flex-col items-center">
                     {isSuccess ? (
                         /* Success State */
                         <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in zoom-in duration-500">
@@ -283,7 +283,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         </div>
                     ) : loading ? (
                         /* Loading */
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full max-w-5xl mx-auto">
                             {[1, 2, 3, 4].map(i => (
                                 <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-700/30 p-6 animate-pulse">
                                     <div className="h-10 w-10 bg-slate-200 dark:bg-[#22262e] rounded-lg mb-4" />
@@ -297,7 +297,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         </div>
                     ) : (
                         /* Plan Cards */
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full max-w-5xl mx-auto">
                             {plans.map((plan) => {
                                 const isExpiredOrCancelled = companyStatus === 'SUSPENDED' || companyStatus === 'CANCELLED';
                                 const isCurrent = !isExpiredOrCancelled && ((currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase()));
