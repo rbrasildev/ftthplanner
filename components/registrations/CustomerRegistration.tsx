@@ -8,9 +8,10 @@ import { Customer, PaginatedResponse } from '../../types';
 interface CustomerRegistrationProps {
     onLocate?: (customer: Customer) => void;
     projectId?: string;
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, projectId }) => {
+const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, projectId, showToast }) => {
     const { t } = useLanguage();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [search, setSearch] = useState('');
@@ -106,9 +107,11 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                 await updateCustomer(editingCustomer.id, formData);
                 loadCustomers();
                 handleCloseModal();
+                if (showToast) showToast(t('toast_updated_success') || 'Atualizado com sucesso', 'success');
             }
         } catch (error) {
             console.error("Failed to save customer", error);
+            if (showToast) showToast(t('error_save') || 'Falha ao salvar cliente', 'error');
         }
     };
 
@@ -118,8 +121,10 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
             setCustomers(prev => prev.filter(c => c.id !== id));
             setShowDeleteConfirm(null);
             setTotal(prev => prev - 1);
+            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
         } catch (error) {
             console.error("Failed to delete customer", error);
+            if (showToast) showToast(t('error_delete') || 'Falha ao excluir cliente', 'error');
         }
     };
 
@@ -139,9 +144,9 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
             </div>
 
             {/* List Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between gap-4">
                     <div className="relative max-w-md flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -149,7 +154,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                             placeholder={t('search_placeholder') || 'Buscar...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                     
@@ -171,12 +176,12 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                 ) : (
                     <div className="relative overflow-x-auto">
                         {isLoading && (
-                            <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-white/50 dark:bg-[#1a1d23]/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                                 <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
                             </div>
                         )}
                         <table className="w-full text-left text-sm min-w-[800px]">
-                            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                                 <tr>
                                     <th className="px-6 py-4">{t('name')}</th>
                                     <th className="px-6 py-4">{t('contacts')}</th>
@@ -203,7 +208,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                         <td className="px-6 py-4">
                                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${customer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                                 customer.status === 'INACTIVE' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' :
-                                                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                                    'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
                                                 }`}>
                                                 {customer.status === 'ACTIVE' ? t('customer_status_active') :
                                                     customer.status === 'INACTIVE' ? t('customer_status_inactive') :
@@ -254,7 +259,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
 
                         {/* Pagination Footer */}
                         {totalPages > 1 && (
-                            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
+                            <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#22262e]/20">
                                 <div className="text-xs text-slate-500 dark:text-slate-400">
                                     {t('page') || 'Página'} {page} {t('of') || 'de'} {totalPages}
                                 </div>
@@ -262,7 +267,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                     <button
                                         disabled={page === 1}
                                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -292,7 +297,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                     <button
                                         disabled={page === totalPages}
                                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
@@ -306,7 +311,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete')}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_customer')}</p>
@@ -331,8 +336,8 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
             {/* Modal for Editing Basic Info */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 translate-y-0 border border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 translate-y-0 border border-slate-200 dark:border-slate-700/30">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-700/30">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <User className="w-6 h-6 text-emerald-500" />
                                 {t('edit_customer')}
@@ -390,11 +395,11 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                 rows={2}
                             />
 
-                            <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+                            <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/30 mt-4">
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
-                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition"
+                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition"
                                 >
                                     {t('cancel')}
                                 </button>

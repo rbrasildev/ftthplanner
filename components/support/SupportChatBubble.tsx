@@ -30,8 +30,8 @@ const EmojiPickerOverlay: React.FC<{ reply: string, setReply: (val: string) => v
                 <SmilePlus className="w-5 h-5" />
             </button>
             {showEmoji && (
-                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 z-50">
-                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-slate-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
+                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/30 animate-in fade-in slide-in-from-bottom-2 z-50">
+                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-[#1a1d23] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
                         <EmojiPicker
                             onEmojiClick={(emojiData) => setReply(reply + emojiData.emoji)}
                             width={300}
@@ -285,7 +285,7 @@ export const SupportChatBubble: React.FC = () => {
     }
 
     return (
-        <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-emerald-800 flex flex-col z-[3000] overflow-hidden transition-all ${isMinimized ? 'h-14' : 'h-[500px]'}`}>
+        <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl border border-slate-200 dark:border-emerald-800 flex flex-col z-[3000] overflow-hidden transition-all ${isMinimized ? 'h-14' : 'h-[500px]'}`}>
             {/* Header */}
             <div className="p-4 bg-emerald-600 text-white flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export const SupportChatBubble: React.FC = () => {
 
             {!isMinimized && (
                 <>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-[#1a1d23]/50">
                         {!isAgentOnline && (
                             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-4 rounded-xl text-center mb-2">
                                 <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mb-3">
@@ -348,7 +348,7 @@ export const SupportChatBubble: React.FC = () => {
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${isMe
                                                 ? 'bg-emerald-600 text-white rounded-br-none'
-                                                : 'bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
+                                                : 'bg-white dark:bg-[#22262e] dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
                                                 }`} style={{ wordBreak: 'break-word' }}>
                                                 {renderMessageText(msg.content)}
                                                 <div className={`text-[10px] mt-1.5 ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
@@ -360,8 +360,8 @@ export const SupportChatBubble: React.FC = () => {
                                 })}
                                 {isClosed && (
                                     <div className="flex flex-col items-center gap-2 py-4">
-                                        <div className="h-px w-full bg-slate-200 dark:bg-slate-800" />
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-900 px-2 -mt-3.5">{t('chat_closed')}</span>
+                                        <div className="h-px w-full bg-slate-200 dark:bg-[#22262e]" />
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 dark:bg-[#1a1d23] px-2 -mt-3.5">{t('chat_closed')}</span>
                                         <button
                                             onClick={() => { setMessages([]); setIsClosed(false); }}
                                             className="text-[10px] text-emerald-600 hover:underline font-bold"
@@ -375,7 +375,7 @@ export const SupportChatBubble: React.FC = () => {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                    <div className="p-4 bg-white dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700/30">
                         <div className="relative flex items-end gap-2">
                             <EmojiPickerOverlay reply={message} setReply={setMessage} />
                             <textarea
@@ -389,7 +389,7 @@ export const SupportChatBubble: React.FC = () => {
                                     }
                                 }}
                                 placeholder={isClosed ? t('chat_closed') : t('chat_type_message')}
-                                className="flex-1 min-h-[40px] max-h-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white resize-none disabled:opacity-50"
+                                className="flex-1 min-h-[40px] max-h-32 bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/30 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white resize-none disabled:opacity-50"
                                 rows={1}
                             />
                             <button

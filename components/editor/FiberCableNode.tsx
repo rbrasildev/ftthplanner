@@ -103,7 +103,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             >
                 {/* CONTROLS (Floating above) - Adjusted for better persistence (sticky hover) */}
                 <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-all duration-500 delay-300 group-hover:duration-150 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
-                    <div className="flex gap-0.5 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
+                    <div className="flex gap-0.5 bg-white dark:bg-[#22262e] rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
                             className="text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-white p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
@@ -124,7 +124,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                 {/* VISUAL BODY - Draggable Area Updated */}
                 <div
                     className={`
-                        flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden w-[168px] h-full
+                        flex flex-col bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 overflow-hidden w-[168px] h-full
                         ${isMirrored ? 'border-l-0' : 'border-r-0'}
                         cursor-grab active:cursor-grabbing
                     `}

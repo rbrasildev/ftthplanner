@@ -32,8 +32,8 @@ const EmojiPickerOverlay: React.FC<{ reply: string, setReply: (val: string) => v
                 <SmilePlus className="w-5 h-5" />
             </button>
             {showEmoji && (
-                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2 z-50">
-                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-slate-900 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
+                <div className="absolute bottom-full mb-2 left-0 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/30 animate-in fade-in slide-in-from-bottom-2 z-50">
+                    <Suspense fallback={<div className="w-[300px] h-[400px] bg-white dark:bg-[#1a1d23] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>}>
                         <EmojiPicker
                             onEmojiClick={(emojiData) => setReply(reply + emojiData.emoji)}
                             width={300}
@@ -398,10 +398,10 @@ export const SupportAdminPanel: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-200px)] bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="flex h-[calc(100vh-200px)] bg-white dark:bg-[#1a1d23] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700/30 overflow-hidden">
             {/* Sidebar */}
-            <div className="w-2/5 sm:w-1/3 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white dark:bg-slate-900/50">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
+            <div className="w-2/5 sm:w-1/3 border-r border-slate-200 dark:border-slate-700/30 flex flex-col bg-white dark:bg-[#1a1d23]/50">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 bg-slate-50/30 dark:bg-[#22262e]/20">
                     <div className="flex justify-between items-center mb-5">
                         <div className="flex flex-col">
                             <h2 className="font-extrabold dark:text-white uppercase tracking-widest text-[10px] text-slate-400">{t('chat_support')}</h2>
@@ -422,7 +422,7 @@ export const SupportAdminPanel: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg mb-3">
+                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-[#22262e] rounded-lg mb-3">
                         <button
                             onClick={() => { setActiveTab('chats'); setFilterStatus('OPEN'); }}
                             className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${activeTab === 'chats' && filterStatus === 'OPEN' ? 'bg-white dark:bg-slate-700 shadow-sm dark:text-white' : 'text-slate-500'}`}
@@ -449,7 +449,7 @@ export const SupportAdminPanel: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder={t('chat_search_placeholder')}
-                            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
+                            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                         />
                         <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
                             <User className="w-3.5 h-3.5" />
@@ -475,7 +475,7 @@ export const SupportAdminPanel: React.FC = () => {
                                     <button
                                         key={conv.id}
                                         onClick={() => handleSelectConv(conv)}
-                                        className={`w-full p-3 flex gap-3 items-center text-left border-b border-slate-100 dark:border-slate-800 transition-all ${selectedConv?.id === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                                        className={`w-full p-3 flex gap-3 items-center text-left border-b border-slate-100 dark:border-slate-700/30 transition-all ${selectedConv?.id === conv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
                                             } ${isClosed ? 'opacity-60' : ''}`}
                                     >
                                         <div className="relative shrink-0">
@@ -514,7 +514,7 @@ export const SupportAdminPanel: React.FC = () => {
                                     <button
                                         key={user.id}
                                         onClick={() => handleSelectOnlineUser(user)}
-                                        className={`w-full p-3 flex gap-3 items-center text-left border-b border-slate-100 dark:border-slate-800 transition-all ${selectedOnlineUser?.id === user.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                                        className={`w-full p-3 flex gap-3 items-center text-left border-b border-slate-100 dark:border-slate-700/30 transition-all ${selectedOnlineUser?.id === user.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
                                             }`}
                                     >
                                         <div className="relative shrink-0">
@@ -540,10 +540,10 @@ export const SupportAdminPanel: React.FC = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-slate-50/20 dark:bg-slate-900/20">
+            <div className="flex-1 flex flex-col bg-slate-50/20 dark:bg-[#1a1d23]/20">
                 {(selectedConv || selectedOnlineUser) ? (
                     <>
-                        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-10 shadow-sm">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#1a1d23] flex justify-between items-center z-10 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <CompanyLogo
@@ -576,7 +576,7 @@ export const SupportAdminPanel: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={handleCloseTicket}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold transition-all"
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-[#22262e] text-slate-600 dark:text-slate-400 rounded-lg text-xs font-bold transition-all"
                                     >
                                         <CheckCircle className="w-4 h-4" />
                                         {t('chat_resolve_btn')}
@@ -603,7 +603,7 @@ export const SupportAdminPanel: React.FC = () => {
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${isMe
                                                 ? 'bg-emerald-600 text-white rounded-br-none'
-                                                : 'bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
+                                                : 'bg-white dark:bg-[#22262e] dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
                                                 }`} style={{ wordBreak: 'break-word' }}>
                                                 {renderMessageText(msg.content)}
                                                 <div className={`text-[9px] mt-1.5 flex items-center gap-1 ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
@@ -619,7 +619,7 @@ export const SupportAdminPanel: React.FC = () => {
                         </div>
 
                         {(!selectedConv || selectedConv.status !== 'CLOSED') ? (
-                            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                            <div className="p-4 bg-white dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700/30">
                                 <div className="relative flex items-end gap-2">
                                     <EmojiPickerOverlay reply={reply} setReply={setReply} />
                                     <textarea
@@ -632,7 +632,7 @@ export const SupportAdminPanel: React.FC = () => {
                                             }
                                         }}
                                         placeholder={t('chat_type_reply')}
-                                        className="flex-1 min-h-[44px] max-h-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white shadow-inner resize-none"
+                                        className="flex-1 min-h-[44px] max-h-32 bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white shadow-inner resize-none"
                                         rows={1}
                                     />
                                     <button
@@ -645,7 +645,7 @@ export const SupportAdminPanel: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 bg-slate-100 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest py-3">
+                            <div className="p-4 bg-slate-100 dark:bg-[#22262e]/50 border-t border-slate-200 dark:border-slate-700/30 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest py-3">
                                 {t('chat_closed')}
                             </div>
                         )}

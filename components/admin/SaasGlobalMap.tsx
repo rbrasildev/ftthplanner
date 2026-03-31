@@ -68,8 +68,8 @@ export const SaasGlobalMap: React.FC = () => {
     }
 
     return (
-        <div className="h-full w-full relative z-0 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-6 py-3 rounded-full border border-slate-200 dark:border-slate-800 shadow-lg flex items-center gap-4">
+        <div className="h-full w-full relative z-0 flex flex-col bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 dark:bg-[#1a1d23]/90 backdrop-blur-sm px-6 py-3 rounded-full border border-slate-200 dark:border-slate-700/30 shadow-lg flex items-center gap-4">
                 <div>
                     <h3 className="font-bold text-slate-900 dark:text-white text-sm">Global Project Distribution</h3>
                     <p className="text-[10px] text-slate-500 font-medium">{projects.length} Active Projects</p>

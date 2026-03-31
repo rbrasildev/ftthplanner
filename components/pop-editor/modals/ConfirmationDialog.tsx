@@ -62,7 +62,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
     return (
         <div className="absolute inset-0 z-[2500] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm pointer-events-auto">
-            <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200`}>
+            <div className={`bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200`}>
                 <div className="flex items-start gap-4 mb-4">
                     <div className={`w-12 h-12 ${style.bg} rounded-full flex items-center justify-center shrink-0 border ${style.border}`}>
                         <Icon className={`w-6 h-6 ${style.icon}`} />

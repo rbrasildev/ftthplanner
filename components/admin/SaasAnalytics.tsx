@@ -189,14 +189,14 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
                         Managed across {companies.length} companies
                     </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Global POPs</p>
                     <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
                         {totalPOPs}
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">Points of Presence</p>
                 </div>
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Monthly Revenue</p>
                     <h3 className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                         ${totalRevenue.toFixed(2)}
@@ -207,7 +207,7 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Plan Distribution Chart */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Plan Distribution</h3>
                     <div className="h-64 w-full">
                         <svg ref={plansChartRef} width="100%" height="100%"></svg>
@@ -215,7 +215,7 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
                 </div>
 
                 {/* Growth Chart */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Network Growth (Projects)</h3>
                     <div className="h-64 w-full">
                         <svg ref={growthChartRef} width="100%" height="100%"></svg>
@@ -223,7 +223,7 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
                 </div>
 
                 {/* Density Chart */}
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Top Companies</h3>
                     <div className="h-64 w-full">
                         <svg ref={densityChartRef} width="100%" height="100%"></svg>

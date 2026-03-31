@@ -11,7 +11,7 @@ export const MapModeTooltip: React.FC<MapModeTooltipProps> = ({ toolMode, drawin
     const { t } = useLanguage();
 
     return (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-[#22262e]/90 backdrop-blur text-slate-700 dark:text-white px-4 py-2 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 text-xs font-medium z-[500] pointer-events-none">
             {toolMode === 'view' && t('tooltip_view')}
             {toolMode === 'move_node' && t('tooltip_move')}
             {toolMode === 'add_cto' && t('tooltip_add_cto')}

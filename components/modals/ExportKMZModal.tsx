@@ -37,10 +37,10 @@ export const ExportKMZModal: React.FC<ExportKMZModalProps> = ({ isOpen, onClose,
     };
 
     const CheckboxRow = ({ label, checked, onChange }: { label: string, checked: boolean, onChange: () => void }) => (
-        <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+        <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700/30 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <button
                 type="button"
-                className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${checked ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-transparent border border-slate-300 dark:border-slate-700'}`}
+                className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${checked ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-[#22262e] text-transparent border border-slate-300 dark:border-slate-700'}`}
                 onClick={(e) => { e.preventDefault(); onChange(); }}
             >
                 {checked && <CheckSquare className="w-4 h-4" />}
@@ -52,10 +52,10 @@ export const ExportKMZModal: React.FC<ExportKMZModalProps> = ({ isOpen, onClose,
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all scale-100 opacity-100">
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-slate-700/30 flex flex-col overflow-hidden transform transition-all scale-100 opacity-100">
 
                 {/* Header */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#1a1d23]/50">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                             <FileDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -80,7 +80,7 @@ export const ExportKMZModal: React.FC<ExportKMZModalProps> = ({ isOpen, onClose,
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         disabled={isExporting}

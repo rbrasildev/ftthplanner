@@ -58,10 +58,10 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-[#1a1d23] rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700/30 flex flex-col max-h-[90vh]">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between px-5 py-4 bg-slate-50 dark:bg-[#22262e]/50 border-b border-slate-200 dark:border-slate-700">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <Unplug className="w-5 h-5 text-indigo-500" />
@@ -110,7 +110,7 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                                 </div>
                             ) : (
                                 <select
-                                    className="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    className="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#22262e] text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                     value={selectedSplitterId}
                                     onChange={(e) => setSelectedSplitterId(e.target.value)}
                                 >
@@ -196,7 +196,7 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                 </div>
 
                 {/* Footer */}
-                <div className="px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                <div className="px-5 py-4 bg-slate-50 dark:bg-[#22262e]/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"

@@ -48,8 +48,8 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
 
     return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setConfiguringOltPortId(null)}>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl w-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="h-10 bg-slate-50 dark:bg-slate-800/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg shadow-2xl w-[600px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="h-10 bg-slate-50 dark:bg-[#22262e]/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <div className="p-1 rounded bg-emerald-600 text-white">
                             <Router className="w-3.5 h-3.5" />
@@ -68,7 +68,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
 
                 <div className="p-4 flex-1 overflow-y-auto max-h-[60vh] space-y-4">
                     {/* Current Status */}
-                    <div className="bg-slate-50 dark:bg-slate-950 rounded p-3 border border-slate-200 dark:border-slate-800">
+                    <div className="bg-slate-50 dark:bg-[#151820] rounded p-3 border border-slate-200 dark:border-slate-700/30">
                         {localPOP.connections.find((c: any) => c.sourceId === configuringOltPortId || c.targetId === configuringOltPortId) ? (
                             <div className="flex items-center justify-between">
                                 <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-2">
@@ -101,12 +101,12 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                 const isExpanded = expandedDioIds.includes(dio.id);
 
                                 return (
-                                    <div key={dio.id} className="bg-slate-50 dark:bg-slate-900/50 rounded border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                    <div key={dio.id} className="bg-slate-50 dark:bg-[#1a1d23]/50 rounded border border-slate-200 dark:border-slate-700/30 overflow-hidden">
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => toggleDio(dio.id)}
-                                            className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors justify-start rounded-none"
+                                            className="w-full px-3 py-2 bg-slate-100 dark:bg-[#22262e] text-xs font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors justify-start rounded-none"
                                         >
                                             {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                                             <Server className="w-3 h-3 text-emerald-600 dark:text-emerald-500" />
@@ -152,7 +152,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                                                             className={`
                                                                                         w-8 h-8 mx-auto rounded text-[9px] font-mono flex items-center justify-center border transition-all relative
                                                                                         ${isConnectedToSelf ? 'bg-emerald-600 border-emerald-400 text-white ring-2 ring-emerald-500/20 font-bold scale-110 z-10' : ''}
-                                                                                        ${occupiedByOtherOLT ? 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-700 cursor-not-allowed' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-400'}
+                                                                                        ${occupiedByOtherOLT ? 'bg-slate-100 dark:bg-[#151820] border-slate-200 dark:border-slate-700/30 text-slate-400 dark:text-slate-700 cursor-not-allowed' : 'bg-white dark:bg-[#22262e] border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-emerald-600 hover:text-white hover:border-emerald-400'}
                                                                                     `}
                                                                         >
                                                                             {(idx + 1) + 0 /* idx is 0-based relative to tray slice, so +1 gives 1-12. If we want 1-12 always, (idx+1) is correct. */}

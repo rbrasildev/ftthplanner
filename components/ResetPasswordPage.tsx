@@ -64,7 +64,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
             {/* Background */}
             <div className="absolute inset-0 z-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-md"></div>
 
-            <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative z-10 w-full max-w-md bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-3xl overflow-hidden shadow-2xl">
                 <div className="p-8 sm:p-12">
                     <div className="text-center space-y-2 mb-8">
                         <div className="flex justify-center mb-6">
@@ -107,7 +107,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
+                                        className="w-full bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
                                         placeholder={t('register_password_placeholder')}
                                         required
                                         disabled={isLoading || !token}
@@ -119,7 +119,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onBackToLo
                                         type="password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
+                                        className="w-full bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
                                         placeholder={t('register_confirm_password_placeholder')}
                                         required
                                         disabled={isLoading || !token}

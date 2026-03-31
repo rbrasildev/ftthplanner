@@ -122,10 +122,10 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700/30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#1a1d23]/50">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
                             <FileUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -183,7 +183,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Tipo de Poste (Catálogo)</label>
                         {isLoadingCatalog ? (
-                            <div className="flex items-center gap-2 text-slate-500 text-sm p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2 text-slate-500 text-sm p-3 bg-slate-50 dark:bg-[#22262e] rounded-xl border border-slate-200 dark:border-slate-700">
                                 <Loader2 className="w-4 h-4 animate-spin" /> Carregando catálogo...
                             </div>
                         ) : poleTypes.length > 0 ? (
@@ -207,7 +207,7 @@ export const KmlImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onClose,
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors"

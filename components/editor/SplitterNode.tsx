@@ -177,7 +177,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         ${isLitIn
                                 ? 'border-red-400 bg-red-600 text-white'
                                 : !isConnectorized
-                                    ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
+                                    ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'
                                     : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
                     `}
                     >
@@ -244,7 +244,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                             : isSecondaryUnbalanced
                                                 ? 'border-slate-950 dark:border-slate-300 bg-white dark:bg-white text-slate-950 dark:text-slate-950 font-bold border-[1.5px]'
                                                 : !isConnectorized
-                                                    ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-slate-950 text-white dark:text-slate-100'
+                                                    ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'
                                                     : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
                                     }
                             `}

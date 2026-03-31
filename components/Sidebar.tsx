@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const isFreeOrTrial = userPlan === 'Plano Grátis' || userPlanType?.toUpperCase() === 'TRIAL';
 
     const sidebarClasses = `
-        fixed lg:relative z-[2000] h-screen transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col
+        fixed lg:relative z-[2000] h-screen transition-all duration-300 ease-in-out border-r border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#1a1d23] flex flex-col
         ${isCollapsed ? 'w-20' : 'w-[280px]'}
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
     `;
@@ -220,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <aside className={sidebarClasses}>
                 {/* 1. Header & Collapse Toggle */}
-                <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-100 dark:border-slate-900 h-16 flex-shrink-0`}>
+                <div className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-100 dark:border-slate-700/30 h-16 flex-shrink-0`}>
                     {!isCollapsed && (
                         <div className="flex items-center gap-2.5 overflow-hidden animate-in fade-in duration-300">
                             <div className="w-8 h-8 flex-shrink-0">
@@ -261,14 +261,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* 2. Project Context (Only in map/project mode) */}
                 {viewMode === 'project' && (
-                    <div className={`p-4 border-b border-slate-100 dark:border-slate-900 ${isCollapsed ? 'flex flex-col items-center justify-center' : ''} flex-shrink-0 space-y-2`}>
+                    <div className={`p-4 border-b border-slate-100 dark:border-slate-700/30 ${isCollapsed ? 'flex flex-col items-center justify-center' : ''} flex-shrink-0 space-y-2`}>
                         <Tooltip content={t('import_kmz_label')} enabled={isCollapsed}>
                             <button
                                 onClick={onImportClick}
                                 className={`group relative flex items-center transition-all duration-200
                                     ${isCollapsed
-                                        ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950'
-                                        : 'w-full gap-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20'}`}
+                                        ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-600/30 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30'
+                                        : 'w-full gap-3 bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-600/30 px-3 py-2 rounded-xl border-dashed hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:bg-emerald-950/20'}`}
                             >
                                 <FileUp className={`flex-shrink-0 transition-colors ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4 text-slate-400 group-hover:text-emerald-500'}`} />
                                 {!isCollapsed && (
@@ -387,7 +387,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         </span>
                                     )}
                                     {isCollapsed && (
-                                        <div className="mx-auto w-6 border-t border-slate-200 dark:border-slate-800 my-2" />
+                                        <div className="mx-auto w-6 border-t border-slate-200 dark:border-slate-700/40 my-2" />
                                     )}
                                     {section.items.map(item => {
                                         const active = isMenuActive(item);
@@ -431,7 +431,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all
                                                                         ${subActive
                                                                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
-                                                                            : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                                                            : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#22262e]'}`}
                                                                 >
                                                                     <sub.icon className={`w-3.5 h-3.5 ${subActive ? 'text-emerald-500' : ''}`} />
                                                                     <span className="flex-1 text-left">{sub.label}</span>
@@ -453,7 +453,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* 4. Footer */}
-                <div className={`p-4 border-t border-slate-100 dark:border-slate-900 ${isCollapsed ? 'items-center' : ''} flex flex-col gap-3 flex-shrink-0`}>
+                <div className={`p-4 border-t border-slate-100 dark:border-slate-700/30 ${isCollapsed ? 'items-center' : ''} flex flex-col gap-3 flex-shrink-0`}>
 
                     {/* Expanded: Full user card */}
                     {!isCollapsed && user && (
@@ -468,7 +468,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         <ExpirationLabel expInfo={expInfo} t={t} />
                                     </>
                                 ) : (
-                                    <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                                    <div className="h-3 w-16 bg-slate-200 dark:bg-[#22262e] rounded animate-pulse" />
                                 )}
                             </div>
                         </div>
@@ -484,13 +484,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <UserAvatar user={user} companyLogo={companyLogo} size="md" />
                                 {/* Dot indicator for expiring plans */}
                                 {expInfo && (expInfo.isExpired || expInfo.isExpiringSoon) && (
-                                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-slate-950 animate-pulse" />
+                                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-[#1a1d23] animate-pulse" />
                                 )}
                             </button>
 
                             {/* User Popover */}
                             {showUserPopover && (
-                                <div className="absolute bottom-full left-full ml-2 mb-0 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-3 z-[9999] animate-in fade-in slide-in-from-left-2 duration-200">
+                                <div className="absolute bottom-full left-full ml-2 mb-0 w-56 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600/40 rounded-xl shadow-xl p-3 z-[9999] animate-in fade-in slide-in-from-left-2 duration-200">
                                     <div className="flex items-center gap-3 mb-3">
                                         <UserAvatar user={user} companyLogo={companyLogo} size="lg" />
                                         <div className="flex flex-col overflow-hidden">
@@ -500,7 +500,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     </div>
 
                                     {isHydrated && (
-                                        <div className="mb-3 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                        <div className="mb-3 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-[#1a1d23]">
                                             <div className="flex items-center gap-1.5">
                                                 <Crown className="w-3 h-3 text-amber-500" />
                                                 <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-tighter">{userPlan || 'Plano Grátis'}</span>
@@ -538,7 +538,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <Button
                                 variant={isFreeOrTrial ? 'primary' : 'outline'}
                                 onClick={onUpgradeClick}
-                                className="w-full text-[10px] font-bold h-9"
+                                className={`w-full text-[10px] font-bold h-9 ${!isFreeOrTrial ? 'dark:border-slate-600/40 dark:text-slate-300 dark:hover:bg-[#22262e] dark:hover:text-white' : ''}`}
                             >
                                 {isFreeOrTrial
                                     ? <><Zap className="w-3.5 h-3.5 mr-2" /> {t('upgrade_now') || 'Fazer Upgrade'}</>
@@ -595,7 +595,7 @@ const Badge: React.FC<{ value: number | string; small?: boolean }> = ({ value, s
 const UserAvatar: React.FC<{ user: string; companyLogo?: string | null; size?: 'md' | 'lg' }> = ({ user, companyLogo, size = 'md' }) => {
     const dim = size === 'lg' ? 'w-10 h-10' : 'w-9 h-9';
     return (
-        <div className={`${dim} rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 overflow-hidden shrink-0`}>
+        <div className={`${dim} rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-700/30 overflow-hidden shrink-0`}>
             {companyLogo ? (
                 <img src={companyLogo} alt="Company" className="w-full h-full object-contain" />
             ) : (
@@ -651,7 +651,7 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed
                 {icon}
                 {/* Badge dot on collapsed icon */}
                 {isCollapsed && badge !== undefined && badge !== 0 && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-slate-950" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-[#1a1d23]" />
                 )}
             </div>
 
@@ -685,7 +685,7 @@ const FooterButton: React.FC<{ icon: React.ReactNode; title?: string; onClick: (
         size="icon"
         onClick={onClick}
         title={title}
-        className={`flex-1 h-9 ${className} ${danger ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-500 hover:bg-rose-500 hover:text-white border-rose-100 dark:border-rose-900/30' : ''}`}
+        className={`flex-1 h-9 ${className} ${danger ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-500 hover:bg-rose-500 hover:text-white border-rose-100 dark:border-rose-900/30' : 'dark:border-slate-600/30 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-[#22262e]'}`}
     >
         {icon}
     </Button>

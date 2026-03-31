@@ -62,7 +62,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
 }) => {
     return (
         <div
-            className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex flex-col shrink-0 z-50 cursor-move select-none"
+            className="bg-slate-100 dark:bg-[#22262e] border-b border-slate-200 dark:border-slate-700 flex flex-col shrink-0 z-50 cursor-move select-none"
             onMouseDown={onWindowDragStart}
         >
             {/* Line 1: Title and Main Actions */}
@@ -113,7 +113,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
             </div>
 
             {/* Line 2: All Tools and Exports — hidden when collapsed */}
-            <div style={{ display: isCollapsed ? 'none' : undefined }} className="h-12 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
+            <div style={{ display: isCollapsed ? 'none' : undefined }} className="h-12 bg-slate-50 dark:bg-[#1a1d23]/40 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4">
                 <div className="flex gap-1.5 pointer-events-auto items-center">
 
                     {/* GROUP 1: EDIT MODES */}
@@ -253,7 +253,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                         </Button>
 
                         {showHotkeys && (
-                            <div className="absolute top-10 right-0 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute top-10 right-0 w-56 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
                                     <CircleHelp className="w-4 h-4 text-emerald-500" />
                                     <span className="text-sm font-bold text-slate-900 dark:text-white">{t('hotkeys_title')}</span>
@@ -268,7 +268,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                                         { key: 'D', label: t('hotkey_d') }
                                     ].map(item => (
                                         <div key={item.key} className="flex items-center gap-3">
-                                            <kbd className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-sm">
+                                            <kbd className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded shadow-sm">
                                                 {item.key}
                                             </kbd>
                                             <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">{item.label}</span>

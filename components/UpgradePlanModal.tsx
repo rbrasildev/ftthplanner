@@ -174,10 +174,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
     return (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-2 sm:p-4">
-            <div className="bg-white dark:bg-slate-950 shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="bg-white dark:bg-[#151820] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] rounded-2xl border border-slate-200 dark:border-slate-700/30">
 
                 {/* Header */}
-                <div className="relative shrink-0 border-b border-slate-100 dark:border-slate-800">
+                <div className="relative shrink-0 border-b border-slate-100 dark:border-slate-700/30">
                     {/* Close Button */}
                     {!isSuccess && (
                         <button
@@ -285,12 +285,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         /* Loading */
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-800 p-6 animate-pulse">
-                                    <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-lg mb-4" />
-                                    <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
-                                    <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded mb-6" />
+                                <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-700/30 p-6 animate-pulse">
+                                    <div className="h-10 w-10 bg-slate-200 dark:bg-[#22262e] rounded-lg mb-4" />
+                                    <div className="h-5 w-24 bg-slate-200 dark:bg-[#22262e] rounded mb-2" />
+                                    <div className="h-8 w-32 bg-slate-200 dark:bg-[#22262e] rounded mb-6" />
                                     <div className="space-y-3">
-                                        {[1, 2, 3].map(j => <div key={j} className="h-4 bg-slate-100 dark:bg-slate-800/50 rounded w-full" />)}
+                                        {[1, 2, 3].map(j => <div key={j} className="h-4 bg-slate-100 dark:bg-[#22262e]/50 rounded w-full" />)}
                                     </div>
                                 </div>
                             ))}
@@ -311,8 +311,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             ${plan.highlight
                                                 ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/20'
                                                 : isCurrent
-                                                    ? 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50'
-                                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md'
+                                                    ? 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-[#1a1d23]/50'
+                                                    : 'border-slate-200 dark:border-slate-700/30 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md'
                                             }
                                         `}
                                     >
@@ -340,7 +340,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3
                                                 ${plan.highlight
                                                     ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                                    : 'bg-slate-100 dark:bg-[#22262e] text-slate-500 dark:text-slate-400'
                                                 }`}>
                                                 <PlanIcon className="w-5 h-5" />
                                             </div>
@@ -348,7 +348,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                         </div>
 
                                         {/* Price */}
-                                        <div className="mb-5 pb-5 border-b border-slate-100 dark:border-slate-800">
+                                        <div className="mb-5 pb-5 border-b border-slate-100 dark:border-slate-700/30">
                                             {isFree ? (
                                                 <div className="flex items-baseline">
                                                     <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t('free')}</span>
@@ -380,9 +380,9 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                                             disabled={isCurrent}
                                             className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all duration-200
                                                 ${isCurrent
-                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                                    ? 'bg-slate-100 dark:bg-[#22262e] text-slate-400 dark:text-slate-500 cursor-not-allowed'
                                                     : isFree
-                                                        ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                                        ? 'bg-white dark:bg-[#22262e] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                                                         : plan.highlight
                                                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
                                                             : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 hover:-translate-y-0.5 active:translate-y-0'

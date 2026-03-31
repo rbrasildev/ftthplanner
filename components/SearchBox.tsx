@@ -62,7 +62,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
                     value={inputValue}
                     onChange={handleInputChange}
                     placeholder={t('search_placeholder')}
-                    className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-9 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm transition-all duration-300"
+                    className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl pl-10 pr-9 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm transition-all duration-300"
                 />
 
                 {inputValue && (
@@ -79,7 +79,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
 
                 {/* Search Dropdown Logic */}
                 {showResults && inputValue.trim().length >= 2 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[3000] max-h-60 overflow-y-auto p-1">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[3000] max-h-60 overflow-y-auto p-1">
                         {results.length > 0 ? (
                             results.map((item) => (
                                 <button

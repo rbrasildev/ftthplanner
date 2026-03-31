@@ -144,9 +144,9 @@ export const BackupManager: React.FC<{ backupEnabled?: boolean }> = ({ backupEna
                     <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                 </div>
             ) : (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('backup_filename')}</th>
                                 <th className="px-6 py-4">{t('backup_date')}</th>
@@ -210,7 +210,7 @@ export const BackupManager: React.FC<{ backupEnabled?: boolean }> = ({ backupEna
                             {backups.length === 0 && (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <div className="w-16 h-16 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mx-auto mb-4">
                                             <AlertCircle className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                                         </div>
                                         <p>{t('no_backups')}</p>

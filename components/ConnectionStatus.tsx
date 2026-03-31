@@ -54,7 +54,7 @@ export const ConnectionStatus: React.FC = () => {
                     transition={{ type: 'spring', damping: 20, stiffness: 100 }}
                     className="fixed top-0 left-0 right-0 z-[9999] flex justify-center p-4 pointer-events-none"
                 >
-                    <div className="bg-white dark:bg-slate-900 border-l-4 border-amber-500 shadow-2xl rounded-xl p-4 flex items-center gap-4 max-w-md pointer-events-auto border border-slate-200 dark:border-slate-800">
+                    <div className="bg-white dark:bg-[#1a1d23] border-l-4 border-amber-500 shadow-2xl rounded-xl p-4 flex items-center gap-4 max-w-md pointer-events-auto border border-slate-200 dark:border-slate-700/30">
                         <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shrink-0">
                             {isOffline ? (
                                 <WifiOff className="w-6 h-6 text-amber-600" />

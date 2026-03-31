@@ -441,11 +441,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [currentView]);
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300 overflow-hidden">
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#151820] font-sans transition-colors duration-300 overflow-hidden">
 
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 px-4 pb-4 pt-20 lg:p-8 h-full relative">
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#151820] px-4 pb-4 pt-20 lg:p-8 h-full relative">
 
         {/* Projects View */}
         {currentView === 'projects' && (
@@ -470,11 +470,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     placeholder={t('search_generic')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-100/80 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800/50 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
+                    className="w-full bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/30/50 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
 
-                <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800/50 rounded-xl p-1 shadow-sm h-[38px]">
+                <div className="flex items-center bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/30/50 rounded-xl p-1 shadow-sm h-[38px]">
                   <button
                     onClick={() => toggleViewMode('grid')}
                     className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
@@ -506,12 +506,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 animate-pulse h-48"></div>
+                  <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-5 animate-pulse h-48"></div>
                 ))}
               </div>
             ) : filteredProjects.length === 0 ? (
-              <div className="text-center py-20 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
-                <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center py-20 border-2 border-dashed border-slate-300 dark:border-slate-700/30 rounded-2xl bg-slate-50/50 dark:bg-[#1a1d23]/50">
+                <div className="w-16 h-16 bg-slate-200 dark:bg-[#22262e] rounded-full flex items-center justify-center mx-auto mb-4">
                   <FolderOpen className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                 </div>
                 <p className="text-slate-500 font-medium">{t('no_projects')}</p>
@@ -542,9 +542,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <div
                         key={project.id}
                         onClick={() => onOpenProject(project.id)}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg flex items-center gap-6 relative"
+                        className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg flex items-center gap-6 relative"
                       >
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0 transition-colors">
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-[#22262e] group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0 transition-colors">
                           <MapIcon className="w-6 h-6 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
                         </div>
 
@@ -553,7 +553,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                               {project.name}
                             </h3>
-                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                            <span className="text-[10px] bg-slate-100 dark:bg-[#22262e] text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
                               {t('last_modified', { date: new Date(project.updatedAt).toLocaleDateString() })}
                             </span>
                           </div>
@@ -566,7 +566,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
 
                         <div className="hidden md:block w-48 shrink-0">
-                          <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="w-full h-1.5 bg-slate-100 dark:bg-[#22262e] rounded-full overflow-hidden">
                             <div
                               className="h-full bg-emerald-500 transition-all"
                               style={{ width: `${progress}%` }}
@@ -575,7 +575,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
 
                         {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
-                          <div className="flex items-center gap-1 pl-4 border-l border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center gap-1 pl-4 border-l border-slate-100 dark:border-slate-700/30">
                             <button
                               onClick={(e) => handleEditClick(e, project)}
                               className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
@@ -600,10 +600,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <div
                       key={project.id}
                       onClick={() => onOpenProject(project.id)}
-                      className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 rounded-xl p-5 cursor-pointer transition-all hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1 relative"
+                      className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 hover:border-emerald-500/50 rounded-xl p-5 cursor-pointer transition-all hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1 relative"
                     >
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center transition-colors">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-[#22262e] group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center transition-colors">
                           <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
                         </div>
                         {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
@@ -635,21 +635,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         {t('last_modified', { date: new Date(project.updatedAt).toLocaleDateString() })}
                       </p>
 
-                      <div className="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#151820]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/30">
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">
                             {hasNetworkData ? project.network.ctos.filter((c: any) => c.type === 'CEO').length : '...'}
                           </span>
                           <span className="text-slate-500 dark:text-slate-600">CEOs</span>
                         </div>
-                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
+                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-[#22262e]"></div>
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">
                             {hasNetworkData ? `${deployedCTOs}/${totalCTOs}` : totalCTOs}
                           </span>
                           <span className="text-slate-500 dark:text-slate-600">CTOs</span>
                         </div>
-                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
+                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-[#22262e]"></div>
                         <div>
                           <span className="block font-bold text-slate-700 dark:text-slate-200">
                             {hasNetworkData ? `${deployedCables}/${totalCables}` : totalCables}
@@ -658,7 +658,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/30">
                         <div className="flex justify-between items-center mb-1.5">
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
                             <Activity className="w-3 h-3 text-emerald-500" />
@@ -666,7 +666,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           </div>
                           <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">{progress}%</span>
                         </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-slate-100 dark:bg-[#22262e] rounded-full overflow-hidden">
                           <div
                             className="h-full bg-emerald-500 transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
@@ -694,7 +694,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* Placeholders for other views */}
         {currentView !== 'projects' && currentView !== 'integrations' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 capitalize">
@@ -718,33 +718,34 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* --- CABLE REGISTRATION --- */}
         {currentView === 'reg_cabo' && (
-          <CableRegistration />
+          <CableRegistration showToast={showToast} />
         )}
 
         {/* --- BOX REGISTRATION --- */}
         {currentView === 'reg_caixa' && (
-          <BoxRegistration />
+          <BoxRegistration showToast={showToast} />
         )}
 
         {/* --- POLE REGISTRATION --- */}
         {currentView === 'reg_poste' && (
-          <PoleRegistration />
+          <PoleRegistration showToast={showToast} />
         )}
 
         {/* --- FUSION REGISTRATION --- */}
         {currentView === 'reg_fusao' && (
-          <FusionRegistration />
+          <FusionRegistration showToast={showToast} />
         )}
 
         {/* --- OLT REGISTRATION --- */}
         {currentView === 'reg_olt' && (
-          <OLTRegistration />
+          <OLTRegistration showToast={showToast} />
         )}
 
         {/* --- CUSTOMER REGISTRATION --- */}
         {currentView === 'reg_clientes' && (
           <CustomerRegistration
             projectId={currentProjectId}
+            showToast={showToast}
             onLocate={(customer) => {
               // Try to find which project this customer belongs to
               let project = null;
@@ -777,7 +778,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* --- REGISTRATION PLACEHOLDERS --- */}
         {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste', 'reg_fusao', 'reg_olt', 'reg_clientes'].includes(currentView) && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mb-6">
               {currentView === 'reg_poste' && <UtilityPole className="w-10 h-10 text-slate-400" />}
               {currentView === 'reg_caixa' && <Box className="w-10 h-10 text-slate-400" />}
               {currentView === 'reg_cabo' && <Cable className="w-10 h-10 text-slate-400" />}
@@ -821,9 +822,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {isLoadingUsers ? (
               <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /></div>
             ) : (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                  <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                     <tr>
                       <th className="px-6 py-4">{t('username')}</th>
                       <th className="px-6 py-4">{t('email')}</th>
@@ -841,7 +842,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                              ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
                               user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                                'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'}`}>
+                                'bg-slate-100 text-slate-800 dark:bg-[#22262e] dark:text-slate-300'}`}>
                             {user.role === 'OWNER' ? t('role_owner') : user.role === 'ADMIN' ? t('role_admin') : t('role_member')}
                           </span>
                         </td>
@@ -884,8 +885,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* --- ADD USER MODAL --- */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col relative">
-            <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
+          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col relative">
+            <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {editingUser ? t('edit_user') : t('add_user')}
               </h3>
@@ -934,7 +935,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 showSearch={false}
               />
             </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
+            <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
               <button onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
 
               <button
@@ -953,7 +954,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* --- USER DELETE CONFIRMATION --- */}
       {userToDelete && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
@@ -978,8 +979,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {
         isCreating && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
-              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
+              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {t('create_project_modal_title')}
                 </h3>
@@ -1010,12 +1011,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </span>
                   </div>
                   {locationResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
                       {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
                     </div>
                   )}
                 </div>
-                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
+                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-[#1a1d23]">
                   <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
                     <MapInvalidator />
                     <LayersControl position="topright">
@@ -1028,12 +1029,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </LayersControl>
                     <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
                   </MapContainer>
-                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
+                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-[#1a1d23]/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
                     {t('map_instruction')}
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
+              <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
                 <button onClick={() => setIsCreating(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
                 <button onClick={handleCreateSubmit} disabled={!newProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Plus className="w-4 h-4" /> {t('confirm_create')} </button>
               </div>
@@ -1046,8 +1047,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {
         isEditing && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
-              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 rounded-t-xl">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
+              <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Settings className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {t('edit_project')}
                 </h3>
@@ -1078,12 +1079,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </span>
                   </div>
                   {locationResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
                       {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
                     </div>
                   )}
                 </div>
-                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-slate-900">
+                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-[#1a1d23]">
                   <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
                     <MapInvalidator />
                     <LayersControl position="topright">
@@ -1096,12 +1097,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </LayersControl>
                     <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
                   </MapContainer>
-                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-900/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
+                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-[#1a1d23]/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
                     {t('map_instruction')}
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
+              <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
                 <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
                 <button onClick={handleEditSubmit} disabled={!editProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Save className="w-4 h-4" /> {t('save_changes')} </button>
               </div>
@@ -1115,7 +1116,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         projectToDelete && (
           <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setProjectToDelete(null)}>
             <div
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200"
+              className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-start gap-4 mb-4">

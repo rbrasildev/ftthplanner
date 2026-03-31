@@ -5,7 +5,11 @@ import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem
 import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save, AlertTriangle } from 'lucide-react';
 import { CustomInput } from '../common';
 
-export const FusionRegistration: React.FC = () => {
+interface FusionRegistrationProps {
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
     const [fusions, setFusions] = useState<FusionCatalogItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,9 +75,10 @@ export const FusionRegistration: React.FC = () => {
                 setFusions(prev => [...prev, created]);
             }
             setIsModalOpen(false);
+            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
         } catch (error) {
             console.error("Failed to save fusion", error);
-            alert(t('error_save_fusion') || "Erro ao salvar fusão");
+            if (showToast) showToast(t('error_save_fusion') || "Erro ao salvar fusão", 'error');
         }
     };
 
@@ -82,9 +87,10 @@ export const FusionRegistration: React.FC = () => {
             await deleteFusion(id);
             setFusions(prev => prev.filter(f => f.id !== id));
             setShowDeleteConfirm(null);
+            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
         } catch (error) {
             console.error("Failed to delete fusion", error);
-            alert(t('error_delete_fusion') || "Erro ao deletar fusão");
+            if (showToast) showToast(t('error_delete_fusion') || "Erro ao deletar fusão", 'error');
         }
     };
 
@@ -114,9 +120,9 @@ export const FusionRegistration: React.FC = () => {
             </div>
 
             {/* List */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -124,7 +130,7 @@ export const FusionRegistration: React.FC = () => {
                             placeholder={t('search_generic') || "Buscar..."}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-50 dark:text-slate-200 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-50 dark:text-slate-200 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -139,7 +145,7 @@ export const FusionRegistration: React.FC = () => {
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('name')}</th>
                                 <th className="px-6 py-4">{t('attenuation')}</th>
@@ -186,7 +192,7 @@ export const FusionRegistration: React.FC = () => {
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
@@ -211,7 +217,7 @@ export const FusionRegistration: React.FC = () => {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingItem ? (t('edit_fusion') || "Editar Fusão") : (t('new_fusion') || "Nova Fusão")}

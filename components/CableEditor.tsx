@@ -179,14 +179,14 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   return (
     <div
       ref={panelRef}
-      className={`fixed z-[2000] w-[520px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden ${isCollapsed ? 'h-auto' : 'h-auto max-h-[90vh]'}`}
+      className={`fixed z-[2000] w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden ${isCollapsed ? 'h-auto' : 'h-auto max-h-[90vh]'}`}
       style={{ willChange: 'top, left', transition: 'none' }}
     >
 
       {/* Header - Draggable Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
+        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Cable className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
@@ -217,7 +217,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               </label>
 
               {isLoadingCatalog ? (
-                <div className="w-full flex items-center justify-center gap-2 py-2 text-slate-600 dark:text-slate-400 text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg opacity-70 cursor-wait">
+                <div className="w-full flex items-center justify-center gap-2 py-2 text-slate-600 dark:text-slate-400 text-xs font-medium bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg opacity-70 cursor-wait">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>{t('loading_catalog')}</span>
                 </div>
@@ -287,7 +287,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
                 {t('fiber_color_standard')}
               </label>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#22262e] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                 <span>{formData.colorStandard === 'EIA598' ? t('standard_eia') : t('standard_abnt')}</span>
                 <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">{t('catalog_defined')}</span>
               </div>
@@ -306,7 +306,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
             </div>
 
             {/* Length Display */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+            <div className="bg-slate-50 dark:bg-[#22262e]/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
                 <Ruler className="w-3 h-3" /> {t('estimated_length')} (Total)
               </label>
@@ -334,7 +334,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
                 <Palette className="w-3 h-3" /> {t('map_color')}
               </label>
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-[#22262e] p-2 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div
                   className="w-12 h-6 rounded-md shadow-sm border border-slate-200 dark:border-slate-600"
                   style={{ backgroundColor: formData.color }}
@@ -347,7 +347,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
 
           </div>
 
-          <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 shrink-0">
+          <div className="p-4 bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/30 shrink-0">
             {showDeleteConfirm ? (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg p-3 space-y-3 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-start gap-2 text-red-600 dark:text-red-400">
@@ -360,7 +360,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                   <button
                     type="button"
                     onClick={handleCancelDelete}
-                    className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
+                    className="flex-1 py-1.5 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-medium transition"
                   >
                     {t('cancel')}
                   </button>

@@ -72,10 +72,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
             </button>
 
             {/* 2. Main Container */}
-            <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-slate-900 lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">
+            <div className="relative z-10 w-full max-w-[1200px] h-auto lg:h-[800px] lg:bg-white lg:dark:bg-[#1a1d23] lg:border lg:border-slate-200 lg:dark:border-slate-700/30 lg:rounded-3xl overflow-hidden lg:shadow-2xl flex flex-col lg:flex-row bg-transparent dark:bg-transparent shadow-none border-none justify-center">
 
                 {/* Left Side - Form */}
-                <div className="w-full lg:w-5/12 p-0 sm:p-12 xl:p-16 flex flex-col justify-center bg-transparent dark:bg-transparent lg:bg-white lg:dark:bg-slate-900">
+                <div className="w-full lg:w-5/12 p-0 sm:p-12 xl:p-16 flex flex-col justify-center bg-transparent dark:bg-transparent lg:bg-white lg:dark:bg-[#1a1d23]">
 
                     <div className="max-w-sm mx-auto w-full space-y-8">
                         <div className="text-center space-y-2">
@@ -104,7 +104,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            className="w-full bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder={t('login_email_placeholder')}
                                             required
                                             autoFocus
@@ -119,7 +119,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                             type="password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            className="w-full bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder={t('login_password_placeholder')}
                                             required
                                         />
@@ -155,7 +155,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                 </div>
 
                 {/* Right Side - Feature Image Display (Hidden on Mobile) */}
-                <div className="hidden lg:flex w-7/12 bg-slate-50 dark:bg-slate-950 relative items-center justify-center p-12 overflow-hidden">
+                <div className="hidden lg:flex w-7/12 bg-slate-50 dark:bg-[#151820] relative items-center justify-center p-12 overflow-hidden">
 
                     {/* Decorative Elements */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
@@ -163,16 +163,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
 
                     {/* Feature Image Card */}
                     <div className="relative w-full max-w-2xl z-10">
-                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+                        <div className="bg-white/50 dark:bg-[#1a1d23]/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
                             <img
                                 src="/login-feature.png"
                                 alt="Feature Preview"
-                                className="w-full h-auto rounded-xl shadow-inner border border-slate-200/50 dark:border-slate-800/50"
+                                className="w-full h-auto rounded-xl shadow-inner border border-slate-200/50 dark:border-slate-700/30/50"
                             />
                         </div>
 
                         {/* Floating Feature Label */}
-                        <div className="absolute -bottom-8 -right-8 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-slate-700 flex items-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
+                        <div className="absolute -bottom-8 -right-8 bg-white dark:bg-[#22262e] p-4 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-slate-700 flex items-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200">
                             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-slate-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/30">
                                 <KeyRound className="w-6 h-6 text-white" />
                             </div>
@@ -190,7 +190,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
             {/* Forgot Password Modal */}
             {isForgotModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#1a1d23] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-8">
                             <div className="text-center space-y-2 mb-8">
                                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('forgot_password_title')}</h2>
@@ -218,7 +218,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                             type="email"
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
+                                            className="w-full bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 outline-none font-medium transition-all"
                                             placeholder={t('login_email_placeholder')}
                                             required
                                             disabled={forgotLoading}
@@ -230,7 +230,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                         <button
                                             type="button"
                                             onClick={() => setIsForgotModalOpen(false)}
-                                            className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl text-sm px-5 py-4 text-center transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98]"
+                                            className="flex-1 bg-slate-100 dark:bg-[#22262e] text-slate-900 dark:text-white font-bold rounded-xl text-sm px-5 py-4 text-center transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98]"
                                             disabled={forgotLoading}
                                         >
                                             {t('cancel')}

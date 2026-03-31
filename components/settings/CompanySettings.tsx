@@ -107,14 +107,14 @@ export const CompanySettings: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-6">
                 {/* Visual Identity Section */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] rounded-xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
                         Identidade Visual
                     </h2>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                         <div className="relative group">
-                            <div className="w-32 h-32 rounded-2xl bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+                            <div className="w-32 h-32 rounded-2xl bg-slate-50 dark:bg-[#151820] border-2 border-dashed border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden">
                                 {formData.logoUrl ? (
                                     <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                                 ) : (
@@ -148,7 +148,7 @@ export const CompanySettings: React.FC = () => {
 
                 {/* Contact and Legal Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <Hash className="w-4 h-4" /> Informações Legais
                         </h3>
@@ -169,7 +169,7 @@ export const CompanySettings: React.FC = () => {
                         />
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <Mail className="w-4 h-4" /> Canais Digitais
                         </h3>
@@ -191,7 +191,7 @@ export const CompanySettings: React.FC = () => {
                 </div>
 
                 {/* Location Section */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-[#1a1d23] rounded-xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
                         <MapPin className="w-4 h-4" /> Localização
                     </h3>

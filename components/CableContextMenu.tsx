@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Edit, Trash2, Unplug, AlertTriangle, X, Check, Settings, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Edit, Trash2, Unplug, AlertTriangle, X, Check, Settings, Eye, EyeOff, MapPin, Cable } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface CableContextMenuProps {
@@ -14,11 +14,12 @@ interface CableContextMenuProps {
     onToggleReserve?: () => void;
     onPositionReserve?: () => void;
     targetType?: "CTO" | "POP";
+    cableName?: string;
 }
 
 export const CableContextMenu: React.FC<CableContextMenuProps> = ({
     x, y, onEdit, onProperties, onDelete, onConnect, onClose,
-    showReserveLabel, onToggleReserve, onPositionReserve, targetType
+    showReserveLabel, onToggleReserve, onPositionReserve, targetType, cableName
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
@@ -37,8 +38,8 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
     return (
         <div
             ref={menuRef}
-            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[180px] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-            style={{ 
+            className="fixed z-[99999] w-56 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/40 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            style={{
                 top: y > window.innerHeight / 2 ? 'auto' : y,
                 bottom: y > window.innerHeight / 2 ? window.innerHeight - y : 'auto',
                 left: x > window.innerWidth / 2 ? 'auto' : x,
@@ -46,126 +47,115 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
             }}
             onContextMenu={(e) => e.preventDefault()}
         >
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit();
-                    onClose();
-                }}
-                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-            >
-                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
-                    <Edit className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            {/* Header */}
+            <div className="px-3 py-2.5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-700/30">
+                <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <Cable className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-sm font-medium">{t('edit')}</span>
-            </button>
-
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onProperties();
-                    onClose();
-                }}
-                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-            >
-                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-md group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors">
-                    <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{cableName || t('cable')}</div>
+                    <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('cable')}</div>
                 </div>
-                <span className="text-sm font-medium">{t('properties')}</span>
-            </button>
+            </div>
 
-            {onToggleReserve && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleReserve();
-                        onClose();
-                    }}
-                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-                >
-                    <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-md group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-                        {showReserveLabel ? <EyeOff className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-                    </div>
-                    <span className="text-sm font-medium">{showReserveLabel ? (t('hide_reserve_label')) : (t('toggle_reserve_label'))}</span>
-                </button>
-            )}
+            {/* Actions */}
+            <div className="py-1">
+                <MenuItem
+                    icon={<Edit className="w-3.5 h-3.5" />}
+                    label={t('edit')}
+                    iconColor="text-emerald-500 dark:text-emerald-400"
+                    onClick={() => { onEdit(); onClose(); }}
+                />
 
-            {onPositionReserve && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onPositionReserve();
-                        onClose();
-                    }}
-                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-                >
-                    <div className="p-1.5 bg-teal-50 dark:bg-teal-900/30 rounded-md group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
-                        <MapPin className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                    </div>
-                    <span className="text-sm font-medium">{t('position_reserve_label')}</span>
-                </button>
-            )}
+                <MenuItem
+                    icon={<Settings className="w-3.5 h-3.5" />}
+                    label={t('properties')}
+                    iconColor="text-emerald-500 dark:text-emerald-400"
+                    onClick={() => { onProperties(); onClose(); }}
+                />
 
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (onConnect) onConnect();
-                    onClose();
-                }}
-                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 transition-colors group"
-            >
-                <div className="p-1.5 bg-amber-50 dark:bg-amber-900/30 rounded-md group-hover:bg-amber-100 dark:group-hover:bg-amber-900/50 transition-colors">
-                    <Unplug className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <span className="text-sm font-medium">{targetType === 'POP' ? t('connect_to_pop') : t('connect_to_box')}</span>
-            </button>
+                {onToggleReserve && (
+                    <MenuItem
+                        icon={showReserveLabel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        label={showReserveLabel ? t('hide_reserve_label') : t('toggle_reserve_label')}
+                        iconColor="text-indigo-500 dark:text-indigo-400"
+                        onClick={() => { onToggleReserve(); onClose(); }}
+                    />
+                )}
 
-            {showDeleteConfirm ? (
-                <div className="p-2 space-y-2 animate-in fade-in slide-in-from-top-2 bg-red-50 dark:bg-red-900/10 rounded-b-lg border-t border-red-100 dark:border-red-900/30">
-                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400 px-1">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span className="text-xs font-bold text-red-600 dark:text-red-400">
-                            {t('confirm_delete')}
-                        </span>
+                {onPositionReserve && (
+                    <MenuItem
+                        icon={<MapPin className="w-3.5 h-3.5" />}
+                        label={t('position_reserve_label')}
+                        iconColor="text-teal-500 dark:text-teal-400"
+                        onClick={() => { onPositionReserve(); onClose(); }}
+                    />
+                )}
+
+                <MenuItem
+                    icon={<Unplug className="w-3.5 h-3.5" />}
+                    label={targetType === 'POP' ? t('connect_to_pop') : t('connect_to_box')}
+                    iconColor="text-amber-500 dark:text-amber-400"
+                    onClick={() => { if (onConnect) onConnect(); onClose(); }}
+                />
+            </div>
+
+            {/* Danger Zone */}
+            <div className="border-t border-slate-100 dark:border-slate-700/30">
+                {showDeleteConfirm ? (
+                    <div className="p-2 space-y-2 animate-in fade-in duration-150 bg-red-50 dark:bg-red-950/20">
+                        <div className="flex items-center gap-2 px-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                            <span className="text-[11px] font-bold text-red-600 dark:text-red-400">
+                                {t('confirm_delete')}
+                            </span>
+                        </div>
+                        <div className="flex gap-1.5">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
+                                className="flex-1 py-1.5 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600/40 hover:bg-slate-50 dark:hover:bg-slate-600/30 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors"
+                            >
+                                <X className="w-3 h-3" />
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); if (onDelete) onDelete(); onClose(); }}
+                                className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
+                            >
+                                <Check className="w-3 h-3" />
+                                {t('confirm')}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowDeleteConfirm(false);
-                            }}
-                            className="flex-1 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors"
-                        >
-                            <X className="w-3 h-3" />
-                            {t('cancel')}
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onDelete) onDelete();
-                                onClose();
-                            }}
-                            className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
-                        >
-                            <Check className="w-3 h-3" />
-                            {t('confirm')}
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDeleteConfirm(true);
-                    }}
-                    className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors group border-t border-slate-100 dark:border-slate-700/50"
-                >
-                    <div className="p-1.5 bg-red-50 dark:bg-red-900/30 rounded-md group-hover:bg-red-100 dark:group-hover:bg-red-900/50 transition-colors">
-                        <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    </div>
-                    <span className="text-sm font-medium">{t('delete')}</span>
-                </button>
-            )}
+                ) : (
+                    <MenuItem
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                        label={t('delete')}
+                        iconColor="text-red-500 dark:text-red-400"
+                        danger
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
+                    />
+                )}
+            </div>
         </div>
     );
 };
+
+const MenuItem: React.FC<{
+    icon: React.ReactNode;
+    label: string;
+    iconColor: string;
+    danger?: boolean;
+    onClick: (e: React.MouseEvent) => void;
+}> = ({ icon, label, iconColor, danger, onClick }) => (
+    <button
+        onClick={(e) => { e.stopPropagation(); onClick(e); }}
+        className={`w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors text-[13px] font-medium
+            ${danger
+                ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+    >
+        <span className={iconColor}>{icon}</span>
+        <span>{label}</span>
+    </button>
+);

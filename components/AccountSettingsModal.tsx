@@ -64,10 +64,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+            <div className="bg-white dark:bg-[#151820] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700/30">
 
                 {/* Header */}
-                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50 dark:bg-[#1a1d23]/50">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <User className="w-5 h-5 text-emerald-500" />
                         Minha Conta
@@ -81,7 +81,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-slate-100 dark:border-slate-800 px-6 pt-2 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex border-b border-slate-100 dark:border-slate-700/30 px-6 pt-2 bg-slate-50 dark:bg-[#1a1d23]/50">
                     <button
                         onClick={() => setActiveTab('details')}
                         className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -103,7 +103,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                         <>
                             {/* User Info Block */}
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-600 dark:text-slate-300">
+                                <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-[#22262e] flex items-center justify-center text-xl font-bold text-slate-600 dark:text-slate-300">
                                     {userData.username.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
@@ -114,7 +114,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
                             {/* Details List */}
                             <div className="space-y-4">
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-700/30">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Plano Atual</span>
                                     <span className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                         {isFree ? <span className="text-slate-500">Grátis</span> : <span className="text-emerald-500">{userData.plan}</span>}
@@ -122,7 +122,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                 </div>
 
 
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-700/30">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Vencimento / Renovação</span>
                                     <span className="font-bold text-slate-900 dark:text-white">
                                         {userData.expiresAt
@@ -136,7 +136,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     <span>Manual</span>
                                 </div>
 
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-700/30">
                                     <span className="text-slate-500 dark:text-slate-400 font-medium">Status</span>
                                     <span className={`font-bold px-2 py-1 rounded-full text-xs ${userData.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : isTrial ? 'bg-amber-100 text-amber-700' : isFree ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                         {userData.status === 'CANCELLED' ? 'Cancelado' : isTrial ? 'Período de Teste' : isFree ? 'Gratuito' : 'Ativo'}
@@ -148,7 +148,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             <div className="pt-6 space-y-3">
                                 <button
                                     onClick={onManagePlan}
-                                    className="w-full py-3 px-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group"
+                                    className="w-full py-3 px-4 bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group"
                                 >
                                     <CreditCard className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                                     {t('upgrade_plan') || 'Fazer Upgrade / Trocar Plano'}
@@ -191,7 +191,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                     <span>Carregando histórico...</span>
                                 </div>
                             ) : invoices.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-10 px-4 text-center bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                                <div className="flex flex-col items-center justify-center py-10 px-4 text-center bg-slate-50 dark:bg-[#1a1d23]/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700/30">
                                     <Receipt className="w-10 h-10 text-slate-300 mb-3" />
                                     <h4 className="text-sm font-bold text-slate-600 dark:text-slate-300">Nenhuma fatura encontrada</h4>
                                     <p className="text-xs text-slate-400 mt-1">Seu histórico de pagamentos aparecerá aqui.</p>
@@ -230,7 +230,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                         const hasReference = inv.referenceStart && inv.referenceEnd;
 
                                         return (
-                                        <div key={inv.id} className={`p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isOverdue ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
+                                        <div key={inv.id} className={`p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isOverdue ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800' : 'bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30'}`}>
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-bold text-slate-900 dark:text-white text-sm">{inv.planName}</span>
@@ -291,7 +291,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             )}
 
                             {selectedInvoiceForPix && (
-                                <div className="mt-6 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-slate-800 animate-in slide-in-from-bottom-2">
+                                <div className="mt-6 p-6 bg-slate-50 dark:bg-[#1a1d23] rounded-2xl border border-emerald-100 dark:border-slate-700/30 animate-in slide-in-from-bottom-2">
                                     <div className="flex justify-between items-start mb-4">
                                         <h4 className="font-bold text-slate-900 dark:text-white">Pagamento Pix Pendente</h4>
                                         <button onClick={() => setSelectedInvoiceForPix(null)} className="text-slate-400 hover:text-slate-600">
@@ -307,7 +307,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                                                 type="text"
                                                 readOnly
                                                 value={selectedInvoiceForPix.qrCode}
-                                                className="flex-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-500 truncate"
+                                                className="flex-1 px-3 py-2 bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs font-mono text-slate-500 truncate"
                                             />
                                             <button
                                                 onClick={() => handleCopyPix(selectedInvoiceForPix.qrCode)}

@@ -29,7 +29,26 @@
       "Bash(taskkill //F //IM node.exe)",
       "Bash(node -e \":*)",
       "Bash(find /d/ftthplanner -type f -name *admin* -o -name *saas*)",
-      "Bash(grep -n \"activeView === ''companies''\" /d/ftthplanner/components/admin/SaasAdminPage.tsx)"
+      "Bash(grep -n \"activeView === ''companies''\" /d/ftthplanner/components/admin/SaasAdminPage.tsx)",
+      "Bash(find /d/ftthplanner -type f \\\\\\(-name *api* -o -name *route* -o -name *server* \\\\\\) \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "WebFetch(domain:www.postman.com)",
+      "WebFetch(domain:documenter.getpostman.com)",
+      "Bash(grep -r \"alert\\\\|Alert\\\\|success\\\\|error\" /d/ftthplanner/components/*.tsx)",
+      "Bash(grep -r \"add\\\\|Add\\\\|edit\\\\|Edit\\\\|delete\\\\|Delete\\\\|create\\\\|Create\" /d/ftthplanner/components/*.tsx)",
+      "Bash(grep -l \"add\\\\|Add\\\\|create\\\\|Create\\\\|delete\\\\|Delete\\\\|save\\\\|Save\" /d/ftthplanner/components/registrations/*.tsx)",
+      "Bash(wc -l /d/ftthplanner/components/registrations/*.tsx)",
+      "Bash(grep -l \"add\\\\|Add\\\\|edit\\\\|Edit\\\\|delete\\\\|Delete\" /d/ftthplanner/components/modals/*.tsx)",
+      "Bash(grep -n \"showToast\\\\|onSuccess\\\\|onSave\\\\|onDelete\\\\|handleSave\\\\|handleDelete\" /d/ftthplanner/components/pop-editor/modals/*.tsx)",
+      "Bash(grep -n \"return \\(\" d:/ftthplanner/components/registrations/*.tsx)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//d/ftthplanner/**)",
+      "Bash(done)",
+      "Bash(do)",
+      "Bash(sed -i 's/dark:bg-slate-950/dark:bg-[#151820]/g; s/dark:bg-slate-900/dark:bg-[#1a1d23]/g; s/dark:bg-slate-800/dark:bg-[#22262e]/g; s/dark:border-slate-800/dark:border-slate-700\\\\/30/g' \"$f\")",
+      "Bash(echo \"Updated $f\")",
+      "Bash(while read:*)",
+      "Bash(do sed:*)"
     ]
   }
 }

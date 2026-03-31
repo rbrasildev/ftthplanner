@@ -40,9 +40,9 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
 
     return (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-950 w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-white dark:bg-[#151820] w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700/30 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#1a1d23]/50">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                             <FileText className="w-6 h-6" />
@@ -115,10 +115,10 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                         </div>
 
                         {report.cableStats.length > 0 ? (
-                            <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <div className="overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700/30 shadow-sm">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="bg-slate-50 dark:bg-slate-900/50">
+                                        <tr className="bg-slate-50 dark:bg-[#1a1d23]/50">
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('report_cable_type')}</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">{t('report_qty')}</th>
                                             <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">{t('report_total_meters')}</th>
@@ -142,7 +142,7 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                                 </table>
                             </div>
                         ) : (
-                            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-6 text-center">
+                            <div className="bg-slate-50 dark:bg-[#1a1d23]/30 rounded-2xl p-6 text-center">
                                 <p className="text-sm text-slate-500">{t('report_no_data')}</p>
                             </div>
                         )}
@@ -158,7 +158,7 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                 </div>
 
                 {/* Footer Actions */}
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-5 py-2 text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -197,7 +197,7 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string
 };
 
 const ReportRow: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 rounded-2xl">
+    <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-[#1a1d23]/30 border border-slate-100 dark:border-slate-700/30 rounded-2xl">
         <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">{label}</span>
         <span className="text-lg font-black text-slate-900 dark:text-white">{value}</span>
     </div>

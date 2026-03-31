@@ -72,7 +72,7 @@ const DraggableModal: React.FC<{
     return (
         <div
             ref={modalRef}
-            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
             style={{ 
                 transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`, 
                 width: 320,
@@ -82,7 +82,7 @@ const DraggableModal: React.FC<{
             onMouseDown={(e) => e.stopPropagation()}
         >
             <div
-                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-t-xl"
+                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#22262e]/50 rounded-t-xl"
                 onMouseDown={handleMouseDown}
             >
                 <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold">
@@ -183,11 +183,11 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                 <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded border border-slate-200 dark:border-slate-700 opacity-70">
+                                <div className="bg-slate-50 dark:bg-[#22262e]/50 p-2 rounded border border-slate-200 dark:border-slate-700 opacity-70">
                                     <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">{t('total_slots')}</span>
                                     <span className="text-slate-700 dark:text-white font-mono text-lg font-bold block">{editingOLT.structure?.slots || 1}</span>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded border border-slate-200 dark:border-slate-700 opacity-70">
+                                <div className="bg-slate-50 dark:bg-[#22262e]/50 p-2 rounded border border-slate-200 dark:border-slate-700 opacity-70">
                                     <span className="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">
                                         {editingOLT.type === 'OLT' ? t('olt_ports') : t('active_ports')}
                                     </span>
@@ -200,7 +200,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                         </div>
 
                         {(editingOLT.type === 'OLT' || !editingOLT.type) && (
-                            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
+                            <div className="space-y-3 bg-slate-50 dark:bg-[#22262e]/30 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
                                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                                     <Settings2 className="w-3.5 h-3.5" /> {t('manage_slots')}
                                 </label>
@@ -213,19 +213,19 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                             setEditingOLT({ ...editingOLT, structure: { ...editingOLT.structure, slotsConfig: newSlotsConfig } as any });
                                         };
                                         return (
-                                            <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
+                                            <div key={idx} className="flex items-center gap-2 bg-white dark:bg-[#22262e] p-2 rounded border border-slate-200 dark:border-slate-700">
                                                 <input
                                                     type="text"
                                                     maxLength={6}
                                                     value={slotConfig.name || ''}
                                                     placeholder={`S${idx + 1}`}
                                                     onChange={e => updateSlotConfig({ name: e.target.value || undefined })}
-                                                    className="w-14 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 py-1 outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    className="w-14 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a1d23] text-slate-700 dark:text-slate-300 py-1 outline-none focus:ring-1 focus:ring-indigo-500"
                                                     title={t('slot_names') || 'Nome do Slot'}
                                                 />
                                                 <div className="flex items-center gap-2 ml-auto">
                                                     <select
-                                                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
+                                                        className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
                                                         value={slotConfig.active ? 'active' : 'empty'}
                                                         onChange={e => updateSlotConfig({ active: e.target.value === 'active' })}
                                                     >
@@ -234,7 +234,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                                     </select>
                                                     {slotConfig.active && (
                                                         <select
-                                                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
+                                                            className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-700 dark:text-white p-1 focus:outline-none focus:border-emerald-500"
                                                             value={slotConfig.portCount}
                                                             onChange={e => updateSlotConfig({ portCount: parseInt(e.target.value) })}
                                                         >

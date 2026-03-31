@@ -495,7 +495,7 @@ export default function App() {
 
     const showToast = (msg: string, type: 'success' | 'info' | 'error' = 'success') => {
         setToast({ msg, type });
-        setTimeout(() => setToast(null), 3000);
+        setTimeout(() => setToast(null), 4000);
     };
 
     const handleEndSupport = async () => {
@@ -1498,7 +1498,7 @@ export default function App() {
 
     return (
 
-        <div className="flex h-screen w-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+        <div className="flex h-screen w-screen bg-slate-50 dark:bg-[#151820] overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             <Helmet>
                 <title>{saasConfig?.appName || t('app_title')}</title>
                 <link rel="icon" href={saasConfig?.faviconUrl || saasConfig?.appLogoUrl || "/logo.png"} type="image/png" />
@@ -1507,10 +1507,18 @@ export default function App() {
             <ConnectionStatus />
             
             {toast && (
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-5">
-                    <div className={`px-4 py-2 rounded-lg shadow-lg border flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/90 border-emerald-500 text-emerald-800 dark:text-white' : toast.type === 'error' ? 'bg-red-100 dark:bg-red-900/90 border-red-500 text-red-800 dark:text-white' : 'bg-sky-100 dark:bg-sky-900/90 border-sky-500 text-sky-800 dark:text-white'} `}>
-                        <CheckCircle2 className="w-4 h-4" /> <span className="text-sm font-medium">{toast.msg}</span>
-                    </div>
+                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
+                    toast.type === 'success' ? 'bg-emerald-600 text-white' :
+                    toast.type === 'error' ? 'bg-red-600 text-white' :
+                    'bg-sky-600 text-white'
+                }`}>
+                    {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                    {toast.type === 'error' && <AlertTriangle className="w-4 h-4 shrink-0" />}
+                    {toast.type === 'info' && <Zap className="w-4 h-4 shrink-0" />}
+                    {toast.msg}
+                    <button onClick={() => setToast(null)} className="ml-2 p-0.5 rounded hover:bg-white/20 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             )}
 
@@ -1560,7 +1568,7 @@ export default function App() {
             })()}
 
             {/* Mobile TopBar */}
-            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-[40] flex items-center justify-between px-4">
+            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-[#151820]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/30 z-[40] flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="w-7 h-7" />
                     <span className="font-bold text-sm tracking-tight">{saasConfig?.appName || t('app_title')}</span>
@@ -1683,12 +1691,12 @@ export default function App() {
                     />
                 </main>
             ) : currentProjectId && !currentProject ? (
-                <main className="flex-1 relative flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white gap-4 transition-colors">
+                <main className="flex-1 relative flex flex-col items-center justify-center bg-slate-100 dark:bg-[#151820] text-slate-900 dark:text-white gap-4 transition-colors">
                     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
                     <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
                 </main>
             ) : (
-                <main className="flex-1 relative bg-slate-100 dark:bg-slate-900">
+                <main className="flex-1 relative bg-slate-100 dark:bg-[#1a1d23]">
                     {/* Map Toolbar (Floating Center) */}
                     <div className={`absolute ${isSupportMode ? 'top-20 lg:top-20' : 'top-20 lg:top-4'} left-1/2 -translate-x-1/2 z-[1000] pointer-events-none`}>
                         <div className="pointer-events-auto w-fit">
@@ -1712,7 +1720,7 @@ export default function App() {
 
                     {/* Move Mode Floating Controls */}
                     {toolMode === 'move_node' && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-slate-800 p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white dark:bg-[#22262e] p-2 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                             <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-2 flex items-center gap-2">
                                 <Move className="w-4 h-4 text-sky-500" />
                                 {t('moving_node')}
@@ -1878,7 +1886,7 @@ export default function App() {
                             <Button
                                 variant="secondary"
                                 onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
-                                className="bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full px-6 py-6 shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700"
+                                className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur rounded-full px-6 py-6 shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700"
                             >
                                 <X className="w-5 h-5" />
                                 {t('cancel')}
@@ -2087,10 +2095,10 @@ export default function App() {
             {showSettingsModal && (
                 <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
                     <div
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
+                        className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="h-12 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between">
+                        <div className="h-12 bg-slate-50 dark:bg-[#22262e] border-b border-slate-200 dark:border-slate-700 px-4 flex items-center justify-between">
                             <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <Settings className="w-4 h-4" /> {t('system_settings')}
                             </h3>
@@ -2120,7 +2128,7 @@ export default function App() {
                                             if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
                                             settingsTimeoutRef.current = setTimeout(() => setSettingsSaved(false), 2000);
                                         }}
-                                        className="w-24 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+                                        className="w-24 bg-slate-100 dark:bg-[#22262e] border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
                                     />
                                     <span className="text-sm text-slate-500">{t('meters')}</span>
                                     {settingsSaved && (
@@ -2132,7 +2140,7 @@ export default function App() {
                                 <p className="text-xs text-slate-500 mt-2">{t('snap_distance_help')}</p>
                             </div>
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                        <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
                             <Button
                                 variant="emerald"
                                 onClick={() => {

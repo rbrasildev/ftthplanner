@@ -79,13 +79,13 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-50 w-full max-w-[500px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden"
+      className="fixed z-50 w-full max-w-[500px] max-h-[85vh] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       {/* Header - Draggable Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
+        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <FolderOpen className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
@@ -114,7 +114,7 @@ export const ProjectManager: React.FC<ProjectManagerProps> = ({
                 className={`group flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer
                   ${isActive
                     ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 dark:border-emerald-600 shadow-md ring-1 ring-emerald-500/20'
-                    : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-sm'}`}
+                    : 'bg-white dark:bg-[#22262e]/40 border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-sm'}`}
               >
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />

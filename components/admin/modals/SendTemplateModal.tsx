@@ -76,9 +76,9 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-[#1a1d23] w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-center bg-slate-50 dark:bg-[#1a1d23]/50">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
                             <Send className="w-5 h-5" />
@@ -102,7 +102,7 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                                 onClick={() => { setTargetType('ALL'); setTargetId(''); }}
                                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${targetType === 'ALL'
                                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                                    : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                                    : 'border-slate-100 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-700'}`}
                             >
                                 <Users className="w-6 h-6" />
                                 <span className="text-xs font-bold">Todos</span>
@@ -111,7 +111,7 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                                 onClick={() => { setTargetType('COMPANY'); setTargetId(''); }}
                                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${targetType === 'COMPANY'
                                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                                    : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                                    : 'border-slate-100 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-700'}`}
                             >
                                 <Building2 className="w-6 h-6" />
                                 <span className="text-xs font-bold">Empresa</span>
@@ -120,7 +120,7 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                                 onClick={() => { setTargetType('USER'); setTargetId(''); }}
                                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${targetType === 'USER'
                                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                                    : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
+                                    : 'border-slate-100 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-700'}`}
                             >
                                 <User className="w-6 h-6" />
                                 <span className="text-xs font-bold">Usuário</span>
@@ -142,11 +142,11 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                                     placeholder={`Buscar ${targetType === 'COMPANY' ? 'empresa' : 'usuário'}...`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                                 />
                             </div>
 
-                            <div className="max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-xl divide-y divide-slate-50 dark:divide-slate-800">
+                            <div className="max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-700/30 rounded-xl divide-y divide-slate-50 dark:divide-slate-800">
                                 {loading ? (
                                     <div className="p-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin" /> Carregando...
@@ -193,7 +193,7 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                <div className="px-6 py-4 bg-slate-50 dark:bg-[#1a1d23]/50 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"

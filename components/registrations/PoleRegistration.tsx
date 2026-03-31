@@ -5,7 +5,11 @@ import { PoleCatalogItem, getPoles, createPole, updatePole, deletePole } from '.
 import { Search, Plus, Edit2, Trash2, X, Save, AlertTriangle, Loader2, Zap } from 'lucide-react';
 import { CustomSelect, CustomInput } from '../common';
 
-export const PoleRegistration: React.FC = () => {
+interface PoleRegistrationProps {
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
     const [poles, setPoles] = useState<PoleCatalogItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,9 +55,10 @@ export const PoleRegistration: React.FC = () => {
             setIsModalOpen(false);
             setEditingPole(null);
             setFormData({ type: 'Concreto', shape: 'Circular', height: 10, strength: 600 });
+            if (showToast) showToast(editingPole ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
         } catch (error) {
             console.error(error);
-            alert(t('error_save') || 'Failed to save pole');
+            if (showToast) showToast(t('error_save') || 'Falha ao salvar poste', 'error');
         } finally {
             setSaving(false);
         }
@@ -64,9 +69,10 @@ export const PoleRegistration: React.FC = () => {
             await deletePole(id);
             setPoles(prev => prev.filter(p => p.id !== id));
             setShowDeleteConfirm(null);
+            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
         } catch (error) {
             console.error(error);
-            alert(t('error_delete') || 'Failed to delete');
+            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
         }
     };
 
@@ -108,9 +114,9 @@ export const PoleRegistration: React.FC = () => {
             </div>
 
             {/* List Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -118,7 +124,7 @@ export const PoleRegistration: React.FC = () => {
                             placeholder={t('search_placeholder_box') || 'Buscar...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -133,7 +139,7 @@ export const PoleRegistration: React.FC = () => {
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('name')}</th>
                                 <th className="px-6 py-4">{t('splitter_type')}</th>
@@ -184,7 +190,7 @@ export const PoleRegistration: React.FC = () => {
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
@@ -209,8 +215,8 @@ export const PoleRegistration: React.FC = () => {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 {editingPole ? (t('edit_pole') || 'Editar Poste') : (t('new_pole') || 'Novo Poste')}
                             </h2>
@@ -298,7 +304,7 @@ export const PoleRegistration: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-sm transition"
+                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-sm transition"
                                 >
                                     {t('cancel')}
                                 </button>

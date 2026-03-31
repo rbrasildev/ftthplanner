@@ -9,7 +9,11 @@ import { CustomSelect, CustomInput } from '../common';
 
 const SPEC_COLORS = ['#10b981', '#86efac', '#3b82f6', '#93c5fd', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5', '#8b5cf6', '#c4b5fd', '#ec4899', '#f9a8d4', '#6b7280', '#d1d5db'];
 
-const CableRegistration: React.FC = () => {
+interface CableRegistrationProps {
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
     const [cables, setCables] = useState<CableCatalogItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -72,7 +76,10 @@ const CableRegistration: React.FC = () => {
 
     const handleSave = async () => {
         try {
-            if (!formData.name) return alert(t('name_required'));
+            if (!formData.name) {
+                if (showToast) showToast(t('name_required') || 'Nome é obrigatório', 'error');
+                return;
+            }
 
             if (editingCable) {
                 await updateCable(editingCable.id, formData);
@@ -81,9 +88,10 @@ const CableRegistration: React.FC = () => {
             }
             loadCables();
             setIsModalOpen(false);
+            if (showToast) showToast(editingCable ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
         } catch (error) {
             console.error("Failed to save cable", error);
-            alert(t('error_save_cable'));
+            if (showToast) showToast(t('error_save_cable') || 'Falha ao salvar cabo', 'error');
         }
     };
 
@@ -92,8 +100,10 @@ const CableRegistration: React.FC = () => {
             await deleteCable(id);
             loadCables();
             setShowDeleteConfirm(null);
+            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
         } catch (error) {
             console.error("Failed to delete cable", error);
+            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
         }
     };
 
@@ -124,9 +134,9 @@ const CableRegistration: React.FC = () => {
             </div>
 
             {/* List Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -134,7 +144,7 @@ const CableRegistration: React.FC = () => {
                             placeholder={t('search_placeholder_cable')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -145,7 +155,7 @@ const CableRegistration: React.FC = () => {
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('name')}</th>
                                 <th className="px-6 py-4">{t('brand')}</th>
@@ -198,7 +208,7 @@ const CableRegistration: React.FC = () => {
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
@@ -223,8 +233,8 @@ const CableRegistration: React.FC = () => {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50 sticky top-0 z-10 backdrop-blur-md">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700/30">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-center bg-slate-50/50 dark:bg-[#22262e]/50 sticky top-0 z-10 backdrop-blur-md">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingCable ? t('edit_cable') : t('new_cable')}
                             </h2>
@@ -277,7 +287,7 @@ const CableRegistration: React.FC = () => {
                             </div>
 
                             {/* Tech Specs */}
-                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 rounded-xl border border-slate-100 dark:border-slate-700">
                                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">{t('specifications')}</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div>
@@ -360,7 +370,7 @@ const CableRegistration: React.FC = () => {
                             {/* Visual Representation */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Deployed Specs */}
-                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#22262e]/50">
                                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Implantado</h4>
                                     <div className="flex gap-4 items-center">
                                         <div className="flex-1">
@@ -386,7 +396,7 @@ const CableRegistration: React.FC = () => {
                                             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Espessura</label>
                                             <input
                                                 type="number"
-                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-center"
+                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white text-center"
                                                 value={formData.deployedSpec?.width}
                                                 onChange={e => setFormData({ ...formData, deployedSpec: { ...formData.deployedSpec!, width: Number(e.target.value) } })}
                                             />
@@ -395,7 +405,7 @@ const CableRegistration: React.FC = () => {
                                 </div>
 
                                 {/* Planned Specs */}
-                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#22262e]/50">
                                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Planejado</h4>
                                     <div className="flex gap-4 items-center">
                                         <div className="flex-1">
@@ -421,7 +431,7 @@ const CableRegistration: React.FC = () => {
                                             <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Espessura</label>
                                             <input
                                                 type="number"
-                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-center"
+                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white text-center"
                                                 value={formData.plannedSpec?.width}
                                                 onChange={e => setFormData({ ...formData, plannedSpec: { ...formData.plannedSpec!, width: Number(e.target.value) } })}
                                             />
@@ -432,7 +442,7 @@ const CableRegistration: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/80 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm">
+                        <div className="p-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3 bg-slate-50 dark:bg-[#22262e]/80 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm">
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"

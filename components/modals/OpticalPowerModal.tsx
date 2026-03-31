@@ -35,10 +35,10 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
 
     return (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
 
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/20">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-start bg-slate-50/50 dark:bg-[#22262e]/20">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <Activity className="w-6 h-6 text-emerald-500" />
@@ -81,7 +81,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
 
                     {/* Metadata Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 rounded-xl border border-slate-100 dark:border-slate-700">
                             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">{t('origin_olt')}</div>
                             <div className="text-slate-900 dark:text-white font-semibold flex items-center gap-2">
                                 <Network className="w-4 h-4 text-emerald-500" />
@@ -96,7 +96,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                                 <div className="text-xs text-slate-500 mt-1">{t('output_power_short')}: <strong>{result.oltPower} dBm</strong></div>
                             )}
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 rounded-xl border border-slate-100 dark:border-slate-700">
                             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold mb-1">{t('total_loss')}</div>
                             <div className="text-slate-900 dark:text-white font-semibold flex items-center gap-2">
                                 <ArrowDown className="w-4 h-4 text-rose-500" />
@@ -108,7 +108,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
 
                     {/* Path Table */}
                     <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-2">{t('path_details')}</h3>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wide border-b border-slate-100 dark:border-slate-700/30 pb-2">{t('path_details')}</h3>
                         <div className="relative">
                             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700 z-0"></div>
                             <div className="space-y-6 relative z-10">
@@ -123,7 +123,7 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                                         `}>
                                             {idx + 1}
                                         </div>
-                                        <div className="flex-1 bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
+                                        <div className="flex-1 bg-white dark:bg-[#22262e] p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">{item.name}</div>

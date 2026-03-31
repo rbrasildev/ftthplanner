@@ -3120,7 +3120,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'w-[1100px] h-auto rounded-xl' : 'w-[1100px] h-[750px] rounded-xl'} bg-white dark:bg-slate-900 border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'w-[1100px] h-auto rounded-xl' : 'w-[1100px] h-[750px] rounded-xl'} bg-white dark:bg-[#1a1d23] border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
             >
 
                 <CTOEditorToolbar
@@ -3159,14 +3159,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-[#E6E6E6] dark:bg-slate-900 relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-[#1a1d23] relative overflow-hidden"
                     style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                 >
                     {/* LOADING OVERLAY - Masks initial layout calculation */}
                     {!isContentReady && (
-                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-bl-xl">
+                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-[#1a1d23] border-2 border-slate-300 dark:border-slate-600 rounded-bl-xl">
                             <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-3" />
                             <p className="text-slate-600 dark:text-slate-400 font-medium text-sm animate-pulse">{t('loading_diagram') || 'Carregando diagrama...'}</p>
                         </div>
@@ -3225,7 +3225,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     {/* Bottom Right Floating Controls */}
                     <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3 pointer-events-auto">
                         {/* Navigation Panel (Zoom & Center) */}
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
+                        <div className="bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl p-1.5 flex flex-col gap-2">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -3488,14 +3488,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
-                <div className={`h-16 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
+                <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
                     <div className="flex items-center gap-8">
                         {/* Model Select */}
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('model') || 'Modelo'}</span>
                             <div className="w-48">
                                 {isCatalogLoading ? (
-                                    <div className="h-10 w-full bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl border border-slate-300 dark:border-slate-700" />
+                                    <div className="h-10 w-full bg-slate-200 dark:bg-[#22262e] animate-pulse rounded-xl border border-slate-300 dark:border-slate-700" />
                                 ) : (
                                     <CustomSelect
                                         value={localCTO.catalogId || ''}
@@ -3537,7 +3537,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     }}
                                     className="flex items-center gap-2 group cursor-pointer transition-all"
                                 >
-                                    <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
+                                    <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
                                         <div
                                             className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
                                             style={{ backgroundColor: status.color }}
@@ -3580,7 +3580,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* CONFIRM UNSAVED CHANGES MODAL */}
                 {showCloseConfirm && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
                             <div className="flex items-start gap-4 mb-4">
                                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shrink-0 border border-amber-300 dark:border-amber-500/30">
                                     <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-500" />
@@ -3626,7 +3626,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* FUSION TYPE SELECTION MODAL */}
                 {showFusionTypeModal && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
+                        <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
                             <div className="flex items-center justify-between mb-2 px-2">
                                 <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                     {t('select_fusion_type')}
@@ -3667,7 +3667,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* SPLITTER SELECTION MODAL */}
                 {showSplitterDropdown && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-auto">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-100 dark:border-slate-700/30 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                             <div className="flex items-center justify-between mb-2 px-2">
                                 <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                     {t('select_splitter')}
@@ -3680,7 +3680,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 </button>
                             </div>
 
-                            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-3 gap-1">
+                            <div className="flex bg-slate-100 dark:bg-[#22262e] p-1 rounded-xl mb-3 gap-1">
                                 <button
                                     onClick={() => setSplitterFilter('all')}
                                     className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${splitterFilter === 'all' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -3741,7 +3741,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* AUTO SPLICE MODAL */}
                 {isAutoSpliceOpen && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsAutoSpliceOpen(false)}>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-96 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-96 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <ArrowRightLeft className="w-5 h-5 text-white" />
@@ -3804,7 +3804,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* OTDR INPUT MODAL */}
                 {otdrTargetPort && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setOtdrTargetPort(null)}>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <Ruler className="w-5 h-5 text-white" />
@@ -3866,7 +3866,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* CONFIRM CABLE REMOVAL MODAL */}
                 {cableToRemove && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
                             <div className="flex items-start gap-4 mb-4">
                                 <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0 border border-red-300 dark:border-red-500/30">
                                     <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
@@ -3914,7 +3914,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {contextMenu && (
                     <div
                         ref={contextMenuRef}
-                        className="fixed z-[9999] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 w-48 animate-in fade-in zoom-in-95 duration-100"
+                        className="fixed z-[9999] bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 w-48 animate-in fade-in zoom-in-95 duration-100"
                         style={{ top: contextMenu.y, left: contextMenu.x }}
                         onClick={(e) => e.stopPropagation()}
                     >

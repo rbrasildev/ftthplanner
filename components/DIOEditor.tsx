@@ -106,10 +106,10 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
             className="fixed inset-0 z-[2200] bg-black flex items-center justify-center select-none"
             onContextMenu={(e) => e.preventDefault()}
         >
-            <div className="w-full h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden relative">
+            <div className="w-full h-full bg-white dark:bg-[#151820] flex flex-col overflow-hidden relative">
 
                 {/* Toolbar */}
-                <div className="h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 shrink-0 z-50 shadow-sm">
+                <div className="h-12 bg-white dark:bg-[#1a1d23] border-b border-slate-200 dark:border-slate-700/30 flex items-center justify-between px-4 shrink-0 z-50 shadow-sm">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
                         <div className="flex items-center gap-2 pr-3 border-r border-slate-200 dark:border-slate-700">
                             <div className="p-1.5 rounded-lg bg-orange-600 text-white">
@@ -128,11 +128,11 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         {onUpdateDio && (
                             <button
                                 onClick={() => setIsLinkModalOpen(true)}
-                                className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600/10 hover:border-emerald-500/50 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all select-none"
+                                className="px-3 py-1 bg-slate-100 dark:bg-[#22262e] hover:bg-emerald-600/10 hover:border-emerald-500/50 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all select-none"
                             >
                                 <Link2 className="w-3.5 h-3.5" />
                                 {t('link_cables')}
-                                <span className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded text-[10px] text-slate-500">{relevantCables.length}</span>
+                                <span className="bg-white dark:bg-[#1a1d23] px-1.5 py-0.5 rounded text-[10px] text-slate-500">{relevantCables.length}</span>
                             </button>
                         )}
 
@@ -145,7 +145,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
                                     ${isOtdrToolActive
                                         ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
-                                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
+                                        : 'bg-slate-100 dark:bg-[#22262e] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
                                 `}
                                 title={t('tooltip_otdr')}
                             >
@@ -163,7 +163,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border select-none
                                     ${isVflToolActive
                                         ? 'bg-red-600 border-red-500 text-white shadow-sm'
-                                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
+                                        : 'bg-slate-100 dark:bg-[#22262e] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'}
                                 `}
                                 title={t('tooltip_vfl')}
                             >
@@ -190,7 +190,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                 </div>
 
                 {/* Splicing View */}
-                <div className="flex-1 bg-white dark:bg-slate-950 relative overflow-hidden">
+                <div className="flex-1 bg-white dark:bg-[#151820] relative overflow-hidden">
                     <LogicalSplicingView
                         dio={dio}
                         localPOP={pop}
@@ -209,8 +209,8 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
                 {isLinkModalOpen && (
                     <div className="absolute inset-0 z-[2400] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setIsLinkModalOpen(false)}>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="h-12 bg-slate-50 dark:bg-slate-800/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="h-12 bg-slate-50 dark:bg-[#22262e]/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
                                 <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2 text-sm">
                                     <div className="p-1 rounded bg-emerald-600 text-white">
                                         <Link2 className="w-3.5 h-3.5" />
@@ -219,7 +219,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                 </h3>
                                 <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"><X className="w-5 h-5" /></button>
                             </div>
-                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-white dark:bg-slate-950">
+                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-white dark:bg-[#151820]">
                                 {incomingCables.length === 0 && (
                                     <div className="text-center p-8 text-slate-500">
                                         <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -238,7 +238,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                             className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left
                                                 ${isLinked
                                                     ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-500 text-emerald-900 dark:text-white'
-                                                    : (assignedToWho ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400')}
+                                                    : (assignedToWho ? 'bg-slate-50 dark:bg-[#1a1d23] border-slate-100 dark:border-slate-700/30 text-slate-400 cursor-not-allowed' : 'bg-slate-50 dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400')}
                                             `}
                                         >
                                             <div className="flex-1">
@@ -261,7 +261,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                 {/* OTDR INPUT MODAL */}
                 {otdrTargetPort && (
                     <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }}>
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-lg p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                                     <Ruler className="w-5 h-5 text-white" />
@@ -284,7 +284,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                             </div>
 
                             <div className="flex gap-2">
-                                <button onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
+                                <button onClick={() => { setOtdrTargetPort(null); setIsOtdrToolActive(false); }} className="flex-1 py-2 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
                                 <button onClick={handleOtdrSubmit} className="flex-1 py-2 bg-indigo-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition">{t('otdr_locate')}</button>
                             </div>
                         </div>

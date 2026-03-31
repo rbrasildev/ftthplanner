@@ -99,13 +99,13 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
                 </div>
             )}
             
-            <div className="space-y-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="space-y-4 bg-white dark:bg-[#1a1d23] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                    <CreditCard className="w-5 h-5 text-slate-400" />
                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Dados do Cartão</h3>
                 </div>
                 
-                <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl relative">
+                <div className="p-3 sm:p-4 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl relative">
                    <CardElement options={CARD_ELEMENT_OPTIONS} className="w-full h-8" />
                 </div>
             </div>
@@ -423,7 +423,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         }
     };
 
-    const inputClasses = "w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all placeholder:text-slate-400";
+    const inputClasses = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all placeholder:text-slate-400";
     const labelClasses = "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 ml-1";
     const iconClasses = "absolute left-3.5 top-3.5 w-4.5 h-4.5 text-slate-400";
 
@@ -447,7 +447,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                             onClick={() => setPaymentTab('card')}
                             className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all ${paymentTab === 'card'
                                 ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold'
-                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 text-slate-500 dark:text-slate-400'
+                                : 'border-slate-100 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-700 text-slate-500 dark:text-slate-400'
                                 }`}
                         >
                             <CreditCard className="w-4 sm:w-5 h-4 sm:h-5" />
@@ -457,7 +457,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                             onClick={() => setPaymentTab('pix')}
                             className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all ${paymentTab === 'pix'
                                 ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold'
-                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 text-slate-500 dark:text-slate-400'
+                                : 'border-slate-100 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-700 text-slate-500 dark:text-slate-400'
                                 }`}
                         >
                             <Wallet className={`w-4 sm:w-5 h-4 sm:h-5 ${paymentTab === 'pix' ? 'text-emerald-500' : ''}`} />
@@ -480,7 +480,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                             )}
 
                             {pixData ? (
-                                <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-in zoom-in duration-300">
+                                <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm animate-in zoom-in duration-300">
                                     <div className="text-center mb-6">
                                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Pague com Pix</h3>
                                         <p className="text-sm text-slate-500 max-w-xs">
@@ -505,7 +505,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                                                 type="text"
                                                 readOnly
                                                 value={pixData.qr_code}
-                                                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-500 truncate outline-none select-all"
+                                                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs font-mono text-slate-500 truncate outline-none select-all"
                                                 onClick={(e) => (e.target as HTMLInputElement).select()}
                                             />
                                             <button
@@ -535,7 +535,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                                             O pagamento via Pix proporciona liberação imediata da sua assinatura. Precisamos apenas de alguns dados para gerar a cobrança.
                                         </p>
 
-                                        <div className="space-y-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                        <div className="space-y-4 bg-white dark:bg-[#1a1d23] p-4 rounded-xl border border-slate-100 dark:border-slate-700/30">
                                             <div>
                                                 <label className={labelClasses}>Nome Completo</label>
                                                 <div className="relative">
@@ -600,7 +600,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
 
                 {/* Coluna Direita: Resumo do Plano */}
                 <div className="w-full lg:w-[350px] order-2 lg:order-2">
-                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-slate-950 text-white p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl relative overflow-hidden border border-white/5">
+                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-[#151820] text-white p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl relative overflow-hidden border border-white/5">
 
                         <div className="relative z-10">
                             <div className="mb-6">

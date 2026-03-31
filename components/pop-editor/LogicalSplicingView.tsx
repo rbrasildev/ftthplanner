@@ -274,11 +274,11 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 draggable
                 onDragStart={(e) => handleDragStart(e, cable.id)}
                 onDragEnd={(e) => handleDragEnd(e, cable.id)}
-                className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4 group"
+                className="bg-white dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden mb-4 group"
             >
                 <button
                     onClick={(e) => toggleCable(cable.id, e)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/50 px-3 py-2 border-b border-slate-200 dark:border-slate-800 font-bold text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="w-full bg-slate-50 dark:bg-[#1a1d23]/50 px-3 py-2 border-b border-slate-200 dark:border-slate-700/30 font-bold text-sm text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                     <div className="flex items-center gap-2">
                         <GripVertical className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -312,7 +312,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                     >
                                         T{tubeIdx + 1}
                                     </div>
-                                    <div className="p-1.5 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1 bg-slate-50 dark:bg-slate-900/50">
+                                    <div className="p-1.5 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1 bg-slate-50 dark:bg-[#1a1d23]/50">
                                         {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
                                             const fiberIndex = startFiberIndex + fOffset;
                                             const fiberId = `${cable.id}-fiber-${fiberIndex}`;
@@ -342,7 +342,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                     }}
                                                     title={isConnected ? `DIO: ${targetPortNum}` : t('port_free')}
                                                 >
-                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-800 shadow-sm z-20" />}
+                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-700/30 shadow-sm z-20" />}
                                                     {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10" />}
                                                     <span className="relative z-[5]">{(fiberIndex % 12) + 1}</span>
                                                     {isConnected && !isSelected && (
@@ -365,17 +365,17 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
         const itemIds = columns[colId];
         return (
             <div
-                className="flex-1 min-w-[200px] border-r border-slate-200 dark:border-slate-800 flex flex-col"
+                className="flex-1 min-w-[200px] border-r border-slate-200 dark:border-slate-700/30 flex flex-col"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, colId)}
             >
-                <div className="px-3 py-2 bg-slate-200/50 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
+                <div className="px-3 py-2 bg-slate-200/50 dark:bg-[#22262e] border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
                     <span className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{title}</span>
                     <span className="bg-slate-300/50 dark:bg-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-600 dark:text-slate-400 shadow-sm border border-slate-300/50 dark:border-slate-600">{itemIds.length}</span>
                 </div>
                 <div className="flex-1 p-3 overflow-y-auto custom-scrollbar">
                     {itemIds.length === 0 ? (
-                        <div className="h-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-400 text-[10px] italic">
+                        <div className="h-20 border-2 border-dashed border-slate-200 dark:border-slate-700/30 rounded-xl flex items-center justify-center text-slate-400 text-[10px] italic">
                             {t('drop_here')}
                         </div>
                     ) : (
@@ -387,8 +387,8 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
     };
 
     return (
-        <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 flex flex-col pointer-events-auto">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
+        <div className="flex-1 w-full h-full bg-slate-50 dark:bg-[#1a1d23] flex flex-col pointer-events-auto">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#151820] shrink-0">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                     <Split className="text-orange-500 w-5 h-5" />
                     {t('splicing_matrix')}
@@ -454,12 +454,12 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                         <div className="mt-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-lg text-sm text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="opacity-70">{t('type_FUSION')}:</span>
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-slate-800 rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-[#22262e] rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
                                 <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{t('conn_fiber')}</span>
                                 <strong>{vCable?.name} (F:{fNum})</strong>
                             </div>
                             <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400 mx-1" />
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-slate-800 rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-[#22262e] rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
                                 <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{t('conn_port')}</span>
                                 <strong>{pNum}</strong>
                             </div>
@@ -492,14 +492,14 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Lado A: Kanban Columns for Cables */}
-                <div className="w-2/3 flex overflow-hidden bg-slate-100/30 dark:bg-slate-900/10">
+                <div className="w-2/3 flex overflow-hidden bg-slate-100/30 dark:bg-[#1a1d23]/10">
                     {renderColumn('col1', `${t('column_name')} 1`)}
                     {renderColumn('col2', `${t('column_name')} 2`)}
                     {renderColumn('col3', `${t('column_name')} 3`)}
                 </div>
 
                 {/* Lado B: DIO (Trays/Ports) */}
-                <div className="w-1/3 p-4 overflow-y-auto custom-scrollbar border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                <div className="w-1/3 p-4 overflow-y-auto custom-scrollbar border-l border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#151820]">
                     <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
                         <Layers className="w-4 h-4 text-orange-500" /> {t('tray')}s
                     </h4>
@@ -511,10 +511,10 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                             const portsInTray = endPort - startPort;
 
                             return (
-                                <div key={trayIdx} className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-2">
+                                <div key={trayIdx} className="bg-white dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden mb-2">
                                     <button
                                         onClick={(e) => toggleTray(trayIdx, e)}
-                                        className="w-full bg-slate-100 dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase flex items-center justify-between hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
+                                        className="w-full bg-slate-100 dark:bg-[#22262e] px-4 py-3 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase flex items-center justify-between hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
                                     >
                                         <div className="flex items-center gap-2">
                                             <Layers className="w-4 h-4 text-slate-400" />
@@ -528,7 +528,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                     </button>
 
                                     {!collapsedTrays.has(trayIdx) && (
-                                        <div className="p-2 grid grid-cols-6 sm:grid-cols-12 md:grid-cols-12 lg:grid-cols-12 gap-1 bg-slate-50 dark:bg-slate-900/50">
+                                        <div className="p-2 grid grid-cols-6 sm:grid-cols-12 md:grid-cols-12 lg:grid-cols-12 gap-1 bg-slate-50 dark:bg-[#1a1d23]/50">
                                             {Array.from({ length: portsInTray }).map((__, pOffset) => {
                                                 const pIndex = startPort + pOffset;
                                                 const pId = dio.portIds[pIndex];
@@ -562,11 +562,11 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                                                 isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 z-10' :
                                                                     isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)] z-10' :
                                                                         isSpliced ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400' :
-                                                                            'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400'}
+                                                                            'bg-white dark:bg-[#1a1d23] border-slate-200 dark:border-slate-700 text-slate-500 hover:border-orange-400'}
                                                     `}
                                                         title={isSpliced ? `F: ${connectedFiberNum}` : t('port_free')}
                                                     >
-                                                        {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-800 shadow-sm z-20" />}
+                                                        {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-700/30 shadow-sm z-20" />}
                                                         {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10" />}
                                                         <span className="text-[10px] font-bold relative z-[5]">{pIndex + 1}</span>
                                                         <div className="flex gap-1 mt-0.5">

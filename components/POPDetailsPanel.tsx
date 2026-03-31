@@ -122,12 +122,12 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[520px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
+      className="fixed z-[2000] w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[80vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div
         onMouseDown={handleMouseDown}
-        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
+        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Building2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
@@ -205,7 +205,7 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
+          <div className="bg-slate-50 dark:bg-[#22262e]/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">{t('backbone_cables')}</span>
               <span className="text-slate-700 dark:text-slate-300 font-mono">{(pop.inputCableIds || []).length}</span>
@@ -226,10 +226,10 @@ export const POPDetailsPanel: React.FC<POPDetailsPanelProps> = ({
             </div>
           </div>
 
-          <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
+          <div className="p-4 bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-3">
             <button
               onClick={onOpenRack}
-              className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
+              className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
             >
               <Settings2 className="w-4 h-4" />
               {t('manage_pop')}

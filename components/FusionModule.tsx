@@ -30,9 +30,9 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
 
     return (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#1a1d23]/50">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                             <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -48,7 +48,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 bg-slate-50 dark:bg-slate-950/30">
+                <form onSubmit={handleSubmit} className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex flex-col gap-4 bg-slate-50 dark:bg-[#151820]/30">
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nome da Fusão</label>
                         <input
@@ -56,7 +56,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                             value={name}
                             onChange={e => setName(e.target.value)}
                             placeholder="Ex: Fusão Padrão"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                             autoFocus
                         />
                     </div>
@@ -68,7 +68,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                             value={attenuation}
                             onChange={e => setAttenuation(e.target.value)}
                             placeholder="0.01"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                         />
                     </div>
                     <button
@@ -85,7 +85,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                     <div className="flex items-center justify-between mb-2 px-1">
                         <h3 className="text-xs font-bold text-slate-400 uppercase">Fusões Cadastradas</h3>
-                        <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-bold bg-slate-100 dark:bg-[#22262e] text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
                             {fusionTypes.length}
                         </span>
                     </div>
@@ -97,7 +97,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                     ) : (
                         <div className="space-y-2">
                             {fusionTypes.map(ft => (
-                                <div key={ft.id} className="group flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl hover:border-amber-500/50 transition-colors shadow-sm">
+                                <div key={ft.id} className="group flex items-center justify-between p-3 bg-white dark:bg-[#22262e] border border-slate-100 dark:border-slate-700 rounded-xl hover:border-amber-500/50 transition-colors shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <div className="w-2 h-2 rounded-full bg-amber-500"></div>
                                         <div>

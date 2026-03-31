@@ -18,7 +18,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
 }) => {
     const baseClasses = `
         w-full px-4 py-2.5 
-        bg-white dark:bg-slate-950 
+        bg-white dark:bg-[#151820] 
         border rounded-lg transition-all duration-300
         text-sm text-slate-900 dark:text-white
         placeholder:text-slate-400
@@ -26,7 +26,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
         disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900
         ${error
             ? 'border-red-500 ring-4 ring-red-500/10'
-            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}
+            : 'border-slate-200 dark:border-slate-700/30 hover:border-slate-300 dark:hover:border-slate-700'}
         ${Icon ? 'pl-11' : ''}
     `;
 

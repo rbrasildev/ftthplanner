@@ -260,20 +260,20 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             <div
                 key={olt.id}
                 id={`kanban-item-${olt.id}`}
-                className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4 transition-opacity duration-200"
+                className="bg-[#1a1d23] rounded-xl border border-slate-700/50 shadow-sm overflow-hidden mb-4 transition-opacity duration-200"
                 draggable
                 onDragStart={(e) => handleDragStart(e, olt.id)}
                 onDragEnd={(e) => handleDragEnd(e, olt.id)}
             >
-                <div className="w-full bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-stretch cursor-grab active:cursor-grabbing hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                <div className="w-full bg-[#22262e] border-b border-slate-700/50 flex items-stretch cursor-grab active:cursor-grabbing hover:bg-[#2a2e38] transition-colors">
                     {/* Drag Handle */}
-                    <div className="w-8 flex items-center justify-center border-r border-slate-200 dark:border-slate-700/50 text-slate-400 hover:text-slate-600">
+                    <div className="w-8 flex items-center justify-center border-r border-slate-700/30 text-slate-500 hover:text-slate-300">
                         <GripVertical className="w-4 h-4" />
                     </div>
 
                     <button
                         onClick={(e) => toggleOLT(olt.id, e)}
-                        className="flex-1 px-3 py-3 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between"
+                        className="flex-1 px-3 py-3 font-bold text-sm text-slate-300 flex items-center justify-between"
                     >
                         <div className="flex items-center gap-2">
                             <span>{olt.name}</span>
@@ -281,7 +281,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                 const usedCount = (olt.portIds || []).filter((p: string) => !!connectionMap[p]).length;
                                 const total = olt.portIds?.length || 0;
                                 return (
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-emerald-900/30 text-emerald-400' : 'bg-[#2a2e38] text-slate-400'}`}>
                                         {usedCount}/{total}
                                     </span>
                                 );
@@ -317,11 +317,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                             const slotLabel = slotConfig?.name || `Slot ${slotIdx + 1}`;
 
                             return (
-                                <div key={slotIdx} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase flex items-center gap-2">
+                                <div key={slotIdx} className="border border-slate-700/40 rounded-lg overflow-hidden">
+                                    <div className="bg-[#22262e] px-3 py-1 text-xs font-bold text-slate-400 border-b border-slate-700/40 uppercase flex items-center gap-2">
                                         <Server className="w-3 h-3 text-emerald-500" /> {slotLabel}
                                     </div>
-                                    <div className="p-2 bg-white dark:bg-slate-900/30" style={{ display: 'grid', gridTemplateColumns: `repeat(${slotPorts.length}, 1fr)`, gap: '3px' }}>
+                                    <div className="p-2 bg-[#15171c]" style={{ display: 'grid', gridTemplateColumns: `repeat(${slotPorts.length}, 1fr)`, gap: '3px' }}>
                                         {slotPorts.map((pId, localIdx) => {
                                             const isConnected = !!connectionMap[pId];
                                             const isSelected = selectedPortA === pId;
@@ -342,7 +342,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                             ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                                 isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                     isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
-                                                                        'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                                        'bg-[#1e2028] text-slate-500 border-slate-600/40 hover:border-indigo-400/50'}`}
                                                         title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
                                                     >
                                                         {localIdx + 1}
@@ -366,8 +366,8 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
 
                         {/* Uplinks */}
                         {olt.uplinkPortIds && olt.uplinkPortIds.length > 0 && (
-                            <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden mt-2">
-                                <div className="bg-slate-100 dark:bg-slate-800/80 px-3 py-1 text-xs font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700 uppercase flex items-center gap-2">
+                            <div className="border border-slate-700/40 rounded-lg overflow-hidden mt-2">
+                                <div className="bg-[#22262e] px-3 py-1 text-xs font-bold text-slate-500 border-b border-slate-700/40 uppercase flex items-center gap-2">
                                     <Network className="w-3 h-3" /> {t('uplinks')}
                                 </div>
                                 <div className="p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
@@ -385,8 +385,8 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                 className={`h-8 rounded-md border text-xs font-bold transition-all relative group
                                                         ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                         isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                            isConnected ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600' :
-                                                                'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                            isConnected ? 'bg-[#2a2e38] text-slate-400 border-slate-600/50' :
+                                                                'bg-[#1e2028] text-slate-500 border-slate-600/40 hover:border-indigo-400/50'}`}
                                                 title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
                                             >
                                                 U{uIdx + 1}
@@ -416,20 +416,20 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             <div
                 key={dio.id}
                 id={`kanban-item-${dio.id}`}
-                className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-4 transition-opacity duration-200"
+                className="bg-[#1a1d23] rounded-xl border border-slate-700/50 shadow-sm overflow-hidden mb-4 transition-opacity duration-200"
                 draggable
                 onDragStart={(e) => handleDragStart(e, dio.id)}
                 onDragEnd={(e) => handleDragEnd(e, dio.id)}
             >
-                <div className="w-full bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-stretch cursor-grab active:cursor-grabbing hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                <div className="w-full bg-[#22262e] border-b border-slate-700/50 flex items-stretch cursor-grab active:cursor-grabbing hover:bg-[#2a2e38] transition-colors">
                     {/* Drag Handle */}
-                    <div className="w-8 flex items-center justify-center border-r border-slate-200 dark:border-slate-700/50 text-slate-400 hover:text-slate-600">
+                    <div className="w-8 flex items-center justify-center border-r border-slate-700/30 text-slate-500 hover:text-slate-300">
                         <GripVertical className="w-4 h-4" />
                     </div>
 
                     <button
                         onClick={(e) => toggleDIO(dio.id, e)}
-                        className="flex-1 px-3 py-3 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between"
+                        className="flex-1 px-3 py-3 font-bold text-sm text-slate-300 flex items-center justify-between"
                     >
                         <div className="flex items-center gap-2">
                             <span>{dio.name}</span>
@@ -437,7 +437,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                 const usedCount = (dio.portIds || []).filter((p: string) => !!connectionMap[p]).length;
                                 const total = dio.portIds?.length || 0;
                                 return (
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${usedCount === total && total > 0 ? 'bg-blue-900/30 text-blue-400' : 'bg-[#2a2e38] text-slate-400'}`}>
                                         {usedCount}/{total}
                                     </span>
                                 );
@@ -484,11 +484,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                             if (trayPorts.length === 0) return null;
 
                             return (
-                                <div key={tIdx} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                                    <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase flex items-center gap-2">
+                                <div key={tIdx} className="border border-slate-700/40 rounded-lg overflow-hidden">
+                                    <div className="bg-[#22262e] px-3 py-1 text-xs font-bold text-slate-400 border-b border-slate-700/40 uppercase flex items-center gap-2">
                                         <Layers className="w-3 h-3 text-blue-500" /> {t('tray')} {tIdx + 1}
                                     </div>
-                                    <div className="p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-12 gap-2 bg-white dark:bg-slate-900/30">
+                                    <div className="p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-12 gap-2 bg-[#15171c]">
                                         {trayPorts.map((pId, localIdx) => {
                                             const absIdx = (tIdx * TRAY_SIZE) + localIdx;
                                             const isConnected = !!connectionMap[pId];
@@ -510,7 +510,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                             ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                                 isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                     isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
-                                                                        'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                                        'bg-[#1e2028] text-slate-500 border-slate-600/40 hover:border-indigo-400/50'}`}
                                                         title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
                                                     >
                                                         {absIdx + 1}
@@ -541,19 +541,19 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
 
         return (
             <div
-                className={`flex-1 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto custom-scrollbar flex flex-col ${bgColor}`}
+                className={`flex-1 border-r border-slate-700/30 p-4 overflow-y-auto custom-scrollbar flex flex-col ${bgColor}`}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, colId)}
             >
-                <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2 select-none">
+                <h4 className="font-bold text-slate-300 mb-4 flex items-center gap-2 select-none">
                     {icon} {title}
-                    <span className="ml-auto text-xs font-normal text-slate-400 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <span className="ml-auto text-xs font-normal text-slate-500 px-2 py-0.5 rounded-full bg-[#1a1d23]">
                         {itemIds.length}
                     </span>
                 </h4>
                 <div className="flex-1 flex flex-col">
                     {itemIds.length === 0 && (
-                        <div className="flex-1 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 text-sm italic select-none">
+                        <div className="flex-1 border-2 border-dashed border-slate-600/40 rounded-xl flex items-center justify-center text-slate-500 text-sm italic select-none">
                             {t('drop_here')}
                         </div>
                     )}
@@ -574,13 +574,13 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     };
 
     return (
-        <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 overflow-hidden flex flex-col pointer-events-auto">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+        <div className="flex-1 w-full h-full bg-[#22262e] overflow-hidden flex flex-col pointer-events-auto">
+            <div className="p-4 border-b border-slate-700/40 bg-[#1a1d23] shrink-0">
+                <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
                     <Network className="text-indigo-500 w-5 h-5" />
                     {t('patching_matrix')}
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-sm text-slate-500 mt-1">
                     {t('patching_kanban_instruction')}
                 </p>
                 {selectedPortA && !viewingConnection && (
@@ -643,16 +643,16 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {renderColumn('col1', t('col_olts') || 'OLTs', <Zap className="w-4 h-4 text-indigo-500" />, 'bg-slate-50 dark:bg-slate-900')}
+                {renderColumn('col1', t('col_olts') || 'OLTs', <Zap className="w-4 h-4 text-indigo-400" />, 'bg-[#22262e]')}
                 {/* Flow arrow between columns */}
-                <div className="flex items-center px-0 shrink-0 text-slate-300 dark:text-slate-600">
+                <div className="flex items-center px-0 shrink-0 text-slate-600">
                     <ArrowRight className="w-4 h-4" />
                 </div>
-                {renderColumn('col2', t('col_switches') || 'Switches', <Network className="w-4 h-4 text-emerald-500" />, 'bg-white dark:bg-slate-950')}
-                <div className="flex items-center px-0 shrink-0 text-slate-300 dark:text-slate-600">
+                {renderColumn('col2', t('col_switches') || 'Switches', <Network className="w-4 h-4 text-emerald-400" />, 'bg-[#2a2e38]')}
+                <div className="flex items-center px-0 shrink-0 text-slate-600">
                     <ArrowRight className="w-4 h-4" />
                 </div>
-                {renderColumn('col3', t('col_dios') || 'DIOs', <Server className="w-4 h-4 text-blue-500" />, 'bg-slate-100/50 dark:bg-slate-900/50')}
+                {renderColumn('col3', t('col_dios') || 'DIOs', <Server className="w-4 h-4 text-blue-400" />, 'bg-[#1e2128]')}
             </div>
         </div>
     );

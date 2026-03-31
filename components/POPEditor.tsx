@@ -496,6 +496,38 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             if (el) {
                 el.style.transform = `translate(${newX}px, ${newY}px)`;
             }
+
+            // Update SVG connection lines in real-time during drag
+            localPOP.dios.forEach(dio => {
+                if (!dio.inputCableIds || dio.inputCableIds.length === 0) return;
+                dio.inputCableIds.forEach(cableId => {
+                    const cable = uniqueIncomingCables.find(c => c.id === cableId);
+                    if (!cable) return;
+
+                    const isDio = dragState.targetId === dio.id;
+                    const isCable = dragState.targetId === cable.id;
+                    if (!isDio && !isCable) return;
+
+                    const dioLayout = getLayout(dio.id);
+                    const cableLayout = getLayout(cable.id);
+
+                    let p2x = dioLayout.x;
+                    let p2y = dioLayout.y + 40;
+                    let p1x = cableLayout.x + 112;
+                    let p1y = cableLayout.y + 30;
+
+                    if (isDio) { p2x = newX; p2y = newY + 40; }
+                    if (isCable) { p1x = newX + 112; p1y = newY + 30; }
+
+                    const cx = (p1x + p2x) / 2;
+                    const pathEl = document.getElementById(`conn-${cable.id}-${dio.id}-path`);
+                    const c1El = document.getElementById(`conn-${cable.id}-${dio.id}-c1`);
+                    const c2El = document.getElementById(`conn-${cable.id}-${dio.id}-c2`);
+                    if (pathEl) pathEl.setAttribute('d', `M ${p1x} ${p1y} C ${cx} ${p1y}, ${cx} ${p2y}, ${p2x} ${p2y}`);
+                    if (c1El) { c1El.setAttribute('cx', String(p1x)); c1El.setAttribute('cy', String(p1y)); }
+                    if (c2El) { c2El.setAttribute('cx', String(p2x)); c2El.setAttribute('cy', String(p2y)); }
+                });
+            });
         }
         else if (dragState.mode === 'modal_olt' && dragState.initialPos) {
             const dx = e.clientX - dragState.startX;
@@ -1006,7 +1038,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     return (
         <div className="pop-editor-modal fixed inset-0 z-[2000] bg-black flex items-center justify-center">
-            <div className="w-full h-full bg-white dark:bg-slate-950 flex flex-col overflow-hidden relative">
+            <div className="w-full h-full bg-[#1a1d23] flex flex-col overflow-hidden relative">
 
                 {/* 1. HEADER (Title + Close) */}
                 <PopHeader
@@ -1044,19 +1076,29 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-slate-200 dark:bg-slate-950 relative overflow-hidden"
+                    className="flex-1 bg-[#2c2f36] relative overflow-hidden"
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     style={{ cursor: dragState ? 'grabbing' : 'default' }}
                 >
+                    {/* Rack Rails */}
+                    {viewMode !== 'logical' && (
+                        <>
+                            <div className="absolute top-0 bottom-0 left-0 w-4 bg-[#15171c] border-r border-slate-700/30 z-30 pointer-events-none"
+                                style={{ backgroundImage: 'repeating-linear-gradient(180deg, transparent 0px, transparent 36px, #2a2e38 36px, #2a2e38 40px)', backgroundSize: '100% 40px' }} />
+                            <div className="absolute top-0 bottom-0 right-0 w-4 bg-[#15171c] border-l border-slate-700/30 z-30 pointer-events-none"
+                                style={{ backgroundImage: 'repeating-linear-gradient(180deg, transparent 0px, transparent 36px, #2a2e38 36px, #2a2e38 40px)', backgroundSize: '100% 40px' }} />
+                        </>
+                    )}
+
                     {/* Grid */}
                     {viewMode !== 'logical' && (
                         <div
                             className="absolute inset-0 pointer-events-none opacity-20"
                             style={{
-                                backgroundImage: `radial-gradient(#475569 1px, transparent 1px)`,
+                                backgroundImage: `radial-gradient(#3a3d44 0.8px, transparent 0.8px)`,
                                 backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
                                 backgroundPosition: `${viewState.x}px ${viewState.y}px`
                             }}
@@ -1064,7 +1106,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     )}
 
                     {viewMode === 'logical' ? (
-                        <div className="absolute inset-0 z-10 bg-white dark:bg-slate-950 overflow-hidden">
+                        <div className="absolute inset-0 z-10 bg-[#2c2f36] overflow-hidden">
                             <LogicalPatchingView
                                 localPOP={localPOP}
                                 onAddConnection={handleAddLogicalConnection}
@@ -1102,14 +1144,15 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         return (
                                             <g key={`${cable.id}-${dio.id}`}>
                                                 <path
+                                                    id={`conn-${cable.id}-${dio.id}-path`}
                                                     d={`M ${p1.x} ${p1.y} C ${cx} ${p1.y}, ${cx} ${p2.y}, ${p2.x} ${p2.y}`}
                                                     stroke="#0ea5e9"
                                                     strokeWidth={3}
                                                     fill="none"
                                                     opacity={0.5}
                                                 />
-                                                <circle cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
-                                                <circle cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
+                                                <circle id={`conn-${cable.id}-${dio.id}-c1`} cx={p1.x} cy={p1.y} r={3} fill="#0ea5e9" />
+                                                <circle id={`conn-${cable.id}-${dio.id}-c2`} cx={p2.x} cy={p2.y} r={3} fill="#0ea5e9" />
                                             </g>
                                         );
                                     });
@@ -1125,7 +1168,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         id={cable.id}
                                         key={cable.id}
                                         style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
-                                        className="absolute w-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-20 flex flex-col opacity-60 hover:opacity-100 transition-opacity clickable-element select-none"
+                                        className="absolute w-28 bg-[#1a1d23] border border-slate-700/50 ring-1 ring-black/20 rounded-lg shadow-xl z-20 flex flex-col hover:brightness-110 transition-all clickable-element select-none"
                                         onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
                                         onMouseLeave={() => onHoverCable && onHoverCable(null)}
                                         onDoubleClick={(e) => {
@@ -1134,10 +1177,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         }}
                                     >
                                         <div
-                                            className="h-7 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
+                                            className="h-7 bg-[#22262e] border-b border-slate-700/50 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
                                             onMouseDown={(e) => handleElementDragStart(e, cable.id)}
                                         >
-                                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate flex-1">{cable.name}</span>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_4px_#0ea5e9] shrink-0" />
+                                            <span className="text-[10px] font-bold text-slate-300 truncate flex-1">{cable.name}</span>
                                             <div className="flex items-center gap-1">
                                                 <Button
                                                     variant="ghost"
@@ -1154,7 +1198,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                                 <GripHorizontal className="w-3 h-3 text-slate-600" />
                                             </div>
                                         </div>
-                                        <div className="p-2 text-[10px] text-slate-500 text-center">
+                                        <div className="p-2 text-[10px] text-slate-500 text-center bg-[#15171c] rounded-b-lg">
                                             {t('backbone_cable')}<br />({t('splice_inside_dio')})
                                         </div>
                                     </div>
@@ -1282,17 +1326,17 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 {/* Auto-Patch Modal */}
                 {showAutoPatchModal && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('auto_patch')}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">{t('auto_patch_desc')}</p>
+                        <div className="bg-[#1a1d23] border border-slate-700/50 p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+                            <h3 className="text-lg font-bold text-slate-200 mb-1">{t('auto_patch')}</h3>
+                            <p className="text-xs text-slate-500 mb-5">{t('auto_patch_desc')}</p>
 
                             {/* Source: OLT */}
                             <div className="mb-4">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">{t('source') || 'Origem'} (OLT/Switch)</label>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('source') || 'Origem'} (OLT/Switch)</label>
                                 <select
                                     value={autoPatchSourceId}
                                     onChange={e => setAutoPatchSourceId(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-600/50 bg-[#22262e] text-sm font-medium text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                                 >
                                     <option value="">{t('select') || 'Selecione...'}</option>
                                     {localPOP.olts.map((olt: any) => {
@@ -1310,11 +1354,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
                             {/* Target: DIO */}
                             <div className="mb-6">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">{t('target') || 'Destino'} (DIO)</label>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">{t('target') || 'Destino'} (DIO)</label>
                                 <select
                                     value={autoPatchTargetId}
                                     onChange={e => setAutoPatchTargetId(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-600/50 bg-[#22262e] text-sm font-medium text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                                 >
                                     <option value="">{t('select') || 'Selecione...'}</option>
                                     {localPOP.dios.map((dio: any) => {
@@ -1341,9 +1385,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 const freeDio = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
                                 const willConnect = Math.min(freeOlt, freeDio);
                                 return (
-                                    <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-                                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{willConnect}</span>
-                                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-1.5">{t('connections_to_create') || 'conexões serão criadas'}</span>
+                                    <div className="mb-5 p-3 bg-[#22262e] rounded-lg border border-slate-600/50 text-center">
+                                        <span className="text-2xl font-black text-indigo-400">{willConnect}</span>
+                                        <span className="text-xs text-slate-500 ml-1.5">{t('connections_to_create') || 'conexões serão criadas'}</span>
                                     </div>
                                 );
                             })()}
@@ -1352,7 +1396,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setShowAutoPatchModal(false)}
-                                    className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    className="flex-1 px-4 py-2.5 rounded-lg border border-slate-600/50 text-sm font-bold text-slate-400 hover:bg-[#22262e] transition-colors"
                                 >
                                     {t('cancel')}
                                 </button>

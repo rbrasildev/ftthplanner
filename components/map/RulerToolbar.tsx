@@ -22,7 +22,7 @@ export const RulerToolbar: React.FC<RulerToolbarProps> = ({ rulerPoints, onClear
 
     return (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
-            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-3 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-3 border border-slate-200 dark:border-slate-700">
                 <Ruler className="w-5 h-5 text-pink-500" />
                 <div className="flex flex-col">
                     <span className="text-[10px] text-slate-500 uppercase leading-none">{t('ruler_total')}</span>

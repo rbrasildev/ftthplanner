@@ -153,12 +153,12 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[520px] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
+      className="fixed z-[2000] w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div
         onMouseDown={handleMouseDown}
-        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-slate-800 shrink-0 cursor-move select-none"
+        className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 cursor-move select-none"
       >
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
@@ -192,7 +192,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
 
             <div>
               {isLoading ? (
-                <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 flex items-center gap-2 text-slate-500 dark:text-slate-400 h-[46px]">
+                <div className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 flex items-center gap-2 text-slate-500 dark:text-slate-400 h-[46px]">
                   <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
                   <span className="text-sm">{t('loading') || 'Carregando...'}</span>
                 </div>
@@ -253,14 +253,14 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
                   }
                 }}
                 title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
-                className="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-800 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                className="mt-2 w-full py-2 bg-slate-50 dark:bg-[#151820] hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-700/30 transition-all flex items-center justify-center gap-2 text-xs font-bold"
               >
                 <Activity className="w-4 h-4" />
                 {t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
               </button>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
+            <div className="bg-slate-50 dark:bg-[#22262e]/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">{t('inputs')}</span>
                 <span className="text-slate-700 dark:text-slate-300 font-mono">{(cto.inputCableIds || []).length} Cable(s)</span>
@@ -283,10 +283,10 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
 
           </div>
 
-          <div className="p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 shrink-0 flex gap-3">
+          <div className="p-4 bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/30 shrink-0 flex gap-3">
             <button
               onClick={onOpenSplicing}
-              className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
+              className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition"
             >
               <Settings2 className="w-4 h-4" />
               {t('manage_splicing')}

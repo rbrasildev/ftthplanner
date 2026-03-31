@@ -90,7 +90,7 @@ const DraggableModal: React.FC<{
     return (
         <div
             ref={modalRef}
-            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200"
+            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
             style={{
                 transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
                 width: 320,
@@ -101,7 +101,7 @@ const DraggableModal: React.FC<{
         >
             {/* Header */}
             <div
-                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-t-xl"
+                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#22262e]/50 rounded-t-xl"
                 onMouseDown={handleMouseDown}
             >
                 <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold">
@@ -258,7 +258,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                                     names[i] = e.target.value;
                                                     setNewOLTConfig({ ...newOLTConfig, slotNames: names });
                                                 }}
-                                                className="w-14 h-7 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500"
+                                                className="w-14 h-7 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500"
                                             />
                                         ))}
                                     </div>

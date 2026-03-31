@@ -7,7 +7,8 @@ import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, 
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Map as MapIcon, Globe, Building2, Diamond, CheckCircle2, XCircle, LocateFixed } from 'lucide-react';
+import { useTheme } from '../ThemeContext';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -72,9 +73,9 @@ const otdrIcon = L.divIcon({
 
 const handleIcon = L.divIcon({
     className: 'cable-handle',
-    html: `<div style="width: 12px; height: 12px; background: white; border: 2px solid #0ea5e9; border-radius: 50%; cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.8);"></div>`,
-    iconSize: [12, 12],
-    iconAnchor: [6, 6]
+    html: `<div style="width: 16px; height: 16px; background: #fff; border: 2.5px solid #10b981; border-radius: 50%; cursor: grab; box-shadow: 0 0 0 3px rgba(16,185,129,0.25), 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s;" onmouseenter="this.style.transform='scale(1.3)';this.style.boxShadow='0 0 0 5px rgba(16,185,129,0.35), 0 2px 12px rgba(0,0,0,0.4)'" onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 0 0 3px rgba(16,185,129,0.25), 0 2px 8px rgba(0,0,0,0.3)'"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
 });
 
 const startPointIcon = L.divIcon({
@@ -292,14 +293,21 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
                 )
             }
 
-            {/* Active Cable Glow (Yellow) */}
+            {/* Active Cable Glow */}
             {
                 isActive && !isLit && (
-                    <Polyline
-                        positions={positions}
-                        pathOptions={{ color: '#facc15', weight: 12, opacity: 0.4 }}
-                        interactive={false}
-                    />
+                    <>
+                        <Polyline
+                            positions={positions}
+                            pathOptions={{ color: '#10b981', weight: 16, opacity: 0.15 }}
+                            interactive={false}
+                        />
+                        <Polyline
+                            positions={positions}
+                            pathOptions={{ color: '#34d399', weight: 8, opacity: 0.3 }}
+                            interactive={false}
+                        />
+                    </>
                 )
             }
 
@@ -581,6 +589,8 @@ export const MapView: React.FC<MapViewProps> = ({
     onCancelMode
 }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     // Stable ref for optional callbacks — prevents `|| noOp` from creating new references every render
     const stableMoveNode = useMemo(() => onMoveNode || noOp, [onMoveNode]);
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
@@ -1105,38 +1115,34 @@ export const MapView: React.FC<MapViewProps> = ({
 
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve'].includes(mode) ? 'drawing-cursor' : ''}`}>
-            <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-end gap-3">
+            <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Map Type Switcher - Google Maps Style */}
-                <button
-                    onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-                    className="group relative w-16 h-16 rounded-xl overflow-hidden shadow-2xl border-2 border-white dark:border-slate-700 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none z-[1000] bg-white dark:bg-slate-800"
-                    title={mapType === 'street' ? t('map_satellite') : t('map_street')}
-                >
-                    {/* Thumbnail Preview */}
-                    <div className="absolute inset-0 transition-transform duration-500 ease-in-out">
-                        {mapType === 'street' ? (
-                            <div className="absolute inset-0 bg-[url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0')] bg-cover bg-center" />
-                        ) : (
-                            <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                <MapIcon className="w-8 h-8 text-emerald-600 opacity-60" />
-                                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/10" />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Interaction Overlay (Darkens on hover) */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-
-                    {/* Label at the bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-[2px] py-1">
-                        <span className="text-[10px] font-black text-white uppercase tracking-tighter block text-center leading-none">
-                            {mapType === 'street' ? t('map_satellite') : t('map_street')}
-                        </span>
-                    </div>
-                </button>
+                <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+                    <button
+                        onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+                        className="group relative w-full aspect-square rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none"
+                        title={mapType === 'street' ? t('map_satellite') : t('map_street')}
+                    >
+                        <div className="absolute inset-0">
+                            {mapType === 'street' ? (
+                                <div className="absolute inset-0 bg-[url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0')] bg-cover bg-center" />
+                            ) : (
+                                <div className="absolute inset-0 bg-slate-100 dark:bg-[#1a1d23] flex items-center justify-center">
+                                    <Globe className="w-6 h-6 text-emerald-500 opacity-70" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5">
+                            <span className="text-[7px] font-black text-white uppercase tracking-tighter block text-center leading-none">
+                                {mapType === 'street' ? t('map_satellite') : t('map_street')}
+                            </span>
+                        </div>
+                    </button>
+                </div>
 
                 {/* Compact Layer Visibility Panel */}
-                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
+                <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
                     {/* Section: Elements */}
                     <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-1 pb-0.5">{t('layer_panel_elements')}</span>
 
@@ -1146,7 +1152,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     <LayerToggle active={showCables} onClick={() => setShowCables(!showCables)} label={t('layer_cables')} color="slate" icon={<Share2 className="w-5 h-5" />} />
                     <LayerToggle active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers') || 'Clientes'} color="green" icon={<User className="w-5 h-5" />} />
 
-                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-0.5"></div>
+                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 w-full mx-1 my-0.5"></div>
 
                     {/* Section: Display */}
                     <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_display')}</span>
@@ -1176,8 +1182,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 {mapType === 'street' ? (
                     <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        key={isDark ? 'dark-street' : 'light-street'}
+                        url={isDark
+                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
+                        attribution={isDark
+                            ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+                            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}
                         maxNativeZoom={19}
                         maxZoom={24}
                         keepBuffer={8}
@@ -1587,68 +1598,70 @@ export const MapView: React.FC<MapViewProps> = ({
                         position={[pinnedLocation.lat, pinnedLocation.lng]}
                         icon={createSearchPinIcon(selectedId === 'pin-location')}
                     >
-                        <Popup>
-                            <div className="flex flex-col min-w-[200px] -mx-1 -my-0.5">
+                        <Popup className="pinned-location-popup" closeButton={false}>
+                            <div className="flex flex-col w-[220px] bg-white dark:bg-[#1a1d23] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/30 shadow-2xl">
                                 {/* Header */}
-                                <div className="flex items-center gap-1.5 mb-2">
-                                    <LocateFixed className="w-3.5 h-3.5 text-red-500" />
-                                    <span className="text-xs font-bold text-slate-800">{t('pinned_location')}</span>
-                                </div>
-
-                                {/* Coordinates */}
-                                <div className="text-[10px] text-slate-400 font-mono bg-slate-50 rounded px-2 py-1 mb-3 select-all text-center tracking-tight">
-                                    {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
+                                <div className="px-3 py-2.5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#22262e]/50">
+                                    <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center shrink-0">
+                                        <MapPin className="w-3.5 h-3.5 text-white" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-[11px] font-bold text-slate-900 dark:text-white">{t('pinned_location')}</div>
+                                        <div className="text-[10px] text-slate-400 font-mono truncate">
+                                            {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Viability Badge */}
                                 {pinnedLocation.viability && (
-                                    <div className={`mb-3 px-2.5 py-1.5 rounded-lg flex items-center gap-2 ${pinnedLocation.viability.active ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                                    <div className={`mx-3 mt-2.5 px-2.5 py-2 rounded-lg flex items-center gap-2 ${pinnedLocation.viability.active ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40' : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40'}`}>
                                         {pinnedLocation.viability.active ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
                                         <div className="flex flex-col min-w-0">
-                                            <span className={`text-[10px] font-bold uppercase leading-tight ${pinnedLocation.viability.active ? 'text-emerald-700' : 'text-red-700'}`}>
+                                            <span className={`text-[10px] font-bold uppercase leading-tight ${pinnedLocation.viability.active ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                                                 {pinnedLocation.viability.active ? t('viability_available') : t('viability_unavailable')}
                                             </span>
-                                            <span className="text-[10px] text-slate-500 leading-tight">
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                                                 {t('distance_nearest', { dist: Math.round(pinnedLocation.viability.distance) })}
                                             </span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Action Label */}
-                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">{t('add_at_location')}</div>
-
-                                {/* Action Buttons */}
-                                <div className="grid grid-cols-3 gap-1.5">
-                                    <button
-                                        onClick={() => onConvertPin && onConvertPin('CTO')}
-                                        title={t('convert_to_cto')}
-                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all group"
-                                    >
-                                        <Box className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                                        <span className="text-[9px] font-bold text-blue-700">CTO</span>
-                                    </button>
-                                    <button
-                                        onClick={() => onConvertPin && onConvertPin('Pole')}
-                                        title={t('convert_to_pole')}
-                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all group"
-                                    >
-                                        <UtilityPole className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
-                                        <span className="text-[9px] font-bold text-amber-700">{t('pole')}</span>
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (pinnedLocation) {
-                                                handleMapClickForCustomer(pinnedLocation.lat, pinnedLocation.lng);
-                                                if (onClearPin) onClearPin();
-                                            }
-                                        }}
-                                        title={t('customer')}
-                                        className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg bg-green-50 hover:bg-green-100 border border-green-200 transition-all group"
-                                    >
-                                        <User className="w-4 h-4 text-green-600 group-hover:scale-110 transition-transform" />
-                                        <span className="text-[9px] font-bold text-green-700">{t('customer')}</span>
-                                    </button>
+                                {/* Actions */}
+                                <div className="p-3">
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{t('add_at_location')}</div>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        <button
+                                            onClick={() => onConvertPin && onConvertPin('CTO')}
+                                            title={t('convert_to_cto')}
+                                            className="flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/40 transition-all group"
+                                        >
+                                            <Box className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">CTO</span>
+                                        </button>
+                                        <button
+                                            onClick={() => onConvertPin && onConvertPin('Pole')}
+                                            title={t('convert_to_pole')}
+                                            className="flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/40 transition-all group"
+                                        >
+                                            <UtilityPole className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">{t('pole')}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (pinnedLocation) {
+                                                    handleMapClickForCustomer(pinnedLocation.lat, pinnedLocation.lng);
+                                                    if (onClearPin) onClearPin();
+                                                }
+                                            }}
+                                            title={t('customer')}
+                                            className="flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/30 hover:bg-sky-100 dark:hover:bg-sky-900/40 border border-sky-200 dark:border-sky-800/40 transition-all group"
+                                        >
+                                            <User className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
+                                            <span className="text-[9px] font-bold text-sky-700 dark:text-sky-400">{t('customer')}</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </Popup>
@@ -1679,6 +1692,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         x={contextMenu.x}
                         y={contextMenu.y}
                         targetType={contextMenu.targetType}
+                        cableName={cables.find(c => c.id === contextMenu.id)?.name}
                         onEdit={userRole !== 'MEMBER' ? () => {
                             // "Editar Cabo" -> Geometry Edit (Select ID)
                             if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
@@ -1711,6 +1725,11 @@ export const MapView: React.FC<MapViewProps> = ({
                         x={contextMenu.x}
                         y={contextMenu.y}
                         type={contextMenu.type as 'CTO' | 'POP' | 'Pole'}
+                        nodeName={
+                            contextMenu.type === 'CTO' ? ctos.find(c => c.id === contextMenu.id)?.name :
+                            contextMenu.type === 'POP' ? pops.find(p => p.id === contextMenu.id)?.name :
+                            poles.find(p => p.id === contextMenu.id)?.name
+                        }
                         onEdit={userRole !== 'MEMBER' ? () => {
                             if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
@@ -1805,8 +1824,8 @@ export const MapView: React.FC<MapViewProps> = ({
             {
                 mapContextMenu && (
                     <div
-                        className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
-                        style={{ 
+                        className="fixed z-[9999] w-56 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/40 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                        style={{
                             top: mapContextMenu.y > window.innerHeight / 2 ? 'auto' : mapContextMenu.y,
                             bottom: mapContextMenu.y > window.innerHeight / 2 ? window.innerHeight - mapContextMenu.y : 'auto',
                             left: mapContextMenu.x > window.innerWidth / 2 ? 'auto' : mapContextMenu.x,
@@ -1814,47 +1833,43 @@ export const MapView: React.FC<MapViewProps> = ({
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50 mb-1">
-                            <div className="text-[10px] uppercase font-bold text-slate-400">{t('coordinates')}</div>
-                            <div className="text-xs font-mono text-slate-700 dark:text-slate-300 select-all">
-                                {mapContextMenu.lat.toFixed(6)}, {mapContextMenu.lng.toFixed(6)}
+                        {/* Header */}
+                        <div className="px-3 py-2.5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-700/30">
+                            <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
+                                <MapPin className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                                    {mapContextMenu.lat.toFixed(6)}, {mapContextMenu.lng.toFixed(6)}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{t('coordinates')}</div>
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                navigator.clipboard.writeText(`${mapContextMenu.lat}, ${mapContextMenu.lng}`);
-                                setMapContextMenu(null);
-                            }}
-                            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                        >
-                            <Tag className="w-4 h-4 text-slate-400" />
-                            {t('copy_coordinates') || "Copiar Coordenadas"}
-                        </button>
+                        {/* Actions */}
+                        <div className="py-1">
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${mapContextMenu.lat}, ${mapContextMenu.lng}`);
+                                    setMapContextMenu(null);
+                                }}
+                                className="w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors text-[13px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                            >
+                                <span className="text-emerald-500 dark:text-emerald-400"><Copy className="w-3.5 h-3.5" /></span>
+                                <span>{t('copy_coordinates') || "Copiar Coordenadas"}</span>
+                            </button>
 
-                        <button
-                            onClick={() => {
-                                window.open(`https://www.google.com/maps?q=${mapContextMenu.lat},${mapContextMenu.lng}`, '_blank');
-                                setMapContextMenu(null);
-                            }}
-                            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                        >
-                            <Globe className="w-4 h-4 text-emerald-500" />
-                            {t('open_google_maps') || "Abrir no Google Maps"}
-                        </button>
-
-                        {/* Add Node Quick Actions (Optional, but nice to have) */}
-                        <div className="my-1 border-t border-slate-100 dark:border-slate-700/50"></div>
-                        <button
-                            onClick={() => {
-                                setMapContextMenu(null);
-                                // To Add Node, we need to switch mode, but we can't do it easily from here without 'setToolMode' prop which isn't passed to MapView currently. 
-                                // So limiting to requested features.
-                            }}
-                            className="hidden w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2 transition-colors"
-                        >
-                            Place Node Here
-                        </button>
+                            <button
+                                onClick={() => {
+                                    window.open(`https://www.google.com/maps?q=${mapContextMenu.lat},${mapContextMenu.lng}`, '_blank');
+                                    setMapContextMenu(null);
+                                }}
+                                className="w-full text-left px-3 py-2 flex items-center gap-2.5 transition-colors text-[13px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                            >
+                                <span className="text-emerald-500 dark:text-emerald-400"><Globe className="w-3.5 h-3.5" /></span>
+                                <span>{t('open_google_maps') || "Abrir no Google Maps"}</span>
+                            </button>
+                        </div>
                     </div>
                 )
             }
@@ -1902,7 +1917,7 @@ const LayerToggle: React.FC<{ active: boolean; onClick: () => void; label: strin
         <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
             <button
                 onClick={onClick}
-                className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${active ? `${c.active} ${c.shadow} text-white` : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'}`}
+                className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${active ? `${c.active} ${c.shadow} text-white` : 'bg-slate-50 dark:bg-[#1a1d23] text-slate-400 border-slate-100 dark:border-slate-700/30'}`}
             >
                 {icon}
                 {!active && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
@@ -1915,3 +1930,4 @@ const LayerToggle: React.FC<{ active: boolean; onClick: () => void; label: strin
         </div>
     );
 };
+

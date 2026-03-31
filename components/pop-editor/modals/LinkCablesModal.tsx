@@ -22,8 +22,8 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
     if (!configuringDioCablesId) return null;
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-slate-950 pointer-events-auto animate-in fade-in duration-200">
-            <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between shrink-0">
+        <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-[#151820] pointer-events-auto animate-in fade-in duration-200">
+            <div className="h-14 bg-white dark:bg-[#1a1d23] border-b border-slate-200 dark:border-slate-700/30 px-6 flex items-center justify-between shrink-0">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                         <Link2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -46,7 +46,7 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                         <p className="text-xs text-slate-500 mb-4 uppercase font-bold tracking-wider">{t('link_cables_help')}</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {uniqueIncomingCables.length === 0 && (
-                                <div className="col-span-full text-center text-slate-500 py-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                <div className="col-span-full text-center text-slate-500 py-12 border border-dashed border-slate-200 dark:border-slate-700/30 rounded-xl">
                                     {t('no_cables_available')}
                                 </div>
                             )}
@@ -62,12 +62,12 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                                         onClick={() => handleToggleCableLink(configuringDioCablesId, cable.id)}
                                         className={`
                                             flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left
-                                            ${isLinked ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-500 text-emerald-900 dark:text-white shadow-md' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'}
-                                            ${assignedToOther ? 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-950' : ''}
+                                            ${isLinked ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-500 text-emerald-900 dark:text-white shadow-md' : 'bg-white dark:bg-[#1a1d23] border-slate-100 dark:border-slate-700/30 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'}
+                                            ${assignedToOther ? 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-[#151820]' : ''}
                                         `}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className={`p-2 rounded-lg ${isLinked ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                            <div className={`p-2 rounded-lg ${isLinked ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-[#22262e] text-slate-400'}`}>
                                                 <CableIcon className="w-5 h-5" />
                                             </div>
                                             <div>

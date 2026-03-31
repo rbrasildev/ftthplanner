@@ -178,14 +178,12 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             } else {
                 await createSplitter(payload);
             }
-            if (showToast) {
-                showToast(t('toast_applied_success'), 'success');
-            }
+            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
             setIsModalOpen(false);
             loadSplitters();
         } catch (error) {
             console.error("Failed to save splitter", error);
-            alert(t('error_saving_splitter'));
+            if (showToast) showToast(t('error_saving_splitter') || 'Falha ao salvar splitter', 'error');
         } finally {
             setSaving(false);
         }
@@ -196,9 +194,10 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             await deleteSplitter(id);
             loadSplitters();
             setShowDeleteConfirm(null);
+            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
         } catch (error) {
             console.error("Failed to delete", error);
-            alert(t('error_delete') || 'Failed to delete');
+            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
         }
     };
 
@@ -229,9 +228,9 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             </div>
 
             {/* List Container */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
@@ -239,7 +238,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                             placeholder={t('search_splitters')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -254,7 +253,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('splitter_name')}</th>
                                 <th className="px-6 py-4">{t('splitter_type')}</th>
@@ -310,7 +309,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-sm w-full text-center animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
@@ -335,7 +334,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingItem ? t('edit_splitter') : t('new_splitter')}

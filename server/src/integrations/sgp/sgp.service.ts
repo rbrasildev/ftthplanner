@@ -348,8 +348,115 @@ export class SgpService {
         }
     }
 
+    // Process a single customer sync against SGP API
+    private static async syncSingleCustomer(
+        customer: any,
+        baseUrl: string,
+        settings: any,
+        userId: string
+    ): Promise<boolean> {
+        if (!customer.document) return false;
+
+        const bodyData = {
+            app: settings.apiApp,
+            token: settings.apiToken,
+            cpfcnpj: customer.document,
+            exibir_conexao: "s",
+            omitir_titulos: true
+        };
+
+        const response = await fetch(`${baseUrl}/api/ura/clientes/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+        });
+
+        if (!response.ok) {
+            logger.warn(`[SGP Service] Failed to fetch SGP for ${customer.document}: ${response.statusText}`);
+            return false;
+        }
+
+        const data: any = await response.json();
+        const sgpCustomer = (data?.clientes || [])[0] || null;
+        if (!sgpCustomer) return false;
+
+        const mainContract = sgpCustomer.contratos?.[0] || {};
+        const mainService = mainContract.servicos?.[0] || {};
+        const onuData = mainService.onu || {};
+
+        // 1. Connection & Account Status Sync
+        const newStatus = onuData.conexao?.status
+            ? String(onuData.conexao.status).toLowerCase().trim()
+            : (onuData.serial || mainService.mac ? 'offline' : null);
+
+        const servicoStatus = mainService.status || mainContract.status || sgpCustomer.status;
+        const newAccountStatus = servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
+                                 (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
+                                 (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : null));
+
+        const updateData: any = {};
+        if (newStatus && newStatus !== (customer as any).connectionStatus) {
+            updateData.connectionStatus = newStatus;
+        }
+        if (newAccountStatus && newAccountStatus !== (customer as any).status) {
+            updateData.status = newAccountStatus;
+        }
+
+        let updated = false;
+        if (Object.keys(updateData).length > 0) {
+            try {
+                await prisma.customer.update({
+                    where: { id: customer.id },
+                    data: updateData
+                });
+                updated = true;
+            } catch (e) {
+                logger.error(`[SGP Service] Database update failed for ${customer.document}`);
+            }
+        }
+
+        // 2. Port Mismatch Detection
+        const portaStr = onuData.splitter?.porta;
+        const porta = portaStr ? parseInt(String(portaStr), 10) : null;
+
+        if (porta !== null && !isNaN(porta)) {
+            const portIndex = porta - 1;
+            if (customer.splitterPortIndex !== portIndex) {
+                await this.registerConflict(
+                    userId,
+                    customer.document,
+                    'PORT_MISMATCH',
+                    {
+                        plannerPort: (customer.splitterPortIndex ?? -1) + 1,
+                        sgpPort: porta,
+                        customerName: customer.name
+                    },
+                    `Sincronização manual: Porta divergente para ${customer.name}. Planner=${(customer.splitterPortIndex ?? -1) + 1}, SGP=${porta}`
+                );
+            }
+        }
+
+        return updated;
+    }
+
+    // Run async tasks with a concurrency limit
+    private static async runWithConcurrency<T>(tasks: (() => Promise<T>)[], concurrency: number): Promise<T[]> {
+        const results: T[] = [];
+        let index = 0;
+
+        async function worker() {
+            while (index < tasks.length) {
+                const currentIndex = index++;
+                results[currentIndex] = await tasks[currentIndex]();
+            }
+        }
+
+        const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker());
+        await Promise.all(workers);
+        return results;
+    }
+
     static async syncAllStatuses(userId: string, sgpType: string) {
-        // Find the active integration for this user
         const settings = await prisma.integrationSettings.findFirst({
             where: { userId, sgpType }
         });
@@ -364,9 +471,8 @@ export class SgpService {
 
         logger.info(`[SGP Service] Bulk status sync started for company ${user.companyId}`);
 
-        // Fetch all customers that have a document (CPF/CNPJ) for this company
         const customers = await prisma.customer.findMany({
-            where: { 
+            where: {
                 companyId: user.companyId,
                 document: { not: null },
                 deletedAt: null
@@ -375,108 +481,20 @@ export class SgpService {
 
         if (customers.length === 0) return { updated: 0, total: 0 };
 
-        // Create an O(1) in-memory lookup map
-        const customerMap = new Map();
-        for (const customer of customers) {
-            customerMap.set(customer.document, customer);
-        }
+        logger.info(`[SGP Service] Syncing ${customers.length} customers with concurrency=5...`);
 
-        let updatedCount = 0;
-
-        logger.info(`[SGP Service] Checking ${customers.length} local customers against SGP...`);
-
-        for (const customer of customers) {
-            if (!customer.document) continue;
-
+        const CONCURRENCY = 5;
+        const tasks = customers.map(customer => async () => {
             try {
-                // Query SGP individually for each local customer by CPF/CNPJ
-                const bodyData = {
-                    app: settings.apiApp,
-                    token: settings.apiToken,
-                    cpfcnpj: customer.document,
-                    exibir_conexao: "s",
-                    omitir_titulos: true
-                };
-
-                const response = await fetch(`${baseUrl}/api/ura/clientes/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyData)
-                });
-
-                if (!response.ok) {
-                    logger.warn(`[SGP Service] Failed to fetch SGP for ${customer.document}: ${response.statusText}`);
-                    continue;
-                }
-
-                const data: any = await response.json();
-                const sgpClientes = data?.clientes || [];
-                const sgpCustomer = sgpClientes[0] || null;
-
-                if (!sgpCustomer) {
-                    logger.info(`[SGP Service] Customer ${customer.document} not found in SGP.`);
-                    continue;
-                }
-
-                const mainContract = sgpCustomer.contratos?.[0] || {};
-                const mainService = mainContract.servicos?.[0] || {};
-                const onuData = mainService.onu || {};
-
-                // 1. Connection & Account Status Sync
-                const newStatus = onuData.conexao?.status
-                    ? String(onuData.conexao.status).toLowerCase().trim()
-                    : (onuData.serial || mainService.mac ? 'offline' : null);
-
-                const servicoStatus = mainService.status || mainContract.status || sgpCustomer.status;
-                const newAccountStatus = servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
-                                         (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
-                                         (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : null));
-
-                const updateData: any = {};
-                if (newStatus && newStatus !== (customer as any).connectionStatus) {
-                    updateData.connectionStatus = newStatus;
-                }
-                if (newAccountStatus && newAccountStatus !== (customer as any).status) {
-                    updateData.status = newAccountStatus;
-                }
-
-                if (Object.keys(updateData).length > 0) {
-                    try {
-                        await prisma.customer.update({
-                            where: { id: customer.id },
-                            data: updateData
-                        });
-                        updatedCount++;
-                    } catch (e) {
-                        logger.error(`[SGP Service] Database update failed for ${customer.document}`);
-                    }
-                }
-
-                // 2. Port Mismatch Detection
-                const portaStr = onuData.splitter?.porta;
-                const porta = portaStr ? parseInt(String(portaStr), 10) : null;
-
-                if (porta !== null && !isNaN(porta)) {
-                    const portIndex = porta - 1;
-                    if (customer.splitterPortIndex !== portIndex) {
-                        await this.registerConflict(
-                            userId,
-                            customer.document,
-                            'PORT_MISMATCH',
-                            {
-                                plannerPort: (customer.splitterPortIndex ?? -1) + 1,
-                                sgpPort: porta,
-                                customerName: customer.name
-                            },
-                            `Sincronização manual: Porta divergente para ${customer.name}. Planner=${(customer.splitterPortIndex ?? -1) + 1}, SGP=${porta}`
-                        );
-                    }
-                }
-
+                return await this.syncSingleCustomer(customer, baseUrl, settings, userId);
             } catch (err) {
                 logger.error(`[SGP Service] Error checking customer ${customer.document}: ${err instanceof Error ? err.message : String(err)}`);
+                return false;
             }
-        }
+        });
+
+        const results = await this.runWithConcurrency(tasks, CONCURRENCY);
+        const updatedCount = results.filter(Boolean).length;
 
         logger.info(`[SGP Service] Bulk status sync completed. Updated ${updatedCount}/${customers.length} customers.`);
         return { updated: updatedCount, total: customers.length };
