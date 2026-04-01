@@ -134,6 +134,11 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
+
+    if (!email || !password || typeof password !== 'string') {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
     try {
         const user = await prisma.user.findFirst({
             where: { email, deletedAt: null },
@@ -144,7 +149,11 @@ export const login = async (req: Request, res: Response) => {
             }
         });
 
-        if (user && (await bcrypt.compare(password, user.passwordHash))) {
+        if (!user || !user.passwordHash) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        if (await bcrypt.compare(password, user.passwordHash)) {
             if (!user.active) {
                 return res.status(403).json({ error: 'Account is deactivated' });
             }
@@ -277,7 +286,11 @@ export const changePassword = async (req: Request, res: Response) => {
         }
 
         const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!user || !user.passwordHash) return res.status(404).json({ error: 'User not found' });
+
+        if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+            return res.status(400).json({ error: 'Invalid password format' });
+        }
 
         const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isValid) {

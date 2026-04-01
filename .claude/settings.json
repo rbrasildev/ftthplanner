@@ -54,7 +54,9 @@
       "Bash(grep -n \"Loader2.*animate-spin\\\\|<div.*Loader2\\\\|className.*flex.*items-center.*justify-center.*Loader2\" /d/ftthplanner/components/modals/*.tsx /d/ftthplanner/components/admin/*.tsx)",
       "Bash(curl -sL \"https://play-lh.googleusercontent.com/PiwJEoEUasBSoUzG2rClTW0ixiOqO7K8yLhCfPsK8-cM4pDcAnjPaaqj5TFfGt0GYA=w240-h480-rw\" -o d:/ftthplanner/public/integrations/ixc-logo.png)",
       "Bash(curl -sL \"https://sgp.net.br/wp-content/uploads/2023/09/logo-sgp-1.png\" -o d:/ftthplanner/public/integrations/sgp-logo.png)",
-      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(find /d/ftthplanner/server -type f \\\\\\(-name *.js -o -name *.ts \\\\\\) -not -path */node_modules/*)",
+      "Bash(grep -v \"^[0-9]*:\\\\s*//\")"
     ]
   }
 }

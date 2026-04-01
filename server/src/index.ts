@@ -29,6 +29,9 @@ import { SocketService } from './services/SocketService';
 process.on('uncaughtException', (err) => {
     logger.error(`Uncaught Exception: ${err.message}`);
     logger.error(err.stack || '');
+    // Graceful shutdown: encerra o processo para que o PM2 reinicie automaticamente
+    // Sem isso, o processo fica "zumbi" — vivo mas não responsivo
+    setTimeout(() => process.exit(1), 1000);
 });
 process.on('unhandledRejection', (reason, promise) => {
     logger.error(`Unhandled Rejection at: ${promise} reason: ${reason}`);
@@ -64,7 +67,8 @@ app.use(cors({
 // Rate Limiters
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 10,
+    skipSuccessfulRequests: true, // Conta apenas tentativas falhas
     message: { error: 'Muitas tentativas de login, tente novamente em 15 minutos.' }
 });
 
