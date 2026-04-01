@@ -380,7 +380,7 @@ export default function App() {
                     if (data.user.company?.id) setCompanyId(data.user.company.id);
                     if (data.user.email) setUserEmail(data.user.email);
                     if (data.user.company?.name) setCompanyName(data.user.company.name);
-                    if (data.user.company?.logoUrl) setCompanyLogo(data.user.company.logoUrl);
+                    setCompanyLogo(data.user.company?.logoUrl || null);
                     setCompanyStatus(data.user.company?.status || 'ACTIVE');
                     setHasActiveSubscription(!!data.user.company?.mercadopagoSubscriptionId);
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { Link as LinkIcon, AlertTriangle, CheckCircle2, Zap, Settings, X, WifiOff, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -157,7 +158,7 @@ export const IntegrationsPage: React.FC = () => {
         if (!selectedProvider) return null;
         const provider = providers.find(p => p.type === selectedProvider);
 
-        return (
+        return createPortal(
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
                 <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700/30 animate-in fade-in zoom-in-95">
                     {/* Header */}
@@ -216,7 +217,8 @@ export const IntegrationsPage: React.FC = () => {
                         {activeTab === 'conflicts' && <SgpConflictsTab providerType={selectedProvider} showToast={showToast} onConflictChange={fetchStatuses} />}
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     };
 
