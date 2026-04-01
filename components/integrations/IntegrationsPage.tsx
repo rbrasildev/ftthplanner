@@ -49,20 +49,20 @@ export const IntegrationsPage: React.FC = () => {
     const providers: ProviderOption[] = [
         {
             type: 'IXC',
-            label: 'IXC Provedor',
+            label: t('integration_provider_ixc'),
             description: t('ixc_provider_description'),
             icon: <img src="/integrations/ixc-logo.png" alt="IXC" className="w-full h-full object-cover" />,
             iconBg: 'overflow-hidden rounded-xl',
-            tag: 'Webhook + API',
+            tag: t('integration_tag_webhook'),
             tagColor: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
         },
         {
             type: 'GENERIC',
-            label: 'SGP',
+            label: t('integration_provider_sgp'),
             description: t('sgp_provider_description'),
             icon: <img src="/integrations/sgp-logo.png" alt="SGP" className="w-full h-full object-contain p-1.5" />,
             iconBg: 'bg-slate-700 dark:bg-slate-700 overflow-hidden rounded-xl',
-            tag: 'API Polling',
+            tag: t('integration_tag_polling'),
             tagColor: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
         },
     ];

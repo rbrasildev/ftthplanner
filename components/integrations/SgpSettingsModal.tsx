@@ -166,7 +166,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
 
             {/* Credential Fields */}
             <div className="space-y-4 bg-white dark:bg-[#22262e]/30 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Credentials</h4>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t('sgp_credentials_title')}</h4>
 
                 <CustomInput
                     label={t('api_url_label')}
@@ -257,7 +257,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
             <div className="bg-white dark:bg-[#22262e]/30 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
                     <RefreshCw className="w-3.5 h-3.5 inline mr-1" />
-                    Sync
+                    {t('sgp_sync_title')}
                 </h4>
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">

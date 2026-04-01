@@ -24,12 +24,12 @@ interface IntegrationConflict {
     createdAt: string;
 }
 
-const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-    PORT_MISMATCH: { label: 'PORT MISMATCH', color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
-    NOT_FOUND: { label: 'NOT FOUND', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' },
-    INVALID_DATA: { label: 'INVALID DATA', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' },
-    PORT_CONFLICT: { label: 'PORT CONFLICT', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
-    PROCESSING_ERROR: { label: 'ERROR', color: 'bg-slate-100 dark:bg-[#22262e] text-slate-500 dark:text-slate-400' },
+const TYPE_STYLES: Record<string, { key: string; color: string }> = {
+    PORT_MISMATCH: { key: 'conflict_type_port_mismatch', color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
+    NOT_FOUND: { key: 'conflict_type_not_found', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' },
+    INVALID_DATA: { key: 'conflict_type_invalid_data', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' },
+    PORT_CONFLICT: { key: 'conflict_type_port_conflict', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+    PROCESSING_ERROR: { key: 'conflict_type_error', color: 'bg-slate-100 dark:bg-[#22262e] text-slate-500 dark:text-slate-400' },
 };
 
 export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, showToast, onConflictChange }) => {
@@ -115,7 +115,7 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
             }
         }
         setConflicts(prev => prev.filter(c => c.status !== 'PENDING'));
-        showToast(`${successCount}/${pending.length} conflicts ${action.toLowerCase()}`, 'success');
+        showToast(t('conflict_batch_success', { success: successCount, total: pending.length, action: action.toLowerCase() }), 'success');
         onConflictChange?.();
         setBatchActing(false);
     };
@@ -128,10 +128,10 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
         const diffHours = Math.floor(diffMin / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffMin < 1) return 'agora';
-        if (diffMin < 60) return `${diffMin}min`;
-        if (diffHours < 24) return `${diffHours}h`;
-        if (diffDays < 30) return `${diffDays}d`;
+        if (diffMin < 1) return t('time_now');
+        if (diffMin < 60) return t('time_minutes', { n: diffMin });
+        if (diffHours < 24) return t('time_hours', { n: diffHours });
+        if (diffDays < 30) return t('time_days', { n: diffDays });
         return date.toLocaleDateString();
     };
 
@@ -215,7 +215,7 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
                         const customerName = payload.customerName || t('conflict_unknown_customer');
                         const isPortMismatch = conflict.type === 'PORT_MISMATCH';
                         const isBusy = actingIds.has(conflict.id) || batchActing;
-                        const typeInfo = TYPE_LABELS[conflict.type] || TYPE_LABELS['PROCESSING_ERROR'];
+                        const typeInfo = TYPE_STYLES[conflict.type] || TYPE_STYLES['PROCESSING_ERROR'];
 
                         return (
                             <div
@@ -235,7 +235,7 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate">{customerName}</p>
                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider ${typeInfo.color}`}>
-                                                        {typeInfo.label}
+                                                        {t(typeInfo.key)}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
