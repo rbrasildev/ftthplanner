@@ -111,7 +111,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                 {/* Separator */}
                                 <div className="w-px h-4 bg-slate-600/50 shrink-0" />
                                 {/* Ports */}
-                                <div className="flex-1 flex gap-[2px]">
+                                <div className="flex flex-wrap gap-[2px]">
                                     {Array.from({ length: currentPorts }).map((_, pIdx) => {
                                         const portId = `${olt.id}-s${sIdx + 1}-p${pIdx + 1}`;
                                         const isConnected = portConnectionsMap.has(portId);
@@ -128,7 +128,7 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                                 onMouseEnter={() => onPortHover(portId)}
                                                 onMouseLeave={() => onPortHover(null)}
                                                 className={`
-                                                    flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
+                                                    w-[26px] h-[26px] shrink-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
                                                     ${isConfiguring ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
                                                     ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
