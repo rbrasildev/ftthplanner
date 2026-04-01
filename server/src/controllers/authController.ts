@@ -128,7 +128,20 @@ export const register = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         logger.error(`Registration Error: ${error.message}`);
-        res.status(400).json({ error: 'Username or Email already exists or invalid data' });
+
+        let message = 'Registration failed. Please try again.';
+        if (error.code === 'P2002') {
+            const field = error.meta?.target?.[0];
+            if (field === 'email') {
+                message = 'Este e-mail já está cadastrado.';
+            } else if (field === 'username') {
+                message = 'Este nome de usuário já está em uso. Tente outro e-mail.';
+            } else {
+                message = 'Usuário ou e-mail já cadastrado.';
+            }
+        }
+
+        res.status(400).json({ error: message });
     }
 };
 

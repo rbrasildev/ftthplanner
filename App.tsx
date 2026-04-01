@@ -1265,8 +1265,9 @@ export default function App() {
             }
             showToast(t('registration_success'), 'success');
             setAuthView('login');
-        } catch (e) {
-            showToast(t('registration_failed'), 'info');
+        } catch (e: any) {
+            const msg = e?.response?.data?.error || t('registration_failed');
+            showToast(msg, 'error');
         } finally {
             setIsRegistering(false);
         }

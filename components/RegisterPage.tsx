@@ -23,7 +23,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const generatedUsername = email.split('@')[0] || email;
+        const generatedUsername = (email.split('@')[0] || email) + Math.floor(Math.random() * 9000 + 1000);
 
         if (!email.trim() || !password.trim() || !companyName.trim() || !phone.trim()) {
             setError(t('register_error_empty'));
