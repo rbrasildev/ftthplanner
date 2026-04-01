@@ -48,7 +48,13 @@
       "Bash(sed -i 's/dark:bg-slate-950/dark:bg-[#151820]/g; s/dark:bg-slate-900/dark:bg-[#1a1d23]/g; s/dark:bg-slate-800/dark:bg-[#22262e]/g; s/dark:border-slate-800/dark:border-slate-700\\\\/30/g' \"$f\")",
       "Bash(echo \"Updated $f\")",
       "Bash(while read:*)",
-      "Bash(do sed:*)"
+      "Bash(do sed:*)",
+      "Bash(find /d/ftthplanner -type f \\\\\\(-name *.env* -o -name *config* \\\\\\))",
+      "Bash(grep -l \"Loader2\\\\|animate-spin\" /d/ftthplanner/components/*.tsx /d/ftthplanner/components/*/*.tsx /d/ftthplanner/components/*/*/*.tsx)",
+      "Bash(grep -n \"Loader2.*animate-spin\\\\|<div.*Loader2\\\\|className.*flex.*items-center.*justify-center.*Loader2\" /d/ftthplanner/components/modals/*.tsx /d/ftthplanner/components/admin/*.tsx)",
+      "Bash(curl -sL \"https://play-lh.googleusercontent.com/PiwJEoEUasBSoUzG2rClTW0ixiOqO7K8yLhCfPsK8-cM4pDcAnjPaaqj5TFfGt0GYA=w240-h480-rw\" -o d:/ftthplanner/public/integrations/ixc-logo.png)",
+      "Bash(curl -sL \"https://sgp.net.br/wp-content/uploads/2023/09/logo-sgp-1.png\" -o d:/ftthplanner/public/integrations/sgp-logo.png)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
     ]
   }
 }

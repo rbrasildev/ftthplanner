@@ -140,8 +140,19 @@ export const BackupManager: React.FC<{ backupEnabled?: boolean }> = ({ backupEna
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center p-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm animate-pulse">
+                    <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-16">
+                        {[1, 2, 3, 4].map(i => <div key={i} className="h-3 w-20 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
+                    </div>
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="px-6 py-4 flex items-center gap-4 border-t border-slate-100 dark:border-slate-800">
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700/50 shrink-0" />
+                            <div className="h-4 w-48 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                            <div className="h-4 w-28 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                            <div className="h-4 w-16 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                            <div className="ml-auto h-8 w-20 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">

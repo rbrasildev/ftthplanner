@@ -12,7 +12,7 @@ import { CompanySettings } from './settings/CompanySettings';
 import { IntegrationsPage } from './integrations/IntegrationsPage';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, Loader2, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
 import CustomerRegistration from './registrations/CustomerRegistration';
@@ -506,7 +506,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-5 animate-pulse h-48"></div>
+                  <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-5 animate-pulse">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-5 w-36 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                      <div className="h-5 w-5 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                    </div>
+                    <div className="h-3 w-28 bg-slate-100 dark:bg-slate-800/50 rounded mb-6" />
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {[1, 2, 3].map(j => (
+                        <div key={j} className="h-14 bg-slate-100 dark:bg-slate-800/50 rounded-lg" />
+                      ))}
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full" />
+                  </div>
                 ))}
               </div>
             ) : filteredProjects.length === 0 ? (
@@ -820,7 +832,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
 
             {isLoadingUsers ? (
-              <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /></div>
+              <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm animate-pulse">
+                <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-12">
+                  {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
+                </div>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
+                    <div className="h-4 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                    <div className="h-4 w-40 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                    <div className="h-5 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
+                    <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                    <div className="ml-auto h-8 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm">

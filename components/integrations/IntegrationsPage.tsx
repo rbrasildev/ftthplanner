@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../LanguageContext';
-import { Link as LinkIcon, AlertTriangle, CheckCircle2, Zap, Server, Settings, RefreshCw, X, WifiOff, Circle } from 'lucide-react';
+import { Link as LinkIcon, AlertTriangle, CheckCircle2, Zap, Settings, X, WifiOff, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '../common/Button';
 import api from '../../services/api';
 import { SgpSettingsModal } from './SgpSettingsModal';
 import { SgpConflictsTab } from './SgpConflictsTab';
 
 type ProviderType = 'IXC' | 'GENERIC';
+
+interface ProviderOption {
+    type: ProviderType;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+    iconBg: string;
+    tag: string;
+    tagColor: string;
+}
 
 interface ProviderStatus {
     active: boolean;
@@ -24,6 +34,8 @@ export const IntegrationsPage: React.FC = () => {
     const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(null);
     const [activeTab, setActiveTab] = useState<'settings' | 'conflicts'>('settings');
     const [toast, setToast] = useState<ToastData | null>(null);
+    const [showAddDropdown, setShowAddDropdown] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [providerStatuses, setProviderStatuses] = useState<Record<ProviderType, ProviderStatus>>({
         IXC: { active: false, configured: false, conflictCount: 0 },
         GENERIC: { active: false, configured: false, conflictCount: 0 },
@@ -34,6 +46,27 @@ export const IntegrationsPage: React.FC = () => {
         setTimeout(() => setToast(null), 4000);
     }, []);
 
+    const providers: ProviderOption[] = [
+        {
+            type: 'IXC',
+            label: 'IXC Provedor',
+            description: t('ixc_provider_description'),
+            icon: <img src="/integrations/ixc-logo.png" alt="IXC" className="w-full h-full object-cover" />,
+            iconBg: 'overflow-hidden rounded-xl',
+            tag: 'Webhook + API',
+            tagColor: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+        },
+        {
+            type: 'GENERIC',
+            label: 'SGP',
+            description: t('sgp_provider_description'),
+            icon: <img src="/integrations/sgp-logo.png" alt="SGP" className="w-full h-full object-contain p-1.5" />,
+            iconBg: 'bg-slate-700 dark:bg-slate-700 overflow-hidden rounded-xl',
+            tag: 'API Polling',
+            tagColor: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+        },
+    ];
+
     const fetchStatuses = useCallback(async () => {
         try {
             const [ixcRes, genericRes, conflictsRes] = await Promise.all([
@@ -42,23 +75,27 @@ export const IntegrationsPage: React.FC = () => {
                 api.get('/integrations/sgp/conflicts').catch(() => ({ data: [] })),
             ]);
 
-            const conflicts = conflictsRes.data || [];
-            const pendingCount = Array.isArray(conflicts) ? conflicts.filter((c: any) => c.status === 'PENDING').length : 0;
+            const conflicts = Array.isArray(conflictsRes.data) ? conflictsRes.data : [];
+            // Split conflict counts by sgpType stored in payload
+            const ixcConflicts = conflicts.filter((c: any) => c.status === 'PENDING' && c.payload?.sgpType === 'IXC').length;
+            const genericConflicts = conflicts.filter((c: any) => c.status === 'PENDING' && c.payload?.sgpType !== 'IXC').length;
 
             setProviderStatuses({
                 IXC: {
                     active: !!ixcRes.data?.active,
                     configured: !!(ixcRes.data?.apiUrl && ixcRes.data?.apiToken),
-                    conflictCount: pendingCount,
+                    conflictCount: ixcConflicts,
                 },
                 GENERIC: {
                     active: !!genericRes.data?.active,
                     configured: !!(genericRes.data?.apiUrl && genericRes.data?.apiToken),
-                    conflictCount: pendingCount,
+                    conflictCount: genericConflicts,
                 },
             });
         } catch {
-            // Silently fail - statuses just won't show
+            // Silently fail
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
@@ -68,21 +105,38 @@ export const IntegrationsPage: React.FC = () => {
 
     const handleCloseModal = () => {
         setSelectedProvider(null);
-        fetchStatuses(); // Refresh statuses after closing
+        fetchStatuses();
     };
 
-    const getStatusBadge = (status: ProviderStatus) => {
-        if (!status.configured) {
-            return (
-                <span className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-slate-100 dark:bg-[#22262e] text-slate-400 rounded-full uppercase tracking-wider">
-                    <Circle className="w-2 h-2" />
-                    {t('integration_status_not_configured')}
-                </span>
-            );
+    const configuredProviders = providers.filter(p => providerStatuses[p.type].configured);
+    const availableProviders = providers.filter(p => !providerStatuses[p.type].configured);
+
+    const handleAddProvider = (type: ProviderType) => {
+        setShowAddDropdown(false);
+        setSelectedProvider(type);
+        setActiveTab('settings');
+    };
+
+    const handleRemoveProvider = async (type: ProviderType) => {
+        try {
+            await api.post(`/integrations/sgp/settings/${type}`, {
+                active: false,
+                apiUrl: '',
+                apiToken: '',
+                apiApp: '',
+                webhookSecret: '',
+            });
+            showToast(t('integration_removed_success') || 'Integration removed', 'info');
+            fetchStatuses();
+        } catch {
+            showToast(t('sgp_save_error'), 'error');
         }
+    };
+
+    const getStatusIndicator = (status: ProviderStatus) => {
         if (status.active) {
             return (
-                <span className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full uppercase tracking-wider">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -92,54 +146,16 @@ export const IntegrationsPage: React.FC = () => {
             );
         }
         return (
-            <span className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-full uppercase tracking-wider">
-                <WifiOff className="w-2.5 h-2.5" />
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-500 dark:text-amber-400">
+                <WifiOff className="w-3 h-3" />
                 {t('integration_status_inactive')}
             </span>
         );
     };
 
-    const renderProviderCard = (type: ProviderType, icon: React.ReactNode, title: string, description: string, tagLabel: string, tagColor: string, iconBg: string) => {
-        const status = providerStatuses[type];
-        return (
-            <div
-                onClick={() => { setSelectedProvider(type); setActiveTab('settings'); }}
-                className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 hover:border-emerald-500/50 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:shadow-xl hover:-translate-y-1 flex flex-col"
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${iconBg} rounded-xl flex items-center justify-center`}>
-                        {icon}
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 ${tagColor} rounded-full uppercase tracking-wider`}>
-                            {tagLabel}
-                        </span>
-                        {getStatusBadge(status)}
-                    </div>
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1.5">{title}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">
-                    {description}
-                </p>
-
-                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/30 pt-4 mt-auto">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 group-hover:gap-2 transition-all">
-                        <Settings className="w-4 h-4" /> {t('configure_button')}
-                    </span>
-                    {status.conflictCount > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full animate-in fade-in duration-300">
-                            <AlertTriangle className="w-3 h-3" />
-                            {t('integration_conflicts_badge', { count: status.conflictCount })}
-                        </span>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
     const renderProviderModal = () => {
         if (!selectedProvider) return null;
+        const provider = providers.find(p => p.type === selectedProvider);
 
         return (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
@@ -147,12 +163,12 @@ export const IntegrationsPage: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700/30 bg-gradient-to-r from-slate-50 to-white dark:from-slate-950/50 dark:to-slate-900">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                {selectedProvider === 'IXC' ? <Server className="w-5 h-5" /> : <RefreshCw className="w-5 h-5" />}
+                            <div className={`w-10 h-10 rounded-xl ${provider?.iconBg} flex items-center justify-center`}>
+                                {provider?.icon}
                             </div>
                             <div>
                                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                    {t('integration_modal_title', { provider: selectedProvider === 'IXC' ? 'IXC Provedor' : 'SGP' })}
+                                    {t('integration_modal_title', { provider: provider?.label || selectedProvider })}
                                 </h2>
                                 <p className="text-xs text-slate-500">
                                     {t('integration_modal_subtitle')}
@@ -205,8 +221,8 @@ export const IntegrationsPage: React.FC = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
-            {/* Inline Toast */}
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+            {/* Toast */}
             {toast && (
                 <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
                     toast.type === 'success' ? 'bg-emerald-600 text-white' :
@@ -223,7 +239,8 @@ export const IntegrationsPage: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <LinkIcon className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
@@ -233,29 +250,154 @@ export const IntegrationsPage: React.FC = () => {
                         {t('integrations_description')}
                     </p>
                 </div>
+
+                {/* Add Integration Dropdown */}
+                {!isLoading && availableProviders.length > 0 && (
+                    <div className="relative">
+                        <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setShowAddDropdown(!showAddDropdown)}
+                        >
+                            <Plus className="w-4 h-4" />
+                            {t('integration_add_button') || 'Add Integration'}
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAddDropdown ? 'rotate-180' : ''}`} />
+                        </Button>
+
+                        {showAddDropdown && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowAddDropdown(false)} />
+                                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {availableProviders.map((provider) => (
+                                        <button
+                                            key={provider.type}
+                                            onClick={() => handleAddProvider(provider.type)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
+                                        >
+                                            <div className={`w-9 h-9 rounded-lg ${provider.iconBg} flex items-center justify-center shrink-0`}>
+                                                {provider.icon}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{provider.label}</span>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 ${provider.tagColor} rounded-full uppercase tracking-wider`}>
+                                                        {provider.tag}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{provider.description}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {renderProviderCard(
-                    'IXC',
-                    <Server className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-                    t('ixc_provider_title'),
-                    t('ixc_provider_description'),
-                    'Webhook',
-                    'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-                    'bg-blue-50 dark:bg-blue-900/20'
-                )}
+            {/* Configured Integrations List */}
+            {isLoading ? (
+                <div className="space-y-3 animate-in fade-in duration-300">
+                    {[1, 2].map((i) => (
+                        <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl">
+                            <div className="flex items-center gap-4 p-4">
+                                <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/50 animate-pulse shrink-0" />
+                                <div className="flex-1 space-y-2.5">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="h-4 w-28 bg-slate-100 dark:bg-slate-800/50 rounded-md animate-pulse" />
+                                        <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800/50 rounded-full animate-pulse" />
+                                        <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800/50 rounded-full animate-pulse" />
+                                    </div>
+                                    <div className="h-3 w-64 bg-slate-100 dark:bg-slate-800/50 rounded-md animate-pulse" />
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800/50 rounded-lg animate-pulse" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : configuredProviders.length > 0 ? (
+                <div className="space-y-3">
+                    {configuredProviders.map((provider) => {
+                        const status = providerStatuses[provider.type];
+                        return (
+                            <div
+                                key={provider.type}
+                                className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl hover:border-slate-300 dark:hover:border-slate-600/50 transition-all"
+                            >
+                                <div className="flex items-center gap-4 p-4">
+                                    {/* Icon */}
+                                    <div className={`w-11 h-11 rounded-xl ${provider.iconBg} flex items-center justify-center shrink-0`}>
+                                        {provider.icon}
+                                    </div>
 
-                {renderProviderCard(
-                    'GENERIC',
-                    <RefreshCw className="w-6 h-6 text-purple-600 dark:text-purple-400" />,
-                    'SGP',
-                    t('sgp_provider_description'),
-                    'API Polling',
-                    'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
-                    'bg-purple-50 dark:bg-purple-900/20'
-                )}
-            </div>
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2.5">
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{provider.label}</h3>
+                                            <span className={`text-[9px] font-bold px-2 py-0.5 ${provider.tagColor} rounded-full uppercase tracking-wider`}>
+                                                {provider.tag}
+                                            </span>
+                                            {getStatusIndicator(status)}
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{provider.description}</p>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {status.conflictCount > 0 && (
+                                            <button
+                                                onClick={() => { setSelectedProvider(provider.type); setActiveTab('conflicts'); }}
+                                                className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                            >
+                                                <AlertTriangle className="w-3 h-3" />
+                                                {status.conflictCount}
+                                            </button>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => { setSelectedProvider(provider.type); setActiveTab('settings'); }}
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            {t('configure_button')}
+                                        </Button>
+                                        <button
+                                            onClick={() => handleRemoveProvider(provider.type)}
+                                            className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                            title={t('integration_remove') || 'Remove integration'}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                /* Empty State */
+                <div className="bg-white dark:bg-[#1a1d23] border border-dashed border-slate-300 dark:border-slate-700/50 rounded-2xl p-12 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center mb-4">
+                        <LinkIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                        {t('integration_empty_title') || 'No integrations configured'}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                        {t('integration_empty_description') || 'Add an integration to connect your management system (IXC, SGP) and sync customer data automatically.'}
+                    </p>
+                    {availableProviders.length > 0 && (
+                        <Button type="button" variant="primary" size="sm" onClick={() => setShowAddDropdown(true)}>
+                            <Plus className="w-4 h-4" />
+                            {t('integration_add_button') || 'Add Integration'}
+                        </Button>
+                    )}
+                </div>
+            )}
 
             {renderProviderModal()}
         </div>

@@ -16,11 +16,18 @@ export const initCronJobs = () => {
         console.log('[Cron] Daily retention tasks completed.');
     });
 
-    // Run daily at 03:00 AM for SGP Synchronization
+    // Incremental sync every 10 minutes — only fetches records changed since last sync
+    cron.schedule('*/10 * * * *', async () => {
+        console.log('[Cron] Running incremental SGP synchronization...');
+        await SgpService.runIncrementalSync();
+        console.log('[Cron] Incremental SGP sync completed.');
+    });
+
+    // Full sync daily at 03:00 AM — complete reconciliation of all records
     cron.schedule('0 3 * * *', async () => {
-        console.log('[Cron] Running daily SGP synchronization...');
+        console.log('[Cron] Running full daily SGP synchronization...');
         await SgpService.runDailySync();
-        console.log('[Cron] SGP daily sync completed.');
+        console.log('[Cron] Full SGP daily sync completed.');
     });
 
     // Run every hour to check for expired invoices and subscriptions

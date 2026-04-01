@@ -43,7 +43,14 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
         setIsLoading(true);
         try {
             const res = await api.get('/integrations/sgp/conflicts');
-            setConflicts(res.data || []);
+            const all = res.data || [];
+            // Filter conflicts by provider type
+            const filtered = all.filter((c: any) => {
+                const conflictType = c.payload?.sgpType;
+                if (providerType === 'IXC') return conflictType === 'IXC';
+                return conflictType !== 'IXC'; // GENERIC gets everything that's not IXC
+            });
+            setConflicts(filtered);
         } catch {
             // Silent fail
         } finally {
@@ -176,9 +183,22 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
             </div>
 
             {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                    <Loader2 className="w-7 h-7 animate-spin text-emerald-500" />
-                    <p className="text-xs text-slate-400">Loading conflicts...</p>
+                <div className="space-y-2.5 animate-in fade-in duration-300">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-white dark:bg-[#22262e]/50 border border-slate-200 dark:border-slate-700/50 rounded-xl p-4 animate-pulse">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700/50 shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                        <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
+                                    </div>
+                                    <div className="h-3 w-48 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                </div>
+                                <div className="h-8 w-20 bg-slate-100 dark:bg-slate-700/50 rounded-lg shrink-0" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : conflicts.length === 0 ? (
                 <div className="text-center py-14 border-2 border-dashed border-slate-200 dark:border-slate-700/30 rounded-xl flex flex-col items-center gap-2">

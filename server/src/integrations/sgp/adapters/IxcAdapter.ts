@@ -57,117 +57,145 @@ export class IxcAdapter implements ISgpAdapter {
     }
 
     /**
-     * Build the IXC Authorization header.
-     * IXC expects: Authorization: Basic base64("login:token")
-     * Users typically paste just the token from IXC panel.
-     * We try both "token" as-is (already base64) and "1:token" (login 1 = admin).
+     * Build the IXC Authorization + ixcsoft headers.
+     * IXC expects: Authorization: Basic base64("userId:token")
+     * The token from IXC panel comes as "userId:apiToken" where userId is the IXC user ID.
+     * Users may paste the full "61:token" or just the token part.
      */
-    private buildAuthHeaders(token: string): Record<string, string> {
-        // If the token already looks like base64 (no colons, no spaces), use it directly
-        // IXC docs: the token from the admin panel is already the base64-encoded "login:token"
-        // But some users paste the raw token, so we handle both cases
-        const isAlreadyBase64 = /^[A-Za-z0-9+/=]+$/.test(token) && !token.includes(':');
+    public buildAuthHeaders(token: string): Record<string, string> {
+        // IXC token format: "userId:apiToken" — base64 encode for Basic Auth
+        // If token contains ":", it's already in userId:token format
+        // If not, assume it's just the token and we can't guess the userId
+        const base64Token = Buffer.from(token).toString('base64');
 
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${isAlreadyBase64 ? token : Buffer.from(token).toString('base64')}`,
+            'Authorization': `Basic ${base64Token}`,
+            'ixcsoft': 'listar',
         };
     }
 
+    /**
+     * Normalize IXC base URL — strip trailing slashes and any /webservice/v1/... suffix
+     * so users can paste either "https://ixc.provedor.com.br" or the full endpoint URL.
+     */
+    public normalizeBaseUrl(url: string): string {
+        return url
+            .replace(/\/$/, '')
+            .replace(/\/webservice\/v1(\/.*)?$/i, '')
+            .replace(/\/api\/v1(\/.*)?$/i, '');
+    }
+
+    /**
+     * Format digits-only string into CPF (XXX.XXX.XXX-XX) or CNPJ (XX.XXX.XXX/XXXX-XX)
+     */
+    private formatCpfCnpj(digits: string): string | null {
+        if (digits.length === 11) {
+            return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`;
+        }
+        if (digits.length === 14) {
+            return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
+        }
+        return null;
+    }
+
     async searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any> {
-        const cleanCpfCnpj = query.replace(/\D/g, '');
-        const normalizedBase = baseUrl.replace(/\/$/, '');
-
-        // IXC stores CPF formatted (e.g. "123.456.789-00") so we use LIKE (%) operator
-        // Try multiple endpoint patterns since IXC versions differ
-        const endpoints = [
-            '/webservice/v1/cliente',
-            '/api/v1/cliente',
-        ];
-
-        const bodyData = {
-            qtype: 'cliente.cnpj_cpf',
-            query: cleanCpfCnpj,
-            oper: '%',           // LIKE — matches even if IXC stores formatted CPF
-            page: '1',
-            rp: '5',             // Return up to 5 results for better matching
-            sortname: 'cliente.id',
-            sortorder: 'desc',
-            grid_param: JSON.stringify([
-                { TB: 'cliente.cnpj_cpf', O: '%', P: cleanCpfCnpj }
-            ])
-        };
-
+        const normalizedBase = this.normalizeBaseUrl(baseUrl);
         const headers = this.buildAuthHeaders(token);
+
+        const digits = query.replace(/\D/g, '');
+        const formatted = this.formatCpfCnpj(digits);
+
+        // IXC stores CPF/CNPJ formatted (e.g. "965.236.202-63")
+        // Try: 1) formatted CPF/CNPJ exact match, 2) as-typed exact match, 3) LIKE with digits
+        const searchVariants = [
+            formatted ? { query: formatted, oper: '=' } : null,   // Formatted CPF/CNPJ exact match
+            { query: query.trim(), oper: '=' },                    // As-typed exact match
+            { query: digits, oper: '%' },                          // LIKE with digits only
+        ].filter((v): v is { query: string; oper: string } => v !== null && v.query.length > 0);
+
+        const endpoints = ['/webservice/v1/cliente'];
         let lastError = '';
 
-        for (const endpoint of endpoints) {
-            const url = `${normalizedBase}${endpoint}`;
-            logger.info(`[IXC Adapter] Trying ${url} for CPF: ${cleanCpfCnpj}`);
+        for (const variant of searchVariants) {
+            const bodyData = {
+                qtype: 'cliente.cnpj_cpf',
+                query: variant.query,
+                oper: variant.oper,
+                page: '1',
+                rp: '20',
+                sortname: 'cliente.id',
+                sortorder: 'desc',
+            };
 
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(bodyData)
-                });
+            for (const endpoint of endpoints) {
+                const url = `${normalizedBase}${endpoint}`;
+                logger.info(`[IXC Adapter] Trying ${url} for CPF: ${variant.query} (oper: ${variant.oper})`);
 
-                if (!response.ok) {
-                    let errorDetail = '';
-                    try {
-                        const errorData = await response.json();
-                        errorDetail = JSON.stringify(errorData);
-                    } catch {
-                        errorDetail = await response.text();
-                    }
-                    lastError = `IXC API error (${response.status}): ${errorDetail.substring(0, 300)}`;
-                    logger.warn(`[IXC Adapter] ${lastError}`);
-
-                    // If 401/403, don't try the next endpoint — it's an auth problem
-                    if (response.status === 401 || response.status === 403) {
-                        throw new Error(`Autenticação falhou (${response.status}). Verifique o token.`);
-                    }
-                    continue; // Try next endpoint
-                }
-
-                let data: any;
                 try {
-                    data = await response.json();
-                } catch {
-                    const text = await response.text();
-                    logger.warn(`[IXC Adapter] Invalid JSON from ${endpoint}: ${text.substring(0, 200)}`);
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(bodyData)
+                    });
+
+                    // Read body as text first to avoid "body already read" errors
+                    const responseText = await response.text();
+
+                    if (!response.ok) {
+                        lastError = `IXC API error (${response.status}): ${responseText.substring(0, 300)}`;
+                        logger.warn(`[IXC Adapter] ${lastError}`);
+
+                        if (response.status === 401 || response.status === 403) {
+                            throw new Error(`Autenticação falhou (${response.status}). Verifique o token.`);
+                        }
+                        continue;
+                    }
+
+                    let data: any;
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch {
+                        logger.warn(`[IXC Adapter] Invalid JSON from ${endpoint}: ${responseText.substring(0, 200)}`);
+                        continue;
+                    }
+
+                    logger.info(`[IXC Adapter] Response from ${endpoint}: total=${data?.total}, registros=${Array.isArray(data?.registros) ? data.registros.length : 'N/A'}`);
+
+                    if (data?.type === 'error') {
+                        lastError = `IXC: ${data.message || 'Unknown error'}`;
+                        logger.warn(`[IXC Adapter] ${lastError}`);
+                        continue;
+                    }
+
+                    const registros = data?.registros || [];
+                    const ixcClient = registros[0] || null;
+
+                    if (ixcClient) {
+                        logger.info(`[IXC Adapter] Found customer ${ixcClient.id} via ${variant.oper} search`);
+                        return this.normalizeIxcClient(ixcClient, normalizedBase, headers);
+                    }
+
+                    // No result with this variant — try next
+                    logger.info(`[IXC Adapter] No customer found with oper=${variant.oper} for ${variant.query}`);
+                } catch (error: any) {
+                    if (error.message.includes('Autenticação')) throw error;
+                    lastError = error.message;
+                    logger.warn(`[IXC Adapter] Fetch error for ${endpoint}: ${error.message}`);
                     continue;
                 }
-
-                logger.info(`[IXC Adapter] Response from ${endpoint}: total=${data?.total}, registros=${Array.isArray(data?.registros) ? data.registros.length : 'N/A'}`);
-
-                const registros = data?.registros || [];
-
-                // IXC returns { total: "0", registros: [] } when no results
-                // or sometimes { type: "error", message: "..." }
-                if (data?.type === 'error') {
-                    lastError = `IXC: ${data.message || 'Unknown error'}`;
-                    logger.warn(`[IXC Adapter] ${lastError}`);
-                    continue;
-                }
-
-                const ixcClient = registros[0] || null;
-                if (!ixcClient) {
-                    logger.info(`[IXC Adapter] No customer found for CPF ${cleanCpfCnpj}`);
-                    return null;
-                }
-
-                // Build normalized response
-                return this.normalizeIxcClient(ixcClient, normalizedBase, headers);
-            } catch (error: any) {
-                if (error.message.includes('Autenticação')) throw error;
-                lastError = error.message;
-                logger.warn(`[IXC Adapter] Fetch error for ${endpoint}: ${error.message}`);
-                continue;
             }
         }
 
-        throw new Error(lastError || 'Não foi possível conectar à API IXC');
+        // If we had API errors (not just empty results), throw so the user knows
+        if (lastError) {
+            logger.error(`[IXC Adapter] All search variants failed. Last error: ${lastError}`);
+            throw new Error(lastError);
+        }
+
+        // All variants returned empty results — customer genuinely not found
+        logger.info(`[IXC Adapter] Customer not found for query: ${query}`);
+        return null;
     }
 
     /**
@@ -212,6 +240,8 @@ export class IxcAdapter implements ISgpAdapter {
             endereco: [ixcClient.endereco, ixcClient.numero, ixcClient.bairro].filter(Boolean).join(', '),
             cidade: ixcClient.cidade,
             cep: ixcClient.cep,
+            lat: ixcClient.latitude ? parseFloat(ixcClient.latitude) : null,
+            lng: ixcClient.longitude ? parseFloat(ixcClient.longitude) : null,
             status: ixcClient.ativo === 'S' ? 'Ativo' : 'Inativo',
             contratos
         };
@@ -240,8 +270,9 @@ export class IxcAdapter implements ISgpAdapter {
                         sortorder: 'desc'
                     })
                 });
+                const text = await res.text();
                 if (res.ok) {
-                    contractData = await res.json();
+                    try { contractData = JSON.parse(text); } catch { continue; }
                     if (contractData?.registros?.length > 0) break;
                 }
             } catch {
@@ -304,9 +335,11 @@ export class IxcAdapter implements ISgpAdapter {
                     })
                 });
 
+                const text = await res.text();
                 if (!res.ok) continue;
 
-                const data: any = await res.json();
+                let data: any;
+                try { data = JSON.parse(text); } catch { continue; }
                 if (!data?.registros?.length) continue;
 
                 return data.registros.map((rad: any) => ({
@@ -315,9 +348,19 @@ export class IxcAdapter implements ISgpAdapter {
                     login: rad.login,
                     senha: rad.senha,
                     mac: rad.mac,
+                    ip: rad.ip || '',
                     status: rad.ativo === 'S' ? 'Ativo' : (rad.ativo === 'N' ? 'Suspenso' : 'Inativo'),
+                    // FTTH fiber data
+                    id_caixa_ftth: rad.id_caixa_ftth || '',        // CTO/caixa ID
+                    ftth_porta: rad.ftth_porta ? parseInt(rad.ftth_porta, 10) : null,  // Porta na CTO
+                    id_transmissor: rad.id_transmissor || '',      // OLT ID
+                    conexao_raw: rad.conexao || '',                // slot/port/vlan encoded
+                    vlan: rad.vlan || '',
+                    latitude: rad.latitude ? parseFloat(rad.latitude) : null,
+                    longitude: rad.longitude ? parseFloat(rad.longitude) : null,
                     onu: {
-                        serial: rad.mac || '',
+                        serial: rad.onu_mac || rad.mac || '',
+                        mac: rad.mac || '',
                         conexao: {
                             status: rad.online === 'S' ? 'online' : 'offline'
                         }

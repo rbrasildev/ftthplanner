@@ -123,9 +123,15 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                <p className="text-sm text-slate-400">Loading settings...</p>
+            <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="bg-slate-100 dark:bg-slate-800/30 rounded-xl p-4 h-20 animate-pulse" />
+                <div className="bg-slate-100 dark:bg-slate-800/30 rounded-xl p-4 h-14 animate-pulse" />
+                <div className="bg-slate-100 dark:bg-slate-800/30 rounded-xl p-5 space-y-4 animate-pulse">
+                    <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700/50 rounded" />
+                    <div className="h-10 bg-slate-200 dark:bg-slate-700/50 rounded-lg" />
+                    <div className="h-10 bg-slate-200 dark:bg-slate-700/50 rounded-lg" />
+                    <div className="h-8 w-36 bg-slate-200 dark:bg-slate-700/50 rounded-lg" />
+                </div>
             </div>
         );
     }
@@ -184,15 +190,20 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                     />
                 )}
 
-                <CustomInput
-                    label={providerType === 'IXC' ? t('ixc_token_label') : t('sgp_token_label')}
-                    type="password"
-                    icon={KeyRound}
-                    placeholder={providerType === 'IXC' ? t('ixc_token_placeholder') : t('sgp_token_placeholder')}
-                    value={settings.apiToken}
-                    onChange={(e) => setSettings({ ...settings, apiToken: e.target.value })}
-                    required
-                />
+                <div>
+                    <CustomInput
+                        label={providerType === 'IXC' ? t('ixc_token_label') : t('sgp_token_label')}
+                        type="password"
+                        icon={KeyRound}
+                        placeholder={providerType === 'IXC' ? t('ixc_token_placeholder') : t('sgp_token_placeholder')}
+                        value={settings.apiToken}
+                        onChange={(e) => setSettings({ ...settings, apiToken: e.target.value })}
+                        required
+                    />
+                    {providerType === 'IXC' && (
+                        <p className="text-[10px] text-slate-400 mt-1.5 ml-1">{t('ixc_token_help')}</p>
+                    )}
+                </div>
 
                 {/* Test Connection Button */}
                 <div className="pt-2">
@@ -201,10 +212,10 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                         onClick={handleTestConnection}
                         disabled={isTesting || !settings.apiUrl || !settings.apiToken}
                         className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${testResult === 'success'
-                                ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                                : testResult === 'error'
-                                    ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600'
+                            ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                            : testResult === 'error'
+                                ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600'
                             }`}
                     >
                         {isTesting ? (
@@ -222,7 +233,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
             </div>
 
             {/* Webhook URL (IXC only) */}
-            {/* {providerType === 'IXC' && settings.customWebhookUrl && (
+            {providerType === 'IXC' && settings.customWebhookUrl && (
                 <div className="bg-white dark:bg-[#22262e]/30 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
                         <Webhook className="w-3.5 h-3.5 inline mr-1" />
@@ -240,7 +251,7 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                         {t('sgp_webhook_url_help')}
                     </p>
                 </div>
-            )} */}
+            )}
 
             {/* Sync Section */}
             <div className="bg-white dark:bg-[#22262e]/30 border border-slate-200 dark:border-slate-700 rounded-xl p-5">

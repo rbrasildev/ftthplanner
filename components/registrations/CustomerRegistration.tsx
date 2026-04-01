@@ -166,8 +166,28 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                 </div>
 
                 {isLoading && page === 1 ? (
-                    <div className="flex justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                    <div className="animate-pulse">
+                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-10">
+                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
+                        </div>
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="h-4 w-36 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="h-3 w-28 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                    <div className="h-3 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                </div>
+                                <div className="h-5 w-14 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
+                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                <div className="ml-auto flex gap-2">
+                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : customers.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">

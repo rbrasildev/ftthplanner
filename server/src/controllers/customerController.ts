@@ -314,19 +314,19 @@ export const updateCustomer = async (req: Request, res: Response) => {
             });
 
             // Update Drop if coordinates are provided
-            if (dropCoordinates && Array.isArray(dropCoordinates) && dropCoordinates.length >= 2 && ctoId) {
-                // Upsert drop
+            if (dropCoordinates && Array.isArray(dropCoordinates) && dropCoordinates.length >= 2) {
+                const dropCtoId = ctoId || currentHelper.ctoId;
                 const existingDrop = await tx.drop.findUnique({ where: { customerId: id } });
                 if (existingDrop) {
                     await tx.drop.update({
                         where: { id: existingDrop.id },
-                        data: { coordinates: dropCoordinates, ctoId }
+                        data: { coordinates: dropCoordinates, ...(ctoId ? { ctoId } : {}) }
                     });
-                } else {
+                } else if (dropCtoId) {
                     await tx.drop.create({
                         data: {
                             customerId: id,
-                            ctoId,
+                            ctoId: dropCtoId,
                             coordinates: dropCoordinates,
                             length: 0
                         }

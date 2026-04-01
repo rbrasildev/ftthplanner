@@ -374,8 +374,9 @@ const MapEvents: React.FC<{
     onContextMenu?: (e: L.LeafletMouseEvent) => void,
     onUndoDrawingPoint?: () => void,
     isRepositioning?: boolean,
-    isDrawingDrop?: boolean
-}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint, isRepositioning, isDrawingDrop }) => {
+    isDrawingDrop?: boolean,
+    isEditingDrop?: boolean
+}> = ({ mode, onMapClick, onClearSelection, onMapMoveEnd, onContextMenu, onUndoDrawingPoint, isRepositioning, isDrawingDrop, isEditingDrop }) => {
     useMapEvents({
         contextmenu(e) {
             // Block context menu
@@ -398,6 +399,9 @@ const MapEvents: React.FC<{
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (isEditingDrop) {
+                // Don't close editing on map click — only Escape or context menu finishes editing
+                return;
             } else if (mode === 'connect_cable') {
                 onClearSelection();
             } else {
@@ -607,6 +611,8 @@ export const MapView: React.FC<MapViewProps> = ({
         startLng: number,
         points: L.LatLng[]
     } | null>(null);
+    const [editingDropCustomerId, setEditingDropCustomerId] = useState<string | null>(null);
+    const [editingDropCoords, setEditingDropCoords] = useState<{ lat: number; lng: number }[] | null>(null);
 
     const ctoOnlineStatus = useMemo(() => {
         const statusMap: Record<string, boolean> = {};
@@ -712,6 +718,100 @@ export const MapView: React.FC<MapViewProps> = ({
 
         // Don't clear drawing state yet, wait for modal confirm/cancel
     }, [drawingCustomerDrop, ctos]);
+
+    // Drop editing handlers
+    const startEditingDrop = useCallback((customerId: string) => {
+        const customer = allCustomers.find(c => c.id === customerId);
+        if (!customer || !(customer as any).drop?.coordinates) return;
+        const coords = ((customer as any).drop.coordinates as any[]).map((c: any) => {
+            if (Array.isArray(c)) return { lat: c[0], lng: c[1] };
+            return { lat: c.lat, lng: c.lng };
+        });
+        setEditingDropCustomerId(customerId);
+        setEditingDropCoords(coords);
+    }, [allCustomers]);
+
+    const saveDropCoords = useCallback(async (customerId: string, coords: { lat: number; lng: number }[]) => {
+        const customer = allCustomers.find(c => c.id === customerId);
+        if (customer) {
+            if ((customer as any).drop) {
+                (customer as any).drop.coordinates = coords;
+            } else {
+                (customer as any).drop = { coordinates: coords };
+            }
+        }
+        try {
+            const updated = await updateCustomer(customerId, { dropCoordinates: coords });
+            if (onCustomerSaved) onCustomerSaved(updated);
+        } catch {
+            if (showToast) showToast(t('drop_save_error') || 'Erro ao salvar drop', 'error');
+        }
+    }, [allCustomers, showToast, t, onCustomerSaved]);
+
+    const finishEditingDrop = useCallback(() => {
+        if (editingDropCustomerId && editingDropCoords) {
+            saveDropCoords(editingDropCustomerId, editingDropCoords);
+        }
+        setEditingDropCustomerId(null);
+        setEditingDropCoords(null);
+    }, [editingDropCustomerId, editingDropCoords, saveDropCoords]);
+
+    const [dropContextMenu, setDropContextMenu] = useState<{ x: number; y: number; customerId: string } | null>(null);
+
+    const handleDropContextMenu = useCallback((e: L.LeafletMouseEvent, customerId: string) => {
+        if (mode !== 'view') return;
+        const { clientX, clientY } = e.originalEvent;
+        setDropContextMenu({ x: clientX, y: clientY, customerId });
+        setContextMenu(null);
+        setMapContextMenu(null);
+    }, [mode]);
+
+    const handleDropDblClick = useCallback((e: L.LeafletMouseEvent, customerId: string) => {
+        if (!editingDropCoords || customerId !== editingDropCustomerId) return;
+        // Add a new point at the click location, inserted at nearest segment
+        const clickLat = e.latlng.lat;
+        const clickLng = e.latlng.lng;
+        const coords = editingDropCoords;
+
+        // Find nearest segment
+        let minDist = Infinity;
+        let insertIndex = 1;
+        for (let i = 0; i < coords.length - 1; i++) {
+            const midLat = (coords[i].lat + coords[i + 1].lat) / 2;
+            const midLng = (coords[i].lng + coords[i + 1].lng) / 2;
+            const dist = Math.hypot(clickLat - midLat, clickLng - midLng);
+            if (dist < minDist) { minDist = dist; insertIndex = i + 1; }
+        }
+
+        const next = [...coords];
+        next.splice(insertIndex, 0, { lat: clickLat, lng: clickLng });
+        setEditingDropCoords(next);
+        saveDropCoords(customerId, next);
+    }, [editingDropCustomerId, editingDropCoords, saveDropCoords]);
+
+    const handleDropVertexDrag = useCallback((_customerId: string, index: number, lat: number, lng: number) => {
+        setEditingDropCoords(prev => {
+            if (!prev) return prev;
+            const next = [...prev];
+            next[index] = { lat, lng };
+            return next;
+        });
+    }, []);
+
+    const handleDropVertexDragEnd = useCallback(async (customerId: string) => {
+        if (!editingDropCoords) return;
+        await saveDropCoords(customerId, editingDropCoords);
+    }, [editingDropCoords, saveDropCoords]);
+
+    const handleDropVertexRemove = useCallback(async (customerId: string, index: number) => {
+        setEditingDropCoords(prev => {
+            if (!prev || prev.length <= 2) return prev;
+            const next = [...prev];
+            next.splice(index, 1);
+            saveDropCoords(customerId, next);
+            return next;
+        });
+    }, [saveDropCoords]);
 
     // Modify onMapClick to handle 'add_customer' mode
     // (This requires finding the existing onMapClick definition and modifying it or injecting logic)
@@ -876,6 +976,10 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 setContextMenu(null);
                 setMapContextMenu(null);
+                setDropContextMenu(null);
+                if (editingDropCustomerId && editingDropCoords) {
+                    finishEditingDrop();
+                }
                 if (onCancelMode) {
                     onCancelMode();
                 }
@@ -1038,6 +1142,12 @@ export const MapView: React.FC<MapViewProps> = ({
     // Stable callback for MapEvents onMapClick - avoids inline closure recreation
     const handleMapClickInternal = useCallback((lat: number, lng: number) => {
         setMapContextMenu(null);
+        setDropContextMenu(null);
+        // Close drop editing on any map click — save and clear
+        if (editingDropCustomerId && editingDropCoords) {
+            finishEditingDrop();
+            return;
+        }
         if (mode === 'ruler') {
             onRulerPointsChange([...rulerPoints, { lat, lng }]);
         } else if (repositioningCustomer) {
@@ -1073,7 +1183,7 @@ export const MapView: React.FC<MapViewProps> = ({
         } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
             onAddPoint(lat, lng);
         }
-    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t]);
+    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t]);
 
     const handleMapClearSelection = useCallback(() => {
         setActiveCableId(null);
@@ -1208,6 +1318,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     mode={mode}
                     isRepositioning={!!repositioningCustomer}
                     isDrawingDrop={!!drawingCustomerDrop}
+                    isEditingDrop={!!editingDropCustomerId && !!editingDropCoords}
                     onMapClick={handleMapClickInternal}
                     onClearSelection={handleMapClearSelection}
                     onUndoDrawingPoint={handleUndoDrawingPoint}
@@ -1222,6 +1333,13 @@ export const MapView: React.FC<MapViewProps> = ({
                 <DropsLayer
                     customers={allCustomers}
                     visible={isCustomersVisible}
+                    editingDropCustomerId={editingDropCustomerId}
+                    editingDropCoords={editingDropCoords}
+                    onDropContextMenu={handleDropContextMenu}
+                    onDropDblClick={handleDropDblClick}
+                    onDropVertexDrag={handleDropVertexDrag}
+                    onDropVertexDragEnd={handleDropVertexDragEnd}
+                    onDropVertexRemove={handleDropVertexRemove}
                 />
 
                 <D3CablesLayer
@@ -1750,6 +1868,58 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
 
+
+            {/* Drop Context Menu */}
+            {dropContextMenu && (
+                <div
+                    className="fixed z-[99999] w-48 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/40 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                    style={{
+                        top: dropContextMenu.y > window.innerHeight / 2 ? 'auto' : dropContextMenu.y,
+                        bottom: dropContextMenu.y > window.innerHeight / 2 ? window.innerHeight - dropContextMenu.y : 'auto',
+                        left: dropContextMenu.x > window.innerWidth / 2 ? 'auto' : dropContextMenu.x,
+                        right: dropContextMenu.x > window.innerWidth / 2 ? window.innerWidth - dropContextMenu.x : 'auto'
+                    }}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <div className="px-3 py-2.5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-700/30">
+                        <div className="w-6 h-6 bg-slate-900 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                            <span className="text-[10px] text-white font-bold">D</span>
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">Drop</span>
+                    </div>
+                    <div className="py-1">
+                        <button
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                            onClick={() => {
+                                startEditingDrop(dropContextMenu.customerId);
+                                setDropContextMenu(null);
+                            }}
+                        >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                            {t('edit_drop') || 'Editar Drop'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Drop Edit Toolbar */}
+            {editingDropCustomerId && editingDropCoords && (
+                <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-2xl px-4 py-2.5 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                        {t('editing_drop') || 'Editando Drop'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        {t('drop_edit_hint') || 'Arraste pontos | Duplo-clique para adicionar'}
+                    </span>
+                    <button
+                        onClick={finishEditingDrop}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        {t('finish') || 'Finalizar'}
+                    </button>
+                </div>
+            )}
 
             <ConnectCustomerModal
                 isOpen={connectCustomerModalOpen}

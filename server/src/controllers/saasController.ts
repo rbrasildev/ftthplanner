@@ -312,18 +312,27 @@ export const deleteCompany = async (req: AuthRequest, res: Response) => {
         await prisma.catalogFusion.deleteMany({ where: { companyId: id } });
         await prisma.catalogOLT.deleteMany({ where: { companyId: id } });
 
-        // 3. Delete Audit Logs (FK Constraint for Users and Company)
+        // 3. Delete Invoices & Audit Logs
+        await prisma.invoice.deleteMany({ where: { companyId: id } });
         await prisma.auditLog.deleteMany({ where: { companyId: id } });
         await prisma.auditLog.deleteMany({ where: { user: { companyId: id } } });
 
-        // 4. Delete Users
-        // 4. Soft-Delete Users
-        await prisma.user.updateMany({ 
+        // 4. Delete remaining FK-constrained records (via user relation)
+        const companyUserIds = (await prisma.user.findMany({ where: { companyId: id }, select: { id: true } })).map(u => u.id);
+        if (companyUserIds.length > 0) {
+            await prisma.supportConversation.deleteMany({ where: { userId: { in: companyUserIds } } });
+            await prisma.integrationSettings.deleteMany({ where: { userId: { in: companyUserIds } } });
+            await prisma.integrationMapping.deleteMany({ where: { userId: { in: companyUserIds } } });
+            await prisma.integrationConflict.deleteMany({ where: { userId: { in: companyUserIds } } });
+        }
+
+        // 5. Soft-Delete Users
+        await prisma.user.updateMany({
             where: { companyId: id, deletedAt: null },
             data: { deletedAt: new Date(), active: false }
         });
 
-        // 4. Delete Company
+        // 6. Delete Company
         const company = await prisma.company.delete({
             where: { id }
         });

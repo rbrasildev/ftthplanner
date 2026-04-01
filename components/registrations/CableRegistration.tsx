@@ -20,6 +20,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCable, setEditingCable] = useState<CableCatalogItem | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Form State
     const [formData, setFormData] = useState<Partial<CableCatalogItem>>({
@@ -42,11 +43,14 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
     }, []);
 
     const loadCables = async () => {
+        setIsLoading(true);
         try {
             const data = await getCables();
             setCables(data);
         } catch (error) {
             console.error("Failed to load cables", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -149,7 +153,28 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                     </div>
                 </div>
 
-                {filteredCables.length === 0 ? (
+                {isLoading ? (
+                    <div className="animate-pulse">
+                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-12">
+                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
+                        </div>
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="h-4 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                </div>
+                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                <div className="h-4 w-16 bg-slate-100 dark:bg-slate-700/50 rounded" />
+                                <div className="ml-auto flex gap-2">
+                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredCables.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                         {t('no_results')}
                     </div>

@@ -112,15 +112,15 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     const applySgpService = (sgpCustomer: any, contract: any, service: any, silent = false) => {
         const onuData = service.onu || {};
         const contactData = sgpCustomer.contatos || {};
-        
+
         // Get formatted address from the service or main customer
         const addrData = service.endereco || sgpCustomer.endereco || {};
-        
-        // Get coordinates if available
-        const latStr = addrData.latitude || "";
-        const lngStr = addrData.longitude || "";
-        const newLat = latStr !== "" ? parseFloat(latStr) : formData.lat;
-        const newLng = lngStr !== "" ? parseFloat(lngStr) : formData.lng;
+
+        // Get coordinates: try service-level (IXC radusuarios), then customer-level, then address object
+        const latStr = service.latitude || sgpCustomer.lat || addrData.latitude || "";
+        const lngStr = service.longitude || sgpCustomer.lng || addrData.longitude || "";
+        const newLat = latStr !== "" && latStr !== null ? parseFloat(String(latStr)) : formData.lat;
+        const newLng = lngStr !== "" && lngStr !== null ? parseFloat(String(lngStr)) : formData.lng;
 
         const servicoStatus = service.status || sgpCustomer.status;
 
@@ -129,24 +129,24 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             name: sgpCustomer.nome || formData.name,
             email: contactData.emails?.[0] || sgpCustomer.email || formData.email,
             phone: contactData.celulares?.[0] || sgpCustomer.telefone || sgpCustomer.celular || formData.phone,
-            address: addrData, 
+            address: addrData,
             onuSerial: onuData.serial || formData.onuSerial,
             onuMac: service.mac || onuData.mac || formData.onuMac || "",
             pppoeService: service.login || formData.pppoeService,
             onuPower: onuData.rx ? String(onuData.rx) : formData.onuPower,
-            status: servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' : 
-                    (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' : 
+            status: servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
+                    (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
                     (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : formData.status)),
-            connectionStatus: onuData.conexao?.status 
-                ? String(onuData.conexao.status).toLowerCase().trim() 
+            connectionStatus: onuData.conexao?.status
+                ? String(onuData.conexao.status).toLowerCase().trim()
                 : (onuData.serial || service.mac ? 'offline' : formData.connectionStatus),
-            lat: !isNaN(newLat) && latStr !== "" ? newLat : formData.lat,
-            lng: !isNaN(newLng) && lngStr !== "" ? newLng : formData.lng
+            lat: !isNaN(newLat) && latStr !== "" && latStr !== null ? newLat : formData.lat,
+            lng: !isNaN(newLng) && lngStr !== "" && lngStr !== null ? newLng : formData.lng
         };
 
-        // Auto-assign port if available in SGP
-        const sgpPortStr = onuData.splitter?.porta || service.onu?.splitter?.porta;
-        const sgpPort = sgpPortStr ? parseInt(String(sgpPortStr), 10) : null;
+        // Auto-assign port: try IXC ftth_porta, then generic SGP splitter.porta
+        const sgpPortStr = service.ftth_porta || onuData.splitter?.porta || service.onu?.splitter?.porta;
+        const sgpPort = sgpPortStr !== null && sgpPortStr !== undefined ? parseInt(String(sgpPortStr), 10) : null;
 
         if (sgpPort !== null && !isNaN(sgpPort)) {
             updatedData.splitterPortIndex = sgpPort - 1;

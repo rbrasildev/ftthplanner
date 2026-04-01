@@ -478,6 +478,95 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 </div>
             </section>
 
+            {/* --- INTEGRATIONS --- */}
+            <section className="py-24 bg-slate-900 border-t border-slate-800">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/10 rounded-full mb-6">
+                            <Layers className="w-4 h-4 text-blue-400" />
+                            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">{t('landing_integrations_badge') || 'Integrations'}</span>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                            {t('landing_integrations_title') || 'Conecte ao seu sistema de gestão'}
+                        </h2>
+                        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                            {t('landing_integrations_desc') || 'Sincronize clientes, portas e status automaticamente com os principais ERPs do mercado de telecomunicações.'}
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        {/* IXC Provedor */}
+                        <div className="group relative bg-slate-950/50 border border-slate-800 rounded-2xl p-8 hover:border-blue-500/40 transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-blue-500/20">
+                                        <img src="/integrations/ixc-logo.png" alt="IXC Provedor" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">IXC Provedor</h3>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full uppercase tracking-wider">Webhook + API</span>
+                                    </div>
+                                </div>
+                                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                                    {t('landing_ixc_desc') || 'Integração em tempo real via Webhooks. Sincronize clientes, contratos, CTO, porta FTTH e status de conexão automaticamente.'}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        t('landing_ixc_feat_1') || 'Sync em tempo real',
+                                        t('landing_ixc_feat_2') || 'Detecção de conflitos',
+                                        t('landing_ixc_feat_3') || 'PPPoE e ONU',
+                                        t('landing_ixc_feat_4') || 'Status online/offline'
+                                    ].map((feat, i) => (
+                                        <span key={i} className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                                            <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                                            {feat}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SGP */}
+                        <div className="group relative bg-slate-950/50 border border-slate-800 rounded-2xl p-8 hover:border-purple-500/40 transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-purple-500/20 bg-slate-800 flex items-center justify-center p-2">
+                                        <img src="/integrations/sgp-logo.png" alt="SGP" className="w-full h-full object-contain brightness-90" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">SGP</h3>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full uppercase tracking-wider">API Polling</span>
+                                    </div>
+                                </div>
+                                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                                    {t('landing_sgp_desc') || 'Sincronização automática via API. Busca dados de clientes, contratos e serviços diretamente do seu sistema de gestão.'}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        t('landing_sgp_feat_1') || 'Sync automática',
+                                        t('landing_sgp_feat_2') || 'Busca por CPF/CNPJ',
+                                        t('landing_sgp_feat_3') || 'Status de conta',
+                                        t('landing_sgp_feat_4') || 'Sync incremental'
+                                    ].map((feat, i) => (
+                                        <span key={i} className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                                            <CheckCircle2 className="w-3 h-3 text-purple-400" />
+                                            {feat}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom note */}
+                    <p className="text-center text-sm text-slate-500 mt-10">
+                        {t('landing_integrations_note') || 'Configure em minutos. Sem desenvolvimento adicional necessário.'}
+                    </p>
+                </div>
+            </section>
+
             {/* --- HOW IT WORKS --- */}
             <section id="how-it-works" className="py-24 bg-slate-900 border-t border-slate-800" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
