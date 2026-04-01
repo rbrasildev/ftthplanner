@@ -773,13 +773,15 @@ export const MapView: React.FC<MapViewProps> = ({
         const clickLng = e.latlng.lng;
         const coords = editingDropCoords;
 
-        // Find nearest segment
+        // Find nearest segment using perpendicular distance
         let minDist = Infinity;
         let insertIndex = 1;
         for (let i = 0; i < coords.length - 1; i++) {
-            const midLat = (coords[i].lat + coords[i + 1].lat) / 2;
-            const midLng = (coords[i].lng + coords[i + 1].lng) / 2;
-            const dist = Math.hypot(clickLat - midLat, clickLng - midLng);
+            const dist = getDistanceFromLine(
+                { lat: clickLat, lng: clickLng },
+                coords[i],
+                coords[i + 1]
+            );
             if (dist < minDist) { minDist = dist; insertIndex = i + 1; }
         }
 
@@ -1187,7 +1189,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const handleMapClearSelection = useCallback(() => {
         setActiveCableId(null);
+        setContextMenu(null);
         setMapContextMenu(null);
+        setDropContextMenu(null);
     }, []);
 
     const handleUndoDrawingPoint = useCallback(() => {
