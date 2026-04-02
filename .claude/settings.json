@@ -56,7 +56,9 @@
       "Bash(curl -sL \"https://sgp.net.br/wp-content/uploads/2023/09/logo-sgp-1.png\" -o d:/ftthplanner/public/integrations/sgp-logo.png)",
       "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
       "Bash(find /d/ftthplanner/server -type f \\\\\\(-name *.js -o -name *.ts \\\\\\) -not -path */node_modules/*)",
-      "Bash(grep -v \"^[0-9]*:\\\\s*//\")"
+      "Bash(grep -v \"^[0-9]*:\\\\s*//\")",
+      "Bash(grep -n \"setToolMode.*add_cto\\\\|setToolMode.*add_pop\\\\|onClick.*add_cto\\\\|onClick.*add_pop\" /d/ftthplanner/components/*.tsx)",
+      "Bash(grep -n \"handleAddPoint\\\\|mode === ''add_cto''\\\\|mode === ''add_pop''\" /d/ftthplanner/App.tsx)"
     ]
   }
 }

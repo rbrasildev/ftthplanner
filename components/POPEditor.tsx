@@ -98,6 +98,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const dragLinksRef = useRef<{ dioId: string; cableId: string; dioLayout: ElementLayout; cableLayout: ElementLayout; isDio: boolean; isCable: boolean }[]>([]);
 
     // --- Initialization ---
     useEffect(() => {
@@ -445,6 +446,29 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleElementDragStart = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
+
+        // Pre-compute which SVG links need updating during drag
+        const links: typeof dragLinksRef.current = [];
+        localPOP.dios.forEach(dio => {
+            if (!dio.inputCableIds || dio.inputCableIds.length === 0) return;
+            dio.inputCableIds.forEach(cableId => {
+                const cable = uniqueIncomingCables.find(c => c.id === cableId);
+                if (!cable) return;
+                const isDio = id === dio.id;
+                const isCable = id === cable.id;
+                if (!isDio && !isCable) return;
+                links.push({
+                    dioId: dio.id,
+                    cableId: cable.id,
+                    dioLayout: getLayout(dio.id),
+                    cableLayout: getLayout(cable.id),
+                    isDio,
+                    isCable
+                });
+            });
+        });
+        dragLinksRef.current = links;
+
         setDragState({
             mode: 'element',
             targetId: id,
@@ -497,37 +521,26 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 el.style.transform = `translate(${newX}px, ${newY}px)`;
             }
 
-            // Update SVG connection lines in real-time during drag
-            localPOP.dios.forEach(dio => {
-                if (!dio.inputCableIds || dio.inputCableIds.length === 0) return;
-                dio.inputCableIds.forEach(cableId => {
-                    const cable = uniqueIncomingCables.find(c => c.id === cableId);
-                    if (!cable) return;
+            // Update SVG connection lines in real-time using pre-computed cache
+            for (let i = 0; i < dragLinksRef.current.length; i++) {
+                const link = dragLinksRef.current[i];
 
-                    const isDio = dragState.targetId === dio.id;
-                    const isCable = dragState.targetId === cable.id;
-                    if (!isDio && !isCable) return;
+                let p2x = link.dioLayout.x;
+                let p2y = link.dioLayout.y + 40;
+                let p1x = link.cableLayout.x + 112;
+                let p1y = link.cableLayout.y + 30;
 
-                    const dioLayout = getLayout(dio.id);
-                    const cableLayout = getLayout(cable.id);
+                if (link.isDio) { p2x = newX; p2y = newY + 40; }
+                if (link.isCable) { p1x = newX + 112; p1y = newY + 30; }
 
-                    let p2x = dioLayout.x;
-                    let p2y = dioLayout.y + 40;
-                    let p1x = cableLayout.x + 112;
-                    let p1y = cableLayout.y + 30;
-
-                    if (isDio) { p2x = newX; p2y = newY + 40; }
-                    if (isCable) { p1x = newX + 112; p1y = newY + 30; }
-
-                    const cx = (p1x + p2x) / 2;
-                    const pathEl = document.getElementById(`conn-${cable.id}-${dio.id}-path`);
-                    const c1El = document.getElementById(`conn-${cable.id}-${dio.id}-c1`);
-                    const c2El = document.getElementById(`conn-${cable.id}-${dio.id}-c2`);
-                    if (pathEl) pathEl.setAttribute('d', `M ${p1x} ${p1y} C ${cx} ${p1y}, ${cx} ${p2y}, ${p2x} ${p2y}`);
-                    if (c1El) { c1El.setAttribute('cx', String(p1x)); c1El.setAttribute('cy', String(p1y)); }
-                    if (c2El) { c2El.setAttribute('cx', String(p2x)); c2El.setAttribute('cy', String(p2y)); }
-                });
-            });
+                const cx = (p1x + p2x) / 2;
+                const pathEl = document.getElementById(`conn-${link.cableId}-${link.dioId}-path`);
+                const c1El = document.getElementById(`conn-${link.cableId}-${link.dioId}-c1`);
+                const c2El = document.getElementById(`conn-${link.cableId}-${link.dioId}-c2`);
+                if (pathEl) pathEl.setAttribute('d', `M ${p1x} ${p1y} C ${cx} ${p1y}, ${cx} ${p2y}, ${p2x} ${p2y}`);
+                if (c1El) { c1El.setAttribute('cx', String(p1x)); c1El.setAttribute('cy', String(p1y)); }
+                if (c2El) { c2El.setAttribute('cx', String(p2x)); c2El.setAttribute('cy', String(p2y)); }
+            }
         }
         else if (dragState.mode === 'modal_olt' && dragState.initialPos) {
             const dx = e.clientX - dragState.startX;
@@ -997,15 +1010,18 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
             if (oltPorts.length === 0 || dioPorts.length === 0) return prev;
 
-            // Find already connected ports
-            const connectedPorts = new Set<string>();
+            // Find already connected ports (only count patching connections, not fiber/splice)
+            const patchedPorts = new Set<string>();
             prev.connections.forEach(c => {
-                connectedPorts.add(c.sourceId);
-                connectedPorts.add(c.targetId);
+                const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
+                if (!isFiber) {
+                    patchedPorts.add(c.sourceId);
+                    patchedPorts.add(c.targetId);
+                }
             });
 
-            const freeOltPorts = oltPorts.filter(p => !connectedPorts.has(p));
-            const freeDioPorts = dioPorts.filter(p => !connectedPorts.has(p));
+            const freeOltPorts = oltPorts.filter(p => !patchedPorts.has(p));
+            const freeDioPorts = dioPorts.filter(p => !patchedPorts.has(p));
 
             const count = Math.min(freeOltPorts.length, freeDioPorts.length);
             if (count === 0) return prev;
@@ -1168,7 +1184,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                         id={cable.id}
                                         key={cable.id}
                                         style={{ transform: `translate(${layout.x}px, ${layout.y}px)` }}
-                                        className="absolute w-28 bg-[#1a1d23] border border-slate-700/50 ring-1 ring-black/20 rounded-lg shadow-xl z-20 flex flex-col hover:brightness-110 transition-all clickable-element select-none"
+                                        className={`absolute w-28 bg-[#1a1d23] border border-slate-700/50 ring-1 ring-black/20 rounded-lg shadow-xl z-20 flex flex-col hover:brightness-110 clickable-element select-none ${dragState?.targetId === cable.id ? '' : 'transition-[filter]'}`}
                                         onMouseEnter={() => onHoverCable && onHoverCable(cable.id)}
                                         onMouseLeave={() => onHoverCable && onHoverCable(null)}
                                         onDoubleClick={(e) => {
@@ -1340,9 +1356,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 >
                                     <option value="">{t('select') || 'Selecione...'}</option>
                                     {localPOP.olts.map((olt: any) => {
-                                        const connectedPorts = new Set<string>();
-                                        localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
-                                        const free = (olt.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                        const patchedPorts = new Set<string>();
+                                        localPOP.connections.forEach((c: any) => { const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber'); if (!isFiber) { patchedPorts.add(c.sourceId); patchedPorts.add(c.targetId); } });
+                                        const free = (olt.portIds || []).filter((p: string) => !patchedPorts.has(p)).length;
                                         return (
                                             <option key={olt.id} value={olt.id}>
                                                 {olt.name} ({free} {t('available') || 'livres'})
@@ -1362,9 +1378,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 >
                                     <option value="">{t('select') || 'Selecione...'}</option>
                                     {localPOP.dios.map((dio: any) => {
-                                        const connectedPorts = new Set<string>();
-                                        localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
-                                        const free = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                        const patchedPorts = new Set<string>();
+                                        localPOP.connections.forEach((c: any) => { const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber'); if (!isFiber) { patchedPorts.add(c.sourceId); patchedPorts.add(c.targetId); } });
+                                        const free = (dio.portIds || []).filter((p: string) => !patchedPorts.has(p)).length;
                                         return (
                                             <option key={dio.id} value={dio.id}>
                                                 {dio.name} ({free} {t('available') || 'livres'})
@@ -1379,10 +1395,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 const olt = localPOP.olts.find((o: any) => o.id === autoPatchSourceId);
                                 const dio = localPOP.dios.find((d: any) => d.id === autoPatchTargetId);
                                 if (!olt || !dio) return null;
-                                const connectedPorts = new Set<string>();
-                                localPOP.connections.forEach((c: any) => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
-                                const freeOlt = (olt.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
-                                const freeDio = (dio.portIds || []).filter((p: string) => !connectedPorts.has(p)).length;
+                                const patchedPorts = new Set<string>();
+                                localPOP.connections.forEach((c: any) => { const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber'); if (!isFiber) { patchedPorts.add(c.sourceId); patchedPorts.add(c.targetId); } });
+                                const freeOlt = (olt.portIds || []).filter((p: string) => !patchedPorts.has(p)).length;
+                                const freeDio = (dio.portIds || []).filter((p: string) => !patchedPorts.has(p)).length;
                                 const willConnect = Math.min(freeOlt, freeDio);
                                 return (
                                     <div className="mb-5 p-3 bg-[#22262e] rounded-lg border border-slate-600/50 text-center">

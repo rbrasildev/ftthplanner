@@ -312,7 +312,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                     >
                                         T{tubeIdx + 1}
                                     </div>
-                                    <div className="p-1.5 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1 bg-slate-50 dark:bg-[#1a1d23]/50">
+                                    <div className="p-1.5 grid grid-cols-12 gap-1 bg-slate-50 dark:bg-[#1a1d23]/50">
                                         {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
                                             const fiberIndex = startFiberIndex + fOffset;
                                             const fiberId = `${cable.id}-fiber-${fiberIndex}`;
