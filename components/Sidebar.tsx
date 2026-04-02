@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
-    LogOut, FileUp, ChevronLeft, ChevronRight,
+    LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
     Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard
 } from 'lucide-react';
@@ -43,6 +43,9 @@ export interface SidebarProps {
     setCurrentProjectId: (id: string | null) => void;
     setShowProjectManager: (show: boolean) => void;
     onImportClick: () => void;
+    onExportClick?: () => void;
+    onExportAreaClick?: () => void;
+    isExporting?: boolean;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
     isMobileOpen: boolean;
@@ -100,6 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setCurrentProjectId,
     setShowProjectManager,
     onImportClick,
+    onExportClick,
+    onExportAreaClick,
+    isExporting,
     isCollapsed,
     onToggleCollapse,
     isMobileOpen,
@@ -349,6 +355,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     isCollapsed={isCollapsed}
                                     variant="slate"
                                 />
+
+                                {userRole !== 'MEMBER' && onExportClick && (
+                                    <NavButton
+                                        icon={<FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} />}
+                                        label={t('export_kmz_button')}
+                                        onClick={() => { if (!isExporting) { onExportClick(); onCloseMobile(); } }}
+                                        isCollapsed={isCollapsed}
+                                        variant="slate"
+                                    />
+                                )}
+
+                                {userRole !== 'MEMBER' && onExportAreaClick && (
+                                    <NavButton
+                                        icon={<ScanSearch className="w-5 h-5" />}
+                                        label={t('export_area')}
+                                        onClick={() => { onExportAreaClick(); onCloseMobile(); }}
+                                        isCollapsed={isCollapsed}
+                                        variant="slate"
+                                    />
+                                )}
                             </div>
 
                             {/* VFL Indicator */}

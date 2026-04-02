@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
@@ -8,7 +8,7 @@ import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -380,7 +380,7 @@ const MapEvents: React.FC<{
     useMapEvents({
         contextmenu(e) {
             // Block context menu
-            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve' || isDrawingDrop) {
+            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve' || mode === 'export_area' || isDrawingDrop) {
                 L.DomEvent.preventDefault(e as any);
                 if (onUndoDrawingPoint) {
                     onUndoDrawingPoint();
@@ -396,6 +396,8 @@ const MapEvents: React.FC<{
             if (isRepositioning) {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'add_customer') {
+                onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (mode === 'export_area') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
@@ -515,7 +517,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable';
+    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -570,6 +572,9 @@ interface MapViewProps {
     userRole?: string | null;
     onCustomerSaved?: (customer?: Customer) => void;
     onCancelMode?: () => void;
+    exportAreaPolygon?: { lat: number; lng: number }[];
+    onExportAreaPolygonChange?: (points: { lat: number; lng: number }[]) => void;
+    onExportAreaConfirm?: () => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -590,7 +595,10 @@ export const MapView: React.FC<MapViewProps> = ({
     onCustomerSaved,
     userRole = null,
     projectId,
-    onCancelMode
+    onCancelMode,
+    exportAreaPolygon = [],
+    onExportAreaPolygonChange,
+    onExportAreaConfirm
 }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
@@ -1182,10 +1190,14 @@ export const MapView: React.FC<MapViewProps> = ({
             });
         } else if (mode === 'add_customer') {
             handleMapClickForCustomer(lat, lng);
+        } else if (mode === 'export_area') {
+            if (onExportAreaPolygonChange) {
+                onExportAreaPolygonChange([...exportAreaPolygon, { lat, lng }]);
+            }
         } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
             onAddPoint(lat, lng);
         }
-    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t]);
+    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t, exportAreaPolygon, onExportAreaPolygonChange]);
 
     const handleMapClearSelection = useCallback(() => {
         setActiveCableId(null);
@@ -1195,12 +1207,16 @@ export const MapView: React.FC<MapViewProps> = ({
     }, []);
 
     const handleUndoDrawingPoint = useCallback(() => {
-        if (mode === 'ruler') {
+        if (mode === 'export_area') {
+            if (onExportAreaPolygonChange) {
+                onExportAreaPolygonChange(exportAreaPolygon.slice(0, -1));
+            }
+        } else if (mode === 'ruler') {
             onRulerPointsChange(rulerPoints.slice(0, -1));
         } else if (onUndoDrawingPoint) {
             onUndoDrawingPoint();
         }
-    }, [mode, rulerPoints, onRulerPointsChange, onUndoDrawingPoint]);
+    }, [mode, rulerPoints, onRulerPointsChange, onUndoDrawingPoint, exportAreaPolygon, onExportAreaPolygonChange]);
 
     const handleMapContextMenuInternal = useCallback((e: L.LeafletMouseEvent) => {
         if (drawingCustomerDrop) {
@@ -1228,7 +1244,7 @@ export const MapView: React.FC<MapViewProps> = ({
     }), []);
 
     return (
-        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve'].includes(mode) ? 'drawing-cursor' : ''}`}>
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Map Type Switcher - Google Maps Style */}
                 <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
@@ -1425,6 +1441,30 @@ export const MapView: React.FC<MapViewProps> = ({
                         {rulerPoints.map((p, idx) => (
                             <Marker
                                 key={`ruler-pt-${idx}`}
+                                position={[p.lat, p.lng]}
+                                icon={rulerDotIcon}
+                            />
+                        ))}
+                    </>
+                )}
+
+                {/* Export Area Polygon */}
+                {mode === 'export_area' && exportAreaPolygon.length > 0 && (
+                    <>
+                        {exportAreaPolygon.length >= 3 ? (
+                            <Polygon
+                                positions={exportAreaPolygon.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: '#f59e0b', weight: 2, fillColor: '#f59e0b', fillOpacity: 0.15, dashArray: '6, 6' }}
+                            />
+                        ) : (
+                            <Polyline
+                                positions={exportAreaPolygon.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: '#f59e0b', weight: 2, dashArray: '6, 6' }}
+                            />
+                        )}
+                        {exportAreaPolygon.map((p, idx) => (
+                            <Marker
+                                key={`export-pt-${idx}`}
                                 position={[p.lat, p.lng]}
                                 icon={rulerDotIcon}
                             />
@@ -1803,6 +1843,33 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
             </MapContainer>
+
+            {/* Export Area Floating Bar */}
+            {mode === 'export_area' && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800/50 px-5 py-3 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <ScanSearch className="w-4 h-4 text-amber-500" />
+                        <span>{exportAreaPolygon.length < 3
+                            ? (t('export_area_instruction') || 'Clique no mapa para desenhar a área')
+                            : (t('export_area_points', { count: exportAreaPolygon.length }) || `${exportAreaPolygon.length} pontos selecionados`)
+                        }</span>
+                    </div>
+                    {exportAreaPolygon.length >= 3 && (
+                        <button
+                            onClick={onExportAreaConfirm}
+                            className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
+                        >
+                            {t('export_area_confirm') || 'Exportar Área'}
+                        </button>
+                    )}
+                    <button
+                        onClick={onCancelMode}
+                        className="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                    >
+                        {t('cancel') || 'Cancelar'}
+                    </button>
+                </div>
+            )}
 
             {/* Context Menu for Cables */}
             {

@@ -1,15 +1,13 @@
 import React from 'react';
-import { MousePointer2, Move, Box, Building2, UtilityPole, Cable, ChevronDown, Plus, FileUp, FileDown, Waypoints, Unplug, Ruler, UserPlus } from 'lucide-react';
+import { MousePointer2, Box, Building2, UtilityPole, Waypoints, Ruler, UserPlus } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler';
+    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
     onImportKml: () => void;
-    onExportKmz?: () => void;
-    isExporting?: boolean;
     onConnectClick: () => void;
     userRole?: string | null;
 }
@@ -20,8 +18,6 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
     activeMenuId,
     setActiveMenuId,
     onImportKml,
-    onExportKmz,
-    isExporting,
     onConnectClick,
     userRole
 }) => {
@@ -91,21 +87,6 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                 {userRole !== 'MEMBER' && <ToolButton mode="draw_cable" icon={Waypoints} label="Cabo" />}
                 <ToolButton mode="ruler" icon={Ruler} label={t('mode_ruler') || "Régua"} />
             </div>
-
-            {/* Group 4: Project Actions */}
-            {(userRole !== 'MEMBER') && (
-                <div className="flex items-center gap-1 pl-2 ml-1 border-l border-slate-200 dark:border-slate-700/50">
-                    <button
-                        onClick={onExportKmz}
-                        disabled={isExporting}
-                        className={`relative group p-2.5 rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-1 min-w-[60px] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        title={t('export_kmz_tooltip') || "Exportar para Google Earth"}
-                    >
-                        <FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} strokeWidth={2} />
-                        <span className="text-[9px] font-bold uppercase tracking-tight leading-none">{t('export_kmz_button') || "Exportar"}</span>
-                    </button>
-                </div>
-            )}
 
         </div>
     );

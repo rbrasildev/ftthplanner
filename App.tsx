@@ -147,6 +147,7 @@ export default function App() {
 
     const [isExportKMZModalOpen, setIsExportKMZModalOpen] = useState(false);
     const { isExporting, exportToKMZ } = useKMZExport();
+    const [exportAreaPolygon, setExportAreaPolygon] = useState<{ lat: number; lng: number }[]>([]);
 
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(() => localStorage.getItem('ftth_current_project_id'));
 
@@ -253,7 +254,7 @@ export default function App() {
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve' | 'export_area'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -1315,6 +1316,8 @@ export default function App() {
             setCurrentProject(prev => prev ? { ...prev, network: net } : null);
         } else if (toolMode === 'position_reserve') {
             setPendingReserveCableId(null);
+        } else if (toolMode === 'export_area') {
+            setExportAreaPolygon([]);
         }
 
         setToolMode('view');
@@ -1332,12 +1335,15 @@ export default function App() {
             cables: currentProject.network.cables,
             pops: currentProject.network.pops,
             poles: currentProject.network.poles,
-            customers: globalCustomers // Fix to use the populated customer state
+            customers: globalCustomers,
+            polygon: exportAreaPolygon.length >= 3 ? exportAreaPolygon : undefined
         };
 
         exportToKMZ(projectData, options, showToast);
         setIsExportKMZModalOpen(false);
-    }, [currentProject, globalCustomers, exportToKMZ, showToast]);
+        setExportAreaPolygon([]);
+        if (toolMode === 'export_area') setToolMode('view');
+    }, [currentProject, globalCustomers, exportToKMZ, showToast, exportAreaPolygon, toolMode]);
 
     if (!user) {
         if (authView === 'landing') {
@@ -1610,6 +1616,7 @@ export default function App() {
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
                 onExportClick={() => setIsExportKMZModalOpen(true)}
+                onExportAreaClick={() => setToolMode('export_area')}
                 isExporting={isExporting}
                 onReportClick={() => setIsReportModalOpen(true)}
                 isCollapsed={isSidebarCollapsed}
@@ -1735,8 +1742,6 @@ export default function App() {
                                     setSelectedId(null);
                                 }}
                                 userRole={userRole}
-                                onExportKmz={() => setIsExportKMZModalOpen(true)}
-                                isExporting={isExporting}
                             />
                         </div>
                     </div>
@@ -1829,6 +1834,13 @@ export default function App() {
                             }
                         }}
                         onCancelMode={handleCancelMode}
+                        exportAreaPolygon={exportAreaPolygon}
+                        onExportAreaPolygonChange={setExportAreaPolygon}
+                        onExportAreaConfirm={() => {
+                            if (exportAreaPolygon.length >= 3) {
+                                setIsExportKMZModalOpen(true);
+                            }
+                        }}
                     />
 
                     {toolMode === 'edit_cable' && (

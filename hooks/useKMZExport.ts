@@ -56,7 +56,8 @@ export const useKMZExport = () => {
             pops: projectData.pops,
             poles: projectData.poles,
             customers: projectData.customers,
-            options // pass options to worker
+            options,
+            polygon: projectData.polygon
         });
     }, [t]);
 
