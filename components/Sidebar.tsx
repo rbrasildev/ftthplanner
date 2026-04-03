@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* 2. Project Context (Only in map/project mode) */}
                 {viewMode === 'project' && (
-                    <div className={`p-4 border-b border-slate-100 dark:border-slate-700/30 ${isCollapsed ? 'flex flex-col items-center justify-center' : ''} flex-shrink-0 space-y-2`}>
+                    <div className={`p-4 border-b border-slate-100 dark:border-slate-700/30 flex-shrink-0 space-y-2 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
                         <Tooltip content={t('import_kmz_label')} enabled={isCollapsed}>
                             <button
                                 onClick={onImportClick}
@@ -335,7 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             )}
 
                             {/* Operation Section */}
-                            <div className="space-y-1">
+                            <div className={`space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
                                 {!isCollapsed && (
                                     <span className="px-2 pb-2 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('sidebar_operation')}</span>
                                 )}
@@ -406,7 +406,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         /* Dashboard Menu with Sections */
                         <div className="space-y-4">
                             {dashboardSections.map(section => (
-                                <div key={section.label} className="space-y-1">
+                                <div key={section.label} className={`space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
                                     {!isCollapsed && (
                                         <span className="px-2 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                                             {section.label}
