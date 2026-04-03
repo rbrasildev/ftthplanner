@@ -135,11 +135,16 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                     const enrichedPlans = formattedPlans.map(p => {
                         const limits = (p as any).limits;
                         if (limits) {
-                            const limitFeatures = [];
+                            const limitFeatures: string[] = [];
                             if (limits.maxProjects) limitFeatures.push(limits.maxProjects >= 999999 ? t('feature_projects_unlimited') : t('feature_projects', { count: limits.maxProjects }));
                             if (limits.maxUsers) limitFeatures.push(limits.maxUsers >= 999999 ? t('feature_users_unlimited') : t('feature_users', { count: limits.maxUsers }));
                             if (limits.maxCTOs) limitFeatures.push(limits.maxCTOs >= 999999 ? t('feature_ctos_unlimited') : t('feature_ctos', { count: limits.maxCTOs }));
-                            return { ...p, features: [...limitFeatures, ...p.features] };
+                            // Filter out features that duplicate limit info (e.g. "10 Projetos" when limits already show it)
+                            const limitKeywords = ['projeto', 'project', 'usuário', 'user', 'cto', 'ilimitad', 'unlimited'];
+                            const cleanFeatures = p.features.filter((f: string) =>
+                                !limitKeywords.some(kw => f.toLowerCase().includes(kw))
+                            );
+                            return { ...p, features: [...limitFeatures, ...cleanFeatures] };
                         }
                         return p;
                     }).filter(p => !p.name.toLowerCase().includes('trial') && !p.name.toLowerCase().includes('teste'));
@@ -297,7 +302,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         </div>
                     ) : (
                         /* Plan Cards */
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full max-w-5xl mx-auto">
+                        <div className={`grid gap-4 w-full mx-auto ${plans.length <= 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-5xl'}`}>
                             {plans.map((plan) => {
                                 const isExpiredOrCancelled = companyStatus === 'SUSPENDED' || companyStatus === 'CANCELLED';
                                 const isCurrent = !isExpiredOrCancelled && ((currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase()));

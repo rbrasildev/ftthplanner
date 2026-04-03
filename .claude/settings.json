@@ -58,7 +58,15 @@
       "Bash(find /d/ftthplanner/server -type f \\\\\\(-name *.js -o -name *.ts \\\\\\) -not -path */node_modules/*)",
       "Bash(grep -v \"^[0-9]*:\\\\s*//\")",
       "Bash(grep -n \"setToolMode.*add_cto\\\\|setToolMode.*add_pop\\\\|onClick.*add_cto\\\\|onClick.*add_pop\" /d/ftthplanner/components/*.tsx)",
-      "Bash(grep -n \"handleAddPoint\\\\|mode === ''add_cto''\\\\|mode === ''add_pop''\" /d/ftthplanner/App.tsx)"
+      "Bash(grep -n \"handleAddPoint\\\\|mode === ''add_cto''\\\\|mode === ''add_pop''\" /d/ftthplanner/App.tsx)",
+      "Bash(find /d/ftthplanner -type f \\\\\\(-name *.sql -o -name *.json \\\\\\) -path */migrations/*)",
+      "Bash(grep -r \"customer.status\\\\|customer\\\\.status\" /d/ftthplanner/components --include=*.tsx --include=*.ts)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(gh auth:*)"
     ]
   }
 }
