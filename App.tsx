@@ -1646,6 +1646,10 @@ export default function App() {
                         currentView={dashboardView}
                         onViewChange={setDashboardView}
                         showToast={showToast}
+                        onJumpToCoords={(lat, lng) => {
+                            const offset = 0.001;
+                            setMapBounds([[lat - offset, lng - offset], [lat + offset, lng + offset]]);
+                        }}
                         onOpenProject={(id) => {
                             const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {

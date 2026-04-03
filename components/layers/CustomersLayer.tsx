@@ -50,11 +50,13 @@ const createCustomerIcon = (status: string, isSelected: boolean, connectionStatu
 };
 
 // Individual customer marker - memoized to avoid re-render when parent callbacks change
-const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, onContextMenu }: {
+const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, onContextMenu, draggable, onDragEnd }: {
     customer: Customer;
     isSelected: boolean;
     onCustomerClick: (customer: Customer) => void;
     onContextMenu?: (e: L.LeafletMouseEvent, customer: Customer) => void;
+    draggable?: boolean;
+    onDragEnd?: (customer: Customer, lat: number, lng: number) => void;
 }) => {
     const icon = useMemo(() =>
         createCustomerIcon(customer.status, isSelected, customer.connectionStatus),
@@ -64,8 +66,10 @@ const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, 
     // Stable event handlers using refs - prevents Marker re-bindeing on parent re-render
     const onClickRef = useRef(onCustomerClick);
     const onCtxRef = useRef(onContextMenu);
+    const onDragEndRef = useRef(onDragEnd);
     useEffect(() => { onClickRef.current = onCustomerClick; }, [onCustomerClick]);
     useEffect(() => { onCtxRef.current = onContextMenu; }, [onContextMenu]);
+    useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -77,6 +81,12 @@ const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, 
                 L.DomEvent.stopPropagation(e);
                 onCtxRef.current(e, customer);
             }
+        },
+        dragend: (e: any) => {
+            if (onDragEndRef.current) {
+                const latlng = e.target.getLatLng();
+                onDragEndRef.current(customer, latlng.lat, latlng.lng);
+            }
         }
     }), [customer]);
 
@@ -84,6 +94,7 @@ const CustomerMarkerItem = React.memo(({ customer, isSelected, onCustomerClick, 
         <Marker
             position={[customer.lat, customer.lng]}
             icon={icon}
+            draggable={draggable}
             eventHandlers={eventHandlers}
         >
             <Tooltip direction="top" offset={[0, -12]} opacity={0.9}>
@@ -101,9 +112,11 @@ interface CustomersLayerProps {
     visible: boolean;
     mapZoom: number;
     onContextMenu?: (e: L.LeafletMouseEvent, customer: Customer) => void;
+    draggableCustomerId?: string | null;
+    onCustomerDragEnd?: (customer: Customer, lat: number, lng: number) => void;
 }
 
-export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ customers, selectedId, onCustomerClick, visible, mapZoom, onContextMenu }) => {
+export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ customers, selectedId, onCustomerClick, visible, mapZoom, onContextMenu, draggableCustomerId, onCustomerDragEnd }) => {
     if (!visible) return null;
     if (mapZoom < 14) return null;
 
@@ -116,6 +129,8 @@ export const CustomersLayer: React.FC<CustomersLayerProps> = React.memo(({ custo
                     isSelected={selectedId === customer.id}
                     onCustomerClick={onCustomerClick}
                     onContextMenu={onContextMenu}
+                    draggable={customer.id === draggableCustomerId}
+                    onDragEnd={onCustomerDragEnd}
                 />
             ))}
         </>
