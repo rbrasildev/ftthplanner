@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Box, Building2, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight } from 'lucide-react';
+import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Box, Building2, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight, HelpCircle, UtilityPole } from 'lucide-react';
 import * as toGeoJSON from '@mapbox/togeojson';
 import JSZip from 'jszip';
 import { useLanguage } from '../../LanguageContext';
@@ -13,7 +13,7 @@ interface KmlImportModalProps {
     onImport: (data: any) => void;
 }
 
-type ImportTab = 'cables' | 'ctos' | 'ceos' | 'poles';
+type ImportTab = 'cables' | 'ctos' | 'ceos' | 'poles' | 'unclassified';
 
 interface DetectedItem {
     id: string;
@@ -44,10 +44,12 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
         ctos: DetectedItem[];
         ceos: DetectedItem[];
         poles: DetectedItem[];
+        unclassified: DetectedItem[];
     }>({
         cables: [],
         ctos: [],
         ceos: [],
+        unclassified: [],
         poles: []
     });
 
@@ -63,7 +65,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             setFile(null);
             setError(null);
             setIsParsing(false);
-            setItems({ cables: [], ctos: [], ceos: [], poles: [] });
+            setItems({ cables: [], ctos: [], ceos: [], poles: [], unclassified: [] });
             onPreview(null);
         }
     }, [isOpen]);
@@ -139,6 +141,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 ctos: [] as DetectedItem[],
                 ceos: [] as DetectedItem[],
                 poles: [] as DetectedItem[],
+                unclassified: [] as DetectedItem[],
             };
 
             const pointFeatures = geoJson.features?.filter((f: any) => f.geometry?.type === 'Point') || [];
@@ -193,21 +196,18 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                     newItems.ctos.push(item);
                 } else if (name.includes('CEO') || name.includes('EMENDA') || name.includes('FOSC')) {
                     newItems.ceos.push(item);
-                } else if (name.includes('POSTE')) {
+                } else if (name.includes('POSTE') || name.includes('POLE')) {
                     newItems.poles.push(item);
                 } else {
-                    // Default to CTO if uncertain, or Poles?
-                    // Let's put in 'poles' as catch-all or create a generic 'unknown'?
-                    // User asked specifically for Cables, CTO, CEO tabs.
-                    // Let's put in Poles for now as it's a safe container, or CTO.
-                    newItems.ctos.push(item);
+                    newItems.unclassified.push(item);
                 }
             });
 
             setItems(newItems);
 
-            // Auto-switch to first populated tab
-            if (newItems.cables.length > 0) setActiveTab('cables');
+            // Auto-switch to first populated tab (prioritize unclassified if it has items)
+            if (newItems.unclassified.length > 0) setActiveTab('unclassified');
+            else if (newItems.cables.length > 0) setActiveTab('cables');
             else if (newItems.ctos.length > 0) setActiveTab('ctos');
 
         } catch (err: any) {
@@ -254,13 +254,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
     // Validation
     const invalidCount = useMemo(() => {
         let count = 0;
-        ['cables', 'ctos', 'ceos', 'poles'].forEach((key) => {
-            const list = items[key as ImportTab];
-            const invalid = list.filter(i => i.selected && !i.typeId).length; // Only selected items need types? Or all? Usually "Import" acts on ALL.
-            // Assumption: User wants to import EVERYTHING found. So all must have type.
-            // Or maybe only Selected items are imported.
-            // Let's assume: ONLY CHECKED ITEMS ARE IMPORTED.
-            count += list.filter(i => i.selected && !i.typeId).length;
+        (['cables', 'ctos', 'ceos', 'poles'] as ImportTab[]).forEach((key) => {
+            count += items[key].filter(i => i.selected && !i.typeId).length;
         });
         return count;
     }, [items]);
@@ -271,6 +266,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             items.ceos.filter(i => i.selected).length +
             items.poles.filter(i => i.selected).length;
     }, [items]);
+
+    const unclassifiedCount = items.unclassified.length;
 
     const [isImporting, setIsImporting] = useState(false);
 
@@ -314,7 +311,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
     const activeList = items[activeTab];
     const activeCatalog = activeTab === 'cables' ? cableTypes :
         activeTab === 'poles' ? poleTypes :
-            boxTypes.filter(b => activeTab === 'ctos' ? b.type === 'CTO' : b.type === 'CEO');
+            activeTab === 'unclassified' ? [] :
+                boxTypes.filter(b => activeTab === 'ctos' ? b.type === 'CTO' : b.type === 'CEO');
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -379,7 +377,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                             {renderTabButton('cables', 'Cabos', Cable, items.cables.length)}
                             {renderTabButton('ctos', 'CTO', Box, items.ctos.length)}
                             {renderTabButton('ceos', 'CEO', Building2, items.ceos.length)}
-                            {renderTabButton('poles', 'Postes', CheckSquare, items.poles.length)}
+                            {renderTabButton('poles', 'Postes', UtilityPole, items.poles.length)}
+                            {items.unclassified.length > 0 && renderTabButton('unclassified', 'Não Classificados', HelpCircle, items.unclassified.length)}
                         </div>
 
                         {/* Toolbar (Bulk Actions) */}
@@ -394,42 +393,51 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                 <span className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Todos</span>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-slate-500">Definir Tipo:</span>
-                                <select
-                                    className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            handleApplyType(e.target.value);
-                                            e.target.value = ""; // Reset
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- Selecione para aplicar em massa --</option>
-                                    {activeCatalog.map((t: any) => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            {activeTab === 'unclassified' ? (
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl">
+                                    <HelpCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Selecione os itens e use "Mover para" para classificá-los como CTO, CEO ou Poste</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium text-slate-500">Definir Tipo:</span>
+                                        <select
+                                            className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    handleApplyType(e.target.value);
+                                                    e.target.value = ""; // Reset
+                                                }
+                                            }}
+                                        >
+                                            <option value="">-- Selecione para aplicar em massa --</option>
+                                            {activeCatalog.map((t: any) => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            {/* Status Selector (Bulk) */}
-                            <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4 border-r pr-4 mr-2">
-                                <span className="text-xs font-medium text-slate-500">Status:</span>
-                                <select
-                                    className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            handleApplyStatus(e.target.value);
-                                            e.target.value = ""; // Reset
-                                        }
-                                    }}
-                                >
-                                    <option value="">-- Status --</option>
-                                    <option value="DEPLOYED">Implantado</option>
-                                    <option value="NOT_DEPLOYED">Não Implantado</option>
-                                    {activeTab !== 'cables' && <option value="PLANNED">Em Projeto</option>}
-                                </select>
-                            </div>
+                                    {/* Status Selector (Bulk) */}
+                                    <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4 border-r pr-4 mr-2">
+                                        <span className="text-xs font-medium text-slate-500">Status:</span>
+                                        <select
+                                            className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    handleApplyStatus(e.target.value);
+                                                    e.target.value = ""; // Reset
+                                                }
+                                            }}
+                                        >
+                                            <option value="">-- Status --</option>
+                                            <option value="DEPLOYED">Implantado</option>
+                                            <option value="NOT_DEPLOYED">Não Implantado</option>
+                                            {activeTab !== 'cables' && <option value="PLANNED">Em Projeto</option>}
+                                        </select>
+                                    </div>
+                                </>
+                            )}
 
                             {/* Move Items Utility */}
                             {activeTab !== 'cables' && (
@@ -533,6 +541,11 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                     <span className="text-red-500 flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
                                         {invalidCount} itens selecionados sem classificação.
+                                    </span>
+                                ) : unclassifiedCount > 0 ? (
+                                    <span className="text-amber-600 flex items-center gap-2">
+                                        <HelpCircle className="w-4 h-4" />
+                                        {unclassifiedCount} itens não classificados serão ignorados.
                                     </span>
                                 ) : totalSelected > 0 ? (
                                     <span className="text-emerald-600 flex items-center gap-2">
