@@ -32,6 +32,7 @@ interface DashboardPageProps {
   cancelAtPeriodEnd?: boolean;
   projects: Project[];
   onOpenProject: (id: string) => void;
+  onJumpToCoords?: (lat: number, lng: number) => void;
   onCreateProject: (name: string, center?: Coordinates, snapDistance?: number) => void;
   onDeleteProject: (id: string) => void;
   onUpdateProject?: (id: string, name: string, center: Coordinates) => void;
@@ -104,6 +105,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   cancelAtPeriodEnd = false,
   projects,
   onOpenProject,
+  onJumpToCoords,
   onCreateProject,
   onDeleteProject,
   onLogout,
@@ -759,9 +761,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             projectId={currentProjectId}
             showToast={showToast}
             onLocate={(customer) => {
+              if (!customer.lat || !customer.lng) {
+                if (showToast) showToast(t('customer_no_coordinates') || 'Cliente não possui coordenadas no mapa.', 'error');
+                return;
+              }
+
               // Try to find which project this customer belongs to
               let project = null;
-              
+
               if (customer.projectId) {
                 project = projects.find(p => p.id === customer.projectId);
               }
@@ -776,12 +783,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
               if (project) {
                 onOpenProject(project.id);
-                // Map will need to pan to customer.lat/lng after opening
-                localStorage.setItem('map_jump_to_coords', JSON.stringify({ lat: customer.lat, lng: customer.lng }));
+                // Use callback to jump after project opens, with small delay to let map mount
+                setTimeout(() => {
+                  if (onJumpToCoords) onJumpToCoords(customer.lat, customer.lng);
+                }, 500);
               } else if (!customer.ctoId && !customer.projectId) {
-                alert(t('customer_not_connected_to_map') || 'Cliente não está conectado a nenhuma CTO no mapa.');
+                if (showToast) showToast(t('customer_not_connected_to_map') || 'Cliente não está conectado a nenhuma CTO no mapa.', 'error');
               } else {
-                alert(t('project_not_found_for_customer') || 'Projeto não encontrado para este cliente.');
+                if (showToast) showToast(t('project_not_found_for_customer') || 'Projeto não encontrado para este cliente.', 'error');
               }
             }}
           />

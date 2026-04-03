@@ -8,7 +8,7 @@ import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -652,6 +652,22 @@ export const MapView: React.FC<MapViewProps> = ({
         setCustomerModalOpen(true);
     }, []);
 
+    const handleCustomerDragEnd = useCallback((customer: Customer, lat: number, lng: number) => {
+        const updates: Partial<Customer> = { lat, lng };
+        if (customer.ctoId) updates.ctoId = customer.ctoId;
+        if (customer.drop?.coordinates?.length) {
+            const newDropCoords = [...customer.drop.coordinates];
+            newDropCoords[0] = { lat, lng };
+            updates.dropCoordinates = newDropCoords;
+        }
+        updateCustomer(customer.id, updates)
+            .then((updated) => {
+                showToast(t('customer_updated_success') || 'Cliente atualizado', 'success');
+                if (onCustomerSaved) onCustomerSaved(updated);
+            })
+            .catch(() => showToast(t('error_save_customer'), 'error'));
+    }, [showToast, t, onCustomerSaved]);
+
     // --- CUSTOMER FLOW PART 1: PLACEMENT ---
     const handleMapClickForCustomer = useCallback((lat: number, lng: number) => {
         // Step 1: Place customer, open modal for basic info
@@ -686,8 +702,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // Draw Drop Logic
     const handleCustomerContextMenu = useCallback((e: L.LeafletMouseEvent, customer: Customer) => {
-        // Disabled right-click draw drop as per request. The button in the modal will be used instead.
-        setMapContextMenu(null); // Close map menu
+        setMapContextMenu(null);
+        setDropContextMenu(null);
+        setCustomerContextMenu({
+            x: e.originalEvent.clientX,
+            y: e.originalEvent.clientY,
+            customer
+        });
     }, []);
 
     const handleStartDrawingDrop = useCallback((customerId: string, coords?: { lat: number, lng: number }) => {
@@ -764,6 +785,7 @@ export const MapView: React.FC<MapViewProps> = ({
         setEditingDropCoords(null);
     }, [editingDropCustomerId, editingDropCoords, saveDropCoords]);
 
+    const [customerContextMenu, setCustomerContextMenu] = useState<{ x: number; y: number; customer: Customer } | null>(null);
     const [dropContextMenu, setDropContextMenu] = useState<{ x: number; y: number; customerId: string } | null>(null);
 
     const handleDropContextMenu = useCallback((e: L.LeafletMouseEvent, customerId: string) => {
@@ -1153,6 +1175,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleMapClickInternal = useCallback((lat: number, lng: number) => {
         setMapContextMenu(null);
         setDropContextMenu(null);
+        setCustomerContextMenu(null);
         // Close drop editing on any map click — save and clear
         if (editingDropCustomerId && editingDropCoords) {
             finishEditingDrop();
@@ -1204,6 +1227,7 @@ export const MapView: React.FC<MapViewProps> = ({
         setContextMenu(null);
         setMapContextMenu(null);
         setDropContextMenu(null);
+        setCustomerContextMenu(null);
     }, []);
 
     const handleUndoDrawingPoint = useCallback(() => {
@@ -1549,6 +1573,8 @@ export const MapView: React.FC<MapViewProps> = ({
                             visible={isCustomersVisible}
                             mapZoom={currentZoom}
                             onContextMenu={handleCustomerContextMenu}
+                            draggableCustomerId={repositioningCustomer?.id || null}
+                            onCustomerDragEnd={handleCustomerDragEnd}
                         />
                     </MarkerClusterGroup>
                 ) : (
@@ -1618,6 +1644,8 @@ export const MapView: React.FC<MapViewProps> = ({
                             visible={isCustomersVisible}
                             mapZoom={currentZoom}
                             onContextMenu={handleCustomerContextMenu}
+                            draggableCustomerId={repositioningCustomer?.id || null}
+                            onCustomerDragEnd={handleCustomerDragEnd}
                         />
                     </>
                 )}
@@ -1939,6 +1967,59 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
 
+
+            {/* Customer Context Menu */}
+            {customerContextMenu && (
+                <div
+                    className="fixed z-[99999] w-52 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/40 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                    style={{
+                        top: customerContextMenu.y > window.innerHeight / 2 ? 'auto' : customerContextMenu.y,
+                        bottom: customerContextMenu.y > window.innerHeight / 2 ? window.innerHeight - customerContextMenu.y : 'auto',
+                        left: customerContextMenu.x > window.innerWidth / 2 ? 'auto' : customerContextMenu.x,
+                        right: customerContextMenu.x > window.innerWidth / 2 ? window.innerWidth - customerContextMenu.x : 'auto'
+                    }}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <div className="px-3 py-2.5 flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-700/30">
+                        <div className="w-6 h-6 bg-emerald-600 rounded-lg flex items-center justify-center">
+                            <User className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{customerContextMenu.customer.name}</span>
+                    </div>
+                    <div className="py-1">
+                        <button
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                            onClick={() => {
+                                const c = customerContextMenu.customer;
+                                setRepositioningCustomer({ id: c.id, name: c.name || '' });
+                                setCustomerContextMenu(null);
+                                showToast(t('reposition_customer_instruction') || 'Clique no mapa para reposicionar o cliente', 'info');
+                            }}
+                        >
+                            <Move className="w-3.5 h-3.5" />
+                            {t('move') || 'Mover'}
+                        </button>
+                        {customerContextMenu.customer.ctoId && (
+                            <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                                onClick={() => {
+                                    const c = customerContextMenu.customer;
+                                    setCustomerContextMenu(null);
+                                    updateCustomer(c.id, { ctoId: null, splitterId: null, splitterPortIndex: null, dropCoordinates: [] })
+                                        .then((updated) => {
+                                            showToast(t('customer_disconnected') || 'Cliente desconectado', 'success');
+                                            if (onCustomerSaved) onCustomerSaved(updated);
+                                        })
+                                        .catch(() => showToast(t('error_save_customer'), 'error'));
+                                }}
+                            >
+                                <Unplug className="w-3.5 h-3.5" />
+                                {t('disconnect') || 'Desconectar'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Drop Context Menu */}
             {dropContextMenu && (

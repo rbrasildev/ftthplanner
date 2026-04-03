@@ -51,9 +51,7 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
 
     const currentSplitter = cto.splitters.find(s => s.id === selectedSplitterId);
 
-    // Parse splitter type to get total ports (e.g. "1x8" -> 8)
-    // Default to 16 if parsing fails, but ideally should be accurate
-    const splitterCapacity = currentSplitter ? parseInt(currentSplitter.type.split('x')[1] || '16') : 0;
+    const splitterCapacity = currentSplitter ? currentSplitter.outputPortIds.length : 0;
     const availablePorts = currentSplitter ? Array.from({ length: splitterCapacity }, (_, i) => i) : [];
 
     return (
@@ -114,7 +112,7 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                                     value={selectedSplitterId}
                                     onChange={(e) => setSelectedSplitterId(e.target.value)}
                                 >
-                                    <option value="none" disabled>{t('select_an_option') || "Selecione uma opção"}</option>
+                                    <option value="none" disabled>{t('select')}</option>
                                      {cto.splitters.filter(s => s.allowCustomConnections !== false).map(s => (
                                          <option key={s.id} value={s.id}>
                                              {s.name} ({s.type})
