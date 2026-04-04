@@ -1391,7 +1391,7 @@ export default function App() {
     }
 
     if (userRole === 'SUPER_ADMIN') {
-        return <SaasAdminPage onLogout={() => { setUser(null); setToken(null); }} />;
+        return <SaasAdminPage onLogout={handleLogout} />;
     }
 
 

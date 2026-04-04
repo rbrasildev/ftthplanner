@@ -43,6 +43,12 @@ export const register = async (req: Request, res: Response) => {
         }
         // If it IS Free plan, expiresAt remains null (permanent)
 
+        // Clean up soft-deleted users with same email (from deleted companies)
+        const softDeletedUser = await prisma.user.findFirst({ where: { email, deletedAt: { not: null } } });
+        if (softDeletedUser) {
+            await prisma.user.delete({ where: { id: softDeletedUser.id } });
+        }
+
         // Transaction to ensure User and Company are created together
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
