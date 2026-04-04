@@ -8,6 +8,7 @@ export interface SplitterCatalogItem {
     inputs: number;
     outputs: number;
     connectorType?: string;
+    polishType?: string;
     allowCustomConnections?: boolean;
     attenuation: Record<string, any>;
     description?: string;
@@ -137,12 +138,14 @@ export const deletePole = async (id: string): Promise<void> => {
 export interface FusionCatalogItem {
     id: string;
     name: string;
+    category?: string;
+    polishType?: string;
     attenuation: number;
     updatedAt?: string;
 }
 
-export const getFusions = async (): Promise<FusionCatalogItem[]> => {
-    const response = await api.get('/catalog/fusions');
+export const getFusions = async (category?: string): Promise<FusionCatalogItem[]> => {
+    const response = await api.get('/catalog/fusions', { params: category ? { category } : {} });
     return response.data;
 };
 

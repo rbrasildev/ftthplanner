@@ -32,6 +32,8 @@ interface CTOEditorToolbarProps {
 
     // Creation
     onAddFusion: (e: React.MouseEvent) => void;
+    onAddConnector: (e: React.MouseEvent) => void;
+    isConnectorToolActive: boolean;
     onAddNote: (e: React.MouseEvent) => void;
 
     // Connections
@@ -55,7 +57,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
     isMaximized, isCollapsed, onToggleCollapse, onToggleMaximize, onClose, onWindowDragStart,
     isRotateMode, isDeleteMode, showSplitterDropdown, isFusionToolActive, isSmartAlignMode,
     isVflToolActive, isOtdrToolActive, isSnapping, onToggleSnapping, toggleToolMode,
-    onAddFusion, onAddNote,
+    onAddFusion, onAddConnector, isConnectorToolActive, onAddNote,
     isAutoSpliceOpen, onOpenAutoSplice, onClearConnections,
     showHotkeys, onToggleHotkeys, hotkeysRef,
     onExportPNG, exportingType, onOpenQRCode
@@ -150,16 +152,29 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             <Triangle className="w-3.5 h-3.5 -rotate-90" />
                         </Button>
                         <Button
-                            variant={isFusionToolActive ? 'emerald' : 'outline'}
+                            variant={(isFusionToolActive && !isConnectorToolActive) ? 'emerald' : 'outline'}
                             size="icon"
                             onClick={onAddFusion}
-                            className={`h-8 w-8 ${isFusionToolActive ? 'ring-2 ring-emerald-400' : ''}`}
+                            className={`h-8 w-8 ${(isFusionToolActive && !isConnectorToolActive) ? 'ring-2 ring-emerald-400' : ''}`}
                             title={t('add_fusion')}
                         >
                             <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
                                 <circle cx="6" cy="12" r="3" fill="currentColor" stroke="none" />
                                 <circle cx="18" cy="12" r="3" fill="currentColor" stroke="none" />
+                            </svg>
+                        </Button>
+                        <Button
+                            variant={isConnectorToolActive ? 'emerald' : 'outline'}
+                            size="icon"
+                            onClick={onAddConnector}
+                            className={`h-8 w-8 ${isConnectorToolActive ? 'ring-2 ring-emerald-400' : ''}`}
+                            title={t('add_connector') || 'Conector'}
+                        >
+                            <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" strokeWidth="2">
+                                <rect x="7" y="7" width="10" height="10" rx="1" stroke="currentColor" fill="none" />
+                                <rect x="2" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none" />
+                                <rect x="16" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none" />
                             </svg>
                         </Button>
                         <Button

@@ -37,13 +37,18 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     const isLitA = litPorts.has(portA);
     const isLitB = litPorts.has(portB);
 
+    const isConnector = fusion.category === 'connector';
+    const isAPC = fusion.polishType === 'APC';
+    const connectorColor = isAPC ? { bg: 'bg-green-500', border: 'border-green-600', ring: 'ring-green-400' }
+        : { bg: 'bg-blue-500', border: 'border-blue-600', ring: 'ring-blue-400' };
+
     return (
         <div
             id={fusion.id}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
-                height: '12px', // Compact height to prevent click overlaps
-                width: '24px'   // Fits grid
+                height: '12px',
+                width: '24px'
             }}
             className="absolute z-20 flex flex-col items-center justify-center group select-none hover:z-50"
         >
@@ -60,7 +65,6 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 onMouseDown={(e) => onDragStart(e, fusion.id)}
                 onClick={(e) => onAction(e, fusion.id)}
             >
-                {/* Trash Removed - using Global Delete Tool */}
             </div>
 
             {/* Body */}
@@ -69,42 +73,42 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 onMouseDown={(e) => onDragStart(e, fusion.id)}
                 onClick={(e) => onAction(e, fusion.id)}
             >
-                {/* Center Body - Compact Circle (10px to fit in 12px with border) */}
+                {/* Center Body */}
                 <div className={`
-                    w-2.5 h-2.5 rounded-full border border-black dark:border-black z-20 shadow-sm transition-colors duration-300
-                    ${isLitA || isLitB ? 'bg-red-400' : 'bg-[#949494] dark:bg-slate-500'}
+                    w-2.5 h-2.5 border z-20 shadow-sm transition-colors duration-300
+                    ${isConnector ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}` : `rounded-full border-black dark:border-black ${isLitA || isLitB ? 'bg-red-400' : 'bg-[#949494] dark:bg-slate-500'}`}
                 `} />
 
-                {/* Left Port - Edge */}
+                {/* Left Port */}
                 <div
                     id={portA}
                     onMouseDown={(e) => onPortMouseDown(e, portA)}
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border
-                        cursor-pointer select-none transition-all z-30 absolute left-[2px]
-                        ${hoveredPortId === portA ? 'ring-2 ring-emerald-400 scale-125' : ''} 
-                        ${isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
+                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px]
+                        ${isConnector ? `rounded-[1px] ${isLitA ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
+                        ${hoveredPortId === portA ? `ring-2 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
+                        ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitA && isConnectedA && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                    {!isLitA && isConnectedA && !isConnector && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
                 </div>
 
-                {/* Right Port - Edge */}
+                {/* Right Port */}
                 <div
                     id={portB}
                     onMouseDown={(e) => onPortMouseDown(e, portB)}
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border
-                        cursor-pointer select-none transition-all z-30 absolute right-[2px]
-                        ${hoveredPortId === portB ? 'ring-2 ring-emerald-400 scale-125' : ''} 
-                        ${isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
+                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px]
+                        ${isConnector ? `rounded-[1px] ${isLitB ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
+                        ${hoveredPortId === portB ? `ring-2 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
+                        ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitB && isConnectedB && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                    {!isLitB && isConnectedB && !isConnector && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
                 </div>
             </div>
         </div>

@@ -266,11 +266,19 @@ const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: numbe
     const isLitA = litPorts.has(`${fusion.id}-a`);
     const isLitB = litPorts.has(`${fusion.id}-b`);
     const isLit = isLitA || isLitB;
+    const isConnector = fusion.category === 'connector';
+    const connColor = isLit ? '#ef4444' : (fusion.polishType === 'APC' ? '#22c55e' : '#3b82f6');
 
     let content = '';
-    content += `<circle cx="${geo.cx}" cy="${geo.cy}" r="5" fill="${isLit ? '#ef4444' : '#94a3b8'}" stroke="black" stroke-width="1" />`;
-    content += `<circle cx="${geo.leftPort.x}" cy="${geo.leftPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
-    content += `<circle cx="${geo.rightPort.x}" cy="${geo.rightPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
+    if (isConnector) {
+        content += `<rect x="${geo.cx - 5}" y="${geo.cy - 5}" width="10" height="10" rx="1" fill="${connColor}" stroke="${fusion.polishType === 'APC' ? '#16a34a' : '#2563eb'}" stroke-width="1" />`;
+        content += `<rect x="${geo.leftPort.x - 4}" y="${geo.leftPort.y - 4}" width="8" height="8" rx="1" fill="${connColor}" />`;
+        content += `<rect x="${geo.rightPort.x - 4}" y="${geo.rightPort.y - 4}" width="8" height="8" rx="1" fill="${connColor}" />`;
+    } else {
+        content += `<circle cx="${geo.cx}" cy="${geo.cy}" r="5" fill="${isLit ? '#ef4444' : '#94a3b8'}" stroke="black" stroke-width="1" />`;
+        content += `<circle cx="${geo.leftPort.x}" cy="${geo.leftPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
+        content += `<circle cx="${geo.rightPort.x}" cy="${geo.rightPort.y}" r="4" fill="black" stroke="black" stroke-width="1" />`;
+    }
 
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${geo.cx}, ${geo.cy})">${content}</g>`;
 };
@@ -516,9 +524,8 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
         const mapY = y + 5;
         const mapW = MAP_W - 10;
         const mapH = h - 10;
-        content += renderText(mapX + mapW / 2, mapY + 8, 'LOCALIZAÇÃO', 7, 'bold', ENG.colors.textLabel, 'middle');
-        content += `<rect x="${mapX}" y="${mapY + 12}" width="${mapW}" height="${mapH - 12}" fill="#e2e8f0" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
-        content += `<image x="${mapX}" y="${mapY + 12}" width="${mapW}" height="${mapH - 12}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
+        content += `<rect x="${mapX}" y="${mapY}" width="${mapW}" height="${mapH}" fill="#e2e8f0" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+        content += `<image x="${mapX}" y="${mapY}" width="${mapW}" height="${mapH}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
     }
 
     // --- CARIMBO (Bottom of data zone) ---
@@ -629,9 +636,7 @@ export const generateCTOSVG = (
     const finalTransform = `translate(${pageCenterX}, ${pageContentCenterY}) scale(${scale}) translate(${-diaCenterX}, ${-diaCenterY})`;
 
     // 5. RENDER FRAME (Border, Header & Footer)
-    // Engineering drawing border (double line)
     svgContent += `<rect x="4" y="4" width="${PAGE_W - 8}" height="${PAGE_H - 8}" fill="none" stroke="${ENG.colors.border}" stroke-width="1.5" />`;
-    svgContent += `<rect x="10" y="10" width="${PAGE_W - 20}" height="${PAGE_H - 20}" fill="none" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
 
     if (footerData) {
         svgContent += renderEngineeringHeader(0, 0, PAGE_W, footerData);

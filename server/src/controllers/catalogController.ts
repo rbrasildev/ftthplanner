@@ -23,7 +23,7 @@ export const createSplitter = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, allowCustomConnections } = req.body;
+        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, polishType, allowCustomConnections } = req.body;
 
         const newSplitter = await prisma.catalogSplitter.create({
             data: {
@@ -34,6 +34,7 @@ export const createSplitter = async (req: Request, res: Response) => {
                 inputs: Number(inputs),
                 outputs: Number(outputs),
                 connectorType: connectorType || 'Unconnectorized',
+                polishType: polishType || null,
                 allowCustomConnections: allowCustomConnections !== undefined ? allowCustomConnections : false,
                 attenuation: attenuation || {},
                 description
@@ -52,7 +53,7 @@ export const updateSplitter = async (req: Request, res: Response) => {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
         const { id } = req.params;
-        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, allowCustomConnections } = req.body;
+        const { name, type, mode, inputs, outputs, attenuation, description, connectorType, polishType, allowCustomConnections } = req.body;
 
         const exists = await prisma.catalogSplitter.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Splitter not found" });
@@ -66,6 +67,7 @@ export const updateSplitter = async (req: Request, res: Response) => {
                 inputs: Number(inputs),
                 outputs: Number(outputs),
                 connectorType,
+                polishType: polishType || null,
                 allowCustomConnections,
                 attenuation: attenuation || {},
                 description
@@ -438,8 +440,11 @@ export const getFusions = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
+        const category = req.query.category as string | undefined;
+        const where: any = { companyId: user.companyId };
+        if (category) where.category = category;
         const fusions = await prisma.catalogFusion.findMany({
-            where: { companyId: user.companyId },
+            where,
             orderBy: { name: 'asc' }
         });
         res.json(fusions);
@@ -453,9 +458,9 @@ export const createFusion = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, attenuation } = req.body;
+        const { name, attenuation, category, polishType } = req.body;
         const fusion = await prisma.catalogFusion.create({
-            data: { companyId: user.companyId, name, attenuation: Number(attenuation) }
+            data: { companyId: user.companyId, name, attenuation: Number(attenuation), category: category || 'fusion', polishType: polishType || null }
         });
         res.json(fusion);
     } catch (error) {
@@ -469,14 +474,14 @@ export const updateFusion = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, attenuation } = req.body;
+        const { name, attenuation, category, polishType } = req.body;
 
         const exists = await prisma.catalogFusion.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Fusion not found" });
 
         const fusion = await prisma.catalogFusion.update({
             where: { id },
-            data: { name, attenuation: Number(attenuation) }
+            data: { name, attenuation: Number(attenuation), category: category || exists.category, polishType: polishType !== undefined ? polishType : exists.polishType }
         });
         res.json(fusion);
     } catch (error) {

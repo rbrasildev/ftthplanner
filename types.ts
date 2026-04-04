@@ -52,6 +52,7 @@ export interface Splitter {
   inputPortId: string;
   outputPortIds: string[];
   connectorType?: string; // 'Connectorized' | 'Unconnectorized'
+  polishType?: string; // 'APC' | 'UPC' | 'PC'
   allowCustomConnections?: boolean;
 }
 
@@ -60,6 +61,8 @@ export interface FusionPoint {
   name: string;
   type?: 'generic' | 'tray';
   catalogId?: string;
+  category?: 'fusion' | 'connector';
+  polishType?: string;
 }
 
 export interface ElementLayout {

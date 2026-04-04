@@ -606,6 +606,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isFusionToolActive, setIsFusionToolActive] = useState(false);
     const [selectedFusionTypeId, setSelectedFusionTypeId] = useState<string | null>(null);
     const [showFusionTypeModal, setShowFusionTypeModal] = useState(false);
+
+    // CONNECTOR TOOL STATE (reuses fusion tool internally, just tracks which type is selected)
+    const [showConnectorTypeModal, setShowConnectorTypeModal] = useState(false);
+    const [availableConnectors, setAvailableConnectors] = useState<FusionCatalogItem[]>([]);
+    // Connector tool is active when fusion tool is active AND the selected type is a connector
+    const isConnectorToolActive = isFusionToolActive && availableConnectors.some(c => c.id === selectedFusionTypeId);
     // cursorPosition removed — fusion ghost is now positioned via cursorGhostRef (direct DOM)
 
     // --- CATALOG INTEGRATION (declared early so toggleToolMode can reference loadCatalogsOnDemand) ---
@@ -621,15 +627,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const loadCatalogs = async () => {
             setIsCatalogLoading(true);
             try {
-                const [splitters, fusions, cables, boxes, olts] = await Promise.all([
+                const [splitters, fusions, connectors, cables, boxes, olts] = await Promise.all([
                     getSplitters(),
-                    getFusions(),
+                    getFusions('fusion'),
+                    getFusions('connector'),
                     getCables(),
                     getBoxes(),
                     getOLTs()
                 ]);
                 setAvailableSplitters(splitters);
                 setAvailableFusions(fusions);
+                setAvailableConnectors(connectors);
                 setAvailableCables(cables);
                 setAvailableBoxes(boxes);
                 setAvailableOLTs(olts);
@@ -2693,6 +2701,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             inputPortId: `${id}-in`,
             outputPortIds: outputIds,
             connectorType: catalogItem.connectorType,
+            polishType: catalogItem.polishType,
             allowCustomConnections: catalogItem.allowCustomConnections
         };
 
@@ -2792,6 +2801,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setIsFusionToolActive(true);
         setSelectedFusionTypeId(typeId);
         setShowFusionTypeModal(false);
+        setShowConnectorTypeModal(false);
+    };
+
+    const handleAddConnector = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (availableConnectors.length > 1) {
+            setShowConnectorTypeModal(true);
+        } else {
+            const defaultType = availableConnectors.length === 1 ? availableConnectors[0].id : null;
+            activateFusionTool(defaultType);
+        }
     };
 
     const createFusionAtCursor = (e: React.MouseEvent) => {
@@ -2839,15 +2859,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // "NÃO quebrar código existente".
         // I will add `catalogId` to the object and `as any` to bypass strict check for this feature.
 
-        const newFusion: FusionPoint & { catalogId?: string } = {
+        const selectedCatalog = availableFusions.find(f => f.id === selectedFusionTypeId) || availableConnectors.find(c => c.id === selectedFusionTypeId);
+        const newFusion: FusionPoint = {
             id,
             name: `F-${localCTO.fusions.length + 1}`,
-            type: 'generic' // Default valid value
+            type: 'generic',
+            catalogId: selectedFusionTypeId || undefined,
+            category: (selectedCatalog?.category as any) || 'fusion',
+            polishType: selectedCatalog?.polishType || undefined
         };
-
-        if (selectedFusionTypeId) {
-            newFusion.catalogId = selectedFusionTypeId;
-        }
 
         const { x: rx, y: ry } = screenToCanvas(e.clientX, e.clientY);
 
@@ -3144,6 +3164,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     onToggleSnapping={() => setIsSnapping(!isSnapping)}
                     toggleToolMode={toggleToolMode}
                     onAddFusion={handleAddFusion}
+                    onAddConnector={handleAddConnector}
+                    isConnectorToolActive={isConnectorToolActive}
                     onAddNote={handleAddNote}
                     isAutoSpliceOpen={isAutoSpliceOpen}
                     onOpenAutoSplice={() => setIsAutoSpliceOpen(true)}
@@ -3172,7 +3194,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
                     )}
 
-                    {/* FUSION GHOST / CURSOR — positioned via ref (no setState on mousemove) */}
+                    {/* FUSION/CONNECTOR GHOST / CURSOR — positioned via ref (no setState on mousemove) */}
                     <div
                         ref={cursorGhostRef}
                         className="absolute pointer-events-none z-[50] flex items-center justify-center opacity-80"
@@ -3185,14 +3207,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             transformOrigin: 'top left'
                         }}
                     >
-                        {/* Center Body - Compact Circle (Standard Fusion Style) */}
-                        <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
-
-                        {/* Left Port - Edge */}
-                        <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
-
-                        {/* Right Port - Edge */}
-                        <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
+                        {isConnectorToolActive ? (
+                            <>
+                                {/* Connector Ghost - Square with polish color */}
+                                <div className={`w-2.5 h-2.5 rounded-[1px] border z-20 shadow-sm ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500 border-green-600' : 'bg-blue-500 border-blue-600'}`} />
+                                <div className={`w-2 h-2 rounded-[1px] z-30 absolute left-[2px] ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                <div className={`w-2 h-2 rounded-[1px] z-30 absolute right-[2px] ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                            </>
+                        ) : (
+                            <>
+                                {/* Fusion Ghost - Round */}
+                                <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
+                                <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
+                                <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
+                            </>
+                        )}
                     </div>
 
 
@@ -3656,6 +3685,47 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             <span className="text-xs text-slate-400 font-mono">
                                                 {ft.attenuation}dB
                                             </span>
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* CONNECTOR TYPE SELECTION MODAL */}
+                {showConnectorTypeModal && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
+                        <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
+                            <div className="flex items-center justify-between mb-2 px-2">
+                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                    {t('select_connector_type') || 'Selecionar Conector'}
+                                </h3>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowConnectorTypeModal(false)}
+                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            </div>
+                            <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                {availableConnectors.map((ct: any) => (
+                                    <Button
+                                        key={ct.id}
+                                        variant="ghost"
+                                        onClick={() => { activateFusionTool(ct.id); setShowConnectorTypeModal(false); }}
+                                        className="w-full justify-between items-center group transition-colors px-3 py-2.5 h-auto"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2.5 h-2.5 rounded-[1px] ${ct.polishType === 'APC' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                                                {ct.name}
+                                            </span>
+                                        </div>
+                                        {ct.attenuation !== undefined && (
+                                            <span className="text-xs text-slate-400 font-mono">{ct.attenuation}dB</span>
                                         )}
                                     </Button>
                                 ))}

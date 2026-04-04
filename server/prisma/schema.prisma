@@ -271,7 +271,8 @@ model CatalogSplitter {
   inputs                 Int      @default(1)
   outputs                Int
   connectorType          String?  @default("Unconnectorized") @map("connector_type")
-  allowCustomConnections Boolean  @default(true) @map("allow_custom_connections")
+  polishType             String?  @map("polish_type")
+  allowCustomConnections Boolean  @default(false) @map("allow_custom_connections")
   attenuation            Json?    @default("{}")
   description            String?
   createdAt              DateTime @default(now()) @map("created_at")
@@ -284,16 +285,19 @@ model CatalogSplitter {
 }
 
 model TemplateSplitter {
-  id          String   @id @default(uuid())
-  name        String
-  type        String
-  mode        String
-  inputs      Int      @default(1)
-  outputs     Int
-  attenuation Json?    @default("{}")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  id                     String   @id @default(uuid())
+  name                   String
+  type                   String
+  mode                   String
+  inputs                 Int      @default(1)
+  outputs                Int
+  attenuation            Json?    @default("{}")
+  connectorType          String?  @default("Unconnectorized") @map("connector_type")
+  polishType             String?  @map("polish_type")
+  allowCustomConnections Boolean? @default(false) @map("allow_custom_connections")
+  description            String?
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("template_splitters")
 }
@@ -431,6 +435,8 @@ model Pole {
 model CatalogFusion {
   id          String   @id @default(uuid())
   name        String
+  category    String   @default("fusion")
+  polishType  String?  @map("polish_type")
   attenuation Float    @default(0.0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -444,6 +450,8 @@ model CatalogFusion {
 model TemplateFusion {
   id          String   @id @default(uuid())
   name        String
+  category    String   @default("fusion")
+  polishType  String?  @map("polish_type")
   attenuation Float    @default(0.0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")

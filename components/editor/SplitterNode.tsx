@@ -59,6 +59,11 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
 
     const isLitIn = litPorts.has(splitter.inputPortId);
     const isConnectorized = splitter.connectorType === 'Connectorized';
+    const polishType = splitter.polishType || catalogItem?.polishType || '';
+    const isAPC = polishType === 'APC';
+    // APC = green, UPC/PC = blue
+    const polishColor = isAPC ? { bg: 'bg-green-500', border: 'border-green-600', text: 'text-white', hoverBorder: 'hover:border-green-400' }
+        : { bg: 'bg-blue-500', border: 'border-blue-600', text: 'text-white', hoverBorder: 'hover:border-blue-400' };
 
     // --- High-Power Port Identification (Unbalanced Splitters) ---
     // Rule: The port with the lowest attenuation (dB) has the highest power output.
@@ -178,7 +183,9 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 ? 'border-red-400 bg-red-600 text-white'
                                 : !isConnectorized
                                     ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'
-                                    : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'}
+                                    : isAPC
+                                        ? `${polishColor.bg} ${polishColor.border} ${polishColor.text} ${polishColor.hoverBorder}`
+                                        : `${polishColor.bg} ${polishColor.border} ${polishColor.text} ${polishColor.hoverBorder}`}
                     `}
                     >
                         1
@@ -240,12 +247,12 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 ${isLitOut
                                         ? 'border-red-400 bg-red-600 text-white'
                                         : customerName
-                                            ? (isOffline ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-green-500 bg-green-50 text-green-700 font-bold') // Customer Style
+                                            ? (isOffline ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-green-500 bg-green-50 text-green-700 font-bold')
                                             : isSecondaryUnbalanced
                                                 ? 'border-slate-950 dark:border-slate-300 bg-white dark:bg-white text-slate-950 dark:text-slate-950 font-bold border-[1.5px]'
                                                 : !isConnectorized
                                                     ? 'border-slate-950 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'
-                                                    : 'border-slate-900 dark:border-slate-400 bg-white dark:bg-slate-100 text-slate-950 dark:text-slate-900 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300'
+                                                    : `${polishColor.bg} ${polishColor.border} ${polishColor.text} ${polishColor.hoverBorder}`
                                     }
                             `}
                                 style={{

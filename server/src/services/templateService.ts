@@ -49,6 +49,9 @@ export const cloneTemplatesToCompany = async (companyId: string, prisma: any = d
                     inputs: t.inputs,
                     outputs: t.outputs,
                     attenuation: t.attenuation || {},
+                    connectorType: t.connectorType || 'Unconnectorized',
+                    polishType: t.polishType || null,
+                    allowCustomConnections: t.allowCustomConnections ?? false,
                     description: t.description
                 });
             }
@@ -100,6 +103,8 @@ export const cloneTemplatesToCompany = async (companyId: string, prisma: any = d
                 data.push({
                     companyId,
                     name: t.name,
+                    category: t.category || 'fusion',
+                    polishType: t.polishType || null,
                     attenuation: t.attenuation
                 });
             }

@@ -51,6 +51,20 @@ async function main() {
                 plannedSpec: { color: "#f1f1f154", width: 4 }
             },
             {
+                name: "Cabo 24FO",
+                brand: "Genérico",
+                model: "AS-80",
+                defaultLevel: "Distribuição",
+                fiberCount: 24,
+                looseTubeCount: 2, // Ex: 1 tubo de 12
+                fibersPerTube: 12,
+                attenuation: 0.35,
+                fiberProfile: "G.652D",
+                description: "Cabo de distribuição 12 fibras",
+                deployedSpec: { color: "#390000", width: 4 }, // Orange
+                plannedSpec: { color: "#f1f1f154", width: 4 }
+            },
+            {
                 name: "Cabo 36FO",
                 brand: "Genérico",
                 model: "AS-120",
@@ -86,10 +100,26 @@ async function main() {
     await prisma.templateSplitter.deleteMany();
     await prisma.templateSplitter.createMany({
         data: [
-            { name: "Splitter 1:2", type: "PLC", mode: "Balanced", inputs: 1, outputs: 2, attenuation: { "1": 3.7, "2": 3.7 }, description: "Divisor Balanceado 1:2" },
-            { name: "Splitter 1:4", type: "PLC", mode: "Balanced", inputs: 1, outputs: 4, attenuation: { "x": 7.3 }, description: "Divisor Balanceado 1:4" },
-            { name: "Splitter 1:8", type: "PLC", mode: "Balanced", inputs: 1, outputs: 8, attenuation: { "x": 10.5 }, description: "Divisor Balanceado 1:8" },
-            { name: "Splitter 1:16", type: "PLC", mode: "Balanced", inputs: 1, outputs: 16, attenuation: { "x": 13.7 }, description: "Divisor Balanceado 1:16" }
+            { name: "Splitter 1:2 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 2, attenuation: { "1": 3.7, "2": 3.7 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:2 Conectorizado UPC" },
+            { name: "Splitter 1:2 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 2, attenuation: { "1": 3.7, "2": 3.7 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:2 Conectorizado APC" },
+            { name: "Splitter 1:2 (NC)", type: "PLC", mode: "Balanced", inputs: 1, outputs: 2, attenuation: { "1": 3.7, "2": 3.7 }, connectorType: "Unconnectorized", allowCustomConnections: false, description: "Divisor Balanceado 1:2 Não Conectorizado" },
+            { name: "Splitter 1:4 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 4, attenuation: { "x": 7.3 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:4 Conectorizado UPC" },
+            { name: "Splitter 1:4 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 4, attenuation: { "x": 7.3 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:4 Conectorizado APC" },
+            { name: "Splitter 1:4 (NC)", type: "PLC", mode: "Balanced", inputs: 1, outputs: 4, attenuation: { "x": 7.3 }, connectorType: "Unconnectorized", allowCustomConnections: false, description: "Divisor Balanceado 1:4 Não Conectorizado" },
+            { name: "Splitter 1:8 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 8, attenuation: { "x": 10.5 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:8 Conectorizado UPC" },
+            { name: "Splitter 1:8 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 8, attenuation: { "x": 10.5 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:8 Conectorizado APC" },
+            { name: "Splitter 1:8 (NC)", type: "PLC", mode: "Balanced", inputs: 1, outputs: 8, attenuation: { "x": 10.5 }, connectorType: "Unconnectorized", allowCustomConnections: false, description: "Divisor Balanceado 1:8 Não Conectorizado" },
+            { name: "Splitter 1:16 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 16, attenuation: { "x": 13.7 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:16 Conectorizado UPC" },
+            { name: "Splitter 1:16 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 16, attenuation: { "x": 13.7 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:16 Conectorizado APC" },
+            { name: "Splitter 1:16 (NC)", type: "PLC", mode: "Balanced", inputs: 1, outputs: 16, attenuation: { "x": 13.7 }, connectorType: "Unconnectorized", allowCustomConnections: false, description: "Divisor Balanceado 1:16 Não Conectorizado" },
+            { name: "Splitter 1:32 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 32, attenuation: { "x": 17.0 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:32 Conectorizado UPC" },
+            { name: "Splitter 1:32 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 32, attenuation: { "x": 17.0 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:32 Conectorizado APC" },
+            { name: "Splitter 1:32 (NC)", type: "PLC", mode: "Balanced", inputs: 1, outputs: 32, attenuation: { "x": 17.0 }, connectorType: "Unconnectorized", allowCustomConnections: false, description: "Divisor Balanceado 1:32 Não Conectorizado" },
+            { name: "Splitter 1:64 UPC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 64, attenuation: { "x": 20.5 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 1:64 Conectorizado UPC" },
+            { name: "Splitter 1:64 APC", type: "PLC", mode: "Balanced", inputs: 1, outputs: 64, attenuation: { "x": 20.5 }, connectorType: "Connectorized", polishType: "APC", allowCustomConnections: true, description: "Divisor Balanceado 1:64 Conectorizado APC" },
+            { name: "Splitter 2:8 UPC", type: "PLC", mode: "Balanced", inputs: 2, outputs: 8, attenuation: { "x": 10.5 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 2:8 Conectorizado UPC" },
+            { name: "Splitter 2:16 UPC", type: "PLC", mode: "Balanced", inputs: 2, outputs: 16, attenuation: { "x": 13.7 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 2:16 Conectorizado UPC" },
+            { name: "Splitter 2:32 UPC", type: "PLC", mode: "Balanced", inputs: 2, outputs: 32, attenuation: { "x": 17.0 }, connectorType: "Connectorized", polishType: "UPC", allowCustomConnections: true, description: "Divisor Balanceado 2:32 Conectorizado UPC" },
         ]
     });
 
@@ -134,9 +164,12 @@ async function main() {
     await prisma.templateFusion.deleteMany();
     await prisma.templateFusion.createMany({
         data: [
-            { name: "Fusão Padrão", attenuation: 0.02 },
-            { name: "Conector APC", attenuation: 0.5 },
-            { name: "Conector UPC", attenuation: 0.3 }
+            { name: "Fusão Padrão", category: "fusion", attenuation: 0.02 },
+            { name: "Fusão Mecânica", category: "fusion", attenuation: 0.5 },
+            { name: "Conector SC/APC", category: "connector", polishType: "APC", attenuation: 0.3 },
+            { name: "Conector SC/UPC", category: "connector", polishType: "UPC", attenuation: 0.5 },
+            { name: "Conector LC/APC", category: "connector", polishType: "APC", attenuation: 0.3 },
+            { name: "Conector LC/UPC", category: "connector", polishType: "UPC", attenuation: 0.5 }
         ]
     });
 

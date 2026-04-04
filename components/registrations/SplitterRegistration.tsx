@@ -26,10 +26,11 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
         inputs: 1,
         outputs: 8,
         connectorType: 'Unconnectorized',
+        polishType: '' as string,
         allowCustomConnections: false,
-        attenuation: '', // We will parse this to JSON if needed, or store as string in JSON
-        port1: '', // New field for Unbalanced Port 1
-        port2: '', // New field for Unbalanced Port 2
+        attenuation: '',
+        port1: '',
+        port2: '',
         description: ''
     });
 
@@ -104,6 +105,20 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                 if (rawAtt.port2) p2 = rawAtt.port2;
             }
 
+            // Extract attenuation value from any JSON format: { value: X }, { x: X }, { "1": X }, or plain string
+            let attValue = '';
+            if (rawAtt && typeof rawAtt === 'object') {
+                if (rawAtt.value !== undefined) attValue = String(rawAtt.value);
+                else if (rawAtt.x !== undefined) attValue = String(rawAtt.x);
+                else {
+                    // Try first numeric value found (e.g. { "1": 3.7 })
+                    const keys = Object.keys(rawAtt).filter(k => k !== 'port1' && k !== 'port2');
+                    if (keys.length > 0) attValue = String(rawAtt[keys[0]]);
+                }
+            } else if (rawAtt !== undefined && rawAtt !== null) {
+                attValue = String(rawAtt);
+            }
+
             setFormData({
                 name: item.name,
                 type: item.type,
@@ -111,8 +126,9 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                 inputs: item.inputs,
                 outputs: item.outputs,
                 connectorType: item.connectorType || 'Unconnectorized',
-                allowCustomConnections: item.allowCustomConnections !== false,
-                attenuation: typeof rawAtt === 'object' && rawAtt.value ? rawAtt.value : (typeof rawAtt === 'object' ? '' : rawAtt), // Try to keep 'value' for the main input if needed, though we might hide it.
+                polishType: item.polishType || '',
+                allowCustomConnections: (item.connectorType === 'Connectorized') ? (item.allowCustomConnections !== false) : (item.allowCustomConnections === true),
+                attenuation: attValue,
                 port1: p1,
                 port2: p2,
                 description: item.description || ''
@@ -126,6 +142,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                 inputs: 1,
                 outputs: 8,
                 connectorType: 'Unconnectorized',
+                polishType: '',
                 allowCustomConnections: false,
                 attenuation: '',
                 port1: '',
@@ -269,7 +286,6 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                         <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('splitter_name')}</th>
-                                <th className="px-6 py-4">{t('splitter_type')}</th>
                                 <th className="px-6 py-4">{t('splitter_mode')}</th>
                                 <th className="px-6 py-4">{t('splitter_ports')}</th>
                                 <th className="px-6 py-4">{t('attenuation')}</th>
@@ -285,7 +301,6 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                             {splitter.name}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{splitter.type}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                                         {splitter.mode === 'Balanced' ? t('splitter_mode_balanced') : t('splitter_mode_unbalanced')}
                                     </td>
@@ -368,19 +383,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <CustomSelect
-                                        label={t('splitter_type')}
-                                        value={formData.type}
-                                        options={[
-                                            { value: 'PLC', label: 'PLC' },
-                                            { value: 'FBT', label: 'FBT' }
-                                        ]}
-                                        onChange={val => setFormData({ ...formData, type: val })}
-                                        showSearch={false}
-                                    />
-                                </div>
+                            <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <CustomSelect
                                         label={t('splitter_mode')}
@@ -405,10 +408,30 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                         { value: 'Unconnectorized', label: t('unconnectorized') || 'Não Conectorizado' },
                                         { value: 'Connectorized', label: t('connectorized') || 'Conectorizado' }
                                     ]}
-                                    onChange={val => setFormData({ ...formData, connectorType: val })}
+                                    onChange={val => setFormData({ ...formData, connectorType: val, polishType: val === 'Connectorized' ? (formData.polishType || 'UPC') : '', allowCustomConnections: val === 'Connectorized' })}
                                     showSearch={false}
                                 />
                             </div>
+
+                            {formData.connectorType === 'Connectorized' && (
+                                <div>
+                                    <CustomSelect
+                                        label={t('polish_type') || 'Tipo de Polimento'}
+                                        value={formData.polishType || 'UPC'}
+                                        options={[
+                                            { value: 'UPC', label: 'UPC' },
+                                            { value: 'APC', label: 'APC' },
+                                            { value: 'PC', label: 'PC' }
+                                        ]}
+                                        onChange={val => setFormData({ ...formData, polishType: val })}
+                                        showSearch={false}
+                                    />
+                                    <div className="flex items-center gap-2 mt-1.5 ml-1">
+                                        <span className={`w-3 h-3 rounded-full border ${formData.polishType === 'APC' ? 'bg-green-500 border-green-600' : 'bg-blue-500 border-blue-600'}`} />
+                                        <span className="text-[10px] text-slate-500">{formData.polishType === 'APC' ? t('polish_apc_hint') || 'Conector Verde (APC - Angulado)' : t('polish_upc_hint') || 'Conector Azul (UPC/PC - Reto)'}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <label className="flex items-center gap-2 mt-4 ml-1 cursor-pointer select-none">
                                 <input

@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard
+    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug
 } from 'lucide-react';
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
@@ -12,7 +12,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project } from '../types';
 
-export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
+export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
 
 export interface MenuItem {
     id: DashboardView;
@@ -152,6 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork, badge: menuBadges?.reg_splitter },
                     { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server, badge: menuBadges?.reg_olt },
                     { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap, badge: menuBadges?.reg_fusao },
+                    { id: 'reg_conector', label: t('reg_conector') || 'Conector', icon: Plug, badge: menuBadges?.reg_conector },
                     { id: 'reg_clientes', label: t('reg_clientes') || 'Clientes', icon: Users, badge: menuBadges?.reg_clientes }
                 ]
             },
