@@ -181,11 +181,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                         ${isLitIn
                                 ? 'border-red-400 bg-red-600 text-white'
-                                : !isConnectorized
-                                    ? 'border-slate-900 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'
-                                    : isAPC
-                                        ? `${polishColor.bg} ${polishColor.border} ${polishColor.text} ${polishColor.hoverBorder}`
-                                        : `${polishColor.bg} ${polishColor.border} ${polishColor.text} ${polishColor.hoverBorder}`}
+                                : 'border-slate-900 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'}
                     `}
                     >
                         1
