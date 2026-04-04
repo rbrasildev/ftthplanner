@@ -357,20 +357,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                     {/* Limits */}
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{(plan.limits?.maxProjects || 0) >= 999999 ? t('feature_unlimited').replace('Projects', '').trim() : plan.limits?.maxProjects} Projects</span>
+                                        <span>{(plan.limits?.maxProjects || 0) >= 999999 ? t('feature_projects_unlimited') : t('feature_projects', { count: plan.limits?.maxProjects })}</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{(plan.limits?.maxUsers || 0) >= 999999 ? t('feature_unlimited').replace('Users', '').trim() : plan.limits?.maxUsers} Users</span>
+                                        <span>{(plan.limits?.maxUsers || 0) >= 999999 ? t('feature_users_unlimited') : t('feature_users', { count: plan.limits?.maxUsers })}</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-sm text-slate-300">
                                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                        <span>{(plan.limits?.maxCTOs || 0) >= 999999 ? t('feature_unlimited').replace('CTOs', '').trim() : plan.limits?.maxCTOs} CTOs</span>
+                                        <span>{(plan.limits?.maxCTOs || 0) >= 999999 ? t('feature_ctos_unlimited') : t('feature_ctos', { count: plan.limits?.maxCTOs })}</span>
                                     </div>
 
 
-                                    {/* Features List */}
-                                    {plan.features && Array.isArray(plan.features) && plan.features.map((feature: string, i: number) => (
+                                    {/* Features List (filter out items that duplicate limits above) */}
+                                    {plan.features && Array.isArray(plan.features) && plan.features
+                                        .map((f: string) => t(f) || f)
+                                        .filter((feature: string) => {
+                                            const kw = ['projeto', 'project', 'usuário', 'user', 'cto', 'ilimitad', 'unlimited'];
+                                            return !kw.some(k => feature.toLowerCase().includes(k));
+                                        })
+                                        .map((feature: string, i: number) => (
                                         <div key={i} className="flex items-center gap-3 text-sm text-slate-300">
                                             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                                             <span>{feature}</span>
