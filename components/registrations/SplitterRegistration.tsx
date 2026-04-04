@@ -52,15 +52,25 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
     // Helper to extract display value from attenuation (which might be JSON)
     const getAttenuationValue = (val: any): string => {
-        if (val === null || val === undefined) return '';
+        if (val === null || val === undefined) return '-';
         let displayVal = val;
 
         if (typeof val === 'object') {
-            // Check for new port1/port2 format
-            if (val.port1 && val.port2) {
-                return `P1: ${val.port1}dB / P2: ${val.port2}dB`;
+            // Unbalanced: port1/port2 with actual values
+            if (val.port1 !== undefined && val.port2 !== undefined && (val.port1 !== '' || val.port2 !== '')) {
+                if (val.port1 && val.port2) return `P1: ${val.port1} dB / P2: ${val.port2} dB`;
+                return '-';
             }
-            displayVal = val.value || val.v || val.x || JSON.stringify(val);
+            // Try known keys: value, v, x, or first numeric value found
+            if (val.value !== undefined && val.value !== '') displayVal = val.value;
+            else if (val.v !== undefined) displayVal = val.v;
+            else if (val.x !== undefined) displayVal = val.x;
+            else {
+                const keys = Object.keys(val).filter(k => !['port1', 'port2', 'value'].includes(k));
+                const firstVal = keys.length > 0 ? val[keys[0]] : null;
+                if (firstVal !== null && firstVal !== undefined && firstVal !== '') displayVal = firstVal;
+                else return '-';
+            }
         } else if (typeof val === 'string') {
             try {
                 if (val.trim().startsWith('{')) {
