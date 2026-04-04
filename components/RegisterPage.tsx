@@ -3,7 +3,7 @@ import { KeyRound, ArrowLeft, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface RegisterPageProps {
-    onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => void;
+    onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => Promise<void> | void;
     onBackToLogin: () => void;
     onBackToLanding: () => void;
     initialPlan?: string;
@@ -21,7 +21,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
     const [isCustomCountry, setIsCustomCountry] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const generatedUsername = (email.split('@')[0] || email) + Math.floor(Math.random() * 9000 + 1000);
 
@@ -35,14 +35,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
         }
         setError(null);
 
-        // Get source from URL if present
         const urlParams = new URLSearchParams(window.location.search);
         const source = urlParams.get('utm_source') || 'direct';
 
         const cleanPhone = phone.replace(/\D/g, '');
         const fullPhone = `${countryCode}${cleanPhone}`;
 
-        onRegister(generatedUsername, email, password, companyName, initialPlan, fullPhone, source);
+        try {
+            await onRegister(generatedUsername, email, password, companyName, initialPlan, fullPhone, source);
+        } catch (err: any) {
+            setError(err?.response?.data?.error || err?.message || t('registration_failed'));
+        }
     };
 
     return (
