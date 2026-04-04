@@ -20,6 +20,41 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
     const [countryCode, setCountryCode] = useState('+55');
     const [isCustomCountry, setIsCustomCountry] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const countryDropdownRef = React.useRef<HTMLDivElement>(null);
+
+    const countries = [
+        { code: '+55', iso: 'br', name: 'Brasil' },
+        { code: '+351', iso: 'pt', name: 'Portugal' },
+        { code: '+1', iso: 'us', name: 'EUA' },
+        { code: '+52', iso: 'mx', name: 'México' },
+        { code: '+54', iso: 'ar', name: 'Argentina' },
+        { code: '+56', iso: 'cl', name: 'Chile' },
+        { code: '+57', iso: 'co', name: 'Colômbia' },
+        { code: '+51', iso: 'pe', name: 'Peru' },
+        { code: '+598', iso: 'uy', name: 'Uruguai' },
+        { code: '+58', iso: 've', name: 'Venezuela' },
+        { code: '+593', iso: 'ec', name: 'Equador' },
+        { code: '+591', iso: 'bo', name: 'Bolívia' },
+        { code: '+595', iso: 'py', name: 'Paraguai' },
+        { code: '+34', iso: 'es', name: 'Espanha' },
+    ];
+
+    const FlagImg = ({ iso, size = 20 }: { iso: string; size?: number }) => (
+        <img src={`https://flagcdn.com/w40/${iso}.png`} alt="" width={size} height={Math.round(size * 0.75)} className="rounded-sm object-cover" style={{ minWidth: size }} />
+    );
+
+    const selectedCountry = countries.find(c => c.code === countryCode) || countries[0];
+
+    React.useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
+                setShowCountryDropdown(false);
+            }
+        };
+        if (showCountryDropdown) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showCountryDropdown]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,35 +175,48 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                                 autoFocus
                                             />
                                         ) : (
-                                            <select
-                                                value={countryCode}
-                                                onChange={(e) => {
-                                                    if (e.target.value === 'other') {
-                                                        setIsCustomCountry(true);
-                                                        setCountryCode('+');
-                                                    } else {
-                                                        setCountryCode(e.target.value);
-                                                    }
-                                                    setPhone(''); // Reset phone when changing country
-                                                }}
-                                                className="w-[110px] sm:w-[130px] bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent p-4 outline-none font-medium shadow-sm lg:shadow-none cursor-pointer text-center"
-                                            >
-                                                <option value="+55">🇧🇷 +55</option>
-                                                <option value="+351">🇵🇹 +351</option>
-                                                <option value="+1">🇺🇸 +1</option>
-                                                <option value="+52">🇲🇽 +52</option>
-                                                <option value="+54">🇦🇷 +54</option>
-                                                <option value="+56">🇨🇱 +56</option>
-                                                <option value="+57">🇨🇴 +57</option>
-                                                <option value="+51">🇵🇪 +51</option>
-                                                <option value="+598">🇺🇾 +598</option>
-                                                <option value="+58">🇻🇪 +58</option>
-                                                <option value="+593">🇪🇨 +593</option>
-                                                <option value="+591">🇧🇴 +591</option>
-                                                <option value="+595">🇵🇾 +595</option>
-                                                <option value="+34">🇪🇸 +34</option>
-                                                <option value="other">🌍 Outro...</option>
-                                            </select>
+                                            <div className="relative" ref={countryDropdownRef}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                                                    className="w-[110px] sm:w-[130px] bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent p-4 outline-none font-medium shadow-sm lg:shadow-none cursor-pointer flex items-center justify-center gap-2"
+                                                >
+                                                    <FlagImg iso={selectedCountry.iso} size={20} />
+                                                    <span>{countryCode}</span>
+                                                </button>
+                                                {showCountryDropdown && (
+                                                    <div className="absolute top-full left-0 mt-1 w-[220px] bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 max-h-[280px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
+                                                        {countries.map(c => (
+                                                            <button
+                                                                key={c.code}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setCountryCode(c.code);
+                                                                    setPhone('');
+                                                                    setShowCountryDropdown(false);
+                                                                }}
+                                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${countryCode === c.code ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 font-bold' : 'text-slate-700 dark:text-slate-300'}`}
+                                                            >
+                                                                <FlagImg iso={c.iso} size={22} />
+                                                                <span className="flex-1 text-left">{c.name}</span>
+                                                                <span className="text-slate-400 font-mono text-xs">{c.code}</span>
+                                                            </button>
+                                                        ))}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setIsCustomCountry(true);
+                                                                setCountryCode('+');
+                                                                setShowCountryDropdown(false);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-t border-slate-100 dark:border-slate-700"
+                                                        >
+                                                            <div style={{ width: 22, minWidth: 22 }} />
+                                                            <span className="flex-1 text-left">Outro...</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                         <input
                                             type="tel"
