@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma';
 
 export interface AuthRequest extends Request {
     user?: {
@@ -26,11 +27,26 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
         return res.sendStatus(500);
     }
 
-    jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
+    jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, user: any) => {
         if (err) {
             console.error(`[Auth] Token verification failed: ${err.message}`);
             return res.sendStatus(403);
         }
+
+        // Check if this token is still the active session
+        try {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: { activeSessionToken: true }
+            });
+            if (dbUser?.activeSessionToken && dbUser.activeSessionToken !== token) {
+                console.log(`[Auth] Session revoked for user: ${user?.username || 'unknown'}`);
+                return res.status(401).json({ error: 'SESSION_REVOKED', message: 'Sua sessão foi encerrada por outro login.' });
+            }
+        } catch {
+            // DB check failed — allow request to proceed
+        }
+
         console.log(`[Auth] Token verified for user: ${user?.username || 'unknown'}`);
         (req as AuthRequest).user = user;
         next();

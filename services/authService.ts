@@ -4,7 +4,7 @@ export const login = async (email: string, password?: string) => {
     const pass = password || "123456";
 
     // Perform Login
-    const res = await api.post('/auth/login', { email, password: pass });
+    const res = await api.post('/auth/login', { email, password: pass, forceLogin: true });
     return res.data;
 };
 

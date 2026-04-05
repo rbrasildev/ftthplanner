@@ -152,7 +152,7 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { email, password, forceLogin } = req.body;
 
     if (!email || !password || typeof password !== 'string') {
         return res.status(400).json({ error: 'Email and password are required' });
@@ -181,25 +181,26 @@ export const login = async (req: Request, res: Response) => {
                 return res.status(500).json({ error: 'User not associated with any company' });
             }
 
-
-
-            if (user.company) {
-                // if (user.company.status === 'SUSPENDED' && user.role !== 'SUPER_ADMIN') {
-                //     return res.status(403).json({ error: 'Company subscription is suspended' });
-                // }
- 
-                // CHECK TRIAL / SUBSCRIPTION EXPIRATION
-                if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
-                    logger.info(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
-                    // We don't downgrade anymore to ensure the trial remains expired and blocked
+            // Check active session on another device
+            if (user.activeSessionToken && !forceLogin) {
+                // Verify if the existing token is still valid
+                try {
+                    jwt.verify(user.activeSessionToken, process.env.JWT_SECRET as string);
+                    // Token still valid — another device is logged in
+                    return res.status(409).json({
+                        error: 'SESSION_ACTIVE',
+                        message: 'Já existe uma sessão ativa nesta conta em outro dispositivo.'
+                    });
+                } catch {
+                    // Token expired — proceed normally
                 }
             }
 
-            // Update Last Login
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { lastLoginAt: new Date() }
-            });
+            if (user.company) {
+                if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
+                    logger.info(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
+                }
+            }
 
             const token = jwt.sign(
                 {
@@ -211,6 +212,12 @@ export const login = async (req: Request, res: Response) => {
                 process.env.JWT_SECRET as string,
                 { expiresIn: '7d' }
             );
+
+            // Save active session token & update last login
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { lastLoginAt: new Date(), activeSessionToken: token }
+            });
 
             res.cookie('auth_token', token, {
                 httpOnly: true,
@@ -228,7 +235,7 @@ export const login = async (req: Request, res: Response) => {
                     role: user.role,
                     company: user.company
                 },
-                token // Retornando para suporte ao modo anônimo (Header fallback)
+                token
             });
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
@@ -401,6 +408,17 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
+    // Clear active session token in DB
+    const userId = (req as any).user?.id;
+    if (userId) {
+        try {
+            await prisma.user.update({
+                where: { id: userId },
+                data: { activeSessionToken: null }
+            });
+        } catch {}
+    }
+
     res.clearCookie('auth_token', {
         httpOnly: true,
         secure: true,
