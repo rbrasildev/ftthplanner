@@ -566,6 +566,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (!isMaximized) {
             setSavedWindowPos(windowPos);
             setIsMaximized(true);
+            setIsCollapsed(false);
         } else {
             setIsMaximized(false);
             setWindowPos(savedWindowPos);
