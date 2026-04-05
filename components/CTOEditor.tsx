@@ -934,39 +934,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const p2 = getPortCenter(c.targetId);
                 if (!p1 || !p2) return c;
 
-                // 1. Sanitize/Clean Current Points First (Hybrid Logic)
-                // If the user manually dragged points, they might be off-grid or slightly skewed.
-                // We want to "fix" them first (preserve shape) before cycling to a completely new shape.
-
+                // --- Sanitize helper ---
                 const sanitize = (pts: { x: number, y: number }[]) => {
                     if (!pts || pts.length === 0) return [];
-
-                    // Start from P1
                     let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
-
                     const cleanPts = pts.map(p => {
                         let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
                         let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
-
-                        // Orthogonalize
                         const THRESHOLD = GRID_SIZE * 1.5;
                         const dx = Math.abs(nx - prevRef.x);
                         const dy = Math.abs(ny - prevRef.y);
-
-                        if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x; // Snap Vertical
-                        else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y; // Snap Horizontal
-
-                        // If both are small (duplicate) or both large (diagonal), just grid snap.
-                        // But for diagonal, we might forcing L-shape? No, keep diagonal if intentional?
-                        // User wants "small adjustment". Let's assume strict orthogonal preferred.
-                        // If diagonal, force one axis?
-                        // Let's stick to simple grid snap + proximity snap.
-
+                        if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
+                        else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
                         prevRef = { x: nx, y: ny };
                         return { x: nx, y: ny };
                     });
-
-                    // Filter duplicates
                     return cleanPts.filter((p, i) => {
                         if (i === 0) return true;
                         return !(p.x === cleanPts[i - 1].x && p.y === cleanPts[i - 1].y);
@@ -976,7 +958,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const currentPoints = c.points || [];
                 const sanitizedPoints = sanitize(currentPoints);
 
-                // Helper: Compare point arrays
                 const arePointsDifferent = (a: { x: number, y: number }[], b: { x: number, y: number }[]) => {
                     if (a.length !== b.length) return true;
                     for (let i = 0; i < a.length; i++) {
@@ -985,45 +966,75 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     return false;
                 };
 
-                // CHECK: Is current messy?
-                // If sanitized is different from current -> APPLY SANITIZED (Fix manual drag)
-                // But we must check if "current" is empty.
+                // If current points are messy, sanitize first
                 if (currentPoints.length > 0 && arePointsDifferent(currentPoints, sanitizedPoints)) {
                     return { ...c, points: sanitizedPoints };
                 }
 
-                // IF ALREADY CLEAN (or empty), CYCLE CANDIDATES
-                // Shape 0: Horizontal First (L) -> |__
-                const shape0 = [{ x: p2.x, y: p1.y }];
-
-                // Shape 1: Vertical First (L) -> __|
-                const shape1 = [{ x: p1.x, y: p2.y }];
-
-                // Shape 2: Mid-Point Horizontal (Z) -> --|--
+                // --- Shape candidates ---
                 const midX = (p1.x + p2.x) / 2;
-                const shape2 = [{ x: midX, y: p1.y }, { x: midX, y: p2.y }];
-
-                // Shape 3: Mid-Point Vertical (Z) -> |__|
                 const midY = (p1.y + p2.y) / 2;
-                const shape3 = [{ x: p1.x, y: midY }, { x: p2.x, y: midY }];
+                const thirdX = p1.x + (p2.x - p1.x) / 3;
+                const twoThirdX = p1.x + (p2.x - p1.x) * 2 / 3;
+                const thirdY = p1.y + (p2.y - p1.y) / 3;
+                const twoThirdY = p1.y + (p2.y - p1.y) * 2 / 3;
 
-                const candidates = [shape0, shape1, shape2, shape3];
+                const candidates = [
+                    [],                                                          // 0: Straight
+                    [{ x: p2.x, y: p1.y }],                                     // 1: L horizontal
+                    [{ x: p1.x, y: p2.y }],                                     // 2: L vertical
+                    [{ x: midX, y: p1.y }, { x: midX, y: p2.y }],               // 3: Z horizontal mid (50%)
+                    [{ x: thirdX, y: p1.y }, { x: thirdX, y: p2.y }],           // 4: Z horizontal 1/3
+                    [{ x: twoThirdX, y: p1.y }, { x: twoThirdX, y: p2.y }],     // 5: Z horizontal 2/3
+                    [{ x: p1.x, y: midY }, { x: p2.x, y: midY }],              // 6: Z vertical mid (50%)
+                    [{ x: p1.x, y: thirdY }, { x: p2.x, y: thirdY }],          // 7: Z vertical 1/3
+                    [{ x: p1.x, y: twoThirdY }, { x: p2.x, y: twoThirdY }],    // 8: Z vertical 2/3
+                ];
 
-                const normalize = (pts: { x: number, y: number }[]) =>
-                    JSON.stringify(pts.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) })));
-
-                const currentStr = normalize(currentPoints);
-
-                let matchIndex = -1;
-                candidates.forEach((cand, idx) => {
-                    const candStr = normalize(cand.map(p => ({
+                // --- Detect current shape ---
+                const snap = (pts: { x: number, y: number }[]) =>
+                    JSON.stringify(pts.map(p => ({
                         x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
                         y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
                     })));
-                    if (candStr === currentStr) matchIndex = idx;
+                const currentStr = snap(currentPoints);
+
+                let matchIndex = -1;
+                candidates.forEach((cand, idx) => {
+                    if (snap(cand) === currentStr) matchIndex = idx;
                 });
 
-                // Cycle
+                // Fallback detection by point count + orientation
+                if (matchIndex === -1) {
+                    if (currentPoints.length === 0) matchIndex = 0;
+                    else if (currentPoints.length === 1) {
+                        // L shape — check if closer to horizontal or vertical
+                        const pt = currentPoints[0];
+                        const dxToP2 = Math.abs(pt.x - p2.x);
+                        const dyToP1 = Math.abs(pt.y - p1.y);
+                        matchIndex = (dxToP2 < dyToP1) ? 1 : 2;
+                    }
+                    else if (currentPoints.length === 2) {
+                        // Z shape — detect orientation and approximate position
+                        const dx = Math.abs(currentPoints[0].x - currentPoints[1].x);
+                        if (dx < GRID_SIZE * 2) {
+                            // Horizontal Z — determine which third
+                            const turnX = currentPoints[0].x;
+                            const ratio = (turnX - p1.x) / (p2.x - p1.x || 1);
+                            if (ratio < 0.4) matchIndex = 4;      // ~1/3
+                            else if (ratio > 0.6) matchIndex = 5;  // ~2/3
+                            else matchIndex = 3;                    // ~mid
+                        } else {
+                            // Vertical Z
+                            const turnY = currentPoints[0].y;
+                            const ratio = (turnY - p1.y) / (p2.y - p1.y || 1);
+                            if (ratio < 0.4) matchIndex = 7;
+                            else if (ratio > 0.6) matchIndex = 8;
+                            else matchIndex = 6;
+                        }
+                    }
+                }
+
                 const nextIndex = (matchIndex + 1) % candidates.length;
                 const nextShape = candidates[nextIndex];
 
