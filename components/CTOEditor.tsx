@@ -861,35 +861,55 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return () => clearTimeout(timer);
     }, []);
 
-    // --- Auto-connect pass-through cables (same name) ---
+    // --- Auto-connect pass-through cables (sangria pairs) ---
+    // A pass-through pair is: one cable arriving (toNodeId === cto.id)
+    // and one cable leaving (fromNodeId === cto.id), both originating
+    // from the same split (same base name without last (A)/(B) suffix).
     const autoConnectedRef = useRef(false);
     useEffect(() => {
         if (!isContentReady || autoConnectedRef.current || incomingCables.length < 2) return;
         autoConnectedRef.current = true;
 
-        // Group cables by fiberCount + catalogId (same physical cable model)
-        // Only auto-connect when exactly 2 cables match (pass-through scenario)
-        const cablesBySpec = new Map<string, CableData[]>();
-        incomingCables.forEach(cable => {
-            const key = `${cable.fiberCount}-${cable.catalogId || 'none'}`;
-            const group = cablesBySpec.get(key) || [];
-            group.push(cable);
-            cablesBySpec.set(key, group);
+        const ctoId = cto.id;
+
+        // Separate cables by direction relative to this CTO
+        const arriving = incomingCables.filter(c => c.toNodeId === ctoId);
+        const leaving = incomingCables.filter(c => c.fromNodeId === ctoId);
+
+        if (arriving.length === 0 || leaving.length === 0) return;
+
+        // Match pairs by base name (strip last parenthetical suffix)
+        const getBaseName = (name: string) => name.replace(/\s*\([A-Za-z]\)\s*$/, '').trim();
+
+        const pairs: [CableData, CableData][] = [];
+        const usedLeaving = new Set<string>();
+
+        arriving.forEach(arrCable => {
+            const arrBase = getBaseName(arrCable.name);
+            const match = leaving.find(lCable =>
+                !usedLeaving.has(lCable.id) &&
+                getBaseName(lCable.name) === arrBase &&
+                lCable.fiberCount === arrCable.fiberCount
+            );
+            if (match) {
+                pairs.push([arrCable, match]);
+                usedLeaving.add(match.id);
+            }
         });
+
+        if (pairs.length === 0) return;
 
         setLocalCTO(prev => {
             let allNew: FiberConnection[] = [];
 
-            cablesBySpec.forEach((cables) => {
-                if (cables.length !== 2) return;
-                const [source, target] = cables;
-
-                // Skip if any connections already exist between this pair
-                const hasExisting = prev.connections.some(c =>
-                    (c.sourceId.startsWith(source.id + '-') && c.targetId.startsWith(target.id + '-')) ||
-                    (c.sourceId.startsWith(target.id + '-') && c.targetId.startsWith(source.id + '-'))
+            pairs.forEach(([source, target]) => {
+                // Skip if ANY fiber of either cable already has a connection
+                // (means user already managed this pair — don't override)
+                const hasAnyConnection = prev.connections.some(c =>
+                    c.sourceId.startsWith(source.id + '-') || c.targetId.startsWith(source.id + '-') ||
+                    c.sourceId.startsWith(target.id + '-') || c.targetId.startsWith(target.id + '-')
                 );
-                if (hasExisting) return;
+                if (hasAnyConnection) return;
 
                 const count = Math.min(source.fiberCount, target.fiberCount);
                 const srcTubes = source.looseTubeCount || 1;
@@ -921,7 +941,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (allNew.length === 0) return prev;
             return { ...prev, connections: [...prev.connections, ...allNew] };
         });
-    }, [isContentReady, incomingCables]);
+    }, [isContentReady, incomingCables, cto.id]);
 
     const litConnections = useMemo(() => {
         const lit = new Set<string>();
