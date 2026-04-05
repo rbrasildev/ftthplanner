@@ -438,15 +438,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return { minX, minY, maxX, maxY };
     };
 
-    const getInitialViewState = (data: CTOData) => {
+    const getInitialViewState = (data: CTOData, vw?: number, vh?: number) => {
         let minX = Infinity, minY = Infinity, maxY = -Infinity, maxX = -Infinity;
-        const checkPoint = (px: number, py: number) => {
-            if (px < minX) minX = px; if (py < minY) minY = py;
-            if (px > maxX) maxX = px; if (py > maxY) maxY = py;
-        };
 
         if (data.layout) {
-            // 1. Check Cabes
             incomingCables.forEach(cable => {
                 const l = data.layout![cable.id];
                 if (!l) return;
@@ -457,7 +452,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
-            // 2. Check Splitters
             data.splitters.forEach(split => {
                 const l = data.layout![split.id];
                 if (!l) return;
@@ -467,7 +461,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
-            // 3. Check Fusions
             data.fusions.forEach(fusion => {
                 const l = data.layout![fusion.id];
                 if (!l) return;
@@ -476,7 +469,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 if (b.maxX > maxX) maxX = b.maxX; if (b.maxY > maxY) maxY = b.maxY;
             });
 
-            // 4. Check Connections
             data.connections.forEach(c => {
                 c.points?.forEach(p => {
                     if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
@@ -491,10 +483,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const contentW = maxX - minX + (PADDING * 2);
         const contentH = maxY - minY + (PADDING * 2);
 
-        const viewportW = isMaximized ? window.innerWidth : modalSize.w;
-        const viewportH = (isMaximized ? window.innerHeight : modalSize.h) - 56; // Minus header height
+        const viewportW = vw ?? 1100;
+        const viewportH = (vh ?? 750) - 56;
 
-        // Calculate best zoom to fit content, but max 1 and min 0.2 to avoid "deformed" tiny view
         const zoomW = viewportW / contentW;
         const zoomH = viewportH / contentH;
         const targetZoom = Math.max(0.2, Math.min(zoomW, zoomH, 1));
@@ -1270,7 +1261,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     // --- View Centering ---
     const handleCenterView = () => {
-        setViewState(getInitialViewState(localCTO));
+        const vw = isMaximized ? window.innerWidth : modalSize.w;
+        const vh = isMaximized ? window.innerHeight : modalSize.h;
+        setViewState(getInitialViewState(localCTO, vw, vh));
     };
 
     // --- Auto Pass-Through Logic ---
