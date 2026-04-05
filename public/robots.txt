@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /assets/
+
+User-agent: Googlebot
+Allow: /
 
 Sitemap: https://ftthplanner.com.br/sitemap.xml

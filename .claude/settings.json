@@ -68,7 +68,9 @@
       "Bash(gh --version)",
       "Bash(gh auth:*)",
       "Bash(find /d/ftthplanner -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"toGeoJSON\\\\|togeojson\\\\|Placemark\" {} \\\\;)",
-      "Bash(find \"d:\\\\ftthplanner\" -type f \\\\\\( -name \"*CTOEditor*\" -o -name \"*ctoEditor*\" -o -name \"*cto-editor*\" \\\\\\) -exec ls -lh {} \\\\;)"
+      "Bash(find \"d:\\\\ftthplanner\" -type f \\\\\\( -name \"*CTOEditor*\" -o -name \"*ctoEditor*\" -o -name \"*cto-editor*\" \\\\\\) -exec ls -lh {} \\\\;)",
+      "Bash(ls -lah /d/ftthplanner/*.json)",
+      "Bash(ls -lah /d/ftthplanner/public/*.xml /d/ftthplanner/public/*.txt /d/ftthplanner/public/manifest.*)"
     ]
   }
 }

@@ -52,6 +52,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 <meta property="og:title" content={`${appTitle} | Software para Projetos de Fibra Óptica`} />
                 <meta property="og:description" content={appDesc} />
                 <meta property="og:image" content={ogImg} />
+                <meta property="og:site_name" content={appTitle} />
+                <meta property="og:locale" content="pt_BR" />
+                <meta property="og:locale:alternate" content="en_US" />
 
                 {/* Twitter */}
                 <meta property="twitter:card" content="summary_large_image" />
@@ -62,26 +65,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                 {/* Structured Data (SoftwareApplication) */}
                 <script type="application/ld+json">
-                    {`
-{
-    "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-            "name": "${appTitle}",
-                "operatingSystem": "Web Browser",
-                    "applicationCategory": "DesignApplication",
-                        "offers": {
-        "@type": "Offer",
-            "price": "0",
-                "priceCurrency": "BRL"
-    },
-    "description": "Software profissional para planejamento, documentação e gerenciamento de redes de fibra óptica (FTTH/FTTx).",
-        "aggregateRating": {
-        "@type": "AggregateRating",
-            "ratingValue": "4.8",
-                "ratingCount": "124"
-    }
-}
-`}
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": appTitle,
+                        "url": saasConfig?.websiteUrl || "https://ftthplanner.com.br",
+                        "operatingSystem": "Web Browser",
+                        "applicationCategory": "DesignApplication",
+                        "applicationSubCategory": "Network Planning Software",
+                        "description": appDesc,
+                        "screenshot": saasConfig?.heroPreviewUrl || "https://ftthplanner.com.br/dashboard-preview.png",
+                        "offers": plans.length > 0
+                            ? plans.map(p => ({
+                                "@type": "Offer",
+                                "name": p.name,
+                                "price": String(p.price || 0),
+                                "priceCurrency": "BRL",
+                                "description": p.description || `${p.maxProjects || '∞'} projetos, ${p.maxMembersPerProject || '∞'} membros`
+                            }))
+                            : { "@type": "Offer", "price": "0", "priceCurrency": "BRL", "description": "Teste gratuito" },
+                        "featureList": [
+                            "Mapa interativo com design de topologia",
+                            "Diagrama unifilar de CTO/CEO",
+                            "Cálculo de potência óptica automático",
+                            "Gestão de equipes e projetos",
+                            "Exportação PNG de alta qualidade",
+                            "Importação KMZ/KML",
+                            "VFL e OTDR virtual",
+                            "Catálogo de equipamentos"
+                        ],
+                        "aggregateRating": {
+                            "@type": "AggregateRating",
+                            "ratingValue": "4.8",
+                            "ratingCount": "124",
+                            "bestRating": "5"
+                        }
+                    })}
                 </script>
             </Helmet>
 
