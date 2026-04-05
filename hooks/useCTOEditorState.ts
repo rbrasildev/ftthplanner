@@ -301,16 +301,11 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
     }, [localCTO, onSave, onClose]);
 
     const handleCloseRequest = useCallback(() => {
-        const { viewState: _vs, ...localRest } = localCTO;
-        const localForCompare = { ...localRest };
-        if (localForCompare.connections) {
-            localForCompare.connections = [...localForCompare.connections].sort((a, b) => a.id.localeCompare(b.id));
-        }
-        const hasChanges = JSON.stringify(localForCompare) !== savedSnapshotRef.current;
+        const hasChanges = createSnapshot(localCTO) !== savedSnapshotRef.current;
 
         if (hasChanges) setShowCloseConfirm(true);
         else onClose();
-    }, [localCTO, onClose]);
+    }, [localCTO, onClose, createSnapshot]);
 
     return {
         localCTO,

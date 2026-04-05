@@ -19,6 +19,9 @@ interface SplitterNodeProps {
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     attachedCustomers?: Record<number, { name: string; status?: string }>; // portIndex -> Customer Data
     catalogItem?: SplitterCatalogItem; // Metadata for identifying high-power ports
+    onHoverEnter?: (e: React.MouseEvent) => void;
+    onHoverLeave?: (e: React.MouseEvent) => void;
+    hoverData?: { id: string; type: string };
 }
 
 const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
@@ -35,7 +38,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     onDoubleClick,
     onContextMenu,
     attachedCustomers = {},
-    catalogItem
+    catalogItem,
+    onHoverEnter,
+    onHoverLeave,
+    hoverData
 }) => {
     const { t } = useLanguage();
     const portCount = splitter.outputPortIds.length;
@@ -93,6 +99,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     return (
         <div
             id={splitter.id}
+            onMouseEnter={onHoverEnter}
+            onMouseLeave={onHoverLeave}
+            data-hover-id={hoverData?.id}
+            data-hover-type={hoverData?.type}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 width: size,

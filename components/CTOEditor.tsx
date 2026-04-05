@@ -353,16 +353,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [litPorts, setLitPorts] = useState<Set<string>>(incomingLitPorts);
     const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
-    // Auto-download logic for deep links
+    // Auto-download logic for deep links (ref assigned after handleExportPNG is defined)
+    const handleExportPNGRef = useRef<() => void>(() => {});
+
     useEffect(() => {
         if (autoDownload) {
             console.log("[CTOEditor] Auto-download triggered via deep link");
             const timer = setTimeout(() => {
-                // If the URL has downloadType=pdf, we honor it, otherwise default to PNG as requested
-                // PDF export is disabled for production due to visual inconsistencies
-                // Defaulting everything to PNG
-                const params = new URLSearchParams(window.location.search);
-                handleExportPNG();
+                handleExportPNGRef.current();
             }, 3000); // 3 seconds to be safe with all renders
             return () => clearTimeout(timer);
         }
@@ -1041,73 +1039,122 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleSmartAlignCable = (cableId: string) => {
         setLocalCTO(prev => {
-            // 1. Determine Action based on Representative
-            let action: 'SANITIZE' | 'CYCLE' = 'CYCLE'; // Default
-            let nextShapeIdx = 0;
-
+            // --- Collect & sort relevant connections by fiber index ---
             const relevantConnections = prev.connections.filter(c =>
                 c.sourceId.startsWith(cableId + '-') || c.targetId.startsWith(cableId + '-') ||
                 c.sourceId === cableId || c.targetId === cableId
             );
+            if (relevantConnections.length === 0) return prev;
 
-            if (relevantConnections.length > 0) {
-                const representative = relevantConnections[0];
-                const p1Rep = getPortCenter(representative.sourceId);
-                const p2Rep = getPortCenter(representative.targetId);
+            const getFiberIdx = (conn: FiberConnection) => {
+                const ownPort = conn.sourceId.startsWith(cableId) ? conn.sourceId : conn.targetId;
+                const m = ownPort.match(/-fiber-(\d+)$/);
+                return m ? parseInt(m[1]) : 0;
+            };
 
-                if (p1Rep && p2Rep) {
-                    const currentPoints = representative.points || [];
+            const sorted = [...relevantConnections].sort((a, b) => getFiberIdx(a) - getFiberIdx(b));
+            const connIndexMap = new Map<string, number>();
+            sorted.forEach((c, i) => connIndexMap.set(c.id, i));
+            const totalConns = sorted.length;
 
-                    // Helper: Sanitize Logic
-                    const sanitizeHelpers = (pts: { x: number, y: number }[], startP: { x: number, y: number }) => {
-                        if (!pts || pts.length === 0) return [];
-                        let prevRef = { x: Math.round(startP.x / GRID_SIZE) * GRID_SIZE, y: Math.round(startP.y / GRID_SIZE) * GRID_SIZE };
-                        return pts.map(p => {
-                            let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
-                            let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
-                            const THRESHOLD = GRID_SIZE * 1.5;
-                            const dx = Math.abs(nx - prevRef.x);
-                            const dy = Math.abs(ny - prevRef.y);
-                            if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
-                            else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
-                            prevRef = { x: nx, y: ny };
-                            return { x: nx, y: ny };
-                        }).filter((p, i, arr) => i === 0 || !(p.x === arr[i - 1].x && p.y === arr[i - 1].y));
-                    };
+            // --- Sanitize helper ---
+            const sanitize = (pts: { x: number; y: number }[], startP: { x: number; y: number }) => {
+                if (!pts || pts.length === 0) return [];
+                let prevRef = { x: Math.round(startP.x / GRID_SIZE) * GRID_SIZE, y: Math.round(startP.y / GRID_SIZE) * GRID_SIZE };
+                return pts.map(p => {
+                    let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
+                    let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
+                    const THRESHOLD = GRID_SIZE * 1.5;
+                    const dx = Math.abs(nx - prevRef.x);
+                    const dy = Math.abs(ny - prevRef.y);
+                    if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
+                    else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
+                    prevRef = { x: nx, y: ny };
+                    return { x: nx, y: ny };
+                }).filter((p, i, arr) => i === 0 || !(p.x === arr[i - 1].x && p.y === arr[i - 1].y));
+            };
 
-                    const sanitizedPoints = sanitizeHelpers(currentPoints, p1Rep);
+            // --- Determine action from representative ---
+            let action: 'SANITIZE' | 'CYCLE' = 'CYCLE';
+            let nextShapeIdx = 0;
 
-                    const arePointsDifferent = (a: any[], b: any[]) => {
-                        if (a.length !== b.length) return true;
-                        for (let i = 0; i < a.length; i++) if (Math.abs(a[i].x - b[i].x) > 1 || Math.abs(a[i].y - b[i].y) > 1) return true;
-                        return false;
-                    };
+            const representative = sorted[0];
+            const p1Rep = getPortCenter(representative.sourceId);
+            const p2Rep = getPortCenter(representative.targetId);
 
-                    if (currentPoints.length > 0 && arePointsDifferent(currentPoints, sanitizedPoints)) {
-                        action = 'SANITIZE';
-                    } else {
-                        // Determine Cycle Index
-                        const shape0 = [{ x: p2Rep.x, y: p1Rep.y }];
-                        const shape1 = [{ x: p1Rep.x, y: p2Rep.y }];
-                        const midX = (p1Rep.x + p2Rep.x) / 2;
-                        const shape2 = [{ x: midX, y: p1Rep.y }, { x: midX, y: p2Rep.y }];
-                        const midY = (p1Rep.y + p2Rep.y) / 2;
-                        const shape3 = [{ x: p1Rep.x, y: midY }, { x: p2Rep.x, y: midY }];
-                        const candidates = [shape0, shape1, shape2, shape3];
-                        const normalize = (pts: any[]) => JSON.stringify(pts.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) })));
-                        const currentStr = normalize(currentPoints);
+            if (p1Rep && p2Rep) {
+                const currentPoints = representative.points || [];
+                const sanitizedPoints = sanitize(currentPoints, p1Rep);
 
-                        let matchIndex = -1;
-                        candidates.forEach((cand, idx) => {
-                            const candStr = normalize(cand.map(p => ({ x: Math.round(p.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p.y / GRID_SIZE) * GRID_SIZE })));
-                            if (candStr === currentStr) matchIndex = idx;
-                        });
-                        nextShapeIdx = (matchIndex + 1) % candidates.length;
+                const arePointsDifferent = (a: any[], b: any[]) => {
+                    if (a.length !== b.length) return true;
+                    for (let i = 0; i < a.length; i++) if (Math.abs(a[i].x - b[i].x) > 1 || Math.abs(a[i].y - b[i].y) > 1) return true;
+                    return false;
+                };
+
+                if (currentPoints.length > 0 && arePointsDifferent(currentPoints, sanitizedPoints)) {
+                    action = 'SANITIZE';
+                } else {
+                    // Detect current shape to determine cycle index
+                    // Use simple shapes for detection (same as before)
+                    const midX = (p1Rep.x + p2Rep.x) / 2;
+                    const midY = (p1Rep.y + p2Rep.y) / 2;
+                    const detectionCandidates = [
+                        [],                                                     // 0: Straight
+                        [{ x: p2Rep.x, y: p1Rep.y }],                          // 1: L horizontal
+                        [{ x: p1Rep.x, y: p2Rep.y }],                          // 2: L vertical
+                        [{ x: midX, y: p1Rep.y }, { x: midX, y: p2Rep.y }],    // 3: Z horizontal (approx)
+                        [{ x: p1Rep.x, y: midY }, { x: p2Rep.x, y: midY }],   // 4: Z vertical (approx)
+                    ];
+                    const normalize = (pts: any[]) => JSON.stringify(pts.map((p: any) => ({ x: Math.round(p.x), y: Math.round(p.y) })));
+                    const currentStr = normalize(currentPoints);
+
+                    let matchIndex = -1;
+                    // For Z shapes (idx 3,4), check with tolerance since uniform spacing offsets them
+                    detectionCandidates.forEach((cand, idx) => {
+                        const candSnapped = cand.map(p => ({
+                            x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
+                            y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
+                        }));
+                        if (normalize(candSnapped) === currentStr) matchIndex = idx;
+                    });
+
+                    // For Z shapes: detect by point count since offsets vary per fiber
+                    if (matchIndex === -1 && currentPoints.length === 2) {
+                        // Determine if it's a horizontal Z (both points share ~same X) or vertical Z
+                        const dx = Math.abs(currentPoints[0].x - currentPoints[1].x);
+                        const dy = Math.abs(currentPoints[0].y - currentPoints[1].y);
+                        if (dx < GRID_SIZE * 2) matchIndex = 3; // Horizontal Z (vertical turn column)
+                        else if (dy < GRID_SIZE * 2) matchIndex = 4; // Vertical Z (horizontal turn row)
                     }
+                    // Detect straight (0 points)
+                    if (matchIndex === -1 && currentPoints.length === 0) matchIndex = 0;
+
+                    const SHAPE_COUNT = 5;
+                    nextShapeIdx = (matchIndex + 1) % SHAPE_COUNT;
                 }
             }
 
-            // 2. Apply Action to ALL relevant connections
+            // --- Pre-compute global averages for uniform Z spacing ---
+            let avgSourceX = 0, avgSourceY = 0, avgTargetX = 0, avgTargetY = 0;
+            let validCount = 0;
+            sorted.forEach(c => {
+                const s = getPortCenter(c.sourceId);
+                const t = getPortCenter(c.targetId);
+                if (s && t) {
+                    avgSourceX += s.x; avgSourceY += s.y;
+                    avgTargetX += t.x; avgTargetY += t.y;
+                    validCount++;
+                }
+            });
+            if (validCount > 0) {
+                avgSourceX /= validCount; avgSourceY /= validCount;
+                avgTargetX /= validCount; avgTargetY /= validCount;
+            }
+
+            const LANE_SPACING = GRID_SIZE * 2; // 12px — matches fiber pitch
+
+            // --- Apply to all connections ---
             const updatedConnections = prev.connections.map(c => {
                 const isSourceRelated = c.sourceId === cableId || c.sourceId.startsWith(cableId + '-');
                 const isTargetRelated = c.targetId === cableId || c.targetId.startsWith(cableId + '-');
@@ -1118,43 +1165,46 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 if (!p1 || !p2) return c;
 
                 if (action === 'SANITIZE') {
-                    // Inline sanitize logic (reused)
-                    const sanitize = (pts: any[]) => {
-                        if (!pts || pts.length === 0) return [];
-                        // Need startP from this connection, NOT representative
-                        let prevRef = { x: Math.round(p1.x / GRID_SIZE) * GRID_SIZE, y: Math.round(p1.y / GRID_SIZE) * GRID_SIZE };
-                        return pts.map(p => {
-                            let nx = Math.round(p.x / GRID_SIZE) * GRID_SIZE;
-                            let ny = Math.round(p.y / GRID_SIZE) * GRID_SIZE;
-                            const THRESHOLD = GRID_SIZE * 1.5;
-                            const dx = Math.abs(nx - prevRef.x);
-                            const dy = Math.abs(ny - prevRef.y);
-                            if (dx < THRESHOLD && dy >= THRESHOLD) nx = prevRef.x;
-                            else if (dy < THRESHOLD && dx >= THRESHOLD) ny = prevRef.y;
-                            prevRef = { x: nx, y: ny };
-                            return { x: nx, y: ny };
-                        }).filter((p, i, arr) => i === 0 || !(p.x === arr[i - 1].x && p.y === arr[i - 1].y));
-                    };
-                    return { ...c, points: sanitize(c.points || []) };
-                } else {
-                    // APPLY CYCLE SHAPE
-                    const shape0 = [{ x: p2.x, y: p1.y }];
-                    const shape1 = [{ x: p1.x, y: p2.y }];
-                    const midX = (p1.x + p2.x) / 2;
-                    const shape2 = [{ x: midX, y: p1.y }, { x: midX, y: p2.y }];
-                    const midY = (p1.y + p2.y) / 2;
-                    const shape3 = [{ x: p1.x, y: midY }, { x: p2.x, y: midY }];
-
-                    const candidates = [shape0, shape1, shape2, shape3];
-                    const targetShape = candidates[nextShapeIdx];
-
-                    const finalPoints = targetShape.map(p => ({
-                        x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
-                        y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
-                    }));
-
-                    return { ...c, points: finalPoints };
+                    return { ...c, points: sanitize(c.points || [], p1) };
                 }
+
+                const idx = connIndexMap.get(c.id) ?? 0;
+                const center = (totalConns - 1) / 2;
+
+                let shapePoints: { x: number; y: number }[];
+
+                switch (nextShapeIdx) {
+                    case 0: // Straight (no waypoints)
+                        shapePoints = [];
+                        break;
+                    case 1: // L horizontal first
+                        shapePoints = [{ x: p2.x, y: p1.y }];
+                        break;
+                    case 2: // L vertical first
+                        shapePoints = [{ x: p1.x, y: p2.y }];
+                        break;
+                    case 3: { // Uniform Z horizontal — each fiber gets its own turn column
+                        const baseMidX = (avgSourceX + avgTargetX) / 2;
+                        const turnX = baseMidX + (idx - center) * LANE_SPACING;
+                        shapePoints = [{ x: turnX, y: p1.y }, { x: turnX, y: p2.y }];
+                        break;
+                    }
+                    case 4: { // Uniform Z vertical — each fiber gets its own turn row
+                        const baseMidY = (avgSourceY + avgTargetY) / 2;
+                        const turnY = baseMidY + (idx - center) * LANE_SPACING;
+                        shapePoints = [{ x: p1.x, y: turnY }, { x: p2.x, y: turnY }];
+                        break;
+                    }
+                    default:
+                        shapePoints = [];
+                }
+
+                const finalPoints = shapePoints.map(p => ({
+                    x: Math.round(p.x / GRID_SIZE) * GRID_SIZE,
+                    y: Math.round(p.y / GRID_SIZE) * GRID_SIZE
+                }));
+
+                return { ...c, points: finalPoints };
             });
 
             return { ...prev, connections: updatedConnections };
@@ -1344,6 +1394,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const handleExportPNG = () => handleExport('png');
+    handleExportPNGRef.current = handleExportPNG;
 
     // --- OPTICAL POWER CALCULATION HANDLER ---
     const handleSplitterDoubleClick = (splitterId: string) => {
@@ -3051,7 +3102,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const scale = delta > 0 ? 0.9 : 1.1;
             setViewState(prev => {
                 const newZoom = Math.min(Math.max(0.1, prev.zoom * scale), 4);
-                return { ...prev, zoom: newZoom };
+                const next = { ...prev, zoom: newZoom };
+                viewStateRef.current = next;
+                return next;
             });
         });
     }, []);
@@ -3082,17 +3135,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // (S) Add Splitter
             if (key === 's') {
                 e.preventDefault();
-                setShowSplitterDropdown(prev => !prev);
+                toggleToolMode('splitterDropdown');
             }
             // (F) Fusion Tool
             else if (key === 'f') {
                 e.preventDefault();
-                setIsFusionToolActive(prev => !prev);
+                toggleToolMode('fusion');
             }
             // (A) Smart Align
             else if (key === 'a') {
                 e.preventDefault();
-                setIsSmartAlignMode(prev => !prev);
+                toggleToolMode('smartAlign');
             }
             // (R) Rotate Hovered
             else if (key === 'r') {
@@ -3124,7 +3177,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, setShowSplitterDropdown, setIsFusionToolActive, setIsSmartAlignMode, setIsAutoSpliceOpen]);
+    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, toggleToolMode, setIsAutoSpliceOpen]);
 
     return (
         <div
@@ -3360,14 +3413,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 if (!isElementVisible(layout, 192, totalHeight)) return null;
 
                                 return (
-                                    <div
-                                        key={cable.id}
-                                        data-hover-id={cable.id}
-                                        data-hover-type="cable"
-                                        onMouseEnter={handleElementHover}
-                                        onMouseLeave={handleElementHoverClear}
-                                        className="contents"
-                                    >
                                         <FiberCableNode
                                             key={cable.id}
                                             cable={cable}
@@ -3387,8 +3432,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             onCableClick={handleCableClick}
                                             onEdit={handleCableEditClick}
                                             onContextMenu={handleCableContextMenu}
+                                            onHoverEnter={handleElementHover}
+                                            onHoverLeave={handleElementHoverClear}
+                                            hoverData={{ id: cable.id, type: 'cable' }}
                                         />
-                                    </div>
                                 );
                             });
                         })()}
@@ -3398,29 +3445,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             // Viewport culling: skip off-screen fusions (48x24 bounding box)
                             if (!isElementVisible(layout, 48, 24)) return null;
                             return (
-                                <div
-                                    key={fusion.id}
-                                    data-hover-id={fusion.id}
-                                    data-hover-type="fusion"
-                                    onMouseEnter={handleElementHover}
-                                    onMouseLeave={handleElementHoverClear}
-                                    className="contents"
-                                >
                                     <FusionNode
                                         key={fusion.id}
                                         fusion={fusion}
-                                    layout={layout}
-                                    connections={localCTO.connections}
-                                    litPorts={litPorts}
-                                    hoveredPortId={hoveredPortId}
-
-                                    onDragStart={handleElementDragStart}
-                                    onAction={handleFusionAction}
-                                    onPortMouseDown={handlePortMouseDown}
-                                    onPortMouseEnter={setHoveredPortId}
-                                    onPortMouseLeave={handlePortMouseLeave}
+                                        layout={layout}
+                                        connections={localCTO.connections}
+                                        litPorts={litPorts}
+                                        hoveredPortId={hoveredPortId}
+                                        onDragStart={handleElementDragStart}
+                                        onAction={handleFusionAction}
+                                        onPortMouseDown={handlePortMouseDown}
+                                        onPortMouseEnter={setHoveredPortId}
+                                        onPortMouseLeave={handlePortMouseLeave}
+                                        onHoverEnter={handleElementHover}
+                                        onHoverLeave={handleElementHoverClear}
+                                        hoverData={{ id: fusion.id, type: 'fusion' }}
                                     />
-                                </div>
                             );
                         })}
 
@@ -3484,32 +3524,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             );
 
                             return (
-                                <div
-                                    key={splitter.id}
-                                    data-hover-id={splitter.id}
-                                    data-hover-type="splitter"
-                                    onMouseEnter={handleElementHover}
-                                    onMouseLeave={handleElementHoverClear}
-                                    className="contents"
-                                >
                                     <SplitterNode
                                         key={splitter.id}
                                         splitter={splitter}
-                                                layout={layout}
-                                                connections={localCTO.connections}
-                                                litPorts={litPorts}
-                                                hoveredPortId={hoveredPortId}
-                                                catalogItem={catalogItem}
-                                                onDragStart={handleElementDragStart}
-                                                onAction={handleSplitterAction}
-                                                onPortMouseDown={handlePortMouseDown}
-                                                onPortMouseEnter={setHoveredPortId}
-                                                onPortMouseLeave={handlePortMouseLeave}
-                                                onDoubleClick={handleSplitterDoubleClick}
-                                                onContextMenu={handleSplitterContextMenu}
-                                                attachedCustomers={attachedCustomers}
-                                            />
-                                        </div>
+                                        layout={layout}
+                                        connections={localCTO.connections}
+                                        litPorts={litPorts}
+                                        hoveredPortId={hoveredPortId}
+                                        catalogItem={catalogItem}
+                                        onDragStart={handleElementDragStart}
+                                        onAction={handleSplitterAction}
+                                        onPortMouseDown={handlePortMouseDown}
+                                        onPortMouseEnter={setHoveredPortId}
+                                        onPortMouseLeave={handlePortMouseLeave}
+                                        onDoubleClick={handleSplitterDoubleClick}
+                                        onContextMenu={handleSplitterContextMenu}
+                                        attachedCustomers={attachedCustomers}
+                                        onHoverEnter={handleElementHover}
+                                        onHoverLeave={handleElementHoverClear}
+                                        hoverData={{ id: splitter.id, type: 'splitter' }}
+                                    />
                                     );
                                 })}
 

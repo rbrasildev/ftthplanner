@@ -14,6 +14,9 @@ interface FusionNodeProps {
     onPortMouseDown: (e: React.MouseEvent, portId: string) => void;
     onPortMouseEnter: (portId: string) => void;
     onPortMouseLeave: () => void;
+    onHoverEnter?: (e: React.MouseEvent) => void;
+    onHoverLeave?: (e: React.MouseEvent) => void;
+    hoverData?: { id: string; type: string };
 }
 
 const FusionNodeComponent: React.FC<FusionNodeProps> = ({
@@ -26,7 +29,10 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     onAction,
     onPortMouseDown,
     onPortMouseEnter,
-    onPortMouseLeave
+    onPortMouseLeave,
+    onHoverEnter,
+    onHoverLeave,
+    hoverData
 }) => {
     const portA = `${fusion.id}-a`;
     const portB = `${fusion.id}-b`;
@@ -45,6 +51,10 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     return (
         <div
             id={fusion.id}
+            onMouseEnter={onHoverEnter}
+            onMouseLeave={onHoverLeave}
+            data-hover-id={hoverData?.id}
+            data-hover-type={hoverData?.type}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 height: '12px',

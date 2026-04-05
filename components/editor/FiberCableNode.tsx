@@ -21,6 +21,9 @@ interface FiberCableNodeProps {
     onCableMouseLeave?: (id: string) => void;
     onCableClick?: (e: React.MouseEvent, id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    onHoverEnter?: (e: React.MouseEvent) => void;
+    onHoverLeave?: (e: React.MouseEvent) => void;
+    hoverData?: { id: string; type: string };
 }
 
 const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
@@ -40,7 +43,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     onCableMouseEnter,
     onCableMouseLeave,
     onCableClick,
-    onContextMenu
+    onContextMenu,
+    onHoverEnter,
+    onHoverLeave,
+    hoverData
 }) => {
     const { t } = useLanguage();
     const looseTubeCount = cable.looseTubeCount || 1;
@@ -86,6 +92,10 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
         <div
             id={cable.id}
             onContextMenu={(e) => onContextMenu?.(e, cable.id)}
+            onMouseEnter={onHoverEnter}
+            onMouseLeave={onHoverLeave}
+            data-hover-id={hoverData?.id}
+            data-hover-type={hoverData?.type}
             style={{
                 transform: `translate(${layout.x}px, ${layout.y}px) rotate(${layout.rotation}deg)`,
                 paddingTop: `${paddingTop}px`,

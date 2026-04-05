@@ -67,7 +67,8 @@
       "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
       "Bash(gh --version)",
       "Bash(gh auth:*)",
-      "Bash(find /d/ftthplanner -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"toGeoJSON\\\\|togeojson\\\\|Placemark\" {} \\\\;)"
+      "Bash(find /d/ftthplanner -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"toGeoJSON\\\\|togeojson\\\\|Placemark\" {} \\\\;)",
+      "Bash(find \"d:\\\\ftthplanner\" -type f \\\\\\( -name \"*CTOEditor*\" -o -name \"*ctoEditor*\" -o -name \"*cto-editor*\" \\\\\\) -exec ls -lh {} \\\\;)"
     ]
   }
 }
