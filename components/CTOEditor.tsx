@@ -861,6 +861,68 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return () => clearTimeout(timer);
     }, []);
 
+    // --- Auto-connect pass-through cables (same name) ---
+    const autoConnectedRef = useRef(false);
+    useEffect(() => {
+        if (!isContentReady || autoConnectedRef.current || incomingCables.length < 2) return;
+        autoConnectedRef.current = true;
+
+        // Group cables by fiberCount + catalogId (same physical cable model)
+        // Only auto-connect when exactly 2 cables match (pass-through scenario)
+        const cablesBySpec = new Map<string, CableData[]>();
+        incomingCables.forEach(cable => {
+            const key = `${cable.fiberCount}-${cable.catalogId || 'none'}`;
+            const group = cablesBySpec.get(key) || [];
+            group.push(cable);
+            cablesBySpec.set(key, group);
+        });
+
+        setLocalCTO(prev => {
+            let allNew: FiberConnection[] = [];
+
+            cablesBySpec.forEach((cables) => {
+                if (cables.length !== 2) return;
+                const [source, target] = cables;
+
+                // Skip if any connections already exist between this pair
+                const hasExisting = prev.connections.some(c =>
+                    (c.sourceId.startsWith(source.id + '-') && c.targetId.startsWith(target.id + '-')) ||
+                    (c.sourceId.startsWith(target.id + '-') && c.targetId.startsWith(source.id + '-'))
+                );
+                if (hasExisting) return;
+
+                const count = Math.min(source.fiberCount, target.fiberCount);
+                const srcTubes = source.looseTubeCount || 1;
+                const srcFPT = Math.ceil(source.fiberCount / srcTubes);
+
+                for (let i = 0; i < count; i++) {
+                    const sourceFiberId = `${source.id}-fiber-${i}`;
+                    const targetFiberId = `${target.id}-fiber-${i}`;
+
+                    const isOccupied = prev.connections.some(c =>
+                        c.sourceId === sourceFiberId || c.targetId === sourceFiberId ||
+                        c.sourceId === targetFiberId || c.targetId === targetFiberId
+                    ) || allNew.some(c =>
+                        c.sourceId === sourceFiberId || c.targetId === sourceFiberId ||
+                        c.sourceId === targetFiberId || c.targetId === targetFiberId
+                    );
+                    if (isOccupied) continue;
+
+                    allNew.push({
+                        id: `conn-auto-${Date.now()}-${i}`,
+                        sourceId: sourceFiberId,
+                        targetId: targetFiberId,
+                        color: getFiberColor(i % srcFPT, source.colorStandard),
+                        points: []
+                    });
+                }
+            });
+
+            if (allNew.length === 0) return prev;
+            return { ...prev, connections: [...prev.connections, ...allNew] };
+        });
+    }, [isContentReady, incomingCables]);
+
     const litConnections = useMemo(() => {
         const lit = new Set<string>();
         localCTO.connections.forEach(conn => {
