@@ -199,7 +199,7 @@ interface CTOEditorProps {
     autoDownload?: boolean; // NEW: To trigger export on load
 }
 
-type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note';
+type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note' | 'resize';
 
 
 // --- COMPONENT: ConnectionsLayer (Memoized with custom areEqual to prevent SVG re-renders) ---
@@ -491,8 +491,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const contentW = maxX - minX + (PADDING * 2);
         const contentH = maxY - minY + (PADDING * 2);
 
-        const viewportW = 1100;
-        const viewportH = 750 - 56; // Minus header height
+        const viewportW = isMaximized ? window.innerWidth : modalSize.w;
+        const viewportH = (isMaximized ? window.innerHeight : modalSize.h) - 56; // Minus header height
 
         // Calculate best zoom to fit content, but max 1 and min 0.2 to avoid "deformed" tiny view
         const zoomW = viewportW / contentW;
@@ -558,18 +558,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return { x, y };
     });
 
+    const DEFAULT_WIDTH = 1100;
+    const DEFAULT_HEIGHT = 750;
+    const MIN_WIDTH = 600;
+    const MIN_HEIGHT = 400;
+
+    const [modalSize, setModalSize] = useState({ w: DEFAULT_WIDTH, h: DEFAULT_HEIGHT });
     const [isMaximized, setIsMaximized] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [savedWindowPos, setSavedWindowPos] = useState(windowPos);
+    const [savedModalSize, setSavedModalSize] = useState(modalSize);
 
     const toggleMaximize = () => {
         if (!isMaximized) {
             setSavedWindowPos(windowPos);
+            setSavedModalSize(modalSize);
             setIsMaximized(true);
             setIsCollapsed(false);
         } else {
             setIsMaximized(false);
             setWindowPos(savedWindowPos);
+            setModalSize(savedModalSize);
         }
         // Force re-center after layout settles
         setTimeout(() => handleCenterView(), 100);
@@ -722,7 +731,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         portCenterCache.current = {};
         containerRectCache.current = null;
         forceRender(n => n + 1);
-    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized]);
+    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized, modalSize]);
 
 
     useEffect(() => {
@@ -881,8 +890,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const isElementVisible = useCallback((layout: { x: number; y: number }, width: number, height: number) => {
         const vs = viewStateRef.current;
         if (vs.zoom > 1.5) return true; // High zoom = few elements, culling not needed
-        const vw = isMaximized ? window.innerWidth : 1100;
-        const vh = isMaximized ? window.innerHeight : 750;
+        const vw = isMaximized ? window.innerWidth : modalSize.w;
+        const vh = isMaximized ? window.innerHeight : modalSize.h;
         const MARGIN = 300;
         const minX = (-vs.x - MARGIN) / vs.zoom;
         const minY = (-vs.y - MARGIN) / vs.zoom;
@@ -1926,6 +1935,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setWindowPos({
                 x: dragState.initialWindowPos.x + dx,
                 y: dragState.initialWindowPos.y + dy
+            });
+            return;
+        }
+
+        // 1b. RESIZE DRAG
+        if (dragState.mode === 'resize') {
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            setModalSize({
+                w: Math.max(MIN_WIDTH, (dragState.initialLayout?.x || DEFAULT_WIDTH) + dx),
+                h: Math.max(MIN_HEIGHT, (dragState.initialLayout?.y || DEFAULT_HEIGHT) + dy)
             });
             return;
         }
@@ -3194,18 +3214,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     return (
         <div
             id="cto-editor-modal"
-            className={`cto-editor-modal fixed z-[2000] ${!dragState || dragState.mode !== 'window' ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-0' : ''}`}
+            className={`cto-editor-modal fixed z-[2000] ${!dragState || (dragState.mode !== 'window' && dragState.mode !== 'resize') ? 'transition-all duration-300' : ''} ${isMaximized ? 'inset-0' : ''}`}
             style={isMaximized ? {} : { left: windowPos.x, top: windowPos.y }}
         >
             {dragState && (
                 <style>{`
-                    body, body * { cursor: grabbing !important; }
+                    body, body * { cursor: ${dragState.mode === 'resize' ? 'nwse-resize' : 'grabbing'} !important; }
                     ${dragState.targetId ? `[id="${dragState.targetId}"] { pointer-events: none !important; }` : ''}
                 `}</style>
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'w-[1100px] h-auto rounded-xl' : 'w-[1100px] h-[750px] rounded-xl'} bg-white dark:bg-[#1a1d23] border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'h-auto rounded-xl' : 'rounded-xl'} bg-white dark:bg-[#1a1d23] border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                style={isMaximized ? undefined : { width: modalSize.w, height: isCollapsed ? 'auto' : modalSize.h }}
             >
 
                 <CTOEditorToolbar
@@ -4113,7 +4134,29 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
                 )}
 
+
             </div>
+
+            {/* RESIZE HANDLE (outside container to avoid overflow-hidden clipping) */}
+            {!isMaximized && !isCollapsed && (
+                <div
+                    className="absolute bottom-1 right-1 w-5 h-5 cursor-nwse-resize z-[60] group/resize flex items-center justify-center"
+                    onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setDragState({
+                            mode: 'resize',
+                            startX: e.clientX,
+                            startY: e.clientY,
+                            initialLayout: { x: modalSize.w, y: modalSize.h, rotation: 0 }
+                        });
+                    }}
+                >
+                    <svg className="w-3 h-3 text-slate-400 dark:text-slate-500 group-hover/resize:text-emerald-500 transition-colors" viewBox="0 0 12 12">
+                        <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                    </svg>
+                </div>
+            )}
         </div >
     );
 };
