@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { cloneTemplatesToCompany } from '../services/templateService';
 import { sendEmail } from '../services/emailService';
 import logger from '../lib/logger';
+import { resolvePermissions } from '../middleware/checkPermission';
 
 
 // Helper to get Plans
@@ -233,6 +234,7 @@ export const login = async (req: Request, res: Response) => {
                     email: user.email,
                     companyId: user.companyId,
                     role: user.role,
+                    permissions: resolvePermissions(user.permissions, user.role),
                     company: user.company
                 },
                 token
@@ -291,6 +293,7 @@ export const getMe = async (req: Request, res: Response) => {
                 email: user.email,
                 companyId: user.companyId,
                 role: user.role,
+                permissions: resolvePermissions(user.permissions, user.role),
                 company: user.company
             }
         });

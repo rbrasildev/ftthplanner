@@ -1,5 +1,6 @@
-﻿import { Router } from 'express';
-import { authenticateToken, requireAdminOrOwner } from '../middleware/auth';
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { checkPermission } from '../middleware/checkPermission';
 import {
     getProjects,
     createProject,
@@ -19,13 +20,13 @@ router.use(authenticateToken);
 
 router.get('/ctos/search', searchCTO);
 router.get('/', getProjects);
-router.post('/', requireAdminOrOwner, createProject);
+router.post('/', checkPermission('projects:create'), createProject);
 router.get('/:id', getProject);
-router.put('/:id', requireAdminOrOwner, updateProject);
-router.delete('/:id', requireAdminOrOwner, deleteProject);
-router.post('/:id/sync', requireAdminOrOwner, syncProject);
+router.put('/:id', checkPermission('projects:edit'), updateProject);
+router.delete('/:id', checkPermission('projects:delete'), deleteProject);
+router.post('/:id/sync', syncProject);
 router.get('/:id/ctos/:ctoId/power', getCTOPower);
-router.put('/:id/ctos/:ctoId', requireAdminOrOwner, updateCTO);
-router.put('/:id/pops/:popId', requireAdminOrOwner, updatePOP);
+router.put('/:id/ctos/:ctoId', checkPermission('map:edit'), updateCTO);
+router.put('/:id/pops/:popId', checkPermission('map:edit'), updatePOP);
 
 export default router;

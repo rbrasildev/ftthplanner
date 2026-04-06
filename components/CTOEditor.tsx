@@ -3,6 +3,7 @@ import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberCol
 import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
+import { hasPermission } from '../shared/permissions';
 import { CustomSelect } from './common/CustomSelect';
 import { CustomInput } from './common/CustomInput';
 import { FiberCableNode } from './editor/FiberCableNode';
@@ -192,6 +193,7 @@ interface CTOEditorProps {
     subscriptionExpiresAt?: string | null;
     onShowUpgrade?: () => void;
     userRole?: string | null;
+    userPermissions?: string[];
     network: NetworkState;
     projectId?: string;
     companyLogo?: string | null;
@@ -333,7 +335,7 @@ const ConnectionsLayer = React.memo(({
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
     litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
-    userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole,
+    userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole, userPermissions = [],
     projectId, companyLogo, saasLogo,
     autoDownload
 }) => {
@@ -3312,7 +3314,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     isCollapsed={isCollapsed}
                     onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
                     onToggleMaximize={toggleMaximize}
-                    onClose={handleCloseRequest}
+                    onClose={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? handleCloseRequest : onClose}
                     onWindowDragStart={handleWindowDragStart}
                     isRotateMode={isRotateMode}
                     isDeleteMode={isDeleteMode}
@@ -3723,7 +3725,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {userRole !== 'MEMBER' && (
+                        {(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') && (
                             <Button
                                 onClick={handleApply}
                                 isLoading={savingAction === 'apply'}
@@ -3736,14 +3738,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </Button>
                         )}
                         <Button
-                            onClick={userRole === 'MEMBER' ? onClose : handleCloseRequest}
+                            onClick={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? handleCloseRequest : onClose}
                             isLoading={savingAction === 'save_close'}
                             disabled={savingAction !== 'idle'}
                             variant="emerald"
                             className="px-6 font-bold min-w-[150px] shadow-sm shadow-emerald-900/20"
-                            icon={userRole === 'MEMBER' ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                            icon={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? <Save className="w-4 h-4" /> : <X className="w-4 h-4" />}
                         >
-                            <span className="whitespace-nowrap">{userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Salvar / Sair')}</span>
+                            <span className="whitespace-nowrap">{(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? (t('save_or_done') || 'Salvar / Sair') : (t('done') || 'Sair')}</span>
                         </Button>
                     </div>
                 </div>

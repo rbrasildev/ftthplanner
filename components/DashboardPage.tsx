@@ -13,7 +13,8 @@ import { CompanySettings } from './settings/CompanySettings';
 import { IntegrationsPage } from './integrations/IntegrationsPage';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check } from 'lucide-react';
+import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
 import CustomerRegistration from './registrations/CustomerRegistration';
@@ -26,6 +27,7 @@ import { CustomSelect } from './common/CustomSelect';
 interface DashboardPageProps {
   username: string;
   userRole?: string;
+  userPermissions?: string[];
   userPlan?: string;
   userPlanType?: string;
   userBackupEnabled?: boolean;
@@ -99,6 +101,7 @@ type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | '
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
   userRole, // Receive role
+  userPermissions = [],
   userPlan = 'Plano Grátis',
   userPlanType = 'STANDARD',
   userBackupEnabled = false,
@@ -176,7 +179,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<adminService.AdminUser | null>(null); // New state for editing
-  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: ROLE_DEFAULT_PERMISSIONS['MEMBER'] as string[] });
   const [userToDelete, setUserToDelete] = useState<adminService.AdminUser | null>(null);
 
   // Fetch users when view changes to 'users'
@@ -201,7 +204,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       const newUser = await adminService.createUser(userFormData);
       setUsersList(prev => [newUser, ...prev]);
       setIsUserModalOpen(false);
-      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
       if (showToast) showToast(t('toast_user_created') || "Usuário criado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to create user", error);
@@ -220,7 +223,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const handleEditUserClick = (user: adminService.AdminUser) => {
     setEditingUser(user);
-    setUserFormData({ username: user.username, email: user.email, password: '', confirmPassword: '', role: user.role }); // Password empty means no change
+    setUserFormData({ username: user.username, email: user.email, password: '', confirmPassword: '', role: user.role, permissions: [...(user.permissions || ROLE_DEFAULT_PERMISSIONS[user.role] || [])] });
     setIsUserModalOpen(true);
   };
 
@@ -232,14 +235,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       return;
     }
     try {
-      const updateData: any = { role: userFormData.role };
+      const updateData: any = { role: userFormData.role, permissions: userFormData.permissions };
       if (userFormData.password) updateData.password = userFormData.password;
 
       const updatedUser = await adminService.updateUser(editingUser.id, updateData);
       setUsersList(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
       setIsUserModalOpen(false);
       setEditingUser(null);
-      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
       if (showToast) showToast(t('toast_user_updated') || "Usuário atualizado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to update user", error);
@@ -371,10 +374,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   ].filter(item => {
     if (item.id === 'backup' && !userBackupEnabled) return false;
 
-    // Only show Users, Backup and Registrations to ADMIN or OWNER or SUPPORT
-    if (item.id === 'users' || item.id === 'backup' || item.id === 'registrations') {
-      return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
-    }
+    // Permission-based menu visibility
+    if (item.id === 'users') return hasPermission(userPermissions, 'users:manage') || userRole === 'OWNER' || userRole === 'support';
+    if (item.id === 'backup') return hasPermission(userPermissions, 'backup:manage') || userRole === 'OWNER' || userRole === 'support';
+    if (item.id === 'registrations') return hasPermission(userPermissions, 'catalogs:manage') || userRole === 'OWNER' || userRole === 'support';
+    if (item.id === 'settings') return hasPermission(userPermissions, 'settings:company') || userRole === 'OWNER' || userRole === 'support';
+    if (item.id === 'integrations') return hasPermission(userPermissions, 'integrations:manage') || userRole === 'OWNER' || userRole === 'support';
     return true;
   }) as MenuItem[];
 
@@ -495,7 +500,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   </button>
                 </div>
 
-                {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
+                {(hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
                   <button
                     onClick={() => setIsCreating(true)}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap active:scale-95"
@@ -590,7 +595,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           </div>
                         </div>
 
-                        {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
+                        {(hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
                           <div className="flex items-center gap-1 pl-4 border-l border-slate-100 dark:border-slate-700/30">
                             <button
                               onClick={(e) => handleEditClick(e, project)}
@@ -622,7 +627,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <div className="w-10 h-10 bg-slate-100 dark:bg-[#22262e] group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center transition-colors">
                           <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
                         </div>
-                        {(userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support') && (
+                        {(hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
                           <div className="flex items-center gap-1 relative z-20">
                             {/* EDIT BUTTON */}
                             <button
@@ -837,7 +842,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => {
                   setEditingUser(null);
-                  setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER' });
+                  setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
                   setIsUserModalOpen(true);
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
@@ -869,6 +874,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <th className="px-6 py-4">{t('username')}</th>
                       <th className="px-6 py-4">{t('email')}</th>
                       <th className="px-6 py-4">{t('role')}</th>
+                      <th className="px-6 py-4">{t('permissions') || 'Permissões'}</th>
                       <th className="px-6 py-4">{t('created_at')}</th>
                       <th className="px-6 py-4 text-right">{t('actions')}</th>
                     </tr>
@@ -879,11 +885,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{user.username}</td>
                         <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{user.email}</td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                              ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
                               user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                 'bg-slate-100 text-slate-800 dark:bg-[#22262e] dark:text-slate-300'}`}>
                             {user.role === 'OWNER' ? t('role_owner') : user.role === 'ADMIN' ? t('role_admin') : t('role_member')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                            <Shield className="w-3 h-3" />
+                            {user.permissions?.length || 0}/{PERMISSION_GROUPS.reduce((acc, g) => acc + g.permissions.length, 0)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
@@ -909,7 +921,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     ))}
                     {usersList.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                           {t('no_users_found')}
                         </td>
                       </tr>
@@ -925,7 +937,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* --- ADD USER MODAL --- */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-md flex flex-col relative">
+          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-lg flex flex-col relative max-h-[90vh]">
             <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {editingUser ? t('edit_user') : t('add_user')}
@@ -971,9 +983,70 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   { value: 'ADMIN', label: t('role_admin') },
                   ...(editingUser && editingUser.role === 'OWNER' ? [{ value: 'OWNER', label: t('saas_role_owner') || 'Proprietário' }] : [])
                 ]}
-                onChange={val => setUserFormData({ ...userFormData, role: val })}
+                onChange={val => {
+                  const defaults = ROLE_DEFAULT_PERMISSIONS[val] || [];
+                  setUserFormData({ ...userFormData, role: val, permissions: [...defaults] });
+                }}
                 showSearch={false}
               />
+
+              {/* --- PERMISSIONS SECTION --- */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-emerald-500" />
+                    {t('permissions')}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setUserFormData({ ...userFormData, permissions: [...(ROLE_DEFAULT_PERMISSIONS[userFormData.role] || [])] })}
+                    className="text-xs text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
+                  >
+                    {t('reset_defaults')}
+                  </button>
+                </div>
+                <div className="space-y-3 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                  {PERMISSION_GROUPS.map((group, gi) => {
+                    const groupKeys = ['perm_group_projects', 'perm_group_planning', 'perm_group_registrations', 'perm_group_admin'];
+                    return (
+                    <div key={group.label} className="bg-slate-50 dark:bg-[#22262e]/50 rounded-lg p-3">
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t(groupKeys[gi])}</p>
+                      <div className="space-y-1.5">
+                        {group.permissions.map(perm => {
+                          const isChecked = userFormData.permissions.includes(perm);
+                          return (
+                            <label
+                              key={perm}
+                              className="flex items-center gap-2.5 cursor-pointer group/perm py-0.5"
+                            >
+                              <div
+                                onClick={() => {
+                                  const next = isChecked
+                                    ? userFormData.permissions.filter(p => p !== perm)
+                                    : [...userFormData.permissions, perm];
+                                  setUserFormData({ ...userFormData, permissions: next });
+                                }}
+                                className={`w-4.5 h-4.5 rounded flex items-center justify-center border transition-all shrink-0
+                                  ${isChecked
+                                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                                    : 'border-slate-300 dark:border-slate-600 group-hover/perm:border-emerald-400'
+                                  }`}
+                                style={{ width: 18, height: 18 }}
+                              >
+                                {isChecked && <Check className="w-3 h-3" />}
+                              </div>
+                              <span className={`text-sm transition-colors ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                                {t(`perm_${perm.replace(':', '_')}`) || PERMISSION_LABELS[perm as Permission]}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
               <button onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>

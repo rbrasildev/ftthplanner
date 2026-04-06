@@ -71,7 +71,10 @@
       "Bash(find \"d:\\\\ftthplanner\" -type f \\\\\\( -name \"*CTOEditor*\" -o -name \"*ctoEditor*\" -o -name \"*cto-editor*\" \\\\\\) -exec ls -lh {} \\\\;)",
       "Bash(ls -lah /d/ftthplanner/*.json)",
       "Bash(ls -lah /d/ftthplanner/public/*.xml /d/ftthplanner/public/*.txt /d/ftthplanner/public/manifest.*)",
-      "Bash(grep -i \"sangria\" /d/ftthplanner/**/*.tsx /d/ftthplanner/**/*.ts)"
+      "Bash(grep -i \"sangria\" /d/ftthplanner/**/*.tsx /d/ftthplanner/**/*.ts)",
+      "Bash(grep -E \"^\\\\-\\\\-$|role.*:|OWNER|ADMIN|MEMBER|EDITOR|VIEWER\")",
+      "Bash(ls -la /d/ftthplanner/types*)",
+      "Bash(npx ts-node:*)"
     ]
   }
 }

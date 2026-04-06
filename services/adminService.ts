@@ -1,11 +1,11 @@
 import api from './api';
-import { User } from '../types';
 
 export interface AdminUser {
     id: string;
     username: string;
     email: string;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    permissions: string[];
     createdAt: string;
 }
 
@@ -14,6 +14,7 @@ export interface CreateUserDto {
     email: string;
     password?: string;
     role?: string;
+    permissions?: string[];
 }
 
 // Get Users

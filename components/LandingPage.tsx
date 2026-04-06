@@ -702,9 +702,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     </div>
 
                     <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <p className="text-sm text-slate-400">
-                            {saasConfig?.copyrightText || t('landing_footer_rights')}
-                        </p>
+                        <div className="flex items-center gap-4 text-sm text-slate-400">
+                            <p>{saasConfig?.copyrightText || t('landing_footer_rights')}</p>
+                            <span className="hidden md:inline text-slate-700">|</span>
+                            <a href="/privacidade.html" className="hover:text-emerald-500 transition-colors">{t('landing_privacy_policy')}</a>
+                        </div>
                         <div className="flex items-center gap-2 text-sm text-slate-400">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             {t('landing_stat_uptime')}

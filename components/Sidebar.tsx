@@ -8,6 +8,7 @@ import {
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
 import { SearchBox } from './SearchBox';
+import { hasPermission } from '../shared/permissions';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project } from '../types';
@@ -26,6 +27,7 @@ export interface SidebarProps {
     viewMode: 'project' | 'dashboard';
     user: string | null;
     userRole?: string | null;
+    userPermissions?: string[];
     userPlan?: string;
     userPlanType?: string;
     subscriptionExpiresAt?: string | null;
@@ -86,6 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     viewMode,
     user,
     userRole,
+    userPermissions = [],
     userPlan,
     userPlanType,
     subscriptionExpiresAt,
@@ -161,12 +164,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             { id: 'settings', label: t('company_settings_title') || 'Configurações', icon: Settings },
             { id: 'backup', label: t('backup') || 'Backup', icon: Database },
         ].filter(item => {
-            if (item.id === 'backup') {
-                return userBackupEnabled && (userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support');
-            }
-            if (item.id === 'users' || item.id === 'registrations' || item.id === 'integrations') {
-                return userRole === 'ADMIN' || userRole === 'OWNER' || userRole === 'support';
-            }
+            if (item.id === 'backup') return userBackupEnabled && (hasPermission(userPermissions, 'backup:manage') || userRole === 'OWNER' || userRole === 'support');
+            if (item.id === 'users') return hasPermission(userPermissions, 'users:manage') || userRole === 'OWNER' || userRole === 'support';
+            if (item.id === 'registrations') return hasPermission(userPermissions, 'catalogs:manage') || userRole === 'OWNER' || userRole === 'support';
+            if (item.id === 'integrations') return hasPermission(userPermissions, 'integrations:manage') || userRole === 'OWNER' || userRole === 'support';
+            if (item.id === 'settings') return hasPermission(userPermissions, 'settings:company') || userRole === 'OWNER' || userRole === 'support';
             return true;
         }) as MenuItem[];
 
@@ -269,7 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* 2. Project Context (Only in map/project mode) */}
                 {viewMode === 'project' && (
                     <div className={`p-4 border-b border-slate-100 dark:border-slate-700/30 flex-shrink-0 space-y-2 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-                        <Tooltip content={t('import_kmz_label')} enabled={isCollapsed}>
+                        {(hasPermission(userPermissions, 'projects:import') || userRole === 'OWNER') && <Tooltip content={t('import_kmz_label')} enabled={isCollapsed}>
                             <button
                                 onClick={onImportClick}
                                 className={`group relative flex items-center transition-all duration-200
@@ -286,12 +288,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 )}
                                 {!isCollapsed && <Upload className="w-3.5 h-3.5 text-slate-300 ml-auto group-hover:text-emerald-500" />}
                             </button>
-                        </Tooltip>
+                        </Tooltip>}
 
                         <NavButton
                             icon={<FolderOpen className="w-5 h-5" />}
                             label={currentProjectName}
-                            onClick={() => setShowProjectManager(true)}
+                            onClick={() => {}}
                             isCollapsed={isCollapsed}
                             variant="slate"
                         />
@@ -357,7 +359,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     variant="slate"
                                 />
 
-                                {userRole !== 'MEMBER' && onExportClick && (
+                                {(hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && onExportClick && (
                                     <NavButton
                                         icon={<FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} />}
                                         label={t('export_kmz_button')}
@@ -367,7 +369,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     />
                                 )}
 
-                                {userRole !== 'MEMBER' && onExportAreaClick && (
+                                {(hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && onExportAreaClick && (
                                     <NavButton
                                         icon={<ScanSearch className="w-5 h-5" />}
                                         label={t('export_area')}
@@ -536,7 +538,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         </div>
                                     )}
 
-                                    {isHydrated && userRole !== 'support' && (
+                                    {isHydrated && userRole !== 'support' && (hasPermission(userPermissions, 'subscription:manage') || userRole === 'OWNER') && (
                                         <Button
                                             variant={isFreeOrTrial ? 'primary' : 'outline'}
                                             onClick={() => { onUpgradeClick?.(); setShowUserPopover(false); }}
@@ -560,7 +562,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     )}
 
                     {/* Expanded: Upgrade button */}
-                    {!isCollapsed && isHydrated && userRole !== 'support' && (
+                    {!isCollapsed && isHydrated && userRole !== 'support' && (hasPermission(userPermissions, 'subscription:manage') || userRole === 'OWNER') && (
                         <div className="px-2 mb-1">
                             <Button
                                 variant={isFreeOrTrial ? 'primary' : 'outline'}

@@ -1,13 +1,13 @@
-﻿
+
 import express from 'express';
 import * as backupController from '../controllers/backupController';
 import { authenticateToken } from '../middleware/auth';
+import { checkPermission } from '../middleware/checkPermission';
 
 const router = express.Router();
 
-// Apply auth middleware to all backup routes
-// This ensures req.user is populated with companyId
 router.use(authenticateToken);
+router.use(checkPermission('backup:manage'));
 
 router.get('/', backupController.listBackups);
 router.post('/', backupController.createBackup);

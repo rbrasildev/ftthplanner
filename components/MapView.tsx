@@ -10,6 +10,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
+import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
 import { CustomersLayer } from './layers/CustomersLayer';
@@ -570,6 +571,7 @@ interface MapViewProps {
     onRulerPointsChange?: (points: Coordinates[]) => void;
     allCustomers?: Customer[];
     userRole?: string | null;
+    userPermissions?: string[];
     onCustomerSaved?: (customer?: Customer) => void;
     onCancelMode?: () => void;
     exportAreaPolygon?: { lat: number; lng: number }[];
@@ -594,6 +596,7 @@ export const MapView: React.FC<MapViewProps> = ({
     onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
     onCustomerSaved,
     userRole = null,
+    userPermissions = [],
     projectId,
     onCancelMode,
     exportAreaPolygon = [],
@@ -1816,9 +1819,12 @@ export const MapView: React.FC<MapViewProps> = ({
                                 )}
 
                                 {/* Actions */}
+                                {/* Actions — only show if user has at least one add permission */}
+                                {(hasPermission(userPermissions, 'map:add_cto') || hasPermission(userPermissions, 'map:add_pole') || hasPermission(userPermissions, 'map:add_customer') || userRole === 'OWNER') && (
                                 <div className="p-3">
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{t('add_at_location')}</div>
                                     <div className="grid grid-cols-3 gap-1.5">
+                                        {(hasPermission(userPermissions, 'map:add_cto') || userRole === 'OWNER') && (
                                         <button
                                             onClick={() => onConvertPin && onConvertPin('CTO')}
                                             title={t('convert_to_cto')}
@@ -1827,6 +1833,8 @@ export const MapView: React.FC<MapViewProps> = ({
                                             <Box className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                                             <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">CTO</span>
                                         </button>
+                                        )}
+                                        {(hasPermission(userPermissions, 'map:add_pole') || userRole === 'OWNER') && (
                                         <button
                                             onClick={() => onConvertPin && onConvertPin('Pole')}
                                             title={t('convert_to_pole')}
@@ -1835,6 +1843,8 @@ export const MapView: React.FC<MapViewProps> = ({
                                             <UtilityPole className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                                             <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">{t('pole')}</span>
                                         </button>
+                                        )}
+                                        {(hasPermission(userPermissions, 'map:add_customer') || userRole === 'OWNER') && (
                                         <button
                                             onClick={() => {
                                                 if (pinnedLocation) {
@@ -1848,8 +1858,10 @@ export const MapView: React.FC<MapViewProps> = ({
                                             <User className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
                                             <span className="text-[9px] font-bold text-sky-700 dark:text-sky-400">{t('customer')}</span>
                                         </button>
+                                        )}
                                     </div>
                                 </div>
+                                )}
                             </div>
                         </Popup>
                     </Marker>
@@ -1907,7 +1919,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         y={contextMenu.y}
                         targetType={contextMenu.targetType}
                         cableName={cables.find(c => c.id === contextMenu.id)?.name}
-                        onEdit={userRole !== 'MEMBER' ? () => {
+                        onEdit={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             // "Editar Cabo" -> Geometry Edit (Select ID)
                             if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);
                             setContextMenu(null);
@@ -1917,18 +1929,18 @@ export const MapView: React.FC<MapViewProps> = ({
                             if (onEditCable) onEditCable(contextMenu.id);
                             setContextMenu(null);
                         }}
-                        onDelete={userRole !== 'MEMBER' ? () => {
+                        onDelete={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             if (onDeleteCable) onDeleteCable(contextMenu.id);
                             setContextMenu(null);
                         } : undefined}
-                        onConnect={userRole !== 'MEMBER' ? () => {
+                        onConnect={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             if (onInitConnection) onInitConnection(contextMenu.id);
                             setContextMenu(null);
                         } : undefined}
                         onClose={() => setContextMenu(null)}
                         showReserveLabel={cables.find(c => c.id === contextMenu.id)?.showReserveLabel}
-                        onToggleReserve={userRole !== 'MEMBER' ? () => onToggleReserveCable && onToggleReserveCable(contextMenu.id) : undefined}
-                        onPositionReserve={userRole !== 'MEMBER' ? () => onPositionReserveCable && onPositionReserveCable(contextMenu.id) : undefined}
+                        onToggleReserve={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => onToggleReserveCable && onToggleReserveCable(contextMenu.id) : undefined}
+                        onPositionReserve={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => onPositionReserveCable && onPositionReserveCable(contextMenu.id) : undefined}
                     />
                 )
             }
@@ -1944,7 +1956,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             contextMenu.type === 'POP' ? pops.find(p => p.id === contextMenu.id)?.name :
                             poles.find(p => p.id === contextMenu.id)?.name
                         }
-                        onEdit={userRole !== 'MEMBER' ? () => {
+                        onEdit={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             if (onEditNode) onEditNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
                         } : undefined}
@@ -1952,11 +1964,11 @@ export const MapView: React.FC<MapViewProps> = ({
                             onPropertiesNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
                         } : undefined}
-                        onDelete={userRole !== 'MEMBER' ? () => {
+                        onDelete={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             if (onDeleteNode) onDeleteNode(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
                         } : undefined}
-                        onMove={userRole !== 'MEMBER' ? () => {
+                        onMove={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             if (onMoveNodeStart) onMoveNodeStart(contextMenu.id, contextMenu.type as any);
                             setContextMenu(null);
                         } : undefined}

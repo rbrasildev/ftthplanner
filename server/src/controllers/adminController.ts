@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import logger from '../lib/logger';
 import bcrypt from 'bcryptjs';
+import { ROLE_DEFAULT_PERMISSIONS, ALL_PERMISSIONS, Permission } from '../shared/permissions';
+import { resolvePermissions } from '../middleware/checkPermission';
 
 // Get Users (in same company)
 export const getUsers = async (req: AuthRequest, res: Response) => {
@@ -17,12 +19,19 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
                 username: true,
                 email: true,
                 role: true,
+                permissions: true,
                 createdAt: true
             },
             orderBy: { createdAt: 'desc' }
         });
 
-        res.json(users);
+        // Resolve effective permissions for each user
+        const usersWithPermissions = users.map(u => ({
+            ...u,
+            permissions: resolvePermissions(u.permissions, u.role),
+        }));
+
+        res.json(usersWithPermissions);
     } catch (error: any) {
         logger.error(`Error fetching users: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch users' });
@@ -32,7 +41,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 // Create User
 export const createUser = async (req: AuthRequest, res: Response) => {
     try {
-        const { username, email, password, role } = req.body;
+        const { username, email, password, role, permissions } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
@@ -81,12 +90,21 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             }
         }
 
+        // Validate and set permissions
+        const userRole = role || 'MEMBER';
+        let userPermissions: string[] = ROLE_DEFAULT_PERMISSIONS[userRole] || [];
+        if (Array.isArray(permissions)) {
+            // Filter to only valid permissions
+            userPermissions = permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p));
+        }
+
         const newUser = await prisma.user.create({
             data: {
                 username: finalUsername,
                 email: finalEmail,
                 passwordHash,
-                role: role || 'MEMBER',
+                role: userRole,
+                permissions: userPermissions,
                 companyId
             }
         });
@@ -96,6 +114,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             username: newUser.username,
             email: newUser.email,
             role: newUser.role,
+            permissions: resolvePermissions(newUser.permissions, newUser.role),
             createdAt: newUser.createdAt
         });
 
@@ -109,7 +128,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 export const updateUser = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { password, role } = req.body;
+        const { password, role, permissions } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
@@ -127,13 +146,21 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
             updateData.passwordHash = await bcrypt.hash(password, 10);
         }
 
+        // Handle permissions update
+        if (Array.isArray(permissions)) {
+            updateData.permissions = permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p));
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id },
             data: updateData,
-            select: { id: true, username: true, role: true, createdAt: true }
+            select: { id: true, username: true, email: true, role: true, permissions: true, createdAt: true }
         });
 
-        res.json(updatedUser);
+        res.json({
+            ...updatedUser,
+            permissions: resolvePermissions(updatedUser.permissions, updatedUser.role),
+        });
 
     } catch (error: any) {
         logger.error(`Error updating user: ${error.message}`);

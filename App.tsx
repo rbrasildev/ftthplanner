@@ -117,6 +117,7 @@ export default function App() {
     const [user, setUser] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY_USER));
     const [token, setToken] = useState<string | null>(null); // Token is now in cookies
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [userPermissions, setUserPermissions] = useState<string[]>([]);
     const [isSupportMode, setIsSupportMode] = useState<boolean>(() => !!localStorage.getItem('ftth_support_token'));
 
     useEffect(() => {
@@ -361,6 +362,9 @@ export default function App() {
                     if (data.user.role) {
                         setUserRole(data.user.role);
                     }
+                    if (data.user.permissions) {
+                        setUserPermissions(data.user.permissions);
+                    }
 
                     // Populate other user fields
                     const plan = data.user.company?.plan;
@@ -576,8 +580,8 @@ export default function App() {
                         const errorMsg = e.response.data?.error || e.response.data?.details || 'Limite atingido ou acesso negado';
                         console.log('Sync 403:', errorMsg);
 
-                        // If user is MEMBER, it's strictly a permission issue, NOT a plan limit
-                        if (userRole === 'MEMBER') {
+                        // If backend says it's a permission issue, show toast and return
+                        if (e.response.data?.error === 'Permissão insuficiente') {
                             showToast(t('error_permission_denied'), 'error');
                             return;
                         }
@@ -1597,6 +1601,7 @@ export default function App() {
                 viewMode={currentProjectId ? 'project' : 'dashboard'}
                 user={user}
                 userRole={userRole}
+                userPermissions={userPermissions}
                 userPlan={userPlan}
                 userBackupEnabled={userBackupEnabled}
                 userPlanType={userPlanType}
@@ -1637,6 +1642,7 @@ export default function App() {
                     <DashboardPage
                         username={user!}
                         userRole={userRole || 'MEMBER'}
+                        userPermissions={userPermissions}
                         userPlan={userPlan}
                         userPlanType={userPlanType}
                         userBackupEnabled={userBackupEnabled}
@@ -1746,6 +1752,7 @@ export default function App() {
                                     setSelectedId(null);
                                 }}
                                 userRole={userRole}
+                                userPermissions={userPermissions}
                             />
                         </div>
                     </div>
@@ -1781,6 +1788,7 @@ export default function App() {
                         cables={currentProject?.network.cables || []}
                         mode={toolMode}
                         userRole={userRole}
+                        userPermissions={userPermissions}
                         selectedId={selectedId}
                         mapBounds={mapBounds}
                         showLabels={showLabels}
@@ -1968,6 +1976,7 @@ export default function App() {
                     onSelectNextNode={handleSelectNextNode}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingCTO.id, portId, dist)}
                     userRole={userRole}
+                    userPermissions={userPermissions}
                     userPlan={userPlan}
                     subscriptionExpiresAt={subscriptionExpiresAt}
                     onShowUpgrade={handleCTOShowUpgrade}
