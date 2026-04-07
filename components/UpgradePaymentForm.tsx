@@ -60,7 +60,7 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
         try {
             // Request the client_secret from backend
             const { data } = await api.post('/payments/create-stripe-intent', { planId: plan.id });
-            const { clientSecret } = data;
+            const { clientSecret, subscriptionId } = data;
 
             // Confirm payment in browser securely
             const result = await stripe.confirmCardPayment(clientSecret, {
@@ -71,15 +71,27 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
 
             if (result.error) {
                 setStatus({ type: 'error', message: result.error.message || 'Erro no pagamento' });
-            } else {
-                if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'requires_capture') {
-                    setStatus({ type: 'success', message: 'Pagamento concluído com sucesso!' });
-                    setTimeout(onSuccess, 1500);
-                } else {
-                    // It can sometimes just be 'processing'
-                    setStatus({ type: 'success', message: 'Assinatura criada com sucesso! Processando pagamento...' });
-                    setTimeout(onSuccess, 2000);
+            } else if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'requires_capture') {
+                setStatus({ type: 'success', message: 'Pagamento concluído! Ativando assinatura...' });
+                // Confirm subscription on backend to activate plan immediately
+                try {
+                    await api.post('/payments/confirm-stripe-subscription', { subscriptionId });
+                    setStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                } catch (confirmErr: any) {
+                    console.error('Stripe confirm error:', confirmErr);
+                    // Payment went through but confirmation failed — retry once after short delay
+                    await new Promise(r => setTimeout(r, 2000));
+                    try {
+                        await api.post('/payments/confirm-stripe-subscription', { subscriptionId });
+                        setStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                    } catch {
+                        setStatus({ type: 'success', message: 'Pagamento confirmado! Sua assinatura será ativada em instantes.' });
+                    }
                 }
+                setTimeout(onSuccess, 1500);
+            } else {
+                setStatus({ type: 'success', message: 'Assinatura criada! Processando pagamento...' });
+                setTimeout(onSuccess, 2000);
             }
         } catch (err: any) {
             console.error(err);

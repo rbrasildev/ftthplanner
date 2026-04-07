@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import express from 'express';
-import { processPayment, subscribe, handleWebhook, cancelSubscription, createPixPayment, getInvoiceStatus, getInvoices, createStripeIntent, handleStripeWebhook } from '../controllers/paymentController';
+import { processPayment, subscribe, handleWebhook, cancelSubscription, createPixPayment, getInvoiceStatus, getInvoices, createStripeIntent, confirmStripeSubscription, handleStripeWebhook } from '../controllers/paymentController';
 
 import { authenticateToken } from '../middleware/auth';
 
@@ -12,8 +12,7 @@ router.post('/webhook', handleWebhook);
 
 // Stripe endpoints
 router.post('/create-stripe-intent', authenticateToken, createStripeIntent);
-// Note: webhook should ideally use raw body, but we leave it default here inside the auth-less route. 
-// If it fails signature verification due to JSON parsing, index.ts must be updated.
+router.post('/confirm-stripe-subscription', authenticateToken, confirmStripeSubscription);
 router.post('/stripe-webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
 router.post('/cancel_subscription', authenticateToken, cancelSubscription);

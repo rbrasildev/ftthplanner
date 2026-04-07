@@ -160,6 +160,54 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// Confirm Stripe subscription after frontend payment succeeds
+// This is the primary activation path — webhook serves as backup
+export const confirmStripeSubscription = async (req: AuthRequest, res: Response) => {
+    try {
+        const { subscriptionId } = req.body;
+        const companyId = req.user?.companyId;
+
+        if (!companyId) return res.status(401).json({ error: 'User does not belong to a company.' });
+        if (!subscriptionId) return res.status(400).json({ error: 'Missing subscriptionId.' });
+
+        const stripe = getStripe();
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+        // Verify this subscription belongs to this company
+        if (subscription.metadata?.companyId !== companyId) {
+            return res.status(403).json({ error: 'Subscription does not belong to this company.' });
+        }
+
+        // Only activate if subscription is active (payment succeeded)
+        if (subscription.status !== 'active') {
+            return res.status(400).json({ error: `Subscription is not active (status: ${subscription.status}).` });
+        }
+
+        const planId = subscription.metadata?.planId;
+        if (!planId) {
+            return res.status(400).json({ error: 'Missing planId in subscription metadata.' });
+        }
+
+        const nextBilling = await getNextBillingDate(companyId);
+
+        await prisma.company.update({
+            where: { id: companyId },
+            data: {
+                planId,
+                status: 'ACTIVE',
+                subscriptionExpiresAt: nextBilling
+            }
+        });
+
+        logger.info(`Stripe Confirm: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
+        res.json({ success: true, planId, expiresAt: nextBilling });
+
+    } catch (error: any) {
+        logger.error(`Stripe Confirm Error: ${error.message}`);
+        res.status(500).json({ error: 'Failed to confirm subscription.' });
+    }
+};
+
 export const handleStripeWebhook = async (req: Request, res: Response) => {
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -188,15 +236,20 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
     async function resolveCompanyAndPlan(subscriptionId?: string, customerId?: string, metadata?: any) {
         let companyId = metadata?.companyId;
         let planId = metadata?.planId;
+        let resolvedVia = 'invoice_metadata';
+
+        logger.info(`Stripe resolve: invoice metadata companyId=${companyId}, planId=${planId}, subscriptionId=${subscriptionId}, customerId=${customerId}`);
 
         // Try subscription metadata
         if (subscriptionId && (!companyId || !planId)) {
             try {
                 const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                logger.info(`Stripe resolve: subscription metadata = ${JSON.stringify(subscription.metadata)}, status=${subscription.status}`);
                 companyId = companyId || subscription.metadata?.companyId;
                 planId = planId || subscription.metadata?.planId;
-            } catch (err) {
-                logger.warn(`Stripe Webhook: Failed to retrieve subscription ${subscriptionId}`);
+                if (companyId) resolvedVia = 'subscription_metadata';
+            } catch (err: any) {
+                logger.warn(`Stripe Webhook: Failed to retrieve subscription ${subscriptionId}: ${err.message}`);
             }
         }
 
@@ -204,14 +257,16 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
         if (!companyId && customerId) {
             const company = await prisma.company.findFirst({
                 where: { stripeCustomerId: customerId },
-                include: { plan: true }
             });
             if (company) {
                 companyId = company.id;
-                planId = planId || company.planId;
+                // NOTE: don't fallback planId to current plan - it must come from subscription metadata
+                resolvedVia = 'stripe_customer_id';
+                logger.info(`Stripe resolve: found company ${companyId} via stripeCustomerId`);
             }
         }
 
+        logger.info(`Stripe resolve result: companyId=${companyId}, planId=${planId}, via=${resolvedVia}`);
         return { companyId, planId };
     }
 
@@ -222,11 +277,17 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
             const subscriptionId = invoice.subscription as string;
             const customerId = invoice.customer as string;
 
+            logger.info(`Stripe Webhook [${event.type}]: Processing invoice ${invoice.id}, subscription=${subscriptionId}, customer=${customerId}`);
+
             const { companyId, planId } = await resolveCompanyAndPlan(
                 subscriptionId, customerId, invoice.metadata
             );
 
             if (companyId && planId) {
+                // Fetch current company state for comparison
+                const currentCompany = await prisma.company.findUnique({ where: { id: companyId }, select: { planId: true, status: true, subscriptionExpiresAt: true } });
+                logger.info(`Stripe Webhook: Company ${companyId} BEFORE update: planId=${currentCompany?.planId}, status=${currentCompany?.status}, expires=${currentCompany?.subscriptionExpiresAt}`);
+
                 const nextBilling = await getNextBillingDate(companyId);
 
                 await prisma.company.update({
@@ -239,7 +300,7 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                 });
                 logger.info(`Stripe Webhook [${event.type}]: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
             } else {
-                logger.warn(`Stripe Webhook [${event.type}]: Could not resolve company for invoice ${invoice.id} (customer: ${customerId})`);
+                logger.warn(`Stripe Webhook [${event.type}]: Could not resolve company for invoice ${invoice.id} (customer: ${customerId}, companyId=${companyId}, planId=${planId})`);
             }
         } else if (event.type === 'customer.subscription.updated') {
             const subscription = event.data.object as any;
