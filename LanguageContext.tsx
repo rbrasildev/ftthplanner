@@ -1441,7 +1441,14 @@ const translations = {
     'hotkeys_hint': 'Shortcuts for faster editing',
     'add_note': 'Add Note',
     'note_placeholder': 'Type your note here...',
-    'delete_note': 'Delete Note'
+    'delete_note': 'Delete Note',
+    'confirm_password': 'Confirm Password',
+    'username_placeholder': 'ex: john.doe',
+    'password_placeholder': '••••••••',
+    'account_details': 'Account Details',
+    'security': 'Security',
+    'keep_empty_no_change': 'Keep empty to not change current password',
+    'access_control': 'Access Control',
   },
   pt: {
     'upgrade_plan': 'Fazer Upgrade',
@@ -2890,7 +2897,15 @@ const translations = {
     'hotkeys_hint': 'Atalhos para edição rápida',
     'add_note': 'Adicionar Nota',
     'note_placeholder': 'Digite sua anotação aqui...',
-    'delete_note': 'Excluir Nota'
+    'delete_note': 'Excluir Nota',
+    'password': 'Senha',
+    'confirm_password': 'Confirmar Senha',
+    'username_placeholder': 'ex: joao.silva',
+    'password_placeholder': '••••••••',
+    'account_details': 'Detalhes da Conta',
+    'security': 'Segurança',
+    'keep_empty_no_change': 'Deixe em branco para não alterar a senha atual',
+    'access_control': 'Controle de Acesso',
   },
 };
 

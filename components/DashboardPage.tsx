@@ -13,7 +13,7 @@ import { CompanySettings } from './settings/CompanySettings';
 import { IntegrationsPage } from './integrations/IntegrationsPage';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw } from 'lucide-react';
 import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
@@ -937,126 +937,189 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* --- ADD USER MODAL --- */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-lg flex flex-col relative max-h-[90vh]">
+          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[95vh] overflow-hidden">
             <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {editingUser ? t('edit_user') : t('add_user')}
               </h3>
-              <button onClick={() => setIsUserModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><X className="w-6 h-6" /></button>
+              <button 
+                onClick={() => setIsUserModalOpen(false)} 
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="p-6 space-y-4 relative z-10">
-              <CustomInput
-                label={t('email')}
-                type="email"
-                value={userFormData.email}
-                onChange={e => setUserFormData({ ...userFormData, email: e.target.value })}
-                placeholder={t('user_email_placeholder')}
-              />
-              <CustomInput
-                label={`${t('username')} (${t('optional')})`}
-                type="text"
-                value={userFormData.username}
-                onChange={e => setUserFormData({ ...userFormData, username: e.target.value })}
-                disabled={!!editingUser}
-              />
-              <CustomInput
-                label={t('password')}
-                type="password"
-                value={userFormData.password}
-                onChange={e => setUserFormData({ ...userFormData, password: e.target.value })}
-                placeholder={editingUser ? "••••••••" : ""}
-              />
-              {(userFormData.password || !editingUser) && (
-                <CustomInput
-                  label={t('confirm_password') || 'Confirmar Senha'}
-                  type="password"
-                  value={userFormData.confirmPassword}
-                  onChange={e => setUserFormData({ ...userFormData, confirmPassword: e.target.value })}
-                  placeholder={editingUser ? "••••••••" : ""}
-                />
-              )}
-              <CustomSelect
-                label={t('role')}
-                value={userFormData.role}
-                options={[
-                  { value: 'MEMBER', label: t('role_member') },
-                  { value: 'ADMIN', label: t('role_admin') },
-                  ...(editingUser && editingUser.role === 'OWNER' ? [{ value: 'OWNER', label: t('saas_role_owner') || 'Proprietário' }] : [])
-                ]}
-                onChange={val => {
-                  const defaults = ROLE_DEFAULT_PERMISSIONS[val] || [];
-                  setUserFormData({ ...userFormData, role: val, permissions: [...defaults] });
-                }}
-                showSearch={false}
-              />
 
-              {/* --- PERMISSIONS SECTION --- */}
-              <div className="mt-2">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-emerald-500" />
-                    {t('permissions')}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setUserFormData({ ...userFormData, permissions: [...(ROLE_DEFAULT_PERMISSIONS[userFormData.role] || [])] })}
-                    className="text-xs text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
-                  >
-                    {t('reset_defaults')}
-                  </button>
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+              {/* --- SECTION: ACCOUNT DETAILS --- */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <User className="w-4 h-4 text-emerald-500" />
+                  <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    {t('account_details')}
+                  </h4>
                 </div>
-                <div className="space-y-3 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
-                  {PERMISSION_GROUPS.map((group, gi) => {
-                    const groupKeys = ['perm_group_projects', 'perm_group_planning', 'perm_group_registrations', 'perm_group_admin'];
-                    return (
-                    <div key={group.label} className="bg-slate-50 dark:bg-[#22262e]/50 rounded-lg p-3">
-                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t(groupKeys[gi])}</p>
-                      <div className="space-y-1.5">
-                        {group.permissions.map(perm => {
-                          const isChecked = userFormData.permissions.includes(perm);
-                          return (
-                            <label
-                              key={perm}
-                              className="flex items-center gap-2.5 cursor-pointer group/perm py-0.5"
-                            >
-                              <div
-                                onClick={() => {
-                                  const next = isChecked
-                                    ? userFormData.permissions.filter(p => p !== perm)
-                                    : [...userFormData.permissions, perm];
-                                  setUserFormData({ ...userFormData, permissions: next });
-                                }}
-                                className={`w-4.5 h-4.5 rounded flex items-center justify-center border transition-all shrink-0
-                                  ${isChecked
-                                    ? 'bg-emerald-600 border-emerald-600 text-white'
-                                    : 'border-slate-300 dark:border-slate-600 group-hover/perm:border-emerald-400'
-                                  }`}
-                                style={{ width: 18, height: 18 }}
-                              >
-                                {isChecked && <Check className="w-3 h-3" />}
-                              </div>
-                              <span className={`text-sm transition-colors ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
-                                {t(`perm_${perm.replace(':', '_')}`) || PERMISSION_LABELS[perm as Permission]}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomInput
+                    label={t('email')}
+                    type="email"
+                    icon={Mail}
+                    value={userFormData.email}
+                    onChange={e => setUserFormData({ ...userFormData, email: e.target.value })}
+                    placeholder={t('user_email_placeholder')}
+                    required
+                  />
+                  <CustomInput
+                    label={`${t('username')} (${t('optional')})`}
+                    type="text"
+                    icon={User}
+                    value={userFormData.username}
+                    onChange={e => setUserFormData({ ...userFormData, username: e.target.value })}
+                    placeholder={t('username_placeholder')}
+                    disabled={!!editingUser}
+                  />
+                </div>
+              </div>
+
+              {/* --- SECTION: SECURITY --- */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <Lock className="w-4 h-4 text-emerald-500" />
+                  <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    {t('security')}
+                  </h4>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CustomInput
+                    label={t('password')}
+                    type="password"
+                    icon={Lock}
+                    value={userFormData.password}
+                    onChange={e => setUserFormData({ ...userFormData, password: e.target.value })}
+                    placeholder={editingUser ? t('password_placeholder') : t('password_placeholder')}
+                    required={!editingUser}
+                  />
+                  {(userFormData.password || !editingUser) && (
+                    <CustomInput
+                      label={t('confirm_password')}
+                      type="password"
+                      icon={Lock}
+                      value={userFormData.confirmPassword}
+                      onChange={e => setUserFormData({ ...userFormData, confirmPassword: e.target.value })}
+                      placeholder={t('password_placeholder')}
+                      required={!editingUser}
+                    />
+                  )}
+                </div>
+                {editingUser && (
+                  <p className="text-[10px] text-slate-400 italic">
+                    * {t('keep_empty_no_change')}
+                  </p>
+                )}
+              </div>
+
+              {/* --- SECTION: ACCESS & PERMISSIONS --- */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <Shield className="w-4 h-4 text-emerald-500" />
+                  <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    {t('access_control')}
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  <CustomSelect
+                    label={t('role')}
+                    value={userFormData.role}
+                    options={[
+                      { value: 'MEMBER', label: t('role_member') },
+                      { value: 'ADMIN', label: t('role_admin') },
+                      ...(editingUser && editingUser.role === 'OWNER' ? [{ value: 'OWNER', label: t('saas_role_owner') || 'Proprietário' }] : [])
+                    ]}
+                    onChange={val => {
+                      const defaults = ROLE_DEFAULT_PERMISSIONS[val] || [];
+                      setUserFormData({ ...userFormData, role: val, permissions: [...defaults] });
+                    }}
+                    showSearch={false}
+                  />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        {t('permissions')}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setUserFormData({ ...userFormData, permissions: [...(ROLE_DEFAULT_PERMISSIONS[userFormData.role] || [])] })}
+                        className="text-xs text-emerald-600 hover:text-emerald-500 font-bold flex items-center gap-1 transition-colors"
+                      >
+                        <RefreshCcw className="w-3 h-3" />
+                        {t('reset_defaults')}
+                      </button>
                     </div>
-                    );
-                  })}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {PERMISSION_GROUPS.map((group, gi) => {
+                        const groupKeys = ['perm_group_projects', 'perm_group_planning', 'perm_group_registrations', 'perm_group_admin'];
+                        return (
+                          <div key={group.label} className="bg-slate-50 dark:bg-[#22262e]/50 border border-slate-100 dark:border-slate-700/30 rounded-xl p-4">
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 pb-2 border-b border-slate-200/50 dark:border-slate-700/50">
+                              {t(groupKeys[gi]) || group.label}
+                            </p>
+                            <div className="space-y-2">
+                              {group.permissions.map(perm => {
+                                const isChecked = userFormData.permissions.includes(perm);
+                                return (
+                                  <label
+                                    key={perm}
+                                    className="flex items-center gap-3 cursor-pointer group/perm py-1"
+                                  >
+                                    <div
+                                      onClick={() => {
+                                        const next = isChecked
+                                          ? userFormData.permissions.filter(p => p !== perm)
+                                          : [...userFormData.permissions, perm];
+                                        setUserFormData({ ...userFormData, permissions: next });
+                                      }}
+                                      className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all shrink-0
+                                        ${isChecked
+                                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                                          : 'border-slate-200 dark:border-slate-700 group-hover/perm:border-emerald-400'
+                                        }`}
+                                    >
+                                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </div>
+                                    <span className={`text-xs font-medium transition-colors ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                                      {t(`perm_${perm.replace(':', '_')}`) || PERMISSION_LABELS[perm as Permission]}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
             <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
-              <button onClick={() => setIsUserModalOpen(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
+              <button 
+                onClick={() => setIsUserModalOpen(false)} 
+                className="px-6 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-semibold transition shadow-sm"
+              >
+                {t('cancel')}
+              </button>
 
               <button
                 onClick={editingUser ? handleUpdateUser : handleCreateUser}
-                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"
+                className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2"
               >
-                {!editingUser && <Plus className="w-4 h-4" />}
-                {editingUser && <Save className="w-4 h-4" />}
+                {editingUser ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 {editingUser ? t('update') : t('create')}
               </button>
             </div>

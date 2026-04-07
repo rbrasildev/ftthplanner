@@ -10,25 +10,34 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18, isOnline?: boolean) => {
+const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO') => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(18 * zoomScale);
-    const borderSize = Math.max(1.5, Math.round(2.5 * zoomScale));
+    const borderSize = Math.max(2, Math.round(3 * zoomScale)); // Slightly thicker border to make status more visible on CEO
     const pulseSize = Math.round(36 * zoomScale);
 
-    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}-${isOnline}`;
+    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
     }
 
-    // Prioritize custom catalog color if available, otherwise fallback to status color
-    // If online status is explicitly known, it overrides the status color
-    let color = customColor || CTO_STATUS_COLORS[status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
-    
-    if (isOnline === true) color = '#22c55e'; // Green for online
-    else if (isOnline === false) color = '#ef4444'; // Red for offline
+    let statusColor = CTO_STATUS_COLORS[status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+    if (isOnline === true) statusColor = '#22c55e'; // Green for online
+    else if (isOnline === false) statusColor = '#ef4444'; // Red for offline
+
+    let fillColor;
+    let borderColor;
+
+    if (type === 'CEO') {
+        fillColor = customColor || '#64748b'; // Default CEO color if none provided
+        borderColor = isSelected ? '#22c55e' : statusColor;
+    } else {
+        let baseColor = customColor || statusColor;
+        fillColor = baseColor;
+        borderColor = isSelected ? '#22c55e' : baseColor;
+    }
 
     const icon = L.divIcon({
         className: 'custom-icon',
@@ -36,13 +45,13 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
       ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${pulseSize}px; height: ${pulseSize}px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
-        background-color: ${color.substring(0, 7)}cc; /* 60% opacity */
-        border: ${borderSize}px solid ${isSelected ? '#22c55e' : color.substring(0, 7)}; /* Solid thick border, green when selected */
-        border-radius: 50%;
+        background-color: ${fillColor.substring(0, 7)}cc; /* 60% opacity */
+        border: ${borderSize}px solid ${borderColor.substring(0, 7)};
+        border-radius: ${type === 'CEO' ? '30%' : '50%'}; /* Make CEO slightly square to help visual identification */
         width: ${size}px;
         height: ${size}px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        transition: border-color 0.2s ease;
+        transition: border-color 0.2s ease, background-color 0.2s ease;
         z-index: 10;
       ">
       </div>
@@ -96,8 +105,8 @@ export const CTOMarker = React.memo(({
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline
 }: CTOMarkerProps) => {
     const icon = useMemo(() =>
-        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline),
-        [cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline]);
+        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type),
+        [cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
