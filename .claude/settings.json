@@ -74,7 +74,8 @@
       "Bash(grep -i \"sangria\" /d/ftthplanner/**/*.tsx /d/ftthplanner/**/*.ts)",
       "Bash(grep -E \"^\\\\-\\\\-$|role.*:|OWNER|ADMIN|MEMBER|EDITOR|VIEWER\")",
       "Bash(ls -la /d/ftthplanner/types*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

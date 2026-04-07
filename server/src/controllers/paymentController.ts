@@ -184,21 +184,47 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle the event
-    try {
-        if (event.type === 'invoice.payment_succeeded') {
-            const invoice = event.data.object as any;
-            const subscriptionId = invoice.subscription as string;
-            
-            let companyId = invoice.metadata?.companyId;
-            let planId = invoice.metadata?.planId;
+    // Helper to resolve companyId and planId from Stripe objects
+    async function resolveCompanyAndPlan(subscriptionId?: string, customerId?: string, metadata?: any) {
+        let companyId = metadata?.companyId;
+        let planId = metadata?.planId;
 
-            if (subscriptionId) {
-                // Retrieve subscription to get metadata
+        // Try subscription metadata
+        if (subscriptionId && (!companyId || !planId)) {
+            try {
                 const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                 companyId = companyId || subscription.metadata?.companyId;
                 planId = planId || subscription.metadata?.planId;
+            } catch (err) {
+                logger.warn(`Stripe Webhook: Failed to retrieve subscription ${subscriptionId}`);
             }
+        }
+
+        // Fallback: look up company by stripeCustomerId
+        if (!companyId && customerId) {
+            const company = await prisma.company.findFirst({
+                where: { stripeCustomerId: customerId },
+                include: { plan: true }
+            });
+            if (company) {
+                companyId = company.id;
+                planId = planId || company.planId;
+            }
+        }
+
+        return { companyId, planId };
+    }
+
+    // Handle the event
+    try {
+        if (event.type === 'invoice.payment_succeeded' || event.type === 'invoice.paid') {
+            const invoice = event.data.object as any;
+            const subscriptionId = invoice.subscription as string;
+            const customerId = invoice.customer as string;
+
+            const { companyId, planId } = await resolveCompanyAndPlan(
+                subscriptionId, customerId, invoice.metadata
+            );
 
             if (companyId && planId) {
                 const nextBilling = await getNextBillingDate(companyId);
@@ -211,9 +237,47 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         subscriptionExpiresAt: nextBilling
                     }
                 });
-                logger.info(`Stripe Webhook: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
+                logger.info(`Stripe Webhook [${event.type}]: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
             } else {
-                logger.info(`Stripe Webhook: Unhandled invoice ${invoice.id} payment_succeeded (missing companyId/planId)`);
+                logger.warn(`Stripe Webhook [${event.type}]: Could not resolve company for invoice ${invoice.id} (customer: ${customerId})`);
+            }
+        } else if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object as any;
+
+            // Only activate when subscription becomes active
+            if (subscription.status === 'active') {
+                const customerId = subscription.customer as string;
+                const { companyId, planId } = await resolveCompanyAndPlan(
+                    subscription.id, customerId, subscription.metadata
+                );
+
+                if (companyId && planId) {
+                    const nextBilling = await getNextBillingDate(companyId);
+
+                    await prisma.company.update({
+                        where: { id: companyId },
+                        data: {
+                            planId: planId,
+                            status: 'ACTIVE',
+                            subscriptionExpiresAt: nextBilling
+                        }
+                    });
+                    logger.info(`Stripe Webhook [subscription.updated]: Activated company ${companyId} on plan ${planId}`);
+                }
+            }
+        } else if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object as any;
+            const customerId = subscription.customer as string;
+            const { companyId } = await resolveCompanyAndPlan(
+                subscription.id, customerId, subscription.metadata
+            );
+
+            if (companyId) {
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: { status: 'CANCELLED' }
+                });
+                logger.info(`Stripe Webhook [subscription.deleted]: Cancelled company ${companyId}`);
             }
         }
     } catch (error) {
