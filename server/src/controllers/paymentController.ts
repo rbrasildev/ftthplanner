@@ -845,8 +845,27 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
                     body: { status: 'cancelled' }
                 });
             } catch (mpError: any) {
-                // Log but don't block - subscription may already be cancelled on MP side
                 logger.warn(`MP cancel failed (may be already cancelled): ${mpError.message}`);
+            }
+        }
+
+        // If there's a Stripe customer, cancel all active subscriptions
+        if (company.stripeCustomerId) {
+            try {
+                const stripe = getStripe();
+                const subscriptions = await stripe.subscriptions.list({
+                    customer: company.stripeCustomerId,
+                    status: 'active',
+                });
+
+                for (const sub of subscriptions.data) {
+                    await stripe.subscriptions.update(sub.id, {
+                        cancel_at_period_end: true,
+                    });
+                    logger.info(`Stripe: Subscription ${sub.id} set to cancel at period end for company ${companyId}`);
+                }
+            } catch (stripeError: any) {
+                logger.warn(`Stripe cancel failed: ${stripeError.message}`);
             }
         }
 

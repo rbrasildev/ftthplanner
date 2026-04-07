@@ -419,6 +419,20 @@ export default function App() {
         hydrate();
     }, [isHydrated]); // Only trigger on mount (or if explicitly reset)
 
+    // Auto-logout when session expires (401 from any API call)
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            setUser(null);
+            setToken(null);
+            setCurrentProjectId(null);
+            setCurrentProject(null);
+            setProjects([]);
+            setAuthView('landing');
+        };
+        window.addEventListener('ftth-session-expired', handleSessionExpired);
+        return () => window.removeEventListener('ftth-session-expired', handleSessionExpired);
+    }, []);
+
     // Load Project Details when ID changes
     useEffect(() => {
         if (currentProject) {
