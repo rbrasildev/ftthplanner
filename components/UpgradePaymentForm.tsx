@@ -264,7 +264,8 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 v = v.replace(/(\d{4})(\d)/, '$1-$2');
                 v = v.substring(0, 18);
             }
-            setFormData(prev => ({ ...prev, [name]: v }));
+            const idType = value.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF';
+            setFormData(prev => ({ ...prev, [name]: v, identificationType: idType }));
             return;
         }
 
