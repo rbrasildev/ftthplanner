@@ -444,7 +444,25 @@ export default function App() {
 
     useEffect(() => {
         if (currentProjectId && token && (currentProjectId !== prevProjectIdRef.current || !currentProject)) {
-            projectService.getProject(currentProjectId).then(p => {
+            projectService.getProject(currentProjectId).then(async (p) => {
+                // Enriquecer cabos com width do catálogo se não tiverem
+                const cablesWithoutWidth = p.network.cables.filter((c: any) => c.catalogId && !c.width);
+                if (cablesWithoutWidth.length > 0) {
+                    try {
+                        const catalogCables = await catalogService.getCables();
+                        const catalogMap = new Map(catalogCables.map(c => [c.id, c]));
+                        p.network.cables = p.network.cables.map((c: any) => {
+                            if (c.catalogId && !c.width) {
+                                const cat = catalogMap.get(c.catalogId);
+                                if (cat) {
+                                    const w = c.status === 'DEPLOYED' ? cat.deployedSpec?.width : cat.plannedSpec?.width;
+                                    return { ...c, width: w || null };
+                                }
+                            }
+                            return c;
+                        });
+                    } catch (e) { /* catálogo indisponível, segue sem width */ }
+                }
                 setCurrentProject(p);
                 if (p.settings) setSystemSettings(p.settings);
             }).catch(err => {
@@ -1655,7 +1673,7 @@ export default function App() {
             />
 
             {!currentProjectId ? (
-                <main className="flex-1 relative overflow-hidden">
+                <main className="flex-1 relative">
                     <DashboardPage
                         username={user!}
                         userRole={userRole || 'MEMBER'}
@@ -2151,7 +2169,10 @@ export default function App() {
                             coordinates: pendingPoleLocation,
                             catalogId: catalogItem.id,
                             type: catalogItem.type,
-                            height: catalogItem.height
+                            height: catalogItem.height,
+                            shape: catalogItem.shape,
+                            strength: catalogItem.strength,
+                            approvalStatus: 'PENDING',
                         };
                         updateCurrentNetwork(prev => ({ ...prev, poles: [...(prev.poles || []), newPole] }));
                         showToast(t('toast_pole_added'));

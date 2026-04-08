@@ -67,12 +67,13 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
       // Map catalog properties to cable data
       setFormData(prev => ({
         ...prev,
-        catalogId: catalogId, // Persist the catalog reference
+        catalogId: catalogId,
         name: selected.name,
         fiberCount: selected.fiberCount,
         looseTubeCount: selected.looseTubeCount,
         color: selected.deployedSpec?.color || prev.color,
-        colorStandard: (selected.fiberProfile === 'EIA' ? 'EIA598' : 'ABNT') as any
+        colorStandard: (selected.fiberProfile === 'EIA' ? 'EIA598' : 'ABNT') as any,
+        width: (prev.status === 'DEPLOYED' ? selected.deployedSpec?.width : selected.plannedSpec?.width) || 3,
       }));
     } else {
       // If cleared/reset (though option value="" usually handles this if we add logic)
@@ -245,8 +246,8 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               disabled={userRole === 'MEMBER'}
             />
 
-            {/* Fiber Count - Text Only (Driven by Catalog) */}
-            <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr 2fr' }}>
+            {/* Technical Specs Grid */}
+            <div className="grid grid-cols-2 gap-3">
               <CustomInput
                 label={t('fiber_count')}
                 value={selectedCatalogId ? `${formData.fiberCount} FO` : '-'}
@@ -261,18 +262,39 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 disabled
               />
 
-              <CustomSelect
-                label={t('status')}
-                value={formData.status}
-                onChange={(val) => setFormData({ ...formData, status: val as CableStatus })}
-                disabled={userRole === 'MEMBER'}
-                options={[
-                  { value: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED') },
-                  { value: 'DEPLOYED', label: t('status_DEPLOYED') },
-                ]}
-                showSearch={false}
+              <CustomInput
+                label={t('fibers_per_tube')}
+                value={selectedCatalogId && formData.fiberCount && formData.looseTubeCount
+                  ? String(Math.ceil(formData.fiberCount / (formData.looseTubeCount || 1)))
+                  : '-'}
+                onChange={() => { }}
+                disabled
+              />
+
+              <CustomInput
+                label={t('cable_thickness')}
+                value={(() => {
+                  const cat = catalogCables.find(c => c.id === selectedCatalogId);
+                  if (!cat) return '-';
+                  const w = formData.status === 'DEPLOYED' ? cat.deployedSpec?.width : cat.plannedSpec?.width;
+                  return w ? `${w}px` : '-';
+                })()}
+                onChange={() => { }}
+                disabled
               />
             </div>
+
+            <CustomSelect
+              label={t('status')}
+              value={formData.status}
+              onChange={(val) => setFormData({ ...formData, status: val as CableStatus })}
+              disabled={userRole === 'MEMBER'}
+              options={[
+                { value: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED') },
+                { value: 'DEPLOYED', label: t('status_DEPLOYED') },
+              ]}
+              showSearch={false}
+            />
 
             <CustomInput
               label={`${t('technical_reserve')} (m)`}

@@ -223,12 +223,15 @@ const CablePolyline: React.FC<CablePolylineProps> = React.memo(({
         onUpdateGeometry(cable.id, newCoords);
     }, [cable.coordinates, cable.id, onUpdateGeometry]);
 
-    const pathOptions = useMemo(() => ({
-        color,
-        weight: isActive ? 6 : 4,
-        opacity: isLit ? 1 : 0.8,
-        dashArray
-    }), [color, isActive, isLit, dashArray]);
+    const pathOptions = useMemo(() => {
+        const baseWeight = cable.width || 4;
+        return {
+            color,
+            weight: isActive ? Math.max(6, baseWeight + 2) : baseWeight,
+            opacity: isLit ? 1 : 0.8,
+            dashArray
+        };
+    }, [color, isActive, isLit, dashArray, cable.width]);
 
     const map = useMap();
     const shortenedPositions = useMemo(() => {
@@ -878,6 +881,7 @@ export const MapView: React.FC<MapViewProps> = ({
     useEffect(() => { localStorage.setItem('ftth_show_ctos', JSON.stringify(showCTOs)); }, [showCTOs]);
     useEffect(() => { localStorage.setItem('ftth_show_pops', JSON.stringify(showPOPs)); }, [showPOPs]);
     useEffect(() => { localStorage.setItem('ftth_show_poles', JSON.stringify(showPoles)); }, [showPoles]);
+    useEffect(() => { if (mode === 'add_pole' && !showPoles) setShowPoles(true); }, [mode]);
     useEffect(() => { localStorage.setItem('ftth_clustering', JSON.stringify(enableClustering)); }, [enableClustering]);
 
     // --- PERFORMANCE REFS (Stabilize Callbacks) ---

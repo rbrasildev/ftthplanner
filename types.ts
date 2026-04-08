@@ -181,6 +181,7 @@ export interface CableData {
   reserveLocation?: Coordinates; // LocalizaÃ§Ã£o especÃ­fica para a label de reserva
   showReserveLabel?: boolean; // Toggle individual para mostrar/ocultar a label
   streetName?: string; // Nome da rua/direção do cabo (reverse geocoded)
+  width?: number; // Espessura visual do cabo no mapa (pixels, vindo do catálogo)
 }
 
 

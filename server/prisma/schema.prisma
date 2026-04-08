@@ -239,6 +239,7 @@ model Cable {
   reserveLocation  Json?    @map("reserve_location")
   showReserveLabel Boolean  @default(true) @map("show_reserve_label")
   technicalReserve Float?   @default(0) @map("technical_reserve")
+  width            Float?   @map("width")
   company          Company? @relation(fields: [companyId], references: [id])
   project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   deletedAt        DateTime? @map("deleted_at")

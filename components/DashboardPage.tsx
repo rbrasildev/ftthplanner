@@ -450,7 +450,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [currentView]);
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#151820] font-sans transition-colors duration-300 overflow-hidden">
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#151820] font-sans transition-colors duration-300">
 
 
       {/* MAIN CONTENT AREA */}

@@ -223,14 +223,15 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 .attr('stroke-width', (d: any) => {
                     const isLit = litCableIds.has(d.id);
                     const isHigh = highlightedCableId === d.id;
+                    const baseWidth = d.width || 2.5;
 
-                    if (isLit) return currentZoom < 14 ? 2.5 : 4;
-                    if (isHigh) return currentZoom < 14 ? 3 : 5;
+                    if (isLit) return currentZoom < 14 ? 2.5 : Math.max(4, baseWidth + 1);
+                    if (isHigh) return currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
 
-                    if (currentZoom < 12) return 1;
-                    if (currentZoom < 14) return 1.5;
-                    if (currentZoom < 16) return 2;
-                    return 2.5;
+                    if (currentZoom < 12) return Math.max(1, baseWidth * 0.4);
+                    if (currentZoom < 14) return Math.max(1.5, baseWidth * 0.6);
+                    if (currentZoom < 16) return Math.max(2, baseWidth * 0.8);
+                    return baseWidth;
                 })
                 .attr('stroke-dasharray', (d: any) => {
                     if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null;

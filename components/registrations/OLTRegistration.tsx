@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Save, Search, Server, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getOLTs, createOLT, updateOLT, deleteOLT, OLTCatalogItem } from '../../services/catalogService';
@@ -238,7 +239,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
             </div>
 
             {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && (
+            {showDeleteConfirm && createPortal(
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
@@ -260,11 +261,11 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
 
             {/* Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            {isModalOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -377,7 +378,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
         </div>
     );
 };

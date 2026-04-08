@@ -224,7 +224,8 @@ export const getProject = async (req: Request, res: Response) => {
                 catalogId: c.catalogId || null,
                 technicalReserve: c.technicalReserve,
                 reserveLocation: c.reserveLocation,
-                showReserveLabel: c.showReserveLabel
+                showReserveLabel: c.showReserveLabel,
+                width: c.width || null,
             })),
             poles: project.poles.map((p: any) => ({
                 id: p.id,
@@ -818,7 +819,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             catalogId: c.catalogId || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
-                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
+                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
+                            width: c.width || null,
                         });
                     } else {
                         const hasChanged =
@@ -832,6 +834,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.catalogId !== c.catalogId ||
                             dbC.technicalReserve !== (c.technicalReserve || 0) ||
                             dbC.showReserveLabel !== (c.showReserveLabel !== undefined ? c.showReserveLabel : true) ||
+                            dbC.width !== (c.width || null) ||
                             JSON.stringify(dbC.coordinates) !== JSON.stringify(c.coordinates) ||
                             JSON.stringify(dbC.reserveLocation) !== JSON.stringify(c.reserveLocation || null);
 
@@ -857,7 +860,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             catalogId: c.catalogId || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
-                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true
+                            showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
+                            width: c.width || null,
                         }
                     });
                 }

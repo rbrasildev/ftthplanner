@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Search, Edit2, Trash2, X, Save, Box, AlertTriangle, Palette, MoreHorizontal, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getBoxes, createBox, updateBox, deleteBox, BoxCatalogItem } from '../../services/catalogService';
@@ -220,7 +221,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
             </div>
 
             {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && (
+            {showDeleteConfirm && createPortal(
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
                         <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
@@ -242,10 +243,10 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
 
             {/* Modal */}
-            {isModalOpen && (
+            {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 translate-y-0 border border-slate-200 dark:border-slate-700/30">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-700/30">
@@ -359,7 +360,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                         </form>
                     </div>
                 </div>
-            )}
+            , document.body)}
         </div>
     );
 };
