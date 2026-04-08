@@ -154,11 +154,11 @@ export const PoleTableView: React.FC<PoleTableViewProps> = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => exportPolesToCSV(poles, cables, ctos)}
+                    <button onClick={() => exportPolesToCSV(poles, cables, ctos, catalog)}
                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
                         <Download className="w-3.5 h-3.5" /> CSV
                     </button>
-                    <button onClick={() => exportPoleReportPDF(poles, cables, ctos, projectName)}
+                    <button onClick={() => exportPoleReportPDF(poles, cables, ctos, projectName, catalog)}
                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
                         <FileText className="w-3.5 h-3.5" /> PDF
                     </button>

@@ -1,4 +1,16 @@
 import { PoleData, CableData, CTOData, PoleApprovalStatus, PoleSituation } from '../types';
+import { PoleCatalogItem } from '../services/catalogService';
+
+// Helper to resolve pole fields from catalog
+function resolvePole(pole: PoleData, catalogMap: Map<string, PoleCatalogItem>) {
+    const cat = pole.catalogId ? catalogMap.get(pole.catalogId) : undefined;
+    return {
+        type: pole.type || cat?.type || '-',
+        shape: pole.shape || cat?.shape || '-',
+        height: pole.height || cat?.height,
+        strength: pole.strength || cat?.strength,
+    };
+}
 
 // ===================== EXCEL (CSV) EXPORT =====================
 
@@ -20,7 +32,8 @@ const ROAD_SIDE_LABELS: Record<string, string> = {
     RIGHT: 'Direito',
 };
 
-export function exportPolesToCSV(poles: PoleData[], cables: CableData[], ctos: CTOData[]) {
+export function exportPolesToCSV(poles: PoleData[], cables: CableData[], ctos: CTOData[], catalog: PoleCatalogItem[] = []) {
+    const catalogMap = new Map(catalog.map(c => [c.id, c]));
     const headers = [
         'Poste', 'Cód. Concessionária', 'Tipo', 'Formato', 'Altura (m)', 'Esforço (daN)',
         'Situação', 'Status Aprovação', 'Lado da Rua', 'Latitude', 'Longitude',
@@ -30,14 +43,15 @@ export function exportPolesToCSV(poles: PoleData[], cables: CableData[], ctos: C
     const rows = poles.map(pole => {
         const linkedCables = cables.filter(c => pole.linkedCableIds?.includes(c.id));
         const linkedCTOs = ctos.filter(c => c.poleId === pole.id);
+        const resolved = resolvePole(pole, catalogMap);
 
         return [
             pole.name,
             pole.utilityCode || '',
-            pole.type || '',
-            pole.shape || '',
-            pole.height?.toString() || '',
-            pole.strength?.toString() || '',
+            resolved.type,
+            resolved.shape,
+            resolved.height ? String(resolved.height) : '',
+            resolved.strength ? String(resolved.strength) : '',
             pole.situation ? SITUATION_LABELS[pole.situation] || pole.situation : '',
             APPROVAL_LABELS[pole.approvalStatus || 'PENDING'] || 'Pendente',
             pole.roadSide ? ROAD_SIDE_LABELS[pole.roadSide] || pole.roadSide : '',
@@ -80,8 +94,10 @@ export function generatePoleReportHTML(
     poles: PoleData[],
     cables: CableData[],
     ctos: CTOData[],
-    projectName: string
+    projectName: string,
+    catalog: PoleCatalogItem[] = []
 ): string {
+    const catalogMap = new Map(catalog.map(c => [c.id, c]));
     const totalPoles = poles.length;
     const newPoles = poles.filter(p => p.situation === 'NEW').length;
     const existingPoles = poles.filter(p => p.situation === 'EXISTING').length;
@@ -132,17 +148,25 @@ export function generatePoleReportHTML(
     const tableRows = poles.map(pole => {
         const linkedCables = cables.filter(c => pole.linkedCableIds?.includes(c.id));
         const linkedCTOs = ctos.filter(c => c.poleId === pole.id);
+        const resolved = resolvePole(pole, catalogMap);
+        const approvalColor = pole.approvalStatus === 'APPROVED' ? '#16a34a' : pole.approvalStatus === 'IRREGULAR' ? '#dc2626' : '#ca8a04';
         return `<tr>
-            <td>${pole.name}</td>
+            <td><strong>${pole.name}</strong></td>
             <td>${pole.utilityCode || '-'}</td>
-            <td>${pole.type || '-'}</td>
-            <td>${pole.height ? pole.height + 'm' : '-'}</td>
+            <td>${resolved.type}</td>
+            <td>${resolved.shape}</td>
+            <td>${resolved.height ? resolved.height + 'm' : '-'}</td>
+            <td>${resolved.strength ? resolved.strength + ' daN' : '-'}</td>
             <td>${pole.situation ? SITUATION_LABELS[pole.situation] || pole.situation : '-'}</td>
-            <td style="color: ${pole.approvalStatus === 'APPROVED' ? '#16a34a' : pole.approvalStatus === 'IRREGULAR' ? '#dc2626' : '#ca8a04'}; font-weight: bold;">
-                ${APPROVAL_LABELS[pole.approvalStatus || 'PENDING']}
-            </td>
+            <td style="color: ${approvalColor}; font-weight: bold;">${APPROVAL_LABELS[pole.approvalStatus || 'PENDING']}</td>
+            <td>${pole.roadSide ? ROAD_SIDE_LABELS[pole.roadSide] || pole.roadSide : '-'}</td>
             <td>${linkedCables.map(c => c.name).join(', ') || '-'}</td>
             <td>${linkedCTOs.map(c => c.name).join(', ') || '-'}</td>
+            <td>${pole.coordinates.lat.toFixed(6)}</td>
+            <td>${pole.coordinates.lng.toFixed(6)}</td>
+            <td>${pole.hasPhoto ? 'Sim' : 'Não'}</td>
+            <td>${pole.addressReference || '-'}</td>
+            <td>${pole.observations || '-'}</td>
         </tr>`;
     }).join('');
 
@@ -163,12 +187,13 @@ export function generatePoleReportHTML(
         .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }
         .stat-card .value { font-size: 28px; font-weight: 800; color: #0f172a; }
         .stat-card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th { background: #f1f5f9; color: #475569; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; padding: 10px 8px; text-align: left; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        th { background: #f1f5f9; color: #475569; text-transform: uppercase; font-size: 8px; letter-spacing: 0.3px; padding: 6px 4px; text-align: left; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        td { padding: 5px 4px; border-bottom: 1px solid #f1f5f9; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
         tr:hover td { background: #f8fafc; }
         .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
-        @media print { body { padding: 20px; } .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        @page { size: landscape; margin: 10mm; }
+        @media print { body { padding: 10px; } .stats-grid { grid-template-columns: repeat(4, 1fr); } table { font-size: 8px; } th, td { padding: 3px; } }
     </style>
 </head>
 <body>
@@ -203,11 +228,19 @@ export function generatePoleReportHTML(
                     <th>Poste</th>
                     <th>Cód. Conc.</th>
                     <th>Tipo</th>
+                    <th>Formato</th>
                     <th>Altura</th>
+                    <th>Esforço</th>
                     <th>Situação</th>
                     <th>Aprovação</th>
+                    <th>Lado</th>
                     <th>Cabo</th>
                     <th>CTO/Caixa</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Foto</th>
+                    <th>Endereço Ref.</th>
+                    <th>Observações</th>
                 </tr>
             </thead>
             <tbody>${tableRows}</tbody>
@@ -225,9 +258,10 @@ export function exportPoleReportPDF(
     poles: PoleData[],
     cables: CableData[],
     ctos: CTOData[],
-    projectName: string
+    projectName: string,
+    catalog: PoleCatalogItem[] = []
 ) {
-    const html = generatePoleReportHTML(poles, cables, ctos, projectName);
+    const html = generatePoleReportHTML(poles, cables, ctos, projectName, catalog);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
         printWindow.document.write(html);
