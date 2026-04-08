@@ -11,6 +11,7 @@ import { CableEditor } from './components/CableEditor';
 import { CTODetailsPanel } from './components/CTODetailsPanel';
 import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { PoleDetailsPanel } from './components/PoleDetailsPanel';
+import { PoleTableView } from './components/PoleTableView';
 import { MapToolbar } from './components/MapToolbar';
 import { SaasAdminPage } from './components/admin/SaasAdminPage';
 import { LoginPage } from './components/LoginPage';
@@ -147,6 +148,7 @@ export default function App() {
     const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
 
     const [isExportKMZModalOpen, setIsExportKMZModalOpen] = useState(false);
+    const [showPoleTable, setShowPoleTable] = useState(false);
     const { isExporting, exportToKMZ } = useKMZExport();
     const [exportAreaPolygon, setExportAreaPolygon] = useState<{ lat: number; lng: number }[]>([]);
 
@@ -1638,6 +1640,7 @@ export default function App() {
                 onExportAreaClick={() => setToolMode('export_area')}
                 isExporting={isExporting}
                 onReportClick={() => setIsReportModalOpen(true)}
+                onPoleTableClick={() => setShowPoleTable(true)}
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 isMobileOpen={isMobileMenuOpen}
@@ -2072,6 +2075,8 @@ export default function App() {
                 <PoleDetailsPanel
                     pole={getCurrentNetwork().poles?.find(p => p.id === selectedId)!}
                     cables={getCurrentNetwork().cables}
+                    ctos={getCurrentNetwork().ctos}
+                    projectId={currentProject?.id}
                     onRename={(id, newName) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, name: newName } : p) }))}
                     onUpdateStatus={(id, status) => updateCurrentNetwork(prev => ({ ...prev, poles: prev.poles.map(p => p.id === id ? { ...p, status } : p) }))}
                     onUpdate={(id, updates) => {
@@ -2162,6 +2167,20 @@ export default function App() {
                 onExport={handleExportKMZ}
                 isExporting={isExporting}
             />
+
+            {showPoleTable && (
+                <PoleTableView
+                    poles={getCurrentNetwork().poles || []}
+                    cables={getCurrentNetwork().cables || []}
+                    ctos={getCurrentNetwork().ctos || []}
+                    projectName={currentProject?.name}
+                    onSelectPole={(poleId: string) => {
+                        setSelectedId(poleId);
+                        setShowPoleTable(false);
+                    }}
+                    onClose={() => setShowPoleTable(false)}
+                />
+            )}
 
             {showSettingsModal && (
                 <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>

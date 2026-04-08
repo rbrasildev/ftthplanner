@@ -120,9 +120,11 @@ app.use(express.static(frontendPath));
 
 // Routes
 import sgpRoutes from './routes/sgpRoutes';
+import poleDocRoutes from './routes/poleDocRoutes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/pole-doc', poleDocRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/saas', saasRoutes);
 app.use('/api/audit', auditRoutes);

@@ -192,15 +192,87 @@ export const POLE_STATUS_COLORS: Record<PoleStatus, string> = {
   'LICENSED': '#22c55e', // Green (Licenciado)
 };
 
+// Documentação para concessionária
+export type PoleSituation = 'EXISTING' | 'NEW' | 'SHARED' | 'REPLACE';
+export type PoleRoadSide = 'LEFT' | 'RIGHT';
+export type PoleApprovalStatus = 'APPROVED' | 'PENDING' | 'IRREGULAR';
+
+export const POLE_APPROVAL_COLORS: Record<PoleApprovalStatus, string> = {
+  'APPROVED': '#22c55e',  // Verde
+  'PENDING': '#eab308',   // Amarelo
+  'IRREGULAR': '#ef4444', // Vermelho
+};
+
+export const POLE_SITUATION_COLORS: Record<PoleSituation, string> = {
+  'EXISTING': '#6b7280',  // Cinza
+  'NEW': '#3b82f6',       // Azul
+  'SHARED': '#8b5cf6',    // Roxo
+  'REPLACE': '#f97316',   // Laranja
+};
+
 export interface PoleData {
   id: string;
   name: string;
   status: PoleStatus;
   coordinates: Coordinates;
-  catalogId?: string; // Reference to CatalogPole
+  catalogId?: string;
   type?: string;
   height?: number;
-  linkedCableIds?: string[]; // Logically linked cables for licensing
+  linkedCableIds?: string[];
+  // Campos de documentação para concessionária
+  utilityCode?: string;
+  shape?: string;
+  strength?: number;
+  situation?: PoleSituation;
+  roadSide?: PoleRoadSide;
+  addressReference?: string;
+  observations?: string;
+  approvalStatus?: PoleApprovalStatus;
+  hasPhoto?: boolean;
+  lastInspectionDate?: string;
+}
+
+export interface PoleEquipmentData {
+  id: string;
+  poleId: string;
+  type: string;
+  name: string;
+  description?: string;
+  quantity: number;
+}
+
+export interface PoleSpanData {
+  id: string;
+  originPoleId: string;
+  destinationPoleId: string;
+  distanceMeters?: number;
+  cableType?: string;
+  fiberCount?: number;
+  sag?: number;
+  minHeight?: number;
+  sharing?: string;
+  observations?: string;
+}
+
+export interface PoleChecklistData {
+  id?: string;
+  poleId: string;
+  hasIdentification: boolean;
+  hasPhoto: boolean;
+  distanceVerified: boolean;
+  heightInformed: boolean;
+  cableLinked: boolean;
+  ctoOrBoxLinked: boolean;
+  noElectricalConflict: boolean;
+  readyToSubmit: boolean;
+}
+
+export interface PolePhotoData {
+  id: string;
+  poleId: string;
+  url: string;
+  caption?: string;
+  createdAt?: string;
 }
 
 export interface FusionType {

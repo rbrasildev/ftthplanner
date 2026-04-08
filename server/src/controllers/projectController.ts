@@ -234,7 +234,17 @@ export const getProject = async (req: Request, res: Response) => {
                 catalogId: p.catalogId || null,
                 type: p.type,
                 height: p.height,
-                linkedCableIds: p.linkedCableIds
+                linkedCableIds: p.linkedCableIds,
+                utilityCode: p.utilityCode || null,
+                shape: p.shape || null,
+                strength: p.strength || null,
+                situation: p.situation || null,
+                roadSide: p.roadSide || null,
+                addressReference: p.addressReference || null,
+                observations: p.observations || null,
+                approvalStatus: p.approvalStatus || 'PENDING',
+                hasPhoto: p.hasPhoto || false,
+                lastInspectionDate: p.lastInspectionDate || null,
             }))
         };
 
@@ -878,7 +888,17 @@ export const syncProject = async (req: Request, res: Response) => {
                             catalogId: p.catalogId || null,
                             type: p.type,
                             height: p.height,
-                            linkedCableIds: p.linkedCableIds || []
+                            linkedCableIds: p.linkedCableIds || [],
+                            utilityCode: p.utilityCode || null,
+                            shape: p.shape || null,
+                            strength: p.strength || null,
+                            situation: p.situation || null,
+                            roadSide: p.roadSide || null,
+                            addressReference: p.addressReference || null,
+                            observations: p.observations || null,
+                            approvalStatus: p.approvalStatus || 'PENDING',
+                            hasPhoto: p.hasPhoto || false,
+                            lastInspectionDate: p.lastInspectionDate ? new Date(p.lastInspectionDate) : null,
                         });
                     } else {
                         const hasChanged =
@@ -889,7 +909,15 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbP.catalogId !== (p.catalogId || null) ||
                             dbP.type !== p.type ||
                             dbP.height !== p.height ||
-                            JSON.stringify(dbP.linkedCableIds) !== JSON.stringify(p.linkedCableIds || []);
+                            JSON.stringify(dbP.linkedCableIds) !== JSON.stringify(p.linkedCableIds || []) ||
+                            dbP.utilityCode !== (p.utilityCode || null) ||
+                            dbP.shape !== (p.shape || null) ||
+                            dbP.strength !== (p.strength || null) ||
+                            dbP.situation !== (p.situation || null) ||
+                            dbP.roadSide !== (p.roadSide || null) ||
+                            dbP.addressReference !== (p.addressReference || null) ||
+                            dbP.observations !== (p.observations || null) ||
+                            dbP.approvalStatus !== (p.approvalStatus || 'PENDING');
 
                         if (hasChanged) toUpdate.push(p);
                     }
@@ -908,7 +936,17 @@ export const syncProject = async (req: Request, res: Response) => {
                             catalogId: p.catalogId || null,
                             type: p.type,
                             height: p.height,
-                            linkedCableIds: p.linkedCableIds || []
+                            linkedCableIds: p.linkedCableIds || [],
+                            utilityCode: p.utilityCode || null,
+                            shape: p.shape || null,
+                            strength: p.strength || null,
+                            situation: p.situation || null,
+                            roadSide: p.roadSide || null,
+                            addressReference: p.addressReference || null,
+                            observations: p.observations || null,
+                            approvalStatus: p.approvalStatus || 'PENDING',
+                            hasPhoto: p.hasPhoto || false,
+                            lastInspectionDate: p.lastInspectionDate ? new Date(p.lastInspectionDate) : null,
                         }
                     });
                 }

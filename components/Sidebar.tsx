@@ -53,6 +53,7 @@ export interface SidebarProps {
     isMobileOpen: boolean;
     onCloseMobile: () => void;
     onReportClick?: () => void;
+    onPoleTableClick?: () => void;
     isHydrated?: boolean;
     currentDashboardView?: DashboardView;
     onDashboardViewChange?: (view: DashboardView) => void;
@@ -114,6 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isMobileOpen,
     onCloseMobile,
     onReportClick,
+    onPoleTableClick,
     isHydrated,
     currentDashboardView = 'projects',
     onDashboardViewChange,
@@ -355,6 +357,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     icon={<FileText className="w-5 h-5" />}
                                     label={t('report_analyze')}
                                     onClick={() => { onReportClick?.(); onCloseMobile(); }}
+                                    isCollapsed={isCollapsed}
+                                    variant="slate"
+                                />
+
+                                <NavButton
+                                    icon={<UtilityPole className="w-5 h-5" />}
+                                    label="Tabela de Postes"
+                                    onClick={() => { onPoleTableClick?.(); onCloseMobile(); }}
                                     isCollapsed={isCollapsed}
                                     variant="slate"
                                 />

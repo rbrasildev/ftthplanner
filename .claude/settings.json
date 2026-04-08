@@ -75,7 +75,8 @@
       "Bash(grep -E \"^\\\\-\\\\-$|role.*:|OWNER|ADMIN|MEMBER|EDITOR|VIEWER\")",
       "Bash(ls -la /d/ftthplanner/types*)",
       "Bash(npx ts-node:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
     ]
   }
 }

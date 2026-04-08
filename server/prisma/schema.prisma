@@ -413,25 +413,119 @@ model TemplatePole {
 }
 
 model Pole {
-  id             String          @id @default(uuid())
-  projectId      String          @map("project_id")
-  name           String
-  status         EquipmentStatus @default(PLANNED)
-  lat            Float
-  lng            Float
-  catalogId      String?         @map("catalog_id")
-  companyId      String?         @map("company_id")
-  height         Float?
-  linkedCableIds String[]        @default([]) @map("linked_cable_ids")
-  type           String?
-  catalog        CatalogPole?    @relation(fields: [catalogId], references: [id])
-  company        Company?        @relation(fields: [companyId], references: [id])
-  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  deletedAt      DateTime?       @map("deleted_at")
+  id                String          @id @default(uuid())
+  projectId         String          @map("project_id")
+  name              String
+  status            EquipmentStatus @default(PLANNED)
+  lat               Float
+  lng               Float
+  catalogId         String?         @map("catalog_id")
+  companyId         String?         @map("company_id")
+  height            Float?
+  linkedCableIds    String[]        @default([]) @map("linked_cable_ids")
+  type              String?
+  // Campos de documentação para concessionária
+  utilityCode       String?         @map("utility_code")
+  shape             String?
+  strength          Float?
+  situation         PoleSituation?
+  roadSide          PoleRoadSide?   @map("road_side")
+  addressReference  String?         @map("address_reference")
+  observations      String?
+  approvalStatus    PoleApprovalStatus @default(PENDING) @map("approval_status")
+  hasPhoto          Boolean         @default(false) @map("has_photo")
+  lastInspectionDate DateTime?      @map("last_inspection_date")
+
+  catalog           CatalogPole?    @relation(fields: [catalogId], references: [id])
+  company           Company?        @relation(fields: [companyId], references: [id])
+  project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deletedAt         DateTime?       @map("deleted_at")
+
+  equipments        PoleEquipment[]
+  photos            PolePhoto[]
+  checklist         PoleChecklist?
+  spansAsOrigin     PoleSpan[]      @relation("span_origin")
+  spansAsDestination PoleSpan[]     @relation("span_destination")
 
   @@index([companyId])
+  @@index([projectId])
+  @@index([companyId, projectId])
   @@index([lat, lng])
+  @@index([approvalStatus])
+  @@index([situation])
+  @@index([projectId, approvalStatus])
+  @@index([projectId, situation])
+  @@index([deletedAt])
   @@map("poles")
+}
+
+model PoleEquipment {
+  id          String   @id @default(uuid())
+  poleId      String   @map("pole_id")
+  type        String   // CTO, caixa_emenda, reserva_tecnica, estai, ancoragem, transformador, iluminacao
+  name        String
+  description String?
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  pole        Pole     @relation(fields: [poleId], references: [id], onDelete: Cascade)
+
+  @@index([poleId])
+  @@map("pole_equipments")
+}
+
+model PoleSpan {
+  id              String   @id @default(uuid())
+  originPoleId    String   @map("origin_pole_id")
+  destinationPoleId String @map("destination_pole_id")
+  distanceMeters  Float?   @map("distance_meters")
+  cableType       String?  @map("cable_type")
+  fiberCount      Int?     @map("fiber_count")
+  sag             Float?   // flecha
+  minHeight       Float?   @map("min_height")
+  sharing         String?  // compartilhamento
+  observations    String?
+  projectId       String   @map("project_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  originPole      Pole     @relation("span_origin", fields: [originPoleId], references: [id], onDelete: Cascade)
+  destinationPole Pole     @relation("span_destination", fields: [destinationPoleId], references: [id], onDelete: Cascade)
+
+  @@index([originPoleId])
+  @@index([destinationPoleId])
+  @@index([projectId])
+  @@map("pole_spans")
+}
+
+model PolePhoto {
+  id        String   @id @default(uuid())
+  poleId    String   @map("pole_id")
+  url       String
+  caption   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  pole      Pole     @relation(fields: [poleId], references: [id], onDelete: Cascade)
+
+  @@index([poleId])
+  @@map("pole_photos")
+}
+
+model PoleChecklist {
+  id                  String   @id @default(uuid())
+  poleId              String   @unique @map("pole_id")
+  hasIdentification   Boolean  @default(false) @map("has_identification")
+  hasPhoto            Boolean  @default(false) @map("has_photo")
+  distanceVerified    Boolean  @default(false) @map("distance_verified")
+  heightInformed      Boolean  @default(false) @map("has_height")
+  cableLinked         Boolean  @default(false) @map("cable_linked")
+  ctoOrBoxLinked      Boolean  @default(false) @map("cto_or_box_linked")
+  noElectricalConflict Boolean @default(false) @map("no_electrical_conflict")
+  readyToSubmit       Boolean  @default(false) @map("ready_to_submit")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+  pole                Pole     @relation(fields: [poleId], references: [id], onDelete: Cascade)
+
+  @@index([poleId])
+  @@map("pole_checklists")
 }
 
 model CatalogFusion {
@@ -569,6 +663,30 @@ enum EquipmentStatus {
   LICENSED
 
   @@map("equipment_status")
+}
+
+enum PoleSituation {
+  EXISTING
+  NEW
+  SHARED
+  REPLACE
+
+  @@map("pole_situation")
+}
+
+enum PoleRoadSide {
+  LEFT
+  RIGHT
+
+  @@map("pole_road_side")
+}
+
+enum PoleApprovalStatus {
+  APPROVED
+  PENDING
+  IRREGULAR
+
+  @@map("pole_approval_status")
 }
 
 enum UserRole {
