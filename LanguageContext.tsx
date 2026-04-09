@@ -619,6 +619,8 @@ const translations = {
     'cable_thickness': 'Thickness',
     'tube': 'Tube',
     'technical_reserve': 'Technical Reserve',
+    'button_add': 'Add',
+    'no_reserves': 'No technical reserves',
     'geometric_length': 'Geometric Length',
     'estimated_length': 'Estimated Length',
     'toggle_reserve_label': 'Show Technical Reserve',
@@ -2347,6 +2349,8 @@ const translations = {
 
     'patching_instruct': 'Selecione duas portas de equipamentos diferentes para criar a manobra.',
     'technical_reserve': 'Reserva técnica',
+    'button_add': 'Adicionar',
+    'no_reserves': 'Nenhuma reserva técnica',
     'geometric_length': 'Comprimento geométrico',
     'estimated_length': 'Comprimento est.',
     'toggle_reserve_label': 'Mostrar reserva técnica',

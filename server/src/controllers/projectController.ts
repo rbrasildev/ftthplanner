@@ -225,6 +225,7 @@ export const getProject = async (req: Request, res: Response) => {
                 technicalReserve: c.technicalReserve,
                 reserveLocation: c.reserveLocation,
                 showReserveLabel: c.showReserveLabel,
+                reserves: c.reserves || [],
                 width: c.width || null,
             })),
             poles: project.poles.map((p: any) => ({
@@ -820,6 +821,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
+                            reserves: c.reserves || [],
                             width: c.width || null,
                         });
                     } else {
@@ -836,7 +838,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.showReserveLabel !== (c.showReserveLabel !== undefined ? c.showReserveLabel : true) ||
                             dbC.width !== (c.width || null) ||
                             JSON.stringify(dbC.coordinates) !== JSON.stringify(c.coordinates) ||
-                            JSON.stringify(dbC.reserveLocation) !== JSON.stringify(c.reserveLocation || null);
+                            JSON.stringify(dbC.reserveLocation) !== JSON.stringify(c.reserveLocation || null) ||
+                            JSON.stringify(dbC.reserves) !== JSON.stringify(c.reserves || []);
 
                         if (hasChanged) toUpdate.push(c);
                     }
@@ -861,6 +864,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
+                            reserves: c.reserves || [],
                             width: c.width || null,
                         }
                     });

@@ -165,23 +165,31 @@ export interface CTOData {
   poleId?: string; // Associated pole for licensing/anchoring
 }
 
+export interface CableReserve {
+  id: string;
+  length: number; // metros
+  location?: Coordinates;
+  showLabel?: boolean;
+}
+
 export interface CableData {
   id: string;
   name: string;
-  status: CableStatus; // New Status Field
+  status: CableStatus;
   fiberCount: number;
-  looseTubeCount?: number; // Quantity of loose tubes
-  color?: string; // Hex color for map visualization (Used when Deployed)
-  colorStandard?: 'ABNT' | 'EIA598'; // Standard for fiber colors (Default: ABNT)
-  coordinates: Coordinates[]; // Polyline points
-  fromNodeId?: string | null; // Optional/Null for free-floating cables
-  toNodeId?: string | null;   // Optional/Null for free-floating cables
-  catalogId?: string; // Reference to CatalogCable
-  technicalReserve?: number; // Comprimento em metros de reserva tÃ©cnica
-  reserveLocation?: Coordinates; // LocalizaÃ§Ã£o especÃ­fica para a label de reserva
-  showReserveLabel?: boolean; // Toggle individual para mostrar/ocultar a label
-  streetName?: string; // Nome da rua/direção do cabo (reverse geocoded)
-  width?: number; // Espessura visual do cabo no mapa (pixels, vindo do catálogo)
+  looseTubeCount?: number;
+  color?: string;
+  colorStandard?: 'ABNT' | 'EIA598';
+  coordinates: Coordinates[];
+  fromNodeId?: string | null;
+  toNodeId?: string | null;
+  catalogId?: string;
+  technicalReserve?: number; // @deprecated — usar reserves
+  reserveLocation?: Coordinates; // @deprecated — usar reserves
+  showReserveLabel?: boolean; // @deprecated — usar reserves
+  reserves?: CableReserve[]; // Múltiplas reservas técnicas
+  streetName?: string;
+  width?: number;
 }
 
 

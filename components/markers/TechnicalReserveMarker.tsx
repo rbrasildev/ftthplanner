@@ -76,18 +76,19 @@ const createReserveIcon = (reserveValue: number, currentZoom: number) => {
 
 interface TechnicalReserveMarkerProps {
     cableId: string;
+    reserveId: string;
     reserveValue: number;
     position: Coordinates;
     mode: string;
     currentZoom: number;
-    onMoveReserve: (cableId: string, lat: number, lng: number) => void;
+    onMoveReserve: (cableId: string, reserveId: string, lat: number, lng: number) => void;
     onDragStart: (cableId: string) => void;
     onDrag: (lat: number, lng: number) => void;
     onDragEnd: () => void;
 }
 
 export const TechnicalReserveMarker = React.memo(({
-    cableId, reserveValue, position, mode, currentZoom,
+    cableId, reserveId, reserveValue, position, mode, currentZoom,
     onMoveReserve, onDragStart, onDrag, onDragEnd
 }: TechnicalReserveMarkerProps) => {
 
@@ -133,7 +134,7 @@ export const TechnicalReserveMarker = React.memo(({
             const marker = e.target;
             const pos = marker.getLatLng();
             setLocalPos({ lat: pos.lat, lng: pos.lng });
-            onMoveReserve(cableId, pos.lat, pos.lng);
+            onMoveReserve(cableId, reserveId, pos.lat, pos.lng);
         }
     }), [cableId, onMoveReserve, onDragStart, onDrag, onDragEnd]);
 

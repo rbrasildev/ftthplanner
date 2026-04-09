@@ -76,7 +76,13 @@
       "Bash(ls -la /d/ftthplanner/types*)",
       "Bash(npx ts-node:*)",
       "Bash(npm run:*)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(grep -n \"findMany\\\\|findFirst\\\\|findUnique\\\\|findOne\\\\|count\\\\|groupBy\" /d/ftthplanner/server/src/controllers/*.ts)",
+      "Bash(grep -n \"where:\\\\|orderBy:\\\\|groupBy:\\\\|include:\" /d/ftthplanner/server/src/services/*.ts)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); const icons = ['Cylinder','Pipeline','Tube','Cable','GitBranchPlus','Route','Workflow']; icons.forEach\\(i => console.log\\(i, !!l[i]\\)\\)\")",
+      "Bash(ls -la /d/ftthplanner/*.ts /d/ftthplanner/*.tsx)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Cylinder:', !!l.Cylinder, 'CircleDot:', !!l.CircleDot, 'Disc:', !!l.Disc, 'Square:', !!l.Square, 'SquareDot:', !!l.SquareDot\\)\")",
+      "Bash(grep -l \"duct\\\\|manhole\" /d/ftthplanner/server/src/index.ts /d/ftthplanner/server/src/services/*.ts /d/ftthplanner/server/src/lib/*.ts)"
     ]
   }
 }

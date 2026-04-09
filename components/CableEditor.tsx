@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { CableData, CableStatus } from '../types';
-import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { CableData, CableStatus, CableReserve } from '../types';
+import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen, Loader2, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import L from 'leaflet';
 import { useLanguage } from '../LanguageContext';
 import { getCables, CableCatalogItem } from '../services/catalogService';
@@ -296,13 +296,71 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               showSearch={false}
             />
 
-            <CustomInput
-              label={`${t('technical_reserve')} (m)`}
-              value={String(formData.technicalReserve)}
-              onChange={(e) => setFormData({ ...formData, technicalReserve: parseFloat(e.target.value) || 0 })}
-              disabled={userRole === 'MEMBER'}
-              type="number"
-            />
+            {/* Multiple Technical Reserves */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center justify-between">
+                <span>{t('technical_reserve')}</span>
+                {userRole !== 'MEMBER' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newReserve: CableReserve = {
+                        id: `res-${Date.now()}`,
+                        length: 0,
+                        showLabel: true,
+                      };
+                      setFormData({
+                        ...formData,
+                        reserves: [...(formData.reserves || []), newReserve],
+                        technicalReserve: ((formData.technicalReserve || 0) + 0),
+                      });
+                    }}
+                    className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold"
+                  >
+                    <Plus className="w-3 h-3" /> {t('button_add') || 'Adicionar'}
+                  </button>
+                )}
+              </label>
+              {(formData.reserves || []).length === 0 && (
+                <p className="text-xs text-slate-400 italic py-2">{t('no_reserves') || 'Nenhuma reserva técnica'}</p>
+              )}
+              <div className="space-y-2">
+                {(formData.reserves || []).map((reserve, idx) => (
+                  <div key={reserve.id} className="flex items-center gap-2 bg-slate-50 dark:bg-[#22262e] rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                    <span className="text-xs font-bold text-slate-400 w-5">#{idx + 1}</span>
+                    <input
+                      type="number"
+                      value={reserve.length}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const updated = (formData.reserves || []).map(r =>
+                          r.id === reserve.id ? { ...r, length: val } : r
+                        );
+                        const totalReserve = updated.reduce((sum, r) => sum + r.length, 0);
+                        setFormData({ ...formData, reserves: updated, technicalReserve: totalReserve });
+                      }}
+                      disabled={userRole === 'MEMBER'}
+                      className="flex-1 w-0 px-2 py-1 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white focus:ring-1 focus:ring-emerald-500"
+                      placeholder="metros"
+                    />
+                    <span className="text-xs text-slate-400">m</span>
+                    {userRole !== 'MEMBER' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = (formData.reserves || []).filter(r => r.id !== reserve.id);
+                          const totalReserve = updated.reduce((sum, r) => sum + r.length, 0);
+                          setFormData({ ...formData, reserves: updated, technicalReserve: totalReserve });
+                        }}
+                        className="p-1 text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Color Standard Selection - Display Only */}
             <div>
@@ -337,13 +395,15 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                   <span className="text-[10px] text-slate-400">{t('geometric_length')}:</span>
                   <span>{Math.round(calculatedLength).toLocaleString()} m</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
-                  <span className="text-[10px] text-slate-400">{t('technical_reserve')}:</span>
-                  <span>{formData.technicalReserve?.toLocaleString()} m</span>
-                </div>
+                {(formData.reserves || []).map((r: any, i: number) => (
+                  <div key={r.id} className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
+                    <span className="text-[10px] text-slate-400">{t('technical_reserve')} #{i + 1}:</span>
+                    <span>{r.length?.toLocaleString()} m</span>
+                  </div>
+                ))}
                 <div className="flex justify-between pt-1 font-bold text-emerald-600 dark:text-emerald-400">
                   <span className="text-[10px] uppercase">Total:</span>
-                  <span>{(Math.round(calculatedLength) + (formData.technicalReserve || 0)).toLocaleString()} m</span>
+                  <span>{(Math.round(calculatedLength) + (formData.reserves || []).reduce((s: number, r: any) => s + (r.length || 0), 0)).toLocaleString()} m</span>
                 </div>
                 <div className="text-right text-[10px] text-slate-500 mt-1">
                   ({((Math.round(calculatedLength) + (formData.technicalReserve || 0)) / 1000).toFixed(3)} km)

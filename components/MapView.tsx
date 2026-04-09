@@ -558,7 +558,7 @@ interface MapViewProps {
 
     onToggleReserveCable?: (id: string) => void;
     onPositionReserveCable?: (id: string) => void;
-    onReservePositionSet?: (lat: number, lng: number) => void;
+    onReservePositionSet?: (lat: number, lng: number, cableId?: string, reserveId?: string) => void;
 
     projectId?: string;
 
@@ -1077,14 +1077,18 @@ export const MapView: React.FC<MapViewProps> = ({
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
 
-    // Pre-filter cables with technical reserves (avoids inline .filter() in JSX)
+    // Pre-filter cables with reserves (new array format or legacy single)
     const cablesWithReserves = useMemo(() =>
-        cables.filter(c => (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel)),
+        cables.filter(c => {
+            const hasNewReserves = (c.reserves || []).some((r: any) => r.length > 0 && (showLabels || r.showLabel !== false));
+            const hasLegacyReserve = (c.technicalReserve || 0) > 0 && (showLabels || c.showReserveLabel);
+            return hasNewReserves || hasLegacyReserve;
+        }),
         [cables, showLabels]);
 
-    // Stable callback for reserve move (avoids inline arrow per cable)
-    const handleMoveReserve = useCallback((_id: string, lat: number, lng: number) => {
-        if (onReservePositionSet) onReservePositionSet(lat, lng);
+    // Stable callback for reserve move
+    const handleMoveReserve = useCallback((cableId: string, reserveId: string, lat: number, lng: number) => {
+        if (onReservePositionSet) onReservePositionSet(lat, lng, cableId, reserveId);
     }, [onReservePositionSet]);
 
     useEffect(() => {
@@ -1667,33 +1671,42 @@ export const MapView: React.FC<MapViewProps> = ({
                     </>
                 )}
 
-                {/* TECHNICAL RESERVES (Draggable Markers) */}
-                {cablesWithReserves.map(cable => {
-                    const position = cable.reserveLocation || (() => {
+                {/* TECHNICAL RESERVES (Draggable Markers) - Multiple per cable */}
+                {cablesWithReserves.flatMap(cable => {
+                    const reserves = cable.reserves && cable.reserves.length > 0
+                        ? cable.reserves
+                        : (cable.technicalReserve || 0) > 0
+                            ? [{ id: 'legacy', length: cable.technicalReserve || 0, location: cable.reserveLocation, showLabel: cable.showReserveLabel }]
+                            : [];
+
+                    const defaultMidpoint = (() => {
                         const coords = cable.coordinates;
-                        if (coords && coords.length >= 2) {
-                            const midIndex = Math.floor(coords.length / 2);
-                            return coords[midIndex];
-                        }
+                        if (coords && coords.length >= 2) return coords[Math.floor(coords.length / 2)];
                         return null;
                     })();
 
-                    if (!position) return null;
+                    return reserves
+                        .filter((r: any) => r.length > 0 && (showLabels || r.showLabel !== false))
+                        .map((reserve: any, idx: number) => {
+                            const position = reserve.location || defaultMidpoint;
+                            if (!position) return null;
 
-                    return (
-                        <TechnicalReserveMarker
-                            key={`reserve-${cable.id}`}
-                            cableId={cable.id}
-                            reserveValue={cable.technicalReserve || 0}
-                            position={position}
-                            mode={mode}
-                            currentZoom={currentZoom}
-                            onMoveReserve={handleMoveReserve}
-                            onDragStart={handlePointDragStart}
-                            onDrag={handleDrag}
-                            onDragEnd={handleDragEnd}
-                        />
-                    );
+                            return (
+                                <TechnicalReserveMarker
+                                    key={`reserve-${cable.id}-${reserve.id || idx}`}
+                                    cableId={cable.id}
+                                    reserveId={reserve.id || `legacy-${idx}`}
+                                    reserveValue={reserve.length}
+                                    position={position}
+                                    mode={mode}
+                                    currentZoom={currentZoom}
+                                    onMoveReserve={handleMoveReserve}
+                                    onDragStart={handlePointDragStart}
+                                    onDrag={handleDrag}
+                                    onDragEnd={handleDragEnd}
+                                />
+                            );
+                        });
                 })}
 
 

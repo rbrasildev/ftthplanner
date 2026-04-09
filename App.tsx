@@ -307,6 +307,7 @@ export default function App() {
 
     // --- Technical Reserve State ---
     const [pendingReserveCableId, setPendingReserveCableId] = useState<string | null>(null);
+    const [pendingReserveId, setPendingReserveId] = useState<string | null>(null);
 
     // --- Pinned Location State ---
     const [pinnedLocation, setPinnedLocation] = useState<(Coordinates & { viability?: { active: boolean, distance: number } }) | null>(null);
@@ -693,7 +694,9 @@ export default function App() {
 
     const handlePositionReserveCable = useCallback((id: string) => {
         const cable = getCurrentNetwork().cables.find(c => c.id === id);
-        if (!cable || (cable.technicalReserve || 0) <= 0) {
+        if (!cable) return;
+        const totalReserve = (cable.reserves || []).reduce((s: number, r: any) => s + (r.length || 0), 0) + (cable.technicalReserve || 0);
+        if (totalReserve <= 0) {
             showToast(t('technical_reserve') + " <= 0", 'info');
             return;
         }
@@ -702,14 +705,27 @@ export default function App() {
         showToast(t('tooltip_position_reserve'), 'info');
     }, [getCurrentNetwork, t]);
 
-    const handleReservePositionSet = useCallback((lat: number, lng: number) => {
-        if (!pendingReserveCableId) return;
+    const handleReservePositionSet = useCallback((lat: number, lng: number, cableId?: string, reserveId?: string) => {
+        const targetCableId = cableId || pendingReserveCableId;
+        if (!targetCableId) return;
         updateCurrentNetwork(prev => ({
             ...prev,
-            cables: prev.cables.map(c => c.id === pendingReserveCableId ? { ...c, reserveLocation: { lat, lng }, showReserveLabel: true } : c)
+            cables: prev.cables.map(c => {
+                if (c.id !== targetCableId) return c;
+                // If we have a specific reserveId, update that reserve's location
+                if (reserveId && c.reserves && c.reserves.length > 0) {
+                    return {
+                        ...c,
+                        reserves: c.reserves.map(r => r.id === reserveId ? { ...r, location: { lat, lng }, showLabel: true } : r)
+                    };
+                }
+                // Legacy fallback
+                return { ...c, reserveLocation: { lat, lng }, showReserveLabel: true };
+            })
         }));
         setToolMode('view');
         setPendingReserveCableId(null);
+        setPendingReserveId(null);
         showToast(t('toast_reserve_positioned'), 'success');
     }, [pendingReserveCableId, updateCurrentNetwork, t]);
 
