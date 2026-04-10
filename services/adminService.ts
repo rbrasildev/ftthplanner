@@ -6,6 +6,7 @@ export interface AdminUser {
     email: string;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
     permissions: string[];
+    allowedProjectIds: string[] | null;
     createdAt: string;
 }
 
@@ -15,6 +16,7 @@ export interface CreateUserDto {
     password?: string;
     role?: string;
     permissions?: string[];
+    allowedProjectIds?: string[] | null;
 }
 
 // Get Users

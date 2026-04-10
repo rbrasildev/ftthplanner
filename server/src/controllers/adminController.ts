@@ -20,15 +20,17 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
                 email: true,
                 role: true,
                 permissions: true,
+                allowedProjectIds: true,
                 createdAt: true
-            },
+            } as any,
             orderBy: { createdAt: 'desc' }
         });
 
         // Resolve effective permissions for each user
-        const usersWithPermissions = users.map(u => ({
+        const usersWithPermissions = users.map((u: any) => ({
             ...u,
             permissions: resolvePermissions(u.permissions, u.role),
+            allowedProjectIds: Array.isArray(u.allowedProjectIds) ? u.allowedProjectIds : null,
         }));
 
         res.json(usersWithPermissions);
@@ -41,7 +43,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
 // Create User
 export const createUser = async (req: AuthRequest, res: Response) => {
     try {
-        const { username, email, password, role, permissions } = req.body;
+        const { username, email, password, role, permissions, allowedProjectIds } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
@@ -98,6 +100,21 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             userPermissions = permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p));
         }
 
+        // Validate allowedProjectIds: must be array of strings belonging to this company
+        let validatedAllowedIds: string[] | null = null;
+        if (Array.isArray(allowedProjectIds)) {
+            const ids = allowedProjectIds.filter((x: any) => typeof x === 'string');
+            if (ids.length > 0) {
+                const owned = await prisma.project.findMany({
+                    where: { id: { in: ids }, companyId, deletedAt: null },
+                    select: { id: true }
+                });
+                validatedAllowedIds = owned.map(p => p.id);
+            } else {
+                validatedAllowedIds = null;
+            }
+        }
+
         const newUser = await prisma.user.create({
             data: {
                 username: finalUsername,
@@ -105,8 +122,9 @@ export const createUser = async (req: AuthRequest, res: Response) => {
                 passwordHash,
                 role: userRole,
                 permissions: userPermissions,
+                allowedProjectIds: validatedAllowedIds as any,
                 companyId
-            }
+            } as any
         });
 
         res.status(201).json({
@@ -115,6 +133,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
             email: newUser.email,
             role: newUser.role,
             permissions: resolvePermissions(newUser.permissions, newUser.role),
+            allowedProjectIds: validatedAllowedIds,
             createdAt: newUser.createdAt
         });
 
@@ -128,7 +147,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 export const updateUser = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { password, role, permissions } = req.body;
+        const { password, role, permissions, allowedProjectIds } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(400).json({ error: 'User not associated with a company' });
@@ -151,15 +170,33 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
             updateData.permissions = permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p));
         }
 
+        // Handle allowedProjectIds update
+        // null/undefined → field not touched
+        // [] → cleared (no restriction)
+        // [ids...] → validated against company projects
+        if (allowedProjectIds !== undefined) {
+            if (Array.isArray(allowedProjectIds) && allowedProjectIds.length > 0) {
+                const ids = allowedProjectIds.filter((x: any) => typeof x === 'string');
+                const owned = await prisma.project.findMany({
+                    where: { id: { in: ids }, companyId, deletedAt: null },
+                    select: { id: true }
+                });
+                updateData.allowedProjectIds = owned.map(p => p.id);
+            } else {
+                updateData.allowedProjectIds = null;
+            }
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id },
             data: updateData,
-            select: { id: true, username: true, email: true, role: true, permissions: true, createdAt: true }
-        });
+            select: { id: true, username: true, email: true, role: true, permissions: true, allowedProjectIds: true, createdAt: true } as any
+        }) as any;
 
         res.json({
             ...updatedUser,
             permissions: resolvePermissions(updatedUser.permissions, updatedUser.role),
+            allowedProjectIds: Array.isArray(updatedUser.allowedProjectIds) ? updatedUser.allowedProjectIds : null,
         });
 
     } catch (error: any) {

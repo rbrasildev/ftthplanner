@@ -21,10 +21,14 @@ export const register = async (req: Request, res: Response) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Determine Initial Plan
-        let initialPlanName = 'Plano Trial'; // Default to 7-day Trial
-        if (planName && typeof planName === 'string') {
-            initialPlanName = planName;
-        }
+        // IMPORTANT: New registrations ALWAYS start on Trial regardless of which plan
+        // the user clicked on the landing page. The selected paid plan is only an
+        // "interest" indicator — actual paid plans must be activated through payment.
+        // The only exception is the explicit Free plan, which is permanent.
+        const requestedPlanName = (planName && typeof planName === 'string') ? planName : null;
+        const isFreePlanRequest = requestedPlanName === 'Plano Grátis';
+
+        const initialPlanName = isFreePlanRequest ? 'Plano Grátis' : 'Plano Trial';
 
         let selectedPlan = await getPlanByName(initialPlanName);
         if (!selectedPlan) {
@@ -35,14 +39,12 @@ export const register = async (req: Request, res: Response) => {
         // Calculate Expiration
         let expiresAt: Date | null = null;
 
-        // If it's NOT the Free plan, it's a Trial (with expiration)
+        // Trial plans get an expiration date; Free plan is permanent (null)
         if (selectedPlan?.name !== 'Plano Grátis') {
-            // User requested to use trial_duration_days from DB
             const trialDays = selectedPlan?.trialDurationDays || 7;
             expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + trialDays);
         }
-        // If it IS Free plan, expiresAt remains null (permanent)
 
         // Clean up soft-deleted users with same email (from deleted companies)
         const softDeletedUser = await prisma.user.findFirst({ where: { email, deletedAt: { not: null } } });

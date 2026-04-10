@@ -179,7 +179,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<adminService.AdminUser | null>(null); // New state for editing
-  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: ROLE_DEFAULT_PERMISSIONS['MEMBER'] as string[] });
+  const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: ROLE_DEFAULT_PERMISSIONS['MEMBER'] as string[], restrictProjects: false, allowedProjectIds: [] as string[] });
   const [userToDelete, setUserToDelete] = useState<adminService.AdminUser | null>(null);
 
   // Fetch users when view changes to 'users'
@@ -201,10 +201,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       return;
     }
     try {
-      const newUser = await adminService.createUser(userFormData);
+      const payload: any = {
+        username: userFormData.username,
+        email: userFormData.email,
+        password: userFormData.password,
+        role: userFormData.role,
+        permissions: userFormData.permissions,
+        allowedProjectIds: userFormData.restrictProjects ? userFormData.allowedProjectIds : null,
+      };
+      const newUser = await adminService.createUser(payload);
       setUsersList(prev => [newUser, ...prev]);
       setIsUserModalOpen(false);
-      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']], restrictProjects: false, allowedProjectIds: [] });
       if (showToast) showToast(t('toast_user_created') || "Usuário criado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to create user", error);
@@ -223,7 +231,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   const handleEditUserClick = (user: adminService.AdminUser) => {
     setEditingUser(user);
-    setUserFormData({ username: user.username, email: user.email, password: '', confirmPassword: '', role: user.role, permissions: [...(user.permissions || ROLE_DEFAULT_PERMISSIONS[user.role] || [])] });
+    setUserFormData({
+      username: user.username,
+      email: user.email,
+      password: '',
+      confirmPassword: '',
+      role: user.role,
+      permissions: [...(user.permissions || ROLE_DEFAULT_PERMISSIONS[user.role] || [])],
+      restrictProjects: Array.isArray(user.allowedProjectIds) && user.allowedProjectIds.length > 0,
+      allowedProjectIds: Array.isArray(user.allowedProjectIds) ? [...user.allowedProjectIds] : [],
+    });
     setIsUserModalOpen(true);
   };
 
@@ -235,14 +252,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       return;
     }
     try {
-      const updateData: any = { role: userFormData.role, permissions: userFormData.permissions };
+      const updateData: any = {
+        role: userFormData.role,
+        permissions: userFormData.permissions,
+        allowedProjectIds: userFormData.restrictProjects ? userFormData.allowedProjectIds : [],
+      };
       if (userFormData.password) updateData.password = userFormData.password;
 
       const updatedUser = await adminService.updateUser(editingUser.id, updateData);
       setUsersList(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u));
       setIsUserModalOpen(false);
       setEditingUser(null);
-      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
+      setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']], restrictProjects: false, allowedProjectIds: [] });
       if (showToast) showToast(t('toast_user_updated') || "Usuário atualizado com sucesso", 'success');
     } catch (error: any) {
       console.error("Failed to update user", error);
@@ -1103,6 +1124,66 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       })}
                     </div>
                   </div>
+
+                  {/* Project Access Restriction */}
+                  {userFormData.role !== 'OWNER' && userFormData.role !== 'ADMIN' && (
+                    <div>
+                      <label className="flex items-center gap-3 cursor-pointer mb-3">
+                        <div
+                          onClick={() => setUserFormData({ ...userFormData, restrictProjects: !userFormData.restrictProjects })}
+                          className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all shrink-0
+                            ${userFormData.restrictProjects
+                              ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                            }`}
+                        >
+                          {userFormData.restrictProjects && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t('restrict_projects_access') || 'Restringir acesso a projetos específicos'}
+                        </span>
+                      </label>
+
+                      {userFormData.restrictProjects && (
+                        <div className="bg-slate-50 dark:bg-[#22262e]/50 border border-slate-100 dark:border-slate-700/30 rounded-xl p-4">
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-3">
+                            {t('restrict_projects_hint') || 'Selecione os projetos que este usuário poderá acessar. Se nenhum for selecionado, o usuário não verá nenhum projeto.'}
+                          </p>
+                          <div className="max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                            {projects.length === 0 ? (
+                              <p className="text-xs text-slate-400 italic py-2">{t('no_projects') || 'Nenhum projeto disponível'}</p>
+                            ) : (
+                              projects.map((p: Project) => {
+                                const isChecked = userFormData.allowedProjectIds.includes(p.id);
+                                return (
+                                  <label key={p.id} className="flex items-center gap-3 cursor-pointer group/proj py-1">
+                                    <div
+                                      onClick={() => {
+                                        const next = isChecked
+                                          ? userFormData.allowedProjectIds.filter((id: string) => id !== p.id)
+                                          : [...userFormData.allowedProjectIds, p.id];
+                                        setUserFormData({ ...userFormData, allowedProjectIds: next });
+                                      }}
+                                      className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all shrink-0
+                                        ${isChecked
+                                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                                          : 'border-slate-200 dark:border-slate-700 group-hover/proj:border-emerald-400'
+                                        }`}
+                                    >
+                                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </div>
+                                    <span className={`text-xs font-medium transition-colors truncate ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                                      {p.name}
+                                    </span>
+                                  </label>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

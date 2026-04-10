@@ -1510,6 +1510,8 @@ const translations = {
     'security': 'Security',
     'keep_empty_no_change': 'Keep empty to not change current password',
     'access_control': 'Access Control',
+    'restrict_projects_access': 'Restrict access to specific projects',
+    'restrict_projects_hint': 'Select which projects this user can access. If none are selected, the user will not see any projects.',
 
     // Parent/Base Project
     'base_project': 'Base Project',
@@ -3041,6 +3043,8 @@ const translations = {
     'security': 'Segurança',
     'keep_empty_no_change': 'Deixe em branco para não alterar a senha atual',
     'access_control': 'Controle de Acesso',
+    'restrict_projects_access': 'Restringir acesso a projetos específicos',
+    'restrict_projects_hint': 'Selecione os projetos que este usuário poderá acessar. Se nenhum for selecionado, o usuário não verá nenhum projeto.',
 
     // Parent/Base Project
     'base_project': 'Projeto Base',

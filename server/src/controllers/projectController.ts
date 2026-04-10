@@ -4,6 +4,24 @@ import { AuthRequest } from '../middleware/auth';
 import logger from '../lib/logger';
 import { traceOpticalPower } from '../services/opticalCalcService';
 
+/**
+ * Resolves the per-user project access restriction.
+ * Returns null if no restriction applies (user sees all company projects).
+ * Returns an array of allowed project IDs otherwise.
+ *
+ * OWNER, ADMIN and SUPER_ADMIN always bypass restrictions.
+ */
+async function getUserAllowedProjectIds(userId: string, role?: string): Promise<string[] | null> {
+    if (role === 'OWNER' || role === 'ADMIN' || role === 'SUPER_ADMIN') return null;
+    const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { allowedProjectIds: true } as any
+    }) as any;
+    const raw = dbUser?.allowedProjectIds;
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    return raw.filter((id: any) => typeof id === 'string');
+}
+
 export const getProjects = async (req: Request, res: Response) => {
     const user = (req as AuthRequest).user;
     if (!user || !user.companyId) {
@@ -14,9 +32,13 @@ export const getProjects = async (req: Request, res: Response) => {
     try {
         logger.info(`[getProjects] Fetching projects for company ${user.companyId}...`);
 
+        const allowedIds = await getUserAllowedProjectIds(user.id, user.role);
+        const baseWhere: any = { companyId: user.companyId, deletedAt: null };
+        if (allowedIds) baseWhere.id = { in: allowedIds };
+
         // Fetch projects summaries
         const projects = await prisma.project.findMany({
-            where: { companyId: user.companyId, deletedAt: null },
+            where: baseWhere,
             orderBy: { updatedAt: 'desc' },
             select: {
                 id: true,
@@ -162,6 +184,11 @@ export const getProject = async (req: Request, res: Response) => {
     if (!user || !user.companyId) return res.status(401).send();
 
     try {
+        const allowedIds = await getUserAllowedProjectIds(user.id, user.role);
+        if (allowedIds && !allowedIds.includes(id)) {
+            return res.status(403).json({ error: 'Access denied to this project' });
+        }
+
         const project = await prisma.project.findFirst({
             where: { id, companyId: user.companyId, deletedAt: null },
             include: {

@@ -23,6 +23,7 @@ model User {
   resetTokenExpires DateTime?  @map("reset_token_expires")
   activeSessionToken String?   @map("active_session_token")
   permissions       Json       @default("[]")
+  allowedProjectIds Json?      @map("allowed_project_ids")
   auditLogs         AuditLog[]
   projects          Project[]
   company           Company?   @relation(fields: [companyId], references: [id])
