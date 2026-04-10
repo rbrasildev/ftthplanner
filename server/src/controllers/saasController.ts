@@ -176,7 +176,7 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
                     select: { id: true, name: true }
                 },
                 invoices: {
-                    select: { id: true, status: true, amount: true, referenceStart: true, referenceEnd: true, createdAt: true }
+                    select: { id: true, status: true, amount: true, referenceStart: true, referenceEnd: true, createdAt: true, updatedAt: true, paidAt: true }
                 }
             },
             orderBy: { createdAt: 'desc' }
@@ -186,6 +186,13 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
         const enriched = companies.map(c => {
             const overdueInvoices = c.invoices.filter(inv => inv.status === 'OVERDUE');
             const paidInvoices = c.invoices.filter(inv => inv.status === 'PAID');
+            // Prefer the authoritative `paidAt` timestamp; fall back to `updatedAt`
+            // for legacy rows that haven't been backfilled yet.
+            const paidTs = (inv: typeof paidInvoices[number]) =>
+                new Date(inv.paidAt || inv.updatedAt || inv.createdAt).getTime();
+            const lastPaidInvoice = paidInvoices.length > 0
+                ? paidInvoices.slice().sort((a, b) => paidTs(b) - paidTs(a))[0]
+                : null;
             return {
                 ...c,
                 _financial: {
@@ -193,7 +200,9 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
                     overdueTotal: overdueInvoices.reduce((sum, inv) => sum + inv.amount, 0),
                     paidCount: paidInvoices.length,
                     paidTotal: paidInvoices.reduce((sum, inv) => sum + inv.amount, 0),
-                    lastPayment: paidInvoices.length > 0 ? paidInvoices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt : null
+                    lastPayment: lastPaidInvoice
+                        ? (lastPaidInvoice.paidAt || lastPaidInvoice.updatedAt || lastPaidInvoice.createdAt)
+                        : null
                 }
             };
         });
@@ -223,11 +232,12 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
             zipCode,
             businessEmail,
             website,
-            subscriptionExpiresAt
+            subscriptionExpiresAt,
+            customLimits
         } = req.body;
 
         // Validate that at least one field is being updated
-        if (!status && !planId && !name && phone === undefined && logoUrl === undefined && cnpj === undefined && address === undefined && city === undefined && state === undefined && zipCode === undefined && businessEmail === undefined && website === undefined && !subscriptionExpiresAt) {
+        if (!status && !planId && !name && phone === undefined && logoUrl === undefined && cnpj === undefined && address === undefined && city === undefined && state === undefined && zipCode === undefined && businessEmail === undefined && website === undefined && !subscriptionExpiresAt && customLimits === undefined) {
             return res.status(400).json({ error: 'No fields provided for update' });
         }
 
@@ -256,6 +266,27 @@ export const updateCompanyStatus = async (req: AuthRequest, res: Response) => {
         if (subscriptionExpiresAt) {
             data.subscriptionExpiresAt = new Date(subscriptionExpiresAt);
             logger.info(`[saasController] Manually setting expiration for company ${id} to ${data.subscriptionExpiresAt.toISOString()}`);
+        }
+
+        // --- CUSTOM LIMITS: per-company override of plan.limits ---
+        // Accept null to clear all overrides; otherwise sanitize to keep only
+        // the known numeric keys (defensive against arbitrary JSON injection).
+        if (customLimits !== undefined) {
+            if (customLimits === null) {
+                data.customLimits = null;
+            } else if (typeof customLimits === 'object') {
+                const allowedKeys = ['maxProjects', 'maxUsers', 'maxCTOs', 'maxPOPs'] as const;
+                const sanitized: Record<string, number> = {};
+                for (const key of allowedKeys) {
+                    const value = (customLimits as any)[key];
+                    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+                        sanitized[key] = Math.floor(value);
+                    }
+                }
+                // Empty object → store as null so the column reflects "no overrides"
+                data.customLimits = Object.keys(sanitized).length > 0 ? sanitized : null;
+            }
+            logger.info(`[saasController] Custom limits for company ${id}: ${JSON.stringify(data.customLimits)}`);
         }
 
         const company = await prisma.company.update({
@@ -547,6 +578,10 @@ export const getCompanyInvoices = async (req: AuthRequest, res: Response) => {
             status: inv.status,
             paymentMethod: inv.paymentMethod,
             createdAt: inv.createdAt,
+            updatedAt: inv.updatedAt,
+            // Authoritative payment timestamp; null for non-PAID or for legacy
+            // rows that pre-date the column. Frontend falls back to updatedAt.
+            paidAt: inv.paidAt,
             expiresAt: inv.expiresAt,
             referenceStart: inv.referenceStart,
             referenceEnd: inv.referenceEnd,
@@ -577,7 +612,7 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
         // 1. Mark invoice as PAID
         await prisma.invoice.update({
             where: { id: invoiceId },
-            data: { status: 'PAID', paymentMethod: 'MANUAL' }
+            data: { status: 'PAID', paymentMethod: 'MANUAL', paidAt: new Date() }
         });
 
         // 2. Recalculate subscription expiration (anchored to billing cycle)

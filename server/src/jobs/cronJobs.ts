@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { processRetentionMetrics } from '../services/retentionService';
 import { executeAutomations } from '../services/automationService';
 import { prisma } from '../lib/prisma';
+import { startOfTodayUTC } from '../lib/subscriptionUtils';
 import { SgpService } from '../integrations/sgp/sgp.service';
 
 export const initCronJobs = () => {
@@ -36,6 +37,10 @@ export const initCronJobs = () => {
 
         try {
             const now = new Date();
+            // Start-of-today (UTC) — used for date-only comparisons against
+            // `subscriptionExpiresAt` so a customer is only suspended AFTER
+            // their due date has fully passed, not on the day itself.
+            const startToday = startOfTodayUTC();
 
             // 1. Expire PENDING Pix Invoices
             const expiredInvoices = await prisma.invoice.updateMany({
@@ -56,7 +61,7 @@ export const initCronJobs = () => {
             const suspendedCompanies = await prisma.company.updateMany({
                 where: {
                     status: { in: ['ACTIVE', 'CANCELLED'] },
-                    subscriptionExpiresAt: { lt: now }
+                    subscriptionExpiresAt: { lt: startToday }
                 },
                 data: {
                     status: 'SUSPENDED'
@@ -77,7 +82,7 @@ export const initCronJobs = () => {
             const overdueCompanies = await prisma.company.findMany({
                 where: {
                     status: 'SUSPENDED',
-                    subscriptionExpiresAt: { lt: now },
+                    subscriptionExpiresAt: { lt: startToday },
                     planId: { not: null }
                 },
                 include: { plan: true }

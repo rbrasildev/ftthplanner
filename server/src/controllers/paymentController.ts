@@ -802,7 +802,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
                 if (localInvoice && localInvoice.status !== 'PAID') {
                     await prisma.invoice.update({
                         where: { id: localInvoice.id },
-                        data: { status: 'PAID' }
+                        data: { status: 'PAID', paidAt: new Date() }
                     });
                 }
 
@@ -926,7 +926,7 @@ export const getInvoiceStatus = async (req: AuthRequest, res: Response) => {
                         // Mark invoice as PAID
                         await prisma.invoice.update({
                             where: { id },
-                            data: { status: 'PAID' }
+                            data: { status: 'PAID', paidAt: new Date() }
                         });
 
                         return res.json({ status: 'PAID' });

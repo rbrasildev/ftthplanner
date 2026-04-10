@@ -59,6 +59,7 @@ model Company {
   planId                    String?           @map("plan_id")
   subscriptionExpiresAt     DateTime?         @map("subscription_expires_at")
   status                    String            @default("ACTIVE")
+  customLimits              Json?             @map("custom_limits") // Per-company overrides of plan.limits (e.g. {"maxProjects": 5}). Keys present override plan defaults; null = no overrides.
   mercadopagoSubscriptionId String?           @map("mercadopago_subscription_id")
   stripeCustomerId          String?           @map("stripe_customer_id")
   phone                     String?
@@ -129,6 +130,7 @@ model Invoice {
   expiresAt            DateTime  @map("expires_at")
   referenceStart       DateTime? @map("reference_start") // Billing period start (e.g. 2026-03-15)
   referenceEnd         DateTime? @map("reference_end")   // Billing period end (e.g. 2026-04-15)
+  paidAt               DateTime? @map("paid_at")         // Set when status transitions to PAID — authoritative payment timestamp
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
 

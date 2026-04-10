@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon } from 'lucide-react';
 import * as saasService from '../../services/saasService';
+import { isSubscriptionExpired } from '../../utils/subscriptionUtils';
+import { getEffectiveLimits } from '../../utils/limitsUtils';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
 import { ChangePasswordModal } from '../modals/ChangePasswordModal';
@@ -30,6 +32,12 @@ interface Company {
     _count: { projects: number; users: number; ctos?: number; pops?: number };
     createdAt: string;
     subscriptionExpiresAt?: string;
+    customLimits?: {
+        maxProjects?: number;
+        maxUsers?: number;
+        maxCTOs?: number;
+        maxPOPs?: number;
+    } | null;
     phone?: string;
     logoUrl?: string;
     cnpj?: string;
@@ -39,6 +47,7 @@ interface Company {
     zipCode?: string;
     businessEmail?: string;
     website?: string;
+    paymentMethod?: string;
 }
 
 interface Plan {
@@ -89,6 +98,136 @@ interface SaaSConfig {
     socialTwitter?: string | null;
     socialYoutube?: string | null;
 }
+
+// --- Custom Limits Editor (per-company override of plan limits) ---
+// Hidden by default behind a button. When the admin enables it, shows 4
+// inputs (one per limit). Empty input means "fall through to plan default".
+// Saving sends only the keys that have a numeric value; empty keys are
+// dropped, so the company falls back to the plan limit for those.
+const CustomLimitsEditor: React.FC<{
+    company: Company;
+    onSave: (newLimits: Record<string, number> | null) => Promise<void> | void;
+}> = ({ company, onSave }) => {
+    const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const planLimits = company.plan?.limits || {};
+    const initial = company.customLimits || {};
+    const [values, setValues] = useState<Record<string, string>>({
+        maxProjects: initial.maxProjects?.toString() ?? '',
+        maxUsers: initial.maxUsers?.toString() ?? '',
+        maxCTOs: initial.maxCTOs?.toString() ?? '',
+        maxPOPs: initial.maxPOPs?.toString() ?? '',
+    });
+
+    const fields: { key: keyof typeof planLimits; label: string }[] = [
+        { key: 'maxProjects', label: 'Projetos' },
+        { key: 'maxUsers', label: 'Usuários' },
+        { key: 'maxCTOs', label: 'CTOs' },
+        { key: 'maxPOPs', label: 'POPs' },
+    ];
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // Build the override object: only include keys with a real number
+            const overrides: Record<string, number> = {};
+            for (const { key } of fields) {
+                const raw = values[key as string];
+                if (raw !== '' && raw != null) {
+                    const n = Number(raw);
+                    if (Number.isFinite(n) && n >= 0) {
+                        overrides[key as string] = Math.floor(n);
+                    }
+                }
+            }
+            // Empty object → null so the row clears all overrides
+            await onSave(Object.keys(overrides).length > 0 ? overrides : null);
+            setEditing(false);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (!window.confirm('Remover todos os limites personalizados? A empresa voltará a usar os limites do plano.')) return;
+        setSaving(true);
+        try {
+            await onSave(null);
+            setValues({ maxProjects: '', maxUsers: '', maxCTOs: '', maxPOPs: '' });
+            setEditing(false);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!editing) {
+        return (
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/30">
+                <button
+                    onClick={() => setEditing(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 rounded-lg transition-colors"
+                >
+                    <Settings className="w-3.5 h-3.5" />
+                    Editar limites personalizados
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/30 space-y-3">
+            <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200">Limites personalizados</h4>
+                <p className="text-[10px] text-slate-400">Vazio = usar limite do plano</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                {fields.map(({ key, label }) => {
+                    const planValue = (planLimits as any)[key];
+                    const isUnlimited = planValue && planValue >= 999999;
+                    return (
+                        <div key={key as string}>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{label}</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={values[key as string]}
+                                onChange={(e) => setValues(prev => ({ ...prev, [key as string]: e.target.value }))}
+                                placeholder={isUnlimited ? 'Ilimitado' : (planValue?.toString() ?? '—')}
+                                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                    {saving ? 'Salvando...' : 'Salvar'}
+                </button>
+                <button
+                    onClick={() => setEditing(false)}
+                    disabled={saving}
+                    className="px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                    Cancelar
+                </button>
+                {company.customLimits && Object.keys(company.customLimits).length > 0 && (
+                    <button
+                        onClick={handleClearAll}
+                        disabled={saving}
+                        className="px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors disabled:opacity-50"
+                        title="Remover todos os limites personalizados"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 // --- Company Invoices Section (used in company detail panel) ---
 const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdueCount: number, overdueTotal: number, paidCount: number, paidTotal: number, lastPayment: string | null } }> = ({ companyId, financial }) => {
@@ -179,6 +318,13 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
                         const isOverdue = inv.status === 'OVERDUE';
                         const isPaid = inv.status === 'PAID';
                         const isPending = inv.status === 'PENDING';
+                        // Authoritative `paidAt` (set when status flipped to PAID); falls back to
+                        // `updatedAt` for legacy rows that pre-date the column.
+                        const paidAt = isPaid ? new Date(inv.paidAt || inv.updatedAt || inv.createdAt) : null;
+                        // Days late: how many days past the due date the customer is currently
+                        const daysLate = isOverdue && inv.expiresAt
+                            ? Math.max(0, Math.floor((Date.now() - new Date(inv.expiresAt).getTime()) / (1000 * 60 * 60 * 24)))
+                            : 0;
                         return (
                             <div key={inv.id} className={`p-3 rounded-lg border text-xs ${isOverdue ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-[#151820] border-slate-100 dark:border-slate-700/30'}`}>
                                 <div className="flex items-center justify-between mb-1">
@@ -192,15 +338,39 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
                                         R$ {inv.amount?.toFixed(2)}
                                     </span>
                                 </div>
+
+                                {/* Period + payment method */}
+                                <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                    {inv.referenceStart && inv.referenceEnd ? (
+                                        <span>Ref: {new Date(inv.referenceStart).toLocaleDateString('pt-BR')} → {new Date(inv.referenceEnd).toLocaleDateString('pt-BR')}</span>
+                                    ) : (
+                                        <span>Criada: {new Date(inv.createdAt).toLocaleDateString('pt-BR')}</span>
+                                    )}
+                                    <span>•</span>
+                                    <span className="capitalize">{inv.paymentMethod?.replace('_', ' ').toLowerCase()}</span>
+                                </div>
+
+                                {/* Status-specific second line */}
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        {inv.referenceStart && inv.referenceEnd ? (
-                                            <span>Ref: {new Date(inv.referenceStart).toLocaleDateString()} → {new Date(inv.referenceEnd).toLocaleDateString()}</span>
-                                        ) : (
-                                            <span>{new Date(inv.createdAt).toLocaleDateString()}</span>
+                                    <div className="flex items-center gap-2 text-[10px]">
+                                        {isPaid && paidAt && (
+                                            <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                Pago em {paidAt.toLocaleDateString('pt-BR')} {paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         )}
-                                        <span>•</span>
-                                        <span className="capitalize">{inv.paymentMethod?.replace('_', ' ').toLowerCase()}</span>
+                                        {isOverdue && inv.expiresAt && (
+                                            <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
+                                                <AlertTriangle className="w-3 h-3" />
+                                                Vencida em {new Date(inv.expiresAt).toLocaleDateString('pt-BR')} ({daysLate} dia{daysLate === 1 ? '' : 's'} de atraso)
+                                            </span>
+                                        )}
+                                        {isPending && inv.expiresAt && (
+                                            <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
+                                                <Clock className="w-3 h-3" />
+                                                Vence em {new Date(inv.expiresAt).toLocaleDateString('pt-BR')}
+                                            </span>
+                                        )}
                                     </div>
                                     {!isPaid && (
                                         <button
@@ -244,6 +414,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const { toggleTheme } = useTheme();
     const { setLanguage, language } = useLanguage();
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+    const [companyDetailTab, setCompanyDetailTab] = useState<'overview' | 'financial'>('overview');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -805,7 +976,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             {section.items.map(item => (
                                 <button
                                     key={item.id}
-                                    onClick={() => setActiveView(item.id as any)}
+                                    onClick={() => { setSelectedCompany(null); setActiveView(item.id as any); }}
                                     title={isCollapsed ? item.label : ''}
                                     className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-2.5'} ${activeView === item.id
                                         ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm'
@@ -977,7 +1148,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         const ct = getUsagePercentage(c._count.ctos || 0, c.plan?.limits?.maxCTOs);
                                                         return p > 80 || u > 80 || ct > 80;
                                                     }).slice(0, 5).map(c => (
-                                                        <div key={c.id} className="text-[11px] flex justify-between items-center bg-white/50 dark:bg-[#1a1d23]/50 p-2 rounded-lg group cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-amber-200" onClick={() => setSelectedCompany(c)}>
+                                                        <div key={c.id} className="text-[11px] flex justify-between items-center bg-white/50 dark:bg-[#1a1d23]/50 p-2 rounded-lg group cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-amber-200" onClick={() => { setActiveView('companies'); setSelectedCompany(c); setCompanyDetailTab('overview'); }}>
                                                             <span className="font-bold text-slate-700 dark:text-slate-200 truncate pr-2">{c.name}</span>
                                                             <span className="shrink-0 text-[10px] text-amber-600 font-bold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded">{t('saas_near_limit')}</span>
                                                         </div>
@@ -1055,7 +1226,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         </div>
                     )}
 
-                    {activeView === 'companies' && (
+                    {activeView === 'companies' && !selectedCompany && (
                         <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
                             <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700/30 flex flex-col lg:flex-row justify-between items-center gap-4">
                                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
@@ -1128,14 +1299,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </select>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    {company.subscriptionExpiresAt ? (
-                                                        <div className={`text-xs font-bold ${new Date(company.subscriptionExpiresAt) < new Date() ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                            {new Date(company.subscriptionExpiresAt).toLocaleDateString()}
-                                                            {new Date(company.subscriptionExpiresAt) < new Date() && (
-                                                                <span className="block text-[10px] text-red-500 font-semibold">Vencido</span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
+                                                    {company.subscriptionExpiresAt ? (() => {
+                                                        const expired = isSubscriptionExpired(company.subscriptionExpiresAt);
+                                                        return (
+                                                            <div className={`text-xs font-bold ${expired ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                                {new Date(company.subscriptionExpiresAt).toLocaleDateString()}
+                                                                {expired && (
+                                                                    <span className="block text-[10px] text-red-500 font-semibold">Vencido</span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })() : (
                                                         <span className="text-xs text-slate-400">—</span>
                                                     )}
                                                 </td>
@@ -1155,20 +1329,25 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="w-48 space-y-2 mx-auto">
-                                                        <UsageBar
-                                                            label="Projects"
-                                                            current={company._count.projects}
-                                                            max={company.plan?.limits?.maxProjects}
-                                                            color="bg-indigo-500"
-                                                        />
-                                                        <UsageBar
-                                                            label="CTOs"
-                                                            current={company._count.ctos || 0}
-                                                            max={company.plan?.limits?.maxCTOs}
-                                                            color="bg-blue-500"
-                                                        />
-                                                    </div>
+                                                    {(() => {
+                                                        const eff = getEffectiveLimits(company.plan?.limits, company.customLimits);
+                                                        return (
+                                                            <div className="w-48 space-y-2 mx-auto">
+                                                                <UsageBar
+                                                                    label="Projects"
+                                                                    current={company._count.projects}
+                                                                    max={eff.maxProjects}
+                                                                    color="bg-indigo-500"
+                                                                />
+                                                                <UsageBar
+                                                                    label="CTOs"
+                                                                    current={company._count.ctos || 0}
+                                                                    max={eff.maxCTOs}
+                                                                    color="bg-blue-500"
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm ${company.status === 'ACTIVE'
@@ -1199,7 +1378,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => setSelectedCompany(company)}
+                                                            onClick={() => { setSelectedCompany(company); setCompanyDetailTab('overview'); }}
                                                             className="text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
                                                             title="Quick View"
                                                         >
@@ -1722,215 +1901,227 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     )}
 
                     {activeView === 'config' && (
-                        <div className="space-y-6 max-w-4xl">
-                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden p-8">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
-                                        <Shield className="w-6 h-6" />
+                        <div className="space-y-6 max-w-5xl">
+                            {/* Hero header — gradient banner instead of plain card */}
+                            <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                                <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+                                <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+                                <div className="relative flex items-center gap-4">
+                                    <div className="p-3 bg-white/15 backdrop-blur-sm rounded-xl border border-white/20">
+                                        <Shield className="w-7 h-7" />
                                     </div>
-                                    <h2 className="text-xl font-bold">{t('saas_config_title')}</h2>
-                                    <p className="text-sm text-slate-500">{t('saas_config_subtitle')}</p>
+                                    <div>
+                                        <h2 className="text-2xl font-bold">{t('saas_config_title')}</h2>
+                                        <p className="text-sm text-indigo-100/90 mt-0.5">{t('saas_config_subtitle')}</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-8">
-                                {/* Branding Section */}
-                                <div className="space-y-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        {t('saas_config_branding')}
-                                        <div className="flex-1 h-px bg-slate-100 dark:bg-[#22262e]"></div>
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_app_name')}</label>
-                                                <input
-                                                    defaultValue={saasConfig?.appName}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="Ex: FTTH Planner Pro"
-                                                />
+                            {/* Branding Section */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center gap-3">
+                                    <div className="p-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-lg">
+                                        <Palette className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('saas_config_branding')}</h3>
+                                        <p className="text-xs text-slate-500">Identidade visual e nome da plataforma</p>
+                                    </div>
+                                </div>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_app_name')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.appName}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="Ex: FTTH Planner Pro"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_website')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.websiteUrl || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="https://suaplataforma.com"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_logo')}</label>
+                                        <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30">
+                                            <div className="w-20 h-20 bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                                {saasConfig?.appLogoUrl ? (
+                                                    <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                                                ) : (
+                                                    <ImageIcon className="w-8 h-8 text-slate-300" />
+                                                )}
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_website')}</label>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-slate-500 mb-2">PNG, JPEG, SVG ou WebP · máximo 2MB</p>
                                                 <input
-                                                    defaultValue={saasConfig?.websiteUrl || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder="https://suaplataforma.com"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-[#151820] rounded-2xl border border-slate-100 dark:border-slate-700/30">
-                                                <div className="w-20 h-20 bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                                                    {saasConfig?.appLogoUrl ? (
-                                                        <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
-                                                    ) : (
-                                                        <Monitor className="w-8 h-8 text-slate-300" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_config_logo')}</label>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                const maxSize = 2 * 1024 * 1024; // 2MB
-                                                                const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
-                                                                if (file.size > maxSize) {
-                                                                    showAlert('File size exceeds 2MB limit.', 'error');
-                                                                    e.target.value = '';
-                                                                    return;
-                                                                }
-                                                                if (!allowedTypes.includes(file.type)) {
-                                                                    showAlert('Invalid file type. Only PNG, JPEG, SVG and WebP are allowed.', 'error');
-                                                                    e.target.value = '';
-                                                                    return;
-                                                                }
-                                                                const reader = new FileReader();
-                                                                reader.onloadend = async () => {
-                                                                    const base64 = reader.result as string;
-                                                                    try {
-                                                                        const result = await saasService.uploadSaaSLogo(base64);
-                                                                        if (result.success) {
-                                                                            setSaasConfig(prev => prev ? { ...prev, appLogoUrl: result.logoUrl } : null);
-                                                                        }
-                                                                    } catch (err) {
-                                                                        console.error('Failed to upload SaaS logo:', err);
-                                                                        showAlert('Failed to upload logo.', 'error');
-                                                                    }
-                                                                };
-                                                                reader.readAsDataURL(file);
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const maxSize = 2 * 1024 * 1024; // 2MB
+                                                            const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+                                                            if (file.size > maxSize) {
+                                                                showAlert('File size exceeds 2MB limit.', 'error');
+                                                                e.target.value = '';
+                                                                return;
                                                             }
-                                                        }}
-                                                        className="text-[10px] w-full"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Support Section */}
-                                <div className="space-y-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        {t('saas_config_support')}
-                                        <div className="flex-1 h-px bg-slate-100 dark:bg-[#22262e]"></div>
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_email')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.supportEmail || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="suporte@suaplataforma.com"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_phone')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.supportPhone || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="+55 (00) 00000-0000"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_website')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.websiteUrl || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="https://seusite.com.br"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* SEO Section */}
-                                <div className="space-y-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        {t('saas_config_seo')}
-                                        <div className="flex-1 h-px bg-slate-100 dark:bg-[#22262e]"></div>
-                                    </h3>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_desc')}</label>
-                                            <textarea
-                                                defaultValue={saasConfig?.appDescription || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
-                                                placeholder="Planeje redes FTTH com facilidade..."
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_keywords')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.appKeywords || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="ftth, projetos, fibra óptica, telecall"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_image')}</label>
-                                            <input
-                                                defaultValue={saasConfig?.ogImageUrl || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Social Media Section */}
-                                <div className="space-y-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        {t('saas_config_social')}
-                                        <div className="flex-1 h-px bg-slate-100 dark:bg-[#22262e]"></div>
-                                    </h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {['Facebook', 'Twitter', 'Instagram', 'Linkedin', 'Youtube'].map((social) => (
-                                            <div key={social}>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{social} URL</label>
-                                                <input
-                                                    defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
-                                                    onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                    placeholder={`https://${social.toLowerCase()}.com/perfil`}
+                                                            if (!allowedTypes.includes(file.type)) {
+                                                                showAlert('Invalid file type. Only PNG, JPEG, SVG and WebP are allowed.', 'error');
+                                                                e.target.value = '';
+                                                                return;
+                                                            }
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = async () => {
+                                                                const base64 = reader.result as string;
+                                                                try {
+                                                                    const result = await saasService.uploadSaaSLogo(base64);
+                                                                    if (result.success) {
+                                                                        setSaasConfig(prev => prev ? { ...prev, appLogoUrl: result.logoUrl } : null);
+                                                                    }
+                                                                } catch (err) {
+                                                                    console.error('Failed to upload SaaS logo:', err);
+                                                                    showAlert('Failed to upload logo.', 'error');
+                                                                }
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                    className="text-xs w-full"
                                                 />
                                             </div>
-                                        ))}
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Content & Layout Section */}
-                                <div className="space-y-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        {t('saas_config_landing')}
-                                        <div className="flex-1 h-px bg-slate-100 dark:bg-[#22262e]"></div>
-                                    </h3>
+                            {/* Support Section */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center gap-3">
+                                    <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                                        <HeartPulse className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('saas_config_support')}</h3>
+                                        <p className="text-xs text-slate-500">Canais de contato exibidos para os clientes</p>
+                                    </div>
+                                </div>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_email')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.supportEmail || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="suporte@suaplataforma.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_support_phone')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.supportPhone || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="+55 (00) 00000-0000"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_hero')}</label>
+                            {/* SEO Section */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center gap-3">
+                                    <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
+                                        <Search className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('saas_config_seo')}</h3>
+                                        <p className="text-xs text-slate-500">Como sua plataforma aparece no Google e redes sociais</p>
+                                    </div>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_desc')}</label>
+                                        <textarea
+                                            defaultValue={saasConfig?.appDescription || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                            placeholder="Planeje redes FTTH com facilidade..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_keywords')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.appKeywords || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="ftth, projetos, fibra óptica, telecall"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_seo_image')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.ogImageUrl || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Social Media Section */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center gap-3">
+                                    <div className="p-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-lg">
+                                        <Share2 className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('saas_config_social')}</h3>
+                                        <p className="text-xs text-slate-500">Links das redes sociais oficiais</p>
+                                    </div>
+                                </div>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {['Facebook', 'Twitter', 'Instagram', 'Linkedin', 'Youtube'].map((social) => (
+                                        <div key={social}>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{social} URL</label>
                                             <input
-                                                defaultValue={saasConfig?.heroPreviewUrl || ''}
-                                                onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
+                                                defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
+                                                onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
                                                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                                placeholder="/dashboard-preview.png"
+                                                placeholder={`https://${social.toLowerCase()}.com/perfil`}
                                             />
                                         </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Content & Layout Section */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center gap-3">
+                                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
+                                        <Monitor className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('saas_config_landing')}</h3>
+                                        <p className="text-xs text-slate-500">Imagens e conteúdo da landing page pública</p>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_hero')}</label>
+                                        <input
+                                            defaultValue={saasConfig?.heroPreviewUrl || ''}
+                                            onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="/dashboard-preview.png"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -2279,161 +2470,198 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         </div>
                     )
                 }
-                {/* Company Quick View Drawer */}
+                {/* Company Detail Page (full-width inline view) — wrapped in
+                    px-8 to match the rest of the activeView blocks (this sits
+                    outside the main content wrapper because it replaced the
+                    fixed-position drawer that didn't need padding). */}
                 {
-                    selectedCompany && (
-                        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm" onClick={() => setSelectedCompany(null)}>
-                            <div className="w-full max-w-md bg-white dark:bg-[#1a1d23] h-full shadow-2xl p-6 overflow-y-auto border-l border-slate-200 dark:border-slate-700/30" onClick={e => e.stopPropagation()}>
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedCompany.name}</h2>
-                                        <p className="text-sm text-slate-500">ID: {selectedCompany.id}</p>
+                    activeView === 'companies' && selectedCompany && (
+                        <div className="px-8 pb-12 space-y-6">
+                            {/* Page header — back button, identity, status, quick actions */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm p-5">
+                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                                        <button
+                                            onClick={() => setSelectedCompany(null)}
+                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+                                            title="Voltar para a lista"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <div className="w-14 h-14 rounded-xl bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden shrink-0">
+                                            {selectedCompany.logoUrl ? (
+                                                <img src={selectedCompany.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                            ) : (
+                                                <Building2 className="w-6 h-6 text-slate-300" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">{selectedCompany.name}</h2>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${selectedCompany.status === 'ACTIVE'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : selectedCompany.status === 'TRIAL'
+                                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                    {selectedCompany.status}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 truncate">
+                                                {selectedCompany.plan?.name || t('saas_no_plan')} · ID: {selectedCompany.id}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <button onClick={() => setSelectedCompany(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
-                                        <X className="w-6 h-6" />
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {selectedCompany.status === 'ACTIVE' ? (
+                                            <button
+                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${selectedCompany.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' }), 'warning')}
+                                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-lg text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
+                                            >
+                                                <Lock className="w-3.5 h-3.5" />
+                                                {t('saas_suspend')}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${selectedCompany.name}"? O acesso será liberado.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' }), 'info')}
+                                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
+                                            >
+                                                <Shield className="w-3.5 h-3.5" />
+                                                {t('saas_activate')}
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => handleCompanyDelete(selectedCompany)}
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-[#22262e] text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            {t('saas_delete')}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Read-only institutional info — these fields are managed by the customer
+                                    in their own company settings; admin only views them here. */}
+                                <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700/30 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">CNPJ</p>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{selectedCompany.cnpj || '—'}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Telefone</p>
+                                        {selectedCompany.phone ? (() => {
+                                            // WhatsApp expects digits only (with country code). Strip any
+                                            // formatting (spaces, dashes, parens, +) from the stored phone.
+                                            const digits = selectedCompany.phone.replace(/\D/g, '');
+                                            // Pre-filled welcome message sent when admin opens the chat
+                                            // right after a customer signs up. Uses the company name so
+                                            // it's personalized without extra clicks.
+                                            const welcomeMessage = `Olá! 👋 Aqui é da equipe FTTH Planner.\n\nSeja muito bem-vindo(a)! Vimos que a *${selectedCompany.name}* acabou de criar uma conta na nossa plataforma e estamos passando para confirmar seu cadastro e tirar qualquer dúvida que você possa ter sobre o sistema.\n\nQualquer coisa que precisar (configuração inicial, planos, suporte técnico), é só responder por aqui. Estamos à disposição! 🚀`;
+                                            const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(welcomeMessage)}`;
+                                            return (
+                                                <a
+                                                    href={waUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                                    title="Abrir conversa no WhatsApp com mensagem de boas-vindas"
+                                                >
+                                                    <MessageSquare className="w-3.5 h-3.5" />
+                                                    {selectedCompany.phone}
+                                                </a>
+                                            );
+                                        })() : (
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">—</p>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">E-mail</p>
+                                        {selectedCompany.businessEmail ? (
+                                            <a
+                                                href={`mailto:${selectedCompany.businessEmail}`}
+                                                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                title={selectedCompany.businessEmail}
+                                            >
+                                                {selectedCompany.businessEmail}
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">—</p>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Website</p>
+                                        {selectedCompany.website ? (
+                                            <a
+                                                href={selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                title={selectedCompany.website}
+                                            >
+                                                {selectedCompany.website}
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">—</p>
+                                        )}
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-4 min-w-0">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Endereço</p>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                            {[selectedCompany.address, selectedCompany.city, selectedCompany.state, selectedCompany.zipCode].filter(Boolean).join(' · ') || '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Unified card — tabs + body share a single wrapper so the
+                                tab strip visually owns the content area instead of floating
+                                above a stack of separate cards. */}
+                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                {/* Tabs — Visão Geral / Financeiro */}
+                                <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700/30 px-3">
+                                    <button
+                                        onClick={() => setCompanyDetailTab('overview')}
+                                        className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${companyDetailTab === 'overview'
+                                            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                            : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    >
+                                        <LayoutDashboard className="w-4 h-4" />
+                                        Visão Geral
+                                    </button>
+                                    <button
+                                        onClick={() => setCompanyDetailTab('financial')}
+                                        className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${companyDetailTab === 'financial'
+                                            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                            : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    >
+                                        <Wallet className="w-4 h-4" />
+                                        Financeiro
+                                        {((selectedCompany as any)._financial?.overdueCount || 0) > 0 && (
+                                            <span className="ml-1 px-1.5 py-0.5 text-[9px] font-black rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                                {(selectedCompany as any)._financial.overdueCount}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
 
-                                <div className="space-y-6 pb-20">
-                                    {/* Edit Institutional Info */}
-                                    <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-4 shadow-sm space-y-4">
-                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                            <Building2 className="w-4 h-4 text-indigo-500" />
-                                            {t('saas_company_profile')}
+                                {/* Tab content — single column, full width.
+                                    Institutional info is read-only in the header above; the customer
+                                    edits it from their own company settings. */}
+                                <div className="p-6 divide-y divide-slate-100 dark:divide-slate-700/30 [&>*+*]:pt-6 [&>*+*]:mt-6">
+                                {companyDetailTab === 'overview' && (() => {
+                                    const eff = getEffectiveLimits(selectedCompany.plan?.limits, selectedCompany.customLimits);
+                                    const hasOverrides = !!selectedCompany.customLimits && Object.keys(selectedCompany.customLimits).length > 0;
+                                    return (
+                                <>
+                                    {/* Saúde e uso */}
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            {t('saas_health_usage')}
+                                            {hasOverrides && (
+                                                <span className="px-1.5 py-0.5 text-[9px] font-black rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                                    LIMITES PERSONALIZADOS
+                                                </span>
+                                            )}
                                         </h3>
-
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-[#151820] rounded-lg">
-                                                <div className="w-16 h-16 rounded-lg bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden shrink-0">
-                                                    {selectedCompany.logoUrl ? (
-                                                        <img src={selectedCompany.logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                                                    ) : (
-                                                        <Building2 className="w-6 h-6 text-slate-300" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_logo')}</label>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                const maxSize = 2 * 1024 * 1024; // 2MB
-                                                                const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
-                                                                if (file.size > maxSize) {
-                                                                    showAlert('File size exceeds 2MB limit.', 'error');
-                                                                    e.target.value = '';
-                                                                    return;
-                                                                }
-                                                                if (!allowedTypes.includes(file.type)) {
-                                                                    showAlert('Invalid file type. Only PNG, JPEG, SVG and WebP are allowed.', 'error');
-                                                                    e.target.value = '';
-                                                                    return;
-                                                                }
-                                                                const reader = new FileReader();
-                                                                reader.onloadend = async () => {
-                                                                    const base64 = reader.result as string;
-                                                                    await handleCompanyUpdate(selectedCompany.id, { logoUrl: base64 });
-                                                                };
-                                                                reader.readAsDataURL(file);
-                                                            }
-                                                        }}
-                                                        className="text-[10px] w-full"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-3">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_nav_companies')}</label>
-                                                    <input
-                                                        className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                        defaultValue={selectedCompany.name}
-                                                        onBlur={(e) => {
-                                                            if (e.target.value !== selectedCompany.name) {
-                                                                handleCompanyUpdate(selectedCompany.id, { name: e.target.value });
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_cnpj')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                            defaultValue={selectedCompany.cnpj || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { cnpj: e.target.value })}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_phone')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                            defaultValue={selectedCompany.phone || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { phone: e.target.value })}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_business_email')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm font-mono"
-                                                            defaultValue={selectedCompany.businessEmail || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { businessEmail: e.target.value })}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_website')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm font-mono"
-                                                            defaultValue={selectedCompany.website || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { website: e.target.value })}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_address')}</label>
-                                                    <input
-                                                        className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                        defaultValue={selectedCompany.address || ''}
-                                                        onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { address: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_city')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                            defaultValue={selectedCompany.city || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { city: e.target.value })}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_state')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                            defaultValue={selectedCompany.state || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { state: e.target.value })}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('saas_company_zip')}</label>
-                                                        <input
-                                                            className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm"
-                                                            defaultValue={selectedCompany.zipCode || ''}
-                                                            onBlur={(e) => handleCompanyUpdate(selectedCompany.id, { zipCode: e.target.value })}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Summary Card */}
-                                    <div className="bg-slate-50 dark:bg-[#151820] rounded-xl p-4 border border-slate-100 dark:border-slate-700/30">
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{t('saas_health_usage')}</h3>
                                         <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-4">
                                             <div>
                                                 <p className="text-slate-400 text-[10px] uppercase font-bold mb-1">{t('saas_plan_info')}</p>
@@ -2474,110 +2702,253 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <UsageBar
                                                 label="Projects"
                                                 current={selectedCompany._count.projects}
-                                                max={selectedCompany.plan?.limits?.maxProjects}
+                                                max={eff.maxProjects}
                                                 color="bg-indigo-500"
                                             />
                                             <UsageBar
                                                 label="Users"
                                                 current={selectedCompany._count.users}
-                                                max={selectedCompany.plan?.limits?.maxUsers}
+                                                max={eff.maxUsers}
                                                 color="bg-emerald-500"
                                             />
                                             <UsageBar
                                                 label="Infrastructure (CTOs)"
                                                 current={selectedCompany._count.ctos || 0}
-                                                max={selectedCompany.plan?.limits?.maxCTOs}
+                                                max={eff.maxCTOs}
                                                 color="bg-blue-500"
                                             />
                                         </div>
-                                    </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {selectedCompany.status === 'ACTIVE' ? (
-                                            <button
-                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${selectedCompany.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' }), 'warning')}
-                                                className="flex items-center justify-center gap-2 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-xl text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
-                                            >
-                                                <Lock className="w-3.5 h-3.5" />
-                                                {t('saas_suspend')}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${selectedCompany.name}"? O acesso será liberado.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' }), 'info')}
-                                                className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
-                                            >
-                                                <Shield className="w-3.5 h-3.5" />
-                                                {t('saas_activate')}
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => handleCompanyDelete(selectedCompany)}
-                                            className="flex items-center justify-center gap-2 py-2.5 bg-slate-50 dark:bg-[#22262e] text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                            {t('saas_delete')}
-                                        </button>
+                                        {/* Custom limits editor — leave empty to inherit plan default */}
+                                        <CustomLimitsEditor
+                                            company={selectedCompany}
+                                            onSave={(newLimits) => handleCompanyUpdate(selectedCompany.id, { customLimits: newLimits })}
+                                        />
                                     </div>
+                                    </>
+                                    );
+                                })()}
 
-                                    {/* Users List */}
-                                    <div>
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            {t('saas_team_members')} <span className="bg-slate-100 dark:bg-[#22262e] px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {selectedCompany.users?.map(u => (
-                                                <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                            {u.username.slice(0, 2).toUpperCase()}
+                                    {companyDetailTab === 'financial' && (
+                                    <>
+                                    {/* Visão Financeira — payment cycle, LTV, MRR, dates */}
+                                    {(() => {
+                                        const fin = (selectedCompany as any)._financial || {};
+                                        const expiresAt = selectedCompany.subscriptionExpiresAt ? new Date(selectedCompany.subscriptionExpiresAt) : null;
+                                        const createdAt = new Date(selectedCompany.createdAt);
+                                        const now = new Date();
+                                        const startToday = new Date();
+                                        startToday.setUTCHours(0, 0, 0, 0);
+
+                                        // Days until / since expiration (date-only, mirrors backend semantic)
+                                        let daysDiff: number | null = null;
+                                        if (expiresAt) {
+                                            const expDay = new Date(expiresAt);
+                                            expDay.setUTCHours(0, 0, 0, 0);
+                                            daysDiff = Math.round((expDay.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24));
+                                        }
+                                        const isExpired = daysDiff !== null && daysDiff < 0;
+
+                                        // Days as customer
+                                        const daysAsCustomer = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+                                        // Payment day of month (extracted from due date)
+                                        const paymentDay = expiresAt ? expiresAt.getUTCDate() : null;
+
+                                        // Owner last login
+                                        const owner = selectedCompany.users?.find((u: any) => u.role === 'OWNER');
+                                        const lastLogin = (owner as any)?.lastLoginAt ? new Date((owner as any).lastLoginAt) : null;
+
+                                        // Payment method label
+                                        const pmLabel = (selectedCompany.paymentMethod || 'PIX')
+                                            .replace('_', ' ')
+                                            .toLowerCase()
+                                            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+                                        const fmtDate = (d: Date | null) => d ? d.toLocaleDateString('pt-BR') : '—';
+                                        const fmtMoney = (v: number | undefined) => v != null ? `R$ ${v.toFixed(2)}` : '—';
+
+                                        return (
+                                            <div>
+                                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                    <Wallet className="w-3.5 h-3.5" />
+                                                    Visão Financeira
+                                                </h3>
+
+                                                {/* Top KPIs: LTV, MRR, Pagamentos */}
+                                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                                            <TrendingUp className="w-3 h-3" /> LTV
                                                         </div>
-                                                        <div>
-                                                            <p className="font-medium text-sm text-slate-900 dark:text-white">{u.username}</p>
-                                                            <p className="text-xs text-slate-400 uppercase">{u.role}</p>
-                                                        </div>
+                                                        <p className="text-sm font-black text-emerald-600">{fmtMoney(fin.paidTotal)}</p>
                                                     </div>
-                                                    {['OWNER', 'ADMIN'].includes(u.role) && (
-                                                        <button
-                                                            onClick={() => handleEntrarSuporte(u.id)}
-                                                            className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                            title={t('saas_support_mode') || 'Acessar Modo Suporte'}
-                                                        >
-                                                            <UserCheck className="w-4 h-4" />
-                                                        </button>
+                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                                            <Activity className="w-3 h-3" /> MRR
+                                                        </div>
+                                                        <p className="text-sm font-black text-indigo-600">{fmtMoney(selectedCompany.plan?.price)}</p>
+                                                    </div>
+                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                                            <CheckCircle2 className="w-3 h-3" /> Pagos
+                                                        </div>
+                                                        <p className="text-sm font-black text-slate-900 dark:text-white">{fin.paidCount || 0}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Detalhes em duas colunas */}
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                                                    <div>
+                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                                            <Calendar className="w-3 h-3" /> Cliente desde
+                                                        </div>
+                                                        <p className="font-bold text-slate-700 dark:text-slate-200">{fmtDate(createdAt)}</p>
+                                                        <p className="text-[10px] text-slate-400">{daysAsCustomer} dias</p>
+                                                    </div>
+
+                                                    <div>
+                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                                            <CreditCard className="w-3 h-3" /> Forma de pagamento
+                                                        </div>
+                                                        <p className="font-bold text-slate-700 dark:text-slate-200">{pmLabel}</p>
+                                                        {paymentDay && (
+                                                            <p className="text-[10px] text-slate-400">Todo dia {paymentDay}</p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                                            <CalendarClock className="w-3 h-3" /> Próximo vencimento
+                                                        </div>
+                                                        <p className={`font-bold ${isExpired ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
+                                                            {fmtDate(expiresAt)}
+                                                        </p>
+                                                        {daysDiff !== null && (
+                                                            <p className={`text-[10px] font-semibold ${isExpired ? 'text-red-500' : daysDiff <= 5 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                                                {isExpired
+                                                                    ? `${Math.abs(daysDiff)} dia(s) em atraso`
+                                                                    : daysDiff === 0
+                                                                        ? 'Vence hoje'
+                                                                        : `Em ${daysDiff} dia(s)`}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                                            <CheckCircle2 className="w-3 h-3" /> Último pagamento
+                                                        </div>
+                                                        <p className="font-bold text-slate-700 dark:text-slate-200">
+                                                            {fin.lastPayment ? fmtDate(new Date(fin.lastPayment)) : '—'}
+                                                        </p>
+                                                        {fin.lastPayment && (
+                                                            <p className="text-[10px] text-slate-400">
+                                                                {Math.floor((now.getTime() - new Date(fin.lastPayment).getTime()) / (1000 * 60 * 60 * 24))} dia(s) atrás
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    {fin.overdueCount > 0 && (
+                                                        <div className="col-span-2 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                                            <div className="flex items-center gap-1 text-red-500 text-[10px] uppercase font-bold mb-0.5">
+                                                                <AlertTriangle className="w-3 h-3" /> Inadimplência
+                                                            </div>
+                                                            <p className="font-black text-red-600">
+                                                                {fmtMoney(fin.overdueTotal)} <span className="font-normal text-[10px]">em {fin.overdueCount} fatura(s)</span>
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {lastLogin && (
+                                                        <div className="col-span-2">
+                                                            <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                                                <Clock className="w-3 h-3" /> Último acesso (Owner)
+                                                            </div>
+                                                            <p className="font-bold text-slate-700 dark:text-slate-200">
+                                                                {lastLogin.toLocaleDateString('pt-BR')} {lastLogin.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
                                                     )}
                                                 </div>
-                                            ))}
-                                            {(!selectedCompany.users || selectedCompany.users.length === 0) && (
-                                                <p className="text-sm text-slate-400 italic">{t('saas_no_users_found')}</p>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        );
+                                    })()}
+                                    </>
+                                    )}
 
-                                    {/* Projects List */}
-                                    <div>
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            {t('saas_projects')} <span className="bg-slate-100 dark:bg-[#22262e] px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
-                                        </h3>
-                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                            {selectedCompany.projects?.map(p => (
-                                                <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg hover:border-indigo-300 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded">
-                                                            <Network className="w-4 h-4" />
+                                    {companyDetailTab === 'overview' && (
+                                    <>
+                                    {/* Users + Projects side-by-side */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Users List */}
+                                        <div>
+                                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                {t('saas_team_members')} <span className="bg-slate-100 dark:bg-[#22262e] px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.users?.length || 0}</span>
+                                            </h3>
+                                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                                {selectedCompany.users?.map(u => (
+                                                    <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                                {u.username.slice(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="font-medium text-sm text-slate-900 dark:text-white truncate">{u.username}</p>
+                                                                <p className="text-xs text-slate-400 uppercase">{u.role}</p>
+                                                            </div>
                                                         </div>
-                                                        <p className="font-medium text-sm text-slate-900 dark:text-white">{p.name}</p>
+                                                        {['OWNER', 'ADMIN'].includes(u.role) && (
+                                                            <button
+                                                                onClick={() => handleEntrarSuporte(u.id)}
+                                                                className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors shrink-0"
+                                                                title={t('saas_support_mode') || 'Acessar Modo Suporte'}
+                                                            >
+                                                                <UserCheck className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            ))}
-                                            {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
-                                                <p className="text-sm text-slate-400 italic">{t('saas_no_projects_found')}</p>
-                                            )}
+                                                ))}
+                                                {(!selectedCompany.users || selectedCompany.users.length === 0) && (
+                                                    <p className="text-sm text-slate-400 italic">{t('saas_no_users_found')}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Projects List */}
+                                        <div>
+                                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                {t('saas_projects')} <span className="bg-slate-100 dark:bg-[#22262e] px-2 py-0.5 rounded-full text-[10px]">{selectedCompany.projects?.length || 0}</span>
+                                            </h3>
+                                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                                {selectedCompany.projects?.map(p => (
+                                                    <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg hover:border-indigo-300 transition-colors">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded shrink-0">
+                                                                <Network className="w-4 h-4" />
+                                                            </div>
+                                                            <p className="font-medium text-sm text-slate-900 dark:text-white truncate">{p.name}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {(!selectedCompany.projects || selectedCompany.projects.length === 0) && (
+                                                    <p className="text-sm text-slate-400 italic">{t('saas_no_projects_found')}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Financial History */}
-                                    <CompanyInvoicesSection companyId={selectedCompany.id} financial={(selectedCompany as any)._financial} />
+                                    </>
+                                    )}
+
+                                {companyDetailTab === 'financial' && (
+                                <>
+                                    {/* Financial history */}
+                                    <div>
+                                        <CompanyInvoicesSection companyId={selectedCompany.id} financial={(selectedCompany as any)._financial} />
+                                    </div>
+                                </>
+                                )}
                                 </div>
                             </div>
                         </div>

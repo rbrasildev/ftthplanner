@@ -4,6 +4,7 @@ import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
 import { Button } from './components/common/Button';
 import { calculateDistance } from './utils/geometryUtils';
+import { isSubscriptionExpired } from './utils/subscriptionUtils';
 import { CTOEditor } from './components/CTOEditor';
 import { POPEditor } from './components/POPEditor';
 import { ProjectManager } from './components/ProjectManager';
@@ -494,7 +495,7 @@ export default function App() {
             }).catch(err => {
                 console.error(err);
                 if (err.response && err.response.status === 403) {
-                    const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                    const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                     const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
                     
                     if (isExpired) {
@@ -661,7 +662,7 @@ export default function App() {
                             return;
                         }
 
-                        const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                        const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                         const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
 
                         if (isExpired) {
@@ -1729,7 +1730,7 @@ export default function App() {
                 if (!subscriptionExpiresAt || !user) return null;
                 const isFree = userPlan === 'Plano Grátis';
                 if (isFree) return null;
-                const isExpired = new Date() > new Date(subscriptionExpiresAt);
+                const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                 if (!isExpired && companyStatus !== 'SUSPENDED') return null;
                 return (
                     <div className="fixed top-0 left-0 right-0 z-[99998] bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-lg">
@@ -1831,7 +1832,7 @@ export default function App() {
                             setMapBounds([[lat - offset, lng - offset], [lat + offset, lng + offset]]);
                         }}
                         onOpenProject={(id) => {
-                            const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                            const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {
                                 const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
                                 if (isTrial || !userPlanPrice || userPlanPrice === 0) {
@@ -1850,7 +1851,7 @@ export default function App() {
                             setShowProjectManager(false);
                         }}
                         onCreateProject={async (name, center) => {
-                            const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                            const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                             if (companyStatus === 'SUSPENDED' || isExpired) {
                                 const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
                                 if (isTrial || !userPlanPrice || userPlanPrice === 0) {
@@ -2275,7 +2276,7 @@ export default function App() {
                     projects={projects}
                     currentProjectId={currentProjectId!}
                     onSelectProject={(id) => {
-                        const isExpired = subscriptionExpiresAt && new Date() > new Date(subscriptionExpiresAt);
+                        const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                         if (companyStatus === 'SUSPENDED' || isExpired) {
                             const isTrial = userPlanType === 'TRIAL' || userPlan?.toLowerCase().includes('teste') || userPlan?.toLowerCase().includes('trial');
                             if (isTrial || !userPlanPrice || userPlanPrice === 0) {

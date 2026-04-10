@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import logger from '../lib/logger';
+import { isSubscriptionExpired } from '../lib/subscriptionUtils';
+import { getEffectiveLimits } from '../lib/limitsUtils';
 import { traceOpticalPower } from '../services/opticalCalcService';
 
 /**
@@ -139,18 +141,16 @@ export const createProject = async (req: Request, res: Response) => {
         if (company.status === 'SUSPENDED') {
             return res.status(403).json({ error: 'Assinatura suspensa. Por favor, regularize seu plano para criar novos projetos.' });
         }
-        if (company.subscriptionExpiresAt && new Date() > company.subscriptionExpiresAt) {
+        if (isSubscriptionExpired(company.subscriptionExpiresAt)) {
             return res.status(403).json({ error: 'Seu período de teste (trial) expirou. Por favor, assine um plano para continuar.' });
         }
 
-        if (company.plan && company.plan.limits) {
-            const limits = company.plan.limits as any;
-            if (limits.maxProjects && company._count.projects >= limits.maxProjects) {
-                return res.status(403).json({
-                    error: 'Limite de projetos atingido para seu plano',
-                    details: `Máximo de projetos: ${limits.maxProjects}`
-                });
-            }
+        const limits = getEffectiveLimits(company.plan?.limits, company.customLimits);
+        if (limits.maxProjects && company._count.projects >= limits.maxProjects) {
+            return res.status(403).json({
+                error: 'Limite de projetos atingido para seu plano',
+                details: `Máximo de projetos: ${limits.maxProjects}`
+            });
         }
 
         const project = await prisma.project.create({
@@ -207,7 +207,7 @@ export const getProject = async (req: Request, res: Response) => {
             if (project.company.status === 'SUSPENDED') {
                 return res.status(403).json({ error: 'Assinatura suspensa. Por favor, regularize seu plano para acessar este projeto.' });
             }
-            if (project.company.subscriptionExpiresAt && new Date() > project.company.subscriptionExpiresAt) {
+            if (isSubscriptionExpired(project.company.subscriptionExpiresAt)) {
                 return res.status(403).json({ error: 'Seu período de teste (trial) expirou. Por favor, assine um plano para acessar seus projetos.' });
             }
         }
@@ -553,13 +553,13 @@ export const syncProject = async (req: Request, res: Response) => {
             if (company.status === 'SUSPENDED') {
                 return res.status(403).json({ error: 'Assinatura suspensa. Sincronização bloqueada.' });
             }
-            if (company.subscriptionExpiresAt && new Date() > company.subscriptionExpiresAt) {
+            if (isSubscriptionExpired(company.subscriptionExpiresAt)) {
                 return res.status(403).json({ error: 'Trial expirado. Sincronização bloqueada.' });
             }
         }
 
-        if (company?.plan?.limits) {
-            const limits = company.plan.limits as any;
+        if (company) {
+            const limits = getEffectiveLimits(company.plan?.limits, company.customLimits);
 
             // Calculate DELTA (Net New Items) logic for Soft Lock
             // a) New Items in this Payload
@@ -579,7 +579,7 @@ export const syncProject = async (req: Request, res: Response) => {
             const totalGlobalPOPs = await prisma.pop.count({ where: { companyId: user.companyId, deletedAt: null } });
 
             // e) Check Limit: If Delta > 0 AND (Global + Delta) > Limit
-            // Note: 'totalGlobal' includes 'currentProject'. 
+            // Note: 'totalGlobal' includes 'currentProject'.
             // So FutureTotal = (Global - CurrentProject) + Payload
             //                = Global + (Payload - CurrentProject)
             //                = Global + Delta.

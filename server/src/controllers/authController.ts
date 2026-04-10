@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { cloneTemplatesToCompany } from '../services/templateService';
 import { sendEmail } from '../services/emailService';
 import logger from '../lib/logger';
+import { isSubscriptionExpired } from '../lib/subscriptionUtils';
 import { resolvePermissions } from '../middleware/checkPermission';
 
 
@@ -200,7 +201,7 @@ export const login = async (req: Request, res: Response) => {
             }
 
             if (user.company) {
-                if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
+                if (isSubscriptionExpired(user.company.subscriptionExpiresAt)) {
                     logger.info(`Subscription/Trial for ${user.company.name} expired. Blocking access.`);
                 }
             }
@@ -277,7 +278,7 @@ export const getMe = async (req: Request, res: Response) => {
 
         // --- REPEAT EXPIRATION CHECK LOGIC ---
         if (user.company) {
-            if (user.company.subscriptionExpiresAt && new Date() > user.company.subscriptionExpiresAt) {
+            if (isSubscriptionExpired(user.company.subscriptionExpiresAt)) {
                 logger.info(`[getMe] Subscription/Trial for ${user.company.name} expired. Blocking access.`);
                 // Downgrade removed for consistency
             }

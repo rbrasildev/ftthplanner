@@ -5,6 +5,7 @@ import logger from '../lib/logger';
 import bcrypt from 'bcryptjs';
 import { ROLE_DEFAULT_PERMISSIONS, ALL_PERMISSIONS, Permission } from '../shared/permissions';
 import { resolvePermissions } from '../middleware/checkPermission';
+import { getEffectiveLimits } from '../lib/limitsUtils';
 
 // Get Users (in same company)
 export const getUsers = async (req: AuthRequest, res: Response) => {
@@ -82,14 +83,12 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 
         if (!company) return res.status(404).json({ error: 'Company not found' });
 
-        if (company.plan?.limits) {
-            const limits = company.plan.limits as any;
-            if (limits.maxUsers && company._count.users >= limits.maxUsers) {
-                return res.status(403).json({
-                    error: 'User limit reached for your plan',
-                    details: `Max users: ${limits.maxUsers}`
-                });
-            }
+        const limits = getEffectiveLimits(company.plan?.limits, company.customLimits);
+        if (limits.maxUsers && company._count.users >= limits.maxUsers) {
+            return res.status(403).json({
+                error: 'User limit reached for your plan',
+                details: `Max users: ${limits.maxUsers}`
+            });
         }
 
         // Validate and set permissions
