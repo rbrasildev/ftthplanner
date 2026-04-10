@@ -82,7 +82,10 @@
       "Bash(node -e \"const l = require\\('lucide-react'\\); const icons = ['Cylinder','Pipeline','Tube','Cable','GitBranchPlus','Route','Workflow']; icons.forEach\\(i => console.log\\(i, !!l[i]\\)\\)\")",
       "Bash(ls -la /d/ftthplanner/*.ts /d/ftthplanner/*.tsx)",
       "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Cylinder:', !!l.Cylinder, 'CircleDot:', !!l.CircleDot, 'Disc:', !!l.Disc, 'Square:', !!l.Square, 'SquareDot:', !!l.SquareDot\\)\")",
-      "Bash(grep -l \"duct\\\\|manhole\" /d/ftthplanner/server/src/index.ts /d/ftthplanner/server/src/services/*.ts /d/ftthplanner/server/src/lib/*.ts)"
+      "Bash(grep -l \"duct\\\\|manhole\" /d/ftthplanner/server/src/index.ts /d/ftthplanner/server/src/services/*.ts /d/ftthplanner/server/src/lib/*.ts)",
+      "Bash(ls -la /d/ftthplanner/*.tsx /d/ftthplanner/*.ts)",
+      "Bash(grep -n \"PoleDetailsPanel\\\\|pole properties\" /d/ftthplanner/components/*.tsx)",
+      "Bash(find /d/ftthplanner -name \"*.tsx\" -type f -exec grep -l \"PoleDetailsPanel\" {} \\\\;)"
     ]
   }
 }

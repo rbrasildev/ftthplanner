@@ -89,7 +89,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                             mode="add_pole"
                             icon={UtilityPole}
                             label={t('sidebar_pole') || "Poste"}
-                        />
+                                                   />
                     )}
                 </div>
             )}

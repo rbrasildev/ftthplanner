@@ -299,12 +299,34 @@ export interface NetworkState {
   fusionTypes?: FusionType[]; // Modules de FusÃ£o
 }
 
+export interface InheritedElementsConfig {
+  backbone: boolean;
+  poles: boolean;
+  cables: boolean;
+  ctos: boolean;
+  ceos: boolean;
+  pops: boolean;
+  customers: boolean;
+}
+
+export const DEFAULT_INHERITED_ELEMENTS: InheritedElementsConfig = {
+  backbone: true,
+  poles: true,
+  cables: true,
+  ctos: true,
+  ceos: true,
+  pops: true,
+  customers: false,
+};
+
 export interface ProjectSettings {
-  snapDistance: number; // Distance in meters to auto-connect cables
+  snapDistance: number;
+  coverageRadius: number; // Raio de cobertura em metros
 }
 
 export interface SystemSettings {
   snapDistance: number;
+  coverageRadius: number;
 }
 
 export interface Project {
@@ -318,6 +340,20 @@ export interface Project {
     zoom: number;
   };
   settings?: ProjectSettings;
+  parentProjectId?: string | null;
+  parentProject?: { id: string; name: string } | null;
+  inheritedElements?: InheritedElementsConfig;
+  parentNetwork?: (NetworkState & { parentProjectName?: string }) | null;
+  childCables?: CableData[];
+  counts?: {
+    ctos: number;
+    pops: number;
+    cables: number;
+    poles: number;
+    deployedCtos: number;
+    deployedCables: number;
+    childProjects: number;
+  };
 }
 
 // Fiber color code standard (Brazilian/International standard variation)

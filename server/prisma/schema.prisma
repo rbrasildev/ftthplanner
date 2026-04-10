@@ -161,7 +161,14 @@ model Project {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   deletedAt DateTime?  @map("deleted_at")
 
+  // Parent Project relationship
+  parentProjectId    String?   @map("parent_project_id")
+  parentProject      Project?  @relation("ProjectParentChild", fields: [parentProjectId], references: [id])
+  childProjects      Project[] @relation("ProjectParentChild")
+  inheritedElements  Json?     @default("{\"backbone\": true, \"poles\": true, \"cables\": true, \"ctos\": true, \"ceos\": true, \"pops\": true, \"customers\": false}") @map("inherited_elements")
+
   @@index([companyId])
+  @@index([parentProjectId])
   @@map("projects")
 }
 

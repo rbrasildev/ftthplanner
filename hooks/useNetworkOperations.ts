@@ -36,6 +36,7 @@ interface UseNetworkOperationsProps {
     skipNextAutoSyncRef: React.MutableRefObject<boolean>;
     systemSettings: { snapDistance: number };
     migrateNodeData: (node: CTOData | POPData, oldCableId: string, newCableId: string) => CTOData | POPData;
+    parentNetwork?: NetworkState | null;
 }
 
 export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
@@ -62,7 +63,8 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
         syncTimeoutRef,
         skipNextAutoSyncRef,
         systemSettings,
-        migrateNodeData
+        migrateNodeData,
+        parentNetwork
     } = props;
 
     // --- NODE OPS ---
@@ -263,6 +265,15 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
 
     const finalizeCableCreation = useCallback((path: Coordinates[], fromId: string | null = null, toId: string | null = null) => {
         if (path.length < 2) return;
+
+        // Detect which IDs belong to the parent project (don't modify their inputCableIds)
+        const parentNodeIds = new Set<string>();
+        if (parentNetwork) {
+            parentNetwork.ctos.forEach(c => parentNodeIds.add(c.id));
+            parentNetwork.pops.forEach(p => parentNodeIds.add(p.id));
+            (parentNetwork.poles || []).forEach(p => parentNodeIds.add(p.id));
+        }
+
         updateCurrentNetwork(prev => {
             const newCable: CableData = {
                 id: `cable-${Date.now()}`,
@@ -273,12 +284,13 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 toNodeId: toId,
                 coordinates: path
             };
+            // Only update inputCableIds for nodes in the CURRENT project, not parent
             const updatedCTOs = prev.ctos.map(cto => {
-                if (cto.id === toId || cto.id === fromId) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
+                if ((cto.id === toId || cto.id === fromId) && !parentNodeIds.has(cto.id)) return { ...cto, inputCableIds: [...(cto.inputCableIds || []), newCable.id] };
                 return cto;
             });
             const updatedPOPs = prev.pops.map(pop => {
-                if (pop.id === toId || pop.id === fromId) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
+                if ((pop.id === toId || pop.id === fromId) && !parentNodeIds.has(pop.id)) return { ...pop, inputCableIds: [...(pop.inputCableIds || []), newCable.id] };
                 return pop;
             });
             return { ...prev, cables: [...prev.cables, newCable], ctos: updatedCTOs, pops: updatedPOPs };
@@ -287,12 +299,25 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
         setDrawingPath([]);
         setDrawingFromId(null);
         setToolMode('view');
-    }, [updateCurrentNetwork, t, setDrawingPath, setDrawingFromId, setToolMode]);
+    }, [updateCurrentNetwork, t, setDrawingPath, setDrawingFromId, setToolMode, parentNetwork]);
 
     const handleConnectCable = useCallback((cableId: string, nodeId: string, pointIndex: number) => {
+        // Detect parent node IDs
+        const parentNodeIds = new Set<string>();
+        if (parentNetwork) {
+            parentNetwork.ctos.forEach(c => parentNodeIds.add(c.id));
+            parentNetwork.pops.forEach(p => parentNodeIds.add(p.id));
+            (parentNetwork.poles || []).forEach(p => parentNodeIds.add(p.id));
+        }
+        const isParentNode = parentNodeIds.has(nodeId);
+
         updateCurrentNetwork(prev => {
             const cable = prev.cables.find(c => c.id === cableId);
-            const node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId) || (prev.poles || []).find(p => p.id === nodeId);
+            // Look in current project first, then parent network
+            let node = prev.ctos.find(c => c.id === nodeId) || prev.pops.find(p => p.id === nodeId) || (prev.poles || []).find(p => p.id === nodeId);
+            if (!node && parentNetwork) {
+                node = parentNetwork.ctos.find(c => c.id === nodeId) || parentNetwork.pops.find(p => p.id === nodeId) || (parentNetwork.poles || []).find(p => p.id === nodeId);
+            }
             if (!cable || !node) return prev;
 
             const oldNodeId = pointIndex === 0 ? cable.fromNodeId : cable.toNodeId;
@@ -304,13 +329,14 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 updatedPOPs = updatedPOPs.map(p => p.id === oldNodeId ? { ...p, inputCableIds: (p.inputCableIds || []).filter(id => id !== cableId) } : p);
             }
 
-            if ('inputCableIds' in node && (node.inputCableIds || []).includes(cableId)) {
+            // Skip duplicate check for parent nodes (their inputCableIds are read-only)
+            if (!isParentNode && 'inputCableIds' in node && (node.inputCableIds || []).includes(cableId)) {
                 showToast(t('error_cto_duplicate_cable'), 'info');
                 return prev;
             }
 
             if (pointIndex === 0 || pointIndex === cable.coordinates.length - 1) {
-                const isPole = (prev.poles || []).some(p => p.id === nodeId);
+                const isPole = (prev.poles || []).some(p => p.id === nodeId) || (isParentNode && parentNetwork && (parentNetwork.poles || []).some(p => p.id === nodeId));
                 const newCoords = [...cable.coordinates];
                 newCoords[pointIndex] = node.coordinates;
                 showToast(t(pointIndex === 0 ? 'toast_cable_connected_start' : 'toast_cable_connected_end', { name: node.name }));
@@ -319,19 +345,21 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                     return {
                         ...prev,
                         cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c),
-                        poles: (prev.poles || []).map(p => p.id === nodeId ? { ...p, linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId])) } : p)
+                        // Only update local poles' linkedCableIds
+                        poles: isParentNode ? prev.poles : (prev.poles || []).map(p => p.id === nodeId ? { ...p, linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId])) } : p)
                     };
                 }
 
                 return {
                     ...prev,
                     cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords, [pointIndex === 0 ? 'fromNodeId' : 'toNodeId']: node.id } : c),
-                    ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
-                    pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
+                    // Only update local nodes' inputCableIds (parent nodes won't match in prev.ctos/pops anyway, but be explicit)
+                    ctos: isParentNode ? updatedCTOs : updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: (c.inputCableIds || []).includes(cableId) ? c.inputCableIds : [...(c.inputCableIds || []), cableId] } : c),
+                    pops: isParentNode ? updatedPOPs : updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: (p.inputCableIds || []).includes(cableId) ? p.inputCableIds : [...(p.inputCableIds || []), cableId] } : p)
                 };
             }
 
-            const isPole = (prev.poles || []).some(p => p.id === nodeId);
+            const isPole = (prev.poles || []).some(p => p.id === nodeId) || (isParentNode && parentNetwork && (parentNetwork.poles || []).some(p => p.id === nodeId));
             if (isPole) {
                 const newCoords = [...cable.coordinates];
                 newCoords[pointIndex] = node.coordinates;
@@ -339,7 +367,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 return {
                     ...prev,
                     cables: prev.cables.map(c => c.id === cableId ? { ...c, coordinates: newCoords } : c),
-                    poles: (prev.poles || []).map(p => p.id === nodeId ? { ...p, linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId])) } : p)
+                    poles: isParentNode ? prev.poles : (prev.poles || []).map(p => p.id === nodeId ? { ...p, linkedCableIds: Array.from(new Set([...(p.linkedCableIds || []), cableId])) } : p)
                 };
             }
 
@@ -363,11 +391,11 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
             return {
                 ...prev,
                 cables: [...prev.cables.map(c => c.id === cableId ? cable1 : c), cable2],
-                ctos: updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: [...(c.inputCableIds || []), cableId] } : c),
-                pops: updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: [...(p.inputCableIds || []), cableId] } : p)
+                ctos: isParentNode ? updatedCTOs : updatedCTOs.map(c => c.id === nodeId ? { ...c, inputCableIds: [...(c.inputCableIds || []), cableId] } : c),
+                pops: isParentNode ? updatedPOPs : updatedPOPs.map(p => p.id === nodeId ? { ...p, inputCableIds: [...(p.inputCableIds || []), cableId] } : p)
             };
         });
-    }, [updateCurrentNetwork, t, migrateNodeData, setMultiConnectionIds]);
+    }, [updateCurrentNetwork, t, migrateNodeData, setMultiConnectionIds, parentNetwork]);
 
     const handleUpdateCableGeometry = useCallback((id: string, coords: Coordinates[]) => {
         updateCurrentNetwork(prev => {

@@ -27,12 +27,16 @@ export const getProjects = async (req: Request, res: Response) => {
                 centerLng: true,
                 zoom: true,
                 settings: true,
+                parentProjectId: true,
+                inheritedElements: true,
+                parentProject: { select: { id: true, name: true } },
                 _count: {
                     select: {
                         ctos: { where: { deletedAt: null } },
                         cables: { where: { deletedAt: null } },
                         pops: { where: { deletedAt: null } },
-                        poles: { where: { deletedAt: null } }
+                        poles: { where: { deletedAt: null } },
+                        childProjects: { where: { deletedAt: null } }
                     }
                 }
             }
@@ -75,13 +79,17 @@ export const getProjects = async (req: Request, res: Response) => {
                 cables: p._count.cables,
                 poles: p._count.poles,
                 deployedCtos: deployedMap[p.id]?.ctos || 0,
-                deployedCables: deployedMap[p.id]?.cables || 0
+                deployedCables: deployedMap[p.id]?.cables || 0,
+                childProjects: p._count.childProjects || 0
             },
             mapState: {
                 center: { lat: p.centerLat, lng: p.centerLng },
                 zoom: p.zoom
             },
-            settings: p.settings
+            settings: p.settings,
+            parentProjectId: p.parentProjectId || null,
+            parentProject: p.parentProject || null,
+            inheritedElements: p.inheritedElements
         })));
     } catch (error: any) {
         logger.error(`Get Projects Error: ${error.message}`);
@@ -161,7 +169,8 @@ export const getProject = async (req: Request, res: Response) => {
                 pops: { where: { deletedAt: null } },
                 cables: { where: { deletedAt: null } },
                 poles: { where: { deletedAt: null } },
-                company: true
+                company: true,
+                parentProject: { select: { id: true, name: true } }
             }
         });
 
@@ -250,6 +259,99 @@ export const getProject = async (req: Request, res: Response) => {
             }))
         };
 
+        // If this project has a parent, fetch parent network inline (single request)
+        let parentNetworkData: any = null;
+        const parentId = (project as any).parentProjectId;
+        if (parentId) {
+            const inheritConfig = ((project as any).inheritedElements as any) || {};
+            const parent = await prisma.project.findFirst({
+                where: { id: parentId, companyId: user.companyId, deletedAt: null },
+                include: {
+                    ctos: inheritConfig.ctos !== false || inheritConfig.ceos !== false ? { where: { deletedAt: null } } : false,
+                    pops: inheritConfig.pops !== false ? { where: { deletedAt: null } } : false,
+                    cables: inheritConfig.cables !== false || inheritConfig.backbone !== false ? { where: { deletedAt: null } } : false,
+                    poles: inheritConfig.poles !== false ? { where: { deletedAt: null } } : false,
+                }
+            });
+            if (parent) {
+                parentNetworkData = {
+                    ctos: parent.ctos ? (parent.ctos as any[]).filter((c: any) => {
+                        if (c.type === 'CEO') return inheritConfig.ceos !== false;
+                        return inheritConfig.ctos !== false;
+                    }).map((c: any) => ({
+                        id: c.id, name: c.name, status: c.status,
+                        coordinates: { lat: c.lat, lng: c.lng },
+                        splitters: c.splitters || [], fusions: c.fusions || [],
+                        connections: c.connections || [], inputCableIds: c.inputCableIds,
+                        layout: c.layout || {}, clientCount: c.clientCount,
+                        catalogId: c.catalogId || null, type: c.type,
+                        color: c.color, reserveLoopLength: c.reserveLoopLength,
+                        poleId: c.poleId || null
+                    })) : [],
+                    pops: parent.pops ? (parent.pops as any[]).map((p: any) => ({
+                        id: p.id, name: p.name, status: p.status,
+                        coordinates: { lat: p.lat, lng: p.lng },
+                        olts: p.olts || [], dios: p.dios || [],
+                        fusions: p.fusions || [], connections: p.connections || [],
+                        inputCableIds: p.inputCableIds, layout: p.layout || {},
+                        color: p.color, size: p.size, poleId: p.poleId || null
+                    })) : [],
+                    cables: parent.cables ? (parent.cables as any[]).map((c: any) => ({
+                        id: c.id, name: c.name, status: c.status,
+                        fiberCount: c.fiberCount, looseTubeCount: c.looseTubeCount,
+                        color: c.color, colorStandard: c.colorStandard,
+                        coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
+                        toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
+                        reserves: c.reserves || [], width: c.width || null
+                    })) : [],
+                    poles: parent.poles ? (parent.poles as any[]).map((p: any) => ({
+                        id: p.id, name: p.name, status: p.status,
+                        coordinates: { lat: p.lat, lng: p.lng },
+                        catalogId: p.catalogId || null, type: p.type,
+                        height: p.height, linkedCableIds: p.linkedCableIds
+                    })) : [],
+                    parentProjectName: parent.name
+                };
+            }
+        }
+
+        // Also fetch child cables inline
+        let childCablesData: any[] = [];
+        const childProjects = await prisma.project.findMany({
+            where: { parentProjectId: id, companyId: user.companyId, deletedAt: null },
+            select: { id: true, name: true }
+        });
+        if (childProjects.length > 0) {
+            const allNodeIds = [
+                ...project.ctos.map((c: any) => c.id),
+                ...project.pops.map((p: any) => p.id),
+                ...project.poles.map((p: any) => p.id),
+            ];
+            if (allNodeIds.length > 0) {
+                const childProjectIds = childProjects.map(p => p.id);
+                const childProjectNameMap = new Map(childProjects.map(p => [p.id, p.name]));
+                const cables = await prisma.cable.findMany({
+                    where: {
+                        projectId: { in: childProjectIds },
+                        deletedAt: null,
+                        OR: [
+                            { fromNodeId: { in: allNodeIds } },
+                            { toNodeId: { in: allNodeIds } },
+                        ]
+                    }
+                });
+                childCablesData = cables.map((c: any) => ({
+                    id: c.id, name: c.name, status: c.status,
+                    fiberCount: c.fiberCount, looseTubeCount: c.looseTubeCount,
+                    color: c.color, colorStandard: c.colorStandard,
+                    coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
+                    toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
+                    reserves: c.reserves || [], width: c.width || null,
+                    projectName: childProjectNameMap.get(c.projectId) || 'Projeto Vinculado',
+                }));
+            }
+        }
+
         res.json({
             id: project.id,
             name: project.name,
@@ -257,7 +359,12 @@ export const getProject = async (req: Request, res: Response) => {
             updatedAt: project.updatedAt.getTime(),
             network,
             mapState: { center: { lat: project.centerLat, lng: project.centerLng }, zoom: project.zoom },
-            settings: project.settings
+            settings: project.settings,
+            parentProjectId: (project as any).parentProjectId || null,
+            parentProject: (project as any).parentProject || null,
+            inheritedElements: (project as any).inheritedElements,
+            parentNetwork: parentNetworkData,
+            childCables: childCablesData
         });
 
     } catch (error: any) {
@@ -308,6 +415,16 @@ export const deleteProject = async (req: Request, res: Response) => {
         // Verify ownership/tenancy first to avoid unauthorized delete of resources
         const project = await prisma.project.findFirst({ where: { id, companyId: user.companyId } });
         if (!project) return res.status(404).json({ error: 'Project not found' });
+
+        // Prevent deleting a project that has children
+        const childCount = await prisma.project.count({
+            where: { parentProjectId: id, deletedAt: null }
+        });
+        if (childCount > 0) {
+            return res.status(400).json({
+                error: `Este projeto possui ${childCount} projeto(s) vinculado(s). Desvincule-os antes de excluir.`
+            });
+        }
 
         // Explicitly delete related resources first to ensure no orphans
         // This is a safety measure in case DB cascade is not configured
@@ -1184,6 +1301,260 @@ export const getCTOPower = async (req: Request, res: Response) => {
     } catch (error: any) {
         logger.error(`[getCTOPower] Error: ${error.message}`);
         res.status(500).json({ error: 'Failed to calculate power' });
+    }
+};
+
+// ====== PARENT PROJECT ENDPOINTS ======
+
+export const setParentProject = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id } = req.params;
+    const { parentProjectId, inheritedElements } = req.body;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        // Verify both projects exist and belong to the same company
+        const [project, parentProject] = await Promise.all([
+            prisma.project.findFirst({ where: { id, companyId: user.companyId, deletedAt: null } }),
+            parentProjectId ? prisma.project.findFirst({ where: { id: parentProjectId, companyId: user.companyId, deletedAt: null } }) : null
+        ]);
+
+        if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+
+        if (parentProjectId) {
+            if (!parentProject) return res.status(404).json({ error: 'Projeto base não encontrado' });
+
+            // Prevent self-reference
+            if (parentProjectId === id) {
+                return res.status(400).json({ error: 'Um projeto não pode ser base de si mesmo' });
+            }
+
+            // Prevent parent project from being a child (no chains)
+            if (parentProject.parentProjectId) {
+                return res.status(400).json({ error: 'O projeto selecionado já está vinculado a outro projeto base. Não é permitido encadear.' });
+            }
+
+            // Prevent making a parent into a child (if this project already has children)
+            const childCount = await prisma.project.count({
+                where: { parentProjectId: id, deletedAt: null }
+            });
+            if (childCount > 0) {
+                return res.status(400).json({ error: 'Este projeto já possui projetos vinculados. Um projeto base não pode ser vinculado a outro.' });
+            }
+        }
+
+        const updated = await prisma.project.update({
+            where: { id },
+            data: {
+                parentProjectId: parentProjectId || null,
+                inheritedElements: inheritedElements || undefined
+            }
+        });
+
+        res.json({
+            parentProjectId: updated.parentProjectId,
+            inheritedElements: updated.inheritedElements
+        });
+    } catch (error: any) {
+        logger.error(`Set Parent Project Error: ${error.message}`);
+        res.status(500).json({ error: 'Falha ao definir projeto base' });
+    }
+};
+
+export const getParentProjectNetwork = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id } = req.params;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        // Get this project to find its parent
+        const project = await prisma.project.findFirst({
+            where: { id, companyId: user.companyId, deletedAt: null },
+            select: { parentProjectId: true, inheritedElements: true }
+        });
+
+        if (!project || !project.parentProjectId) {
+            return res.json({ network: null, parentProjectId: null, inheritedElements: null });
+        }
+
+        const inheritConfig = (project.inheritedElements as any) || {};
+
+        // Fetch the parent project's network
+        const parent = await prisma.project.findFirst({
+            where: { id: project.parentProjectId, companyId: user.companyId, deletedAt: null },
+            include: {
+                ctos: inheritConfig.ctos !== false || inheritConfig.ceos !== false ? { where: { deletedAt: null } } : false,
+                pops: inheritConfig.pops !== false ? { where: { deletedAt: null } } : false,
+                cables: inheritConfig.cables !== false || inheritConfig.backbone !== false ? { where: { deletedAt: null } } : false,
+                poles: inheritConfig.poles !== false ? { where: { deletedAt: null } } : false,
+            }
+        });
+
+        if (!parent) {
+            return res.json({ network: null, parentProjectId: project.parentProjectId, inheritedElements: project.inheritedElements });
+        }
+
+        // Build filtered network based on inheritance config
+        const network: any = { ctos: [], pops: [], cables: [], poles: [] };
+
+        if (parent.ctos) {
+            network.ctos = (parent.ctos as any[])
+                .filter((c: any) => {
+                    if (c.type === 'CEO') return inheritConfig.ceos !== false;
+                    return inheritConfig.ctos !== false;
+                })
+                .map((c: any) => ({
+                    id: c.id, name: c.name, status: c.status,
+                    coordinates: { lat: c.lat, lng: c.lng },
+                    splitters: c.splitters || [], fusions: c.fusions || [],
+                    connections: c.connections || [], inputCableIds: c.inputCableIds,
+                    layout: c.layout || {}, clientCount: c.clientCount,
+                    catalogId: c.catalogId || null, type: c.type,
+                    color: c.color, reserveLoopLength: c.reserveLoopLength,
+                    poleId: c.poleId || null
+                }));
+        }
+
+        if (parent.pops) {
+            network.pops = (parent.pops as any[]).map((p: any) => ({
+                id: p.id, name: p.name, status: p.status,
+                coordinates: { lat: p.lat, lng: p.lng },
+                olts: p.olts || [], dios: p.dios || [],
+                fusions: p.fusions || [], connections: p.connections || [],
+                inputCableIds: p.inputCableIds, layout: p.layout || {},
+                color: p.color, size: p.size, poleId: p.poleId || null
+            }));
+        }
+
+        if (parent.cables) {
+            network.cables = (parent.cables as any[]).map((c: any) => ({
+                id: c.id, name: c.name, status: c.status,
+                fiberCount: c.fiberCount, looseTubeCount: c.looseTubeCount,
+                color: c.color, colorStandard: c.colorStandard,
+                coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
+                toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
+                reserves: c.reserves || [], width: c.width || null
+            }));
+        }
+
+        if (parent.poles) {
+            network.poles = (parent.poles as any[]).map((p: any) => ({
+                id: p.id, name: p.name, status: p.status,
+                coordinates: { lat: p.lat, lng: p.lng },
+                catalogId: p.catalogId || null, type: p.type,
+                height: p.height, linkedCableIds: p.linkedCableIds,
+                utilityCode: p.utilityCode || null, shape: p.shape || null,
+                strength: p.strength || null, situation: p.situation || null,
+                roadSide: p.roadSide || null, addressReference: p.addressReference || null,
+                observations: p.observations || null,
+                approvalStatus: p.approvalStatus || 'PENDING',
+                hasPhoto: p.hasPhoto || false,
+                lastInspectionDate: p.lastInspectionDate || null
+            }));
+        }
+
+        res.json({
+            network,
+            parentProjectId: project.parentProjectId,
+            parentProjectName: parent.name,
+            inheritedElements: project.inheritedElements
+        });
+    } catch (error: any) {
+        logger.error(`Get Parent Project Network Error: ${error.message}`);
+        res.status(500).json({ error: 'Falha ao buscar rede do projeto base' });
+    }
+};
+
+export const getChildProjects = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id } = req.params;
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        const children = await prisma.project.findMany({
+            where: { parentProjectId: id, companyId: user.companyId, deletedAt: null },
+            select: { id: true, name: true, updatedAt: true }
+        });
+        res.json(children);
+    } catch (error: any) {
+        logger.error(`Get Child Projects Error: ${error.message}`);
+        res.status(500).json({ error: 'Falha ao buscar projetos vinculados' });
+    }
+};
+
+export const getChildCables = async (req: Request, res: Response) => {
+    const user = (req as AuthRequest).user;
+    const { id } = req.params; // parent project id
+
+    if (!user || !user.companyId) return res.status(401).send();
+
+    try {
+        // Get all node IDs from this (parent) project
+        const [ctos, pops, poles] = await Promise.all([
+            prisma.cto.findMany({ where: { projectId: id, deletedAt: null }, select: { id: true } }),
+            prisma.pop.findMany({ where: { projectId: id, deletedAt: null }, select: { id: true } }),
+            prisma.pole.findMany({ where: { projectId: id, deletedAt: null }, select: { id: true } }),
+        ]);
+        const parentNodeIds = [
+            ...ctos.map(c => c.id),
+            ...pops.map(p => p.id),
+            ...poles.map(p => p.id),
+        ];
+
+        if (parentNodeIds.length === 0) {
+            return res.json({ cables: [] });
+        }
+
+        // Find child projects
+        const childProjects = await prisma.project.findMany({
+            where: { parentProjectId: id, companyId: user.companyId, deletedAt: null },
+            select: { id: true, name: true }
+        });
+
+        if (childProjects.length === 0) {
+            return res.json({ cables: [] });
+        }
+
+        const childProjectIds = childProjects.map(p => p.id);
+        const childProjectNameMap = new Map(childProjects.map(p => [p.id, p.name]));
+
+        // Find cables from child projects referencing parent nodes
+        const cables = await prisma.cable.findMany({
+            where: {
+                projectId: { in: childProjectIds },
+                deletedAt: null,
+                OR: [
+                    { fromNodeId: { in: parentNodeIds } },
+                    { toNodeId: { in: parentNodeIds } },
+                ]
+            }
+        });
+
+        res.json({
+            cables: cables.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                status: c.status,
+                fiberCount: c.fiberCount,
+                looseTubeCount: c.looseTubeCount,
+                color: c.color,
+                colorStandard: c.colorStandard,
+                coordinates: c.coordinates,
+                fromNodeId: c.fromNodeId || null,
+                toNodeId: c.toNodeId || null,
+                catalogId: c.catalogId || null,
+                reserves: c.reserves || [],
+                width: c.width || null,
+                projectId: c.projectId,
+                projectName: childProjectNameMap.get(c.projectId) || 'Projeto Vinculado',
+            }))
+        });
+    } catch (error: any) {
+        logger.error(`Get Child Cables Error: ${error.message}`);
+        res.status(500).json({ error: 'Falha ao buscar cabos dos projetos vinculados' });
     }
 };
 

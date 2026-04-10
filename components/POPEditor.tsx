@@ -35,12 +35,16 @@ interface POPEditorProps {
     // Edit Cable
     onEditCable?: (cable: CableData) => void;
     userRole?: string | null;
+    readOnly?: boolean;
+    readOnlyLabel?: string;
+    onGoToParentProject?: () => void;
 }
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, userRole }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject }) => {
     const { t } = useLanguage();
+    const canEdit = !readOnly && userRole !== 'MEMBER';
     const [localPOP, setLocalPOP] = useState<POPData>(JSON.parse(JSON.stringify(pop)));
 
     // Viewport State
@@ -889,7 +893,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             // Ctrl+S - Save
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
-                if (userRole !== 'MEMBER') handleCloseRequest();
+                if (canEdit) handleCloseRequest();
                 return;
             }
 
@@ -1059,8 +1063,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 {/* 1. HEADER (Title + Close) */}
                 <PopHeader
                     title={t('pop_editor_title', { name: pop.name })}
-                    onClose={userRole === 'MEMBER' ? onClose : handleCloseRequest}
+                    onClose={canEdit ? handleCloseRequest : onClose}
                     userRole={userRole}
+                    readOnlyLabel={readOnlyLabel}
                 />
 
                 {/* 2. SECONDARY TOOLBAR */}
@@ -1071,7 +1076,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     viewMode={viewMode}
                     onClearAll={handleShowClearConfirm}
                     onAutoPatch={handleOpenAutoPatch}
-                    onSave={userRole === 'MEMBER' ? onClose : handleCloseRequest}
+                    onSave={canEdit ? handleCloseRequest : onClose}
                     t={t}
                     userRole={userRole}
                     stats={useMemo(() => {
@@ -1087,6 +1092,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             usedPorts: connectedPorts.size
                         };
                     }, [localPOP.olts, localPOP.dios, localPOP.connections])}
+                    readOnly={readOnly}
+                    onGoToParentProject={onGoToParentProject}
                 />
 
                 {/* Canvas */}

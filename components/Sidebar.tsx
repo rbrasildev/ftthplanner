@@ -63,6 +63,7 @@ export interface SidebarProps {
     saasLogo?: string | null;
     userBackupEnabled?: boolean;
     menuBadges?: Partial<Record<DashboardView, number | string>>;
+    onProjectSettingsClick?: () => void;
 }
 
 // --- Helpers ---
@@ -124,7 +125,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     saasName,
     saasLogo,
     userBackupEnabled,
-    menuBadges
+    menuBadges,
+    onProjectSettingsClick
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -341,10 +343,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                             {/* Operation Section */}
                             <div className={`space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-                                {!isCollapsed && (
-                                    <span className="px-2 pb-2 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('sidebar_operation')}</span>
-                                )}
-
+                                {/* Navigation */}
                                 <NavButton
                                     icon={<LayoutDashboard className="w-5 h-5" />}
                                     label={t('home')}
@@ -352,6 +351,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     isCollapsed={isCollapsed}
                                     variant="slate"
                                 />
+
+                                {/* Analysis & Data */}
+                                {!isCollapsed && (
+                                    <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('report_analyze')}</span>
+                                )}
 
                                 <NavButton
                                     icon={<FileText className="w-5 h-5" />}
@@ -363,31 +367,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                                 <NavButton
                                     icon={<UtilityPole className="w-5 h-5" />}
-                                    label="Tabela de Postes"
+                                    label={t('pole_table')}
                                     onClick={() => { onPoleTableClick?.(); onCloseMobile(); }}
                                     isCollapsed={isCollapsed}
                                     variant="slate"
                                 />
 
-                                {(hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && onExportClick && (
-                                    <NavButton
-                                        icon={<FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} />}
-                                        label={t('export_kmz_button')}
-                                        onClick={() => { if (!isExporting) { onExportClick(); onCloseMobile(); } }}
-                                        isCollapsed={isCollapsed}
-                                        variant="slate"
-                                    />
+                                {/* Export */}
+                                {((hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && (onExportClick || onExportAreaClick)) && (
+                                    <>
+                                        {!isCollapsed && (
+                                            <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('export_kmz_button')}</span>
+                                        )}
+                                        {onExportClick && (
+                                            <NavButton
+                                                icon={<FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} />}
+                                                label={t('export_kmz_button')}
+                                                onClick={() => { if (!isExporting) { onExportClick(); onCloseMobile(); } }}
+                                                isCollapsed={isCollapsed}
+                                                variant="slate"
+                                            />
+                                        )}
+                                        {onExportAreaClick && (
+                                            <NavButton
+                                                icon={<ScanSearch className="w-5 h-5" />}
+                                                label={t('export_area')}
+                                                onClick={() => { onExportAreaClick(); onCloseMobile(); }}
+                                                isCollapsed={isCollapsed}
+                                                variant="slate"
+                                            />
+                                        )}
+                                    </>
                                 )}
 
-                                {(hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && onExportAreaClick && (
-                                    <NavButton
-                                        icon={<ScanSearch className="w-5 h-5" />}
-                                        label={t('export_area')}
-                                        onClick={() => { onExportAreaClick(); onCloseMobile(); }}
-                                        isCollapsed={isCollapsed}
-                                        variant="slate"
-                                    />
+                                {/* Settings — at the end */}
+                                {!isCollapsed && (
+                                    <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('system_settings')}</span>
                                 )}
+
+                                <NavButton
+                                    icon={<Settings className="w-5 h-5" />}
+                                    label={t('system_settings')}
+                                    onClick={() => { onProjectSettingsClick?.(); onCloseMobile(); }}
+                                    isCollapsed={isCollapsed}
+                                    variant="slate"
+                                />
                             </div>
 
                             {/* VFL Indicator */}

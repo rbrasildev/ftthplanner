@@ -1,5 +1,5 @@
 import api from './api';
-import { Project, NetworkState, Coordinates, CTOData } from '../types';
+import { Project, NetworkState, Coordinates, CTOData, POPData, InheritedElementsConfig } from '../types';
 
 export interface ProjectSummary {
     id: string;
@@ -53,5 +53,26 @@ export const updateCTO = async (projectId: string, ctoId: string, cto: CTOData) 
 };
 export const updatePOP = async (projectId: string, popId: string, pop: POPData) => {
     const res = await api.put(`/projects/${projectId}/pops/${popId}`, pop);
+    return res.data;
+};
+
+// Parent Project
+export const setParentProject = async (projectId: string, parentProjectId: string | null, inheritedElements?: InheritedElementsConfig) => {
+    const res = await api.put(`/projects/${projectId}/parent`, { parentProjectId, inheritedElements });
+    return res.data;
+};
+
+export const getParentProjectNetwork = async (projectId: string) => {
+    const res = await api.get(`/projects/${projectId}/parent-network`);
+    return res.data;
+};
+
+export const getChildProjects = async (projectId: string) => {
+    const res = await api.get(`/projects/${projectId}/children`);
+    return res.data;
+};
+
+export const getChildCables = async (projectId: string) => {
+    const res = await api.get(`/projects/${projectId}/child-cables`);
     return res.data;
 };

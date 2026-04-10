@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { CustomInput } from './common/CustomInput';
 import {
     X, MapPin, Edit2, Check, Settings, Info, Share2, Unlink, Loader2, Activity,
     ChevronDown, ChevronUp, Plus, Trash2, Camera, CheckSquare, Square, Image, ClipboardList, Package
@@ -53,9 +54,63 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
     const [observations, setObservations] = useState(pole.observations || '');
     const [approvalStatus, setApprovalStatus] = useState<PoleApprovalStatus>(pole.approvalStatus || 'PENDING');
     const [lastInspectionDate, setLastInspectionDate] = useState(pole.lastInspectionDate || '');
+    const [editCoords, setEditCoords] = useState(`${pole.coordinates.lat}, ${pole.coordinates.lng}`);
     const [isSaving, setIsSaving] = useState(false);
     const [polesCatalog, setPolesCatalog] = useState<PoleCatalogItem[]>([]);
     const [loadingCatalog, setLoadingCatalog] = useState(false);
+
+    // Draggable Logic
+    const panelRef = React.useRef<HTMLDivElement>(null);
+    const dragRef = React.useRef({
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        initialLeft: 0,
+        initialTop: 0
+    });
+
+    useEffect(() => {
+        if (panelRef.current) {
+            const width = 560;
+            const height = panelRef.current.offsetHeight || 500;
+            const initialX = (window.innerWidth - width) / 2;
+            const initialY = Math.max(50, (window.innerHeight - height) / 2);
+            panelRef.current.style.left = `${initialX}px`;
+            panelRef.current.style.top = `${initialY}px`;
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!dragRef.current.isDragging || !panelRef.current) return;
+            e.preventDefault();
+            const dx = e.clientX - dragRef.current.startX;
+            const dy = e.clientY - dragRef.current.startY;
+            panelRef.current.style.left = `${dragRef.current.initialLeft + dx}px`;
+            panelRef.current.style.top = `${dragRef.current.initialTop + dy}px`;
+        };
+        const handleMouseUp = () => {
+            dragRef.current.isDragging = false;
+            document.body.style.userSelect = '';
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, []);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!panelRef.current) return;
+        dragRef.current.isDragging = true;
+        dragRef.current.startX = e.clientX;
+        dragRef.current.startY = e.clientY;
+        const rect = panelRef.current.getBoundingClientRect();
+        dragRef.current.initialLeft = rect.left;
+        dragRef.current.initialTop = rect.top;
+        document.body.style.userSelect = 'none';
+    };
 
     // Equipments tab state
     const [equipments, setEquipments] = useState<PoleEquipmentData[]>([]);
@@ -96,6 +151,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
         setObservations(pole.observations || '');
         setApprovalStatus(pole.approvalStatus || 'PENDING');
         setLastInspectionDate(pole.lastInspectionDate || '');
+        setEditCoords(`${pole.coordinates.lat}, ${pole.coordinates.lng}`);
     }, [pole.id]);
 
     useEffect(() => { loadCatalog(); }, []);
@@ -186,6 +242,12 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
             if (observations !== (pole.observations || '')) updates.observations = observations;
             if (approvalStatus !== (pole.approvalStatus || 'PENDING')) updates.approvalStatus = approvalStatus;
             if (lastInspectionDate !== (pole.lastInspectionDate || '')) updates.lastInspectionDate = lastInspectionDate;
+            const coordParts = editCoords.split(/[,\s]+/).filter(Boolean);
+            const newLat = coordParts.length >= 2 ? parseFloat(coordParts[0]) : NaN;
+            const newLng = coordParts.length >= 2 ? parseFloat(coordParts[1]) : NaN;
+            if (!isNaN(newLat) && !isNaN(newLng) && (newLat !== pole.coordinates.lat || newLng !== pole.coordinates.lng)) {
+                updates.coordinates = { lat: newLat, lng: newLng };
+            }
 
             if (Object.keys(updates).length > 0) {
                 await onUpdate(pole.id, updates);
@@ -284,9 +346,13 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
     ];
 
     return (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden transition-colors z-[2000]">
+        <div
+            ref={panelRef}
+            className="fixed z-[2000] w-[560px] bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden flex flex-col max-h-[90vh]"
+            style={{ willChange: 'top, left', transition: 'none' }}
+        >
             {/* Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between">
+            <div onMouseDown={handleMouseDown} className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between cursor-move select-none shrink-0">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${POLE_APPROVAL_COLORS[approvalStatus]}20` }}>
                         <MapPin className="w-5 h-5" style={{ color: POLE_APPROVAL_COLORS[approvalStatus] }} />
@@ -364,45 +430,37 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
 
                                 {/* Status + Situation row */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('status')}</label>
-                                        <select value={status} onChange={e => setStatus(e.target.value as PoleStatus)}
-                                            className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
-                                            {(['PLANNED', 'ANALYSING', 'LICENSED'] as PoleStatus[]).map(s => (
-                                                <option key={s} value={s}>{t(`status_${s}`)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_situation')}</label>
-                                        <select value={situation || ''} onChange={e => setSituation(e.target.value as PoleSituation || undefined)}
-                                            className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
-                                            <option value="">-</option>
-                                            {SITUATIONS.map(s => (
-                                                <option key={s} value={s}>{t(`pole_situation_${s}`)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <CustomSelect
+                                        label={t('status')}
+                                        value={status}
+                                        options={(['PLANNED', 'ANALYSING', 'LICENSED'] as PoleStatus[]).map(s => ({ value: s, label: t(`status_${s}`) }))}
+                                        onChange={val => setStatus(val as PoleStatus)}
+                                        showSearch={false}
+                                    />
+                                    <CustomSelect
+                                        label={t('pole_situation')}
+                                        value={situation || ''}
+                                        options={[{ value: '', label: '-' }, ...SITUATIONS.map(s => ({ value: s, label: t(`pole_situation_${s}`) }))]}
+                                        onChange={val => setSituation((val as PoleSituation) || undefined)}
+                                        showSearch={false}
+                                    />
                                 </div>
 
                                 {/* Utility Code + Road Side */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_utility_code')}</label>
-                                        <input value={utilityCode} onChange={e => setUtilityCode(e.target.value)}
-                                            placeholder={t('pole_utility_code_placeholder')}
-                                            className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_road_side')}</label>
-                                        <select value={roadSide || ''} onChange={e => setRoadSide(e.target.value as PoleRoadSide || undefined)}
-                                            className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
-                                            <option value="">-</option>
-                                            {ROAD_SIDES.map(s => (
-                                                <option key={s} value={s}>{t(`pole_road_side_${s}`)}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <CustomInput
+                                        label={t('pole_utility_code')}
+                                        value={utilityCode}
+                                        onChange={e => setUtilityCode(e.target.value)}
+                                        placeholder={t('pole_utility_code_placeholder')}
+                                    />
+                                    <CustomSelect
+                                        label={t('pole_road_side')}
+                                        value={roadSide || ''}
+                                        options={[{ value: '', label: '-' }, ...ROAD_SIDES.map(s => ({ value: s, label: t(`pole_road_side_${s}`) }))]}
+                                        onChange={val => setRoadSide((val as PoleRoadSide) || undefined)}
+                                        showSearch={false}
+                                    />
                                 </div>
 
                                 {/* Pole Type from Catalog */}
@@ -437,32 +495,37 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                         ));
                                         })()}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500">
-                                        <div>Lat: {pole.coordinates.lat.toFixed(6)}</div>
-                                        <div>Lng: {pole.coordinates.lng.toFixed(6)}</div>
-                                    </div>
+                                    <CustomInput
+                                        label={`${t('coordinates') || 'Coordenadas'} (lat, lng)`}
+                                        icon={MapPin}
+                                        value={editCoords}
+                                        onChange={e => setEditCoords(e.target.value)}
+                                        placeholder="-23.550520, -46.633308"
+                                    />
                                 </div>
 
                                 {/* Address Reference */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_address_reference')}</label>
-                                    <input value={addressReference} onChange={e => setAddressReference(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                                </div>
+                                <CustomInput
+                                    label={t('pole_address_reference')}
+                                    value={addressReference}
+                                    onChange={e => setAddressReference(e.target.value)}
+                                />
 
                                 {/* Observations */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_observations')}</label>
-                                    <textarea value={observations} onChange={e => setObservations(e.target.value)} rows={2}
-                                        className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none" />
-                                </div>
+                                <CustomInput
+                                    label={t('pole_observations')}
+                                    value={observations}
+                                    onChange={e => setObservations(e.target.value)}
+                                    isTextarea
+                                />
 
                                 {/* Last Inspection */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t('pole_last_inspection')}</label>
-                                    <input type="date" value={lastInspectionDate ? lastInspectionDate.substring(0, 10) : ''} onChange={e => setLastInspectionDate(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                                </div>
+                                <CustomInput
+                                    label={t('pole_last_inspection')}
+                                    type="date"
+                                    value={lastInspectionDate ? lastInspectionDate.substring(0, 10) : ''}
+                                    onChange={e => setLastInspectionDate(e.target.value)}
+                                />
 
                                 {/* Linked Cables */}
                                 <div className="space-y-2">

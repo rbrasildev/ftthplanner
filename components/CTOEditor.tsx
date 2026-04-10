@@ -199,6 +199,9 @@ interface CTOEditorProps {
     companyLogo?: string | null;
     saasLogo?: string | null;
     autoDownload?: boolean; // NEW: To trigger export on load
+    readOnly?: boolean;
+    readOnlyLabel?: string;
+    onGoToParentProject?: () => void;
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note' | 'resize';
@@ -337,9 +340,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole, userPermissions = [],
     projectId, companyLogo, saasLogo,
-    autoDownload
+    autoDownload, readOnly = false, readOnlyLabel, onGoToParentProject
 }) => {
     const { t } = useLanguage();
+    const canEdit = !readOnly && (hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER');
 
     // --- CTO STATE MANAGEMENT (extracted hook) ---
     const {
@@ -3232,6 +3236,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     // --- KEYBOARD SHORTCUTS ---
     useEffect(() => {
+        if (readOnly) return; // No shortcuts in read-only mode
         const handleKeyDown = (e: KeyboardEvent) => {
             // Ignore if user is typing in an input
             const target = e.target as HTMLElement;
@@ -3286,7 +3291,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, toggleToolMode, setIsAutoSpliceOpen]);
+    }, [readOnly, hoveredElement, handleRotateElement, handleDeleteSplitter, handleDeleteFusion, removeConnection, toggleToolMode, setIsAutoSpliceOpen]);
 
     return (
         <div
@@ -3307,6 +3312,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             >
 
                 <CTOEditorToolbar
+                    readOnly={readOnly}
                     t={t}
                     propertiesName={propertiesName}
                     onNameChange={(name) => { setPropertiesName(name); setLocalCTO(prev => ({ ...prev, name })); }}
@@ -3314,7 +3320,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     isCollapsed={isCollapsed}
                     onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
                     onToggleMaximize={toggleMaximize}
-                    onClose={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? handleCloseRequest : onClose}
+                    onClose={canEdit ? handleCloseRequest : onClose}
                     onWindowDragStart={handleWindowDragStart}
                     isRotateMode={isRotateMode}
                     isDeleteMode={isDeleteMode}
@@ -3662,7 +3668,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 {/* Footer: Redesigned with Model and Status Controls */}
                 <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
-                    <div className="flex items-center gap-8">
+                    {!readOnly && <div className="flex items-center gap-8">
                         {/* Model Select */}
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('model') || 'Modelo'}</span>
@@ -3694,38 +3700,45 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             </div>
                         </div>
 
-                        {/* Status Radio Buttons */}
-                        <div className="flex items-center gap-4">
-                            {[
-                                { id: 'PLANNED', label: t('status_PLANNED'), color: '#f59e0b', textColor: 'text-amber-600 dark:text-amber-500' },
-                                { id: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED'), color: '#ef4444', textColor: 'text-red-600 dark:text-red-500' },
-                                { id: 'DEPLOYED', label: t('status_DEPLOYED'), color: '#10b981', textColor: 'text-emerald-600 dark:text-emerald-500' },
-                                { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-emerald-600 dark:text-emerald-500' }
-                            ].map((status) => (
-                                <button
-                                    key={status.id}
-                                    onClick={() => {
-                                        setPropertiesStatus(status.id as CTOStatus);
-                                        setLocalCTO(prev => ({ ...prev, status: status.id as CTOStatus }));
-                                    }}
-                                    className="flex items-center gap-2 group cursor-pointer transition-all"
-                                >
-                                    <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
-                                        <div
-                                            className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
-                                            style={{ backgroundColor: status.color }}
-                                        />
-                                    </div>
-                                    <span className={`text-[13px] font-bold transition-colors ${propertiesStatus === status.id ? status.textColor : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
-                                        {status.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                        {/* Status Radio Buttons — hidden when readOnly */}
+                        {!readOnly && (
+                            <div className="flex items-center gap-4">
+                                {[
+                                    { id: 'PLANNED', label: t('status_PLANNED'), color: '#f59e0b', textColor: 'text-amber-600 dark:text-amber-500' },
+                                    { id: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED'), color: '#ef4444', textColor: 'text-red-600 dark:text-red-500' },
+                                    { id: 'DEPLOYED', label: t('status_DEPLOYED'), color: '#10b981', textColor: 'text-emerald-600 dark:text-emerald-500' },
+                                    { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-emerald-600 dark:text-emerald-500' }
+                                ].map((status) => (
+                                    <button
+                                        key={status.id}
+                                        onClick={() => {
+                                            setPropertiesStatus(status.id as CTOStatus);
+                                            setLocalCTO(prev => ({ ...prev, status: status.id as CTOStatus }));
+                                        }}
+                                        className="flex items-center gap-2 group cursor-pointer transition-all"
+                                    >
+                                        <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
+                                            <div
+                                                className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                                                style={{ backgroundColor: status.color }}
+                                            />
+                                        </div>
+                                        <span className={`text-[13px] font-bold transition-colors ${propertiesStatus === status.id ? status.textColor : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
+                                            {status.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>}
 
+                    {readOnly && readOnlyLabel && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg text-xs font-bold text-amber-700 dark:text-amber-300">
+                            <span>🔒</span> {readOnlyLabel}
+                        </div>
+                    )}
                     <div className="flex items-center gap-3">
-                        {(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') && (
+                        {canEdit && (
                             <Button
                                 onClick={handleApply}
                                 isLoading={savingAction === 'apply'}
@@ -3737,15 +3750,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 {t('apply') || 'Aplicar'}
                             </Button>
                         )}
+                        {readOnly && onGoToParentProject && (
+                            <Button
+                                onClick={() => { onClose(); onGoToParentProject(); }}
+                                variant="primary"
+                                className="px-5 font-bold min-w-[120px]"
+                                icon={<ExternalLink className="w-4 h-4" />}
+                            >
+                                <span className="whitespace-nowrap">{t('base_project_edit_in_base')}</span>
+                            </Button>
+                        )}
                         <Button
-                            onClick={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? handleCloseRequest : onClose}
+                            onClick={canEdit ? handleCloseRequest : onClose}
                             isLoading={savingAction === 'save_close'}
                             disabled={savingAction !== 'idle'}
-                            variant="emerald"
-                            className="px-6 font-bold min-w-[150px] shadow-sm shadow-emerald-900/20"
-                            icon={(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? <Save className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                            variant={readOnly ? 'ghost' : 'emerald'}
+                            className={readOnly ? 'px-4 font-bold' : 'px-6 font-bold min-w-[150px] shadow-sm shadow-emerald-900/20'}
+                            icon={canEdit ? <Save className="w-4 h-4" /> : <X className="w-4 h-4" />}
                         >
-                            <span className="whitespace-nowrap">{(hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER') ? (t('save_or_done') || 'Salvar / Sair') : (t('done') || 'Sair')}</span>
+                            <span className="whitespace-nowrap">{canEdit ? (t('save_or_done') || 'Salvar / Sair') : (t('close') || 'Fechar')}</span>
                         </Button>
                     </div>
                 </div>

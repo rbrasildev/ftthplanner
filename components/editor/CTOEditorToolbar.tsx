@@ -50,6 +50,9 @@ interface CTOEditorToolbarProps {
     onExportPNG: () => void;
     exportingType: 'png' | 'pdf' | null;
     onOpenQRCode: () => void;
+
+    // Read-only
+    readOnly?: boolean;
 }
 
 export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
@@ -60,7 +63,8 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
     onAddFusion, onAddConnector, isConnectorToolActive, onAddNote,
     isAutoSpliceOpen, onOpenAutoSplice, onClearConnections,
     showHotkeys, onToggleHotkeys, hotkeysRef,
-    onExportPNG, exportingType, onOpenQRCode
+    onExportPNG, exportingType, onOpenQRCode,
+    readOnly = false
 }) => {
     return (
         <div
@@ -75,8 +79,9 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                         <input
                             type="text"
                             value={propertiesName}
-                            onChange={(e) => onNameChange(e.target.value)}
-                            className="bg-transparent border-0 border-b-2 border-transparent focus:border-emerald-500 dark:focus:border-emerald-400 px-1 py-0.5 outline-none transition-all w-full max-w-[400px] text-slate-900 dark:text-white font-bold placeholder:text-slate-400"
+                            onChange={(e) => !readOnly && onNameChange(e.target.value)}
+                            readOnly={readOnly}
+                            className={`bg-transparent border-0 border-b-2 border-transparent ${readOnly ? 'cursor-default' : 'focus:border-emerald-500 dark:focus:border-emerald-400'} px-1 py-0.5 outline-none transition-all w-full max-w-[400px] text-slate-900 dark:text-white font-bold placeholder:text-slate-400`}
                             placeholder={t('name')}
                         />
                     </h2>
@@ -119,13 +124,14 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                 <div className="flex gap-1.5 pointer-events-auto items-center">
 
                     {/* GROUP 1: EDIT MODES */}
-                    <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600">
+                    <div className={`flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-600 ${readOnly ? 'opacity-40 pointer-events-none' : ''}`}>
                         <Button
                             variant={isRotateMode ? 'emerald' : 'outline'}
                             size="icon"
                             onClick={() => toggleToolMode('rotate')}
                             className="h-8 w-8"
                             title={t('rotate_mode')}
+                            disabled={readOnly}
                         >
                             <RotateCw className={`w-3.5 h-3.5 ${isRotateMode ? 'animate-spin-slow' : ''}`} />
                         </Button>
@@ -135,19 +141,21 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={() => toggleToolMode('delete')}
                             className="h-8 w-8"
                             title={t('delete_mode')}
+                            disabled={readOnly}
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                     </div>
 
                     {/* GROUP 2: CREATION */}
-                    <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                    <div className={`flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600 ${readOnly ? 'opacity-40 pointer-events-none' : ''}`}>
                         <Button
                             variant={showSplitterDropdown ? 'emerald' : 'outline'}
                             size="icon"
                             onClick={() => toggleToolMode('splitterDropdown')}
                             className="h-8 w-8"
                             title={t('splitters')}
+                            disabled={readOnly}
                         >
                             <Triangle className="w-3.5 h-3.5 -rotate-90" />
                         </Button>
@@ -157,6 +165,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={onAddFusion}
                             className={`h-8 w-8 ${(isFusionToolActive && !isConnectorToolActive) ? 'ring-2 ring-emerald-400' : ''}`}
                             title={t('add_fusion')}
+                            disabled={readOnly}
                         >
                             <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="12" cy="12" r="6" stroke="currentColor" fill="none" />
@@ -170,6 +179,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={onAddConnector}
                             className={`h-8 w-8 ${isConnectorToolActive ? 'ring-2 ring-emerald-400' : ''}`}
                             title={t('add_connector') || 'Conector'}
+                            disabled={readOnly}
                         >
                             <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" strokeWidth="2">
                                 <rect x="7" y="7" width="10" height="10" rx="1" stroke="currentColor" fill="none" />
@@ -183,19 +193,21 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={onAddNote}
                             className="h-8 w-8"
                             title={t('add_note')}
+                            disabled={readOnly}
                         >
                             <StickyNote className="w-3.5 h-3.5" />
                         </Button>
                     </div>
 
                     {/* GROUP 3: CONNECTIONS */}
-                    <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                    <div className={`flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600 ${readOnly ? 'opacity-40 pointer-events-none' : ''}`}>
                         <Button
                             variant={isAutoSpliceOpen ? 'emerald' : 'outline'}
                             size="icon"
                             onClick={onOpenAutoSplice}
                             className="h-8 w-8"
                             title={t('auto_splice')}
+                            disabled={readOnly}
                         >
                             <ArrowRightLeft className="w-3.5 h-3.5" />
                         </Button>
@@ -205,6 +217,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={() => toggleToolMode('smartAlign')}
                             className={`h-8 w-8 ${isSmartAlignMode ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-400' : ''}`}
                             title={t('smart_align')}
+                            disabled={readOnly}
                         >
                             <AlignCenter className={`w-3.5 h-3.5 ${isSmartAlignMode ? 'fill-white animate-pulse' : ''}`} />
                         </Button>
@@ -215,19 +228,21 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={onClearConnections}
                             className="h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                             title={t('reset_connections')}
+                            disabled={readOnly}
                         >
                             <Eraser className="w-3.5 h-3.5" />
                         </Button>
                     </div>
 
                     {/* GROUP 4: ANALYSIS */}
-                    <div className="flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600">
+                    <div className={`flex items-center gap-1.5 px-2 border-r border-slate-300 dark:border-slate-600 ${readOnly ? 'opacity-40 pointer-events-none' : ''}`}>
                         <Button
                             variant={isVflToolActive ? 'destructive' : 'outline'}
                             size="icon"
                             onClick={() => toggleToolMode('vfl')}
                             className={`h-8 w-8 ${isVflToolActive ? 'bg-red-600 border-red-700 text-white hover:bg-red-500' : ''}`}
                             title={t('tool_vfl')}
+                            disabled={readOnly}
                         >
                             <Flashlight className="w-3.5 h-3.5 animate-pulse" />
                         </Button>
@@ -237,19 +252,21 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                             onClick={() => toggleToolMode('otdr')}
                             className={`h-8 w-8 ${isOtdrToolActive ? 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-500' : ''}`}
                             title={t('otdr_trace_tool')}
+                            disabled={readOnly}
                         >
                             <Ruler className="w-3.5 h-3.5" />
                         </Button>
                     </div>
 
                     {/* GROUP 5: VIEW */}
-                    <div className="flex items-center gap-1.5 pl-2">
+                    <div className={`flex items-center gap-1.5 pl-2 ${readOnly ? 'opacity-40 pointer-events-none' : ''}`}>
                         <Button
                             variant={isSnapping ? 'emerald' : 'outline'}
                             size="icon"
                             onClick={onToggleSnapping}
                             className="h-8 w-8"
                             title={t('snap_grid')}
+                            disabled={readOnly}
                         >
                             <Magnet className="w-3.5 h-3.5" />
                         </Button>

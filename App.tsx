@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
 import { Button } from './components/common/Button';
-import { autoSnapNetwork, calculateDistance } from './utils/geometryUtils';
+import { calculateDistance } from './utils/geometryUtils';
 import { CTOEditor } from './components/CTOEditor';
 import { POPEditor } from './components/POPEditor';
 import { ProjectManager } from './components/ProjectManager';
@@ -20,8 +20,9 @@ import { LandingPage } from './components/LandingPage';
 import { DashboardPage } from './components/DashboardPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CompanySettings } from './components/settings/CompanySettings';
+import { ParentProjectSettings } from './components/settings/ParentProjectSettings';
 import { SearchBox } from './components/SearchBox';
-import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer } from './types';
+import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer, InheritedElementsConfig, DEFAULT_INHERITED_ELEMENTS } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import { useKMZExport } from './hooks/useKMZExport';
@@ -29,7 +30,7 @@ import { useNetworkImport } from './hooks/useNetworkImport';
 import { useOpticalTrace } from './hooks/useOpticalTrace';
 import { useNetworkOperations } from './hooks/useNetworkOperations';
 
-import { Loader2, Plus, FileDown, Waypoints, Box, Activity, CalendarDays, Database, Users, Link as LinkIcon, Building2, Map as MapIcon, LayoutDashboard, Settings, LogOut, ChevronRight, Share2, Crown, Zap, Save, AlertTriangle, Building, ChevronLeft, MapPin, X, FileUp, Check, CheckCircle2, Play, Pause, Square, SkipForward, SkipBack, Search, Maximize2, UtilityPole, Ruler, Scissors, ArrowRightLeft, MousePointer2, AlertCircle, Phone, Info, Eye, Download, EyeOff, LayoutTemplate, Layers, Move } from 'lucide-react';
+import { Loader2, Plus, FileDown, Waypoints, Box, Activity, CalendarDays, Database, Users, Link as LinkIcon, Building2, Map as MapIcon, LayoutDashboard, Settings, LogOut, ChevronRight, Share2, Crown, Zap, Save, AlertTriangle, Building, ChevronLeft, MapPin, X, FileUp, Check, CheckCircle2, Play, Pause, Square, SkipForward, SkipBack, Search, Maximize2, UtilityPole, Ruler, Scissors, ArrowRightLeft, MousePointer2, AlertCircle, Phone, Info, Eye, Download, EyeOff, LayoutTemplate, Layers, Move, GitBranch } from 'lucide-react';
 import JSZip from 'jszip';
 import toGeoJSON from '@mapbox/togeojson';
 import L from 'leaflet';
@@ -145,7 +146,7 @@ export default function App() {
     const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
     // Global System Settings
-    const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30 });
+    const [systemSettings, setSystemSettings] = useState<SystemSettings>({ snapDistance: 30, coverageRadius: 200 });
 
     const [isExportKMZModalOpen, setIsExportKMZModalOpen] = useState(false);
     const [showPoleTable, setShowPoleTable] = useState(false);
@@ -166,16 +167,23 @@ export default function App() {
                 // as the support admin still needs to see the client's dashboard.
             }
         }
-        // Safety: Reset tool mode and clear backup when switching projects
+        // Safety: Reset tool mode, clear backup and stale data when switching projects
         setToolMode('view');
         previousNetworkState.current = null;
+        setParentNetwork(null);
+        setParentProjectName('');
+        setChildCables([]);
     }, [currentProjectId, isSupportMode]);
     const prevProjectIdRef = useRef<string>('');
 
     const [showProjectManager, setShowProjectManager] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
-    const [settingsSaved, setSettingsSaved] = useState(false);
-    const settingsTimeoutRef = useRef<any>(null);
+
+    // Parent Project State
+    const [parentNetwork, setParentNetwork] = useState<NetworkState | null>(null);
+    const [parentProjectName, setParentProjectName] = useState<string>('');
+    const [showParentProjectModal, setShowParentProjectModal] = useState(false);
+    const [childCables, setChildCables] = useState<CableData[]>([]);
     const syncTimeoutRef = useRef<any>(null); // For debounce sync
     const skipNextAutoSyncRef = useRef<boolean>(false); // NEW: To avoid sync conflict when manual updateCTO is running
 
@@ -274,11 +282,20 @@ export default function App() {
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [targetCTOId, setTargetCTOId] = useState<string | null>(null); // NEW: For deep links
+    const [targetPOPId, setTargetPOPId] = useState<string | null>(null);
     const [autoDownloadCTO, setAutoDownloadCTO] = useState(false); // NEW: For auto-export
     const [editingCTO, setEditingCTO] = useState<CTOData | null>(null);
     const [editingPOP, setEditingPOP] = useState<POPData | null>(null);
     const [editingCable, setEditingCable] = useState<CableData | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null); // For dropdowns
+
+    // Computed: is the currently editing CTO/POP from the parent project?
+    const editingNodeIsFromParent = useMemo(() => {
+        if (!parentNetwork) return false;
+        if (editingCTO) return parentNetwork.ctos.some(c => c.id === editingCTO.id);
+        if (editingPOP) return parentNetwork.pops.some(p => p.id === editingPOP.id);
+        return false;
+    }, [parentNetwork, editingCTO, editingPOP]);
 
     // Search State
     // searchTerm handled by SearchBox component to avoid re-renders
@@ -465,7 +482,15 @@ export default function App() {
                     } catch (e) { /* catálogo indisponível, segue sem width */ }
                 }
                 setCurrentProject(p);
-                if (p.settings) setSystemSettings(p.settings);
+                if (p.settings) setSystemSettings({ snapDistance: 30, coverageRadius: 200, ...p.settings });
+                // Apply inline parent network + child cables (loaded in single request)
+                if (p.parentNetwork) {
+                    setParentNetwork(p.parentNetwork);
+                    setParentProjectName(p.parentNetwork.parentProjectName || '');
+                }
+                if (p.childCables?.length) {
+                    setChildCables(p.childCables);
+                }
             }).catch(err => {
                 console.error(err);
                 if (err.response && err.response.status === 403) {
@@ -491,16 +516,26 @@ export default function App() {
         }
     }, [currentProjectId, token]);
 
-    // Handle targeting CTO after project loads
+    // parentNetwork and childCables are now loaded inline with getProject (single request)
+
+    // Handle targeting CTO/POP after project loads (deep link or redirect from linked project)
     useEffect(() => {
-        if (currentProject && targetCTOId) {
+        if (!currentProject) return;
+        if (targetCTOId) {
             const foundCTO = currentProject.network.ctos.find(c => c.id === targetCTOId);
             if (foundCTO) {
                 setEditingCTO(foundCTO);
                 setTargetCTOId(null);
             }
         }
-    }, [currentProject, targetCTOId]);
+        if (targetPOPId) {
+            const foundPOP = currentProject.network.pops.find(p => p.id === targetPOPId);
+            if (foundPOP) {
+                setEditingPOP(foundPOP);
+                setTargetPOPId(null);
+            }
+        }
+    }, [currentProject, targetCTOId, targetPOPId]);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
@@ -520,6 +555,7 @@ export default function App() {
             isInitialLoad.current = true;
 
             // --- Reset UI State on Project Switch/Entry ---
+            setCurrentProject(null);
             setEditingCTO(null);
             setEditingPOP(null);
             setEditingCable(null);
@@ -539,6 +575,10 @@ export default function App() {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 4000);
     };
+
+    const handleParentBlockedEdit = useCallback(() => {
+        showToast(t('base_project_blocked_edit'), 'info');
+    }, [t]);
 
     const handleEndSupport = async () => {
         try {
@@ -655,7 +695,7 @@ export default function App() {
                 syncTimeoutRef.current = null;
             }
         };
-    }, [currentProject, token]);
+    }, [currentProject, token, systemSettings]);
 
     // PROTECT AGAINST DATA LOSS (Refreshes/Closes while Saving)
     useEffect(() => {
@@ -670,20 +710,6 @@ export default function App() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isSaving]);
 
-    // Helper to trigger snap and notify
-    const performAutoSnap = (overrideDistance?: number) => {
-        if (!currentProjectId) return;
-        const distance = overrideDistance ?? systemSettings.snapDistance;
-        let count = 0;
-        updateCurrentNetwork(prev => {
-            const result = autoSnapNetwork(prev, distance);
-            count = result.snappedCount;
-            return result.state;
-        });
-        if (count > 0) {
-            showToast(t('toast_auto_snap_success', { count, distance }), 'success');
-        }
-    };
 
     const handleToggleReserveCable = useCallback((id: string) => {
         updateCurrentNetwork(prev => ({
@@ -762,7 +788,7 @@ export default function App() {
         setToolMode, setDrawingPath, setDrawingFromId, setIsPoleModalOpen,
         setPendingPoleLocation, pendingPoleLocation, setMultiConnectionIds,
         setHighlightedCableId, syncTimeoutRef, skipNextAutoSyncRef,
-        systemSettings, migrateNodeData
+        systemSettings, migrateNodeData, parentNetwork
     });
 
     const handleMapMoveEnd = (lat: number, lng: number, zoom: number) => {
@@ -880,16 +906,51 @@ export default function App() {
     // OMNI-RE-RENDER PROTECTION: Memoized props for CTOEditor to prevent jitter/tremor
     const editingCTOIncomingCables = useMemo(() => {
         if (!editingCTO || !currentProject) return [];
+        const isFromParent = parentNetwork?.ctos.some(c => c.id === editingCTO.id);
+        if (isFromParent && parentNetwork) {
+            // Read-only view of parent CTO: show parent cables + local cables + child cables
+            const pCables = parentNetwork.cables.filter(c =>
+                c.fromNodeId === editingCTO.id || c.toNodeId === editingCTO.id
+            );
+            const localCables = currentProject.network.cables.filter(c =>
+                c.fromNodeId === editingCTO.id || c.toNodeId === editingCTO.id
+            );
+            const cCables = childCables.filter(c =>
+                c.fromNodeId === editingCTO.id || c.toNodeId === editingCTO.id
+            );
+            return [...pCables, ...localCables, ...cCables];
+        }
+        // Normal edit of own CTO: local cables + child cables from linked projects
         const net = currentProject.network;
         const currentCTOState = net.ctos.find(c => c.id === editingCTO.id) || editingCTO;
-        return net.cables.filter(c =>
+        const localCables = net.cables.filter(c =>
             c.fromNodeId === editingCTO.id ||
             c.toNodeId === editingCTO.id ||
             currentCTOState.inputCableIds?.includes(c.id)
         );
-    }, [editingCTO, currentProject]);
+        if (childCables.length > 0) {
+            const cCables = childCables.filter(c =>
+                c.fromNodeId === editingCTO.id || c.toNodeId === editingCTO.id
+            );
+            if (cCables.length > 0) return [...localCables, ...cCables];
+        }
+        return localCables;
+    }, [editingCTO, currentProject, parentNetwork, childCables]);
 
-    const editingCTONetwork = useMemo(() => currentProject?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] }, [currentProject]);
+    const editingCTONetwork = useMemo(() => {
+        const base = currentProject?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
+        // Merge parent network nodes for optical signal tracing
+        // The trace needs to navigate through all CTOs/POPs/cables to find the OLT path
+        if (parentNetwork) {
+            return {
+                ...base,
+                ctos: [...base.ctos, ...parentNetwork.ctos.filter(c => !base.ctos.some(bc => bc.id === c.id))],
+                pops: [...base.pops, ...parentNetwork.pops.filter(p => !base.pops.some(bp => bp.id === p.id))],
+                cables: [...base.cables, ...parentNetwork.cables.filter(c => !base.cables.some(bc => bc.id === c.id))],
+            };
+        }
+        return base;
+    }, [currentProject, parentNetwork]);
 
     const handleCTOHoverCable = useCallback((id: string | null) => {
         setHighlightedCableId(id);
@@ -911,9 +972,30 @@ export default function App() {
 
     const editingPOPIncomingCables = useMemo(() => {
         if (!editingPOP || !currentProject) return [];
+        const isFromParent = parentNetwork?.pops.some(p => p.id === editingPOP.id);
+        if (isFromParent && parentNetwork) {
+            const pCables = parentNetwork.cables.filter(c =>
+                c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id
+            );
+            const localCables = currentProject.network.cables.filter(c =>
+                c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id
+            );
+            const cCables = childCables.filter(c =>
+                c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id
+            );
+            return [...pCables, ...localCables, ...cCables];
+        }
+        // Normal edit of own POP: local cables + child cables from linked projects
         const net = currentProject.network;
-        return net.cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id);
-    }, [editingPOP, currentProject]);
+        const localCables = net.cables.filter(c => c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id);
+        if (childCables.length > 0) {
+            const cCables = childCables.filter(c =>
+                c.fromNodeId === editingPOP.id || c.toNodeId === editingPOP.id
+            );
+            if (cCables.length > 0) return [...localCables, ...cCables];
+        }
+        return localCables;
+    }, [editingPOP, currentProject, parentNetwork, childCables]);
 
     const handlePOPHoverCable = useCallback((id: string | null) => {
         setHighlightedCableId(id);
@@ -1029,11 +1111,11 @@ export default function App() {
                     return prev;
                 }
 
-                return autoSnapNetwork({
+                return {
                     ...prev,
                     ctos: [...prev.ctos, ...validNewCTOs],
                     cables: [...prev.cables, ...validNewCables]
-                }, systemSettings.snapDistance).state;
+                };
             });
 
             if (newCTOs.length > 0) {
@@ -1101,6 +1183,8 @@ export default function App() {
                     setEditingPOP(pop);
                     setSelectedId(null);
                 }
+            } else if (type === 'Pole') {
+                setSelectedId(id);
             }
         } else if (toolMode === 'move_node') {
             setSelectedId(id);
@@ -1145,6 +1229,39 @@ export default function App() {
         }
     }, [toolMode]);
 
+    // Open parent project nodes in read-only mode
+    const handleParentNodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
+        if (!parentNetwork) return;
+        if (type === 'CTO') {
+            const cto = parentNetwork.ctos.find(c => c.id === id);
+            if (cto) {
+                setEditingCTO(cto);
+
+                setSelectedId(null);
+            }
+        } else if (type === 'POP') {
+            const pop = parentNetwork.pops.find(p => p.id === id);
+            if (pop) {
+                setEditingPOP(pop);
+
+                setSelectedId(null);
+            }
+        }
+    }, [parentNetwork]);
+
+    const handleGoToParentProject = useCallback(() => {
+        const parentId = currentProject?.parentProjectId;
+        if (!parentId) return;
+        // Remember which element to open in the base project
+        const ctoId = editingCTO?.id || null;
+        const popId = editingPOP?.id || null;
+        setEditingCTO(null);
+        setEditingPOP(null);
+        if (ctoId) setTargetCTOId(ctoId);
+        if (popId) setTargetPOPId(popId);
+        setCurrentProjectId(parentId);
+    }, [currentProject?.parentProjectId, editingCTO?.id, editingPOP?.id]);
+
     const handleNodeForCable = useCallback((nodeId: string) => {
         const net = getCurrentNetwork(); // stable getter
         const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId);
@@ -1187,7 +1304,12 @@ export default function App() {
 
     const handleNodeForCableStable = useCallback((nodeId: string) => {
         const net = getCurrentNetwork();
-        const node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId) || (net.poles || []).find(p => p.id === nodeId);
+        let node = net.ctos.find(c => c.id === nodeId) || net.pops.find(p => p.id === nodeId) || (net.poles || []).find(p => p.id === nodeId);
+
+        // Also look in parent network for cross-project connections
+        if (!node && parentNetwork) {
+            node = parentNetwork.ctos.find(c => c.id === nodeId) || parentNetwork.pops.find(p => p.id === nodeId) || (parentNetwork.poles || []).find(p => p.id === nodeId);
+        }
         if (!node) return;
 
         const currentPath = drawingPathRef.current;
@@ -1202,7 +1324,7 @@ export default function App() {
                 finalizeCableCreation(finalPath, currentFromId, nodeId);
             }
         }
-    }, [getCurrentNetwork, finalizeCableCreation]);
+    }, [getCurrentNetwork, finalizeCableCreation, parentNetwork]);
 
     const handleCableClick = useCallback((id: string) => {
         // Left click in view mode: Just select (or do nothing to avoid annoying popups)
@@ -1545,7 +1667,7 @@ export default function App() {
                         });
                     }
 
-                    const isViable = minDistance <= 200;
+                    const isViable = minDistance <= systemSettings.coverageRadius;
 
                     setPinnedLocation({
                         lat,
@@ -1686,6 +1808,7 @@ export default function App() {
                 companyName={companyName}
                 saasName={saasConfig?.appName}
                 saasLogo={saasConfig?.appLogoUrl}
+                onProjectSettingsClick={() => setShowSettingsModal(true)}
             />
 
             {!currentProjectId ? (
@@ -1904,6 +2027,11 @@ export default function App() {
                                 setIsExportKMZModalOpen(true);
                             }
                         }}
+                        parentNetwork={parentNetwork}
+                        showParentElements={true}
+                        parentProjectName={parentProjectName}
+                        onParentNodeClick={handleParentNodeClick}
+                        onParentBlockedEdit={handleParentBlockedEdit}
                     />
 
                     {toolMode === 'edit_cable' && (
@@ -2008,6 +2136,9 @@ export default function App() {
                     userRole={userRole}
                     onEditCable={setEditingCable}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
+                    readOnly={editingNodeIsFromParent}
+                    readOnlyLabel={editingNodeIsFromParent ? t('base_project_readonly_label', { name: parentProjectName }) : undefined}
+                    onGoToParentProject={editingNodeIsFromParent ? handleGoToParentProject : undefined}
                 />
             )}
             {editingCTO && (
@@ -2036,6 +2167,9 @@ export default function App() {
                     companyLogo={companyLogo}
                     saasLogo={saasConfig?.appLogoUrl}
                     autoDownload={autoDownloadCTO}
+                    readOnly={editingNodeIsFromParent}
+                    readOnlyLabel={editingNodeIsFromParent ? t('base_project_readonly_label', { name: parentProjectName }) : undefined}
+                    onGoToParentProject={editingNodeIsFromParent ? handleGoToParentProject : undefined}
                     onUpdateCableStreetNames={(updates) => {
                         updateCurrentNetwork(prev => ({
                             ...prev,
@@ -2219,6 +2353,26 @@ export default function App() {
                 />
             )}
 
+            {/* Parent Project Settings Modal */}
+            <ParentProjectSettings
+                isOpen={showParentProjectModal}
+                onClose={() => setShowParentProjectModal(false)}
+                currentProjectId={currentProjectId || ''}
+                currentProjectName={currentProject?.name || ''}
+                parentProjectId={currentProject?.parentProjectId || null}
+                inheritedElements={currentProject?.inheritedElements || DEFAULT_INHERITED_ELEMENTS}
+                projects={projects}
+                onParentChanged={(newParentId, newConfig) => {
+                    if (currentProject) {
+                        setCurrentProject({
+                            ...currentProject,
+                            parentProjectId: newParentId,
+                            inheritedElements: newConfig
+                        });
+                    }
+                }}
+            />
+
             {showSettingsModal && (
                 <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
                     <div
@@ -2240,40 +2394,60 @@ export default function App() {
                         <div className="p-6 space-y-6">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-                                    <Ruler className="w-3 h-3" /> {t('snap_distance_lbl')}
+                                    <Ruler className="w-3 h-3" /> {t('coverage_radius_lbl')}
                                 </label>
                                 <div className="flex gap-2 items-center">
                                     <input
                                         type="number"
-                                        min="1"
-                                        max="200"
-                                        value={systemSettings.snapDistance}
+                                        min="50"
+                                        max="2000"
+                                        value={systemSettings.coverageRadius || ''}
                                         onChange={(e) => {
-                                            const val = Math.max(1, parseInt(e.target.value) || 1);
-                                            setSystemSettings(prev => ({ ...prev, snapDistance: val }));
-                                            setSettingsSaved(true);
-                                            if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
-                                            settingsTimeoutRef.current = setTimeout(() => setSettingsSaved(false), 2000);
+                                            const raw = parseInt(e.target.value);
+                                            setSystemSettings(prev => ({ ...prev, coverageRadius: isNaN(raw) ? 0 : raw }));
                                         }}
-                                        className="w-24 bg-slate-100 dark:bg-[#22262e] border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition-colors"
+                                        onBlur={() => {
+                                            setSystemSettings(prev => ({ ...prev, coverageRadius: Math.min(2000, Math.max(50, prev.coverageRadius || 200)) }));
+                                        }}
+                                        className="w-24 bg-slate-100 dark:bg-[#22262e] border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                     />
                                     <span className="text-sm text-slate-500">{t('meters')}</span>
-                                    {settingsSaved && (
-                                        <span className="flex items-center gap-1 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-left-2">
-                                            <Check className="w-3 h-3" /> {t('saved')}
-                                        </span>
-                                    )}
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">{t('snap_distance_help')}</p>
+                                <p className="text-xs text-slate-500 mt-2">{t('coverage_radius_help')}</p>
+                            </div>
+
+                            {/* Base Project Link */}
+                            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                    <GitBranch className="w-3 h-3" /> {t('base_project')}
+                                </label>
+                                {currentProject?.parentProjectId ? (
+                                    <div className="flex items-center justify-between p-2.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
+                                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                            {t('base_project_linked_to', { name: currentProject.parentProject?.name || '' })}
+                                        </span>
+                                        <button
+                                            onClick={() => { setShowSettingsModal(false); setShowParentProjectModal(true); }}
+                                            className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                        >
+                                            {t('settings') || 'Configurar'}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => { setShowSettingsModal(false); setShowParentProjectModal(true); }}
+                                        className="w-full flex items-center justify-between p-2.5 bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs text-slate-500 hover:border-emerald-300 dark:hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
+                                    >
+                                        <span>{t('base_project_none')}</span>
+                                        <span className="font-bold">{t('base_project_select_placeholder')}</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 border-t border-slate-200 dark:border-slate-700 flex justify-end">
                             <Button
                                 variant="emerald"
-                                onClick={() => {
-                                    performAutoSnap(systemSettings.snapDistance);
-                                    setShowSettingsModal(false);
-                                }}
+                                onClick={() => setShowSettingsModal(false)}
                             >
                                 {t('done')}
                             </Button>

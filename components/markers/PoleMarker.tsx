@@ -26,7 +26,7 @@ const createPoleIcon = (
 ) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
-    const baseSize = 12;
+    const baseSize = 9;
     const size = Math.round(baseSize * zoomScale);
 
     const cacheKey = `pole-${type}-${isSelected}-${showLabels}-${effectiveZoom}-${approvalStatus || 'none'}-${situation || 'none'}`;

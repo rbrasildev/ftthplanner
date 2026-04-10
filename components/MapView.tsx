@@ -3,12 +3,12 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus } from '../types';
+import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState } from '../types';
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
@@ -22,6 +22,7 @@ import { CTOMarker } from './markers/CTOMarker';
 import { POPMarker } from './markers/POPMarker';
 import { PoleMarker } from './markers/PoleMarker';
 import { TechnicalReserveMarker } from './markers/TechnicalReserveMarker';
+import { ParentProjectLayer } from './layers/ParentProjectLayer';
 
 
 
@@ -580,6 +581,12 @@ interface MapViewProps {
     exportAreaPolygon?: { lat: number; lng: number }[];
     onExportAreaPolygonChange?: (points: { lat: number; lng: number }[]) => void;
     onExportAreaConfirm?: () => void;
+    // Parent Project
+    parentNetwork?: NetworkState | null;
+    showParentElements?: boolean;
+    parentProjectName?: string;
+    onParentNodeClick?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    onParentBlockedEdit?: () => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -604,7 +611,12 @@ export const MapView: React.FC<MapViewProps> = ({
     onCancelMode,
     exportAreaPolygon = [],
     onExportAreaPolygonChange,
-    onExportAreaConfirm
+    onExportAreaConfirm,
+    parentNetwork = null,
+    showParentElements = true,
+    parentProjectName = '',
+    onParentNodeClick,
+    onParentBlockedEdit
 }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
@@ -619,6 +631,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const [pendingConnection, setPendingConnection] = useState<{ ctoId: string, dropPoints: L.LatLng[] } | null>(null);
     const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | undefined>(undefined);
     const [isCustomersVisible, setIsCustomersVisible] = useState(true);
+    const [showParentLayer, setShowParentLayer] = useState(true);
     const [drawingCustomerDrop, setDrawingCustomerDrop] = useState<{
         customerId: string,
         startLat: number,
@@ -1074,6 +1087,17 @@ export const MapView: React.FC<MapViewProps> = ({
         visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)),
         [visiblePoles, mode, selectedId]);
 
+    // Merge parent network nodes for snap detection (cable endpoint connections)
+    const snapCTOs = useMemo(() =>
+        parentNetwork ? [...ctos, ...parentNetwork.ctos] : ctos,
+        [ctos, parentNetwork]);
+    const snapPOPs = useMemo(() =>
+        parentNetwork ? [...pops, ...parentNetwork.pops] : pops,
+        [pops, parentNetwork]);
+    const snapPoles = useMemo(() =>
+        parentNetwork ? [...poles, ...parentNetwork.poles] : poles,
+        [poles, parentNetwork]);
+
     // Lazy loading labels based on zoom
     const effectiveShowLabels = showLabels && currentZoom > 16;
 
@@ -1281,41 +1305,32 @@ export const MapView: React.FC<MapViewProps> = ({
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
-                {/* Map Type Switcher - Google Maps Style */}
-                <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-                    <button
-                        onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-                        className="group relative w-full aspect-square rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none"
-                        title={mapType === 'street' ? t('map_satellite') : t('map_street')}
-                    >
-                        <div className="absolute inset-0">
-                            {mapType === 'street' ? (
-                                <div className="absolute inset-0 bg-[url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0')] bg-cover bg-center" />
-                            ) : (
-                                <div className="absolute inset-0 bg-slate-100 dark:bg-[#1a1d23] flex items-center justify-center">
-                                    <Globe className="w-6 h-6 text-emerald-500 opacity-70" />
-                                </div>
-                            )}
-                        </div>
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5">
-                            <span className="text-[7px] font-black text-white uppercase tracking-tighter block text-center leading-none">
-                                {mapType === 'street' ? t('map_satellite') : t('map_street')}
-                            </span>
-                        </div>
-                    </button>
-                </div>
-
-                {/* Compact Layer Visibility Panel */}
+                {/* Unified Layer & Map Panel */}
                 <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
+
+                    {/* Map Type Switcher */}
+                    <LayerToggle
+                        active={mapType === 'satellite'}
+                        onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+                        label={mapType === 'street' ? t('map_satellite') : t('map_street')}
+                        color="emerald"
+                        icon={mapType === 'street' ? <Layers className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                    />
+
+                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 w-full mx-1 my-0.5"></div>
+
                     {/* Section: Elements */}
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-1 pb-0.5">{t('layer_panel_elements')}</span>
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_elements')}</span>
 
                     <LayerToggle active={showCTOs} onClick={() => setShowCTOs(!showCTOs)} label={t('layer_ctos')} color="blue" icon={<Box className="w-5 h-5" />} />
                     <LayerToggle active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-5 h-5" />} />
-                    <LayerToggle active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles') || 'Postes'} color="stone" icon={<UtilityPole className="w-5 h-5" />} />
+                    <LayerToggle active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles')} color="stone" icon={<UtilityPole className="w-5 h-5" />} />
                     <LayerToggle active={showCables} onClick={() => setShowCables(!showCables)} label={t('layer_cables')} color="slate" icon={<Share2 className="w-5 h-5" />} />
-                    <LayerToggle active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers') || 'Clientes'} color="green" icon={<User className="w-5 h-5" />} />
+                    <LayerToggle active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="green" icon={<User className="w-5 h-5" />} />
+
+                    {parentNetwork && (
+                        <LayerToggle active={showParentLayer} onClick={() => setShowParentLayer(!showParentLayer)} label={parentProjectName || t('base_project_layer_label')} color="emerald" icon={<GitBranch className="w-5 h-5" />} />
+                    )}
 
                     <div className="h-[1px] bg-slate-200 dark:bg-slate-700 w-full mx-1 my-0.5"></div>
 
@@ -1323,7 +1338,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_display')}</span>
 
                     <LayerToggle active={showLabels} onClick={() => onToggleLabels && onToggleLabels()} label={t('show_labels')} color="emerald" icon={<Tag className="w-5 h-5" />} />
-                    <LayerToggle active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering') || 'Agrupamento'} color="purple" icon={<Layers className="w-5 h-5" />} />
+                    <LayerToggle active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering')} color="purple" icon={<Layers className="w-5 h-5" />} />
                 </div>
             </div>
 
@@ -1385,6 +1400,24 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <BoundsUpdater setBounds={setMapBoundsState} setZoom={setCurrentZoom} />
 
+                {/* Parent Project Elements Layer */}
+                {parentNetwork && (
+                    <ParentProjectLayer
+                        network={parentNetwork}
+                        visible={showParentLayer && showParentElements}
+                        parentProjectName={parentProjectName}
+                        mode={mode}
+                        showLabels={effectiveShowLabels}
+                        currentZoom={currentZoom}
+                        selectedId={selectedId}
+                        cableStartPoint={cableStartPoint}
+                        onCableStart={onCableStart}
+                        onCableEnd={onCableEnd}
+                        onNodeClick={onParentNodeClick}
+                        onBlockedEdit={onParentBlockedEdit}
+                    />
+                )}
+
                 <DropsLayer
                     customers={allCustomers}
                     visible={isCustomersVisible}
@@ -1430,9 +1463,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                     onUpdateGeometry={onUpdateCableGeometry}
                                     onConnect={mode === 'connect_cable' ? handleConnectWrapper : undefined}
                                     snapDistance={snapDistance}
-                                    ctos={ctos}
-                                    pops={pops}
-                                    poles={poles}
+                                    ctos={snapCTOs}
+                                    pops={snapPOPs}
+                                    poles={snapPoles}
                                     onPointDragStart={handlePointDragStart}
                                     onDrag={handleDrag}
                                     onDragEnd={handleDragEnd}

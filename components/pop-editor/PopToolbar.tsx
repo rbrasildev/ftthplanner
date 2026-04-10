@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server, Scissors, Zap, Network, Save, X, Link } from 'lucide-react';
+import { Server, Scissors, Zap, Network, Save, X, Link, ExternalLink } from 'lucide-react';
 import { Button } from '../common/Button';
 
 interface PopToolbarProps {
@@ -13,6 +13,8 @@ interface PopToolbarProps {
     userRole?: string | null;
     t: (key: string) => string;
     stats?: { olts: number; dios: number; connections: number; totalPorts: number; usedPorts: number };
+    readOnly?: boolean;
+    onGoToParentProject?: () => void;
 }
 
 export const PopToolbar: React.FC<PopToolbarProps> = ({
@@ -25,8 +27,11 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
     onSave,
     userRole,
     t,
-    stats
+    stats,
+    readOnly,
+    onGoToParentProject
 }) => {
+    const canEdit = !readOnly && userRole !== 'MEMBER';
     return (
         <div className="h-12 bg-[#22262e] border-b border-slate-600/40 flex items-center justify-between px-4 shrink-0 z-40 backdrop-blur-sm">
             <div className="flex gap-2 items-center w-full">
@@ -88,14 +93,25 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                 </div>
 
                 <div className="flex items-center ml-auto gap-2">
+                    {readOnly && onGoToParentProject && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => { onSave(); onGoToParentProject(); }}
+                            className="h-8 px-4 font-bold active:scale-95 shadow-sm"
+                            icon={<ExternalLink className="w-3.5 h-3.5" />}
+                        >
+                            {t('base_project_edit_in_base')}
+                        </Button>
+                    )}
                     <Button
-                        variant={userRole === 'MEMBER' ? 'outline' : 'emerald'}
+                        variant={canEdit ? 'emerald' : 'outline'}
                         size="sm"
                         onClick={onSave}
-                        className={`h-8 px-4 font-bold active:scale-95 shadow-sm ${userRole === 'MEMBER' ? 'text-slate-300 border-slate-600/40' : ''}`}
-                        icon={userRole === 'MEMBER' ? <X className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                        className={`h-8 px-4 font-bold active:scale-95 shadow-sm ${!canEdit ? 'text-slate-300 border-slate-600/40' : ''}`}
+                        icon={canEdit ? <Save className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
                     >
-                        {userRole === 'MEMBER' ? (t('done') || 'Sair') : (t('save_or_done') || 'Concluir')}
+                        {canEdit ? (t('save_or_done') || 'Concluir') : (t('close') || 'Fechar')}
                     </Button>
 
                     {userRole !== 'MEMBER' && onAutoPatch && (

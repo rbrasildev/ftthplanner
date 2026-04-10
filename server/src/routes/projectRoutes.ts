@@ -11,7 +11,11 @@ import {
     updateCTO,
     updatePOP,
     searchCTO,
-    getCTOPower
+    getCTOPower,
+    setParentProject,
+    getParentProjectNetwork,
+    getChildProjects,
+    getChildCables
 } from '../controllers/projectController';
 
 const router = Router();
@@ -28,5 +32,11 @@ router.post('/:id/sync', syncProject);
 router.get('/:id/ctos/:ctoId/power', getCTOPower);
 router.put('/:id/ctos/:ctoId', checkPermission('map:edit'), updateCTO);
 router.put('/:id/pops/:popId', checkPermission('map:edit'), updatePOP);
+
+// Parent Project routes
+router.put('/:id/parent', checkPermission('projects:edit'), setParentProject);
+router.get('/:id/parent-network', getParentProjectNetwork);
+router.get('/:id/children', getChildProjects);
+router.get('/:id/child-cables', getChildCables);
 
 export default router;
