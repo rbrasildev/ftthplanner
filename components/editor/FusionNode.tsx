@@ -17,6 +17,9 @@ interface FusionNodeProps {
     onHoverEnter?: (e: React.MouseEvent) => void;
     onHoverLeave?: (e: React.MouseEvent) => void;
     hoverData?: { id: string; type: string };
+    // For connectors (category==='connector'), the single customer attached to this element.
+    // Fusions never have customers, so this is only meaningful when isConnector.
+    attachedCustomer?: { name: string; status?: string | null } | null;
 }
 
 const FusionNodeComponent: React.FC<FusionNodeProps> = ({
@@ -32,7 +35,8 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
     onPortMouseLeave,
     onHoverEnter,
     onHoverLeave,
-    hoverData
+    hoverData,
+    attachedCustomer = null,
 }) => {
     const portA = `${fusion.id}-a`;
     const portB = `${fusion.id}-b`;
@@ -120,6 +124,34 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 >
                     {!isLitB && isConnectedB && !isConnector && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
                 </div>
+
+                {/* Attached Customer Label — only for connectors. Extends horizontally from the RIGHT tip
+                    (portB) of the connector, so it reads as "cable coming out of the connector end",
+                    not hanging off the side of the body. */}
+                {isConnector && attachedCustomer && (() => {
+                    const isOffline = attachedCustomer.status === 'offline';
+                    return (
+                        <div
+                            className="absolute flex items-center pointer-events-none"
+                            style={{
+                                // Anchor at the right port and extend further right.
+                                left: 'calc(100% + 1px)',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 40
+                            }}
+                            title={attachedCustomer.name}
+                        >
+                            {/* Triangle pointing left toward the connector tip */}
+                            <div className={`w-0 h-0 border-t-[2px] border-t-transparent border-b-[2px] border-b-transparent border-r-[3px] ${isOffline ? 'border-r-red-500/80' : 'border-r-green-500/80'} mr-[-1px]`} />
+                            <div className={`${isOffline ? 'bg-red-500/90 dark:bg-red-600/90' : 'bg-green-500/90 dark:bg-green-600/90'} text-white rounded-[1px] shadow-sm flex items-center justify-center px-[2px] py-[1px] min-h-[8px]`}>
+                                <span className="text-[6px] font-black uppercase tracking-tighter whitespace-nowrap">
+                                    {attachedCustomer.name}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );

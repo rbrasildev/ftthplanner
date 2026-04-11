@@ -58,17 +58,29 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         // Basic validation
         if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
-        // Check if email or username exists
+        // Check if email or username exists.
+        // IMPORTANT: does NOT filter by deletedAt — the unique index in Postgres is
+        // global, so a soft-deleted user still "owns" their username/email at the
+        // DB level. If we skipped them here, the create would slip through and
+        // blow up with a 500 on the unique constraint.
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
                     { username: finalUsername },
                     { email: finalEmail }
-                ],
-                deletedAt: null
+                ]
             }
         });
-        if (existingUser) return res.status(400).json({ error: 'Username or Email already taken' });
+        if (existingUser) {
+            const isSameUsername = existingUser.username.toLowerCase() === finalUsername.toLowerCase();
+            const field = isSameUsername ? 'username' : 'e-mail';
+            if (existingUser.deletedAt) {
+                return res.status(400).json({
+                    error: `Este ${field} pertence a um usuário removido anteriormente e não pode ser reutilizado.`
+                });
+            }
+            return res.status(400).json({ error: 'Username or Email already taken' });
+        }
 
         const passwordHash = await bcrypt.hash(password, 10);
 

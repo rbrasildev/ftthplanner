@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { X, FileText, LayoutList, Cable, ClipboardCheck, Download, Info } from 'lucide-react';
+import { X, FileText, LayoutList, Cable, ClipboardCheck, Download, Info, Users } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
-import { NetworkState } from '../../types';
+import { NetworkState, Customer } from '../../types';
 import { calculateNetworkReport } from '../../utils/reportUtils';
 
 interface ProjectReportModalProps {
@@ -9,12 +9,13 @@ interface ProjectReportModalProps {
     onClose: () => void;
     network: NetworkState;
     projectName: string;
+    customers?: Customer[];
 }
 
-export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, onClose, network, projectName }) => {
+export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, onClose, network, projectName, customers = [] }) => {
     const { t } = useLanguage();
 
-    const report = useMemo(() => calculateNetworkReport(network), [network]);
+    const report = useMemo(() => calculateNetworkReport(network, customers), [network, customers]);
 
     if (!isOpen) return null;
 
@@ -24,6 +25,8 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
         csv += `${t('report_total_ceos')},${report.ceoCount}\n`;
         csv += `${t('report_total_pops')},${report.popCount}\n`;
         csv += `${t('report_total_poles')},${report.poleCount}\n`;
+        csv += `${t('report_total_drops')},${report.dropCount}\n`;
+        csv += `${t('report_total_drop_meters')},${report.dropMeters.toFixed(2)}\n`;
         csv += `\n${t('report_cable_type')},${t('report_qty')},${t('report_total_meters')}\n`;
         report.cableStats.forEach(stat => {
             csv += `${stat.fiberCount}FO,${stat.count},${stat.totalMeters.toFixed(2)}\n`;
@@ -68,12 +71,18 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
 
                     {/* Metrics Dashboard */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <MetricCard
                             icon={<LayoutList className="w-4 h-4" />}
                             label={t('report_infrastructure')}
                             value={report.ctoCount + report.ceoCount + report.popCount + report.poleCount}
                             color="blue"
+                        />
+                        <MetricCard
+                            icon={<Users className="w-4 h-4" />}
+                            label={t('report_total_drops')}
+                            value={`${report.dropCount} (${report.dropMeters.toFixed(0)}m)`}
+                            color="indigo"
                         />
                         <MetricCard
                             icon={<Cable className="w-4 h-4" />}
@@ -102,6 +111,8 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                             <ReportRow label={t('report_total_ceos')} value={report.ceoCount} />
                             <ReportRow label={t('report_total_pops')} value={report.popCount} />
                             <ReportRow label={t('report_total_poles')} value={report.poleCount} />
+                            <ReportRow label={t('report_total_drops')} value={report.dropCount} />
+                            <ReportRow label={t('report_total_drop_meters')} value={`${report.dropMeters.toFixed(1)}m`} />
                         </div>
                     </section>
 
@@ -178,11 +189,12 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
     );
 };
 
-const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string | number; color: 'blue' | 'emerald' | 'amber' }> = ({ icon, label, value, color }) => {
+const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string | number; color: 'blue' | 'emerald' | 'amber' | 'indigo' }> = ({ icon, label, value, color }) => {
     const colors = {
         blue: 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30',
         emerald: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30',
-        amber: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
+        amber: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30',
+        indigo: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
     };
 
     return (

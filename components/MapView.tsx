@@ -779,14 +779,16 @@ export const MapView: React.FC<MapViewProps> = ({
             return;
         }
 
-        // VERIFY: If CTO has no splitters that allow connections, block it
+        // VERIFY: CTO must have at least one viable attachment point — a splitter that allows
+        // custom connections OR at least one connector in its fusions list.
         const hasValidSplitters = cto.splitters?.some(s => s.allowCustomConnections !== false);
-        if (!hasValidSplitters) {
-            alert("Esta CTO não possui splitters que permitem novas conexões de clientes.");
+        const hasConnectors = (cto.fusions || []).some(f => f.category === 'connector');
+        if (!hasValidSplitters && !hasConnectors) {
+            alert("Esta CTO não possui splitters ou conectores disponíveis para conectar clientes.");
             return;
         }
 
-        // Open Modal to select splitter/port
+        // Open Modal to select splitter port or connector
         setPendingConnection({
             ctoId: cto.id,
             dropPoints: drawingCustomerDrop.points || [] // Pass the path drawn so far
@@ -2182,7 +2184,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 }}
                 allCustomers={allCustomers}
                 customerId={drawingCustomerDrop?.customerId}
-                onConnect={async (ctoId, splitterId, portIndex) => {
+                onConnect={async (ctoId, payload) => {
                     if (!pendingConnection) return;
 
                     try {
@@ -2206,15 +2208,15 @@ export const MapView: React.FC<MapViewProps> = ({
                         const endPoint = { lat: targetCto.coordinates.lat, lng: targetCto.coordinates.lng };
 
                         const fullPath = [startPoint, ...waypoints, endPoint];
-                        console.log("[MapView] Saving Drop Path:", fullPath);
 
                         if (drawingCustomerDrop?.customerId) {
                             const updatedCustomer = await updateCustomer(drawingCustomerDrop.customerId, {
                                 dropCoordinates: fullPath,
                                 ctoId: ctoId,
-                                splitterId: splitterId ?? undefined,
-                                splitterPortIndex: portIndex ?? undefined
-                            });
+                                splitterId: payload.splitterId ?? null,
+                                splitterPortIndex: payload.splitterPortIndex ?? null,
+                                connectorId: payload.connectorId ?? null
+                            } as any);
 
                             showToast(t('toast_cable_split', { name: targetCto.name }), 'success');
 

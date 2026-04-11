@@ -2494,6 +2494,7 @@ export default function App() {
                 onClose={() => setIsReportModalOpen(false)}
                 network={currentProject?.network || { ctos: [], pops: [], cables: [], poles: [] }}
                 projectName={currentProject?.name || ''}
+                customers={globalCustomers}
             />
 
             {token && <SupportChatBubble />}

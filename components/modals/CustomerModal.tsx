@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Customer, CTOData, Splitter } from '../../types';
 import { useLanguage } from '../../LanguageContext';
-import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle } from 'lucide-react';
+import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle, Zap } from 'lucide-react';
 import { CustomInput } from '../common/CustomInput';
 import { CustomSelect } from '../common/CustomSelect';
 import { getSplitterPortCount } from '../../utils/splitterUtils';
@@ -59,6 +59,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     const [selectedCtoId, setSelectedCtoId] = useState<string | null>(initialData?.ctoId || null);
     const [selectedSplitterId, setSelectedSplitterId] = useState<string | null>(initialData?.splitterId || null);
     const [selectedPortIndex, setSelectedPortIndex] = useState<number | null>(initialData?.splitterPortIndex !== undefined ? initialData.splitterPortIndex : null);
+    const [selectedConnectorId, setSelectedConnectorId] = useState<string | null>(initialData?.connectorId || null);
+    // Which attachment tab is active — auto-initialized based on what the customer already has.
+    const [attachmentMode, setAttachmentMode] = useState<'splitter' | 'connector'>(initialData?.connectorId ? 'connector' : 'splitter');
 
     // Update form when initialData changes
     useEffect(() => {
@@ -87,6 +90,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             setSelectedCtoId(initialData.ctoId || null);
             setSelectedSplitterId(initialData.splitterId || null);
             setSelectedPortIndex(initialData.splitterPortIndex !== undefined ? initialData.splitterPortIndex : null);
+            setSelectedConnectorId(initialData.connectorId || null);
+            setAttachmentMode(initialData.connectorId ? 'connector' : 'splitter');
             setActiveTab(TABS.DATA); // Also reset to first tab
         }
     }, [initialData]);
@@ -288,12 +293,18 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 finalAddress = finalAddress.replace(/, ,/g, ',').replace(/^, /, '').replace(/ -  - /, ' - ').trim();
             }
 
+            // Attachment fields follow the mode: in 'connector' mode we send the connectorId and
+            // null out the splitter fields; in 'splitter' mode we do the opposite. The server also
+            // enforces mutual exclusion, so both sides agree.
+            const attachmentFields = attachmentMode === 'connector'
+                ? { splitterId: null, splitterPortIndex: null, connectorId: selectedConnectorId }
+                : { splitterId: selectedSplitterId, splitterPortIndex: selectedPortIndex, connectorId: null };
+
             await onSave({
                 ...formData,
                 address: finalAddress, // Use the processed address
                 ctoId: selectedCtoId,
-                splitterId: selectedSplitterId,
-                splitterPortIndex: selectedPortIndex,
+                ...attachmentFields,
                 updatedAt: new Date().toISOString()
             });
             onClose();
@@ -355,7 +366,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                             }`}
                     >
                         <Network size={16} />
-                        {t('customer_connection')} ({selectedPortIndex !== null ? '1' : '0'})
+                        {t('customer_connection')} ({(selectedPortIndex !== null || selectedConnectorId) ? '1' : '0'})
                     </button>
                 </div>
 
@@ -558,6 +569,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                 setSelectedCtoId(null);
                                                 setSelectedSplitterId(null);
                                                 setSelectedPortIndex(null);
+                                                setSelectedConnectorId(null);
                                             }}
                                             className="text-xs text-indigo-500 hover:underline"
                                         >
@@ -589,6 +601,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                         setSelectedCtoId(cto.id);
                                                         setSelectedSplitterId(null);
                                                         setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
+                                                        setSelectedConnectorId(null);
                                                     }}
                                                     className={`p-2 text-left rounded text-sm flex justify-between items-center ${selectedCtoId === cto.id
                                                         ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-600'
@@ -604,73 +617,162 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 )}
                             </div>
 
-                            {selectedCtoId && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('select_splitter')}</label>
-                                        <div className="flex gap-2 flex-wrap">
-                                            {splitters.length === 0 && <span className="text-sm text-slate-500 italic">{t('no_splitters_in_cto')}</span>}
-                                            {splitters.map(splitter => (
-                                                <button
-                                                    key={splitter.id}
-                                                    disabled={splitter.allowCustomConnections === false}
-                                                    onClick={() => {
-                                                        setSelectedSplitterId(splitter.id);
-                                                        setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
-                                                    }}
-                                                    title={splitter.allowCustomConnections === false ? (t('splitter_blocked_desc') || "Este splitter não permite conexão de clientes") : ""}
-                                                    className={`px-3 py-1.5 rounded text-sm border transition-all ${selectedSplitterId === splitter.id
-                                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                                        : splitter.allowCustomConnections === false
-                                                            ? 'bg-slate-100 dark:bg-[#22262e] border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed opacity-70'
-                                                            : 'bg-white dark:bg-[#22262e] border-slate-300 dark:border-slate-600 hover:bg-slate-50'
-                                                        } `}
-                                                >
-                                                    {splitter.name} ({splitter.type})
-                                                </button>
-                                            ))}
+                            {selectedCtoId && (() => {
+                                // Connectors live in the CTO's fusions array with category='connector'.
+                                const ctoConnectors = (selectedCto?.fusions || []).filter(f => f.category === 'connector');
+                                return (
+                                    <div className="space-y-4">
+                                        {/* Attachment mode tabs */}
+                                        <div className="flex bg-slate-100 dark:bg-[#22262e] p-1 rounded-lg gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setAttachmentMode('splitter');
+                                                    setSelectedConnectorId(null);
+                                                }}
+                                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                                                    attachmentMode === 'splitter'
+                                                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                                }`}
+                                            >
+                                                <Network className="w-3.5 h-3.5" />
+                                                {t('splitter') || 'Splitter'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setAttachmentMode('connector');
+                                                    setSelectedSplitterId(null);
+                                                    setSelectedPortIndex(null);
+                                                }}
+                                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                                                    attachmentMode === 'connector'
+                                                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                                }`}
+                                            >
+                                                <Zap className="w-3.5 h-3.5" />
+                                                {t('connector') || 'Conector'} ({ctoConnectors.length})
+                                            </button>
                                         </div>
-                                    </div>
 
-                                    {selectedSplitterId && (
+                                        {attachmentMode === 'splitter' && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-slate-500 mb-1">{t('select_splitter')}</label>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {splitters.length === 0 && <span className="text-sm text-slate-500 italic">{t('no_splitters_in_cto')}</span>}
+                                                        {splitters.map(splitter => (
+                                                            <button
+                                                                key={splitter.id}
+                                                                disabled={splitter.allowCustomConnections === false}
+                                                                onClick={() => {
+                                                                    setSelectedSplitterId(splitter.id);
+                                                                    setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
+                                                                }}
+                                                                title={splitter.allowCustomConnections === false ? (t('splitter_blocked_desc') || "Este splitter não permite conexão de clientes") : ""}
+                                                                className={`px-3 py-1.5 rounded text-sm border transition-all ${selectedSplitterId === splitter.id
+                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                    : splitter.allowCustomConnections === false
+                                                                        ? 'bg-slate-100 dark:bg-[#22262e] border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed opacity-70'
+                                                                        : 'bg-white dark:bg-[#22262e] border-slate-300 dark:border-slate-600 hover:bg-slate-50'
+                                                                    } `}
+                                                            >
+                                                                {splitter.name} ({splitter.type})
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {selectedSplitterId && (
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-slate-500 mb-1 flex justify-between items-center">
+                                                            <span>{t('select_port')}</span>
+                                                            {sgpSuggestedPort !== null && (
+                                                                <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold border border-indigo-200">
+                                                                    SGP Sugere: Porta {sgpSuggestedPort + 1}
+                                                                </span>
+                                                            )}
+                                                        </label>
+                                                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                                                            {ports.map(port => (
+                                                                <button
+                                                                    key={port.index}
+                                                                    disabled={port.occupied}
+                                                                    onClick={() => setSelectedPortIndex(port.index)}
+                                                                    className={`
+                                                                        relative h-10 rounded border flex items-center justify-center text-sm font-bold transition-all
+                                                                        ${port.occupied
+                                                                            ? 'bg-slate-100 dark:bg-[#22262e] border-slate-200 text-slate-400 cursor-not-allowed'
+                                                                            : selectedPortIndex === port.index
+                                                                                ? 'bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-200 dark:ring-green-900'
+                                                                                : port.index === sgpSuggestedPort
+                                                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-200 hover:bg-indigo-100'
+                                                                                    : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
+                                                                        }
+                                                                    `}
+                                                                    title={port.occupied ? t('port_occupied_by', { name: port.occupantName || '' }) : t('port_free')}
+                                                                >
+                                                                    {port.index + 1}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {attachmentMode === 'connector' && (
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-500 mb-1 flex justify-between items-center">
-                                                    <span>{t('select_port')}</span>
-                                                    {sgpSuggestedPort !== null && (
-                                                        <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold border border-indigo-200">
-                                                            SGP Sugere: Porta {sgpSuggestedPort + 1}
-                                                        </span>
-                                                    )}
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5">
+                                                    <Zap className="w-3 h-3" />
+                                                    {t('select_connector') || 'Selecionar Conector'}
                                                 </label>
-                                                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                                                {ports.map(port => (
-                                                    <button
-                                                        key={port.index}
-                                                        disabled={port.occupied}
-                                                        onClick={() => setSelectedPortIndex(port.index)}
-                                                        className={`
-                                                            relative h-10 rounded border flex items-center justify-center text-sm font-bold transition-all
-                                                            ${port.occupied
-                                                                ? 'bg-slate-100 dark:bg-[#22262e] border-slate-200 text-slate-400 cursor-not-allowed'
-                                                                : selectedPortIndex === port.index
-                                                                    ? 'bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-200 dark:ring-green-900'
-                                                                    : port.index === sgpSuggestedPort
-                                                                        ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-200 hover:bg-indigo-100'
-                                                                        : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
-                                                            }
-                                                        `}
-                                                        title={port.occupied ? t('port_occupied_by', { name: port.occupantName || '' }) : t('port_free')}
-                                                    >
-                                                        {port.index + 1}
-                                                    </button>
-                                                ))}
+                                                {ctoConnectors.length === 0 ? (
+                                                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm rounded border border-yellow-200 dark:border-yellow-800">
+                                                        {t('no_connectors_in_cto') || 'Esta CTO não possui conectores. Adicione um conector no editor da CTO.'}
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                                                        {ctoConnectors.map(conn => {
+                                                            const occupant = allCustomers.find(c =>
+                                                                c.ctoId === selectedCtoId &&
+                                                                c.connectorId === conn.id &&
+                                                                c.id !== formData.id
+                                                            );
+                                                            const isOccupied = !!occupant;
+                                                            const isSelected = selectedConnectorId === conn.id;
+                                                            const isAPC = conn.polishType === 'APC';
+                                                            return (
+                                                                <button
+                                                                    key={conn.id}
+                                                                    type="button"
+                                                                    disabled={isOccupied}
+                                                                    onClick={() => setSelectedConnectorId(conn.id)}
+                                                                    title={isOccupied ? t('port_occupied_by', { name: occupant!.name }) : (conn.name || 'Conector')}
+                                                                    className={`
+                                                                        relative h-14 rounded border text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1 px-1
+                                                                        ${isOccupied
+                                                                            ? 'bg-slate-100 dark:bg-[#22262e] border-slate-200 text-slate-400 cursor-not-allowed'
+                                                                            : isSelected
+                                                                                ? 'bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-200 dark:ring-green-900'
+                                                                                : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-green-400 hover:text-green-600'
+                                                                        }
+                                                                    `}
+                                                                >
+                                                                    <span className={`w-2.5 h-2.5 rounded-[1px] ${isAPC ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                                                    <span className="truncate max-w-full leading-tight">{conn.name}</span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    )}
-
-
-                                </div>
-                            )}
+                                        )}
+                                    </div>
+                                );
+                            })()}
 
                             <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
@@ -853,11 +955,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     ...prev,
                                     ctoId: null,
                                     splitterId: null,
-                                    splitterPortIndex: null
+                                    splitterPortIndex: null,
+                                    connectorId: null
                                 }));
                                 setSelectedCtoId(null);
                                 setSelectedSplitterId(null);
                                 setSelectedPortIndex(null);
+                                setSelectedConnectorId(null);
                                 setShowDisconnectConfirm(false);
                             }}
                             className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-500 rounded-lg shadow-lg shadow-red-900/20 transition-all active:scale-95"

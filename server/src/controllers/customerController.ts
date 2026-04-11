@@ -105,7 +105,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         const {
             name, document, phone, email, address,
             lat, lng,
-            ctoId, splitterId, splitterPortIndex, fiberId,
+            ctoId, splitterId, splitterPortIndex, connectorId, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
             connectionStatus
@@ -123,8 +123,16 @@ export const createCustomer = async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Coordenadas inválidas. Lat/Lng devem ser números." });
         }
 
-        // Validation: Check if port is already occupied
-        if (ctoId && splitterId && splitterPortIndex !== undefined) {
+        // Mutual exclusion: a customer is either on a splitter port OR on a connector, never both.
+        if (connectorId && (splitterId || splitterPortIndex !== undefined && splitterPortIndex !== null)) {
+            return res.status(400).json({
+                error: 'Conexão inválida',
+                details: 'Cliente não pode estar em splitter e conector ao mesmo tempo.'
+            });
+        }
+
+        // Validation: Check if splitter port is already occupied
+        if (ctoId && splitterId && splitterPortIndex !== undefined && splitterPortIndex !== null) {
 
             const existing = await prisma.customer.findFirst({
                 where: {
@@ -141,6 +149,25 @@ export const createCustomer = async (req: Request, res: Response) => {
                 return res.status(409).json({
                     error: 'Porta ocupada',
                     details: `Esta porta já está em uso pelo cliente ${existing.name}`
+                });
+            }
+        }
+
+        // Validation: Check if connector is already occupied (1 customer per connector)
+        if (ctoId && connectorId) {
+            const existing = await prisma.customer.findFirst({
+                where: {
+                    companyId: user.companyId,
+                    ctoId,
+                    connectorId,
+                    deletedAt: null
+                }
+            });
+
+            if (existing) {
+                return res.status(409).json({
+                    error: 'Conector ocupado',
+                    details: `Este conector já está em uso pelo cliente ${existing.name}`
                 });
             }
         }
@@ -164,9 +191,12 @@ export const createCustomer = async (req: Request, res: Response) => {
                     lat: pLat,
                     lng: pLng,
                     ctoId,
-                    splitterId,
-                    // Index is 0-based usually, ensure it's a number
-                    splitterPortIndex: splitterPortIndex !== undefined ? Number(splitterPortIndex) : null,
+                    // Mutual exclusion — if attaching via connector, null out splitter fields.
+                    splitterId: connectorId ? null : splitterId,
+                    splitterPortIndex: connectorId
+                        ? null
+                        : (splitterPortIndex !== undefined && splitterPortIndex !== null ? Number(splitterPortIndex) : null),
+                    connectorId: connectorId || null,
                     fiberId,
                     status: status || 'ACTIVE',
                     onuSerial,
@@ -246,7 +276,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
         const {
             name, document, phone, email, address,
             lat, lng,
-            ctoId, splitterId, splitterPortIndex, fiberId,
+            ctoId, splitterId, splitterPortIndex, connectorId, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
             connectionStatus
@@ -256,9 +286,17 @@ export const updateCustomer = async (req: Request, res: Response) => {
         const currentHelper = await prisma.customer.findFirst({ where: { id, companyId: user.companyId } });
         if (!currentHelper) return res.status(404).json({ error: 'Customer not found' });
 
-        // Check occupancy if changing port
+        // Mutual exclusion: if a connector is being assigned, no splitter attachment can coexist.
+        if (connectorId && (splitterId || (splitterPortIndex !== undefined && splitterPortIndex !== null))) {
+            return res.status(400).json({
+                error: 'Conexão inválida',
+                details: 'Cliente não pode estar em splitter e conector ao mesmo tempo.'
+            });
+        }
+
+        // Check occupancy if changing splitter port
         if (
-            ctoId && splitterId && splitterPortIndex !== undefined &&
+            ctoId && splitterId && splitterPortIndex !== undefined && splitterPortIndex !== null &&
             (
                 ctoId !== currentHelper.ctoId ||
                 splitterId !== currentHelper.splitterId ||
@@ -284,6 +322,29 @@ export const updateCustomer = async (req: Request, res: Response) => {
             }
         }
 
+        // Check occupancy if changing connector
+        if (
+            ctoId && connectorId &&
+            (ctoId !== currentHelper.ctoId || connectorId !== currentHelper.connectorId)
+        ) {
+            const existing = await prisma.customer.findFirst({
+                where: {
+                    companyId: user.companyId,
+                    ctoId,
+                    connectorId,
+                    id: { not: id },
+                    deletedAt: null
+                }
+            });
+
+            if (existing) {
+                return res.status(409).json({
+                    error: 'Conector ocupado',
+                    details: `Este conector já está em uso pelo cliente ${existing.name}`
+                });
+            }
+        }
+
         // New Drop Logic: Extract drop coordinates
         const { dropCoordinates } = req.body;
 
@@ -293,15 +354,36 @@ export const updateCustomer = async (req: Request, res: Response) => {
                 await tx.drop.deleteMany({ where: { customerId: id } });
             }
 
+            // Distinguish "field omitted from request" (undefined → don't touch) from "field explicitly
+            // set to null" (null → clear it). Prisma treats `undefined` as a skip, so we must only coerce
+            // values that were actually sent.
+            let splitterIdData: string | null | undefined = splitterId;
+            let splitterPortIndexData: number | null | undefined = splitterPortIndex === undefined
+                ? undefined
+                : (splitterPortIndex === null ? null : Number(splitterPortIndex));
+            let connectorIdData: string | null | undefined = connectorId;
+
+            // Mutual exclusion at update time: when the request explicitly sets a connector, we also
+            // clear any previous splitter attachment so the two can never coexist in the row.
+            if (connectorId) {
+                splitterIdData = null;
+                splitterPortIndexData = null;
+            }
+            // Symmetric case: if the request explicitly sets a splitter port, clear any previous connector.
+            if (splitterId && splitterPortIndex !== undefined && splitterPortIndex !== null) {
+                connectorIdData = null;
+            }
+
             const customer = await tx.customer.update({
                 where: { id },
                 data: {
                     name, document, phone, email, address,
-                    lat: lat !== undefined ? parseFloat(lat) : undefined,
-                    lng: lng !== undefined ? parseFloat(lng) : undefined,
+                    lat: lat !== undefined && lat !== null ? parseFloat(lat) : undefined,
+                    lng: lng !== undefined && lng !== null ? parseFloat(lng) : undefined,
                     ctoId,
-                    splitterId,
-                    splitterPortIndex: (splitterPortIndex !== undefined && splitterPortIndex !== null) ? Number(splitterPortIndex) : null,
+                    splitterId: splitterIdData,
+                    splitterPortIndex: splitterPortIndexData,
+                    connectorId: connectorIdData,
                     fiberId,
                     status,
                     onuSerial,

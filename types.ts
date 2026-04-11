@@ -449,6 +449,10 @@ export interface Customer {
   ctoId?: string | null;
   splitterId?: string | null;
   splitterPortIndex?: number | null;
+  // Alternative to splitterId/splitterPortIndex — when set, the customer is connected
+  // directly to a connector (FusionPoint with category='connector') inside the CTO.
+  // One customer per connector. Mutually exclusive with splitter attachment.
+  connectorId?: string | null;
   fiberId?: string | null;
   drop?: Drop; // Include Drop relation
   status: CustomerStatus;

@@ -64,10 +64,13 @@ export const sendEmail = async (templateSlug: string, to: string, variables: Rec
         finalVars.app_logo = formatUrl(finalVars.app_logo || saasConfig?.appLogoUrl || '/logo.png');
         finalVars.app_url = finalVars.app_url || saasConfig?.websiteUrl || baseUrl;
 
-        // Auto-inject company branding if missing
+        // Auto-inject company branding if missing.
+        // Uses findFirst + deletedAt:null because email uniqueness is now a
+        // PARTIAL index (only enforced on active users). A soft-deleted user
+        // can share the email with an active one; we always want the active.
         if (!finalVars.company_logo || !finalVars.company_name) {
-            const userWithCompany = await prisma.user.findUnique({
-                where: { email: to },
+            const userWithCompany = await prisma.user.findFirst({
+                where: { email: to, deletedAt: null },
                 include: { company: true }
             });
 

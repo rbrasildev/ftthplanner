@@ -2970,11 +2970,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const handleAddConnector = (e: React.MouseEvent) => {
         e.stopPropagation();
+        // If no connector catalog items exist, we cannot activate connector mode — doing so would
+        // fall through to `activateFusionTool(null)` and silently enter plain fusion mode (the cursor
+        // ghost would be round and clicks would create fusions, making the user think "clicked
+        // connector → got fusion"). Warn the user and abort instead.
+        if (availableConnectors.length === 0) {
+            alert(t('no_connectors_in_catalog') || 'Cadastre um conector no catálogo antes de usar esta ferramenta.');
+            return;
+        }
         if (availableConnectors.length > 1) {
             setShowConnectorTypeModal(true);
         } else {
-            const defaultType = availableConnectors.length === 1 ? availableConnectors[0].id : null;
-            activateFusionTool(defaultType);
+            activateFusionTool(availableConnectors[0].id);
         }
     };
 
@@ -3560,6 +3567,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             const layout = getLayout(fusion.id);
                             // Viewport culling: skip off-screen fusions (48x24 bounding box)
                             if (!isElementVisible(layout, 48, 24)) return null;
+                            // Only connectors can have an attached customer. Lookup is O(n) but ctoCustomers
+                            // is normally a tiny list (<= CTO clientCount), so this is fine.
+                            const attachedCustomer = fusion.category === 'connector'
+                                ? (() => {
+                                    const match = ctoCustomers.find(c => c.connectorId === fusion.id);
+                                    return match ? { name: match.name, status: match.connectionStatus } : null;
+                                })()
+                                : null;
                             return (
                                     <FusionNode
                                         key={fusion.id}
@@ -3576,6 +3591,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         onHoverEnter={handleElementHover}
                                         onHoverLeave={handleElementHoverClear}
                                         hoverData={{ id: fusion.id, type: 'fusion' }}
+                                        attachedCustomer={attachedCustomer}
                                     />
                             );
                         })}

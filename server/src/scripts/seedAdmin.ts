@@ -28,26 +28,35 @@ async function main() {
         }
     }
 
-    // 2. Criar ou Atualizar UsuÃ¡rio Admin
-    // Verificamos pelo e-mail que Ã© um campo Ãºnico obrigatÃ³rio
-    const user = await prisma.user.upsert({
-        where: { email: adminEmail },
-        update: {
-            username: adminUsername,
-            passwordHash: hashedPassword,
-            role: UserRole.SUPER_ADMIN,
-            companyId: company?.id,
-            active: true
-        },
-        create: {
-            email: adminEmail,
-            username: adminUsername,
-            passwordHash: hashedPassword,
-            role: UserRole.SUPER_ADMIN,
-            companyId: company?.id,
-            active: true
-        }
+    // 2. Criar ou Atualizar Usuário Admin.
+    // upsert({ where: { email } }) não é mais confiável porque o índice
+    // único de email virou parcial (só entre ativos). Usamos findFirst
+    // filtrando deletedAt:null e depois create/update explícito.
+    const existing = await prisma.user.findFirst({
+        where: { email: adminEmail, deletedAt: null }
     });
+
+    const user = existing
+        ? await prisma.user.update({
+            where: { id: existing.id },
+            data: {
+                username: adminUsername,
+                passwordHash: hashedPassword,
+                role: UserRole.SUPER_ADMIN,
+                companyId: company?.id,
+                active: true
+            }
+        })
+        : await prisma.user.create({
+            data: {
+                email: adminEmail,
+                username: adminUsername,
+                passwordHash: hashedPassword,
+                role: UserRole.SUPER_ADMIN,
+                companyId: company?.id,
+                active: true
+            }
+        });
 
     console.log(`
     âœ… Super Admin configurado com sucesso!

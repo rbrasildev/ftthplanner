@@ -722,6 +722,7 @@ model Customer {
   ctoId             String?  @map("cto_id")
   splitterId        String?  @map("splitter_id")
   splitterPortIndex Int?     @map("splitter_port_index")
+  connectorId       String?  @map("connector_id")
   fiberId           String?  @map("fiber_id")
   status            String   @default("ACTIVE")
   createdAt         DateTime @default(now()) @map("created_at")
