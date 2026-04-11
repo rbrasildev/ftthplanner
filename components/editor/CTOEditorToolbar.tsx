@@ -112,7 +112,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                         size="icon"
                         onClick={onClose}
                         title={t('cancel')}
-                        className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:text-rose-500 dark:hover:text-rose-400"
+                        className="h-8 w-8 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400"
                     >
                         <X className="w-5 h-5" />
                     </Button>
@@ -286,7 +286,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
 
                         {showHotkeys && (
                             <div className="absolute top-10 right-0 w-56 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">
                                     <CircleHelp className="w-4 h-4 text-emerald-500" />
                                     <span className="text-sm font-bold text-slate-900 dark:text-white">{t('hotkeys_title')}</span>
                                 </div>

@@ -772,6 +772,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
     const [hoveredElement, setHoveredElement] = useState<{ id: string, type: 'cable' | 'connection' | 'splitter' | 'fusion' } | null>(null);
+    // Ref mirror of dragState — used by stable hover callbacks to suppress
+    // re-renders during element drag (direct-DOM transforms would otherwise
+    // be overwritten by React's re-render, causing the element/fibers to jitter).
+    const dragStateRef = useRef(dragState);
+    dragStateRef.current = dragState;
     const [showHotkeys, setShowHotkeys] = useState(false);
     const svgRef = useRef<SVGSVGElement>(null);
     const diagramRef = useRef<HTMLDivElement>(null);
@@ -990,6 +995,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     };
 
     const portCenterCache = useRef<Record<string, { x: number, y: number }>>({});
+    // Snapshot of port positions at the moment an element drag starts.
+    // Used by handleMouseMove to compute connection endpoints from the ORIGINAL
+    // port positions + total drag delta — immune to mid-drag cache invalidation
+    // (which can happen if the parent passes a new `incomingCables` reference,
+    // triggering useLayoutEffect to wipe portCenterCache).
+    const dragPortSnapshot = useRef<Record<string, { x: number, y: number }>>({});
     const containerRectCache = useRef<DOMRect | null>(null);
 
     const getPortCenter = useCallback((portId: string): { x: number, y: number } | null => {
@@ -1612,6 +1623,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const storedLayout = localCTORef.current.layout?.[id];
         const isMirrored = storedLayout?.mirrored || false;
 
+        // Snapshot current port positions for every connection touching this element.
+        // handleMouseMove will use this snapshot (+ drag delta) instead of reading
+        // positions live, so the computation is resilient to getPortCenter cache
+        // invalidation that may happen mid-drag (e.g. parent re-render passing a
+        // fresh `incomingCables` array).
+        dragPortSnapshot.current = {};
+        localCTORef.current.connections.forEach(conn => {
+            const sourceIsEl = conn.sourceId === id || conn.sourceId.startsWith(id + '-');
+            const targetIsEl = conn.targetId === id || conn.targetId.startsWith(id + '-');
+            if (!sourceIsEl && !targetIsEl) return;
+            const p1 = getPortCenter(conn.sourceId);
+            const p2 = getPortCenter(conn.targetId);
+            if (p1) dragPortSnapshot.current[conn.sourceId] = p1;
+            if (p2) dragPortSnapshot.current[conn.targetId] = p2;
+        });
+
         setDragState({
             mode: 'element',
             targetId: id,
@@ -1624,7 +1651,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 mirrored: isMirrored
             }
         });
-    }, [isVflToolActive, isOtdrToolActive, isDeleteMode, isRotateMode, isSmartAlignMode]);
+    }, [isVflToolActive, isOtdrToolActive, isDeleteMode, isRotateMode, isSmartAlignMode, getPortCenter]);
 
     const handleDeleteSplitter = useCallback((id: string) => {
         setLocalCTO(prev => {
@@ -1762,7 +1789,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, [isVflToolActive, isOtdrToolActive, onToggleVfl, setOtdrTargetPort, viewState]);
 
-    const handlePortMouseLeave = useCallback(() => setHoveredPortId(null), []);
+    // Suppress hover state churn while an element is being dragged.
+    // During element drag the transform is mutated directly on the DOM node for 60fps
+    // smoothness — a React re-render triggered by hover state would overwrite that
+    // transform with the stale React-tracked layout, causing visible jitter/shift.
+    const handlePortMouseEnter = useCallback((portId: string) => {
+        if (dragStateRef.current?.mode === 'element') return;
+        setHoveredPortId(portId);
+    }, []);
+    const handlePortMouseLeave = useCallback(() => {
+        if (dragStateRef.current?.mode === 'element') return;
+        setHoveredPortId(null);
+    }, []);
 
     const handleCableMouseEnter = useCallback((id: string) => onHoverCable && onHoverCable(id), [onHoverCable]);
     const handleCableMouseLeave = useCallback((id: string) => onHoverCable && onHoverCable(null), [onHoverCable]);
@@ -1774,6 +1812,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // Stable hover handler via event delegation — avoids N inline arrows per .map() item
     // Child wrappers use data-hover-id and data-hover-type attributes instead of onMouseEnter/Leave
     const handleElementHover = useCallback((e: React.MouseEvent) => {
+        // Skip during element drag to avoid re-renders that would overwrite direct-DOM transform.
+        if (dragStateRef.current?.mode === 'element') return;
         const target = (e.target as HTMLElement).closest('[data-hover-id]') as HTMLElement | null;
         if (target) {
             setHoveredElement({
@@ -1783,6 +1823,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, []);
     const handleElementHoverClear = useCallback((e: React.MouseEvent) => {
+        if (dragStateRef.current?.mode === 'element') return;
         const related = (e.relatedTarget as HTMLElement)?.closest?.('[data-hover-id]');
         if (!related) setHoveredElement(null);
     }, []);
@@ -2124,9 +2165,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 const pathEl = connectionRefs.current[conn.id];
                 if (!pathEl) return;
 
-                // Get current visible points (cached or re-calculated)
-                const p1 = getPortCenter(conn.sourceId);
-                const p2 = getPortCenter(conn.targetId);
+                // Prefer the drag-start snapshot over live reads:
+                // the snapshot holds positions from BEFORE any DOM mutation, so
+                // `snapshot + totalDelta` always equals the correct current position.
+                // Live reads via getPortCenter could return post-mutation values
+                // if the cache was invalidated mid-drag, causing compounded offset.
+                const p1 = dragPortSnapshot.current[conn.sourceId] || getPortCenter(conn.sourceId);
+                const p2 = dragPortSnapshot.current[conn.targetId] || getPortCenter(conn.targetId);
                 if (!p1 || !p2) return;
 
                 // Apply Delta to the side that is moving
@@ -2256,6 +2301,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
 
     const handleMouseUp = (e: React.MouseEvent) => {
+        // Drag ended — release the port-position snapshot taken at drag start.
+        // (Safe to clear for any mouseup, even non-element drags.)
+        dragPortSnapshot.current = {};
+
         // COMMIT DRAG CHANGES TO STATE
         if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout && !dragState.targetId.startsWith('fus-')) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
@@ -3314,7 +3363,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             )}
             <div
                 onContextMenu={(e) => e.preventDefault()}
-                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'h-auto rounded-xl' : 'rounded-xl'} bg-white dark:bg-[#1a1d23] border-[1px] border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
+                className={`cto-editor-container relative ${isMaximized ? 'w-full h-full rounded-none' : isCollapsed ? 'h-auto rounded-xl' : 'rounded-xl'} bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-600 shadow-sm flex flex-col overflow-hidden ${isVflToolActive || isOtdrToolActive || isSmartAlignMode || isRotateMode || isDeleteMode ? 'cursor-crosshair' : ''}`}
                 style={isMaximized ? undefined : { width: modalSize.w, height: isCollapsed ? 'auto' : modalSize.h }}
             >
 
@@ -3364,7 +3413,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 >
                     {/* LOADING OVERLAY - Masks initial layout calculation */}
                     {!isContentReady && (
-                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-[#1a1d23] border-2 border-slate-300 dark:border-slate-600 rounded-bl-xl">
+                        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-100 dark:bg-[#1a1d23]">
                             <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-3" />
                             <p className="text-slate-600 dark:text-slate-400 font-medium text-sm animate-pulse">{t('loading_diagram') || 'Carregando diagrama...'}</p>
                         </div>
@@ -3451,7 +3500,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             >
                                 <ZoomOut className="w-5 h-5" />
                             </Button>
-                            <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                            <div className="h-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -3548,7 +3597,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                             onRotate={handleRotateElement}
                                             onMirror={handleMirrorElement}
                                             onPortMouseDown={handlePortMouseDown}
-                                            onPortMouseEnter={setHoveredPortId}
+                                            onPortMouseEnter={handlePortMouseEnter}
                                             onPortMouseLeave={handlePortMouseLeave}
                                             onCableMouseEnter={handleCableMouseEnter}
                                             onCableMouseLeave={handleCableMouseLeave}
@@ -3586,7 +3635,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         onDragStart={handleElementDragStart}
                                         onAction={handleFusionAction}
                                         onPortMouseDown={handlePortMouseDown}
-                                        onPortMouseEnter={setHoveredPortId}
+                                        onPortMouseEnter={handlePortMouseEnter}
                                         onPortMouseLeave={handlePortMouseLeave}
                                         onHoverEnter={handleElementHover}
                                         onHoverLeave={handleElementHoverClear}
@@ -3667,7 +3716,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         onDragStart={handleElementDragStart}
                                         onAction={handleSplitterAction}
                                         onPortMouseDown={handlePortMouseDown}
-                                        onPortMouseEnter={setHoveredPortId}
+                                        onPortMouseEnter={handlePortMouseEnter}
                                         onPortMouseLeave={handlePortMouseLeave}
                                         onDoubleClick={handleSplitterDoubleClick}
                                         onContextMenu={handleSplitterContextMenu}
@@ -3683,7 +3732,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
-                <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
+                <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
                     {!readOnly && <div className="flex items-center gap-8">
                         {/* Model Select */}
                         <div className="flex items-center gap-3">
@@ -3723,7 +3772,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     { id: 'PLANNED', label: t('status_PLANNED'), color: '#f59e0b', textColor: 'text-amber-600 dark:text-amber-500' },
                                     { id: 'NOT_DEPLOYED', label: t('status_NOT_DEPLOYED'), color: '#ef4444', textColor: 'text-red-600 dark:text-red-500' },
                                     { id: 'DEPLOYED', label: t('status_DEPLOYED'), color: '#10b981', textColor: 'text-emerald-600 dark:text-emerald-500' },
-                                    { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-emerald-600 dark:text-emerald-500' }
+                                    { id: 'CERTIFIED', label: t('status_CERTIFIED'), color: '#0ea5e9', textColor: 'text-sky-600 dark:text-sky-500' }
                                 ].map((status) => (
                                     <button
                                         key={status.id}
@@ -3838,9 +3887,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* FUSION TYPE SELECTION MODAL */}
                 {showFusionTypeModal && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
-                        <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
-                            <div className="flex items-center justify-between mb-2 px-2">
-                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">
                                     {t('select_fusion_type')}
                                 </h3>
                                 <Button
@@ -3879,9 +3928,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* CONNECTOR TYPE SELECTION MODAL */}
                 {showConnectorTypeModal && (
                     <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
-                        <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 fade-in duration-300">
-                            <div className="flex items-center justify-between mb-2 px-2">
-                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">
                                     {t('select_connector_type') || 'Selecionar Conector'}
                                 </h3>
                                 <Button
@@ -3919,18 +3968,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 {/* SPLITTER SELECTION MODAL */}
                 {showSplitterDropdown && (
-                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-auto">
-                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-100 dark:border-slate-700/30 rounded-2xl p-4 max-w-xs w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex items-center justify-between mb-2 px-2">
-                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-3 px-1">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-white">
                                     {t('select_splitter')}
                                 </h3>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setShowSplitterDropdown(false)}
-                                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                                 >
                                     <X className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
 
                             <div className="flex bg-slate-100 dark:bg-[#22262e] p-1 rounded-xl mb-3 gap-1">
@@ -3993,8 +4044,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 {/* AUTO SPLICE MODAL */}
                 {isAutoSpliceOpen && (
-                    <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsAutoSpliceOpen(false)}>
-                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-96 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto" onClick={() => setIsAutoSpliceOpen(false)}>
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <ArrowRightLeft className="w-5 h-5 text-white" />
@@ -4056,8 +4107,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 {/* OTDR INPUT MODAL */}
                 {otdrTargetPort && (
-                    <div className="absolute inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setOtdrTargetPort(null)}>
-                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-80 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto" onClick={() => setOtdrTargetPort(null)}>
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
                                     <Ruler className="w-5 h-5 text-white" />
@@ -4186,7 +4237,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     {t('ctx_remove_cable')}
                                 </Button>
-                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
@@ -4202,7 +4253,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     {t('ctx_edit_cable')}
                                 </Button>
 
-                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
                                 <Button
                                     variant="ghost"
                                     onClick={(e) => {
@@ -4216,7 +4267,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                     {t('action_flip')}
                                 </Button>
 
-                                <div className="h-[1px] bg-slate-100 dark:bg-slate-700 my-1"></div>
+                                <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
