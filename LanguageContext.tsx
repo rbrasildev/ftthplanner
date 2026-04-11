@@ -669,6 +669,7 @@ const translations = {
     'fiber_color_standard': 'Fiber Color Standard',
     'catalog_defined': 'Catalog Defined',
     'color_selection_info': 'Color defined by catalog according to status.',
+    'pick_custom_color': 'Pick a custom color',
 
     // Project Manager / Create Modal
     'project_manager': 'Project Manager',
@@ -2421,6 +2422,7 @@ const translations = {
     'map_color': 'Cor no mapa',
     'catalog_defined': 'Definido no catálogo',
     'color_selection_info': 'Cor definida pelo catálogo de acordo com o status.',
+    'pick_custom_color': 'Escolher uma cor personalizada',
     'disabled': 'Desativado',
     'confirm_delete_cable_msg': 'Confirmar deleção de {name}? Isso removerá as fusões associadas.',
     'connect_cable': 'Conectar cabo',

@@ -277,7 +277,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                   const cat = catalogCables.find(c => c.id === selectedCatalogId);
                   if (!cat) return '-';
                   const w = formData.status === 'DEPLOYED' ? cat.deployedSpec?.width : cat.plannedSpec?.width;
-                  return w ? `${w}px` : '-';
+                  return w ? String(w) : '-';
                 })()}
                 onChange={() => { }}
                 disabled
@@ -411,19 +411,77 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               </div>
             </div>
 
-            {/* Color Display (Enforced by Catalog) */}
+            {/* Color Picker — overrides the catalog-defined color for this cable on the map. */}
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
                 <Palette className="w-3 h-3" /> {t('map_color')}
               </label>
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-[#22262e] p-2 rounded-lg border border-slate-200 dark:border-slate-700">
-                <div
-                  className="w-12 h-6 rounded-md shadow-sm border border-slate-200 dark:border-slate-600"
-                  style={{ backgroundColor: formData.color }}
-                />
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  {t('color_selection_info')}
-                </span>
+              <div className="bg-slate-50 dark:bg-[#22262e] p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-6 rounded-md shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
+                    style={{ backgroundColor: formData.color }}
+                  />
+                  <input
+                    type="color"
+                    value={(formData.color || '#0ea5e9').substring(0, 7)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                    className="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-300 dark:border-slate-600"
+                    title={t('pick_custom_color') || 'Escolher cor'}
+                  />
+                  <CustomInput
+                    value={(formData.color || '').toUpperCase()}
+                    onChange={(e) => {
+                      const v = e.target.value.trim();
+                      // Accept partial input; only commit when it looks like a valid hex.
+                      if (/^#?[0-9a-fA-F]{0,6}$/.test(v)) {
+                        setFormData(prev => ({ ...prev, color: v.startsWith('#') ? v : `#${v}` }));
+                      }
+                    }}
+                    placeholder="#0EA5E9"
+                    className="flex-1 font-mono text-xs uppercase"
+                  />
+                  {/* Inline thickness editor — affects the polyline weight on the map. */}
+                  <div className="flex items-center gap-1 shrink-0" title={t('cable_thickness')}>
+                    <Ruler className="w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      step={1}
+                      value={formData.width ?? ''}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          setFormData(prev => ({ ...prev, width: undefined as any }));
+                          return;
+                        }
+                        const n = parseInt(raw, 10);
+                        if (!isNaN(n)) setFormData(prev => ({ ...prev, width: Math.max(1, Math.min(20, n)) }));
+                      }}
+                      className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {CABLE_MAP_COLORS.map(c => {
+                    const isActive = (formData.color || '').toLowerCase() === c.toLowerCase();
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, color: c }))}
+                        title={c}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                          isActive
+                            ? 'border-emerald-500 scale-110 shadow-md'
+                            : 'border-slate-300 dark:border-slate-600 hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
