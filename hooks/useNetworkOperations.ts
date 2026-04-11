@@ -331,7 +331,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
 
             // Skip duplicate check for parent nodes (their inputCableIds are read-only)
             if (!isParentNode && 'inputCableIds' in node && (node.inputCableIds || []).includes(cableId)) {
-                showToast(t('error_cto_duplicate_cable'), 'info');
+                showToast(t('error_node_duplicate_cable', { name: node.name }), 'info');
                 return prev;
             }
 

@@ -14,7 +14,7 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(18 * zoomScale);
-    const borderSize = Math.max(2, Math.round(3 * zoomScale)); // Slightly thicker border to make status more visible on CEO
+    const borderSize = Math.max(2, Math.round(3 * zoomScale));
     const pulseSize = Math.round(36 * zoomScale);
 
     const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}`;
@@ -27,17 +27,10 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
     if (isOnline === true) statusColor = '#22c55e'; // Green for online
     else if (isOnline === false) statusColor = '#ef4444'; // Red for offline
 
-    let fillColor;
-    let borderColor;
-
-    if (type === 'CEO') {
-        fillColor = customColor || '#64748b'; // Default CEO color if none provided
-        borderColor = isSelected ? '#22c55e' : statusColor;
-    } else {
-        let baseColor = customColor || statusColor;
-        fillColor = baseColor;
-        borderColor = isSelected ? '#22c55e' : baseColor;
-    }
+    // Status color drives both fill and border so status changes are always fully visible.
+    // CEO and CTO share the same size/colors; they only differ in border-radius (CEO slightly squared).
+    const fillColor = statusColor;
+    const borderColor = isSelected ? '#22c55e' : statusColor;
 
     const icon = L.divIcon({
         className: 'custom-icon',

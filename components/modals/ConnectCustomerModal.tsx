@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
 import { CTOData, Customer } from '../../types';
 import { Network, Server, Router, Unplug, X, Loader2 } from 'lucide-react';
+import { getSplitterPortCount } from '../../utils/splitterUtils';
 
 interface ConnectCustomerModalProps {
     isOpen: boolean;
@@ -23,16 +24,31 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
             setSelectedSplitterId('none');
             setSelectedPortIndex('');
             if (cto?.splitters && cto.splitters.length > 0) {
-                // Ensure we only consider splitters that explicitly allow connections (or are undefined which defaults to true)
-                const validSplitters = cto.splitters.filter(s => s.allowCustomConnections !== false);
-                if (validSplitters.length > 0) {
-                    setSelectedSplitterId(validSplitters[0].id);
+                // If the customer being connected is already attached to THIS CTO, pre-select
+                // their existing splitter/port so the modal reflects reality instead of appearing empty.
+                const currentCustomer = customerId ? allCustomers.find(c => c.id === customerId) : null;
+                const alreadyHere = currentCustomer && currentCustomer.ctoId === cto.id;
+                const existingSplitter = alreadyHere && currentCustomer.splitterId
+                    ? cto.splitters.find(s => s.id === currentCustomer.splitterId && s.allowCustomConnections !== false)
+                    : null;
+
+                if (existingSplitter) {
+                    setSelectedSplitterId(existingSplitter.id);
+                    if (currentCustomer.splitterPortIndex !== null && currentCustomer.splitterPortIndex !== undefined) {
+                        setSelectedPortIndex(String(currentCustomer.splitterPortIndex));
+                    }
                 } else {
-                    setSelectedSplitterId('none');
+                    // Ensure we only consider splitters that explicitly allow connections (or are undefined which defaults to true)
+                    const validSplitters = cto.splitters.filter(s => s.allowCustomConnections !== false);
+                    if (validSplitters.length > 0) {
+                        setSelectedSplitterId(validSplitters[0].id);
+                    } else {
+                        setSelectedSplitterId('none');
+                    }
                 }
             }
         }
-    }, [isOpen, cto]);
+    }, [isOpen, cto, customerId, allCustomers]);
 
     const handleConnect = async () => {
         if (!cto) return;
@@ -51,8 +67,11 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
 
     const currentSplitter = cto.splitters.find(s => s.id === selectedSplitterId);
 
-    const splitterCapacity = currentSplitter ? currentSplitter.outputPortIds.length : 0;
+    const splitterCapacity = getSplitterPortCount(currentSplitter);
     const availablePorts = currentSplitter ? Array.from({ length: splitterCapacity }, (_, i) => i) : [];
+
+    // Customer being (re)connected — used to highlight their current port when redrawing to the same CTO.
+    const currentCustomer = customerId ? allCustomers.find(c => c.id === customerId) : null;
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -153,26 +172,42 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
 
                                     const isOccupied = !!occupant;
                                     const isSelected = selectedPortIndex === portIndex.toString();
+                                    // Is this the port currently owned by the customer being connected?
+                                    const isCurrentOwn = !!currentCustomer
+                                        && currentCustomer.ctoId === cto.id
+                                        && currentCustomer.splitterId === currentSplitter.id
+                                        && currentCustomer.splitterPortIndex === portIndex;
 
                                     return (
                                         <button
                                             key={portIndex}
                                             disabled={isOccupied}
                                             onClick={() => setSelectedPortIndex(portIndex.toString())}
-                                            title={isOccupied ? t('error_port_occupied_desc', { name: occupant.name }) : t('port_free')}
+                                            title={
+                                                isOccupied
+                                                    ? t('error_port_occupied_desc', { name: occupant.name })
+                                                    : isCurrentOwn
+                                                        ? t('port_current_own') || 'Porta atual deste cliente'
+                                                        : t('port_free')
+                                            }
                                             className={`
                                                 relative h-10 rounded border text-xs font-bold transition-all flex items-center justify-center
                                                 ${isOccupied
                                                     ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30 text-red-300 cursor-not-allowed'
                                                     : isSelected
                                                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-200 dark:ring-indigo-900 z-10 scale-105'
-                                                        : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-slate-700 dark:text-slate-300'
+                                                        : isCurrentOwn
+                                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500'
+                                                            : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-slate-700 dark:text-slate-300'
                                                 }
                                             `}
                                         >
                                             {portIndex + 1}
                                             {isOccupied && (
                                                 <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-400 rounded-full border border-white dark:border-slate-900" />
+                                            )}
+                                            {isCurrentOwn && !isOccupied && (
+                                                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-white dark:border-slate-900" />
                                             )}
                                         </button>
                                     );
@@ -183,7 +218,13 @@ export const ConnectCustomerModal: React.FC<ConnectCustomerModalProps> = ({ isOp
                             <div className="text-xs text-slate-500 min-h-[1.5em] mt-1 pl-1">
                                 {(() => {
                                     if (selectedPortIndex !== '') {
-                                        // Selected state
+                                        const isCurrent = !!currentCustomer
+                                            && currentCustomer.ctoId === cto.id
+                                            && currentCustomer.splitterId === currentSplitter.id
+                                            && currentCustomer.splitterPortIndex === parseInt(selectedPortIndex);
+                                        if (isCurrent) {
+                                            return <span className="text-emerald-600 font-medium">{t('selected_port_current', { port: parseInt(selectedPortIndex) + 1 }) || `Porta ${parseInt(selectedPortIndex) + 1} (atual)`}</span>
+                                        }
                                         return <span className="text-indigo-600 font-medium">{t('selected_port_info', { port: parseInt(selectedPortIndex) + 1 })}</span>
                                     }
                                     return <span className="text-slate-400 italic">{t('select_free_port')}</span>

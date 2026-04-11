@@ -4,6 +4,7 @@ import { useLanguage } from '../../LanguageContext';
 import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle } from 'lucide-react';
 import { CustomInput } from '../common/CustomInput';
 import { CustomSelect } from '../common/CustomSelect';
+import { getSplitterPortCount } from '../../utils/splitterUtils';
 
 interface CustomerModalProps {
     isOpen: boolean;
@@ -255,14 +256,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     const ports = useMemo(() => {
         if (!selectedSplitter) return [];
 
-        let portCount = 8;
-        if (selectedSplitter.type) {
-            const match = selectedSplitter.type.match(/1x(\d+)/);
-            if (match) portCount = parseInt(match[1]);
-        }
-        if (selectedSplitter.outputPortIds && selectedSplitter.outputPortIds.length > 0) {
-            portCount = Math.max(portCount, selectedSplitter.outputPortIds.length);
-        }
+        const portCount = getSplitterPortCount(selectedSplitter);
 
         const portStatus = Array(portCount).fill(null).map((_, index) => {
             const occupant = allCustomers.find(c =>

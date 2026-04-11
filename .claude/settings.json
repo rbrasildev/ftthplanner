@@ -86,7 +86,9 @@
       "Bash(ls -la /d/ftthplanner/*.tsx /d/ftthplanner/*.ts)",
       "Bash(grep -n \"PoleDetailsPanel\\\\|pole properties\" /d/ftthplanner/components/*.tsx)",
       "Bash(find /d/ftthplanner -name \"*.tsx\" -type f -exec grep -l \"PoleDetailsPanel\" {} \\\\;)",
-      "Bash(node /tmp/date_test.js)"
+      "Bash(node /tmp/date_test.js)",
+      "Bash(grep -oE \"refreshIconOptions:function[^,]{1,300}\" node_modules/leaflet.markercluster/dist/leaflet.markercluster.js)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const src = fs.readFileSync\\('node_modules/leaflet.markercluster/dist/leaflet.markercluster.js', 'utf8'\\); const idx = src.indexOf\\('refreshIconOptions:function'\\); console.log\\(src.substring\\(idx, idx + 500\\)\\);\")"
     ]
   }
 }

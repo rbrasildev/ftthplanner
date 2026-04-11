@@ -386,7 +386,13 @@ export const updateCustomer = async (req: Request, res: Response) => {
             const count = await prisma.customer.count({ where: { ctoId, deletedAt: null } });
             await prisma.cto.update({ where: { id: ctoId }, data: { clientCount: count } });
         }
-        // Also update old CTO count if changed (simplified here)
+        // Decrement old CTO's clientCount if the customer moved to another CTO or was explicitly disconnected.
+        // Only runs when ctoId was actually sent in the request (ctoId === undefined means "don't change").
+        const ctoIdProvided = Object.prototype.hasOwnProperty.call(req.body, 'ctoId');
+        if (ctoIdProvided && currentHelper.ctoId && currentHelper.ctoId !== ctoId) {
+            const oldCount = await prisma.customer.count({ where: { ctoId: currentHelper.ctoId, deletedAt: null } });
+            await prisma.cto.update({ where: { id: currentHelper.ctoId }, data: { clientCount: oldCount } });
+        }
 
         // Fetch the fully hydrated object so the client gets the updated drop right away
         const finalCustomer = await prisma.customer.findUnique({

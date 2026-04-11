@@ -73,11 +73,12 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         const passwordHash = await bcrypt.hash(password, 10);
 
         // Check Plan Limits
+        // Count only NON-deleted users so soft-deleted ones don't hold slots.
         const company = await prisma.company.findUnique({
             where: { id: companyId },
             include: {
                 plan: true,
-                _count: { select: { users: true } }
+                _count: { select: { users: { where: { deletedAt: null } } } }
             }
         });
 

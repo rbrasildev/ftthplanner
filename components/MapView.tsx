@@ -744,11 +744,40 @@ export const MapView: React.FC<MapViewProps> = ({
     }, [allCustomers]);
 
 
-    const handleConnectToCTO = useCallback((ctoId: string) => {
+    const handleConnectToCTO = useCallback(async (ctoId: string) => {
         if (!drawingCustomerDrop) return;
 
-        const cto = ctos.find(c => c.id === ctoId);
+        // Search current project first, then parent (read-only) network — customers live globally and
+        // can be attached to any CTO regardless of which project owns it.
+        const cto = ctos.find(c => c.id === ctoId)
+            || (parentNetwork ? parentNetwork.ctos.find(c => c.id === ctoId) : undefined);
         if (!cto) return;
+
+        // REDRAW SHORTCUT: if the customer is already connected to this exact CTO, the user's intent
+        // is just to update the drop cable path — not to reassign the splitter/port. Save the new path
+        // directly and skip the ConnectCustomerModal. Avoids making the user re-pick a port they already own.
+        const existingCustomer = allCustomers.find(c => c.id === drawingCustomerDrop.customerId);
+        if (existingCustomer && existingCustomer.ctoId === cto.id) {
+            try {
+                const startPoint = { lat: drawingCustomerDrop.startLat, lng: drawingCustomerDrop.startLng };
+                const waypoints = (drawingCustomerDrop.points || []).map(p => ({ lat: p.lat, lng: p.lng }));
+                const endPoint = { lat: cto.coordinates.lat, lng: cto.coordinates.lng };
+                const fullPath = [startPoint, ...waypoints, endPoint];
+
+                const updatedCustomer = await updateCustomer(drawingCustomerDrop.customerId, {
+                    dropCoordinates: fullPath
+                });
+
+                if (onCustomerSaved) onCustomerSaved(updatedCustomer);
+                if (showToast) showToast(t('toast_drop_redrawn', { name: cto.name }) || `Cabo redesenhado para ${cto.name}`, 'success');
+            } catch (error) {
+                console.error("Error redrawing drop:", error);
+                if (showToast) showToast(t('drop_save_error') || 'Erro ao salvar drop', 'error');
+            } finally {
+                setDrawingCustomerDrop(null);
+            }
+            return;
+        }
 
         // VERIFY: If CTO has no splitters that allow connections, block it
         const hasValidSplitters = cto.splitters?.some(s => s.allowCustomConnections !== false);
@@ -765,7 +794,7 @@ export const MapView: React.FC<MapViewProps> = ({
         setConnectCustomerModalOpen(true);
 
         // Don't clear drawing state yet, wait for modal confirm/cancel
-    }, [drawingCustomerDrop, ctos]);
+    }, [drawingCustomerDrop, ctos, parentNetwork, allCustomers, onCustomerSaved, showToast, t]);
 
     // Drop editing handlers
     const startEditingDrop = useCallback((customerId: string) => {
@@ -1554,7 +1583,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     >
                         {renderableCTOs.map(cto => (
                             <CTOMarker
-                                key={cto.id}
+                                key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
                                 isOnline={ctoOnlineStatus[cto.id]}
@@ -1630,7 +1659,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     <>
                         {renderableCTOs.map(cto => (
                             <CTOMarker
-                                key={cto.id}
+                                key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
                                 isOnline={ctoOnlineStatus[cto.id]}
@@ -2164,8 +2193,9 @@ export const MapView: React.FC<MapViewProps> = ({
                         // 2. Waypoints (User clicks in between)
                         const waypoints = pendingConnection.dropPoints.map(p => ({ lat: p.lat, lng: p.lng }));
 
-                        // 3. End Point (CTO Location)
-                        const targetCto = ctos.find(c => c.id === ctoId);
+                        // 3. End Point (CTO Location) — search current project first, then parent (read-only) network
+                        const targetCto = ctos.find(c => c.id === ctoId)
+                            || (parentNetwork ? parentNetwork.ctos.find(c => c.id === ctoId) : undefined);
 
                         if (!targetCto) {
                             console.error("Critical: Target CTO not found!", ctoId);
@@ -2207,7 +2237,11 @@ export const MapView: React.FC<MapViewProps> = ({
                         }
                     }
                 }}
-                cto={ctos.find(c => c.id === pendingConnection?.ctoId) || null}
+                cto={
+                    ctos.find(c => c.id === pendingConnection?.ctoId)
+                    || (parentNetwork ? parentNetwork.ctos.find(c => c.id === pendingConnection?.ctoId) : undefined)
+                    || null
+                }
             />
 
 
