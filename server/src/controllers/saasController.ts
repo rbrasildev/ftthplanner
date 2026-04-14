@@ -615,7 +615,11 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
             data: { status: 'PAID', paymentMethod: 'MANUAL', paidAt: new Date() }
         });
 
-        // 2. Recalculate subscription expiration (anchored to billing cycle)
+        // 2. Recalculate subscription expiration (anchored to billing cycle).
+        // Same logic as getNextBillingDate() in paymentController — advance
+        // from the old expiry until we pass "now". If this is the first PAID
+        // invoice (trial → paid), advance one extra month so the customer
+        // isn't charged for the free trial period.
         const company = invoice.company;
         const now = new Date();
         const prevExpiry = company.subscriptionExpiresAt;
@@ -624,6 +628,15 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
         if (prevExpiry) {
             nextBilling = new Date(prevExpiry);
             while (nextBilling <= now) {
+                nextBilling.setMonth(nextBilling.getMonth() + 1);
+            }
+
+            // First payment? (The invoice we JUST marked PAID is already counted,
+            // so paidCount === 1 means this is the first ever.)
+            const paidCount = await prisma.invoice.count({
+                where: { companyId: company.id, status: 'PAID' }
+            });
+            if (paidCount <= 1) {
                 nextBilling.setMonth(nextBilling.getMonth() + 1);
             }
         } else {

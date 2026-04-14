@@ -89,7 +89,13 @@
       "Bash(node /tmp/date_test.js)",
       "Bash(grep -oE \"refreshIconOptions:function[^,]{1,300}\" node_modules/leaflet.markercluster/dist/leaflet.markercluster.js)",
       "Bash(node -e \"const fs = require\\('fs'\\); const src = fs.readFileSync\\('node_modules/leaflet.markercluster/dist/leaflet.markercluster.js', 'utf8'\\); const idx = src.indexOf\\('refreshIconOptions:function'\\); console.log\\(src.substring\\(idx, idx + 500\\)\\);\")",
-      "Read(//^model /{name=$2} /deletedAt/**)"
+      "Read(//^model /{name=$2} /deletedAt/**)",
+      "Bash(git -C /d/ftthplanner log --all --full-history -S \"sk_live\" -- \"*\")",
+      "Bash(node -e \"const crypto = require\\('crypto'\\); console.log\\('JWT:', crypto.randomBytes\\(64\\).toString\\('hex'\\)\\); console.log\\('ENC:', crypto.randomBytes\\(64\\).toString\\('hex'\\)\\);\")",
+      "Bash(find /d/ftthplanner -type f -name \"*.ts\" -path \"*/server/*\" -exec grep -l \"ENCRYPTION_KEY\" {} \\\\;)",
+      "Bash(find /d/ftthplanner -type f \\\\\\( -name \"*.ts\" -o -name \"*.js\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/dist/*\" ! -path \"*/.next/*\" -exec grep -l \"createCipher\\\\|createDecipher\\\\|AES\\\\|encrypt\\\\|decrypt\" {} \\\\;)",
+      "Bash(find /d/ftthplanner -type f \\\\\\( -name \".env*\" -o -name \"*.config.*\" -o -name \"*.conf.*\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"ENCRYPTION\" {} \\\\;)",
+      "Bash(find /d/ftthplanner/server -type f -name \"*.ts\" ! -path \"*/node_modules/*\" -exec grep -l \"interface.*[Cc]rypto\\\\|interface.*[Ee]ncrypt\\\\|type.*[Cc]rypto\\\\|type.*[Ee]ncrypt\" {} \\\\;)"
     ]
   }
 }

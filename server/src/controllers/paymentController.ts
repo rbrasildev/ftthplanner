@@ -37,6 +37,12 @@ const payment = new Payment(client);
 // Calculates next expiration anchored to the original billing cycle.
 // If the client pays 10 days late, the expiration is still based on the
 // original cycle date, not the payment date. This prevents "shifting" cycles.
+//
+// TRIAL → PAID transition: when the company has never had a PAID invoice,
+// the previous `subscriptionExpiresAt` is the trial end date. Charging for
+// the trial period doesn't make sense (it was free). In this case, we
+// advance ONE extra month so the first payment covers a full NEW month
+// instead of retroactively "paying" for the trial.
 async function getNextBillingDate(companyId: string): Promise<Date> {
     const company = await prisma.company.findUnique({
         where: { id: companyId },
@@ -47,12 +53,24 @@ async function getNextBillingDate(companyId: string): Promise<Date> {
     const prevExpiry = company?.subscriptionExpiresAt;
 
     if (prevExpiry) {
-        // Anchor to the original cycle: advance by 1 month from last expiry date
-        // If already expired (late payment), keep advancing until we pass "now"
         const next = new Date(prevExpiry);
         while (next <= now) {
             next.setMonth(next.getMonth() + 1);
         }
+
+        // First payment ever? (trial → paid transition)
+        // Check BEFORE this invoice is marked PAID so the count is 0.
+        const paidCount = await prisma.invoice.count({
+            where: { companyId, status: 'PAID' }
+        });
+
+        if (paidCount === 0) {
+            // Advance one more month: the customer was on trial, so the
+            // period [prevExpiry → next] was free. First paid month starts
+            // from `next` and runs until `next + 1 month`.
+            next.setMonth(next.getMonth() + 1);
+        }
+
         return next;
     }
 
@@ -710,14 +728,14 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
                 }
             });
         } else {
-            // Create new invoice (no outstanding debt)
-            const company = await prisma.company.findUnique({
-                where: { id: companyId },
-                select: { subscriptionExpiresAt: true }
-            });
-            const refStart = company?.subscriptionExpiresAt || new Date();
-            const refEnd = new Date(refStart);
-            refEnd.setMonth(refEnd.getMonth() + 1);
+            // Create new invoice (no outstanding debt).
+            // Use getNextBillingDate to compute the reference period so that
+            // trial → paid transitions get the correct month (skipping the
+            // free trial period) instead of retroactively charging for it.
+            const nextBilling = await getNextBillingDate(companyId);
+            const refEnd = new Date(nextBilling);
+            const refStart = new Date(nextBilling);
+            refStart.setMonth(refStart.getMonth() - 1);
 
             invoice = await prisma.invoice.create({
                 data: {

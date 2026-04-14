@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { SgpService } from './sgp.service';
 import logger from '../../lib/logger';
+import { encrypt, decryptIfNeeded } from '../../lib/encryption';
+
+const SENSITIVE_FIELDS = ['apiToken', 'webhookSecret'] as const;
 
 export const handleWebhook = async (req: Request, res: Response) => {
     try {
@@ -42,6 +45,11 @@ export const getIntegrationSettings = async (req: Request, res: Response) => {
             where: { userId, sgpType }
         });
 
+        if (settings) {
+            if (settings.apiToken) settings.apiToken = decryptIfNeeded(settings.apiToken);
+            if (settings.webhookSecret) settings.webhookSecret = decryptIfNeeded(settings.webhookSecret);
+        }
+
         res.json(settings || { active: false, sgpType, apiUrl: '', apiApp: '', apiToken: '', webhookSecret: '' });
     } catch (error: any) {
         logger.error(`[SGP Controller] Error fetching settings: ${error.message}`);
@@ -60,6 +68,10 @@ export const saveIntegrationSettings = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
+        // Encrypt sensitive fields before storing
+        const encryptedToken = apiToken ? encrypt(apiToken) : apiToken;
+        const encryptedWebhookSecret = webhookSecret ? encrypt(webhookSecret) : webhookSecret;
+
         let settings = await prisma.integrationSettings.findFirst({
             where: { userId, sgpType }
         });
@@ -67,13 +79,17 @@ export const saveIntegrationSettings = async (req: Request, res: Response) => {
         if (settings) {
             settings = await prisma.integrationSettings.update({
                 where: { id: settings.id },
-                data: { active, apiUrl, apiApp, apiToken, webhookSecret }
+                data: { active, apiUrl, apiApp, apiToken: encryptedToken, webhookSecret: encryptedWebhookSecret }
             });
         } else {
             settings = await prisma.integrationSettings.create({
-                data: { userId, sgpType, active, apiUrl, apiApp, apiToken, webhookSecret }
+                data: { userId, sgpType, active, apiUrl, apiApp, apiToken: encryptedToken, webhookSecret: encryptedWebhookSecret }
             });
         }
+
+        // Return decrypted values to the frontend
+        if (settings.apiToken) settings.apiToken = decryptIfNeeded(settings.apiToken);
+        if (settings.webhookSecret) settings.webhookSecret = decryptIfNeeded(settings.webhookSecret);
 
         res.json(settings);
     } catch (error: any) {

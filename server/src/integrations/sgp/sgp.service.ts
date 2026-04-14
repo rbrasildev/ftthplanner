@@ -6,6 +6,14 @@ import { NormalizedSgpEvent, SgpEventType } from './sgp.types';
 import { ISgpAdapter } from './adapters/SgpAdapter.interface';
 import { IxcAdapter } from './adapters/IxcAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
+import { decryptIfNeeded } from '../../lib/encryption';
+
+/** Decrypts sensitive fields in-place so all downstream code reads plaintext. */
+function decryptSettings<T extends { apiToken?: string | null; webhookSecret?: string | null }>(settings: T): T {
+    if (settings.apiToken) settings.apiToken = decryptIfNeeded(settings.apiToken);
+    if (settings.webhookSecret) settings.webhookSecret = decryptIfNeeded(settings.webhookSecret);
+    return settings;
+}
 
 export class SgpService {
 
@@ -20,15 +28,16 @@ export class SgpService {
     }
 
     public static async processWebhook(tenantId: string, sgpType: string, payload: any, headers: any): Promise<void> {
-        const settings = await prisma.integrationSettings.findFirst({
+        const settingsRaw = await prisma.integrationSettings.findFirst({
             where: { userId: tenantId, sgpType }
         });
 
-        if (!settings || !settings.active) {
+        if (!settingsRaw || !settingsRaw.active) {
             logger.warn(`[SGP Webhook] Tenant ${tenantId} received webhook but integration is disabled or not configured.`);
             return;
         }
 
+        const settings = decryptSettings(settingsRaw);
         const adapter = this.getAdapter(sgpType);
 
         // Security Validation
@@ -264,13 +273,14 @@ export class SgpService {
 
     // Example of outbound sync
     public static async pushExternalEvent(tenantId: string, sgpType: string, internalEvent: Omit<NormalizedSgpEvent, 'rawPayload'>) {
-        const settings = await prisma.integrationSettings.findFirst({
+        const settingsRaw = await prisma.integrationSettings.findFirst({
             where: { userId: tenantId, sgpType }
         });
 
-        if (!settings || !settings.active || !settings.apiUrl) {
+        if (!settingsRaw || !settingsRaw.active || !settingsRaw.apiUrl) {
             return;
         }
+        const settings = decryptSettings(settingsRaw);
 
         const adapter = this.getAdapter(sgpType);
         const payload = adapter.formatOutgoingPayload(internalEvent);
@@ -294,7 +304,7 @@ export class SgpService {
         }
 
         // Find all matching settings for this company
-        const allSettings = await prisma.integrationSettings.findMany({
+        const allSettings = (await prisma.integrationSettings.findMany({
             where: {
                 user: { companyId: user.companyId },
                 apiUrl: { not: null },
@@ -303,7 +313,7 @@ export class SgpService {
             },
             orderBy: [{ active: 'desc' }, { updatedAt: 'desc' }],
             include: { user: true }
-        });
+        })).map(s => decryptSettings(s));
 
         if (allSettings.length === 0) {
             logger.warn(`[SGP Service] No integration settings found for company ${user.companyId}`);
@@ -469,15 +479,16 @@ export class SgpService {
     }
 
     static async syncAllStatuses(userId: string, sgpType: string) {
-        const settings = await prisma.integrationSettings.findFirst({
+        const settingsRaw = await prisma.integrationSettings.findFirst({
             where: { userId, sgpType }
         });
 
-        if (!settings || !settings.apiUrl || !settings.apiToken) {
+        if (!settingsRaw || !settingsRaw.apiUrl || !settingsRaw.apiToken) {
             throw new Error('SGP integration not configured or inactive');
         }
+        const settings = decryptSettings(settingsRaw);
 
-        const baseUrl = settings.apiUrl.replace(/\/$/, '');
+        const baseUrl = settings.apiUrl!.replace(/\/$/, '');
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new Error('User not found');
 
@@ -515,10 +526,10 @@ export class SgpService {
     public static async runDailySync() {
         logger.info('[SGP Service] Starting daily background synchronization...');
         try {
-            const activeSettings = await prisma.integrationSettings.findMany({
+            const activeSettings = (await prisma.integrationSettings.findMany({
                 where: { active: true },
                 include: { user: true }
-            });
+            })).map(s => decryptSettings(s));
 
             for (const setting of activeSettings) {
                 logger.info(`[SGP Service] Synchronizing tenant ${setting.userId} using ${setting.sgpType}`);
@@ -812,10 +823,10 @@ export class SgpService {
     public static async runIncrementalSync() {
         logger.info('[SGP Service] Starting incremental synchronization...');
         try {
-            const activeSettings = await prisma.integrationSettings.findMany({
+            const activeSettings = (await prisma.integrationSettings.findMany({
                 where: { active: true },
                 include: { user: true }
-            });
+            })).map(s => decryptSettings(s));
 
             for (const setting of activeSettings) {
                 if (!setting.apiUrl || !setting.apiToken) continue;

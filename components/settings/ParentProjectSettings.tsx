@@ -62,9 +62,6 @@ export const ParentProjectSettings: React.FC<ParentProjectSettingsProps> = ({
     const availableParents = projects.filter(p => {
         if (p.id === currentProjectId) return false;
         if (p.parentProjectId) return false;
-        if ((p.counts?.childProjects || 0) > 0 && p.id !== parentProjectId) {
-            return p.id === parentProjectId;
-        }
         return true;
     });
 

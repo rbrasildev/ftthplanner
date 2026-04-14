@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react';
-import { Polyline, Tooltip, Pane } from 'react-leaflet';
+import { Pane } from 'react-leaflet';
 import { NetworkState } from '../../types';
 import { useLanguage } from '../../LanguageContext';
 import { CTOMarker } from '../markers/CTOMarker';
 import { POPMarker } from '../markers/POPMarker';
 import { PoleMarker } from '../markers/PoleMarker';
+import { D3ParentCablesLayer } from './D3ParentCablesLayer';
 
 type MapMode = 'view' | 'draw_cable' | 'connect_cable' | 'edit_cable' | string;
 
@@ -90,30 +91,12 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
 
     return (
         <>
-        {/* Parent cables: below D3 cables layer (zIndex 500) */}
-        <Pane name="parent-project-cables" style={{ zIndex: 450, pointerEvents: 'auto' }}>
-            {network.cables.map(cable => (
-                <Polyline
-                    key={`parent-cable-${cable.id}`}
-                    positions={cable.coordinates.map(c => [c.lat, c.lng] as [number, number])}
-                    pathOptions={{
-                        color: cable.color || '#0ea5e9',
-                        weight: cable.width || 4,
-                        opacity: 0.8,
-                        dashArray: cable.status === 'NOT_DEPLOYED' ? '5, 5' : undefined,
-                        interactive: true,
-                    }}
-                    eventHandlers={{ click: handleCableClick }}
-                >
-                    <Tooltip sticky>
-                        <div className="text-xs">
-                            <span className="font-bold text-amber-600">{t('base_project_cable_badge')} </span>
-                            {cable.name} ({cable.fiberCount}fo)
-                        </div>
-                    </Tooltip>
-                </Polyline>
-            ))}
-        </Pane>
+        {/* Parent cables: D3 SVG overlay with leaflet-zoom-hide (matches main cable layer behavior) */}
+        <D3ParentCablesLayer
+            cables={network.cables}
+            visible={visible}
+            onCableClick={handleCableClick}
+        />
 
         {/* Parent markers: above D3 cables layer, same level as normal markers */}
         <Pane name="parent-project-markers" style={{ zIndex: 610, pointerEvents: 'auto' }}>
