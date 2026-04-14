@@ -10,7 +10,7 @@ import { FiberCableNode } from './editor/FiberCableNode';
 import { CTOEditorToolbar } from './editor/CTOEditorToolbar';
 import { FusionNode } from './editor/FusionNode';
 import { SplitterNode } from './editor/SplitterNode';
-import { generateCTOSVG, exportToPNG } from './CTOExporter';
+import { generateCTOSVG, exportToPNG, FooterData } from './CTOExporter';
 import {
     SplitterCatalogItem,
     BoxCatalogItem,
@@ -96,12 +96,16 @@ const preloadImage = (url: string): Promise<string | null> => {
 
 // Generate a static map by stitching OSM tiles (CORS-friendly)
 const generateStaticMap = (lat: number, lng: number, zoom: number, width: number, height: number): Promise<string | null> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) { resolve(null); return; }
+
+        // Fill background
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillRect(0, 0, width, height);
 
         // Convert lat/lng to tile coordinates
         const n = Math.pow(2, zoom);
@@ -109,8 +113,8 @@ const generateStaticMap = (lat: number, lng: number, zoom: number, width: number
         const centerTileY = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
 
         const tileSize = 256;
-        const tilesX = Math.ceil(width / tileSize) + 1;
-        const tilesY = Math.ceil(height / tileSize) + 1;
+        const tilesX = Math.ceil(width / tileSize) + 2;
+        const tilesY = Math.ceil(height / tileSize) + 2;
 
         // Offset within the center tile
         const offsetX = (centerTileX % 1) * tileSize;
@@ -119,47 +123,59 @@ const generateStaticMap = (lat: number, lng: number, zoom: number, width: number
         const startTileX = Math.floor(centerTileX) - Math.floor(tilesX / 2);
         const startTileY = Math.floor(centerTileY) - Math.floor(tilesY / 2);
 
-        let loaded = 0;
-        const totalTiles = tilesX * tilesY;
+        const baseDrawX = width / 2 - offsetX - (Math.floor(centerTileX) - startTileX) * tileSize;
+        const baseDrawY = height / 2 - offsetY - (Math.floor(centerTileY) - startTileY) * tileSize;
 
-        const drawX = width / 2 - offsetX - (Math.floor(centerTileX) - startTileX) * tileSize;
-        const drawY = height / 2 - offsetY - (Math.floor(centerTileY) - startTileY) * tileSize;
+        // Load a single tile with retry
+        const loadTile = (tileXi: number, tileYi: number, retries = 2): Promise<HTMLImageElement | null> => {
+            return new Promise((res) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => res(img);
+                img.onerror = () => {
+                    if (retries > 0) {
+                        setTimeout(() => loadTile(tileXi, tileYi, retries - 1).then(res), 300);
+                    } else {
+                        res(null);
+                    }
+                };
+                img.src = `https://tile.openstreetmap.org/${zoom}/${tileXi}/${tileYi}.png`;
+            });
+        };
 
+        // Load all tiles in parallel
+        const tileJobs: { tx: number; ty: number; promise: Promise<HTMLImageElement | null> }[] = [];
         for (let tx = 0; tx < tilesX; tx++) {
             for (let ty = 0; ty < tilesY; ty++) {
-                const tileXi = startTileX + tx;
-                const tileYi = startTileY + ty;
-
-                const tileImg = new Image();
-                tileImg.crossOrigin = "Anonymous";
-                tileImg.onload = () => {
-                    ctx.drawImage(tileImg, drawX + tx * tileSize, drawY + ty * tileSize);
-                    loaded++;
-                    if (loaded === totalTiles) {
-                        // Draw center marker
-                        ctx.beginPath();
-                        ctx.arc(width / 2, height / 2, 6, 0, Math.PI * 2);
-                        ctx.fillStyle = '#ef4444';
-                        ctx.fill();
-                        ctx.strokeStyle = 'white';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-
-                        try {
-                            resolve(canvas.toDataURL('image/png'));
-                        } catch {
-                            resolve(null);
-                        }
-                    }
-                };
-                tileImg.onerror = () => {
-                    loaded++;
-                    if (loaded === totalTiles) {
-                        try { resolve(canvas.toDataURL('image/png')); } catch { resolve(null); }
-                    }
-                };
-                tileImg.src = `https://tile.openstreetmap.org/${zoom}/${tileXi}/${tileYi}.png`;
+                tileJobs.push({ tx, ty, promise: loadTile(startTileX + tx, startTileY + ty) });
             }
+        }
+
+        // Wait for all, then draw in order
+        const results = await Promise.all(tileJobs.map(async (job) => {
+            const img = await job.promise;
+            return { ...job, img };
+        }));
+
+        for (const { tx, ty, img } of results) {
+            if (img) {
+                ctx.drawImage(img, baseDrawX + tx * tileSize, baseDrawY + ty * tileSize);
+            }
+        }
+
+        // Draw center marker
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        try {
+            resolve(canvas.toDataURL('image/png'));
+        } catch {
+            resolve(null);
         }
     });
 };
@@ -1462,7 +1478,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const now = new Date();
             const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-            const footerData = {
+            const footerData: FooterData = {
                 projectName: projectName || '',
                 boxName: localCTO.name,
                 date: dateStr,
@@ -1495,7 +1511,43 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 console.warn("Could not load static assets for export", e);
             }
 
-            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData);
+            // Build summary data for footer
+            const catalogs = {
+                splitters: availableSplitters,
+                fusions: availableFusions,
+                cables: availableCables,
+                olts: availableOLTs
+            };
+            footerData.splittersSummary = localCTO.splitters.map(s => {
+                let powerStr = '';
+                try {
+                    const result = traceOpticalPath(s.id, cto.id, network, catalogs, localCTO);
+                    powerStr = ` — ${result.finalPower.toFixed(2)} dBm`;
+                } catch {
+                    // Path calculation failed (e.g. no OLT connected)
+                }
+                return `${s.name || 'Splitter'} (${s.type})${powerStr}`;
+            });
+            footerData.cablesSummary = incomingCables.map(c => `${c.name} - ${c.fiberCount}F`);
+            footerData.clientCount = ctoCustomers.length;
+            footerData.clientNames = ctoCustomers.map(c => c.name);
+
+            // Build client details with port number, sorted by port
+            footerData.clientDetails = ctoCustomers.map(c => {
+                let port = '-';
+                let sortKey = 9999;
+                if (c.splitterPortIndex !== null && c.splitterPortIndex !== undefined) {
+                    port = `${c.splitterPortIndex + 1}`;
+                    sortKey = c.splitterPortIndex;
+                } else if (c.connectorId) {
+                    port = 'C';
+                    sortKey = 10000;
+                }
+                const power = c.onuPower !== null && c.onuPower !== undefined ? `${c.onuPower} dBm` : undefined;
+                return { name: c.name, port, power, _sort: sortKey };
+            }).sort((a, b) => a._sort - b._sort).map(({ _sort, ...rest }) => rest);
+
+            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers);
             const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
             await exportToPNG(svg, `${fileName}.png`);
         } catch (error: any) {

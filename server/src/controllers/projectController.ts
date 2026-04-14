@@ -818,6 +818,7 @@ export const syncProject = async (req: Request, res: Response) => {
 
                 // Execute Operations
                 if (toDelete.length > 0) {
+                    await tx.drop.deleteMany({ where: { ctoId: { in: toDelete } } });
                     await tx.cto.deleteMany({ where: { id: { in: toDelete } } });
                 }
 

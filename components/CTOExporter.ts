@@ -1,5 +1,5 @@
 
-import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note } from '../types';
+import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note, Customer } from '../types';
 import jsPDF from 'jspdf';
 
 // --- CONSTANTS ---
@@ -206,7 +206,7 @@ const getFusionGeometry = (fusion: FusionPoint) => {
     };
 };
 
-const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>, customers: Record<number, { name: string; status?: string | null }> = {}): string => {
     const geo = getSplitterGeometry(splitter);
     const isConnectorized = splitter.connectorType === 'Connectorized';
     const isLitIn = litPorts.has(splitter.inputPortId);
@@ -261,7 +261,7 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${cx}, ${cy})">${content}</g>`;
 };
 
-const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: number, litPorts: Set<string>, attachedCustomer?: { name: string; status?: string | null } | null): string => {
     const geo = getFusionGeometry(fusion);
     const isLitA = litPorts.has(`${fusion.id}-a`);
     const isLitB = litPorts.has(`${fusion.id}-b`);
@@ -321,6 +321,13 @@ export interface FooterData {
     mapImage?: string; // Data URL
     logo?: string; // Data URL (Company Logo)
     qrCode?: string; // Data URL (QR Code)
+    // Summary data for export
+    splittersSummary?: string[]; // e.g. ["Splitter 1 (1:8)", "Splitter 2 (1:4)"]
+    cablesSummary?: string[]; // e.g. ["Cabo A - 12F", "Cabo B - 6F"]
+    clientCount?: number;
+    clientNames?: string[]; // All client names
+    clientDetails?: { name: string; port: string; power?: string }[]; // Client with port and power
+    totalPower?: string; // e.g. "1:8 = -10.5 dBm"
 }
 
 const breakText = (text: string, maxChars: number): string[] => {
@@ -449,74 +456,119 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
 const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterData) => {
     let content = '';
     const h = ENG.sizes.footerH;
-    const LEGEND_W = 600; // Expanded for ABNT + International
-    const INFO_W = w - LEGEND_W;
+    const LEGEND_W = 380; // Compact legends
+    const CLIENT_W = 330; // Client column (wider)
+    const MAP_W = 180; // Minimap
+    const INFO_W = w - LEGEND_W - CLIENT_W - MAP_W;
 
     // Outer Border
     content += renderBox(x, y, w, h, 'white', ENG.colors.border);
 
-    // --- ZONE 1: ABNT COLOR LEGEND (Left) ---
-    content += renderBox(x, y, LEGEND_W, h, 'none', ENG.colors.border);
-    content += renderText(x + 15, y + 20, 'LEGENDA DE FIBRAS (ABNT)', 9, 'bold', ENG.colors.textLabel);
+    // --- ZONE 1: ABNT COLOR LEGEND (Left, compact) ---
+    const abntW = LEGEND_W / 2;
+    content += renderBox(x, y, abntW, h, 'none', ENG.colors.border);
+    content += renderText(x + 10, y + 16, 'FIBRAS (ABNT)', 8, 'bold', ENG.colors.textLabel);
 
-    // ABNT Grid (2 columns x 6 rows)
-    const startY = y + 40;
-    const colW = 120;
-    const rowH = 15;
+    const startY = y + 30;
+    const colW = 85;
+    const rowH = 14;
 
     ABNT_COLORS.forEach((item, i) => {
-        const cx = x + 20 + (i >= 6 ? colW : 0);
+        const cx = x + 10 + (i >= 6 ? colW : 0);
         const cy = startY + ((i % 6) * rowH);
-        content += `<rect x="${cx}" y="${cy - 8}" width="12" height="8" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
-        content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
+        content += `<rect x="${cx}" y="${cy - 7}" width="10" height="7" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
+        content += renderText(cx + 14, cy, item.name, 7, 'normal', '#334155');
     });
 
     // --- ZONE 1.5: INTERNATIONAL COLOR LEGEND ---
-    const internX = x + 300;
-    content += `<line x1="${internX}" y1="${y}" x2="${internX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="1" />`;
-    content += renderText(internX + 15, y + 20, 'LEGENDA (INTERNACIONAL)', 9, 'bold', ENG.colors.textLabel);
+    const internX = x + abntW;
+    content += `<line x1="${internX}" y1="${y}" x2="${internX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+    content += renderText(internX + 10, y + 16, 'FIBRAS (INTERN.)', 8, 'bold', ENG.colors.textLabel);
 
     EIA_COLORS.forEach((item, i) => {
-        const cx = internX + 20 + (i >= 6 ? colW : 0);
+        const cx = internX + 10 + (i >= 6 ? colW : 0);
         const cy = startY + ((i % 6) * rowH);
-        content += `<rect x="${cx}" y="${cy - 8}" width="12" height="8" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
-        content += renderText(cx + 20, cy, item.name, 8, 'normal', '#334155');
+        content += `<rect x="${cx}" y="${cy - 7}" width="10" height="7" fill="${item.color}" stroke="#cbd5e1" stroke-width="0.5" />`;
+        content += renderText(cx + 14, cy, item.name, 7, 'normal', '#334155');
     });
 
-    // --- ZONE 2: TECHNICAL DATA + MAP (Right) ---
-    const infoX = x + LEGEND_W;
-    const MAP_W = 180; // Width reserved for minimap
-    const dataW = INFO_W - MAP_W;
+    // --- ZONE 2: CLIENTS COLUMN ---
+    const clientX = x + LEGEND_W;
+    content += `<line x1="${clientX}" y1="${y}" x2="${clientX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="1" />`;
 
-    // --- SUB-ZONE: Technical Data (Center) ---
-    const col1X = infoX + 15;
+    const clientCount = data.clientDetails?.length || data.clientCount || 0;
+    content += renderText(clientX + 10, y + 16, `CLIENTES (${clientCount})`, 8, 'bold', ENG.colors.textLabel);
+
+    if (data.clientDetails && data.clientDetails.length > 0) {
+        // Table header
+        const tableY = y + 30;
+        content += renderText(clientX + 10, tableY, 'P', 6, 'bold', ENG.colors.textLabel);
+        content += renderText(clientX + 30, tableY, 'CLIENTE', 6, 'bold', ENG.colors.textLabel);
+        content += renderText(clientX + CLIENT_W - 10, tableY, 'SINAL', 6, 'bold', ENG.colors.textLabel, 'end');
+
+        content += `<line x1="${clientX + 5}" y1="${tableY + 4}" x2="${clientX + CLIENT_W - 5}" y2="${tableY + 4}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
+
+        const maxRows = 11;
+        data.clientDetails.slice(0, maxRows).forEach((client, i) => {
+            const rowY = tableY + 14 + (i * 11);
+            // Zebra striping
+            if (i % 2 === 0) {
+                content += `<rect x="${clientX + 3}" y="${rowY - 8}" width="${CLIENT_W - 6}" height="11" fill="#f8fafc" />`;
+            }
+            content += renderText(clientX + 10, rowY, client.port, 7, 'bold', '#0f172a');
+            content += renderText(clientX + 30, rowY, client.name, 7, 'normal', '#0f172a');
+            if (client.power) {
+                content += renderText(clientX + CLIENT_W - 10, rowY, client.power, 7, 'normal', '#64748b', 'end');
+            }
+        });
+
+        if (data.clientDetails.length > maxRows) {
+            const moreY = tableY + 14 + (maxRows * 11);
+            content += renderText(clientX + 10, moreY, `+ ${data.clientDetails.length - maxRows} mais...`, 7, 'normal', ENG.colors.textLabel);
+        }
+    }
+
+    // --- ZONE 3: TECHNICAL DATA ---
+    const infoX = clientX + CLIENT_W;
+    content += `<line x1="${infoX}" y1="${y}" x2="${infoX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="1" />`;
+
+    const col1X = infoX + 10;
 
     // Row 1: Location
-    const r1y = y + 22;
-    content += renderText(col1X, r1y, 'LOCALIZAÇÃO', 8, 'bold', ENG.colors.textLabel);
-    content += renderText(col1X, r1y + 16, `${data.lat}, ${data.lng}`, 10, 'bold', '#0f172a');
+    const r1y = y + 16;
+    content += renderText(col1X, r1y, 'LOCALIZAÇÃO', 7, 'bold', ENG.colors.textLabel);
+    content += renderText(col1X, r1y + 13, `${data.lat}, ${data.lng}`, 9, 'bold', '#0f172a');
 
     // Divider
-    content += `<line x1="${infoX}" y1="${y + 50}" x2="${infoX + dataW}" y2="${y + 50}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
+    content += `<line x1="${infoX}" y1="${y + 38}" x2="${infoX + INFO_W}" y2="${y + 38}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
 
     // Row 2: Status
-    const r2y = y + 62;
-    content += renderText(col1X, r2y, 'STATUS / NÍVEL', 8, 'bold', ENG.colors.textLabel);
-    content += renderText(col1X, r2y + 16, `${data.status} / ${data.level}`, 10, 'bold', '#0f172a');
+    const r2y = y + 48;
+    content += renderText(col1X, r2y, 'STATUS / NÍVEL', 7, 'bold', ENG.colors.textLabel);
+    content += renderText(col1X, r2y + 13, `${data.status} / ${data.level}`, 9, 'bold', '#0f172a');
 
     // Divider
-    content += `<line x1="${infoX}" y1="${y + 90}" x2="${infoX + dataW}" y2="${y + 90}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
+    content += `<line x1="${infoX}" y1="${y + 70}" x2="${infoX + INFO_W}" y2="${y + 70}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
 
-    // Row 3: Observations
-    const r3y = y + 102;
-    content += renderText(col1X, r3y, 'OBSERVAÇÕES', 8, 'bold', ENG.colors.textLabel);
-    const obsLines = breakText(data.obs || '-', 40);
-    obsLines.slice(0, 2).forEach((l, i) => {
-        content += renderText(col1X, r3y + 16 + (i * 12), l, 9, 'normal', '#0f172a');
-    });
+    // Row 3: Splitters & Cables summary
+    const r3y = y + 80;
+    content += renderText(col1X, r3y, 'COMPONENTES', 7, 'bold', ENG.colors.textLabel);
+    let compY = r3y + 12;
+    if (data.splittersSummary) {
+        data.splittersSummary.slice(0, 2).forEach(s => {
+            content += renderText(col1X, compY, s, 7, 'normal', '#0f172a');
+            compY += 10;
+        });
+    }
+    if (data.cablesSummary) {
+        data.cablesSummary.slice(0, 2).forEach(c => {
+            content += renderText(col1X, compY, c, 7, 'normal', '#0f172a');
+            compY += 10;
+        });
+    }
 
-    // --- SUB-ZONE: Minimap (Right Column) ---
-    const rightColX = infoX + dataW;
+    // --- ZONE 4: Minimap (Right Column) ---
+    const rightColX = infoX + INFO_W;
     content += `<line x1="${rightColX}" y1="${y}" x2="${rightColX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
 
     if (data.mapImage) {
@@ -528,12 +580,9 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
         content += `<image x="${mapX}" y="${mapY}" width="${mapW}" height="${mapH}" href="${data.mapImage}" preserveAspectRatio="xMidYMid slice" />`;
     }
 
-    // --- CARIMBO (Bottom of data zone) ---
-    const carY = y + h - 30;
-    content += `<line x1="${infoX}" y1="${carY}" x2="${rightColX}" y2="${carY}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
-    content += renderText(col1X, carY + 12, 'PROJETO TÉCNICO EXECUTIVO', 8, 'bold', '#0f172a');
-    content += renderText(col1X, carY + 23, 'FTTH PLANNER v1.0', 7, 'normal', '#94a3b8');
-    content += renderText(infoX + dataW - 10, carY + 23, data.date?.split(' ')[0] || '', 7, 'normal', '#94a3b8', 'end');
+    // --- CARIMBO (Bottom-right of tech data) ---
+    const carY = y + h - 14;
+    content += renderText(infoX + INFO_W - 5, carY, 'FTTH PLANNER v1.0', 6, 'normal', '#94a3b8', 'end');
 
     return content;
 };
@@ -543,7 +592,8 @@ export const generateCTOSVG = (
     incomingCables: CableData[],
     litPorts: Set<string> = new Set(),
     portPositions: Record<string, { x: number, y: number }> = {},
-    footerData?: FooterData
+    footerData?: FooterData,
+    customers: Customer[] = []
 ): string => {
     let svgContent = '';
 
@@ -757,12 +807,27 @@ export const generateCTOSVG = (
 
     cto.splitters.forEach(s => {
         const l = cto.layout![s.id];
-        if (l) diagramContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts);
+        if (l) {
+            // Map customers to splitter port indices
+            const attachedCustomers = customers
+                .filter(c => c.splitterId === s.id && c.splitterPortIndex !== null && c.splitterPortIndex !== undefined)
+                .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: { name: c.name, status: c.connectionStatus } }), {} as Record<number, { name: string; status?: string | null }>);
+            diagramContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts, attachedCustomers);
+        }
     });
 
     cto.fusions.forEach(f => {
         const l = cto.layout![f.id];
-        if (l) diagramContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts);
+        if (l) {
+            // Find attached customer for connector fusions
+            const attachedCustomer = f.category === 'connector'
+                ? (() => {
+                    const match = customers.find(c => c.connectorId === f.id);
+                    return match ? { name: match.name, status: match.connectionStatus } : null;
+                })()
+                : null;
+            diagramContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts, attachedCustomer);
+        }
     });
 
     if (cto.notes) {

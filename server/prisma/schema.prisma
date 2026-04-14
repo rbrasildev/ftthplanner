@@ -756,7 +756,7 @@ model Drop {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  cto      Cto      @relation(fields: [ctoId], references: [id])
+  cto      Cto      @relation(fields: [ctoId], references: [id], onDelete: Cascade)
 
   @@index([ctoId])
   @@map("drops")
