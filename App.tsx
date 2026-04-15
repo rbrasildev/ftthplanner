@@ -2136,10 +2136,13 @@ export default function App() {
                     onHoverCable={handlePOPHoverCable}
                     userRole={userRole}
                     onEditCable={setEditingCable}
+                    onDisconnectCable={handleDisconnectCableFromBox}
+                    onDeleteCable={handleDeleteCable}
                     onOtdrTrace={(portId, dist) => traceOpticalPath(editingPOP.id, portId, dist)}
                     readOnly={editingNodeIsFromParent}
                     readOnlyLabel={editingNodeIsFromParent ? t('base_project_readonly_label', { name: parentProjectName }) : undefined}
                     onGoToParentProject={editingNodeIsFromParent ? handleGoToParentProject : undefined}
+                    isSidebarCollapsed={isSidebarCollapsed}
                 />
             )}
             {editingCTO && (

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
-import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X } from 'lucide-react';
+import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X, Link, Trash2, FileText } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { DIOEditor } from './DIOEditor';
@@ -34,15 +34,19 @@ interface POPEditorProps {
     onHoverCable?: (cableId: string | null) => void;
     // Edit Cable
     onEditCable?: (cable: CableData) => void;
+    // Disconnect/Delete Cable
+    onDisconnectCable?: (cableId: string, popId: string) => void;
+    onDeleteCable?: (cableId: string) => void;
     userRole?: string | null;
     readOnly?: boolean;
     readOnlyLabel?: string;
     onGoToParentProject?: () => void;
+    isSidebarCollapsed?: boolean;
 }
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
     const { t } = useLanguage();
     const canEdit = !readOnly && userRole !== 'MEMBER';
     const [localPOP, setLocalPOP] = useState<POPData>(JSON.parse(JSON.stringify(pop)));
@@ -81,6 +85,12 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Cable Context Menu & Removal
+    const [cableContextMenu, setCableContextMenu] = useState<{ x: number; y: number; cableId: string } | null>(null);
+    const [cableToRemove, setCableToRemove] = useState<string | null>(null);
+    const [cableToDelete, setCableToDelete] = useState<string | null>(null);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
 
     // Auto-patch modal state
     const [showAutoPatchModal, setShowAutoPatchModal] = useState(false);
@@ -369,6 +379,14 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             let newCables;
             if (currentCables.includes(cableId)) {
                 newCables = currentCables.filter(c => c !== cableId);
+                // Remove fiber connections (fusions) associated with this cable
+                const fiberPrefix = `${cableId}-fiber-`;
+                const newConnections = prev.connections.filter(c =>
+                    !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
+                );
+                const newDios = [...prev.dios];
+                newDios[dioIndex] = { ...dio, inputCableIds: newCables };
+                return { ...prev, dios: newDios, connections: newConnections };
             } else {
                 // Validate if assigned to another DIO
                 const assignedToOther = prev.dios.find(d => d.id !== dioId && d.inputCableIds?.includes(cableId));
@@ -398,6 +416,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             connections: updatedConnections
         }));
         setSpliceDioId(null);
+    };
+
+    const handleUpdateConnections = (updatedConnections: FiberConnection[]) => {
+        setLocalPOP(prev => ({
+            ...prev,
+            connections: updatedConnections
+        }));
     };
 
     const handleUpdateDIO = (updatedDio: DIO) => {
@@ -437,6 +462,43 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             )
         }));
     };
+
+    // --- Cable Context Menu ---
+    const handleCableContextMenu = useCallback((e: React.MouseEvent, cableId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCableContextMenu({ x: e.clientX, y: e.clientY, cableId });
+    }, []);
+
+    useEffect(() => {
+        if (!cableContextMenu) return;
+        const handleClick = (e: MouseEvent) => {
+            if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+                setCableContextMenu(null);
+            }
+        };
+        window.addEventListener('mousedown', handleClick);
+        return () => window.removeEventListener('mousedown', handleClick);
+    }, [cableContextMenu]);
+
+    const handleRemoveCableFromPOP = useCallback((cableId: string) => {
+        // Remove cable from POP inputCableIds, all DIOs inputCableIds, and associated fiber connections
+        const fiberPrefix = `${cableId}-fiber-`;
+        setLocalPOP(prev => ({
+            ...prev,
+            inputCableIds: prev.inputCableIds.filter(id => id !== cableId),
+            dios: prev.dios.map(d => ({
+                ...d,
+                inputCableIds: d.inputCableIds?.filter(id => id !== cableId)
+            })),
+            connections: prev.connections.filter(c =>
+                !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
+            )
+        }));
+        if (onDisconnectCable) {
+            onDisconnectCable(cableId, localPOP.id);
+        }
+    }, [onDisconnectCable, localPOP.id]);
 
     // --- Event Handlers (Drag & View) ---
 
@@ -1057,7 +1119,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     }, []);
 
     return (
-        <div className="pop-editor-modal fixed inset-0 z-[2000] bg-black flex items-center justify-center">
+        <div
+            className="pop-editor-modal fixed top-0 bottom-0 right-0 z-[2000] bg-black flex items-center justify-center transition-all duration-300"
+            style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
+        >
             <div className="w-full h-full bg-[#1a1d23] flex flex-col overflow-hidden relative">
 
                 {/* 1. HEADER (Title + Close) */}
@@ -1100,6 +1165,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 <div
                     ref={containerRef}
                     className="flex-1 bg-[#2c2f36] relative overflow-hidden"
+                    onContextMenu={(e) => e.preventDefault()}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
                     onMouseMove={handleMouseMove}
@@ -1198,6 +1264,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                             e.stopPropagation();
                                             onEditCable && onEditCable(cable);
                                         }}
+                                        onContextMenu={(e) => canEdit && handleCableContextMenu(e, cable.id)}
                                     >
                                         <div
                                             className="h-7 bg-[#22262e] border-b border-slate-700/50 px-2 flex items-center justify-between cursor-grab active:cursor-grabbing rounded-t-lg"
@@ -1338,10 +1405,12 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                             onClose={() => setSpliceDioId(null)}
                             onSave={handleDIOSave}
                             onUpdateDio={handleUpdateDIO}
+                            onUpdateConnections={handleUpdateConnections}
                             litPorts={litPorts}
                             vflSource={vflSource}
                             onToggleVfl={onToggleVfl}
                             onOtdrTrace={onOtdrTrace}
+                            isSidebarCollapsed={isSidebarCollapsed}
                         />
                     );
                 })()}
@@ -1469,6 +1538,136 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     onCancel={() => setShowCloseConfirm(false)}
                     onSecondaryAction={onClose}
                 />
+
+                {/* Cable Context Menu */}
+                {cableContextMenu && (
+                    <div
+                        ref={contextMenuRef}
+                        className="fixed z-[9999] bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 w-52 animate-in fade-in zoom-in-95 duration-100"
+                        style={{ top: cableContextMenu.y, left: cableContextMenu.x }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setCableToRemove(cableContextMenu.cableId);
+                                setCableContextMenu(null);
+                            }}
+                            className="w-full !justify-start text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors gap-2 h-auto border-0"
+                            icon={<Link className="w-3.5 h-3.5 rotate-45" />}
+                        >
+                            {t('ctx_remove_cable_pop')}
+                        </Button>
+                        <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                const cable = incomingCables.find(c => c.id === cableContextMenu.cableId);
+                                if (cable && onEditCable) {
+                                    onEditCable(cable);
+                                }
+                                setCableContextMenu(null);
+                            }}
+                            className="w-full !justify-start text-left px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                            icon={<FileText className="w-3.5 h-3.5" />}
+                        >
+                            {t('properties')}
+                        </Button>
+                        <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setCableToDelete(cableContextMenu.cableId);
+                                setCableContextMenu(null);
+                            }}
+                            className="w-full !justify-start text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors gap-2 h-auto border-0"
+                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                        >
+                            {t('delete')}
+                        </Button>
+                    </div>
+                )}
+
+                {/* Confirm Remove Cable from POP */}
+                {cableToRemove && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0 border border-red-300 dark:border-red-500/30">
+                                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('title_remove_cable')}</h3>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t('confirm_remove_cable_pop')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-row gap-3 mt-6">
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                        handleRemoveCableFromPOP(cableToRemove);
+                                        setCableToRemove(null);
+                                    }}
+                                    className="flex-1 font-bold shadow-lg"
+                                    icon={<Link className="w-4 h-4 rotate-45" />}
+                                >
+                                    {t('action_remove')}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setCableToRemove(null)}
+                                    className="flex-1 font-medium"
+                                >
+                                    {t('cancel')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirm Delete Cable */}
+                {cableToDelete && (
+                    <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto">
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0 border border-red-300 dark:border-red-500/30">
+                                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('confirm_delete_cable_msg').replace('{name}', incomingCables.find(c => c.id === cableToDelete)?.name || '')}</h3>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t('confirm_delete_cable')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-row gap-3 mt-6">
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                        if (onDeleteCable) {
+                                            handleRemoveCableFromPOP(cableToDelete);
+                                            onDeleteCable(cableToDelete);
+                                        }
+                                        setCableToDelete(null);
+                                    }}
+                                    className="flex-1 font-bold shadow-lg"
+                                    icon={<Trash2 className="w-4 h-4" />}
+                                >
+                                    {t('delete')}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setCableToDelete(null)}
+                                    className="flex-1 font-medium"
+                                >
+                                    {t('cancel')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </div>

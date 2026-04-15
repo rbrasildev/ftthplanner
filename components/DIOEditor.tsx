@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { POPData, CableData, FiberConnection, DIO } from '../types';
 import { X, Save, AlertCircle, Link2, Search, Check, Cable as CableIcon, Split, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -12,6 +12,7 @@ interface DIOEditorProps {
     onClose: () => void;
     onSave: (updatedConnections: FiberConnection[]) => void;
     onUpdateDio?: (updatedDio: DIO) => void;
+    onUpdateConnections?: (updatedConnections: FiberConnection[]) => void;
 
     // VFL Props
     litPorts?: Set<string>;
@@ -20,6 +21,9 @@ interface DIOEditorProps {
 
     // OTDR Prop
     onOtdrTrace?: (portId: string, distance: number) => void;
+
+    // Layout
+    isSidebarCollapsed?: boolean;
 }
 
 export const DIOEditor: React.FC<DIOEditorProps> = ({
@@ -29,14 +33,21 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
     onClose,
     onSave,
     onUpdateDio,
+    onUpdateConnections,
     litPorts,
     vflSource,
     onToggleVfl,
-    onOtdrTrace
+    onOtdrTrace,
+    isSidebarCollapsed = false
 }) => {
     const { t } = useLanguage();
     const [currentConnections, setCurrentConnections] = useState<FiberConnection[]>(pop.connections);
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+
+    // Sync local connections when pop.connections changes externally
+    useEffect(() => {
+        setCurrentConnections(pop.connections);
+    }, [pop.connections]);
 
     // OTDR States
     const [isOtdrToolActive, setIsOtdrToolActive] = useState(false);
@@ -75,6 +86,14 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
         let newCables;
         if (currentCables.includes(cableId)) {
             newCables = currentCables.filter(c => c !== cableId);
+            // Remove fiber connections (fusions) associated with this cable
+            const fiberPrefix = `${cableId}-fiber-`;
+            const cleaned = currentConnections.filter(c =>
+                !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
+            );
+            setCurrentConnections(cleaned);
+            // Persist cleaned connections immediately to keep POPEditor in sync
+            if (onUpdateConnections) onUpdateConnections(cleaned);
         } else {
             // Check if assigned to other DIO
             const assignedToOther = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cableId));
@@ -103,7 +122,8 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[2200] bg-black flex items-center justify-center select-none"
+            className="fixed top-0 bottom-0 right-0 z-[2200] bg-black flex items-center justify-center select-none transition-all duration-300"
+            style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
             onContextMenu={(e) => e.preventDefault()}
         >
             <div className="w-full h-full bg-white dark:bg-[#151820] flex flex-col overflow-hidden relative">
@@ -209,50 +229,93 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
                 {isLinkModalOpen && (
                     <div className="absolute inset-0 z-[2400] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setIsLinkModalOpen(false)}>
-                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg w-[450px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="h-12 bg-slate-50 dark:bg-[#22262e]/50 px-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
-                                <h3 className="text-slate-900 dark:text-white font-bold flex items-center gap-2 text-sm">
-                                    <div className="p-1 rounded bg-emerald-600 text-white">
-                                        <Link2 className="w-3.5 h-3.5" />
+                        <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
+                                        <Link2 className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
                                     </div>
-                                    {t('link_cables')}
-                                </h3>
-                                <button onClick={() => setIsLinkModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t('link_cables')}</h3>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{dio.name}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsLinkModalOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar space-y-2 bg-white dark:bg-[#151820]">
-                                {incomingCables.length === 0 && (
-                                    <div className="text-center p-8 text-slate-500">
-                                        <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                        <p>{t('no_cables_available')}</p>
+
+                            {/* Body */}
+                            <div className="p-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                {incomingCables.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-10 px-4">
+                                        <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                                            <CableIcon className="w-7 h-7 text-slate-400 dark:text-slate-500" />
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">{t('no_cables_available')}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 text-center max-w-xs leading-relaxed">{t('no_cables_available_desc')}</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {incomingCables.map(cable => {
+                                            const isLinked = dio.inputCableIds?.includes(cable.id);
+                                            const assignedToWho = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cable.id));
+
+                                            return (
+                                                <button
+                                                    key={cable.id}
+                                                    onClick={() => handleToggleCableLink(cable.id)}
+                                                    disabled={!!assignedToWho}
+                                                    className={`
+                                                        w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left group
+                                                        ${isLinked
+                                                            ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-600'
+                                                            : assignedToWho
+                                                                ? 'bg-slate-50 dark:bg-[#151820] border-slate-100 dark:border-slate-800 opacity-50 cursor-not-allowed'
+                                                                : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10'}
+                                                    `}
+                                                >
+                                                    <div className={`
+                                                        w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all
+                                                        ${isLinked
+                                                            ? 'bg-emerald-500 border-emerald-500'
+                                                            : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'}
+                                                    `}>
+                                                        {isLinked && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                                                    </div>
+                                                    <div className={`
+                                                        w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                                                        ${isLinked ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}
+                                                    `}>
+                                                        <CableIcon className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{cable.name}</div>
+                                                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                            {t('fiber_count_label', { count: cable.fiberCount || 0 })}
+                                                            {assignedToWho && (
+                                                                <span className="text-red-500 dark:text-red-400 font-bold ml-2">
+                                                                    &bull; {t('linked_to_dio', { name: assignedToWho.name })}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
-                                 {incomingCables.map(cable => {
-                                    const isLinked = dio.inputCableIds?.includes(cable.id);
-                                    const assignedToWho = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cable.id));
+                            </div>
 
-                                    return (
-                                        <button
-                                            key={cable.id}
-                                            onClick={() => handleToggleCableLink(cable.id)}
-                                            disabled={!!assignedToWho}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left
-                                                ${isLinked
-                                                    ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-500 text-emerald-900 dark:text-white'
-                                                    : (assignedToWho ? 'bg-slate-50 dark:bg-[#1a1d23] border-slate-100 dark:border-slate-700/30 text-slate-400 cursor-not-allowed' : 'bg-slate-50 dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400')}
-                                            `}
-                                        >
-                                            <div className="flex-1">
-                                                <div className="font-bold text-xs mb-0.5 flex items-center gap-2">
-                                                    <CableIcon className="w-3.5 h-3.5 text-slate-400" />
-                                                    {cable.name}
-                                                    {assignedToWho && <span className="text-[10px] text-red-500 dark:text-red-400 font-bold uppercase ml-auto">{t('linked_to_dio', { name: assignedToWho.name })}</span>}
-                                                </div>
-                                                <div className="text-[10px] opacity-60 font-mono ml-5.5">{cable.fiberCount} {t('fibers')}</div>
-                                            </div>
-                                            {isLinked && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 ml-4 shrink-0" />}
-                                        </button>
-                                    );
-                                })}
+                            {/* Footer */}
+                            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700/30 flex justify-end">
+                                <button
+                                    onClick={() => setIsLinkModalOpen(false)}
+                                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-sm text-sm transition-all"
+                                >
+                                    {t('done') || 'Concluir'}
+                                </button>
                             </div>
                         </div>
                     </div>

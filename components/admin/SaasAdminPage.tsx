@@ -21,6 +21,7 @@ interface Company {
         id: string;
         name: string;
         price: number;
+        type?: string; // 'STANDARD' | 'TRIAL' | 'FREE' etc.
         limits: {
             maxProjects?: number;
             maxUsers?: number;
@@ -29,6 +30,8 @@ interface Company {
         }
     };
     planId?: string;
+    users?: { id: string; username: string; role: string; lastLoginAt?: string; createdAt?: string }[];
+    projects?: { id: string; name: string }[];
     _count: { projects: number; users: number; ctos?: number; pops?: number };
     createdAt: string;
     subscriptionExpiresAt?: string;
@@ -1052,43 +1055,90 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 </header>
 
                 <div className="px-8 pb-12">
-                    {activeView === 'dashboard' && (
+                    {activeView === 'dashboard' && (() => {
+                        // Pre-compute dashboard stats (excludes trial from MRR)
+                        const isTrial = (c: Company) =>
+                            c.plan?.type === 'TRIAL' || c.plan?.name?.toLowerCase().includes('trial') || c.plan?.name?.toLowerCase().includes('teste');
+                        const isFree = (c: Company) =>
+                            !c.plan?.price || c.plan.price <= 0 || c.plan?.name?.toLowerCase().includes('grátis') || c.plan?.name?.toLowerCase().includes('free');
+                        const payingSubscribers = companies.filter(c =>
+                            c.status === 'ACTIVE' && !isTrial(c) && !isFree(c)
+                        );
+                        const trialCompanies = companies.filter(c =>
+                            isTrial(c) || c.status === 'TRIAL'
+                        );
+                        const suspendedCompanies = companies.filter(c => c.status === 'SUSPENDED');
+                        const mrr = payingSubscribers.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+                        const totalOverdue = companies.reduce((acc, c) =>
+                            acc + ((c as any)._financial?.overdueTotal || 0), 0
+                        );
+
+                        return (
                         <div className="space-y-8">
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
-                                            <Building2 className="w-6 h-6" />
+                            {/* Stats Grid — 5 KPI cards */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                {/* Total Companies */}
+                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
+                                            <Building2 className="w-5 h-5" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-[#22262e] rounded-lg text-slate-500">{t('saas_total')}</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">{t('saas_total')}</span>
                                     </div>
                                     <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">{companies.length}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_registered_companies')}</p>
+                                    <p className="text-xs text-slate-500 mt-1">{t('saas_registered_companies')}</p>
                                 </div>
 
-                                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
-                                            <CheckCircle2 className="w-6 h-6" />
+                                {/* Paying Subscribers */}
+                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
+                                            <CheckCircle2 className="w-5 h-5" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg">{t('saas_active')}</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Assinantes</span>
                                     </div>
-                                    <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">{companies.filter(c => c.status === 'ACTIVE').length}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_active_subscriptions')}</p>
+                                    <h3 className="text-3xl font-extrabold text-emerald-600">{payingSubscribers.length}</h3>
+                                    <p className="text-xs text-slate-500 mt-1">Pagando ativamente</p>
                                 </div>
 
-                                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
-                                            <CreditCard className="w-6 h-6" />
+                                {/* Trial */}
+                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2.5 bg-violet-50 dark:bg-violet-900/20 rounded-xl text-violet-600 dark:text-violet-400">
+                                            <Play className="w-5 h-5" />
                                         </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-[#22262e] rounded-lg text-slate-500">{t('saas_monthly')}</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Em Trial</span>
                                     </div>
-                                    <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                                        ${companies.reduce((acc, c) => acc + (c.plan?.price || 0), 0).toFixed(2)}
-                                    </h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('saas_estimated_mrr')}</p>
+                                    <h3 className="text-3xl font-extrabold text-violet-600">{trialCompanies.length}</h3>
+                                    <p className="text-xs text-slate-500 mt-1">Testando a plataforma</p>
+                                </div>
+
+                                {/* MRR — only paying subscribers */}
+                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">MRR</span>
+                                    </div>
+                                    <h3 className="text-3xl font-extrabold text-indigo-600">R$ {mrr.toFixed(2)}</h3>
+                                    <p className="text-xs text-slate-500 mt-1">Receita mensal recorrente</p>
+                                </div>
+
+                                {/* Suspended / Overdue */}
+                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className={`p-2.5 rounded-xl ${suspendedCompanies.length > 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
+                                            <AlertTriangle className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Suspensos</span>
+                                    </div>
+                                    <h3 className={`text-3xl font-extrabold ${suspendedCompanies.length > 0 ? 'text-red-600' : 'text-slate-400'}`}>{suspendedCompanies.length}</h3>
+                                    {totalOverdue > 0 ? (
+                                        <p className="text-xs text-red-500 font-semibold mt-1">R$ {totalOverdue.toFixed(2)} em atraso</p>
+                                    ) : (
+                                        <p className="text-xs text-slate-500 mt-1">Nenhuma inadimplência</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -1224,7 +1274,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {activeView === 'companies' && !selectedCompany && (
                         <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">

@@ -53,24 +53,27 @@ async function getNextBillingDate(companyId: string): Promise<Date> {
     const prevExpiry = company?.subscriptionExpiresAt;
 
     if (prevExpiry) {
-        const next = new Date(prevExpiry);
-        while (next <= now) {
-            next.setMonth(next.getMonth() + 1);
-        }
-
         // First payment ever? (trial → paid transition)
-        // Check BEFORE this invoice is marked PAID so the count is 0.
+        // The trial period is free and irrelevant to billing. The paid
+        // subscription starts from NOW (payment date), not from the old
+        // trial end. This anchors the billing day to the day the customer
+        // actually paid (e.g., paid on 14th → always due on 14th).
         const paidCount = await prisma.invoice.count({
             where: { companyId, status: 'PAID' }
         });
 
         if (paidCount === 0) {
-            // Advance one more month: the customer was on trial, so the
-            // period [prevExpiry → next] was free. First paid month starts
-            // from `next` and runs until `next + 1 month`.
+            const next = new Date(now);
             next.setMonth(next.getMonth() + 1);
+            return next;
         }
 
+        // Regular renewal: anchor to the existing billing cycle.
+        // If late, advance month by month until we pass "now".
+        const next = new Date(prevExpiry);
+        while (next <= now) {
+            next.setMonth(next.getMonth() + 1);
+        }
         return next;
     }
 
