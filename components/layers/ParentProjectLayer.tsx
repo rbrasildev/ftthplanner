@@ -18,6 +18,10 @@ interface ParentProjectLayerProps {
     currentZoom?: number;
     cableStartPoint?: { lat: number; lng: number } | null;
     selectedId?: string | null;
+    showCables?: boolean;
+    showCTOs?: boolean;
+    showPOPs?: boolean;
+    showPoles?: boolean;
     onBlockedEdit?: () => void;
     onCableStart?: (nodeId: string) => void;
     onCableEnd?: (nodeId: string) => void;
@@ -37,6 +41,10 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
     currentZoom = 18,
     cableStartPoint,
     selectedId,
+    showCables = true,
+    showCTOs = true,
+    showPOPs = true,
+    showPoles = true,
     onBlockedEdit,
     onCableStart,
     onCableEnd,
@@ -94,14 +102,14 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
         {/* Parent cables: D3 SVG overlay with leaflet-zoom-hide (matches main cable layer behavior) */}
         <D3ParentCablesLayer
             cables={network.cables}
-            visible={visible}
+            visible={visible && showCables}
             onCableClick={handleCableClick}
         />
 
         {/* Parent markers: above D3 cables layer, same level as normal markers */}
         <Pane name="parent-project-markers" style={{ zIndex: 610, pointerEvents: 'auto' }}>
             {/* CTOs/CEOs — exact same CTOMarker component */}
-            {network.ctos.map(cto => (
+            {showCTOs && network.ctos.map(cto => (
                 <CTOMarker
                     key={`parent-cto-${cto.id}`}
                     cto={cto}
@@ -123,7 +131,7 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
             ))}
 
             {/* POPs — exact same POPMarker component */}
-            {network.pops.map(pop => (
+            {showPOPs && network.pops.map(pop => (
                 <POPMarker
                     key={`parent-pop-${pop.id}`}
                     pop={pop}
@@ -145,7 +153,7 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
             ))}
 
             {/* Poles — exact same PoleMarker component */}
-            {network.poles.map(pole => (
+            {showPoles && network.poles.map(pole => (
                 <PoleMarker
                     key={`parent-pole-${pole.id}`}
                     pole={pole}
