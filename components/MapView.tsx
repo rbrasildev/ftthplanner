@@ -1372,17 +1372,23 @@ export const MapView: React.FC<MapViewProps> = ({
                                     onClick={() => setParentLayerExpanded(!parentLayerExpanded)}
                                     className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center shadow border border-slate-300 dark:border-slate-500 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors z-10"
                                 >
-                                    <ChevronDown className={`w-3 h-3 text-slate-600 dark:text-slate-300 transition-transform ${parentLayerExpanded ? 'rotate-180' : ''}`} />
+                                    <ChevronDown className={`w-3 h-3 text-slate-600 dark:text-slate-300 transition-transform duration-200 ${parentLayerExpanded ? 'rotate-180' : ''}`} />
                                 </button>
                             </div>
-                            {parentLayerExpanded && showParentLayer && (
-                                <div className="flex flex-col items-center gap-0.5 bg-emerald-50/80 dark:bg-emerald-900/20 rounded-lg p-1 border border-emerald-200 dark:border-emerald-800/40">
+                            <div
+                                className="overflow-hidden transition-all duration-300 ease-in-out"
+                                style={{
+                                    maxHeight: parentLayerExpanded && showParentLayer ? 200 : 0,
+                                    opacity: parentLayerExpanded && showParentLayer ? 1 : 0,
+                                }}
+                            >
+                                <div className="flex flex-col items-center gap-0.5 bg-emerald-50/80 dark:bg-emerald-900/20 rounded-lg p-1 border border-emerald-200 dark:border-emerald-800/40 mt-0.5">
                                     <LayerToggle active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={`${t('layer_cables')} (${t('base_project')})`} color="emerald" icon={<Share2 className="w-4 h-4" />} />
                                     <LayerToggle active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label={`CTOs (${t('base_project')})`} color="emerald" icon={<Box className="w-4 h-4" />} />
                                     <LayerToggle active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label={`POPs (${t('base_project')})`} color="emerald" icon={<Building2 className="w-4 h-4" />} />
                                     <LayerToggle active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={`${t('layer_poles')} (${t('base_project')})`} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
                                 </div>
-                            )}
+                            </div>
                         </div>
                     )}
 
