@@ -347,21 +347,25 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && createPortal(
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-sm w-full text-center animate-in zoom-in-95 duration-200">
-                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
-                        <div className="flex gap-3">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/30 max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center">
+                            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm">{t('confirm_delete_message')}</p>
+                        </div>
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex gap-3">
                             <button
                                 onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
+                                className="flex-1 px-4 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
                             >
                                 {t('cancel')}
                             </button>
                             <button
                                 onClick={() => handleDelete(showDeleteConfirm!)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
+                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-600/20 transform active:scale-95 transition-all"
                             >
                                 {t('delete')}
                             </button>
@@ -373,17 +377,26 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             {/* Modal */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                {editingItem ? t('edit_splitter') : t('new_splitter')}
-                            </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                                <X className="w-6 h-6" />
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-700/30 animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#1a1d23]/50 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                                    <GitFork className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">
+                                        {editingItem ? t('edit_splitter') : t('new_splitter')}
+                                    </h3>
+                                    <p className="text-xs text-slate-500">{t('splitter_catalog_desc') || 'Gerencie os modelos de splitters no catálogo.'}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                <X className="w-5 h-5 text-slate-500" />
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-4">
+                        <div className="p-6 overflow-y-auto space-y-4 bg-slate-50/30 dark:bg-[#1a1d23]">
                             <div>
                                 <CustomInput
                                     label={t('splitter_name')}
@@ -518,19 +531,19 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
                         </div>
 
-                        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3 shrink-0">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
                             >
                                 {t('cancel')}
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20"
+                                className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95 transition-all"
                             >
-                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                 {t('save')}
                             </button>
                         </div>
