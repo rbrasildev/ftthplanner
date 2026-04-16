@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Move, X, Server, Box, Layers, PlayCircle, Settings2 } from 'lucide-react';
+import { X, Server, Box, Layers, Cpu, Network, HardDrive, Radio, Settings, Zap, GripHorizontal } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
 import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
-import { Button } from '../../common/Button';
 import { CustomInput } from '../../common/CustomInput';
 import { CustomSelect } from '../../common/CustomSelect';
 
@@ -13,7 +12,6 @@ interface AddEquipmentModalsProps {
     dioModalPos: { x: number; y: number };
     onCloseOLT: () => void;
     onCloseDIO: () => void;
-    // onDragStart removed - handled internally
     newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number; type?: string };
     setNewOLTConfig: (config: any) => void;
     newDIOConfig: { ports: number };
@@ -24,16 +22,17 @@ interface AddEquipmentModalsProps {
 
 /**
  * Internal Draggable Modal Wrapper
- * Isolates re-renders to this component during drag operations.
  */
 const DraggableModal: React.FC<{
     title: string;
+    subtitle?: string;
     icon: React.ReactNode;
     initialPos: { x: number; y: number };
     onClose: () => void;
-    headerColor: string; // Tailwind class
+    accentColor: 'indigo' | 'emerald';
+    width?: number;
     children: React.ReactNode;
-}> = ({ title, icon, initialPos, onClose, headerColor, children }) => {
+}> = ({ title, subtitle, icon, initialPos, onClose, accentColor, width = 380, children }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const dragOffset = useRef({ x: 0, y: 0 });
@@ -44,12 +43,12 @@ const DraggableModal: React.FC<{
 
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging || !modalRef.current) return;
-            
+
             const newX = e.clientX - dragOffset.current.x;
             const newY = e.clientY - dragOffset.current.y;
-            
+
             currentPos.current = { x: newX, y: newY };
-            
+
             cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
                 if (modalRef.current) {
@@ -67,7 +66,6 @@ const DraggableModal: React.FC<{
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseMove, { passive: true });
             window.addEventListener('mouseup', handleMouseUp);
-            // Lock cursor and prevent text selection during drag
             document.body.style.cursor = 'grabbing';
             document.body.style.userSelect = 'none';
         }
@@ -87,44 +85,63 @@ const DraggableModal: React.FC<{
         };
     };
 
+    const gradientMap = {
+        indigo: 'from-indigo-50 dark:from-indigo-900/20',
+        emerald: 'from-emerald-50 dark:from-emerald-900/20'
+    };
+
+    const bgMap = {
+        indigo: 'bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+        emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+    };
+
     return (
-        <div
-            ref={modalRef}
-            className="absolute z-[2200] flex flex-col rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
-            style={{
-                transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
-                width: 320,
-                willChange: 'transform',
-                transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, scale 0.2s ease'
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            {/* Header */}
+        <>
+            {/* Backdrop - click outside to close */}
             <div
-                className="h-12 px-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#22262e]/50 rounded-t-xl"
-                onMouseDown={handleMouseDown}
+                className="absolute inset-0 z-[2199] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                onMouseDown={onClose}
+            />
+            <div
+                ref={modalRef}
+                className="absolute z-[2200] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
+                style={{
+                    transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
+                    width,
+                    willChange: 'transform',
+                    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, scale 0.2s ease'
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold">
-                    <div className={`p-1.5 rounded-lg ${headerColor} text-white`}>
+                {/* Header */}
+                <div
+                    className={`px-5 py-4 flex items-center justify-between cursor-move select-none border-b border-slate-200 dark:border-slate-700/30 bg-gradient-to-r ${gradientMap[accentColor]} to-transparent rounded-t-2xl`}
+                    onMouseDown={handleMouseDown}
+                >
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bgMap[accentColor]}`}>
                         {icon}
                     </div>
-                    <span className="text-sm">{title}</span>
+                    <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{title}</h3>
+                        {subtitle && <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{subtitle}</p>}
+                    </div>
+                    <GripHorizontal className="w-4 h-4 text-slate-400 shrink-0 opacity-60 ml-1" />
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
+                <button
                     onClick={onClose}
-                    className="w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0"
                 >
                     <X className="w-5 h-5" />
-                </Button>
+                </button>
             </div>
 
-            {/* Content area */}
-            <div className="p-5 space-y-5">
-                {children}
+                {/* Content area */}
+                <div className="p-5">
+                    {children}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
@@ -138,6 +155,25 @@ const useCatalogOLTs = (show: boolean) => {
     }, [show]);
     return olts;
 };
+
+// Equipment type cards
+const EQUIPMENT_TYPES = [
+    { value: 'OLT', labelKey: 'type_olt', icon: Server },
+    { value: 'SWITCH', labelKey: 'type_switch', icon: Network },
+    { value: 'ROUTER', labelKey: 'type_router', icon: Radio },
+    { value: 'SERVER', labelKey: 'type_server', icon: HardDrive },
+    { value: 'OTHER', labelKey: 'type_other', icon: Cpu },
+] as const;
+
+// DIO presets
+const DIO_PRESETS = [
+    { ports: 12, trays: 1 },
+    { ports: 24, trays: 2 },
+    { ports: 36, trays: 3 },
+    { ports: 48, trays: 4 },
+    { ports: 72, trays: 6 },
+    { ports: 144, trays: 12 },
+];
 
 export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
     showAddOLT,
@@ -156,8 +192,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
     const { t } = useLanguage();
     const catalogOLTs = useCatalogOLTs(showAddOLT);
 
-    const handleOltPresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const val = e.target.value;
+    const handleOltPresetChange = (val: string) => {
         if (val === 'custom') {
             setNewOLTConfig({ ...newOLTConfig, modelName: undefined });
         } else {
@@ -176,22 +211,54 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
     if (!showAddOLT && !showAddDIO) return null;
 
+    const currentType = newOLTConfig.type || 'OLT';
+    const totalPorts = newOLTConfig.slots * newOLTConfig.portsPerSlot;
+
     return (
         <>
             {showAddOLT && (
                 <DraggableModal
-                    title={t('modal_add_olt_title') || "Adicionar OLT"}
-                    icon={<Server className="w-4 h-4" />}
+                    title={t('modal_add_olt_title') || "Adicionar Equipamento Ativo"}
+                    subtitle={newOLTConfig.modelName || t('custom_configuration')}
+                    icon={<Server className="w-4.5 h-4.5" />}
                     initialPos={oltModalPos}
                     onClose={onCloseOLT}
-                    headerColor="bg-indigo-600"
+                    accentColor="indigo"
                 >
-                    <div className="space-y-4">
-                        {/* Catalog Selection */}
+                    <div className="space-y-5">
+                        {/* Type Cards */}
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                                {t('equipment_type')}
+                            </label>
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {EQUIPMENT_TYPES.map(({ value, labelKey, icon: Icon }) => {
+                                    const isSelected = currentType === value;
+                                    return (
+                                        <button
+                                            key={value}
+                                            onClick={() => setNewOLTConfig({ ...newOLTConfig, type: value })}
+                                            className={`
+                                                flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg border-2 transition-all
+                                                ${isSelected
+                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                                                    : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 text-slate-500 hover:border-indigo-300 hover:text-indigo-500'}
+                                            `}
+                                            title={t(labelKey)}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            <span className="text-[9px] font-bold uppercase tracking-wide">{t(labelKey)}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Model from catalog */}
                         <CustomSelect
                             label={t('model')}
                             value={newOLTConfig.modelName ? catalogOLTs.find(o => o.name === newOLTConfig.modelName)?.id || 'custom' : 'custom'}
-                            onChange={(val) => handleOltPresetChange({ target: { value: val } } as any)}
+                            onChange={handleOltPresetChange}
                             options={[
                                 { value: 'custom', label: t('custom_configuration') },
                                 ...catalogOLTs.map(olt => ({
@@ -202,26 +269,14 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                             ]}
                         />
 
-                        <CustomSelect
-                            label={t('equipment_type')}
-                            value={newOLTConfig.type || 'OLT'}
-                            onChange={val => setNewOLTConfig({ ...newOLTConfig, type: val })}
-                            options={[
-                                { value: 'OLT', label: t('type_olt') },
-                                { value: 'SWITCH', label: t('type_switch') },
-                                { value: 'ROUTER', label: t('type_router') },
-                                { value: 'SERVER', label: t('type_server') },
-                                { value: 'OTHER', label: t('type_other') }
-                            ]}
-                        />
-
-                        <div className="space-y-4">
-                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
-                                <Layers className="w-3.5 h-3.5" /> {t('chassis_config')}
+                        {/* Chassis Config */}
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1.5">
+                                <Layers className="w-3 h-3" /> {t('chassis_config')}
                             </label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-2 items-end">
                                 <CustomInput
-                                    label={t('total_slots')}
+                                    label="Slots"
                                     type="number"
                                     min="1"
                                     max="16"
@@ -232,124 +287,142 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                                     }}
                                 />
                                 <CustomInput
-                                    label={newOLTConfig.type === 'OLT' ? t('olt_ports') : t('active_ports')}
+                                    label="Portas"
                                     type="number"
                                     min="1"
                                     max="128"
                                     value={newOLTConfig.portsPerSlot}
                                     onChange={e => setNewOLTConfig({ ...newOLTConfig, portsPerSlot: parseInt(e.target.value) })}
                                 />
+                                <CustomInput
+                                    label="Uplink"
+                                    type="number"
+                                    min="0"
+                                    max="8"
+                                    value={newOLTConfig.uplinkPorts ?? 2}
+                                    onChange={e => setNewOLTConfig({ ...newOLTConfig, uplinkPorts: parseInt(e.target.value) })}
+                                />
                             </div>
-
-                            {/* Slot name preview */}
-                            {newOLTConfig.slots > 1 && (
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">{t('slot_names') || 'Nomes dos Slots'}</label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {Array.from({ length: Math.min(newOLTConfig.slots, 16) }).map((_, i) => (
-                                            <input
-                                                key={i}
-                                                type="text"
-                                                maxLength={6}
-                                                placeholder={`S${i + 1}`}
-                                                defaultValue={(newOLTConfig as any).slotNames?.[i] || ''}
-                                                onChange={e => {
-                                                    const names = [...((newOLTConfig as any).slotNames || [])];
-                                                    names[i] = e.target.value;
-                                                    setNewOLTConfig({ ...newOLTConfig, slotNames: names });
-                                                }}
-                                                className="w-14 h-7 text-center text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500"
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
-                            <CustomInput
-                                label={t('uplink_ports') || 'Uplinks'}
-                                type="number"
-                                min="0"
-                                max="8"
-                                value={newOLTConfig.uplinkPorts ?? 2}
-                                onChange={e => setNewOLTConfig({ ...newOLTConfig, uplinkPorts: parseInt(e.target.value) })}
-                            />
-
-                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/30 rounded-lg p-3 flex items-start gap-3">
-                            <div className="mt-0.5">
-                                <PlayCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                            </div>
+                        {/* Slot names if multiple slots */}
+                        {newOLTConfig.slots > 1 && (
                             <div>
-                                <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-300">{t('preview')}</h4>
-                                <p className="text-[11px] text-slate-600 dark:text-indigo-200/70 leading-tight">
-                                    {t('equipment_preview_msg', {
-                                        type: t(`type_${(newOLTConfig.type || 'OLT').toLowerCase()}`),
-                                        total: newOLTConfig.slots * newOLTConfig.portsPerSlot,
-                                        slots: newOLTConfig.slots,
-                                        ports: newOLTConfig.portsPerSlot
-                                    })}
-                                </p>
+                                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1.5">
+                                    <Settings className="w-3 h-3" /> {t('slot_names') || 'Nomes dos Slots'}
+                                </label>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {Array.from({ length: Math.min(newOLTConfig.slots, 16) }).map((_, i) => (
+                                        <input
+                                            key={i}
+                                            type="text"
+                                            maxLength={6}
+                                            placeholder={`S${i + 1}`}
+                                            defaultValue={(newOLTConfig as any).slotNames?.[i] || ''}
+                                            onChange={e => {
+                                                const names = [...((newOLTConfig as any).slotNames || [])];
+                                                names[i] = e.target.value;
+                                                setNewOLTConfig({ ...newOLTConfig, slotNames: names });
+                                            }}
+                                            className="w-14 h-8 text-center text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30">
+                                <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</div>
+                                <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 leading-tight">{totalPorts}</div>
+                                <div className="text-[10px] text-slate-500">portas</div>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30">
+                                <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Slots</div>
+                                <div className="text-lg font-black text-slate-700 dark:text-slate-300 leading-tight">{newOLTConfig.slots}</div>
+                                <div className="text-[10px] text-slate-500">&times; {newOLTConfig.portsPerSlot}p</div>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30">
+                                <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Uplinks</div>
+                                <div className="text-lg font-black text-slate-700 dark:text-slate-300 leading-tight">{newOLTConfig.uplinkPorts ?? 2}</div>
+                                <div className="text-[10px] text-slate-500">portas</div>
                             </div>
                         </div>
 
-                        <Button
+                        {/* Add Button */}
+                        <button
                             onClick={onAddOLT}
-                            size="lg"
-                            className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg shadow-indigo-900/30 transition-all font-bold"
-                            icon={<Server className="w-4 h-4" />}
+                            className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg shadow-indigo-900/30 transition-all flex items-center justify-center gap-2"
                         >
+                            <Zap className="w-4 h-4" />
                             {t('create_device')}
-                        </Button>
+                        </button>
                     </div>
                 </DraggableModal>
             )}
 
             {showAddDIO && (
                 <DraggableModal
-                    title="Adicionar DIO"
-                    icon={<Box className="w-4 h-4" />}
+                    title={t('modal_add_dio_title') || "Adicionar DIO"}
+                    subtitle={`${newDIOConfig.ports} portas · ${Math.ceil(newDIOConfig.ports / 12)} bandeja${Math.ceil(newDIOConfig.ports / 12) > 1 ? 's' : ''}`}
+                    icon={<Box className="w-4.5 h-4.5" />}
                     initialPos={dioModalPos}
                     onClose={onCloseDIO}
-                    headerColor="bg-emerald-600"
+                    accentColor="emerald"
                 >
-                    <div className="space-y-4">
-                        <CustomSelect
-                            label={t('specifications')}
-                            value={newDIOConfig.ports.toString()}
-                            onChange={val => setNewDIOConfig({ ...newDIOConfig, ports: parseInt(val) })}
-                            options={[
-                                { value: "12", label: `12 ${t('ports_label') || "Portas"} (1 ${t('tray') === 'tray' ? 'bandeja' : t('tray')})` },
-                                { value: "24", label: `24 ${t('ports_label') || "Portas"} (2 ${t('trays') === 'trays' ? 'bandejas' : t('trays')})` },
-                                { value: "36", label: `36 ${t('ports_label') || "Portas"} (3 ${t('bandejas') || "bandejas"})` },
-                                { value: "48", label: `48 ${t('ports_label') || "Portas"} (4 ${t('bandejas') || "bandejas"})` },
-                                { value: "72", label: `72 ${t('ports_label') || "Portas"} (6 ${t('bandejas') || "bandejas"})` },
-                                { value: "144", label: `144 ${t('ports_label') || "Portas"} (12 ${t('bandejas') || "bandejas"})` }
-                            ]}
-                        />
-
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-500/30 rounded-lg p-3 flex items-start gap-3">
-                            <div className="mt-0.5">
-                                <PlayCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{t('preview')}</h4>
-                                <p className="text-[11px] text-slate-600 dark:text-emerald-200/70 leading-tight">
-                                    {t('dio_preview_msg', {
-                                        ports: newDIOConfig.ports,
-                                        trays: Math.ceil(newDIOConfig.ports / 12)
-                                    })}
-                                </p>
+                    <div className="space-y-5">
+                        {/* Preset Grid */}
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                                {t('specifications')}
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {DIO_PRESETS.map(preset => {
+                                    const isSelected = newDIOConfig.ports === preset.ports;
+                                    return (
+                                        <button
+                                            key={preset.ports}
+                                            onClick={() => setNewDIOConfig({ ...newDIOConfig, ports: preset.ports })}
+                                            className={`
+                                                flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl border-2 transition-all
+                                                ${isSelected
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                                                    : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 text-slate-500 hover:border-emerald-300 hover:text-emerald-500'}
+                                            `}
+                                        >
+                                            <div className="text-lg font-black leading-tight">{preset.ports}</div>
+                                            <div className="text-[9px] font-bold uppercase tracking-wide">
+                                                {preset.trays} {preset.trays === 1 ? 'bandeja' : 'bandejas'}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        <Button
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30">
+                                <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Portas totais</div>
+                                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-tight">{newDIOConfig.ports}</div>
+                                <div className="text-[10px] text-slate-500">capacidade</div>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30">
+                                <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bandejas</div>
+                                <div className="text-lg font-black text-slate-700 dark:text-slate-300 leading-tight">{Math.ceil(newDIOConfig.ports / 12)}</div>
+                                <div className="text-[10px] text-slate-500">12 portas cada</div>
+                            </div>
+                        </div>
+
+                        {/* Add Button */}
+                        <button
                             onClick={onAddDIO}
-                            size="lg"
-                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all font-bold"
-                            icon={<Box className="w-4 h-4" />}
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center gap-2"
                         >
+                            <Zap className="w-4 h-4" />
                             {t('create_device')}
-                        </Button>
+                        </button>
                     </div>
                 </DraggableModal>
             )}
