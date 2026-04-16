@@ -1198,11 +1198,12 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     {/* Grid */}
                     {viewMode !== 'logical' && (
                         <div
-                            className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20"
+                            className="absolute inset-0 pointer-events-none"
                             style={{
-                                backgroundImage: `radial-gradient(${isDark ? '#3a3d44' : '#94a3b8'} 0.8px, transparent 0.8px)`,
+                                backgroundImage: `radial-gradient(${isDark ? '#5a6270' : '#94a3b8'} 1.2px, transparent 1.2px)`,
                                 backgroundSize: `${GRID_SIZE * viewState.zoom}px ${GRID_SIZE * viewState.zoom}px`,
-                                backgroundPosition: `${viewState.x}px ${viewState.y}px`
+                                backgroundPosition: `${viewState.x}px ${viewState.y}px`,
+                                opacity: isDark ? 0.6 : 0.4
                             }}
                         />
                     )}
