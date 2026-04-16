@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, X, Server, Box, Layers, Settings, Save, Lock, Unlock, GripHorizontal, Cpu, Network, HardDrive, Radio, Power, PowerOff } from 'lucide-react';
+import { AlertTriangle, X, Server, Box, Layers, Settings, Save, Lock, Unlock, GripHorizontal, Cpu, Network, HardDrive, Radio } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
 import { CustomInput } from '../../common/CustomInput';
 
@@ -24,7 +24,7 @@ const DraggableModal: React.FC<{
     accentColor: 'indigo' | 'emerald';
     width?: number;
     children: React.ReactNode;
-}> = ({ title, subtitle, icon, initialPos, onClose, accentColor, width = 400, children }) => {
+}> = ({ title, subtitle, icon, initialPos, onClose, accentColor, width = 480, children }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const dragOffset = useRef({ x: 0, y: 0 });
@@ -158,7 +158,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
     const { t } = useLanguage();
     const [isTypeUnlocked, setIsTypeUnlocked] = useState(false);
 
-    const initialPos = { x: window.innerWidth / 2 - 200, y: window.innerHeight / 2 - 250 };
+    const initialPos = { x: window.innerWidth / 2 - 240, y: window.innerHeight / 2 - 250 };
 
     const currentOltType = editingOLT?.type || 'OLT';
     const totalOltPorts = editingOLT ? (editingOLT.structure?.slots || 1) * (editingOLT.structure?.portsPerSlot || 16) : 0;
@@ -286,53 +286,73 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                             <div
                                                 key={idx}
                                                 className={`
-                                                    flex items-center gap-2 p-2 rounded-lg border transition-all
+                                                    flex items-center gap-3 p-2.5 rounded-lg border transition-all
                                                     ${slotConfig.active
                                                         ? 'bg-white dark:bg-[#22262e] border-slate-200 dark:border-slate-700/50'
-                                                        : 'bg-slate-50 dark:bg-[#151820]/50 border-slate-200 dark:border-slate-800 opacity-70'}
+                                                        : 'bg-slate-50 dark:bg-[#151820]/50 border-slate-200 dark:border-slate-800'}
                                                 `}
                                             >
-                                                <input
-                                                    type="text"
-                                                    maxLength={6}
-                                                    value={slotConfig.name || ''}
-                                                    placeholder={`S${idx + 1}`}
-                                                    onChange={e => updateSlotConfig({ name: e.target.value || undefined })}
-                                                    className="w-14 h-8 text-center text-[10px] font-bold rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a1d23] text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shrink-0"
-                                                />
-
-                                                <button
-                                                    onClick={() => updateSlotConfig({ active: !slotConfig.active })}
-                                                    className={`
-                                                        h-8 px-2 rounded-md text-[10px] font-bold flex items-center gap-1 transition-all
+                                                {/* Slot indicator + name */}
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <div className={`
+                                                        w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black
                                                         ${slotConfig.active
-                                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}
-                                                    `}
-                                                    title={slotConfig.active ? t('slot_active') : t('slot_empty')}
-                                                >
-                                                    {slotConfig.active ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
-                                                    {slotConfig.active ? t('slot_active') : t('slot_empty')}
-                                                </button>
+                                                            ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                                                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600'}
+                                                    `}>
+                                                        {idx + 1}
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        maxLength={8}
+                                                        value={slotConfig.name || ''}
+                                                        placeholder={`Slot ${idx + 1}`}
+                                                        onChange={e => updateSlotConfig({ name: e.target.value || undefined })}
+                                                        disabled={!slotConfig.active}
+                                                        className="w-20 h-8 px-2 text-[11px] font-semibold rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a1d23] text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    />
+                                                </div>
 
+                                                {/* Port count segmented (only when active) */}
                                                 {slotConfig.active && (
-                                                    <div className="ml-auto flex gap-1 shrink-0">
+                                                    <div className="flex items-center bg-slate-100 dark:bg-[#1a1d23] rounded-md p-0.5 border border-slate-200 dark:border-slate-700 shrink-0">
                                                         {[8, 16].map(portCount => (
                                                             <button
                                                                 key={portCount}
                                                                 onClick={() => updateSlotConfig({ portCount })}
                                                                 className={`
-                                                                    h-8 px-2.5 rounded-md text-[10px] font-bold transition-all
+                                                                    h-7 px-2.5 rounded text-[10px] font-bold transition-all
                                                                     ${slotConfig.portCount === portCount
-                                                                        ? 'bg-indigo-500 text-white'
-                                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}
+                                                                        ? 'bg-white dark:bg-[#2a2e38] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}
                                                                 `}
                                                             >
-                                                                {portCount}p
+                                                                {portCount} portas
                                                             </button>
                                                         ))}
                                                     </div>
                                                 )}
+
+                                                {/* Toggle Switch at right */}
+                                                <label className="ml-auto flex items-center gap-2 cursor-pointer shrink-0 select-none">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${slotConfig.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                                                        {slotConfig.active ? 'Habilitado' : 'Vazio'}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateSlotConfig({ active: !slotConfig.active })}
+                                                        className={`
+                                                            relative w-10 h-6 rounded-full transition-colors flex-shrink-0
+                                                            ${slotConfig.active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}
+                                                        `}
+                                                        title={slotConfig.active ? 'Clique para desabilitar' : 'Clique para habilitar'}
+                                                    >
+                                                        <div className={`
+                                                            absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform
+                                                            ${slotConfig.active ? 'translate-x-4' : 'translate-x-0.5'}
+                                                        `} />
+                                                    </button>
+                                                </label>
                                             </div>
                                         );
                                     })}
