@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug
+    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler
 } from 'lucide-react';
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
@@ -11,7 +11,7 @@ import { SearchBox } from './SearchBox';
 import { hasPermission } from '../shared/permissions';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Project } from '../types';
+import { Project, Coordinates } from '../types';
 
 export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
 
@@ -37,6 +37,8 @@ export interface SidebarProps {
     deploymentProgress: number;
     vflSource: string | null;
     setVflSource: (source: string | null) => void;
+    otdrResult?: Coordinates | null;
+    setOtdrResult?: (result: Coordinates | null) => void;
     searchResults: any[];
     onSearch: (term: string) => void;
     onResultClick: (item: any) => void;
@@ -84,6 +86,16 @@ function getExpirationInfo(subscriptionExpiresAt: string | null | undefined, can
     return { days, isExpired, isExpiringSoon, isTrialPlan, cancelAtPeriodEnd };
 }
 
+function formatVflSourceLabel(source: string): string {
+    const fiberMatch = source.match(/-fiber-(\d+)$/);
+    if (fiberMatch) return `Fibra ${parseInt(fiberMatch[1], 10) + 1}`;
+    const splitterMatch = source.match(/splitter-.*-(?:in|out)-(\d+)$/i);
+    if (splitterMatch) return `Splitter · Porta ${parseInt(splitterMatch[1], 10) + 1}`;
+    const portMatch = source.match(/-port-(\d+)$/i);
+    if (portMatch) return `Porta ${parseInt(portMatch[1], 10) + 1}`;
+    return source.length > 24 ? source.slice(0, 24) + '…' : source;
+}
+
 // --- Main Component ---
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -100,6 +112,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     deploymentProgress,
     vflSource,
     setVflSource,
+    otdrResult,
+    setOtdrResult,
     searchResults,
     onSearch,
     onResultClick,
@@ -425,12 +439,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             <span className="flex w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                             {!isCollapsed && <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tighter">VFL ON</span>}
                                         </div>
-                                        {!isCollapsed && <div className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mb-2 truncate max-w-[180px]">{vflSource}</div>}
+                                        {!isCollapsed && <div className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mb-2 truncate max-w-[180px]">{formatVflSourceLabel(vflSource)}</div>}
                                         <Button
                                             variant="destructive"
                                             size={isCollapsed ? "icon" : "sm"}
                                             onClick={() => setVflSource(null)}
                                             className={`font-bold uppercase tracking-wider ${!isCollapsed ? 'w-full py-1 text-[9px] h-7' : 'w-7 h-7'}`}
+                                            title={t('turn_off')}
+                                        >
+                                            {isCollapsed ? <X className="w-3.5 h-3.5" /> : t('turn_off')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* OTDR Indicator */}
+                            {otdrResult && setOtdrResult && (
+                                <div className={`p-2 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 rounded-xl relative overflow-hidden group ${isCollapsed ? 'flex justify-center' : ''}`}>
+                                    <div className="absolute top-0 right-0 p-1 opacity-10">
+                                        <Ruler className="w-10 h-10 text-indigo-500 -rotate-12" />
+                                    </div>
+                                    <div className={`relative z-10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="flex w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                            {!isCollapsed && <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-tighter">OTDR ON</span>}
+                                        </div>
+                                        {!isCollapsed && <div className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 mb-2 truncate max-w-[180px] font-mono">{otdrResult.lat.toFixed(5)}, {otdrResult.lng.toFixed(5)}</div>}
+                                        <Button
+                                            variant="destructive"
+                                            size={isCollapsed ? "icon" : "sm"}
+                                            onClick={() => setOtdrResult(null)}
+                                            className={`font-bold uppercase tracking-wider ${!isCollapsed ? 'w-full py-1 text-[9px] h-7 bg-indigo-600 hover:bg-indigo-500 border-indigo-700' : 'w-7 h-7 bg-indigo-600 hover:bg-indigo-500 border-indigo-700'}`}
                                             title={t('turn_off')}
                                         >
                                             {isCollapsed ? <X className="w-3.5 h-3.5" /> : t('turn_off')}

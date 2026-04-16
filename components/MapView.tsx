@@ -549,6 +549,7 @@ interface MapViewProps {
         cables: any[];
         ctos: any[];
         ceos: any[];
+        pops: any[];
         poles: any[];
     } | null;
     multiConnectionIds?: Set<string>;
@@ -1881,7 +1882,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 pathOptions={{ color: '#f59e0b', weight: 4, dashArray: '10, 10', opacity: 0.8 }}
                             />
                         ))}
-                        {[...previewImportData.ctos, ...previewImportData.ceos, ...previewImportData.poles].map((item, idx) => {
+                        {[...previewImportData.ctos, ...previewImportData.ceos, ...(previewImportData.pops || []), ...previewImportData.poles].map((item, idx) => {
                             const lat = item.coordinates[1];
                             const lng = item.coordinates[0];
                             return (

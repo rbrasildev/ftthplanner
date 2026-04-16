@@ -335,6 +335,7 @@ export default function App() {
         cables: any[];
         ctos: any[];
         ceos: any[];
+        pops: any[];
         poles: any[];
     } | null>(null);
     const [globalCustomers, setGlobalCustomers] = useState<Customer[]>([]);
@@ -1785,6 +1786,8 @@ export default function App() {
                 deploymentProgress={deploymentProgress}
                 vflSource={vflSource}
                 setVflSource={setVflSource}
+                otdrResult={otdrResult}
+                setOtdrResult={setOtdrResult}
                 searchResults={searchResults}
                 onSearch={handleMainSearch}
                 onResultClick={handleSearchResultClick}

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useLanguage } from '../LanguageContext';
-import { Project, NetworkState, CableData, CTOData, PoleData } from '../types';
+import { Project, NetworkState, CableData, CTOData, PoleData, POPData } from '../types';
 import * as projectService from '../services/projectService';
 
 interface UseNetworkImportProps {
@@ -107,7 +107,23 @@ export const useNetworkImport = ({
                 updated.ctos = [...(updated.ctos || []), ...newCEOs];
             }
 
-            // 3. Process Poles
+            // 3. Process POPs
+            if (data.pops && data.pops.length > 0) {
+                const newPOPs: POPData[] = data.pops.map((p: any, idx: number) => ({
+                    id: crypto.randomUUID(),
+                    name: p.originalName || `POP ${idx + 1}`,
+                    status: p.status || 'PLANNED',
+                    coordinates: { lat: p.coordinates[1], lng: p.coordinates[0] },
+                    olts: [],
+                    dios: [],
+                    fusions: [],
+                    connections: [],
+                    inputCableIds: []
+                }));
+                updated.pops = [...(updated.pops || []), ...newPOPs];
+            }
+
+            // 4. Process Poles
             if (data.poles && data.poles.length > 0) {
                 const newPoles: PoleData[] = data.poles.map((p: any, idx: number) => ({
                     id: crypto.randomUUID(),

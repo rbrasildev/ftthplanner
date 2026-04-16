@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Box, Building2, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight, HelpCircle, UtilityPole } from 'lucide-react';
+import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Box, Package, Building, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight, HelpCircle, UtilityPole } from 'lucide-react';
 import * as toGeoJSON from '@mapbox/togeojson';
 import JSZip from 'jszip';
 import { useLanguage } from '../../LanguageContext';
@@ -13,7 +13,7 @@ interface KmlImportModalProps {
     onImport: (data: any) => void;
 }
 
-type ImportTab = 'cables' | 'ctos' | 'ceos' | 'poles' | 'unclassified';
+type ImportTab = 'cables' | 'ctos' | 'ceos' | 'pops' | 'poles' | 'unclassified';
 
 interface DetectedItem {
     id: string;
@@ -43,12 +43,14 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
         cables: DetectedItem[];
         ctos: DetectedItem[];
         ceos: DetectedItem[];
+        pops: DetectedItem[];
         poles: DetectedItem[];
         unclassified: DetectedItem[];
     }>({
         cables: [],
         ctos: [],
         ceos: [],
+        pops: [],
         unclassified: [],
         poles: []
     });
@@ -65,7 +67,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             setFile(null);
             setError(null);
             setIsParsing(false);
-            setItems({ cables: [], ctos: [], ceos: [], poles: [], unclassified: [] });
+            setItems({ cables: [], ctos: [], ceos: [], pops: [], poles: [], unclassified: [] });
             onPreview(null);
         }
     }, [isOpen]);
@@ -83,6 +85,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             }),
             ctos: items.ctos,
             ceos: items.ceos,
+            pops: items.pops,
             poles: items.poles
         };
         onPreview(previewData);
@@ -140,6 +143,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 cables: [] as DetectedItem[],
                 ctos: [] as DetectedItem[],
                 ceos: [] as DetectedItem[],
+                pops: [] as DetectedItem[],
                 poles: [] as DetectedItem[],
                 unclassified: [] as DetectedItem[],
             };
@@ -192,7 +196,9 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                     typeId: ''
                 };
 
-                if (name.includes('CTO') || name.includes('NAP')) {
+                if (name.includes('POP') || name.includes('HEADEND') || name.includes('CENTRAL') || name.includes('OLT')) {
+                    newItems.pops.push(item);
+                } else if (name.includes('CTO') || name.includes('NAP')) {
                     newItems.ctos.push(item);
                 } else if (name.includes('CEO') || name.includes('EMENDA') || name.includes('FOSC')) {
                     newItems.ceos.push(item);
@@ -209,6 +215,9 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
             if (newItems.unclassified.length > 0) setActiveTab('unclassified');
             else if (newItems.cables.length > 0) setActiveTab('cables');
             else if (newItems.ctos.length > 0) setActiveTab('ctos');
+            else if (newItems.ceos.length > 0) setActiveTab('ceos');
+            else if (newItems.pops.length > 0) setActiveTab('pops');
+            else if (newItems.poles.length > 0) setActiveTab('poles');
 
         } catch (err: any) {
             console.error("Parse error:", err);
@@ -251,7 +260,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
         }));
     };
 
-    // Validation
+    // Validation — POPs don't require a catalog typeId
     const invalidCount = useMemo(() => {
         let count = 0;
         (['cables', 'ctos', 'ceos', 'poles'] as ImportTab[]).forEach((key) => {
@@ -264,6 +273,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
         return items.cables.filter(i => i.selected).length +
             items.ctos.filter(i => i.selected).length +
             items.ceos.filter(i => i.selected).length +
+            items.pops.filter(i => i.selected).length +
             items.poles.filter(i => i.selected).length;
     }, [items]);
 
@@ -281,6 +291,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 cables: items.cables.filter(i => i.selected).map(c => ({ ...c, type: cableTypes.find(t => t.id === c.typeId) })),
                 ctos: items.ctos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
                 ceos: items.ceos.filter(i => i.selected).map(c => ({ ...c, type: boxTypes.find(t => t.id === c.typeId) })),
+                pops: items.pops.filter(i => i.selected),
                 poles: items.poles.filter(i => i.selected).map(p => ({ ...p, type: poleTypes.find(t => t.id === p.typeId) }))
             };
 
@@ -297,22 +308,30 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
     const renderTabButton = (tab: ImportTab, label: string, icon: any, count: number) => (
         <button
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === tab
+            className={`flex-1 min-w-[120px] py-3 px-4 flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === tab
                 ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50/50 dark:bg-emerald-900/10'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
         >
             {React.createElement(icon, { className: "w-4 h-4" })}
             <span className="text-sm">{label}</span>
-            <span className="text-xs bg-slate-100 dark:bg-[#22262e] py-0.5 px-2 rounded-full font-mono">{count}</span>
+            <span className={`text-xs py-0.5 px-2 rounded-full font-mono ${activeTab === tab ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-[#22262e] dark:text-slate-400'}`}>{count}</span>
         </button>
     );
+
+    const moveTargets: { tab: ImportTab; label: string; icon: any }[] = [
+        { tab: 'ctos', label: 'CTO', icon: Box },
+        { tab: 'ceos', label: 'CEO', icon: Package },
+        { tab: 'pops', label: 'POP', icon: Building },
+        { tab: 'poles', label: 'Poste', icon: UtilityPole },
+    ];
 
     const activeList = items[activeTab];
     const activeCatalog = activeTab === 'cables' ? cableTypes :
         activeTab === 'poles' ? poleTypes :
-            activeTab === 'unclassified' ? [] :
+            activeTab === 'unclassified' || activeTab === 'pops' ? [] :
                 boxTypes.filter(b => activeTab === 'ctos' ? b.type === 'CTO' : b.type === 'CEO');
+    const showTypeColumn = activeTab !== 'unclassified' && activeTab !== 'pops';
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -359,7 +378,7 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                         <Upload className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Selecione o arquivo KMZ/KML</h3>
-                                    <p className="text-slate-500 max-w-md">O sistema irá identificar automaticamente Cabos, CTOs, CEOs e Postes para você classificar e validar.</p>
+                                    <p className="text-slate-500 max-w-md">O sistema irá identificar automaticamente Cabos, CTOs, CEOs, POPs e Postes para você classificar e validar.</p>
                                     <span className="text-xs font-mono bg-slate-100 dark:bg-[#22262e] px-3 py-1 rounded-full text-slate-500 mt-4">.kml ou .kmz</span>
                                 </div>
                             )}
@@ -373,64 +392,66 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                 ) : (
                     <>
                         {/* Tabs */}
-                        <div className="flex border-b border-slate-200 dark:border-slate-700/30 shrink-0">
+                        <div className="flex border-b border-slate-200 dark:border-slate-700/30 shrink-0 overflow-x-auto">
                             {renderTabButton('cables', 'Cabos', Cable, items.cables.length)}
                             {renderTabButton('ctos', 'CTO', Box, items.ctos.length)}
-                            {renderTabButton('ceos', 'CEO', Building2, items.ceos.length)}
+                            {renderTabButton('ceos', 'CEO', Package, items.ceos.length)}
+                            {renderTabButton('pops', 'POP', Building, items.pops.length)}
                             {renderTabButton('poles', 'Postes', UtilityPole, items.poles.length)}
                             {items.unclassified.length > 0 && renderTabButton('unclassified', 'Não Classificados', HelpCircle, items.unclassified.length)}
                         </div>
 
                         {/* Toolbar (Bulk Actions) */}
-                        <div className="p-3 border-b border-slate-100 dark:border-slate-700/30 bg-slate-50 dark:bg-[#22262e]/60 flex items-center gap-4 shrink-0 overflow-x-auto">
-                            <div className="flex items-center gap-2 px-2 border-r border-slate-200 dark:border-slate-700">
+                        <div className="p-3 border-b border-slate-100 dark:border-slate-700/30 bg-slate-50 dark:bg-[#22262e]/60 flex flex-wrap items-center gap-3 shrink-0">
+                            <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] cursor-pointer hover:border-emerald-400 transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={activeList.length > 0 && activeList.every(i => i.selected)}
                                     onChange={(e) => handleSelectAll(e.target.checked)}
                                     className="rounded border-slate-300 w-4 h-4 text-emerald-600 focus:ring-emerald-500"
                                 />
-                                <span className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Todos</span>
-                            </div>
+                                <span className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Selecionar Todos</span>
+                            </label>
 
                             {activeTab === 'unclassified' ? (
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl">
                                     <HelpCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Selecione os itens e use "Mover para" para classificá-los como CTO, CEO ou Poste</span>
+                                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Selecione e use "Mover para" para classificar como CTO, CEO, POP ou Poste</span>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-slate-500">Definir Tipo:</span>
-                                        <select
-                                            className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
-                                            onChange={(e) => {
-                                                if (e.target.value) {
-                                                    handleApplyType(e.target.value);
-                                                    e.target.value = ""; // Reset
-                                                }
-                                            }}
-                                        >
-                                            <option value="">-- Selecione para aplicar em massa --</option>
-                                            {activeCatalog.map((t: any) => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    {showTypeColumn && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-medium text-slate-500">Tipo:</span>
+                                            <select
+                                                className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        handleApplyType(e.target.value);
+                                                        e.target.value = "";
+                                                    }
+                                                }}
+                                            >
+                                                <option value="">-- Aplicar em massa --</option>
+                                                {activeCatalog.map((t: any) => (
+                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
-                                    {/* Status Selector (Bulk) */}
-                                    <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4 border-r pr-4 mr-2">
+                                    <div className="flex items-center gap-2">
                                         <span className="text-xs font-medium text-slate-500">Status:</span>
                                         <select
                                             className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-all"
                                             onChange={(e) => {
                                                 if (e.target.value) {
                                                     handleApplyStatus(e.target.value);
-                                                    e.target.value = ""; // Reset
+                                                    e.target.value = "";
                                                 }
                                             }}
                                         >
-                                            <option value="">-- Status --</option>
+                                            <option value="">-- Aplicar em massa --</option>
                                             <option value="DEPLOYED">Implantado</option>
                                             <option value="NOT_DEPLOYED">Não Implantado</option>
                                             {activeTab !== 'cables' && <option value="PLANNED">Em Projeto</option>}
@@ -443,10 +464,17 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                             {activeTab !== 'cables' && (
                                 <div className="flex items-center gap-2 ml-auto">
                                     <span className="text-xs font-medium text-slate-500">Mover para:</span>
-                                    <div className="flex gap-1">
-                                        {activeTab !== 'ctos' && <button onClick={() => handleMoveTo('ctos')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">CTO</button>}
-                                        {activeTab !== 'ceos' && <button onClick={() => handleMoveTo('ceos')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">CEO</button>}
-                                        {activeTab !== 'poles' && <button onClick={() => handleMoveTo('poles')} className="px-2 py-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">Poste</button>}
+                                    <div className="flex gap-1.5">
+                                        {moveTargets.filter(m => m.tab !== activeTab).map(m => (
+                                            <button
+                                                key={m.tab}
+                                                onClick={() => handleMoveTo(m.tab)}
+                                                className="px-2.5 py-1.5 flex items-center gap-1.5 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                                            >
+                                                {React.createElement(m.icon, { className: "w-3.5 h-3.5" })}
+                                                {m.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -463,12 +491,10 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-slate-100 dark:bg-[#22262e] sticky top-0 z-10 text-xs font-bold text-slate-500 uppercase">
                                         <tr>
-                                            <th className="p-3 w-10 text-center">
-                                                {/* Check handleSelectAll logic */}
-                                            </th>
+                                            <th className="p-3 w-10 text-center"></th>
                                             <th className="p-3">Nome (KMZ)</th>
-                                            <th className="p-3">Classificação (Tipo)</th>
-                                            <th className="p-3 text-right">Info Extra</th>
+                                            {showTypeColumn && <th className="p-3">Classificação (Tipo)</th>}
+                                            <th className="p-3 text-right">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -494,38 +520,42 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                                                         <span className="block text-[10px] text-slate-400 font-normal truncate max-w-[200px]">{item.properties.description}</span>
                                                     )}
                                                 </td>
-                                                <td className="p-3">
-                                                    <select
-                                                        value={item.typeId}
-                                                        onChange={(e) => {
-                                                            const newType = e.target.value;
-                                                            setItems(prev => ({
-                                                                ...prev,
-                                                                [activeTab]: prev[activeTab].map(i => i.id === item.id ? { ...i, typeId: newType } : i)
-                                                            }));
-                                                        }}
-                                                        disabled={!item.selected}
-                                                        className={`w-full text-sm px-3 py-1.5 rounded-xl border shadow-sm transition-all outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
-                                                            bg-white dark:bg-[#22262e] text-slate-900 dark:text-white
-                                                            ${!item.typeId && item.selected
-                                                                ? 'border-red-400 dark:border-red-500'
-                                                                : 'border-slate-200 dark:border-slate-700'}`}
-                                                    >
-                                                        <option value="">Selecione...</option>
-                                                        {activeCatalog.map((t: any) => (
-                                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                                <td className="p-3 text-right text-xs text-slate-500 font-mono flex items-center justify-end gap-2">
-                                                    {item.status && (
-                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                                                            ${item.status === 'DEPLOYED' ? 'bg-blue-100 text-blue-600' :
-                                                                item.status === 'PLANNED' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
-                                                            {item.status === 'DEPLOYED' ? 'IMPLANTADO' : item.status === 'PLANNED' ? 'PROJETO' : 'NÃO IMPL.'}
+                                                {showTypeColumn && (
+                                                    <td className="p-3">
+                                                        <select
+                                                            value={item.typeId}
+                                                            onChange={(e) => {
+                                                                const newType = e.target.value;
+                                                                setItems(prev => ({
+                                                                    ...prev,
+                                                                    [activeTab]: prev[activeTab].map(i => i.id === item.id ? { ...i, typeId: newType } : i)
+                                                                }));
+                                                            }}
+                                                            disabled={!item.selected}
+                                                            className={`w-full text-sm px-3 py-1.5 rounded-xl border shadow-sm transition-all outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                                                                bg-white dark:bg-[#22262e] text-slate-900 dark:text-white
+                                                                ${!item.typeId && item.selected
+                                                                    ? 'border-red-400 dark:border-red-500'
+                                                                    : 'border-slate-200 dark:border-slate-700'}`}
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {activeCatalog.map((t: any) => (
+                                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                )}
+                                                <td className="p-3 text-right">
+                                                    {item.status ? (
+                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                                            ${item.status === 'DEPLOYED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                                                item.status === 'PLANNED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                                                                    'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                                            {item.status === 'DEPLOYED' ? 'Implantado' : item.status === 'PLANNED' ? 'Em Projeto' : 'Não Impl.'}
                                                         </span>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-400 italic">sem status</span>
                                                     )}
-                                                    {/* Display helpers driven by type */}
                                                 </td>
                                             </tr>
                                         ))}
