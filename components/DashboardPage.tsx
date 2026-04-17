@@ -863,7 +863,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => {
                   setEditingUser(null);
-                  setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']] });
+                  setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']], restrictProjects: false, allowedProjectIds: [] });
                   setIsUserModalOpen(true);
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20 whitespace-nowrap"
