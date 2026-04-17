@@ -623,7 +623,26 @@ export const MapView: React.FC<MapViewProps> = ({
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     // Stable ref for optional callbacks — prevents `|| noOp` from creating new references every render
-    const stableMoveNode = useMemo(() => onMoveNode || noOp, [onMoveNode]);
+    const stableMoveNode = useMemo(() => {
+        if (!onMoveNode) return noOp;
+        return (id: string, lat: number, lng: number) => {
+            onMoveNode(id, lat, lng);
+
+            const isCTO = ctos.some(c => c.id === id);
+            if (!isCTO) return;
+
+            const affected = allCustomers.filter(c => c.ctoId === id && c.drop?.coordinates?.length);
+            if (affected.length === 0) return;
+
+            affected.forEach(customer => {
+                const coords = [...customer.drop!.coordinates];
+                coords[coords.length - 1] = { lat, lng };
+                updateCustomer(customer.id, { dropCoordinates: coords })
+                    .then(updated => { if (onCustomerSaved) onCustomerSaved(updated); })
+                    .catch(err => console.error('Failed to update drop for', customer.id, err));
+            });
+        };
+    }, [onMoveNode, ctos, allCustomers, onCustomerSaved]);
     const [activeCableId, setActiveCableId] = useState<string | null>(null);
 
     // Customer State
