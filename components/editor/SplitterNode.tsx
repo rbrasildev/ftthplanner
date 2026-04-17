@@ -258,28 +258,33 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     top: `${actualTop}px`
                                 }}
                             >
-                                {customerName && (
+                                {customerName && (() => {
+                                    const cRot = ((layout.rotation || 0) % 360 + 360) % 360;
+                                    const flipText = cRot >= 90 && cRot < 270;
+                                    return (
                                     <div
                                         className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none"
-                                        style={{ 
+                                        style={{
                                             top: `15px`,
-                                            zIndex: 40 
+                                            zIndex: 40
                                         }}
                                     >
                                         <div className={`w-0 h-0 border-l-[2px] border-l-transparent border-r-[2px] border-r-transparent border-b-[3px] ${isOffline ? 'border-b-red-500/80' : 'border-b-green-500/80'} mb-[-1px]`} />
                                         <div className={`${isOffline ? 'bg-red-500/90 dark:bg-red-600/90' : 'bg-green-500/90 dark:bg-green-600/90'} text-white rounded-[1px] shadow-sm flex items-center justify-center p-[1px] min-w-[8px]`}>
-                                            <span 
+                                            <span
                                                 className="text-[6px] font-black uppercase tracking-tighter whitespace-nowrap"
-                                                style={{ 
-                                                    writingMode: 'vertical-rl',
-                                                    textOrientation: 'mixed'
+                                                style={{
+                                                    writingMode: flipText ? 'vertical-lr' : 'vertical-rl',
+                                                    textOrientation: 'mixed',
+                                                    transform: flipText ? 'rotate(180deg)' : undefined
                                                 }}
                                             >
                                                 {customerName}
                                             </span>
                                         </div>
                                     </div>
-                                )}
+                                    );
+                                })()}
                                 {idx + 1}
                             </div>
                         );
