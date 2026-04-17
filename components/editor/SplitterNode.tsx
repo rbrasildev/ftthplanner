@@ -286,19 +286,23 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     })}
                 </div>
 
-                {/* Label centered between input/output — counter-rotated to stay horizontal */}
-                {splitter.name && (
-                    <div
-                        className="absolute pointer-events-none z-20 flex flex-col items-center bg-white/90 dark:bg-[#1a1d23]/90 px-1.5 py-0.5"
-                        style={{
-                            top: height / 2,
-                            left: shiftPx + width / 2,
-                            transform: `translate(-50%, -50%) rotate(${-(layout.rotation || 0)}deg) translateY(${width / 2 + 8}px)`
-                        }}
-                    >
-                        <span className="text-[7px] font-bold text-black dark:text-white whitespace-nowrap leading-tight">{splitter.type}</span>
-                    </div>
-                )}
+                {/* Label beside triangle — text flows input→output, flips side to never be on top */}
+                {splitter.type && (() => {
+                    const rot = ((layout.rotation || 0) % 360 + 360) % 360;
+                    const useRightSide = rot > 45 && rot < 135;
+                    return (
+                        <div
+                            className="absolute pointer-events-none -z-10 bg-white/50 dark:bg-[#1a1d23]/50 px-1 flex items-center justify-center"
+                            style={{
+                                top: height / 2,
+                                left: useRightSide ? width + shiftPx + 8 : -8,
+                                transform: 'translate(-50%, -50%) rotate(90deg)',
+                            }}
+                        >
+                            <span className="text-[7px] font-bold text-black dark:text-white whitespace-nowrap leading-tight">{splitter.type}</span>
+                        </div>
+                    );
+                })()}
             </div>
         </div>
     );
