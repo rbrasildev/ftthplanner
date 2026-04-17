@@ -1,5 +1,6 @@
 
 import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note, Customer } from '../types';
+import { SplitterCatalogItem } from '../services/catalogService';
 import jsPDF from 'jspdf';
 
 // --- CONSTANTS ---
@@ -169,17 +170,17 @@ const getSplitterGeometry = (splitter: Splitter) => {
     const shiftPx = 6;
 
     // Polygon Points (Absolute within Size x Size)
-    // Original: width/2,12 shiftPx,60 width+shiftPx,60
-    // Adjusted:
-    const p1 = `${offsetX + (width / 2) + shiftPx},${offsetY + 14}`; // Recuado para dentro do círculo (Topo)
-    const p2 = `${offsetX + shiftPx + 2},${offsetY + 58}`; // Recuado 2px da lateral (Base Esq)
-    const p3 = `${offsetX + width + shiftPx - 2},${offsetY + 58}`; // Recuado 2px da lateral (Base Dir)
+    const is1x2 = portCount === 2;
+    const baseMargin = is1x2 ? width * 0.10 : 2;
+    const p1 = `${offsetX + (width / 2) + shiftPx},${offsetY + 14}`;
+    const p2 = `${offsetX + shiftPx + baseMargin},${offsetY + 58}`;
+    const p3 = `${offsetX + width + shiftPx - baseMargin},${offsetY + 58}`;
     const polygonPoints = `${p1} ${p2} ${p3}`;
 
-    // Label Position
+    // Label Position — centered between input/output, offset below triangle
     const labelPos = {
         x: offsetX + (width / 2) + shiftPx,
-        y: offsetY + 45 // Keep at 50 for PNG/Editor (Output side)
+        y: offsetY + (height / 2)
     };
 
     const inputPort = {
@@ -206,10 +207,27 @@ const getFusionGeometry = (fusion: FusionPoint) => {
     };
 };
 
-const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>, customers: Record<number, { name: string; status?: string | null }> = {}): string => {
+const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: number, litPorts: Set<string>, customers: Record<number, { name: string; status?: string | null }> = {}, catalogItem?: SplitterCatalogItem): string => {
     const geo = getSplitterGeometry(splitter);
     const isConnectorized = splitter.connectorType === 'Connectorized';
     const isLitIn = litPorts.has(splitter.inputPortId);
+    const portCount = splitter.outputPortIds.length;
+
+    // Detect high-power port for unbalanced splitters
+    let highPowerPortIndex = -1;
+    if (catalogItem?.attenuation) {
+        let att: any = catalogItem.attenuation;
+        if (typeof att === 'string' && att.trim().startsWith('{')) {
+            try { att = JSON.parse(att); } catch (e) { /* ignore */ }
+        }
+        if (typeof att === 'object' && att !== null) {
+            const p1 = parseFloat(att.port1);
+            const p2 = parseFloat(att.port2);
+            if (!isNaN(p1) && !isNaN(p2)) {
+                highPowerPortIndex = p1 < p2 ? 0 : 1;
+            }
+        }
+    }
 
     let content = '';
 
@@ -217,9 +235,6 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     const strokeColor = '#000000';
     const triangleFill = isConnectorized ? 'white' : '#949494';
     const triangleStroke = isLitIn ? '#ef4444' : strokeColor;
-
-    // Label Color
-    const labelColor = isLitIn ? '#ef4444' : (isConnectorized ? '#64748b' : 'white');
 
     // Port Colors
     const portBorder = strokeColor;
@@ -229,8 +244,15 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     // Triangle
     content += `<polygon points="${geo.polygonPoints}" fill="${triangleFill}" stroke="${triangleStroke}" stroke-width="1" />`;
 
-    // Label
-    content += `<text x="${geo.labelPos.x}" y="${geo.labelPos.y}" dominant-baseline="middle" text-anchor="middle" font-size="8" font-weight="bold" fill="${labelColor}" data-pdf-align="splitter-label">${escapeXML(splitter.type)}</text>`;
+    // Label — outside triangle, counter-rotated to stay horizontal
+    const labelOffsetY = geo.width / 2 + 8;
+    const labelText = escapeXML(splitter.type);
+    const labelW = labelText.length * 4.5 + 8;
+    const labelH = 12;
+    content += `<g transform="translate(${geo.labelPos.x}, ${geo.labelPos.y}) rotate(${-rotation}) translate(0, ${labelOffsetY})">` +
+        `<rect x="${-labelW / 2}" y="${-labelH / 2}" width="${labelW}" height="${labelH}" fill="white" fill-opacity="0.9" />` +
+        `<text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="black">${labelText}</text>` +
+        `</g>`;
 
     // Input Port (Always Circle)
     const inputLit = isLitIn;
@@ -243,15 +265,19 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     // Output Ports
     geo.outputPorts.forEach((port, idx) => {
         const isLit = litPorts.has(port.id);
-        const fill = isLit ? '#ef4444' : portFill;
-        const textColor = isLit ? 'white' : portTextColor;
+        const isHighPower = idx === highPowerPortIndex;
+        const isSecondary = portCount === 2 && highPowerPortIndex !== -1 && !isHighPower;
+
+        const fill = isLit ? '#ef4444' : isSecondary ? 'white' : portFill;
+        const stroke = isLit ? '#ef4444' : isSecondary ? '#0a0a0a' : portBorder;
+        const textColor = isLit ? 'white' : isSecondary ? '#0a0a0a' : portTextColor;
+        const r = isHighPower ? 6 : 5;
 
         if (isConnectorized) {
-            // Square (Rect) for connectorized
-            content += `<rect x="${port.x - 5}" y="${port.y - 5}" width="10" height="10" rx="1" fill="${fill}" stroke="${isLit ? '#ef4444' : portBorder}" stroke-width="1" />`;
+            const s = isHighPower ? 12 : 10;
+            content += `<rect x="${port.x - s / 2}" y="${port.y - s / 2}" width="${s}" height="${s}" rx="1" fill="${fill}" stroke="${stroke}" stroke-width="${isSecondary ? 1.5 : 1}" />`;
         } else {
-            // Circle for balanced
-            content += `<circle cx="${port.x}" cy="${port.y}" r="5" fill="${fill}" stroke="${isLit ? '#ef4444' : portBorder}" stroke-width="1" />`;
+            content += `<circle cx="${port.x}" cy="${port.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${isSecondary ? 1.5 : 1}" />`;
         }
         content += `<text x="${port.x}" y="${port.y}" dominant-baseline="middle" text-anchor="middle" font-size="6.5" font-weight="bold" fill="${textColor}" data-pdf-align="splitter-port-number">${idx + 1}</text>`;
     });
@@ -593,7 +619,8 @@ export const generateCTOSVG = (
     litPorts: Set<string> = new Set(),
     portPositions: Record<string, { x: number, y: number }> = {},
     footerData?: FooterData,
-    customers: Customer[] = []
+    customers: Customer[] = [],
+    splitterCatalogs: SplitterCatalogItem[] = []
 ): string => {
     let svgContent = '';
 
@@ -812,7 +839,11 @@ export const generateCTOSVG = (
             const attachedCustomers = customers
                 .filter(c => c.splitterId === s.id && c.splitterPortIndex !== null && c.splitterPortIndex !== undefined)
                 .reduce((acc, c) => ({ ...acc, [c.splitterPortIndex!]: { name: c.name, status: c.connectionStatus } }), {} as Record<number, { name: string; status?: string | null }>);
-            diagramContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts, attachedCustomers);
+            const catalog = splitterCatalogs.find(c =>
+                c.name === s.type || c.type === s.type ||
+                (c.outputs === s.outputPortIds.length && s.type.includes(c.name))
+            );
+            diagramContent += renderSplitter(s, l.x, l.y, l.rotation || 0, litPorts, attachedCustomers, catalog);
         }
     });
 

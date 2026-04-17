@@ -95,7 +95,10 @@
       "Bash(find /d/ftthplanner -type f -name \"*.ts\" -path \"*/server/*\" -exec grep -l \"ENCRYPTION_KEY\" {} \\\\;)",
       "Bash(find /d/ftthplanner -type f \\\\\\( -name \"*.ts\" -o -name \"*.js\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/dist/*\" ! -path \"*/.next/*\" -exec grep -l \"createCipher\\\\|createDecipher\\\\|AES\\\\|encrypt\\\\|decrypt\" {} \\\\;)",
       "Bash(find /d/ftthplanner -type f \\\\\\( -name \".env*\" -o -name \"*.config.*\" -o -name \"*.conf.*\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"ENCRYPTION\" {} \\\\;)",
-      "Bash(find /d/ftthplanner/server -type f -name \"*.ts\" ! -path \"*/node_modules/*\" -exec grep -l \"interface.*[Cc]rypto\\\\|interface.*[Ee]ncrypt\\\\|type.*[Cc]rypto\\\\|type.*[Ee]ncrypt\" {} \\\\;)"
+      "Bash(find /d/ftthplanner/server -type f -name \"*.ts\" ! -path \"*/node_modules/*\" -exec grep -l \"interface.*[Cc]rypto\\\\|interface.*[Ee]ncrypt\\\\|type.*[Cc]rypto\\\\|type.*[Ee]ncrypt\" {} \\\\;)",
+      "Bash(grep -B 5 \"rounded-xl bg-emerald\" /d/ftthplanner/components/modals/*.tsx)",
+      "Bash(node -e \"console.log\\(\\(-Infinity\\).toFixed\\(2\\)\\)\")",
+      "Bash(grep -h \"z-\\\\[\" /d/ftthplanner/components/modals/*.tsx)"
     ]
   }
 }

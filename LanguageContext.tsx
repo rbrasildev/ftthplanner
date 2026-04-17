@@ -1359,6 +1359,8 @@ const translations = {
     'type_FUSION': 'Fusion',
     'type_CONNECTOR': 'Connector / DIO',
     'type_OLT': 'OLT',
+    'optical_no_path': 'No optical path found to the OLT.',
+    'output_distribution': 'Output Power',
     'action_cancelled': 'Action cancelled',
 
     // Retention Intelligence
@@ -2234,6 +2236,8 @@ const translations = {
     'type_FUSION': 'Fusão',
     'type_CONNECTOR': 'Conector / DIO',
     'type_OLT': 'OLT',
+    'optical_no_path': 'Nenhum caminho óptico encontrado até a OLT.',
+    'output_distribution': 'Potência nas Saídas',
 
     // Common
     // Modals & Panels general UI

@@ -47,7 +47,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
     const portCount = splitter.outputPortIds.length;
     // Dimensions aligned to 12px grid
     // Use 12px per port to match fiber pitch
-    const width = portCount === 2 ? 18 : portCount * 12;
+    const width = portCount * 12;
     const height = 72;
 
     // Grid-Safe Rotation Logic:
@@ -145,7 +145,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                 >
                     <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
                         <polygon
-                            points={`${50 + skewPercent},0 ${ (portCount === 2 ? 10 : 2) + skewPercent},100 ${(portCount === 2 ? 90 : 98) + skewPercent},100`}
+                            points={`${50 + skewPercent},0 ${(portCount === 2 ? 10 : 2) + skewPercent},100 ${(portCount === 2 ? 90 : 98) + skewPercent},100`}
                             className={`transition-colors duration-300 ${isConnectorized ? 'fill-white dark:fill-slate-800' : 'fill-[#949494] dark:fill-slate-600'} ${isLitIn ? 'stroke-red-400' : 'stroke-slate-900 dark:stroke-slate-100'} cursor-pointer pointer-events-auto`}
                             strokeWidth="1"
                             onMouseDown={(e) => onDragStart(e, splitter.id)}
@@ -161,9 +161,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             }}
                         />
                     </svg>
-                    <div className="absolute inset-0 flex items-end justify-center pointer-events-none pb-3" style={{ paddingLeft: `${shiftPx}px` }}>
-                        <span className={`text-[8px] font-normal leading-none ${isLitIn ? 'text-red-500' : (!isConnectorized ? 'text-white' : 'text-slate-500 dark:text-slate-100')}`}>{splitter.type}</span>
-                    </div>
+                    {/* Label moved outside triangle — see below */}
                 </div>
 
                 {/* Input Port (Y=12) */}
@@ -213,16 +211,10 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         const isUnbalanced = highPowerPortIndex !== -1;
                         const isSecondaryUnbalanced = is1x2 && isUnbalanced && !isHighPower;
 
-                        // Triangle Base Corners (Dynamic based on width and 6px skew):
-                        // For 1x2, we use 10% and 90% to avoid them being "glued".
-                        const baseL = is1x2 ? 10 : 2;
-                        const baseR = is1x2 ? 90 : 98;
-                        const leftCorner = ( (baseL / 100) * width + 6) - 6;
-                        const rightCorner = ( (baseR / 100) * width + 6) - 6;
-                        const targetCenter = is1x2 ? (idx === 0 ? leftCorner : rightCorner) : (idx * 12) + 6;
-                        
-                        const actualLeft = targetCenter - (isHighPower ? 7 : 5);
-                        const actualTop = is1x2 ? (isHighPower ? 4 : 6) : (isHighPower ? 3 : 5);
+                        const targetCenter = (idx * 12) + 6;
+
+                        const actualLeft = targetCenter - (isHighPower ? 6 : 5);
+                        const actualTop = isHighPower ? 4 : 5;
 
                         return (
                             <div
@@ -247,7 +239,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 border cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute
                                 text-[6.5px] font-semibold select-none flex items-center justify-center
-                                ${isHighPower ? 'w-3.5 h-3.5 z-40' : 'w-2.5 h-2.5'}
+                                ${isHighPower ? 'w-3 h-3 z-40' : 'w-2.5 h-2.5'}
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
                                 ${hoveredPortId === pid ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
@@ -293,6 +285,20 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         );
                     })}
                 </div>
+
+                {/* Label centered between input/output — counter-rotated to stay horizontal */}
+                {splitter.name && (
+                    <div
+                        className="absolute pointer-events-none z-20 flex flex-col items-center bg-white/90 dark:bg-[#1a1d23]/90 px-1.5 py-0.5"
+                        style={{
+                            top: height / 2,
+                            left: shiftPx + width / 2,
+                            transform: `translate(-50%, -50%) rotate(${-(layout.rotation || 0)}deg) translateY(${width / 2 + 8}px)`
+                        }}
+                    >
+                        <span className="text-[7px] font-bold text-black dark:text-white whitespace-nowrap leading-tight">{splitter.type}</span>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -733,6 +733,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isOpticalModalOpen, setIsOpticalModalOpen] = useState(false);
     const [opticalResult, setOpticalResult] = useState<OpticalPathResult | null>(null);
     const [selectedSplitterName, setSelectedSplitterName] = useState('');
+    const [selectedSplitterForModal, setSelectedSplitterForModal] = useState<Splitter | null>(null);
 
     // UNIFIED CACHE CLEAR
     // Clears geometric caches when structure changes (NOT on pan/zoom — ports don't move relative to canvas).
@@ -1547,7 +1548,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return { name: c.name, port, power, _sort: sortKey };
             }).sort((a, b) => a._sort - b._sort).map(({ _sort, ...rest }) => rest);
 
-            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers);
+            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers, availableSplitters);
             const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
             await exportToPNG(svg, `${fileName}.png`);
         } catch (error: any) {
@@ -1582,6 +1583,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
             setOpticalResult(result);
             setSelectedSplitterName(splitter.name);
+            setSelectedSplitterForModal(splitter);
             setIsOpticalModalOpen(true);
         } catch (error) {
             console.error("Error calculating optical path:", error);
@@ -2081,6 +2083,34 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // RAF throttling for mouse move
     const rafIdRef = useRef<number | null>(null);
     const lastMouseScreenPos = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const track = (e: MouseEvent) => { lastMouseScreenPos.current = { x: e.clientX, y: e.clientY }; };
+        window.addEventListener('mousemove', track, { passive: true });
+        return () => window.removeEventListener('mousemove', track);
+    }, []);
+
+    useEffect(() => {
+        if (!isFusionToolActive) return;
+        const positionGhost = (sx: number, sy: number) => {
+            if (!cursorGhostRef.current || !containerRef.current) return;
+            const { x, y } = screenToCanvas(sx, sy);
+            const snapX = isSnapping ? Math.round(x / GRID_SIZE) * GRID_SIZE : x;
+            const snapY = isSnapping ? Math.round(y / GRID_SIZE) * GRID_SIZE : y;
+            const vs = viewStateRef.current;
+            cursorGhostRef.current.style.transform =
+                `translate(${vs.x + (snapX - 12) * vs.zoom}px, ${vs.y + (snapY - 6) * vs.zoom}px) scale(${vs.zoom})`;
+            cursorGhostRef.current.style.display = '';
+        };
+        const pos = lastMouseScreenPos.current;
+        if (pos.x !== 0 || pos.y !== 0) positionGhost(pos.x, pos.y);
+        const onMove = (e: MouseEvent) => {
+            lastMouseScreenPos.current = { x: e.clientX, y: e.clientY };
+            positionGhost(e.clientX, e.clientY);
+        };
+        window.addEventListener('mousemove', onMove);
+        return () => window.removeEventListener('mousemove', onMove);
+    }, [isFusionToolActive, isSnapping]);
 
     // OPTIMIZED: Direct DOM Manipulation for smooth 60FPS dragging
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -4208,6 +4238,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     onClose={() => setIsOpticalModalOpen(false)}
                     result={opticalResult}
                     splitterName={selectedSplitterName}
+                    splitter={selectedSplitterForModal}
+                    catalogItem={selectedSplitterForModal ? availableSplitters.find(c =>
+                        c.name === selectedSplitterForModal.type ||
+                        c.type === selectedSplitterForModal.type ||
+                        (c.outputs === selectedSplitterForModal.outputPortIds.length && selectedSplitterForModal.type.includes(c.name))
+                    ) : undefined}
                 />
 
                 <QRCodeModal
@@ -4340,7 +4376,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
-                                        handleSplitterDoubleClick(contextMenu.id); // Reusing existing double-click logic for "Details"
+                                        handleSplitterDoubleClick(contextMenu.id);
                                         setContextMenu(null);
                                     }}
                                     className="w-full !justify-start text-left px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
@@ -4348,6 +4384,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     {t('ctx_details')}
                                 </Button>
+                                {!readOnly && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            handleDeleteSplitter(contextMenu.id);
+                                            setContextMenu(null);
+                                        }}
+                                        className="w-full !justify-start text-left px-4 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors gap-2 h-auto border-0"
+                                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                                    >
+                                        {t('delete')}
+                                    </Button>
+                                )}
                             </>
                         )}
                     </div>
