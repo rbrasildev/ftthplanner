@@ -44,36 +44,16 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
 
         const ports: { index: number; label: string; attenuation: number; power: number; isHighPower: boolean }[] = [];
 
-        if (isUnbalanced) {
-            const p1Att = parseFloat(att.port1);
-            const p2Att = parseFloat(att.port2);
-            if (isNaN(p1Att) || isNaN(p2Att)) return null;
-            const hpIdx = p1Att < p2Att ? 0 : 1;
-            ports.push(
-                { index: 0, label: `${t('port_label', { number: 1 }) || 'Porta 1'}`, attenuation: p1Att, power: inputPower - p1Att, isHighPower: hpIdx === 0 },
-                { index: 1, label: `${t('port_label', { number: 2 }) || 'Porta 2'}`, attenuation: p2Att, power: inputPower - p2Att, isHighPower: hpIdx === 1 }
-            );
-        } else {
-            let attVal = 0;
-            if (typeof att === 'object' && att?.value !== undefined) {
-                attVal = parseFloat(att.value);
-            } else if (typeof att === 'number') {
-                attVal = att;
-            } else if (typeof att === 'string') {
-                attVal = parseFloat(att);
-            }
-            if (isNaN(attVal) || attVal === 0) return null;
+        if (!isUnbalanced) return null;
 
-            for (let i = 0; i < splitter.outputPortIds.length; i++) {
-                ports.push({
-                    index: i,
-                    label: `${t('port_label', { number: i + 1 }) || `Porta ${i + 1}`}`,
-                    attenuation: attVal,
-                    power: inputPower - attVal,
-                    isHighPower: false
-                });
-            }
-        }
+        const p1Att = parseFloat(att.port1);
+        const p2Att = parseFloat(att.port2);
+        if (isNaN(p1Att) || isNaN(p2Att)) return null;
+        const hpIdx = p1Att < p2Att ? 0 : 1;
+        ports.push(
+            { index: 0, label: `${t('port_label', { number: 1 }) || 'Porta 1'}`, attenuation: p1Att, power: inputPower - p1Att, isHighPower: hpIdx === 0 },
+            { index: 1, label: `${t('port_label', { number: 2 }) || 'Porta 2'}`, attenuation: p2Att, power: inputPower - p2Att, isHighPower: hpIdx === 1 }
+        );
 
         return ports;
     }, [result, splitter, catalogItem, t]);

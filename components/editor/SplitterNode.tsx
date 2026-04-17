@@ -286,17 +286,18 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                     })}
                 </div>
 
-                {/* Label beside triangle — text flows input→output, flips side to never be on top */}
+                {/* Label beside triangle — flips side to never be on top, flips text to never be upside down */}
                 {splitter.type && (() => {
                     const rot = ((layout.rotation || 0) % 360 + 360) % 360;
                     const useRightSide = rot > 45 && rot < 135;
+                    const textRot = useRightSide ? -90 : 90;
                     return (
                         <div
                             className="absolute pointer-events-none -z-10 bg-white/50 dark:bg-[#1a1d23]/50 px-1 flex items-center justify-center"
                             style={{
                                 top: height / 2,
                                 left: useRightSide ? width + shiftPx + 8 : -8,
-                                transform: 'translate(-50%, -50%) rotate(90deg)',
+                                transform: `translate(-50%, -50%) rotate(${textRot}deg)`,
                             }}
                         >
                             <span className="text-[7px] font-bold text-black dark:text-white whitespace-nowrap leading-tight">{splitter.type}</span>
