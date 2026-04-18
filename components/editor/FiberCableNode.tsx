@@ -138,6 +138,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         ${isMirrored ? 'border-l-0' : 'border-r-0'}
                         cursor-grab active:cursor-grabbing
                     `}
+                    style={{ minHeight: '60px' }}
                     onMouseDown={(e) => onDragStart(e, cable.id)}
                 >
 
