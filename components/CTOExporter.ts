@@ -52,6 +52,11 @@ const createSVGElement = (type: string, attrs: Record<string, string | number>, 
 
 // --- RENDERERS ---
 
+// Minimum visual height for the label box — mirrors `minHeight: 60px` on FiberCableNode.
+// Keeps name + fiber count + street name readable on thin cables like DROP FLAT 1FO,
+// where `bundleHeight` would otherwise be only 12px. Aligned to 24px grid (24 × 2).
+const MIN_LABEL_HEIGHT = 48;
+
 const renderCable = (cable: CableData, x: number, y: number, rotation: number, isMirrored: boolean, litPorts: Set<string>): string => {
     const looseTubeCount = cable.looseTubeCount || 1;
     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
@@ -65,6 +70,13 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     const totalHeight = remainder > 0 ? (contentNeededHeight + (24 - remainder)) : contentNeededHeight;
 
     const verticalOffset = (totalHeight - bundleHeight) / 2;
+
+    // Label box height — grows beyond bundleHeight on thin cables so the text fits.
+    // Matches the canvas behavior where the label box overflows vertically around
+    // the fiber bundle without moving the fiber ports themselves.
+    const labelBoxHeight = Math.max(bundleHeight, MIN_LABEL_HEIGHT);
+    const labelTop = verticalOffset + (bundleHeight - labelBoxHeight) / 2;
+    const labelCenterY = labelTop + labelBoxHeight / 2;
 
     // Width Logic (Re-Calculated):
     // Box: 168px
@@ -88,22 +100,22 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
     const boxX = isMirrored ? 22 : 0;
     const fibersOffsetX = isMirrored ? 0 : 168;
 
-    // 1. LABEL BOX
+    // 1. LABEL BOX — rect/clip use the expanded labelBox* geometry so text fits on thin cables.
     const clipId = `clip-cable-${cable.id.replace(/[^a-zA-Z0-9]/g, '-')}`;
     content += `
         <defs>
             <clipPath id="${clipId}">
-                <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" />
+                <rect x="0" y="${labelTop}" width="168" height="${labelBoxHeight}" />
             </clipPath>
         </defs>
         <g transform="translate(${boxX}, 0)" clip-path="url(#${clipId})">
-            <rect x="0" y="${verticalOffset}" width="168" height="${bundleHeight}" fill="white" stroke="#1e293b" stroke-width="1" />
+            <rect x="0" y="${labelTop}" width="168" height="${labelBoxHeight}" fill="white" stroke="#1e293b" stroke-width="1" />
             <!-- Cable Name -->
-            <text x="84" y="${verticalOffset + bundleHeight / 2 - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
+            <text x="84" y="${labelCenterY - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="11" fill="#0f172a" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.name.length > 20 ? '160' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.name)}</text>
             <!-- Fiber Count -->
-            <text x="84" y="${verticalOffset + bundleHeight / 2 + 10 - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount}F</text>
+            <text x="84" y="${labelCenterY + 10 - (cable.streetName ? 5 : 0)}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="9" fill="#64748b" style="text-transform: uppercase;" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}">${cable.fiberCount}F</text>
             <!-- Street Name -->
-            ${cable.streetName ? `<text x="84" y="${verticalOffset + bundleHeight / 2 + 21}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="500" font-size="7" fill="#64748b" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.streetName.length > 25 ? '155' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.streetName)}</text>` : ''}
+            ${cable.streetName ? `<text x="84" y="${labelCenterY + 21}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, sans-serif" font-weight="500" font-size="7" fill="#64748b" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-label-vertical' : 'cable-label-horizontal'}" textLength="${cable.streetName.length > 25 ? '155' : ''}" lengthAdjust="spacingAndGlyphs">${escapeXML(cable.streetName)}</text>` : ''}
         </g>
     `;
 
@@ -638,18 +650,26 @@ export const generateCTOSVG = (
         incomingCables.forEach(c => {
             const l = cto.layout![c.id];
             if (l) {
-                // Calculate Real BBox Height
+                // Calculate Real BBox Height — mirrors renderCable geometry, including
+                // the label box which can overflow above/below the fiber bundle on thin cables.
                 const looseTubeCount = c.looseTubeCount || 1;
                 const fibersPerTube = Math.ceil(c.fiberCount / looseTubeCount);
                 const bundleHeight = (looseTubeCount * (fibersPerTube * 12)) + ((looseTubeCount - 1) * 12);
 
-                // Symmetric padding logic to match renderCable
                 const contentNeededHeight = bundleHeight + 12;
                 const remainder = contentNeededHeight % 24;
                 const totalHeight = remainder > 0 ? (contentNeededHeight + (24 - remainder)) : contentNeededHeight;
 
-                checkPt(l.x, l.y);
-                checkPt(l.x + 190, l.y + totalHeight);
+                const verticalOffset = (totalHeight - bundleHeight) / 2;
+                const labelBoxHeight = Math.max(bundleHeight, MIN_LABEL_HEIGHT);
+                const labelTop = verticalOffset + (bundleHeight - labelBoxHeight) / 2;
+                const labelBottom = labelTop + labelBoxHeight;
+
+                const top = Math.min(0, labelTop);
+                const bottom = Math.max(totalHeight, labelBottom);
+
+                checkPt(l.x, l.y + top);
+                checkPt(l.x + 190, l.y + bottom);
             }
         });
         cto.splitters.forEach(s => {
