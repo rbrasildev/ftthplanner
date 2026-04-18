@@ -297,7 +297,8 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                                         { key: 'A', label: t('hotkey_a') },
                                         { key: 'T', label: t('hotkey_t') },
                                         { key: 'R', label: t('hotkey_r') },
-                                        { key: 'D', label: t('hotkey_d') }
+                                        { key: 'D', label: t('hotkey_d') },
+                                        { key: 'Alt', label: t('hotkey_alt') },
                                     ].map(item => (
                                         <div key={item.key} className="flex items-center gap-3">
                                             <kbd className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded shadow-sm">
