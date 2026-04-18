@@ -405,7 +405,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
 
     // Auto-download logic for deep links (ref assigned after handleExportPNG is defined)
-    const handleExportPNGRef = useRef<() => void>(() => {});
+    const handleExportPNGRef = useRef<() => void>(() => { });
 
     useEffect(() => {
         if (autoDownload) {
@@ -731,7 +731,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         portCenterCache.current = {};
         containerRectCache.current = null;
         forceRender(n => n + 1);
-    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized, modalSize]);
+    // `isCollapsed` invalidates the cache too: while collapsed the canvas is `display:none`,
+    // so getBoundingClientRect() returns zeros. Without this, expanding the modal would
+    // reuse poisoned 0,0 port positions, making connections originate from the top-left corner.
+    }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized, modalSize, isCollapsed]);
 
 
     useEffect(() => {
@@ -795,7 +798,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (contextMenuRef.current && contextMenuRef.current.contains(e.target as Node)) {
                 return;
             }
-            
+
             setContextMenu(null);
             if (showHotkeys && hotkeysRef.current && !hotkeysRef.current.contains(e.target as Node)) {
                 setShowHotkeys(false);
@@ -2017,16 +2020,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         let pOffsetY = 0;
         const conn = localCTORef.current.connections.find(c => c.id === connId);
         if (conn && conn.points && conn.points[pointIndex]) {
-             const pt = conn.points[pointIndex];
-             // Local screenToCanvas uses viewStateRef internally
-             if (containerRef.current) {
-                 const rect = containerRef.current.getBoundingClientRect();
-                 const vs = viewStateRef.current;
-                 const clickX = (e.clientX - rect.left - vs.x) / vs.zoom;
-                 const clickY = (e.clientY - rect.top - vs.y) / vs.zoom;
-                 pOffsetX = pt.x - clickX;
-                 pOffsetY = pt.y - clickY;
-             }
+            const pt = conn.points[pointIndex];
+            // Local screenToCanvas uses viewStateRef internally
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                const vs = viewStateRef.current;
+                const clickX = (e.clientX - rect.left - vs.x) / vs.zoom;
+                const clickY = (e.clientY - rect.top - vs.y) / vs.zoom;
+                pOffsetX = pt.x - clickX;
+                pOffsetY = pt.y - clickY;
+            }
         }
 
         setDragState({
@@ -2198,25 +2201,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
 
         // 3. ELEMENT DRAG (Direct DOM)
-            if (dragState.mode === 'note') {
-                const dy = (e.clientY - dragState.startY) / viewState.zoom;
-                const dx = (e.clientX - dragState.startX) / viewState.zoom;
-                
-                const newX = (dragState.initialLayout?.x || 0) + dx;
-                const newY = (dragState.initialLayout?.y || 0) + dy;
+        if (dragState.mode === 'note') {
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
 
-                setLocalCTO(prev => ({
-                    ...prev,
-                    notes: (prev.notes || []).map(n => n.id === dragState.targetId ? {
-                        ...n,
-                        x: Math.round(newX / GRID_SIZE) * GRID_SIZE,
-                        y: Math.round(newY / GRID_SIZE) * GRID_SIZE
-                    } : n)
-                }));
-                return;
-            }
+            const newX = (dragState.initialLayout?.x || 0) + dx;
+            const newY = (dragState.initialLayout?.y || 0) + dy;
 
-            if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
+            setLocalCTO(prev => ({
+                ...prev,
+                notes: (prev.notes || []).map(n => n.id === dragState.targetId ? {
+                    ...n,
+                    x: Math.round(newX / GRID_SIZE) * GRID_SIZE,
+                    y: Math.round(newY / GRID_SIZE) * GRID_SIZE
+                } : n)
+            }));
+            return;
+        }
+
+        if (dragState.mode === 'element' && dragState.targetId && dragState.initialLayout) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
@@ -3015,6 +3018,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             layout: { ...prev.layout, [id]: initialLayout }
         }));
 
+        // Mark the new splitter as hovered so keyboard shortcuts (R/D) work immediately.
+        // `onMouseEnter` won't fire: the element appears under a stationary cursor,
+        // so without this the hover state would stay on whatever was previously hovered
+        // (or null) until the user moves the mouse off and back on.
+        setHoveredElement({ id, type: 'splitter' });
+
         // START DRAGGING IMMEDIATELY (UX REQUEST: Sticky Drag)
         setDragState({
             mode: 'element',
@@ -3667,8 +3676,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             onHoverLeave={handleElementHoverClear}
                         />
 
-                            </div>
-                        </div>
+                    </div>
+                </div>
 
                 {/* Footer: Redesigned with Model and Status Controls */}
                 <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
@@ -4007,7 +4016,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         )}
                     </div>
                 )}
-
 
             </div>
 
