@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { POPData, OLT, DIO } from '../../types';
+import { POPData, OLT, DIO, SwitchData } from '../../types';
 import { Network, Zap, Server, ArrowRight, ChevronDown, ChevronRight, Layers, GitMerge, GripVertical, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { Button } from '../common/Button';
@@ -28,6 +28,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     // Accordion States
     const [collapsedOLTs, setCollapsedOLTs] = useState<Set<string>>(new Set());
     const [collapsedDIOs, setCollapsedDIOs] = useState<Set<string>>(new Set());
+    const [collapsedSwitches, setCollapsedSwitches] = useState<Set<string>>(new Set());
 
     // --- KANBAN STATE ---
     const [columns, setColumns] = useState<{ col1: string[]; col2: string[]; col3: string[] }>({ col1: [], col2: [], col3: [] });
@@ -45,9 +46,12 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             const col3: string[] = [];
 
             localPOP.olts.forEach(active => {
-                if (active.type === 'OLT') col1.push(active.id);
-                else col2.push(active.id); // Switches, Routers, etc.
+                if (!active.type || active.type === 'OLT') col1.push(active.id);
+                else col2.push(active.id); // legacy: Switches/Routers criados antigamente no array olts
             });
+
+            // Ativos novos (Switch/Router/Server/Other) vivem em localPOP.switches
+            (localPOP.switches || []).forEach(sw => col2.push(sw.id));
 
             localPOP.dios.forEach(dio => col3.push(dio.id));
 
@@ -55,7 +59,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             // Optionally auto-save default layout on first load:
             // if (onUpdatePatchingLayout) onUpdatePatchingLayout({ col1, col2, col3 });
         }
-    }, [localPOP.olts, localPOP.dios, localPOP.patchingLayout]); // Run when items change
+    }, [localPOP.olts, localPOP.dios, localPOP.switches, localPOP.patchingLayout]); // Run when items change
 
     // --- DRAG AND DROP HANDLERS ---
     const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -245,11 +249,12 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
 
     // Create maps for quick lookup during render based on the column arrays
     const equipmentMap = useMemo(() => {
-        const map = new Map<string, OLT | DIO | { isDio: true }>();
+        const map = new Map<string, any>();
         localPOP.olts.forEach(o => map.set(o.id, o));
         localPOP.dios.forEach(d => map.set(d.id, { ...d, isDio: true }));
+        (localPOP.switches || []).forEach(s => map.set(s.id, { ...s, isSwitch: true }));
         return map;
-    }, [localPOP.olts, localPOP.dios]);
+    }, [localPOP.olts, localPOP.dios, localPOP.switches]);
 
 
     const renderActiveEquipment = (olt: OLT) => {
@@ -402,6 +407,94 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const toggleSwitch = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCollapsedSwitches(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const renderSwitchEquipment = (sw: SwitchData) => {
+        const portsLinked = sw.ports.filter(p => !!p.allocation).length;
+        const total = sw.ports.length;
+        const typeLabel: Record<string, string> = {
+            SWITCH: 'Switch', ROUTER: 'Roteador', SERVER: 'Servidor', OTHER: 'Ativo',
+        };
+        const badge = typeLabel[sw.type ?? 'SWITCH'] ?? 'Ativo';
+
+        return (
+            <div
+                key={sw.id}
+                id={`kanban-item-${sw.id}`}
+                className="bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-hidden mb-4 transition-opacity duration-200"
+                draggable
+                onDragStart={(e) => handleDragStart(e, sw.id)}
+                onDragEnd={(e) => handleDragEnd(e, sw.id)}
+            >
+                <div className="w-full bg-slate-50 dark:bg-[#22262e] border-b border-slate-200 dark:border-slate-700/50 flex items-stretch cursor-grab active:cursor-grabbing hover:bg-slate-100 dark:hover:bg-[#2a2e38] transition-colors">
+                    <div className="w-8 flex items-center justify-center border-r border-slate-200 dark:border-slate-700/30 text-slate-400 dark:text-slate-500">
+                        <GripVertical className="w-4 h-4" />
+                    </div>
+                    <button
+                        onClick={(e) => toggleSwitch(sw.id, e)}
+                        className="flex-1 px-3 py-3 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Network className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>{sw.name}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 uppercase">
+                                {badge}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${portsLinked === total && total > 0 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-slate-200 dark:bg-[#2a2e38] text-slate-600 dark:text-slate-400'}`}>
+                                {portsLinked}/{total}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {collapsedSwitches.has(sw.id) ? <ChevronRight className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
+                        </div>
+                    </button>
+                </div>
+
+                {!collapsedSwitches.has(sw.id) && (
+                    <div className="p-3">
+                        <div className="border border-slate-200 dark:border-slate-700/40 rounded-lg overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-[#22262e] px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700/40 uppercase flex items-center gap-2">
+                                <Network className="w-3 h-3 text-emerald-500" /> SFP
+                            </div>
+                            <div className="p-2 bg-slate-100 dark:bg-[#15171c] grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(total, 12)}, 1fr)` }}>
+                                {sw.ports.map((p, idx) => {
+                                    const hasGbic = !!p.gbic;
+                                    const hasAlloc = !!p.allocation;
+                                    const title = `${p.label || `P${idx + 1}`}${hasGbic ? ` · ${p.gbic!.tipo} ${p.gbic!.transmissao}` : ''}${hasAlloc ? ' · conectado' : hasGbic ? ' · sem alocação' : ' · sem GBIC'}`;
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            id={p.id}
+                                            title={title}
+                                            className="h-7 rounded flex items-center justify-center text-[9px] font-mono font-bold"
+                                            style={{
+                                                backgroundColor: hasAlloc ? '#10b981' : hasGbic ? '#334155' : '#1e2028',
+                                                border: `1px solid ${hasAlloc ? '#34d399' : hasGbic ? '#475569' : '#3f4451'}`,
+                                                color: hasAlloc ? '#fff' : hasGbic ? '#e2e8f0' : '#6b7280',
+                                            }}
+                                        >
+                                            {idx + 1}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 italic">
+                            O patching de switches é feito no editor do switch (ícone de edição no canvas).
+                        </div>
                     </div>
                 )}
             </div>
@@ -561,12 +654,13 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                         const item = equipmentMap.get(id);
                         if (!item) return null;
 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        if ((item as any).isDio) {
+                        if (item.isDio) {
                             return renderPassiveEquipment(item as unknown as DIO);
-                        } else {
-                            return renderActiveEquipment(item as OLT);
                         }
+                        if (item.isSwitch) {
+                            return renderSwitchEquipment(item as SwitchData);
+                        }
+                        return renderActiveEquipment(item as OLT);
                     })}
                 </div>
             </div>

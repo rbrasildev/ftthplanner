@@ -1,10 +1,11 @@
 import React from 'react';
-import { Server, Scissors, Zap, Network, Save, X, Link, ExternalLink } from 'lucide-react';
+import { Server, Scissors, Zap, Network, Save, X, Link, ExternalLink, Layers } from 'lucide-react';
 import { Button } from '../common/Button';
 
 interface PopToolbarProps {
     onAddOLT: () => void;
     onAddDIO: () => void;
+    onAddSwitch?: () => void;
     onViewModeChange: (mode: 'canvas' | 'logical') => void;
     viewMode: 'canvas' | 'logical';
     onClearAll: () => void;
@@ -12,7 +13,7 @@ interface PopToolbarProps {
     onSave: () => void;
     userRole?: string | null;
     t: (key: string) => string;
-    stats?: { olts: number; dios: number; connections: number; totalPorts: number; usedPorts: number };
+    stats?: { olts: number; dios: number; switches?: number; connections: number; totalPorts: number; usedPorts: number };
     readOnly?: boolean;
     onGoToParentProject?: () => void;
 }
@@ -20,6 +21,7 @@ interface PopToolbarProps {
 export const PopToolbar: React.FC<PopToolbarProps> = ({
     onAddOLT,
     onAddDIO,
+    onAddSwitch,
     onViewModeChange,
     viewMode,
     onClearAll,
@@ -43,19 +45,33 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                             size="sm"
                             onClick={onAddOLT}
                             className="bg-white dark:bg-[#2a2e38] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600/40 hover:border-indigo-500/50 hover:shadow font-bold active:scale-95"
-                            icon={<Zap className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />}
+                            icon={<Server className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />}
+                            title="Adicionar OLT"
                         >
-                            {t('add_active_equipment')}
+                            OLT
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={onAddDIO}
                             className="bg-white dark:bg-[#2a2e38] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600/40 hover:border-emerald-500/50 hover:shadow font-bold active:scale-95"
-                            icon={<Server className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />}
+                            icon={<Layers className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />}
+                            title="Adicionar DIO"
                         >
-                            {t('add_dio')}
+                            DIO
                         </Button>
+                        {onAddSwitch && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onAddSwitch}
+                                className="bg-white dark:bg-[#2a2e38] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600/40 hover:border-emerald-500/50 hover:shadow font-bold active:scale-95"
+                                icon={<Network className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />}
+                                title="Adicionar Switch, Roteador, Servidor ou outro ativo Ethernet"
+                            >
+                                Ativo
+                            </Button>
+                        )}
                     </div>
                 )}
 
@@ -64,6 +80,7 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                     <div className="hidden sm:flex items-center gap-3 px-3 border-r border-slate-200 dark:border-slate-600/40 text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider">
                         <span>OLT: {stats.olts}</span>
                         <span>DIO: {stats.dios}</span>
+                        {(stats.switches ?? 0) > 0 && <span>SW: {stats.switches}</span>}
                         <span>{t('pop_ports_used') || 'Portas'}: {stats.usedPorts}/{stats.totalPorts}</span>
                     </div>
                 )}

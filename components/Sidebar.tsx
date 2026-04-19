@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler
+    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint
 } from 'lucide-react';
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
@@ -13,7 +13,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project, Coordinates } from '../types';
 
-export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
+export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
 
 export interface MenuItem {
     id: DashboardView;
@@ -172,6 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable, badge: menuBadges?.reg_cabo },
                     { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork, badge: menuBadges?.reg_splitter },
                     { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server, badge: menuBadges?.reg_olt },
+                    { id: 'reg_gbic', label: t('reg_gbic') || 'GBIC / SFP', icon: Fingerprint, badge: menuBadges?.reg_gbic },
                     { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap, badge: menuBadges?.reg_fusao },
                     { id: 'reg_conector', label: t('reg_conector') || 'Conector', icon: Plug, badge: menuBadges?.reg_conector },
                     { id: 'reg_clientes', label: t('reg_clientes') || 'Clientes', icon: Users, badge: menuBadges?.reg_clientes }

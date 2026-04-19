@@ -4,20 +4,27 @@ import { useLanguage } from '../../../LanguageContext';
 import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
 import { CustomInput } from '../../common/CustomInput';
 import { CustomSelect } from '../../common/CustomSelect';
+import type { ActiveEquipmentType } from '../../../types';
 
 interface AddEquipmentModalsProps {
     showAddOLT: boolean;
     showAddDIO: boolean;
+    showAddActive?: boolean;
     oltModalPos: { x: number; y: number };
     dioModalPos: { x: number; y: number };
+    activeModalPos?: { x: number; y: number };
     onCloseOLT: () => void;
     onCloseDIO: () => void;
-    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number; type?: string };
+    onCloseActive?: () => void;
+    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number };
     setNewOLTConfig: (config: any) => void;
     newDIOConfig: { ports: number };
     setNewDIOConfig: (config: any) => void;
+    newActiveConfig?: { type: ActiveEquipmentType; portCount: number; name?: string };
+    setNewActiveConfig?: (config: any) => void;
     onAddOLT: () => void;
     onAddDIO: () => void;
+    onAddActive?: () => void;
 }
 
 /**
@@ -156,14 +163,14 @@ const useCatalogOLTs = (show: boolean) => {
     return olts;
 };
 
-// Equipment type cards
-const EQUIPMENT_TYPES = [
-    { value: 'OLT', labelKey: 'type_olt', icon: Server },
+// Tipos de ativos Ethernet — reutilizam a funcionalidade de Switch.
+// A única diferença entre eles é label/ícone; a mecânica (SFP, DIO, peer) é idêntica.
+const ACTIVE_TYPES: { value: ActiveEquipmentType; labelKey: string; icon: any }[] = [
     { value: 'SWITCH', labelKey: 'type_switch', icon: Network },
     { value: 'ROUTER', labelKey: 'type_router', icon: Radio },
     { value: 'SERVER', labelKey: 'type_server', icon: HardDrive },
     { value: 'OTHER', labelKey: 'type_other', icon: Cpu },
-] as const;
+];
 
 // DIO presets
 const DIO_PRESETS = [
@@ -178,16 +185,22 @@ const DIO_PRESETS = [
 export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
     showAddOLT,
     showAddDIO,
+    showAddActive = false,
     oltModalPos,
     dioModalPos,
+    activeModalPos = { x: 200, y: 200 },
     onCloseOLT,
     onCloseDIO,
+    onCloseActive,
     newOLTConfig,
     setNewOLTConfig,
     newDIOConfig,
     setNewDIOConfig,
+    newActiveConfig,
+    setNewActiveConfig,
     onAddOLT,
-    onAddDIO
+    onAddDIO,
+    onAddActive,
 }) => {
     const { t } = useLanguage();
     const catalogOLTs = useCatalogOLTs(showAddOLT);
@@ -203,22 +216,20 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     portsPerSlot: selected.portsPerSlot || 16,
                     modelName: selected.name,
                     uplinkPorts: selected.uplinkPorts || 2,
-                    type: selected.type || 'OLT'
                 });
             }
         }
     };
 
-    if (!showAddOLT && !showAddDIO) return null;
+    if (!showAddOLT && !showAddDIO && !showAddActive) return null;
 
-    const currentType = newOLTConfig.type || 'OLT';
     const totalPorts = newOLTConfig.slots * newOLTConfig.portsPerSlot;
 
     return (
         <>
             {showAddOLT && (
                 <DraggableModal
-                    title={t('modal_add_olt_title') || "Adicionar Equipamento Ativo"}
+                    title="Adicionar OLT"
                     subtitle={newOLTConfig.modelName || t('custom_configuration')}
                     icon={<Server className="w-4.5 h-4.5" />}
                     initialPos={oltModalPos}
@@ -226,34 +237,6 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     accentColor="indigo"
                 >
                     <div className="space-y-5">
-                        {/* Type Cards */}
-                        <div>
-                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
-                                {t('equipment_type')}
-                            </label>
-                            <div className="grid grid-cols-5 gap-1.5">
-                                {EQUIPMENT_TYPES.map(({ value, labelKey, icon: Icon }) => {
-                                    const isSelected = currentType === value;
-                                    return (
-                                        <button
-                                            key={value}
-                                            onClick={() => setNewOLTConfig({ ...newOLTConfig, type: value })}
-                                            className={`
-                                                flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg border-2 transition-all
-                                                ${isSelected
-                                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300'
-                                                    : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 text-slate-500 hover:border-indigo-300 hover:text-indigo-500'}
-                                            `}
-                                            title={t(labelKey)}
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                            <span className="text-[9px] font-bold uppercase tracking-wide">{t(labelKey)}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
                         {/* Model from catalog */}
                         <CustomSelect
                             label={t('model')}
@@ -422,6 +405,79 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                         >
                             <Zap className="w-4 h-4" />
                             {t('create_device')}
+                        </button>
+                    </div>
+                </DraggableModal>
+            )}
+
+            {showAddActive && newActiveConfig && setNewActiveConfig && onAddActive && onCloseActive && (
+                <DraggableModal
+                    title="Adicionar ativo Ethernet"
+                    subtitle={`${newActiveConfig.portCount} porta${newActiveConfig.portCount !== 1 ? 's' : ''} SFP`}
+                    icon={<Network className="w-4.5 h-4.5" />}
+                    initialPos={activeModalPos}
+                    onClose={onCloseActive}
+                    accentColor="emerald"
+                >
+                    <div className="space-y-5">
+                        {/* Type picker */}
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                                Tipo de equipamento
+                            </label>
+                            <div className="grid grid-cols-4 gap-1.5">
+                                {ACTIVE_TYPES.map(({ value, labelKey, icon: Icon }) => {
+                                    const isSelected = newActiveConfig.type === value;
+                                    return (
+                                        <button
+                                            key={value}
+                                            onClick={() => setNewActiveConfig({ ...newActiveConfig, type: value })}
+                                            className={`
+                                                flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg border-2 transition-all
+                                                ${isSelected
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                                                    : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 text-slate-500 hover:border-emerald-300 hover:text-emerald-500'}
+                                            `}
+                                            title={t(labelKey)}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            <span className="text-[9px] font-bold uppercase tracking-wide">{t(labelKey)}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Name (optional) + port count */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <CustomInput
+                                label="Nome"
+                                placeholder="Auto"
+                                value={newActiveConfig.name ?? ''}
+                                onChange={e => setNewActiveConfig({ ...newActiveConfig, name: e.target.value })}
+                            />
+                            <CustomInput
+                                label="Portas SFP"
+                                type="number"
+                                min="1"
+                                max="96"
+                                value={newActiveConfig.portCount}
+                                onChange={e => setNewActiveConfig({ ...newActiveConfig, portCount: Math.max(1, parseInt(e.target.value) || 1) })}
+                            />
+                        </div>
+
+                        {/* Summary */}
+                        <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700/30 text-xs text-slate-600 dark:text-slate-300">
+                            Este ativo usa a mesma mecânica do switch (GBIC, alocação em DIO, peer trace, LEDs TX/RX).
+                            O tipo define apenas o ícone/rótulo exibido.
+                        </div>
+
+                        <button
+                            onClick={onAddActive}
+                            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Zap className="w-4 h-4" />
+                            {t('create_device') || 'Criar'}
                         </button>
                     </div>
                 </DraggableModal>

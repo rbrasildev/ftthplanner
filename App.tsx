@@ -2131,6 +2131,8 @@ export default function App() {
                 <POPEditor
                     pop={editingPOP}
                     incomingCables={editingPOPIncomingCables}
+                    allPops={network.pops}
+                    allCtos={network.ctos}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
                     onToggleVfl={handlePOPToggleVfl}

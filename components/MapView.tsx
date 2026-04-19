@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents, Toolt
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState } from '../types';
+import { computeCableStatusMap, CableOpticalStatus } from '../utils/switchCableStatus';
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
 import { useLanguage } from '../LanguageContext';
@@ -1103,6 +1104,13 @@ export const MapView: React.FC<MapViewProps> = ({
     // Cables visible in D3 layer (everything EXCEPT the one being edited/active)
     const d3Cables = useMemo(() => visibleCables.filter(c => !allActiveCableIds.has(c.id)), [visibleCables, allActiveCableIds]);
 
+    // Status óptico por cabo (usado pelo popup do menu de contexto — a cor do cabo
+    // não é mais sobrescrita; a fiação visual fica sempre a cor padrão).
+    const cableStatusMap = useMemo(() => {
+        const allPops = parentNetwork ? [...pops, ...parentNetwork.pops] : pops;
+        return computeCableStatusMap(allPops, cables);
+    }, [pops, parentNetwork, cables]);
+
 
     const visibleCTOs = useMemo(() => {
         if (!showCTOs) return [];
@@ -2063,6 +2071,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         y={contextMenu.y}
                         targetType={contextMenu.targetType}
                         cableName={cables.find(c => c.id === contextMenu.id)?.name}
+                        opticalStatus={cableStatusMap.get(contextMenu.id)}
                         onEdit={hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER' ? () => {
                             // "Editar Cabo" -> Geometry Edit (Select ID)
                             if (onEditCableGeometry) onEditCableGeometry(contextMenu.id);

@@ -593,3 +593,98 @@ export const deleteOLT = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to delete OLT' });
     }
 };
+
+// --- GBICS (SFP / SFP+ / BiDi) ---
+
+const GBIC_TIPOS = new Set(['SFP', 'SFP+', 'SFP28', 'QSFP+', 'QSFP28', 'XFP', 'GBIC']);
+const GBIC_MODOS = new Set(['monomodo', 'multimodo']);
+const GBIC_TRANSMISSOES = new Set(['duplex', 'bidi']);
+
+function normalizeGbicPayload(body: any) {
+    const tipo = String(body.tipo || 'SFP');
+    const modoFibra = String(body.modoFibra || 'monomodo');
+    const transmissao = String(body.transmissao || 'duplex');
+    if (!GBIC_TIPOS.has(tipo)) throw new Error(`Invalid tipo: ${tipo}`);
+    if (!GBIC_MODOS.has(modoFibra)) throw new Error(`Invalid modoFibra: ${modoFibra}`);
+    if (!GBIC_TRANSMISSOES.has(transmissao)) throw new Error(`Invalid transmissao: ${transmissao}`);
+    return {
+        name: String(body.name),
+        brand: body.brand ?? null,
+        model: body.model ?? null,
+        tipo,
+        modoFibra,
+        transmissao,
+        rateGbps: body.rateGbps != null ? Number(body.rateGbps) : null,
+        waveTxNm: body.waveTxNm != null ? Number(body.waveTxNm) : null,
+        waveRxNm: body.waveRxNm != null ? Number(body.waveRxNm) : null,
+        reachKm: body.reachKm != null ? Number(body.reachKm) : null,
+        potenciaTx: Number(body.potenciaTx),
+        sensibilidadeRx: Number(body.sensibilidadeRx),
+        description: body.description ?? null,
+    };
+}
+
+export const getGbics = async (req: Request, res: Response) => {
+    try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+        const gbics = await prisma.catalogGbic.findMany({
+            where: { companyId: user.companyId },
+            orderBy: { name: 'asc' }
+        });
+        res.json(gbics);
+    } catch (error) {
+        console.error("Get GBICs Error:", error);
+        res.status(500).json({ error: 'Failed to fetch GBICs' });
+    }
+};
+
+export const createGbic = async (req: Request, res: Response) => {
+    try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+        const data = normalizeGbicPayload(req.body);
+        const gbic = await prisma.catalogGbic.create({
+            data: { ...data, companyId: user.companyId }
+        });
+        res.status(201).json(gbic);
+    } catch (error: any) {
+        console.error("Create GBIC Error:", error);
+        res.status(400).json({ error: 'Failed to create GBIC', details: error.message });
+    }
+};
+
+export const updateGbic = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
+        const exists = await prisma.catalogGbic.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "GBIC not found" });
+
+        const data = normalizeGbicPayload(req.body);
+        const gbic = await prisma.catalogGbic.update({ where: { id }, data });
+        res.json(gbic);
+    } catch (error: any) {
+        console.error("Update GBIC Error:", error);
+        res.status(400).json({ error: 'Failed to update GBIC', details: error.message });
+    }
+};
+
+export const deleteGbic = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const user = (req as AuthRequest).user;
+        if (!user || !user.companyId) return res.status(401).send();
+
+        const exists = await prisma.catalogGbic.findFirst({ where: { id, companyId: user.companyId } });
+        if (!exists) return res.status(404).json({ error: "GBIC not found" });
+
+        await prisma.catalogGbic.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Delete GBIC Error:", error);
+        res.status(500).json({ error: 'Failed to delete GBIC' });
+    }
+};

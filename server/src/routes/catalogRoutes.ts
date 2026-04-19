@@ -39,4 +39,9 @@ router.post('/olts', requireCatalogManage, catalogController.createOLT);
 router.put('/olts/:id', requireCatalogManage, catalogController.updateOLT);
 router.delete('/olts/:id', requireCatalogManage, catalogController.deleteOLT);
 
+router.get('/gbics', catalogController.getGbics);
+router.post('/gbics', requireCatalogManage, catalogController.createGbic);
+router.put('/gbics/:id', requireCatalogManage, catalogController.updateGbic);
+router.delete('/gbics/:id', requireCatalogManage, catalogController.deleteGbic);
+
 export default router;

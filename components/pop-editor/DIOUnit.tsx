@@ -140,7 +140,11 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                             const partner = c.sourceId === pid ? c.targetId : c.sourceId;
                                             return partner.includes('olt');
                                         });
-                                        const isConnected = !!patchConn;
+                                        const switchConn = existingConns.find((c: any) => {
+                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
+                                            return partner.startsWith('swp-') || partner.startsWith('switch-');
+                                        });
+                                        const isConnected = !!patchConn || !!switchConn;
                                         const isSpliced = existingConns.some((c: any) =>
                                             c.sourceId.includes('fiber') || c.targetId.includes('fiber')
                                         );
@@ -153,6 +157,11 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
 
                                         const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(pid) : undefined;
 
+                                        // Cor de conexão: ciano = OLT, azul-céu = Switch
+                                        const connColor = switchConn && !patchConn
+                                            ? { bg: '#10b981', border: '#34d399', shadow: 'rgba(16,185,129,0.4)' }
+                                            : { bg: '#06b6d4', border: '#22d3ee', shadow: 'rgba(6,182,212,0.4)' };
+
                                         return (
                                             <div
                                                 key={pid}
@@ -160,6 +169,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                                 title={(() => {
                                                     const label = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
                                                     if (connInfo) return `${label} → ${connInfo}`;
+                                                    if (switchConn) return `${label} → Switch`;
                                                     if (isSpliced) return `${label} - Spliced`;
                                                     return `${label} (${t('available')})`;
                                                 })()}
@@ -172,10 +182,10 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                                     ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
                                                 style={{
-                                                    backgroundColor: isConnected ? '#06b6d4' : '#1e2028',
-                                                    border: `1px solid ${isConnected ? '#22d3ee' : '#3f4451'}`,
+                                                    backgroundColor: isConnected ? connColor.bg : '#1e2028',
+                                                    border: `1px solid ${isConnected ? connColor.border : '#3f4451'}`,
                                                     color: isConnected ? '#fff' : '#6b7280',
-                                                    boxShadow: isConnected ? '0 0 4px rgba(6,182,212,0.4)' : 'none'
+                                                    boxShadow: isConnected ? `0 0 4px ${connColor.shadow}` : 'none'
                                                 }}
                                             >
                                                 {localIdx + 1}

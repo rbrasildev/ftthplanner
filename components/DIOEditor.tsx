@@ -84,21 +84,28 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
         const currentCables = dio.inputCableIds || [];
         let newCables;
+        const fiberPrefix = `${cableId}-fiber-`;
+        const cleanFiberConns = (conns: FiberConnection[]) => conns.filter(c =>
+            !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
+        );
+
         if (currentCables.includes(cableId)) {
             newCables = currentCables.filter(c => c !== cableId);
-            // Remove fiber connections (fusions) associated with this cable
-            const fiberPrefix = `${cableId}-fiber-`;
-            const cleaned = currentConnections.filter(c =>
-                !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
-            );
+            const cleaned = cleanFiberConns(currentConnections);
             setCurrentConnections(cleaned);
-            // Persist cleaned connections immediately to keep POPEditor in sync
             if (onUpdateConnections) onUpdateConnections(cleaned);
         } else {
-            // Check if assigned to other DIO
             const assignedToOther = pop.dios.find(d => d.id !== dio.id && d.inputCableIds?.includes(cableId));
             if (assignedToOther) return;
             newCables = [...currentCables, cableId];
+            // Defesa: limpa qualquer splice residual desse cabo antes de re-anexar.
+            // Cobre o caso "removi e reconectei o cabo, bandejas aparecem com splices
+            // antigas mas que não funcionam" — algum caminho deixou conexões órfãs.
+            const cleaned = cleanFiberConns(currentConnections);
+            if (cleaned.length !== currentConnections.length) {
+                setCurrentConnections(cleaned);
+                if (onUpdateConnections) onUpdateConnections(cleaned);
+            }
         }
 
         onUpdateDio({ ...dio, inputCableIds: newCables });

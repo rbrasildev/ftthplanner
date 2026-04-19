@@ -118,6 +118,138 @@ export interface DIO {
   splicingLayout?: { col1: string[]; col2: string[]; col3: string[] };
 }
 
+// --- SWITCH / SFP / GBIC ---
+
+export type GbicFormFactor = 'SFP' | 'SFP+' | 'SFP28' | 'QSFP+' | 'QSFP28' | 'XFP' | 'GBIC';
+export type GbicFiberMode = 'monomodo' | 'multimodo';
+// duplex = 2 fibras (TX/RX separadas); bidi = 1 fibra (WDM TX/RX na mesma fibra)
+export type GbicTransmission = 'duplex' | 'bidi';
+
+export interface Gbic {
+  id: string;
+  catalogId?: string;          // Referência a CatalogGbic
+  name?: string;               // Denormalizado para exibição (ex: "1G-BX-10-D")
+  tipo: GbicFormFactor;
+  modoFibra: GbicFiberMode;
+  transmissao: GbicTransmission;
+  rateGbps?: number;           // 1, 10, 25, 40, 100
+  waveTxNm?: number;           // Lambda TX (ex: 1310, 1490)
+  waveRxNm?: number;           // Lambda RX (apenas BiDi)
+  reachKm?: number;            // Alcance nominal
+  potenciaTx: number;          // dBm (potência óptica de saída)
+  sensibilidadeRx: number;     // dBm (mínima recebida para link)
+}
+
+// Alocação de uma porta de switch: conecta-se a porta(s) de um DIO
+// (patch cord do switch → porta do DIO → splice para fibra do cabo).
+// Duplex: txDioPortId !== rxDioPortId.
+// BiDi:   txDioPortId === rxDioPortId (mesma porta para TX e RX).
+export interface SwitchFiberAllocation {
+  dioId: string;
+  txDioPortId: string;
+  rxDioPortId: string;
+}
+
+// Overrides de perdas para o link óptico desta porta. Se omitido,
+// usa-se o padrão (0.35 dB/km fibra, 0.5 dB/conector, 0.1 dB/fusão).
+export interface LinkLossConfig {
+  conectores?: number;
+  fusoes?: number;
+  atenuacaoFibraDbPorKm?: number;
+  perdaPorConectorDb?: number;
+  perdaPorFusaoDb?: number;
+}
+
+/**
+ * Link direto sem DIO. Representa um patch cord ligando a porta SFP deste switch
+ * diretamente em outra porta SFP (de outro switch) OU num uplink de OLT.
+ *
+ * Mutuamente exclusivo com `SwitchPort.allocation`.
+ *
+ * `peerKind` default: 'switch' (retrocompat com dados antigos).
+ * Quando `peerKind='olt'`, o campo `peerSwitchId` armazena o ID da OLT e
+ * `peerPortId` o ID da porta de uplink da OLT.
+ */
+export interface DirectSwitchLink {
+  peerKind?: 'switch' | 'olt';
+  peerSwitchId: string;    // id da switch OU da OLT (dependendo de peerKind)
+  peerPortId: string;
+  /**
+   * Catálogo GBIC usado do lado do peer — relevante quando `peerKind='olt'`
+   * (OLT não tem GBIC modelado em si; o SFP do uplink vive aqui).
+   * Se omitido, assume defaults conservadores (TX 0 dBm, RX −24 dBm).
+   */
+  peerGbicCatalogId?: string;
+}
+
+export interface SwitchPort {
+  id: string;
+  label?: string;              // Ex: "GE1/0/1"
+  gbic?: Gbic;
+  /** Link via DIO (cabo externo). Modo "Via DIO". */
+  allocation?: SwitchFiberAllocation;
+  /** Link direto pra outro switch no mesmo POP (patch cord curto). */
+  directLink?: DirectSwitchLink;
+  linkLossConfig?: LinkLossConfig;
+}
+
+export type ActiveEquipmentType = 'SWITCH' | 'ROUTER' | 'SERVER' | 'OTHER';
+
+export interface SwitchData {
+  id: string;
+  name: string;
+  status?: CTOStatus;
+  catalogId?: string;
+  portCount: number;
+  ports: SwitchPort[];
+  /**
+   * Tipo do ativo — altera apenas label/ícone exibidos. A mecânica (portas
+   * SFP/GBIC, alocação em DIO, peer trace) é idêntica para todos os tipos.
+   * Default: 'SWITCH'.
+   */
+  type?: ActiveEquipmentType;
+  // Uplinks separados são opcionais; por padrão qualquer porta pode ser uplink
+}
+
+// Parâmetros físicos de um link óptico para cálculo de potência RX.
+export interface LinkOptico {
+  distanciaKm: number;
+  conectores: number;          // pares de conectores
+  fusoes: number;
+  // Overrides opcionais — se omitidos, usar perdas do catálogo (cabo) ou padrão.
+  atenuacaoFibraDbPorKm?: number;
+  perdaPorConectorDb?: number;
+  perdaPorFusaoDb?: number;
+}
+
+export type OpticalLinkStatus = 'OK' | 'MARGINAL' | 'NO_SIGNAL';
+
+export interface OpticalLinkResult {
+  potenciaTx: number;
+  potenciaRx: number;
+  perdaTotal: number;
+  sensibilidadeRx: number;
+  margem: number;              // potenciaRx - sensibilidadeRx
+  status: OpticalLinkStatus;
+}
+
+export interface CatalogGbic {
+  id: string;
+  name: string;
+  brand?: string;
+  model?: string;
+  tipo: GbicFormFactor;
+  modoFibra: GbicFiberMode;
+  transmissao: GbicTransmission;
+  rateGbps?: number;
+  waveTxNm?: number;
+  waveRxNm?: number;
+  reachKm?: number;
+  potenciaTx: number;
+  sensibilidadeRx: number;
+  description?: string | null;
+}
+
 export interface POPData {
   id: string;
   name: string;
@@ -126,6 +258,7 @@ export interface POPData {
   coordinates: Coordinates;
   olts: OLT[];
   dios: DIO[];
+  switches?: SwitchData[]; // Ethernet switches with SFP/GBIC ports
   fusions: FusionPoint[]; // Allows splicing inside POP if needed (or fusion trays inside DIO concept)
   connections: FiberConnection[]; // Internal Patch Cords
   inputCableIds: string[];

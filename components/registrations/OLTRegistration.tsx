@@ -18,10 +18,9 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
     const [editingItem, setEditingItem] = useState<OLTCatalogItem | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-    // Form State
+    // Form State (sempre OLT — esta tela é só pra OLT)
     const [formData, setFormData] = useState({
         name: '',
-        type: 'OLT',
         outputPower: 3, // Default Class B+
         slots: 1,
         portsPerSlot: 16,
@@ -50,7 +49,6 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
             setEditingItem(item);
             setFormData({
                 name: item.name,
-                type: item.type || 'OLT',
                 outputPower: item.outputPower,
                 slots: item.slots || 1,
                 portsPerSlot: item.portsPerSlot || 16,
@@ -61,7 +59,6 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
             setEditingItem(null);
             setFormData({
                 name: '',
-                type: 'OLT',
                 outputPower: 3,
                 slots: 1,
                 portsPerSlot: 16,
@@ -76,6 +73,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
         try {
             const payload = {
                 ...formData,
+                type: 'OLT' as const,  // esta tela registra apenas OLTs
                 // Ensure number types
                 outputPower: Number(formData.outputPower),
                 slots: Number(formData.slots),
@@ -120,10 +118,10 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Server className="w-7 h-7 text-emerald-500" />
-                        {t('reg_active_equipment')}
+                        {t('reg_olt') || 'OLT'}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        {t('olt_catalog_desc')}
+                        {t('olt_catalog_desc') || 'Cadastre modelos de OLT (GPON) com slots, portas e uplinks.'}
                     </p>
                 </div>
                 <button
@@ -177,10 +175,10 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                         <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-4">{t('name')}</th>
-                                <th className="px-6 py-4">{t('equipment_type')}</th>
-                                <th className="px-6 py-4">{t('specifications')}</th>
-                                <th className="px-6 py-4">{t('olt_slots')}</th>
-                                <th className="px-6 py-4">{t('ports_per_slot')}</th>
+                                <th className="px-6 py-4">{t('output_power') || 'Potência'}</th>
+                                <th className="px-6 py-4">{t('olt_slots') || 'Slots'}</th>
+                                <th className="px-6 py-4">{t('ports_per_slot') || 'Portas/Slot'}</th>
+                                <th className="px-6 py-4">{t('uplink_ports') || 'Uplinks'}</th>
                                 <th className="px-6 py-4">{t('description')}</th>
                                 <th className="px-6 py-4 text-right">{t('actions')}</th>
                             </tr>
@@ -194,23 +192,17 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                             {olt.name}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#22262e] text-[10px] font-bold uppercase">
-                                            {olt.type || 'OLT'}
-                                        </span>
-                                    </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">
-                                        {olt.type === 'OLT' ? (
-                                            <span>{olt.outputPower > 0 ? '+' : ''}{olt.outputPower} dBm</span>
-                                        ) : (
-                                            <span>{olt.outputPower} W</span>
-                                        )}
+                                        <span>{olt.outputPower > 0 ? '+' : ''}{olt.outputPower} dBm</span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                                         {olt.slots || 1}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                                         {olt.portsPerSlot}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                        {olt.uplinkPorts ?? 0}
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 truncate max-w-xs">
                                         {olt.description}
@@ -288,42 +280,23 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                 />
                             </div>
 
-                            {/* Tipo de Equipamento */}
-                            <div>
-                                <CustomSelect
-                                    label={t('equipment_type')}
-                                    value={formData.type || 'OLT'}
-                                    options={[
-                                        { value: 'OLT', label: t('type_olt') },
-                                        { value: 'SWITCH', label: t('type_switch') },
-                                        { value: 'ROUTER', label: t('type_router') },
-                                        { value: 'SERVER', label: t('type_server') },
-                                        { value: 'OTHER', label: t('type_other') }
-                                    ]}
-                                    onChange={val => setFormData({ ...formData, type: val })}
-                                    showSearch={false}
-                                />
-                            </div>
-
-                            {/* Especificações Técnicas (Saída, Slots, Portas/Slot) */}
+                            {/* Especificações Técnicas (Potência TX, Slots, Portas/Slot) */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                                 <div>
                                     <CustomInput
-                                        label={formData.type === 'OLT' ? t('output_power') : t('power_consumption')}
+                                        label={t('output_power') || 'Potência TX (dBm)'}
                                         type="number"
                                         step="0.1"
                                         value={formData.outputPower}
                                         onChange={e => setFormData({ ...formData, outputPower: parseFloat(e.target.value) })}
                                     />
-                                    {formData.type === 'OLT' && (
-                                        <p className="text-[10px] text-slate-500 mt-1 leading-tight">
-                                            {t('olt_output_power_help')}
-                                        </p>
-                                    )}
+                                    <p className="text-[10px] text-slate-500 mt-1 leading-tight">
+                                        {t('olt_output_power_help') || 'Potência óptica de saída GPON (classe B+ = 3 dBm, C+ = 5 dBm)'}
+                                    </p>
                                 </div>
                                 <div>
                                     <CustomInput
-                                        label={t('olt_slots')}
+                                        label={t('olt_slots') || 'Slots'}
                                         type="number"
                                         value={formData.slots}
                                         onChange={e => setFormData({ ...formData, slots: parseInt(e.target.value) })}
@@ -331,7 +304,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                 </div>
                                 <div>
                                     <CustomInput
-                                        label={formData.type === 'OLT' ? t('olt_ports') : t('active_ports')}
+                                        label={t('olt_ports') || 'Portas GPON por slot'}
                                         type="number"
                                         value={formData.portsPerSlot}
                                         onChange={e => setFormData({ ...formData, portsPerSlot: parseInt(e.target.value) })}
@@ -339,17 +312,18 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                 </div>
                             </div>
 
-                            {/* Portas Uplink (Apenas OLT) */}
-                            {formData.type === 'OLT' && (
-                                <div>
-                                    <CustomInput
-                                        label={t('uplink_ports')}
-                                        type="number"
-                                        value={formData.uplinkPorts || 0}
-                                        onChange={e => setFormData({ ...formData, uplinkPorts: parseInt(e.target.value) })}
-                                    />
-                                </div>
-                            )}
+                            {/* Portas Uplink */}
+                            <div>
+                                <CustomInput
+                                    label={t('uplink_ports') || 'Portas de uplink'}
+                                    type="number"
+                                    value={formData.uplinkPorts || 0}
+                                    onChange={e => setFormData({ ...formData, uplinkPorts: parseInt(e.target.value) })}
+                                />
+                                <p className="text-[10px] text-slate-500 mt-1 leading-tight">
+                                    Portas Ethernet/SFP de uplink (conectam a switches, roteadores, etc).
+                                </p>
+                            </div>
 
                             <div>
                                 <CustomInput

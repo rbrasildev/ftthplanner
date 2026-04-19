@@ -13,10 +13,11 @@ import { CompanySettings } from './settings/CompanySettings';
 import { IntegrationsPage } from './integrations/IntegrationsPage';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint } from 'lucide-react';
 import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
+import { GbicRegistration } from './registrations/GbicRegistration';
 import CustomerRegistration from './registrations/CustomerRegistration';
 import { BackupManager } from './BackupManager';
 import L from 'leaflet';
@@ -96,7 +97,7 @@ const LocationPickerMap = ({
   );
 };
 
-type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_clientes';
+type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
@@ -383,6 +384,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable },
         { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork },
         { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server },
+        { id: 'reg_gbic', label: t('reg_gbic') || 'GBIC / SFP', icon: Fingerprint },
         { id: 'reg_fusao', label: t('reg_fusao') || 'Fusão', icon: Zap },
         { id: 'reg_conector', label: t('reg_conector') || 'Conector', icon: Plug },
         { id: 'reg_clientes', label: t('reg_clientes') || 'Clientes', icon: Users }
@@ -787,6 +789,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <OLTRegistration showToast={showToast} />
         )}
 
+        {/* --- GBIC / SFP REGISTRATION --- */}
+        {currentView === 'reg_gbic' && (
+          <GbicRegistration showToast={showToast} />
+        )}
+
         {/* --- CUSTOMER REGISTRATION --- */}
         {currentView === 'reg_clientes' && (
           <CustomerRegistration
@@ -829,7 +836,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
 
         {/* --- REGISTRATION PLACEHOLDERS --- */}
-        {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste', 'reg_fusao', 'reg_conector', 'reg_olt', 'reg_clientes'].includes(currentView) && (
+        {currentView.startsWith('reg_') && !['reg_splitter', 'reg_cabo', 'reg_caixa', 'reg_poste', 'reg_fusao', 'reg_conector', 'reg_olt', 'reg_gbic', 'reg_clientes'].includes(currentView) && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mb-6">
               {currentView === 'reg_poste' && <UtilityPole className="w-10 h-10 text-slate-400" />}

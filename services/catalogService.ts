@@ -196,3 +196,46 @@ export const deleteOLT = async (id: string): Promise<void> => {
     await api.delete(`/catalog/olts/${id}`);
 };
 
+// --- GBICS (SFP / SFP+ / BiDi) ---
+
+export type GbicFormFactorDTO = 'SFP' | 'SFP+' | 'SFP28' | 'QSFP+' | 'QSFP28' | 'XFP' | 'GBIC';
+export type GbicFiberModeDTO = 'monomodo' | 'multimodo';
+export type GbicTransmissionDTO = 'duplex' | 'bidi';
+
+export interface GbicCatalogItem {
+    id: string;
+    name: string;
+    brand?: string | null;
+    model?: string | null;
+    tipo: GbicFormFactorDTO;
+    modoFibra: GbicFiberModeDTO;
+    transmissao: GbicTransmissionDTO;
+    rateGbps?: number | null;
+    waveTxNm?: number | null;
+    waveRxNm?: number | null;
+    reachKm?: number | null;
+    potenciaTx: number;       // dBm
+    sensibilidadeRx: number;  // dBm
+    description?: string | null;
+    updatedAt?: string;
+}
+
+export const getGbics = async (): Promise<GbicCatalogItem[]> => {
+    const response = await api.get('/catalog/gbics');
+    return response.data;
+};
+
+export const createGbic = async (data: Omit<GbicCatalogItem, 'id' | 'updatedAt'>): Promise<GbicCatalogItem> => {
+    const response = await api.post('/catalog/gbics', data);
+    return response.data;
+};
+
+export const updateGbic = async (id: string, data: Partial<GbicCatalogItem>): Promise<GbicCatalogItem> => {
+    const response = await api.put(`/catalog/gbics/${id}`, data);
+    return response.data;
+};
+
+export const deleteGbic = async (id: string): Promise<void> => {
+    await api.delete(`/catalog/gbics/${id}`);
+};
+

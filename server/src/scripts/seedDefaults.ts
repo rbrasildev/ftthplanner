@@ -196,6 +196,165 @@ async function main() {
         ]
     });
 
+    // --- GBICs (SFP / SFP+ / BiDi) ---
+    // Valores típicos de datasheet. Ajuste por modelo real quando cadastrar no catálogo da empresa.
+    console.log("Seeding Template GBICs...");
+    await prisma.templateGbic.deleteMany();
+    await prisma.templateGbic.createMany({
+        data: [
+            // --- 1G Duplex (2 fibras, 1310 TX/RX) ---
+            {
+                name: "SFP 1G-LX 10km (Duplex)",
+                brand: "Genérico",
+                model: "SFP-1G-LX",
+                tipo: "SFP",
+                modoFibra: "monomodo",
+                transmissao: "duplex",
+                rateGbps: 1,
+                waveTxNm: 1310,
+                reachKm: 10,
+                potenciaTx: -3,
+                sensibilidadeRx: -20,
+                description: "Gigabit Ethernet duplex monomodo 10km — usa 2 fibras"
+            },
+            {
+                name: "SFP 1G-SX 550m (Duplex Multimodo)",
+                brand: "Genérico",
+                model: "SFP-1G-SX",
+                tipo: "SFP",
+                modoFibra: "multimodo",
+                transmissao: "duplex",
+                rateGbps: 1,
+                waveTxNm: 850,
+                reachKm: 0.55,
+                potenciaTx: -4,
+                sensibilidadeRx: -17,
+                description: "Gigabit Ethernet duplex multimodo — curta distância"
+            },
+            // --- 1G BiDi (1 fibra, 1310/1490) ---
+            {
+                name: "SFP 1G-BX 10km (BiDi U - 1310/1490)",
+                brand: "Genérico",
+                model: "SFP-1G-BX-U",
+                tipo: "SFP",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 1,
+                waveTxNm: 1310,
+                waveRxNm: 1490,
+                reachKm: 10,
+                potenciaTx: -3,
+                sensibilidadeRx: -23,
+                description: "BiDi upstream — 1 fibra, TX 1310 / RX 1490"
+            },
+            {
+                name: "SFP 1G-BX 10km (BiDi D - 1490/1310)",
+                brand: "Genérico",
+                model: "SFP-1G-BX-D",
+                tipo: "SFP",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 1,
+                waveTxNm: 1490,
+                waveRxNm: 1310,
+                reachKm: 10,
+                potenciaTx: -3,
+                sensibilidadeRx: -23,
+                description: "BiDi downstream — 1 fibra, TX 1490 / RX 1310"
+            },
+            {
+                name: "SFP 1G-BX 20km (BiDi U - 1310/1490)",
+                brand: "Genérico",
+                model: "SFP-1G-BX-U-20",
+                tipo: "SFP",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 1,
+                waveTxNm: 1310,
+                waveRxNm: 1490,
+                reachKm: 20,
+                potenciaTx: -2,
+                sensibilidadeRx: -28,
+                description: "BiDi upstream — 1 fibra, alcance 20km"
+            },
+            {
+                name: "SFP 1G-BX 20km (BiDi D - 1490/1310)",
+                brand: "Genérico",
+                model: "SFP-1G-BX-D-20",
+                tipo: "SFP",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 1,
+                waveTxNm: 1490,
+                waveRxNm: 1310,
+                reachKm: 20,
+                potenciaTx: -2,
+                sensibilidadeRx: -28,
+                description: "BiDi downstream — 1 fibra, alcance 20km"
+            },
+            // --- 10G Duplex ---
+            {
+                name: "SFP+ 10G-LR 10km (Duplex)",
+                brand: "Genérico",
+                model: "SFP+-10G-LR",
+                tipo: "SFP+",
+                modoFibra: "monomodo",
+                transmissao: "duplex",
+                rateGbps: 10,
+                waveTxNm: 1310,
+                reachKm: 10,
+                potenciaTx: -1,
+                sensibilidadeRx: -14,
+                description: "10G Ethernet duplex monomodo 10km — usa 2 fibras"
+            },
+            {
+                name: "SFP+ 10G-ER 40km (Duplex)",
+                brand: "Genérico",
+                model: "SFP+-10G-ER",
+                tipo: "SFP+",
+                modoFibra: "monomodo",
+                transmissao: "duplex",
+                rateGbps: 10,
+                waveTxNm: 1550,
+                reachKm: 40,
+                potenciaTx: 2,
+                sensibilidadeRx: -15,
+                description: "10G Ethernet duplex monomodo 40km"
+            },
+            // --- 10G BiDi ---
+            {
+                name: "SFP+ 10G-BX 10km (BiDi U - 1270/1330)",
+                brand: "Genérico",
+                model: "SFP+-10G-BX-U",
+                tipo: "SFP+",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 10,
+                waveTxNm: 1270,
+                waveRxNm: 1330,
+                reachKm: 10,
+                potenciaTx: -1,
+                sensibilidadeRx: -14,
+                description: "10G BiDi upstream — 1 fibra"
+            },
+            {
+                name: "SFP+ 10G-BX 10km (BiDi D - 1330/1270)",
+                brand: "Genérico",
+                model: "SFP+-10G-BX-D",
+                tipo: "SFP+",
+                modoFibra: "monomodo",
+                transmissao: "bidi",
+                rateGbps: 10,
+                waveTxNm: 1330,
+                waveRxNm: 1270,
+                reachKm: 10,
+                potenciaTx: -1,
+                sensibilidadeRx: -14,
+                description: "10G BiDi downstream — 1 fibra"
+            }
+        ]
+    });
+
     console.log("Seeding Done!");
 }
 

@@ -17,6 +17,12 @@ interface D3CablesLayerProps {
     mode?: string;
     showLabels?: boolean;
     userRole?: string | null;
+    /**
+     * Cores derivadas do status óptico de switch links por cabo (Fase 4).
+     * Quando presente, sobrescreve a cor default do cabo para comunicar
+     * NO_SIGNAL/MARGINAL/OK através do mapa.
+     */
+    cableStatusColorMap?: Map<string, string>;
 }
 
 // LOD Thresholds
@@ -34,7 +40,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     onContextMenu,
     mode,
     showLabels,
-    userRole
+    userRole,
+    cableStatusColorMap
 }) => {
     const map = useMap();
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -217,6 +224,9 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 .attr('stroke', (d: any) => {
                     if (litCableIds.has(d.id)) return '#ef4444';
                     if (highlightedCableId === d.id) return '#22c55e';
+                    // Fase 4: cor baseada no pior status de switch link atravessando o cabo.
+                    const opticalColor = cableStatusColorMap?.get(d.id);
+                    if (opticalColor) return opticalColor;
                     if (d.status === 'NOT_DEPLOYED') return CABLE_STATUS_COLORS['NOT_DEPLOYED'];
                     return d.color || CABLE_STATUS_COLORS['DEPLOYED'];
                 })
@@ -321,7 +331,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             map.off('viewreset', handleUpdate);
         };
 
-    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, showLabels, userRole]);
+    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, showLabels, userRole, cableStatusColorMap]);
 
     return null;
 };

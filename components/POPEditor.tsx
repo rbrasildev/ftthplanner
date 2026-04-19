@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { POPData, CableData, FiberConnection, OLT, DIO, getFiberColor, ElementLayout } from '../types';
+import { POPData, CableData, CTOData, FiberConnection, OLT, DIO, SwitchData, SwitchPort, ActiveEquipmentType, getFiberColor, ElementLayout } from '../types';
 import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X, Link, Trash2, FileText } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { DIOEditor } from './DIOEditor';
+import { SwitchEditor } from './SwitchEditor';
 
 import { PopHeader } from './pop-editor/PopHeader';
 import { PopToolbar } from './pop-editor/PopToolbar';
 import { OLTUnit } from './pop-editor/OLTUnit';
 import { DIOUnit } from './pop-editor/DIOUnit';
+import { SwitchUnit } from './pop-editor/SwitchUnit';
+import { computeSwitchPortLedStates } from '../utils/switchFiber';
 import { LogicalPatchingView } from './pop-editor/LogicalPatchingView';
 import { AddEquipmentModals } from './pop-editor/modals/AddEquipmentModals';
 import { EditEquipmentModals } from './pop-editor/modals/EditEquipmentModals';
@@ -20,6 +23,10 @@ import { LinkCablesModal } from './pop-editor/modals/LinkCablesModal';
 interface POPEditorProps {
     pop: POPData;
     incomingCables: CableData[];
+    /** Todos os POPs do projeto — usado pelo SwitchEditor pra rastrear peer na outra ponta do cabo. */
+    allPops?: POPData[];
+    /** Todos os CTOs/CEOs do projeto — pra atravessar sangrias no trace do peer. */
+    allCtos?: CTOData[];
     onClose: () => void;
     onSave: (updatedPOP: POPData) => Promise<void> | void;
 
@@ -47,7 +54,7 @@ interface POPEditorProps {
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPops, allCtos, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -62,15 +69,25 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     // Equipment Creation State & Position
     const [showAddOLTModal, setShowAddOLTModal] = useState(false);
     const [oltModalPos, setOltModalPos] = useState({ x: 100, y: 100 });
-    const [newOLTConfig, setNewOLTConfig] = useState({ slots: 1, portsPerSlot: 8, type: 'SWITCH' as any });
+    const [newOLTConfig, setNewOLTConfig] = useState({ slots: 1, portsPerSlot: 8 });
 
     const [showAddDIOModal, setShowAddDIOModal] = useState(false);
     const [dioModalPos, setDioModalPos] = useState({ x: 150, y: 150 });
     const [newDIOConfig, setNewDIOConfig] = useState({ ports: 24 });
 
+    const [showAddActiveModal, setShowAddActiveModal] = useState(false);
+    const [activeModalPos, setActiveModalPos] = useState({ x: 200, y: 200 });
+    const [newActiveConfig, setNewActiveConfig] = useState<{ type: ActiveEquipmentType; portCount: number; name?: string }>({
+        type: 'SWITCH',
+        portCount: 8,
+        name: '',
+    });
+
     // Equipment EDITING State
     const [editingOLT, setEditingOLT] = useState<OLT | null>(null);
     const [editingDIO, setEditingDIO] = useState<{ id: string, name: string, ports: number } | null>(null);
+    const [editingSwitchId, setEditingSwitchId] = useState<string | null>(null);
+    const [editingSwitchPortId, setEditingSwitchPortId] = useState<string | null>(null);
 
     // Deletion State
     const [itemToDelete, setItemToDelete] = useState<{ type: 'OLT' | 'DIO', id: string, name: string } | null>(null);
@@ -101,7 +118,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
     const [autoPatchTargetId, setAutoPatchTargetId] = useState<string>('');
 
     const GRID_SIZE = 20;
-    const EQUIPMENT_WIDTH = 340; // Standard visual width for OLT/DIO
+    // Largura padrão = OLT com 16 portas (slot 44 + pad 24 + 16 * (26+2) = 516).
+    // Equipamentos menores são "preenchidos" até esse tamanho sem esticar as portas.
+    const EQUIPMENT_WIDTH = 516;
 
     // Interaction State
     const [dragState, setDragState] = useState<{
@@ -162,6 +181,27 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             return true;
         });
     }, [incomingCables]);
+
+    // --- Prune orphan fiber splices ---
+    // Quando um cabo é removido upstream e re-adicionado com outro id (mesmo nome
+    // mas id novo), splices `<oldCable>-fiber-N ↔ port` ficam órfãs. As bandejas
+    // continuam mostrando ports laranja porque a conexão existe em `localPOP.connections`,
+    // mesmo que o cabo card não as enxergue. Aqui descartamos splices que apontam
+    // pra cabos inexistentes em `incomingCables`.
+    useEffect(() => {
+        const validCableIds = new Set(uniqueIncomingCables.map(c => c.id));
+        const isOrphanFiberId = (id: string) => {
+            const m = id.match(/^(.+)-fiber-\d+$/);
+            return !!m && !validCableIds.has(m[1]);
+        };
+        setLocalPOP(prev => {
+            const filtered = prev.connections.filter(c =>
+                !isOrphanFiberId(c.sourceId) && !isOrphanFiberId(c.targetId)
+            );
+            if (filtered.length === prev.connections.length) return prev;
+            return { ...prev, connections: filtered };
+        });
+    }, [uniqueIncomingCables]);
 
     // --- View Centering Logic ---
     const handleCenterView = useCallback(() => {
@@ -378,28 +418,28 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
             const dio = prev.dios[dioIndex];
             const currentCables = dio.inputCableIds || [];
+            const fiberPrefix = `${cableId}-fiber-`;
+            const cleanFiberConns = () => prev.connections.filter(c =>
+                !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
+            );
 
             let newCables;
+            let newConnections = prev.connections;
             if (currentCables.includes(cableId)) {
                 newCables = currentCables.filter(c => c !== cableId);
-                // Remove fiber connections (fusions) associated with this cable
-                const fiberPrefix = `${cableId}-fiber-`;
-                const newConnections = prev.connections.filter(c =>
-                    !c.sourceId.startsWith(fiberPrefix) && !c.targetId.startsWith(fiberPrefix)
-                );
-                const newDios = [...prev.dios];
-                newDios[dioIndex] = { ...dio, inputCableIds: newCables };
-                return { ...prev, dios: newDios, connections: newConnections };
+                newConnections = cleanFiberConns();
             } else {
-                // Validate if assigned to another DIO
                 const assignedToOther = prev.dios.find(d => d.id !== dioId && d.inputCableIds?.includes(cableId));
                 if (assignedToOther) return prev;
                 newCables = [...currentCables, cableId];
+                // Defesa: limpa splices órfãs do cabo antes de re-anexar — caso
+                // algum caminho anterior tenha deixado entradas zumbi.
+                newConnections = cleanFiberConns();
             }
 
             const newDios = [...prev.dios];
             newDios[dioIndex] = { ...dio, inputCableIds: newCables };
-            return { ...prev, dios: newDios };
+            return { ...prev, dios: newDios, connections: newConnections };
         });
     };
 
@@ -665,7 +705,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
 
     const handleAddOLT = () => {
         const id = `olt-${Date.now()}`;
-        const { slots, portsPerSlot, type, uplinkPorts, slotNames } = newOLTConfig as any;
+        const { slots, portsPerSlot, uplinkPorts, slotNames } = newOLTConfig as any;
         const defaultSlotsConfig = Array.from({ length: slots || 1 }).map((_, i) => ({
             active: true,
             portCount: portsPerSlot || 16,
@@ -683,8 +723,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             }
         });
 
-        const isOLT = type === 'OLT' || !type;
-        const numUplinks = isOLT ? (uplinkPorts ?? 2) : 0;
+        const numUplinks = uplinkPorts ?? 2;
         const uplinkPortIds: string[] = [];
         for (let i = 1; i <= numUplinks; i++) {
             uplinkPortIds.push(`${id}-uplink-${i}`);
@@ -694,11 +733,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             id,
             name: (newOLTConfig as any).modelName
                 ? `${(newOLTConfig as any).modelName} ${localPOP.olts.length + 1}`
-                : `${t(`type_${type?.toLowerCase() || 'olt'}`)} ${localPOP.olts.length + 1}`,
+                : `${t('type_olt') || 'OLT'} ${localPOP.olts.length + 1}`,
             ports: totalPorts,
             portIds,
             status: 'PLANNED',
-            type: type || 'OLT',
+            type: 'OLT',
             uplinkPorts: numUplinks,
             uplinkPortIds,
             structure: {
@@ -922,6 +961,228 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         setShowClearConfirm(false);
     };
 
+    // --- Active Ethernet Equipment (Switch / Router / Server / Other) ---
+
+    const handleOpenAddActive = () => {
+        const w = 380;
+        const h = 360;
+        const containerW = containerRef.current?.clientWidth || window.innerWidth;
+        const containerH = containerRef.current?.clientHeight || window.innerHeight;
+        setActiveModalPos({ x: (containerW - w) / 2, y: (containerH - h) / 2 });
+        setNewActiveConfig({ type: 'SWITCH', portCount: 8, name: '' });
+        setShowAddActiveModal(true);
+    };
+
+    const defaultNameForType = (type: ActiveEquipmentType): string => {
+        const count = (localPOP.switches || []).filter(s => (s.type ?? 'SWITCH') === type).length + 1;
+        const label: Record<ActiveEquipmentType, string> = {
+            SWITCH: 'Switch',
+            ROUTER: 'Roteador',
+            SERVER: 'Servidor',
+            OTHER: 'Ativo',
+        };
+        return `${label[type]} ${count}`;
+    };
+
+    const handleAddActive = () => {
+        const { type, portCount, name } = newActiveConfig;
+        const id = `switch-${Date.now()}`;
+        const finalPortCount = Math.max(1, portCount);
+        // Usamos o prefixo 'swp-' em cada port ID pra que o DIOUnit reconheça a
+        // conexão e renderize a porta do DIO como ocupada (ver DIOUnit.tsx).
+        const ports: SwitchPort[] = Array.from({ length: finalPortCount }, (_, i) => ({
+            id: `swp-${id}-${i + 1}`,
+            label: `P${i + 1}`,
+        }));
+        const newActive: SwitchData = {
+            id,
+            name: (name && name.trim()) ? name.trim() : defaultNameForType(type),
+            portCount: finalPortCount,
+            ports,
+            status: 'PLANNED',
+            type,
+        };
+
+        const containerW = containerRef.current?.clientWidth || 800;
+        const containerH = containerRef.current?.clientHeight || 600;
+        const centerX = (-viewState.x + containerW / 2) / (viewState.zoom || 1);
+        const centerY = (-viewState.y + containerH / 2) / (viewState.zoom || 1);
+        const finalX = isSnapping
+            ? Math.round((isNaN(centerX) ? 100 : centerX) / GRID_SIZE) * GRID_SIZE
+            : (isNaN(centerX) ? 100 : centerX);
+        const finalY = isSnapping
+            ? Math.round((isNaN(centerY) ? 100 : centerY) / GRID_SIZE) * GRID_SIZE
+            : (isNaN(centerY) ? 100 : centerY);
+
+        setLocalPOP(prev => ({
+            ...prev,
+            switches: [...(prev.switches || []), newActive],
+            layout: { ...prev.layout, [id]: { x: finalX, y: finalY, rotation: 0 } },
+        }));
+        setShowAddActiveModal(false);
+        setEditingSwitchPortId(null);
+        setEditingSwitchId(id);
+    };
+
+    const handleSaveSwitch = (updated: SwitchData) => {
+        setLocalPOP(prev => {
+            const prevSwitch = (prev.switches || []).find(s => s.id === updated.id);
+            // Aplica o updated. Depois, propaga direct links mutualmente.
+            let switches = (prev.switches || []).map(s => (s.id === updated.id ? updated : s));
+
+            // 1) DIRECT LINKS — sincroniza mutualidade entre peers.
+            //    a) Para cada port no updated que TEM directLink, escreve o reverso no peer.
+            //    b) Para cada port no prevSwitch que TINHA directLink mas updated não tem,
+            //       remove o reverso do peer anterior.
+            type RevOp = { switchId: string; portId: string; remove: boolean; peer?: DirectLinkPair };
+            interface DirectLinkPair { peerSwitchId: string; peerPortId: string }
+            const ops: RevOp[] = [];
+
+            for (const port of updated.ports) {
+                const prevPort = prevSwitch?.ports.find(p => p.id === port.id);
+                const hadLink = prevPort?.directLink;
+                const hasLink = port.directLink;
+                const changed = JSON.stringify(hadLink) !== JSON.stringify(hasLink);
+                if (!changed) continue;
+
+                // Só propaga mutualmente quando o peer é OUTRO switch — OLT não
+                // armazena directLink (a conexão vive só em FiberConnection).
+                const hadKind = hadLink?.peerKind ?? 'switch';
+                const hasKind = hasLink?.peerKind ?? 'switch';
+
+                if (hadLink && hadKind === 'switch') {
+                    ops.push({
+                        switchId: hadLink.peerSwitchId,
+                        portId: hadLink.peerPortId,
+                        remove: true,
+                    });
+                }
+                if (hasLink && hasKind === 'switch') {
+                    ops.push({
+                        switchId: hasLink.peerSwitchId,
+                        portId: hasLink.peerPortId,
+                        remove: false,
+                        peer: { peerSwitchId: updated.id, peerPortId: port.id },
+                    });
+                }
+            }
+
+            // Aplica as operações nas switches peers
+            for (const op of ops) {
+                const idx = switches.findIndex(s => s.id === op.switchId);
+                if (idx < 0) continue;
+                const peerSwitch = switches[idx];
+                const updatedPorts = peerSwitch.ports.map(p => {
+                    if (p.id !== op.portId) return p;
+                    if (op.remove) {
+                        const { directLink, ...rest } = p;
+                        return rest;
+                    }
+                    return {
+                        ...p,
+                        directLink: op.peer,
+                        // Se estava alocado em DIO, limpa — direct e DIO são mutuamente exclusivos
+                        allocation: undefined,
+                    };
+                });
+                switches[idx] = { ...peerSwitch, ports: updatedPorts };
+            }
+
+            // 2) FIBER CONNECTIONS — recomputa TUDO relacionado a switches (DIO + direct)
+            //    Coleta todos os port IDs de switches afetados (o updated + peers mutados)
+            const affectedSwitchIds = new Set<string>([updated.id, ...ops.map(o => o.switchId)]);
+            const affectedPortIds = new Set<string>();
+            for (const s of switches) {
+                if (affectedSwitchIds.has(s.id)) {
+                    for (const p of s.ports) affectedPortIds.add(p.id);
+                }
+            }
+
+            const filtered = prev.connections.filter(c =>
+                !affectedPortIds.has(c.sourceId) && !affectedPortIds.has(c.targetId)
+            );
+
+            const fresh: FiberConnection[] = [];
+            for (const sw of switches) {
+                if (!affectedSwitchIds.has(sw.id)) continue;
+                for (const port of sw.ports) {
+                    // DIO mode
+                    const a = port.allocation;
+                    if (a?.txDioPortId) {
+                        fresh.push({
+                            id: `sw-conn-${port.id}-tx`,
+                            sourceId: port.id,
+                            targetId: a.txDioPortId,
+                            color: '#0ea5e9',
+                        });
+                        if (a.rxDioPortId && a.rxDioPortId !== a.txDioPortId) {
+                            fresh.push({
+                                id: `sw-conn-${port.id}-rx`,
+                                sourceId: port.id,
+                                targetId: a.rxDioPortId,
+                                color: '#0ea5e9',
+                            });
+                        }
+                    }
+                    // Direct mode — cria FiberConnection entre switch port e peer port.
+                    // Pra switch↔switch, dedupe pelo menor ID (só um lado cria).
+                    // Pra switch↔OLT uplink, sempre cria do lado do switch
+                    // (OLT não tem directLink próprio, então não duplica).
+                    const d = port.directLink;
+                    if (d && d.peerSwitchId && d.peerPortId) {
+                        const kind = d.peerKind ?? 'switch';
+                        const shouldCreate = kind === 'olt' || port.id < d.peerPortId;
+                        if (shouldCreate) {
+                            fresh.push({
+                                id: `sw-direct-${port.id}`,
+                                sourceId: port.id,
+                                targetId: d.peerPortId,
+                                color: '#38bdf8',
+                            });
+                        }
+                    }
+                }
+            }
+
+            return { ...prev, switches, connections: [...filtered, ...fresh] };
+        });
+        setEditingSwitchId(null);
+    };
+
+    const handleDeleteSwitch = (id: string) => {
+        setLocalPOP(prev => {
+            const sw = (prev.switches || []).find(s => s.id === id);
+            const switchPortIds = new Set(sw?.ports.map(p => p.id) ?? []);
+
+            // 1) Remove o switch do array
+            // 2) Varre OUTROS switches e limpa directLink que apontava pra este
+            //    (evita referências órfãs pro peer deletado)
+            // 3) Remove FiberConnections que envolviam portas deste switch
+            const remaining = (prev.switches || [])
+                .filter(s => s.id !== id)
+                .map(s => {
+                    let touched = false;
+                    const ports = s.ports.map(p => {
+                        if (p.directLink?.peerSwitchId === id) {
+                            touched = true;
+                            const { directLink, ...rest } = p;
+                            return rest;
+                        }
+                        return p;
+                    });
+                    return touched ? { ...s, ports } : s;
+                });
+
+            return {
+                ...prev,
+                switches: remaining,
+                connections: prev.connections.filter(c =>
+                    !switchPortIds.has(c.sourceId) && !switchPortIds.has(c.targetId)
+                ),
+            };
+        });
+    };
+
     const confirmDeleteEquipment = () => {
         if (!itemToDelete) return;
 
@@ -929,20 +1190,60 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
             setLocalPOP(prev => {
                 const o = prev.olts.find(x => x.id === itemToDelete.id);
                 if (!o) return prev;
+                // Coleta todas as portas da OLT (GPON + uplinks) pra limpar referências cruzadas
+                const deletedPortIds = new Set<string>([
+                    ...(o.portIds || []),
+                    ...(o.uplinkPortIds || []),
+                ]);
+                // Switch ports podem ter directLink.peerKind='olt' apontando pra uplink desta OLT — limpar
+                const switches = (prev.switches || []).map(sw => {
+                    let touched = false;
+                    const ports = sw.ports.map(p => {
+                        if (p.directLink
+                            && p.directLink.peerKind === 'olt'
+                            && p.directLink.peerSwitchId === itemToDelete.id) {
+                            touched = true;
+                            const { directLink, ...rest } = p;
+                            return rest;
+                        }
+                        return p;
+                    });
+                    return touched ? { ...sw, ports } : sw;
+                });
                 return {
                     ...prev,
                     olts: prev.olts.filter(x => x.id !== itemToDelete.id),
-                    connections: prev.connections.filter(c => !o.portIds.includes(c.sourceId) && !o.portIds.includes(c.targetId))
+                    switches,
+                    connections: prev.connections.filter(c =>
+                        !deletedPortIds.has(c.sourceId) && !deletedPortIds.has(c.targetId)
+                    )
                 };
             });
         } else {
             setLocalPOP(prev => {
                 const d = prev.dios.find(x => x.id === itemToDelete.id);
                 if (!d) return prev;
+                const deletedPortIds = new Set<string>(d.portIds || []);
+                // Switch ports com allocation.dioId === deleted DIO → limpar (fica órfão senão)
+                const switches = (prev.switches || []).map(sw => {
+                    let touched = false;
+                    const ports = sw.ports.map(p => {
+                        if (p.allocation?.dioId === itemToDelete.id) {
+                            touched = true;
+                            const { allocation, ...rest } = p;
+                            return rest;
+                        }
+                        return p;
+                    });
+                    return touched ? { ...sw, ports } : sw;
+                });
                 return {
                     ...prev,
                     dios: prev.dios.filter(x => x.id !== itemToDelete.id),
-                    connections: prev.connections.filter(c => !d.portIds.includes(c.sourceId) && !d.portIds.includes(c.targetId))
+                    switches,
+                    connections: prev.connections.filter(c =>
+                        !deletedPortIds.has(c.sourceId) && !deletedPortIds.has(c.targetId)
+                    )
                 };
             });
         }
@@ -1028,27 +1329,52 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
         setSpliceDioId(id);
     }, []);
 
-    // Helper: Get connection info for a port (used for tooltips)
+    // Helper: Get connection info for a port (used for tooltips).
+    // Resolve o OTHER END da FiberConnection pra um rótulo legível por tipo:
+    //   - OLT (porta GPON ou uplink) → "NomeOLT (s1-p3)" / "NomeOLT (uplink-1)"
+    //   - DIO                         → "NomeDIO (P5)"
+    //   - Switch/Router/etc           → "NomeSwitch (P1)"
+    //   - Fibra de cabo               → "NomeCabo · fibra N"
+    //   - fallback                    → undefined (deixa o caller decidir)
     const getPortConnectionInfo = useCallback((portId: string): string | undefined => {
         const conn = localPOP.connections.find(c => c.sourceId === portId || c.targetId === portId);
         if (!conn) return undefined;
         const otherEnd = conn.sourceId === portId ? conn.targetId : conn.sourceId;
 
-        // Try to find the equipment name
+        // OLT (GPON ports ou uplinks)
         for (const olt of localPOP.olts) {
-            if (olt.portIds?.includes(otherEnd) || olt.uplinkPortIds?.includes(otherEnd)) {
-                const portLabel = otherEnd.split('-').slice(-2).join('-'); // e.g. "s1-p3"
+            if (olt.portIds?.includes(otherEnd)) {
+                const portLabel = otherEnd.split('-').slice(-2).join('-');
                 return `${olt.name} (${portLabel})`;
             }
+            if (olt.uplinkPortIds?.includes(otherEnd)) {
+                const idx = olt.uplinkPortIds.indexOf(otherEnd) + 1;
+                return `${olt.name} (uplink ${idx})`;
+            }
         }
+        // DIO
         for (const dio of localPOP.dios) {
             if (dio.portIds?.includes(otherEnd)) {
                 const idx = dio.portIds.indexOf(otherEnd) + 1;
                 return `${dio.name} (P${idx})`;
             }
         }
-        return otherEnd;
-    }, [localPOP.connections, localPOP.olts, localPOP.dios]);
+        // Switch/Router/Server/Other
+        for (const sw of localPOP.switches || []) {
+            const port = sw.ports.find(p => p.id === otherEnd);
+            if (port) {
+                return `${sw.name} (${port.label || `P${sw.ports.indexOf(port) + 1}`})`;
+            }
+        }
+        // Fibra de cabo (splice): cableId-fiber-N
+        const fiberMatch = otherEnd.match(/^(.+)-fiber-(\d+)$/);
+        if (fiberMatch) {
+            const cable = uniqueIncomingCables.find(c => c.id === fiberMatch[1]);
+            const cableName = cable?.name ?? 'cabo';
+            return `${cableName} · fibra ${Number(fiberMatch[2]) + 1}`;
+        }
+        return undefined;
+    }, [localPOP.connections, localPOP.olts, localPOP.dios, localPOP.switches, uniqueIncomingCables]);
 
     const handlePortClickRef = useRef(handlePortClick);
     handlePortClickRef.current = handlePortClick;
@@ -1140,6 +1466,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                 <PopToolbar
                     onAddOLT={handleOpenAddOLT}
                     onAddDIO={handleOpenAddDIO}
+                    onAddSwitch={canEdit ? handleOpenAddActive : undefined}
                     onViewModeChange={handleViewModeChange}
                     viewMode={viewMode}
                     onClearAll={handleShowClearConfirm}
@@ -1149,17 +1476,19 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     userRole={userRole}
                     stats={useMemo(() => {
                         const totalPorts = localPOP.olts.reduce((a, o) => a + (o.portIds?.length || 0) + (o.uplinkPortIds?.length || 0), 0)
-                            + localPOP.dios.reduce((a, d) => a + (d.portIds?.length || 0), 0);
+                            + localPOP.dios.reduce((a, d) => a + (d.portIds?.length || 0), 0)
+                            + (localPOP.switches || []).reduce((a, s) => a + s.ports.length, 0);
                         const connectedPorts = new Set<string>();
                         localPOP.connections.forEach(c => { connectedPorts.add(c.sourceId); connectedPorts.add(c.targetId); });
                         return {
                             olts: localPOP.olts.length,
                             dios: localPOP.dios.length,
+                            switches: (localPOP.switches || []).length,
                             connections: localPOP.connections.length,
                             totalPorts,
                             usedPorts: connectedPorts.size
                         };
-                    }, [localPOP.olts, localPOP.dios, localPOP.connections])}
+                    }, [localPOP.olts, localPOP.dios, localPOP.switches, localPOP.connections])}
                     readOnly={readOnly}
                     onGoToParentProject={onGoToParentProject}
                 />
@@ -1357,9 +1686,44 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                                 );
                             })}
 
+                            {/* Switch Units */}
+                            {(localPOP.switches || []).map(sw => {
+                                const layout = getLayout(sw.id);
+                                const effectivePops = (allPops ?? [pop]).map(p => p.id === localPOP.id ? localPOP : p);
+                                const ledStates = computeSwitchPortLedStates({
+                                    sw,
+                                    currentPop: localPOP,
+                                    allPops: effectivePops,
+                                    cables: uniqueIncomingCables,
+                                    allCtos,
+                                    // Catálogo é carregado sob demanda no SwitchEditor — LEDs no canvas
+                                    // vão usar valores estimados até a porta ser editada/salva.
+                                });
+                                return (
+                                    <SwitchUnit
+                                        key={sw.id}
+                                        sw={sw}
+                                        position={{ x: layout.x, y: layout.y }}
+                                        width={EQUIPMENT_WIDTH}
+                                        connections={localPOP.connections}
+                                        hoveredPortId={hoveredPortId}
+                                        ledStates={ledStates}
+                                        onDragStart={handleElementDragStart}
+                                        onEdit={(e, s) => { e.stopPropagation(); setEditingSwitchPortId(null); setEditingSwitchId(s.id); }}
+                                        onDelete={(e, s) => { e.stopPropagation(); handleDeleteSwitch(s.id); }}
+                                        onPortClick={(e, portId) => {
+                                            e.stopPropagation();
+                                            setEditingSwitchPortId(portId);
+                                            setEditingSwitchId(sw.id);
+                                        }}
+                                        onPortHover={setHoveredPortId}
+                                        getPortConnectionInfo={getPortConnectionInfo}
+                                    />
+                                );
+                            })}
+
                         </div>
                     )}
-
 
                 </div> {/* End Canvas */}
 
@@ -1379,6 +1743,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     setNewDIOConfig={setNewDIOConfig}
                     onAddDIO={handleAddDIO}
                     onCloseDIO={() => setShowAddDIOModal(false)}
+
+                    showAddActive={showAddActiveModal}
+                    activeModalPos={activeModalPos}
+                    newActiveConfig={newActiveConfig}
+                    setNewActiveConfig={setNewActiveConfig}
+                    onAddActive={handleAddActive}
+                    onCloseActive={() => setShowAddActiveModal(false)}
                 />
 
                 <EditEquipmentModals
@@ -1406,6 +1777,32 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, onClo
                     handleToggleCableLink={handleToggleCableLink}
                     t={t}
                 />
+
+                {/* SWITCH EDITOR MODAL */}
+                {editingSwitchId && (() => {
+                    const sw = (localPOP.switches || []).find(s => s.id === editingSwitchId);
+                    if (!sw) return null;
+                    // Substitui o POP atual pela versão local (edições não salvas) no array completo
+                    // pra o trace de peer refletir o estado real da UI.
+                    const effectivePops = (allPops ?? [pop]).map(p => p.id === localPOP.id ? localPOP : p);
+                    return (
+                        <SwitchEditor
+                            sw={sw}
+                            allSwitches={localPOP.switches || []}
+                            olts={localPOP.olts}
+                            dios={localPOP.dios}
+                            cables={uniqueIncomingCables}
+                            connections={localPOP.connections}
+                            allPops={effectivePops}
+                            allCtos={allCtos}
+                            currentPopId={localPOP.id}
+                            onClose={() => { setEditingSwitchId(null); setEditingSwitchPortId(null); }}
+                            onSave={handleSaveSwitch}
+                            readOnly={!canEdit}
+                            initialPortId={editingSwitchPortId ?? undefined}
+                        />
+                    );
+                })()}
 
                 {/* SPLICE EDITOR MODAL */}
                 {spliceDioId && (() => {

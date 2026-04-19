@@ -238,6 +238,7 @@ export const getProject = async (req: Request, res: Response) => {
                 coordinates: { lat: p.lat, lng: p.lng },
                 olts: p.olts || [],
                 dios: p.dios || [],
+                switches: p.switches || [],
                 fusions: p.fusions || [],
                 connections: p.connections || [],
                 inputCableIds: p.inputCableIds,
@@ -318,7 +319,7 @@ export const getProject = async (req: Request, res: Response) => {
                     pops: parent.pops ? (parent.pops as any[]).map((p: any) => ({
                         id: p.id, name: p.name, status: p.status,
                         coordinates: { lat: p.lat, lng: p.lng },
-                        olts: p.olts || [], dios: p.dios || [],
+                        olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
                         fusions: p.fusions || [], connections: p.connections || [],
                         inputCableIds: p.inputCableIds, layout: p.layout || {},
                         color: p.color, size: p.size, poleId: p.poleId || null
@@ -882,6 +883,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             lng: p.coordinates.lng,
                             olts: p.olts || [],
                             dios: p.dios || [],
+                            switches: p.switches || [],
                             fusions: p.fusions || [],
                             connections: p.connections || [],
                             inputCableIds: p.inputCableIds || [],
@@ -901,6 +903,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbP.poleId !== p.poleId ||
                             JSON.stringify(dbP.olts) !== JSON.stringify(p.olts || []) ||
                             JSON.stringify(dbP.dios) !== JSON.stringify(p.dios || []) ||
+                            JSON.stringify(dbP.switches) !== JSON.stringify(p.switches || []) ||
                             JSON.stringify(dbP.fusions) !== JSON.stringify(p.fusions || []) ||
                             JSON.stringify(dbP.connections) !== JSON.stringify(p.connections || []) ||
                             JSON.stringify(dbP.inputCableIds) !== JSON.stringify(p.inputCableIds || []) ||
@@ -924,6 +927,7 @@ export const syncProject = async (req: Request, res: Response) => {
                     };
                     if (p.olts !== undefined) data.olts = p.olts;
                     if (p.dios !== undefined) data.dios = p.dios;
+                    if (p.switches !== undefined) data.switches = p.switches;
                     if (p.fusions !== undefined) data.fusions = p.fusions;
                     if (p.connections !== undefined) data.connections = p.connections;
                     if (p.inputCableIds !== undefined) data.inputCableIds = p.inputCableIds;
@@ -1215,6 +1219,7 @@ export const updatePOP = async (req: Request, res: Response) => {
                 lng: pop.coordinates?.lng ?? pop.lng,
                 olts: pop.olts || [],
                 dios: pop.dios || [],
+                switches: pop.switches || [],
                 fusions: pop.fusions || [],
                 connections: pop.connections || [],
                 inputCableIds: pop.inputCableIds || [],
@@ -1273,7 +1278,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
                 connections: c.connections || [], inputCableIds: c.inputCableIds || [],
             })),
             pops: project.pops.map((p: any) => ({
-                id: p.id, name: p.name, olts: p.olts || [], dios: p.dios || [],
+                id: p.id, name: p.name, olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
                 fusions: p.fusions || [], connections: p.connections || [], inputCableIds: p.inputCableIds || [],
             })),
             cables: project.cables.map((c: any) => ({
@@ -1449,7 +1454,7 @@ export const getParentProjectNetwork = async (req: Request, res: Response) => {
             network.pops = (parent.pops as any[]).map((p: any) => ({
                 id: p.id, name: p.name, status: p.status,
                 coordinates: { lat: p.lat, lng: p.lng },
-                olts: p.olts || [], dios: p.dios || [],
+                olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
                 fusions: p.fusions || [], connections: p.connections || [],
                 inputCableIds: p.inputCableIds, layout: p.layout || {},
                 color: p.color, size: p.size, poleId: p.poleId || null

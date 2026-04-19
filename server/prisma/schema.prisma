@@ -75,6 +75,7 @@ model Company {
   catalogBoxes              CatalogBox[]
   catalogCables             CatalogCable[]
   catalogFusions            CatalogFusion[]
+  catalogGbics              CatalogGbic[]
   catalogOLTs               CatalogOLT[]
   catalogPoles              CatalogPole[]
   catalogSplitters          CatalogSplitter[]
@@ -214,6 +215,7 @@ model Pop {
   lng           Float
   olts          Json?           @default("[]")
   dios          Json?           @default("[]")
+  switches      Json?           @default("[]")
   fusions       Json?           @default("[]")
   connections   Json?           @default("[]")
   inputCableIds String[]        @default([]) @map("input_cable_ids")
@@ -598,6 +600,51 @@ model TemplateOLT {
   type         String   @default("OLT")
 
   @@map("template_olts")
+}
+
+model CatalogGbic {
+  id              String   @id @default(uuid())
+  name            String
+  brand           String?
+  model           String?
+  tipo            String   // SFP, SFP+, SFP28, QSFP+, QSFP28, XFP, GBIC
+  modoFibra       String   @map("modo_fibra") // monomodo, multimodo
+  transmissao    String   // duplex, bidi
+  rateGbps        Float?   @map("rate_gbps")
+  waveTxNm        Int?     @map("wave_tx_nm")
+  waveRxNm        Int?     @map("wave_rx_nm")
+  reachKm         Float?   @map("reach_km")
+  potenciaTx      Float    @map("potencia_tx")         // dBm
+  sensibilidadeRx Float    @map("sensibilidade_rx")    // dBm
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  companyId       String?  @map("company_id")
+  company         Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("catalog_gbics")
+}
+
+model TemplateGbic {
+  id              String   @id @default(uuid())
+  name            String
+  brand           String?
+  model           String?
+  tipo            String
+  modoFibra       String   @map("modo_fibra")
+  transmissao    String
+  rateGbps        Float?   @map("rate_gbps")
+  waveTxNm        Int?     @map("wave_tx_nm")
+  waveRxNm        Int?     @map("wave_rx_nm")
+  reachKm         Float?   @map("reach_km")
+  potenciaTx      Float    @map("potencia_tx")
+  sensibilidadeRx Float    @map("sensibilidade_rx")
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("template_gbics")
 }
 
 model DemoVideo {
