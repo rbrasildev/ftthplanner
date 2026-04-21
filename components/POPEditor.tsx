@@ -405,7 +405,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
         if (!configuringOltPortId) return;
         setLocalPOP(prev => ({
             ...prev,
-            connections: prev.connections.filter(c => c.sourceId !== configuringOltPortId && c.targetId !== configuringOltPortId)
+            connections: prev.connections.filter(c => {
+                const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
+                if (isFiber) return true;
+                return c.sourceId !== configuringOltPortId && c.targetId !== configuringOltPortId;
+            })
         }));
         setConfiguringOltPortId(null);
     };
