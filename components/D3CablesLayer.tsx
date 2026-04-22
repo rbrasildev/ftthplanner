@@ -1,8 +1,7 @@
-
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
-import * as d3 from 'd3';
 import L from 'leaflet';
+import RBush from 'rbush';
 import { CableData, CABLE_STATUS_COLORS } from '../types';
 
 interface D3CablesLayerProps {
@@ -26,8 +25,42 @@ interface D3CablesLayerProps {
 }
 
 // LOD Thresholds
-const LOD_SIMPLIFY_THRESHOLD_ZOOM = 14; // Below this zoom, simplify geometry
-const LOD_HIDE_DASHED_ZOOM = 12; // Below this zoom, simplify styling (no dashes)
+const LOD_SIMPLIFY_THRESHOLD_ZOOM = 14;
+const LOD_HIDE_DASHED_ZOOM = 12;
+const HIT_TOLERANCE_PX = 8;
+
+interface HitEntry {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    cableId: string;
+    segments: Array<{ x1: number; y1: number; x2: number; y2: number }>;
+}
+
+class CableRTree extends RBush<HitEntry> {}
+
+const distanceToSegment = (
+    px: number, py: number,
+    x1: number, y1: number,
+    x2: number, y2: number
+): number => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) {
+        const ex = px - x1;
+        const ey = py - y1;
+        return Math.sqrt(ex * ex + ey * ey);
+    }
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const cx = x1 + t * dx;
+    const cy = y1 + t * dy;
+    const ex = px - cx;
+    const ey = py - cy;
+    return Math.sqrt(ex * ex + ey * ey);
+};
 
 export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     cables,
@@ -39,15 +72,15 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     onDoubleClick,
     onContextMenu,
     mode,
-    showLabels,
-    userRole,
-    cableStatusColorMap
+    cableStatusColorMap,
 }) => {
     const map = useMap();
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const gRef = useRef<SVGGElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const treeRef = useRef<CableRTree>(new CableRTree());
+    const cablesByIdRef = useRef<Map<string, CableData>>(new Map());
+    const hoveredCableIdRef = useRef<string | null>(null);
 
-    // Stable refs for callbacks to avoid re-running the main useEffect on callback changes
+    // Stable refs for callbacks
     const onClickRef = useRef(onClick);
     const onDoubleClickRef = useRef(onDoubleClick);
     const onContextMenuRef = useRef(onContextMenu);
@@ -57,287 +90,363 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     useEffect(() => { onContextMenuRef.current = onContextMenu; }, [onContextMenu]);
     useEffect(() => { modeRef.current = mode; }, [mode]);
 
-    // Cache for simplified geometries to avoid re-calculating on every render
-    // Key: cableId-zoomBucket
-    const geometryCache = useRef<Map<string, any[]>>(new Map());
+    // Cache for simplified geometries (keyed by cableId-zoomBucket).
+    const geometryCache = useRef<Map<string, Array<{ lat: number; lng: number }>>>(new Map());
 
-    // Invalidate cache when cables change (edit, delete, project switch).
-    // Without this, edited cables render stale geometry and deleted cables leak forever.
+    // Invalidate cache when cables change.
     useEffect(() => {
         geometryCache.current.clear();
     }, [cables]);
 
-    // Effect: Lifecycle (Create/Destroy SVG)
+    // Keep id->cable lookup synced for hit-test.
+    useEffect(() => {
+        const m = new Map<string, CableData>();
+        for (const c of cables) m.set(c.id, c);
+        cablesByIdRef.current = m;
+    }, [cables]);
+
+    // Lifecycle: create <canvas> inside the Leaflet pane.
     useEffect(() => {
         if (!visible) return;
 
         let pane = map.getPane('d3-visual');
         if (!pane) {
             pane = map.createPane('d3-visual');
-            pane.style.pointerEvents = 'none';
         }
         pane.style.zIndex = '500';
+        // Pane itself must be click-through; canvas below ignores events (we use map.on for hit-test).
+        pane.style.pointerEvents = 'none';
 
-        if (!svgRef.current) {
-            const svg = d3.select(pane).append("svg").attr("class", "leaflet-zoom-hide");
-            svg.style("pointer-events", "none");
-            svg.style("position", "absolute");
-            svg.style("top", "0");
-            svg.style("left", "0");
+        const canvas = document.createElement('canvas');
+        canvas.className = 'leaflet-zoom-hide';
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.pointerEvents = 'none';
+        pane.appendChild(canvas);
 
-            svgRef.current = svg.node();
-            gRef.current = svg.append("g").attr("class", "leaflet-zoom-hide").node();
-        }
+        canvasRef.current = canvas;
 
         return () => {
-            if (svgRef.current) {
-                d3.select(svgRef.current).remove();
-                svgRef.current = null;
-                gRef.current = null;
-            }
+            if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+            canvasRef.current = null;
         };
     }, [map, visible]);
 
-    // Helper: Geometry Simplification (Simple Point Reduction)
-    const getRenderCoordinates = (cable: CableData, currentZoom: number) => {
-        // Full detail if zoomed in
-        if (currentZoom >= LOD_SIMPLIFY_THRESHOLD_ZOOM) {
-            return cable.coordinates;
-        }
-
-        // Bucket zoom into step ranges so cache doesn't thrash
-        let step = 1;
-        if (currentZoom < 10) step = 15;
-        else if (currentZoom < 12) step = 8;
-        else if (currentZoom < 14) step = 3;
-
-        const cacheKey = `${cable.id}-step${step}`;
-        if (geometryCache.current.has(cacheKey)) {
-            return geometryCache.current.get(cacheKey);
-        }
-
-        const coords = cable.coordinates;
-        if (coords.length <= 2 || step === 1) return coords;
-
-        const simplified = [coords[0]];
-        for (let i = 1; i < coords.length - 1; i += step) {
-            simplified.push(coords[i]);
-        }
-        simplified.push(coords[coords.length - 1]);
-
-        geometryCache.current.set(cacheKey, simplified);
-        return simplified;
-    };
-
-
-    // Effect: Render & Update
+    // Draw effect: render cables to canvas + rebuild hit-test R-tree.
     useEffect(() => {
-        if (!visible || !svgRef.current || !gRef.current) return;
+        if (!visible || !canvasRef.current) return;
 
-        const svg = d3.select(svgRef.current);
-        const g = d3.select(gRef.current);
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-        const projectPoint = function (lat: number, lng: number) {
-            return map.latLngToLayerPoint(new L.LatLng(lat, lng));
-        }
+        const getRenderCoordinates = (cable: CableData, currentZoom: number): Array<{ lat: number; lng: number }> => {
+            if (currentZoom >= LOD_SIMPLIFY_THRESHOLD_ZOOM) return cable.coordinates;
 
-        const update = () => {
-            if (!cables) {
-                g.selectAll('path').remove();
-                return;
-            }
+            let step = 1;
+            if (currentZoom < 10) step = 15;
+            else if (currentZoom < 12) step = 8;
+            else if (currentZoom < 14) step = 3;
 
-            const currentZoom = map.getZoom();
+            const cacheKey = `${cable.id}-step${step}`;
+            const cached = geometryCache.current.get(cacheKey);
+            if (cached) return cached;
 
-            // 1. Update SVG Dimensions & Position
-            const mapSize = map.getSize();
-            const mapTopLeft = map.containerPointToLayerPoint([0, 0]);
+            const coords = cable.coordinates;
+            if (coords.length <= 2 || step === 1) return coords;
 
-            svg
-                .style('transform', `translate3d(${mapTopLeft.x}px, ${mapTopLeft.y}px, 0px)`)
-                .attr('width', mapSize.x)
-                .attr('height', mapSize.y);
+            const simplified = [coords[0]];
+            for (let i = 1; i < coords.length - 1; i += step) simplified.push(coords[i]);
+            simplified.push(coords[coords.length - 1]);
 
-            // 2. Path Generator
-            const localPathGenerator = d3.line<any>()
-                .x(d => d.x - mapTopLeft.x)
-                .y(d => d.y - mapTopLeft.y)
-                .curve(d3.curveLinear); // Linear is faster than basis/cardinal
-
-            // Helper to get projected points with clipping
-            const getProjectedPoints = (d: CableData) => {
-                const coords = getRenderCoordinates(d, currentZoom);
-                if (!coords || coords.length < 2) return null;
-
-                let points = coords.map(c => projectPoint(c.lat, c.lng));
-
-                // Smart Clipping: Shorten line slightly if connected to a Box (CTO/POP)
-                const radius = 10; // Box radius in px
-
-                // Start point clipping
-                if (d.fromNodeId && boxIds.has(d.fromNodeId)) {
-                    const p1 = points[0];
-                    const p2 = points[1];
-                    const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                    if (dist > radius) {
-                        const ratio = radius / dist;
-                        points[0] = {
-                            x: p1.x + (p2.x - p1.x) * ratio,
-                            y: p1.y + (p2.y - p1.y) * ratio
-                        } as any;
-                    }
-                }
-
-                // End point clipping
-                if (d.toNodeId && boxIds.has(d.toNodeId)) {
-                    const p1 = points[points.length - 1];
-                    const p2 = points[points.length - 2];
-                    const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                    if (dist > radius) {
-                        const ratio = radius / dist;
-                        points[points.length - 1] = {
-                            x: p1.x + (p2.x - p1.x) * ratio,
-                            y: p1.y + (p2.y - p1.y) * ratio
-                        } as any;
-                    }
-                }
-
-                return points;
-            };
-
-            // 3. Data Join - Visual Paths
-
-            // --- VISUAL LAYER ---
-            const paths = g.selectAll<SVGPathElement, CableData>('path.cable-path')
-                .data(cables, (d: any) => d.id);
-
-            // EXIT
-            paths.exit().remove();
-
-            // ENTER
-            const pathsEnter = paths.enter().append('path')
-                .attr('class', 'cable-path')
-                .attr('fill', 'none')
-                .attr('stroke-linecap', 'round')
-                .attr('pointer-events', 'none');
-
-            // UPDATE + ENTER (Merge)
-            pathsEnter.merge(paths)
-                .attr('d', (d: CableData) => {
-                    const points = getProjectedPoints(d);
-                    return points ? localPathGenerator(points) : null;
-                })
-                .attr('stroke', (d: any) => {
-                    if (litCableIds.has(d.id)) return '#ef4444';
-                    if (highlightedCableId === d.id) return '#22c55e';
-                    // Fase 4: cor baseada no pior status de switch link atravessando o cabo.
-                    const opticalColor = cableStatusColorMap?.get(d.id);
-                    if (opticalColor) return opticalColor;
-                    if (d.status === 'NOT_DEPLOYED') return CABLE_STATUS_COLORS['NOT_DEPLOYED'];
-                    return d.color || CABLE_STATUS_COLORS['DEPLOYED'];
-                })
-                .attr('stroke-width', (d: any) => {
-                    const isLit = litCableIds.has(d.id);
-                    const isHigh = highlightedCableId === d.id;
-                    const baseWidth = d.width || 2.5;
-
-                    if (isLit) return currentZoom < 14 ? 2.5 : Math.max(4, baseWidth + 1);
-                    if (isHigh) return currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
-
-                    if (currentZoom < 12) return Math.max(1, baseWidth * 0.4);
-                    if (currentZoom < 14) return Math.max(1.5, baseWidth * 0.6);
-                    if (currentZoom < 16) return Math.max(2, baseWidth * 0.8);
-                    return baseWidth;
-                })
-                .attr('stroke-dasharray', (d: any) => {
-                    if (currentZoom < LOD_HIDE_DASHED_ZOOM) return null;
-                    if (d.status === 'NOT_DEPLOYED') return '5, 5';
-                    return null;
-                })
-                .attr('opacity', (d: any) => {
-                    if (litCableIds.has(d.id)) return 1;
-                    return 0.8;
-                });
-
-            // --- HIT AREA LAYER (Transparent, wider) ---
-            const hitPaths = g.selectAll<SVGPathElement, CableData>('path.cable-hit')
-                .data(cables, (d: any) => d.id);
-
-            hitPaths.exit().remove();
-
-            // ENTER: Create new hit paths with event handlers (bound via refs for stability)
-            const hitPathsEnter = hitPaths.enter().append('path')
-                .attr('class', 'cable-hit')
-                .attr('fill', 'none')
-                .attr('stroke', 'rgba(0,0,0,0)')
-                .attr('stroke-linecap', 'round')
-                .style('pointer-events', 'auto')
-                .style('cursor', 'pointer')
-                .on("dblclick", (event, d: any) => {
-                    if (onDoubleClickRef.current) {
-                        const latlng = map.mouseEventToLatLng(event);
-                        const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
-                        onDoubleClickRef.current(leafletEvent, d);
-                        L.DomEvent.stopPropagation(event);
-                    }
-                })
-                .on("click", (event, d) => {
-                    const latlng = map.mouseEventToLatLng(event);
-                    const leafletEvent = { originalEvent: event, latlng: latlng, target: { getLatLng: () => latlng } };
-                    onClickRef.current(leafletEvent, d);
-
-                    const currentMode = modeRef.current || '';
-                    const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(currentMode);
-                    if (currentMode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(event);
-                })
-                .on("contextmenu", (event, d) => {
-                    event.preventDefault();
-                    if (onContextMenuRef.current) {
-                        const latlng = map.mouseEventToLatLng(event);
-                        const leafletEvent = {
-                            originalEvent: event,
-                            latlng: latlng,
-                            target: { getLatLng: () => latlng },
-                            containerPoint: map.mouseEventToContainerPoint(event)
-                        };
-                        onContextMenuRef.current(leafletEvent, d);
-                        if (modeRef.current !== 'ruler') L.DomEvent.stopPropagation(event);
-                    }
-                });
-
-            // UPDATE only: geometry + hit area width (no re-binding events)
-            hitPathsEnter.merge(hitPaths)
-                .attr('d', (d: CableData) => {
-                    const points = getProjectedPoints(d);
-                    return points ? localPathGenerator(points) : null;
-                })
-                .attr('stroke-width', Math.max(10, 20 - (18 - currentZoom) * 2));
+            geometryCache.current.set(cacheKey, simplified);
+            return simplified;
         };
 
-        // Initial Draw
-        update();
+        const draw = () => {
+            const size = map.getSize();
+            const mapTopLeft = map.containerPointToLayerPoint([0, 0]);
+            const dpr = window.devicePixelRatio || 1;
+            const currentZoom = map.getZoom();
 
-        // Deduplicated map event: moveend fires after both pan and zoom
-        // Use a single listener to avoid double-work
-        let updateScheduled = false;
-        const handleUpdate = () => {
-            if (updateScheduled) return;
-            updateScheduled = true;
+            // Track layer origin so content moves with the map during pan (no per-frame redraw).
+            L.DomUtil.setPosition(canvas, mapTopLeft);
+
+            // Resize only when needed (changing canvas size clears it).
+            const targetW = Math.max(1, Math.round(size.x * dpr));
+            const targetH = Math.max(1, Math.round(size.y * dpr));
+            if (canvas.width !== targetW || canvas.height !== targetH) {
+                canvas.width = targetW;
+                canvas.height = targetH;
+                canvas.style.width = `${size.x}px`;
+                canvas.style.height = `${size.y}px`;
+            }
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, size.x, size.y);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const entries: HitEntry[] = [];
+
+            for (const cable of cables) {
+                const coords = getRenderCoordinates(cable, currentZoom);
+                if (!coords || coords.length < 2) continue;
+
+                // Project lat/lng -> layer points.
+                const pts = coords.map(c => map.latLngToLayerPoint([c.lat, c.lng]));
+
+                // Smart clipping: shorten endpoint segments that touch a box (CTO/POP) node.
+                const radius = 10;
+                if (cable.fromNodeId && boxIds.has(cable.fromNodeId) && pts.length >= 2) {
+                    const p1 = pts[0];
+                    const p2 = pts[1];
+                    const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    if (d > radius) {
+                        const r = radius / d;
+                        pts[0] = L.point(p1.x + (p2.x - p1.x) * r, p1.y + (p2.y - p1.y) * r);
+                    }
+                }
+                if (cable.toNodeId && boxIds.has(cable.toNodeId) && pts.length >= 2) {
+                    const p1 = pts[pts.length - 1];
+                    const p2 = pts[pts.length - 2];
+                    const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    if (d > radius) {
+                        const r = radius / d;
+                        pts[pts.length - 1] = L.point(p1.x + (p2.x - p1.x) * r, p1.y + (p2.y - p1.y) * r);
+                    }
+                }
+
+                // Style resolution (preserves prior SVG semantics).
+                const isLit = litCableIds.has(cable.id);
+                const isHigh = highlightedCableId === cable.id;
+                const opticalColor = cableStatusColorMap?.get(cable.id);
+
+                let strokeStyle: string;
+                if (isLit) strokeStyle = '#ef4444';
+                else if (isHigh) strokeStyle = '#22c55e';
+                else if (opticalColor) strokeStyle = opticalColor;
+                else if (cable.status === 'NOT_DEPLOYED') strokeStyle = CABLE_STATUS_COLORS['NOT_DEPLOYED'];
+                else strokeStyle = cable.color || CABLE_STATUS_COLORS['DEPLOYED'];
+
+                const baseWidth = cable.width || 2.5;
+                let lineWidth: number;
+                if (isLit) lineWidth = currentZoom < 14 ? 2.5 : Math.max(4, baseWidth + 1);
+                else if (isHigh) lineWidth = currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
+                else if (currentZoom < 12) lineWidth = Math.max(1, baseWidth * 0.4);
+                else if (currentZoom < 14) lineWidth = Math.max(1.5, baseWidth * 0.6);
+                else if (currentZoom < 16) lineWidth = Math.max(2, baseWidth * 0.8);
+                else lineWidth = baseWidth;
+
+                const dashed = currentZoom >= LOD_HIDE_DASHED_ZOOM && cable.status === 'NOT_DEPLOYED';
+                const alpha = isLit ? 1 : 0.8;
+
+                // Stroke.
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x - mapTopLeft.x, pts[0].y - mapTopLeft.y);
+                for (let i = 1; i < pts.length; i++) {
+                    ctx.lineTo(pts[i].x - mapTopLeft.x, pts[i].y - mapTopLeft.y);
+                }
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = strokeStyle;
+                ctx.lineWidth = lineWidth;
+                if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+                ctx.stroke();
+
+                // Build hit entry (layer coords; identical frame as cursor latLng projection).
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                const segments: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const a = pts[i];
+                    const b = pts[i + 1];
+                    segments.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+                    if (a.x < minX) minX = a.x; if (a.y < minY) minY = a.y;
+                    if (b.x < minX) minX = b.x; if (b.y < minY) minY = b.y;
+                    if (a.x > maxX) maxX = a.x; if (a.y > maxY) maxY = a.y;
+                    if (b.x > maxX) maxX = b.x; if (b.y > maxY) maxY = b.y;
+                }
+                entries.push({
+                    minX: minX - HIT_TOLERANCE_PX,
+                    minY: minY - HIT_TOLERANCE_PX,
+                    maxX: maxX + HIT_TOLERANCE_PX,
+                    maxY: maxY + HIT_TOLERANCE_PX,
+                    cableId: cable.id,
+                    segments,
+                });
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.setLineDash([]);
+
+            const tree = new CableRTree();
+            tree.load(entries);
+            treeRef.current = tree;
+        };
+
+        draw();
+
+        let scheduled = false;
+        const onMove = () => {
+            if (scheduled) return;
+            scheduled = true;
             requestAnimationFrame(() => {
-                updateScheduled = false;
-                update();
+                scheduled = false;
+                draw();
             });
         };
 
-        map.on('moveend', handleUpdate);
-        map.on('viewreset', handleUpdate);
+        map.on('moveend', onMove);
+        map.on('zoomend', onMove);
+        map.on('viewreset', onMove);
+        map.on('resize', onMove);
 
         return () => {
-            map.off('moveend', handleUpdate);
-            map.off('viewreset', handleUpdate);
+            map.off('moveend', onMove);
+            map.off('zoomend', onMove);
+            map.off('viewreset', onMove);
+            map.off('resize', onMove);
+        };
+    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, cableStatusColorMap]);
+
+    // Hit-test + event delegation (cursor, click, dblclick, contextmenu).
+    useEffect(() => {
+        if (!visible) return;
+
+        const hitTest = (containerPoint: L.Point): CableData | null => {
+            const lp = map.containerPointToLayerPoint(containerPoint);
+            const hits = treeRef.current.search({
+                minX: lp.x - HIT_TOLERANCE_PX,
+                minY: lp.y - HIT_TOLERANCE_PX,
+                maxX: lp.x + HIT_TOLERANCE_PX,
+                maxY: lp.y + HIT_TOLERANCE_PX,
+            });
+            if (hits.length === 0) return null;
+
+            let bestId: string | null = null;
+            let bestDist = HIT_TOLERANCE_PX;
+            for (const h of hits) {
+                for (const s of h.segments) {
+                    const d = distanceToSegment(lp.x, lp.y, s.x1, s.y1, s.x2, s.y2);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestId = h.cableId;
+                    }
+                }
+            }
+            return bestId ? cablesByIdRef.current.get(bestId) ?? null : null;
         };
 
-    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, showLabels, userRole, cableStatusColorMap]);
+        const container = map.getContainer();
+
+        // When the event target is a Leaflet marker / popup / interactive SVG / tooltip / control,
+        // the user is interacting with something ABOVE the cable canvas — let it through.
+        // Without this guard, capture-phase interception steals clicks from CTOs, POPs, customers, etc.
+        const INTERACTIVE_SELECTORS = '.leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-popup, .leaflet-tooltip, .leaflet-interactive, .leaflet-control';
+        const isOnInteractiveElement = (target: EventTarget | null): boolean => {
+            if (!target || !(target instanceof Element)) return false;
+            return !!target.closest(INTERACTIVE_SELECTORS);
+        };
+
+        // Hover: no conflict with other listeners, use map.on for simplicity.
+        let rafPending = false;
+        const onMouseMove = (e: L.LeafletMouseEvent) => {
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+                rafPending = false;
+                // Don't override cursor when hovering a marker/control.
+                if (isOnInteractiveElement(e.originalEvent.target)) {
+                    if (hoveredCableIdRef.current !== null) {
+                        hoveredCableIdRef.current = null;
+                        container.style.cursor = '';
+                    }
+                    return;
+                }
+                const cable = hitTest(e.containerPoint);
+                const newId = cable?.id ?? null;
+                if (newId !== hoveredCableIdRef.current) {
+                    hoveredCableIdRef.current = newId;
+                    container.style.cursor = newId ? 'pointer' : '';
+                }
+            });
+        };
+
+        // Click / dblclick / contextmenu: intercept on DOM capture phase so we run
+        // BEFORE Leaflet's own handlers (e.g. MapView's useMapEvents({ contextmenu, click })).
+        // Without this, the cable's right-click menu would lose to the generic map menu.
+        const buildEvent = (e: MouseEvent) => {
+            const containerPoint = map.mouseEventToContainerPoint(e);
+            const latlng = map.mouseEventToLatLng(e);
+            return {
+                originalEvent: e,
+                latlng,
+                target: { getLatLng: () => latlng },
+                containerPoint,
+            };
+        };
+
+        const onClickDom = (e: MouseEvent) => {
+            if (isOnInteractiveElement(e.target)) return;
+            const containerPoint = map.mouseEventToContainerPoint(e);
+            const cable = hitTest(containerPoint);
+            if (!cable) return;
+            if (!onClickRef.current) return;
+
+            onClickRef.current(buildEvent(e), cable);
+
+            const currentMode = modeRef.current || '';
+            const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(currentMode);
+            if (currentMode !== 'ruler' && !isAddMode) {
+                e.stopImmediatePropagation();
+            }
+        };
+
+        const onDblClickDom = (e: MouseEvent) => {
+            if (isOnInteractiveElement(e.target)) return;
+            const containerPoint = map.mouseEventToContainerPoint(e);
+            const cable = hitTest(containerPoint);
+            if (!cable) return;
+            if (!onDoubleClickRef.current) return;
+
+            onDoubleClickRef.current(buildEvent(e), cable);
+
+            // Block Leaflet's doubleClickZoom and any other dblclick consumer.
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        };
+
+        const onContextMenuDom = (e: MouseEvent) => {
+            if (isOnInteractiveElement(e.target)) return;
+            const containerPoint = map.mouseEventToContainerPoint(e);
+            const cable = hitTest(containerPoint);
+            if (!cable) return;
+            if (!onContextMenuRef.current) return;
+
+            // Must run before Leaflet's contextmenu handler to win over MapView's generic menu.
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            onContextMenuRef.current(buildEvent(e), cable);
+        };
+
+        map.on('mousemove', onMouseMove);
+        // Use capture=true so we see the event before Leaflet's internal listeners.
+        container.addEventListener('click', onClickDom, true);
+        container.addEventListener('dblclick', onDblClickDom, true);
+        container.addEventListener('contextmenu', onContextMenuDom, true);
+
+        return () => {
+            map.off('mousemove', onMouseMove);
+            container.removeEventListener('click', onClickDom, true);
+            container.removeEventListener('dblclick', onDblClickDom, true);
+            container.removeEventListener('contextmenu', onContextMenuDom, true);
+            if (hoveredCableIdRef.current !== null) {
+                container.style.cursor = '';
+                hoveredCableIdRef.current = null;
+            }
+        };
+    }, [map, visible]);
 
     return null;
 };
