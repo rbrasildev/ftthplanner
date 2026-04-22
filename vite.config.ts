@@ -33,6 +33,22 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
-    }
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-leaflet': ['leaflet', 'react-leaflet', 'leaflet.markercluster', 'react-leaflet-cluster'],
+            'vendor-d3': ['d3'],
+            'vendor-pdf': ['jspdf', 'html2canvas'],
+            'vendor-zip': ['jszip'],
+            'vendor-motion': ['framer-motion'],
+            'vendor-stripe': ['@stripe/react-stripe-js', '@stripe/stripe-js'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000,
+    },
   };
 });

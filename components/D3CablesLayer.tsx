@@ -61,6 +61,12 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     // Key: cableId-zoomBucket
     const geometryCache = useRef<Map<string, any[]>>(new Map());
 
+    // Invalidate cache when cables change (edit, delete, project switch).
+    // Without this, edited cables render stale geometry and deleted cables leak forever.
+    useEffect(() => {
+        geometryCache.current.clear();
+    }, [cables]);
+
     // Effect: Lifecycle (Create/Destroy SVG)
     useEffect(() => {
         if (!visible) return;

@@ -56,6 +56,8 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
                         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
                     }`}
                 title={label}
+                aria-label={label}
+                aria-pressed={isActive}
             >
                 <Icon className={`w-5 h-5 ${isActive ? 'fill-current opacity-20' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[9px] font-bold uppercase tracking-tight leading-none">{label}</span>

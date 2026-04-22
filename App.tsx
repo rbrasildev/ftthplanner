@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
 import { Button } from './components/common/Button';
 import { calculateDistance } from './utils/geometryUtils';
 import { isSubscriptionExpired } from './utils/subscriptionUtils';
-import { CTOEditor } from './components/CTOEditor';
-import { POPEditor } from './components/POPEditor';
+const CTOEditor = lazy(() => import('./components/CTOEditor').then(m => ({ default: m.CTOEditor })));
+const POPEditor = lazy(() => import('./components/POPEditor').then(m => ({ default: m.POPEditor })));
 import { ProjectManager } from './components/ProjectManager';
 import { CableEditor } from './components/CableEditor';
 import { CTODetailsPanel } from './components/CTODetailsPanel';
@@ -14,7 +14,7 @@ import { POPDetailsPanel } from './components/POPDetailsPanel';
 import { PoleDetailsPanel } from './components/PoleDetailsPanel';
 import { PoleTableView } from './components/PoleTableView';
 import { MapToolbar } from './components/MapToolbar';
-import { SaasAdminPage } from './components/admin/SaasAdminPage';
+const SaasAdminPage = lazy(() => import('./components/admin/SaasAdminPage').then(m => ({ default: m.SaasAdminPage })));
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { LandingPage } from './components/LandingPage';
@@ -42,6 +42,7 @@ import * as catalogService from './services/catalogService';
 import api from './services/api';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { AccountSettingsModal } from './components/AccountSettingsModal';
+import { Z_INDEX } from './constants/zIndex';
 
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
 import { PoleSelectionModal } from './components/modals/PoleSelectionModal';
@@ -1569,7 +1570,15 @@ export default function App() {
     }
 
     if (userRole === 'SUPER_ADMIN') {
-        return <SaasAdminPage onLogout={handleLogout} />;
+        return (
+            <Suspense fallback={
+                <div className="w-screen h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0b0d11]">
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                </div>
+            }>
+                <SaasAdminPage onLogout={handleLogout} />
+            </Suspense>
+        );
     }
 
 
@@ -1696,7 +1705,7 @@ export default function App() {
             <ConnectionStatus />
             
             {toast && (
-                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
+                <div style={{ zIndex: Z_INDEX.TOAST }} className={`fixed top-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
                     toast.type === 'success' ? 'bg-emerald-600 text-white' :
                     toast.type === 'error' ? 'bg-red-600 text-white' :
                     'bg-sky-600 text-white'
@@ -1712,7 +1721,7 @@ export default function App() {
             )}
 
             {isSupportMode && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[99999] bg-orange-600 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-4 shadow-2xl font-bold text-sm border-2 border-orange-400 animate-in fade-in slide-in-from-top-4">
+                <div style={{ zIndex: Z_INDEX.ALERT }} className="absolute top-4 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-4 shadow-2xl font-bold text-sm border-2 border-orange-400 animate-in fade-in slide-in-from-top-4">
                     <AlertTriangle className="w-5 h-5 animate-pulse" />
                     <span>MODO DE SUPORTE ATIVO</span>
                     <Button
@@ -1734,7 +1743,7 @@ export default function App() {
                 const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                 if (!isExpired && companyStatus !== 'SUSPENDED') return null;
                 return (
-                    <div className="fixed top-0 left-0 right-0 z-[99998] bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-lg">
+                    <div style={{ zIndex: Z_INDEX.ALERT_BAR }} className="fixed top-0 left-0 right-0 bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-lg">
                         <div className="flex items-center justify-center gap-4 px-4 py-3">
                             <AlertTriangle className="w-5 h-5 shrink-0 animate-pulse" />
                             <span className="text-sm font-semibold">
@@ -2127,6 +2136,7 @@ export default function App() {
             )}
 
             {/* Editors */}
+            <Suspense fallback={null}>
             {editingPOP && (
                 <POPEditor
                     pop={editingPOP}
@@ -2190,6 +2200,7 @@ export default function App() {
                     }}
                 />
             )}
+            </Suspense>
 
             {/* Modals */}
             <KmlImportModal
@@ -2383,7 +2394,7 @@ export default function App() {
             />
 
             {showSettingsModal && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
+                <div style={{ zIndex: Z_INDEX.MODAL }} className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setShowSettingsModal(false)}>
                     <div
                         className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl overflow-hidden transition-colors"
                         onClick={e => e.stopPropagation()}

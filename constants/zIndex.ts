@@ -1,0 +1,17 @@
+export const Z_INDEX = {
+  MAP_BASE: 0,
+  MAP_OVERLAY: 400,
+  MAP_MARKER: 500,
+  SIDEBAR: 1000,
+  MAP_HUD: 1000,
+  DETAILS_PANEL: 2000,
+  DROPDOWN: 2200,
+  MODAL: 3000,
+  MODAL_NESTED: 5000,
+  TOOLTIP: 9999,
+  ALERT_BAR: 99998,
+  ALERT: 99999,
+  TOAST: 999999,
+} as const;
+
+export type ZIndexKey = keyof typeof Z_INDEX;

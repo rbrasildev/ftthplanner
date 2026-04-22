@@ -128,9 +128,9 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
 
   React.useEffect(() => {
     if (panelRef.current) {
-      const width = 520; // Matches w-[520px]
+      const width = Math.min(520, window.innerWidth - 16); // Matches w-[520px], clamped on mobile
       const height = panelRef.current.offsetHeight || 600;
-      const initialX = (window.innerWidth - width) / 2;
+      const initialX = Math.max(8, (window.innerWidth - width) / 2);
       const initialY = Math.max(50, (window.innerHeight - height) / 2);
       panelRef.current.style.left = `${initialX}px`;
       panelRef.current.style.top = `${initialY}px`;
@@ -180,7 +180,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   return (
     <div
       ref={panelRef}
-      className={`fixed z-[2000] w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden ${isCollapsed ? 'h-auto' : 'h-auto max-h-[90vh]'}`}
+      className={`fixed z-[2000] w-[calc(100vw-1rem)] sm:w-[520px] max-w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden ${isCollapsed ? 'h-auto' : 'h-auto max-h-[85vh] sm:max-h-[90vh]'}`}
       style={{ willChange: 'top, left', transition: 'none' }}
     >
 

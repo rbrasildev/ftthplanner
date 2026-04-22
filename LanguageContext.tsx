@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useCallback, useMemo, useState, useContext, ReactNode } from 'react';
 
 type Language = 'en' | 'pt';
 
@@ -3148,7 +3148,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     localStorage.setItem('ftth_language', language);
   }, [language]);
 
-  const t = (key: string, params?: Record<string, string | number>) => {
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
     let text = translations[language][key as keyof typeof translations['en']] || key;
 
     if (params) {
@@ -3157,10 +3157,12 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
     }
     return text;
-  };
+  }, [language]);
+
+  const value = useMemo(() => ({ language, setLanguage, t }), [language, t]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

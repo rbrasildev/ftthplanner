@@ -153,7 +153,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[90vh]"
+      className="fixed z-[2000] w-[calc(100vw-1rem)] sm:w-[520px] max-w-[520px] bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden h-auto max-h-[85vh] sm:max-h-[90vh]"
       style={{ willChange: 'top, left', transition: 'none' }}
     >
       <div
