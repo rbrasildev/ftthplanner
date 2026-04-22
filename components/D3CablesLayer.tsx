@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import RBush from 'rbush';
+import simplify from 'simplify-js';
 import { CableData, CABLE_STATUS_COLORS } from '../types';
 
 interface D3CablesLayerProps {
@@ -144,21 +145,27 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         const getRenderCoordinates = (cable: CableData, currentZoom: number): Array<{ lat: number; lng: number }> => {
             if (currentZoom >= LOD_SIMPLIFY_THRESHOLD_ZOOM) return cable.coordinates;
 
-            let step = 1;
-            if (currentZoom < 10) step = 15;
-            else if (currentZoom < 12) step = 8;
-            else if (currentZoom < 14) step = 3;
+            // Tolerance in degrees (~11m per 0.0001 at equator). Higher zoom-out = coarser simplification.
+            let tolerance: number;
+            let bucket: number;
+            if (currentZoom < 10) { tolerance = 0.0005; bucket = 0; }
+            else if (currentZoom < 12) { tolerance = 0.00015; bucket = 1; }
+            else { tolerance = 0.00005; bucket = 2; }
 
-            const cacheKey = `${cable.id}-step${step}`;
+            const cacheKey = `${cable.id}-z${bucket}`;
             const cached = geometryCache.current.get(cacheKey);
             if (cached) return cached;
 
             const coords = cable.coordinates;
-            if (coords.length <= 2 || step === 1) return coords;
+            if (coords.length <= 2) return coords;
 
-            const simplified = [coords[0]];
-            for (let i = 1; i < coords.length - 1; i += step) simplified.push(coords[i]);
-            simplified.push(coords[coords.length - 1]);
+            // Ramer-Douglas-Peucker: preserves shape by dropping redundant vertices,
+            // not every Nth point — keeps curves & corners intact.
+            const simplified = simplify(
+                coords.map(c => ({ x: c.lng, y: c.lat })),
+                tolerance,
+                false // radial-distance variant: ~2x faster, visually equivalent at these scales
+            ).map(p => ({ lat: p.y, lng: p.x }));
 
             geometryCache.current.set(cacheKey, simplified);
             return simplified;

@@ -101,7 +101,8 @@
       "Bash(grep -h \"z-\\\\[\" /d/ftthplanner/components/modals/*.tsx)",
       "Bash(sort -t: -k3 -rn)",
       "Bash(grep -n \"catch.*=>\\\\s*{$\\\\|catch.*=>.*{\" /d/ftthplanner/App.tsx)",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Bash(git checkout *)"
     ]
   }
 }
