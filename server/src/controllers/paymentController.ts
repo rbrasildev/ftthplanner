@@ -827,30 +827,63 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
                 }
             });
         } else {
-            // Create new invoice (no outstanding debt).
-            // Use getNextBillingDate to compute the reference period so that
-            // trial → paid transitions get the correct month (skipping the
-            // free trial period) instead of retroactively charging for it.
+            // No outstanding debt — issue a new invoice for the next billing period.
+            // getNextBillingDate handles trial → paid transitions correctly.
             const nextBilling = await getNextBillingDate(companyId);
             const refEnd = new Date(nextBilling);
             const refStart = new Date(nextBilling);
             refStart.setMonth(refStart.getMonth() - 1);
 
-            invoice = await prisma.invoice.create({
-                data: {
-                    companyId,
-                    planId,
-                    amount: plan.price,
-                    status: 'PENDING',
-                    paymentMethod: 'PIX',
-                    mercadopagoPaymentId: String(result.id),
-                    qrCode,
-                    qrCodeBase64,
-                    expiresAt: dateOfExpiration,
-                    referenceStart: refStart,
-                    referenceEnd: refEnd
+            // An invoice may already exist for this period with a non-terminal status
+            // (EXPIRED/CANCELLED/PENDING from a previous QR). Re-use it instead of
+            // colliding with the unique_billing_period constraint.
+            const existingForPeriod = await prisma.invoice.findUnique({
+                where: {
+                    unique_billing_period: {
+                        companyId,
+                        referenceStart: refStart,
+                        referenceEnd: refEnd
+                    }
                 }
             });
+
+            if (existingForPeriod) {
+                if (existingForPeriod.status === 'PAID') {
+                    return res.status(409).json({
+                        error: 'Este período já foi pago.',
+                        invoiceId: existingForPeriod.id
+                    });
+                }
+                invoice = await prisma.invoice.update({
+                    where: { id: existingForPeriod.id },
+                    data: {
+                        status: 'PENDING',
+                        paymentMethod: 'PIX',
+                        amount: plan.price,
+                        planId,
+                        mercadopagoPaymentId: String(result.id),
+                        qrCode,
+                        qrCodeBase64,
+                        expiresAt: dateOfExpiration
+                    }
+                });
+            } else {
+                invoice = await prisma.invoice.create({
+                    data: {
+                        companyId,
+                        planId,
+                        amount: plan.price,
+                        status: 'PENDING',
+                        paymentMethod: 'PIX',
+                        mercadopagoPaymentId: String(result.id),
+                        qrCode,
+                        qrCodeBase64,
+                        expiresAt: dateOfExpiration,
+                        referenceStart: refStart,
+                        referenceEnd: refEnd
+                    }
+                });
+            }
         }
 
         return res.status(200).json({

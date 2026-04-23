@@ -754,6 +754,25 @@ const PlansView: React.FC<PlansViewProps> = ({ plans, loading, currentPlanId, cu
         );
     }
 
+    // Capitalize name if it comes in ALL CAPS from the backend — keeps visual consistency
+    const normalizeName = (name: string): string => {
+        if (!name) return '';
+        const allCaps = name === name.toUpperCase() && /[A-Z]/.test(name);
+        if (!allCaps) return name;
+        return name
+            .toLowerCase()
+            .split(' ')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+    };
+
+    // Cap grid at 3 columns — with 4+ plans, creates balanced rows (3+1, 3+2) instead of orphans
+    const gridCols = plans.length === 1
+        ? 'grid-cols-1 max-w-sm'
+        : plans.length === 2
+            ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl'
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+
     return (
         <div className="space-y-5">
             <div>
@@ -761,83 +780,93 @@ const PlansView: React.FC<PlansViewProps> = ({ plans, loading, currentPlanId, cu
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Faça upgrade, troque ou reative sua assinatura. Cobrança mensal recorrente.</p>
             </div>
 
-            <div className={`grid gap-4 ${plans.length <= 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+            <div className={`grid gap-5 pt-3 ${gridCols}`}>
                 {plans.map((plan: any) => {
                     const isExpiredOrCancelled = companyStatus === 'SUSPENDED' || companyStatus === 'CANCELLED';
                     const isCurrent = !isExpiredOrCancelled && ((currentPlanId && currentPlanId === plan.id) || (currentPlanName && currentPlanName.trim().toLowerCase() === plan.name.trim().toLowerCase()));
                     const isFree = plan.priceRaw === 0;
                     const PlanIcon = plan.icon;
+                    const displayName = normalizeName(plan.name);
+                    const features = (plan.features || []).filter((f: string) => f && f.trim().length > 0);
 
                     return (
                         <div
                             key={plan.id}
-                            className={`relative rounded-2xl border p-5 flex flex-col bg-white dark:bg-[#151820] transition-all ${plan.highlight
-                                ? 'border-emerald-500 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/20'
+                            className={`relative rounded-2xl border flex flex-col bg-white dark:bg-[#151820] transition-all ${plan.highlight
+                                ? 'border-emerald-500 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500/20'
                                 : isCurrent
-                                    ? 'border-slate-300 dark:border-slate-600'
+                                    ? 'border-slate-300 dark:border-slate-600 ring-1 ring-slate-300/50 dark:ring-slate-600/30'
                                     : 'border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600'
                                 }`}
                         >
-                            {plan.highlight && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg">
-                                        <Sparkles className="w-3 h-3" />
-                                        Recomendado
-                                    </span>
-                                </div>
-                            )}
-                            {isCurrent && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-700 dark:bg-slate-600 text-white text-[10px] font-bold uppercase tracking-wider">
-                                        Plano atual
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="mt-2 mb-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${plan.highlight ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                                    <PlanIcon className="w-5 h-5" />
-                                </div>
-                                <h3 className="text-base font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                            </div>
-
-                            <div className="mb-5 pb-5 border-b border-slate-100 dark:border-slate-800">
-                                {isFree ? (
-                                    <span className="text-3xl font-extrabold text-slate-900 dark:text-white">Grátis</span>
-                                ) : (
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-sm font-medium text-slate-400">R$</span>
-                                        <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                                            {plan.priceRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {/* Top ribbon — single badge at top, never overlaps icon */}
+                            {(plan.highlight || isCurrent) && (
+                                <div className={`px-4 py-1.5 rounded-t-2xl text-center text-[10px] font-bold uppercase tracking-wider ${plan.highlight
+                                    ? 'bg-emerald-500 text-white'
+                                    : 'bg-slate-700 dark:bg-slate-600 text-white'
+                                    }`}>
+                                    {plan.highlight ? (
+                                        <span className="inline-flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3" /> Recomendado
                                         </span>
-                                        <span className="text-sm text-slate-400 font-medium">/mês</span>
+                                    ) : (
+                                        'Plano atual'
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="p-5 flex flex-col flex-1">
+                                {/* Header: icon + name */}
+                                <div className="mb-4">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${plan.highlight ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                                        <PlanIcon className="w-5 h-5" />
                                     </div>
-                                )}
+                                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{displayName}</h3>
+                                </div>
+
+                                {/* Price */}
+                                <div className="mb-5 pb-5 border-b border-slate-100 dark:border-slate-800">
+                                    {isFree ? (
+                                        <span className="text-3xl font-extrabold text-slate-900 dark:text-white">Grátis</span>
+                                    ) : (
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-sm font-medium text-slate-400">R$</span>
+                                            <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                                                {plan.priceRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                            <span className="text-sm text-slate-400 font-medium">/mês</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Features — always present to keep card heights consistent */}
+                                <ul className="space-y-2.5 mb-6 flex-1 min-h-[8rem]">
+                                    {features.length > 0 ? features.map((feature: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-2.5 text-[13px] text-slate-600 dark:text-slate-300">
+                                            <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`} />
+                                            <span className="leading-snug">{feature}</span>
+                                        </li>
+                                    )) : (
+                                        <li className="text-[13px] text-slate-400 italic">Recursos básicos inclusos</li>
+                                    )}
+                                </ul>
+
+                                {/* CTA */}
+                                <button
+                                    onClick={() => onSelectPlan(plan)}
+                                    disabled={isCurrent}
+                                    className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all ${isCurrent
+                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                                        : isFree
+                                            ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                            : plan.highlight
+                                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
+                                                : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
+                                        }`}
+                                >
+                                    {isCurrent ? 'Assinatura ativa' : isFree ? 'Selecionar' : 'Assinar agora'}
+                                </button>
                             </div>
-
-                            <ul className="space-y-2.5 mb-6 flex-1">
-                                {(plan.features || []).map((feature: string, idx: number) => (
-                                    <li key={idx} className="flex items-start gap-2.5 text-[13px] text-slate-600 dark:text-slate-300">
-                                        <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.highlight ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`} />
-                                        <span className="leading-snug">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <button
-                                onClick={() => onSelectPlan(plan)}
-                                disabled={isCurrent}
-                                className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all ${isCurrent
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                                    : isFree
-                                        ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                                        : plan.highlight
-                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
-                                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                                    }`}
-                            >
-                                {isCurrent ? 'Plano atual' : isFree ? 'Selecionar' : 'Assinar agora'}
-                            </button>
                         </div>
                     );
                 })}
