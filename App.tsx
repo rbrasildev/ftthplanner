@@ -41,7 +41,7 @@ import * as authService from './services/authService';
 import * as catalogService from './services/catalogService';
 import api from './services/api';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
-import { AccountSettingsModal } from './components/AccountSettingsModal';
+import { BillingPage } from './components/BillingPage';
 import { Z_INDEX } from './constants/zIndex';
 
 const STORAGE_KEY_USER = 'ftth_planner_user_v1';
@@ -193,8 +193,7 @@ export default function App() {
     const previousNetworkState = useRef<NetworkState | null>(null);
 
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [renewOnly, setRenewOnly] = useState(false);
-    const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+    const [isBillingPageOpen, setIsBillingPageOpen] = useState(false);
     const [upgradeModalDetails, setUpgradeModalDetails] = useState<string | undefined>(undefined);
     const [upgradeModalTitle, setUpgradeModalTitle] = useState<string | undefined>(undefined);
     const [userPlan, setUserPlan] = useState<string>('Plano Grátis');
@@ -500,17 +499,20 @@ export default function App() {
                     const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                     const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
                     
-                    if (isExpired) {
+                    if (isExpired && !isTrial && userPlanPrice > 0) {
+                        // Paid subscription expired → redirect to BillingPage (handles overdue + renewal)
+                        setIsBillingPageOpen(true);
+                    } else if (isExpired) {
+                        // Trial/free expired → show plan picker with contextual message
                         setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
                         setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
-                        setRenewOnly(!isTrial && userPlanPrice > 0);
+                        setShowUpgradeModal(true);
                     } else {
+                        // Limit reached → show plan picker with limit context
                         setUpgradeModalTitle(t('limit_reached'));
                         setUpgradeModalDetails(err.response.data?.error || t('error_permission_denied'));
-                        setRenewOnly(false);
+                        setShowUpgradeModal(true);
                     }
-
-                    setShowUpgradeModal(true);
                     setCurrentProjectId(null); // Return to dashboard
                 } else {
                     showToast(t('error_project_load') || 'Failed to load project', 'info');
@@ -667,17 +669,17 @@ export default function App() {
                         const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
                         const isTrial = userPlanType === 'TRIAL' || userPlan.toLowerCase().includes('teste') || userPlan.toLowerCase().includes('trial');
 
-                        if (isExpired) {
+                        if (isExpired && !isTrial && userPlanPrice > 0) {
+                            setIsBillingPageOpen(true);
+                        } else if (isExpired) {
                             setUpgradeModalTitle(isTrial ? t('trial_expired_error') : t('subscription_expired_error'));
                             setUpgradeModalDetails(isTrial ? t('trial_expired_desc') : t('subscription_expired_desc'));
-                            setRenewOnly(!isTrial && userPlanPrice > 0);
+                            setShowUpgradeModal(true);
                         } else {
                             setUpgradeModalTitle(t('limit_reached'));
                             setUpgradeModalDetails(errorMsg);
-                            setRenewOnly(false);
+                            setShowUpgradeModal(true);
                         }
-
-                        setShowUpgradeModal(true);
                         return; // Exit early
                     }
 
@@ -1738,6 +1740,7 @@ export default function App() {
             {/* Subscription Expired Banner */}
             {(() => {
                 if (!subscriptionExpiresAt || !user) return null;
+                if (isBillingPageOpen) return null; // BillingPage already surfaces overdue state
                 const isFree = userPlan === 'Plano Grátis';
                 if (isFree) return null;
                 const isExpired = isSubscriptionExpired(subscriptionExpiresAt);
@@ -1752,10 +1755,7 @@ export default function App() {
                                     : t('subscription_expired_desc')}
                             </span>
                             <button
-                                onClick={() => {
-                                    setRenewOnly(true);
-                                    setShowUpgradeModal(true);
-                                }}
+                                onClick={() => setIsBillingPageOpen(true)}
                                 className="shrink-0 px-4 py-1.5 bg-white text-rose-700 font-bold text-sm rounded-lg hover:bg-rose-50 transition-all hover:scale-105 active:scale-95 shadow"
                             >
                                 {t('renew_now') || 'Renovar Agora'}
@@ -1801,7 +1801,7 @@ export default function App() {
                 onSearch={handleMainSearch}
                 onResultClick={handleSearchResultClick}
                 onLogout={handleLogout}
-                onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                onUpgradeClick={() => setIsBillingPageOpen(true)}
                 setCurrentProjectId={setCurrentProjectId}
                 setShowProjectManager={setShowProjectManager}
                 onImportClick={() => setIsAdvancedImportOpen(true)}
@@ -1850,13 +1850,10 @@ export default function App() {
                                 if (isTrial || !userPlanPrice || userPlanPrice === 0) {
                                     setUpgradeModalTitle(t('trial_expired_error'));
                                     setUpgradeModalDetails(t('trial_expired_desc'));
-                                    setRenewOnly(false);
+                                    setShowUpgradeModal(true);
                                 } else {
-                                    setUpgradeModalTitle(t('subscription_expired_error'));
-                                    setUpgradeModalDetails(t('subscription_expired_desc'));
-                                    setRenewOnly(true);
+                                    setIsBillingPageOpen(true);
                                 }
-                                setShowUpgradeModal(true);
                                 return;
                             }
                             setCurrentProjectId(id);
@@ -1869,13 +1866,10 @@ export default function App() {
                                 if (isTrial || !userPlanPrice || userPlanPrice === 0) {
                                     setUpgradeModalTitle(t('trial_expired_error'));
                                     setUpgradeModalDetails(t('trial_expired_desc'));
-                                    setRenewOnly(false);
+                                    setShowUpgradeModal(true);
                                 } else {
-                                    setUpgradeModalTitle(t('subscription_expired_error'));
-                                    setUpgradeModalDetails(t('subscription_expired_desc'));
-                                    setRenewOnly(true);
+                                    setIsBillingPageOpen(true);
                                 }
-                                setShowUpgradeModal(true);
                                 return;
                             }
                             if (!token) return;
@@ -1913,7 +1907,7 @@ export default function App() {
                         }}
                         isLoading={isLoadingProjects}
                         onLogout={handleLogout}
-                        onUpgradeClick={() => setIsAccountSettingsOpen(true)}
+                        onUpgradeClick={() => setIsBillingPageOpen(true)}
                         currentProjectId={currentProjectId || undefined}
                     />
                 </main>
@@ -2301,13 +2295,10 @@ export default function App() {
                             if (isTrial || !userPlanPrice || userPlanPrice === 0) {
                                 setUpgradeModalTitle(t('trial_expired_error'));
                                 setUpgradeModalDetails(t('trial_expired_desc'));
-                                setRenewOnly(false);
+                                setShowUpgradeModal(true);
                             } else {
-                                setUpgradeModalTitle(t('subscription_expired_error'));
-                                setUpgradeModalDetails(t('subscription_expired_desc'));
-                                setRenewOnly(true);
+                                setIsBillingPageOpen(true);
                             }
-                            setShowUpgradeModal(true);
                             return;
                         }
                         setCurrentProjectId(id);
@@ -2476,27 +2467,26 @@ export default function App() {
                 </div>
             )}
 
-            <AccountSettingsModal
-                isOpen={isAccountSettingsOpen}
-                onClose={() => setIsAccountSettingsOpen(false)}
-                onManagePlan={() => {
-                    setIsAccountSettingsOpen(false);
-                    setUpgradeModalDetails(undefined);
-                    setShowUpgradeModal(true);
-                }}
-                userData={{
-                    username: user!,
-                    email: userEmail || undefined,
-                    plan: userPlan,
-                    planType: userPlanType,
-                    expiresAt: subscriptionExpiresAt,
-                    companyId: companyId || 'UNKNOWN'
-                }}
-            />
+            {isBillingPageOpen && (
+                <BillingPage
+                    onBack={() => setIsBillingPageOpen(false)}
+                    userData={{
+                        username: user!,
+                        email: userEmail || undefined,
+                        plan: userPlan,
+                        planType: userPlanType,
+                        planId: userPlanId || undefined,
+                        planPrice: userPlanPrice,
+                        expiresAt: subscriptionExpiresAt,
+                        companyId: companyId || 'UNKNOWN',
+                        companyStatus: companyStatus
+                    }}
+                />
+            )}
 
             <UpgradePlanModal
                 isOpen={showUpgradeModal}
-                onClose={() => { setShowUpgradeModal(false); setRenewOnly(false); }}
+                onClose={() => setShowUpgradeModal(false)}
                 limitDetails={upgradeModalDetails}
                 limitTitle={upgradeModalTitle}
                 companyId={companyId || undefined}
@@ -2505,7 +2495,6 @@ export default function App() {
                 currentPlanId={userPlanId || undefined}
                 currentPlanPrice={userPlanPrice}
                 companyStatus={companyStatus}
-                renewOnly={renewOnly}
             />
 
             <ProjectReportModal

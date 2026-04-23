@@ -102,7 +102,9 @@
       "Bash(sort -t: -k3 -rn)",
       "Bash(grep -n \"catch.*=>\\\\s*{$\\\\|catch.*=>.*{\" /d/ftthplanner/App.tsx)",
       "Bash(npm audit *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 23472 //F)"
     ]
   }
 }

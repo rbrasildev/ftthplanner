@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Check, X, Star, Zap, Shield, Globe, Crown, Sparkles, Receipt } from 'lucide-react';
+import { Check, X, Star, Zap, Shield, Globe, Crown, Sparkles, Receipt, AlertTriangle, Info } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { UpgradePaymentForm } from './UpgradePaymentForm';
 
@@ -24,8 +24,140 @@ interface UpgradePlanModalProps {
     companyStatus?: string;
     limitDetails?: string;
     limitTitle?: string;
-    renewOnly?: boolean;
 }
+
+const daysSince = (date: string | Date): number => {
+    const ref = new Date(date).getTime();
+    return Math.floor((Date.now() - ref) / (1000 * 60 * 60 * 24));
+};
+
+const formatPeriod = (inv: any): string => {
+    if (inv.referenceStart && inv.referenceEnd) {
+        const s = new Date(inv.referenceStart).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        const e = new Date(inv.referenceEnd).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+        return `${s} – ${e}`;
+    }
+    return new Date(inv.createdAt).toLocaleDateString('pt-BR');
+};
+
+interface InvoicePickerProps {
+    invoices: any[];
+    total: number;
+    selectedId: string | null;
+    oldestId: string | null;
+    onSelect: (id: string) => void;
+}
+
+const InvoicePicker: React.FC<InvoicePickerProps> = ({ invoices, total, selectedId, oldestId, onSelect }) => {
+    const count = invoices.length;
+
+    // Single overdue invoice — keep it simple, no selection needed
+    if (count === 1) {
+        const inv = invoices[0];
+        const days = daysSince(inv.referenceEnd || inv.createdAt);
+        return (
+            <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-800/60 bg-red-50/70 dark:bg-red-950/30 overflow-hidden">
+                <div className="px-4 py-3 bg-red-100/60 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800/60 flex items-center gap-2.5">
+                    <Receipt className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wide text-red-700 dark:text-red-400">
+                        Fatura em atraso
+                    </span>
+                    <span className="ml-auto text-sm font-black text-red-700 dark:text-red-400">
+                        R$ {inv.amount?.toFixed(2)}
+                    </span>
+                </div>
+                <div className="px-4 py-3 flex items-center justify-between text-xs text-red-700/80 dark:text-red-400/80">
+                    <span>Período {formatPeriod(inv)}</span>
+                    {days > 0 && <span className="font-semibold">Vencida há {days} {days === 1 ? 'dia' : 'dias'}</span>}
+                </div>
+            </div>
+        );
+    }
+
+    // Multiple overdue — interactive selection list
+    return (
+        <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-800/60 bg-white dark:bg-[#1a1d23] overflow-hidden shadow-sm">
+            <div className="px-4 sm:px-5 py-3.5 bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-800/60">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-red-700 dark:text-red-400">
+                            {count} faturas em atraso
+                        </p>
+                        <p className="text-[11px] text-red-600/80 dark:text-red-400/70">
+                            Débito total: <span className="font-bold">R$ {total.toFixed(2)}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="px-4 sm:px-5 pt-3 pb-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
+                    Selecione qual fatura deseja pagar agora
+                </p>
+            </div>
+
+            <div className="px-3 sm:px-4 pb-3 space-y-2">
+                {invoices.map((inv: any) => {
+                    const isSelected = selectedId === inv.id;
+                    const isOldest = inv.id === oldestId;
+                    const days = daysSince(inv.referenceEnd || inv.createdAt);
+
+                    return (
+                        <button
+                            key={inv.id}
+                            type="button"
+                            onClick={() => onSelect(inv.id)}
+                            className={`w-full text-left px-3.5 py-3 rounded-xl border-2 transition-all flex items-center gap-3 ${isSelected
+                                ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-500/10 shadow-sm shadow-emerald-500/10'
+                                : 'border-slate-200 dark:border-slate-700/40 bg-white dark:bg-[#151820] hover:border-slate-300 dark:hover:border-slate-600'
+                                }`}
+                        >
+                            <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${isSelected
+                                ? 'border-emerald-500 bg-emerald-500'
+                                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
+                                }`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                        {formatPeriod(inv)}
+                                    </span>
+                                    {isOldest && (
+                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                            Recomendada
+                                        </span>
+                                    )}
+                                </div>
+                                {days > 0 && (
+                                    <p className="text-[11px] text-red-600 dark:text-red-400 mt-0.5">
+                                        Vencida há {days} {days === 1 ? 'dia' : 'dias'}
+                                    </p>
+                                )}
+                            </div>
+
+                            <span className={`text-sm font-black whitespace-nowrap ${isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'
+                                }`}>
+                                R$ {inv.amount?.toFixed(2)}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="px-4 sm:px-5 py-2.5 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700/40 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Pague uma fatura por vez. Recomendamos começar pela mais antiga para evitar acúmulo de juros.
+                </p>
+            </div>
+        </div>
+    );
+};
 
 const getPlanIcon = (index: number, name: string) => {
     const lower = name.toLowerCase();
@@ -37,77 +169,51 @@ const getPlanIcon = (index: number, name: string) => {
     return icons[index % icons.length];
 };
 
-export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, currentPlanPrice, companyStatus, limitDetails, limitTitle, companyId, email, renewOnly }) => {
+export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: string, email?: string }> = ({ isOpen, onClose, currentPlanName, currentPlanId, currentPlanPrice, companyStatus, limitDetails, limitTitle, companyId, email }) => {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlanForBilling, setSelectedPlanForBilling] = useState<Plan | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
     const [overdueInfo, setOverdueInfo] = useState<{ count: number, total: number, invoices: any[] }>({ count: 0, total: 0, invoices: [] });
+    const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const { t } = useLanguage();
 
-    // renewOnly mode: skip plan selection entirely, go straight to payment with current plan
-    useEffect(() => {
-        if (!isOpen || !renewOnly) return;
+    const selectedInvoice = overdueInfo.invoices.find(inv => inv.id === selectedInvoiceId) || null;
+    const oldestInvoiceId = overdueInfo.invoices[0]?.id || null;
 
-        const resolveRenewPlan = async () => {
-            // 1. Fetch overdue invoices
+    // Fetch overdue invoices on open — surface pending debt in upgrade flows
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        (async () => {
             try {
                 const invRes = await api.get('/payments/invoices');
                 const allInvoices = invRes.data || [];
-                const overdue = allInvoices.filter((inv: any) => inv.status === 'OVERDUE');
+                const overdue = allInvoices
+                    .filter((inv: any) => inv.status === 'OVERDUE')
+                    .sort((a: any, b: any) => {
+                        const da = new Date(a.referenceStart || a.createdAt).getTime();
+                        const db = new Date(b.referenceStart || b.createdAt).getTime();
+                        return da - db; // oldest first
+                    });
+                if (cancelled) return;
                 if (overdue.length > 0) {
                     const total = overdue.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
                     setOverdueInfo({ count: overdue.length, total, invoices: overdue });
+                    setSelectedInvoiceId(overdue[0].id); // Pre-select oldest (recommended)
+                } else {
+                    setOverdueInfo({ count: 0, total: 0, invoices: [] });
+                    setSelectedInvoiceId(null);
                 }
             } catch (err) {
                 console.error('Failed to fetch overdue invoices', err);
             }
-
-            // 2. Resolve plan and price
-            if (currentPlanId && currentPlanName && currentPlanPrice && currentPlanPrice > 0) {
-                setSelectedPlanForBilling({
-                    id: currentPlanId,
-                    name: currentPlanName,
-                    priceRaw: currentPlanPrice,
-                    price: `R$ ${currentPlanPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                    features: [],
-                    icon: Zap
-                });
-                setLoading(false);
-                return;
-            }
-
-            // Price is 0 or missing (trial/free plan expired) — fetch plans and pick current or recommended
-            try {
-                const response = await api.get('/saas/public/plans');
-                const dbPlans = response.data;
-
-                const match = currentPlanId
-                    ? dbPlans.find((p: any) => p.id === currentPlanId && p.price > 0)
-                    : null;
-                const fallback = match || dbPlans.find((p: any) => p.price > 0 && p.isRecommended) || dbPlans.find((p: any) => p.price > 0);
-
-                if (fallback) {
-                    setSelectedPlanForBilling({
-                        id: fallback.id,
-                        name: fallback.name,
-                        priceRaw: fallback.price,
-                        price: `R$ ${fallback.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                        features: [],
-                        icon: Zap
-                    });
-                }
-            } catch (err) {
-                console.error('Failed to resolve renew plan', err);
-            }
-            setLoading(false);
-        };
-
-        resolveRenewPlan();
-    }, [isOpen, renewOnly, currentPlanId, currentPlanName, currentPlanPrice]);
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen && !renewOnly) { // Skip fetch when renewOnly
+        if (isOpen) {
             const fetchPlans = async () => {
                 try {
                     setLoading(true);
@@ -158,7 +264,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
             };
             fetchPlans();
         }
-    }, [isOpen, renewOnly, t]);
+    }, [isOpen, t]);
 
     const handleSelectPlan = (plan: Plan) => {
         if (plan.priceRaw === 0) { onClose(); return; }
@@ -172,6 +278,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
             setSelectedPlanForBilling(null);
             setIsSuccess(false);
             setLoading(true);
+            setSelectedInvoiceId(null);
+            setOverdueInfo({ count: 0, total: 0, invoices: [] });
         }
     }, [isOpen]);
 
@@ -196,7 +304,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                     {/* Back Button */}
                     {selectedPlanForBilling && !isSuccess && (
                         <button
-                            onClick={() => renewOnly ? onClose() : setSelectedPlanForBilling(null)}
+                            onClick={() => setSelectedPlanForBilling(null)}
                             className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors z-20 text-sm font-medium"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -244,45 +352,26 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
                         /* Payment Form */
                         <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <div className="w-full max-w-3xl">
-                                {/* Overdue Debt Summary (shown above payment form when renewing with outstanding debt) */}
+                                {/* Overdue Invoice Picker — professional-grade selection UX */}
                                 {overdueInfo.count > 0 && (
-                                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/40 border-2 border-red-200 dark:border-red-800 rounded-xl">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
-                                                <Receipt className="w-5 h-5 text-red-600" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-bold text-red-700 dark:text-red-400">
-                                                    {overdueInfo.count} {overdueInfo.count === 1 ? 'fatura em atraso' : 'faturas em atraso'}
-                                                </p>
-                                                <div className="mt-2 space-y-1">
-                                                    {overdueInfo.invoices.map((inv: any) => (
-                                                        <div key={inv.id} className="flex items-center justify-between text-xs text-red-600 dark:text-red-400">
-                                                            <span>
-                                                                {inv.referenceStart && inv.referenceEnd
-                                                                    ? `${new Date(inv.referenceStart).toLocaleDateString()} → ${new Date(inv.referenceEnd).toLocaleDateString()}`
-                                                                    : new Date(inv.createdAt).toLocaleDateString()}
-                                                            </span>
-                                                            <span className="font-bold">R$ {inv.amount?.toFixed(2)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800 flex items-center justify-between">
-                                                    <span className="text-xs font-semibold text-red-600">Débito total</span>
-                                                    <span className="text-lg font-black text-red-700 dark:text-red-400">R$ {overdueInfo.total.toFixed(2)}</span>
-                                                </div>
-                                                <p className="text-[10px] text-red-500 mt-1">
-                                                    O pagamento abaixo quitará a fatura mais antiga. Repita para quitar as demais.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <InvoicePicker
+                                        invoices={overdueInfo.invoices}
+                                        total={overdueInfo.total}
+                                        selectedId={selectedInvoiceId}
+                                        oldestId={oldestInvoiceId}
+                                        onSelect={setSelectedInvoiceId}
+                                    />
                                 )}
                                 <UpgradePaymentForm
                                     plan={selectedPlanForBilling}
                                     email={email}
+                                    selectedInvoice={selectedInvoice}
+                                    remainingAfter={selectedInvoice ? {
+                                        count: overdueInfo.count - 1,
+                                        total: overdueInfo.total - (selectedInvoice.amount || 0)
+                                    } : null}
                                     onSuccess={() => setIsSuccess(true)}
-                                    onCancel={() => renewOnly ? onClose() : setSelectedPlanForBilling(null)}
+                                    onCancel={() => setSelectedPlanForBilling(null)}
                                 />
                             </div>
                         </div>

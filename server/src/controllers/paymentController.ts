@@ -87,7 +87,7 @@ async function getNextBillingDate(companyId: string): Promise<Date> {
 
 export const createStripeIntent = async (req: AuthRequest, res: Response) => {
     try {
-        const { planId } = req.body;
+        const { planId, invoiceId } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(401).json({ error: 'User does not belong to a company.' });
@@ -101,6 +101,24 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
 
         const plan = await prisma.plan.findUnique({ where: { id: planId } });
         if (!plan) return res.status(404).json({ error: 'Plan not found.' });
+
+        // If the client selected a specific overdue invoice to pay, validate it
+        // belongs to this company and is actually OVERDUE. We attach its id to the
+        // subscription metadata so confirmStripeSubscription / the webhook can
+        // mark it PAID when the charge settles.
+        let targetInvoiceId: string | undefined;
+        let targetInvoiceAmount: number | undefined;
+        if (invoiceId) {
+            const target = await prisma.invoice.findUnique({ where: { id: invoiceId } });
+            if (!target || target.companyId !== companyId) {
+                return res.status(404).json({ error: 'Invoice not found for this company.' });
+            }
+            if (target.status !== 'OVERDUE') {
+                return res.status(400).json({ error: 'Invoice is not overdue.' });
+            }
+            targetInvoiceId = target.id;
+            targetInvoiceAmount = target.amount;
+        }
 
         // Retrieve or create Stripe Customer
         let stripeCustomerId = company.stripeCustomerId;
@@ -125,7 +143,25 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
 
         let subscriptionItems = [];
 
-        if (stripePriceId) {
+        // If paying a specific OVERDUE invoice, always use price_data with the invoice's
+        // original amount — protects against plan price changes between invoice issuance
+        // and payment. Otherwise use the plan's configured Stripe Price ID when available.
+        if (targetInvoiceAmount !== undefined) {
+            const product = await stripe.products.create({
+                name: plan.name,
+                description: `SaaS Subscription - ${plan.name} (fatura em atraso)`,
+            });
+            subscriptionItems = [{
+                price_data: {
+                    currency: 'BRL',
+                    product: product.id,
+                    unit_amount: Math.round(targetInvoiceAmount * 100),
+                    recurring: {
+                        interval: 'month' as const,
+                    },
+                },
+            }];
+        } else if (stripePriceId) {
             subscriptionItems = [{
                 price: stripePriceId, // Use the price ID from the admin panel directly
             }];
@@ -153,8 +189,12 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
             customer: stripeCustomerId,
             items: subscriptionItems,
             payment_behavior: 'default_incomplete',
-            payment_settings: { 
+            payment_settings: {
                 save_default_payment_method: 'on_subscription',
+                // Restrict to plain card only — excludes Stripe Link, which would prompt the
+                // customer for an SMS verification code based on an email match and cause
+                // confusion ("um link aparece com cartão que não cadastrei").
+                payment_method_types: ['card'],
                 payment_method_options: {
                     card: { request_three_d_secure: 'any' }
                 }
@@ -162,7 +202,8 @@ export const createStripeIntent = async (req: AuthRequest, res: Response) => {
             expand: ['latest_invoice.payment_intent'],
             metadata: {
                 companyId: companyId,
-                planId: plan.id
+                planId: plan.id,
+                ...(targetInvoiceId ? { localInvoiceId: targetInvoiceId } : {})
             }
         });
 
@@ -219,6 +260,24 @@ export const confirmStripeSubscription = async (req: AuthRequest, res: Response)
                 subscriptionExpiresAt: nextBilling
             }
         });
+
+        // If this subscription was created to settle a specific overdue invoice,
+        // mark it PAID. Webhook is the backup path (same update is idempotent).
+        const localInvoiceId = subscription.metadata?.localInvoiceId;
+        if (localInvoiceId) {
+            try {
+                const local = await prisma.invoice.findUnique({ where: { id: localInvoiceId } });
+                if (local && local.companyId === companyId && local.status !== 'PAID') {
+                    await prisma.invoice.update({
+                        where: { id: localInvoiceId },
+                        data: { status: 'PAID', paidAt: new Date() }
+                    });
+                    logger.info(`Stripe Confirm: Marked local invoice ${localInvoiceId} as PAID.`);
+                }
+            } catch (invErr: any) {
+                logger.warn(`Stripe Confirm: Failed to mark local invoice PAID: ${invErr.message}`);
+            }
+        }
 
         logger.info(`Stripe Confirm: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
         res.json({ success: true, planId, expiresAt: nextBilling });
@@ -319,6 +378,26 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         subscriptionExpiresAt: nextBilling
                     }
                 });
+
+                // If subscription was created to settle a specific OVERDUE local invoice,
+                // mark it PAID here as a backup (confirmStripeSubscription is the primary path).
+                try {
+                    const sub = subscriptionId ? await stripe.subscriptions.retrieve(subscriptionId) : null;
+                    const localInvoiceId = sub?.metadata?.localInvoiceId;
+                    if (localInvoiceId) {
+                        const local = await prisma.invoice.findUnique({ where: { id: localInvoiceId } });
+                        if (local && local.companyId === companyId && local.status !== 'PAID') {
+                            await prisma.invoice.update({
+                                where: { id: localInvoiceId },
+                                data: { status: 'PAID', paidAt: new Date() }
+                            });
+                            logger.info(`Stripe Webhook: Marked local invoice ${localInvoiceId} as PAID.`);
+                        }
+                    }
+                } catch (invErr: any) {
+                    logger.warn(`Stripe Webhook: Failed to settle local invoice: ${invErr.message}`);
+                }
+
                 logger.info(`Stripe Webhook [${event.type}]: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
             } else {
                 logger.warn(`Stripe Webhook [${event.type}]: Could not resolve company for invoice ${invoice.id} (customer: ${customerId}, companyId=${companyId}, planId=${planId})`);
@@ -634,7 +713,7 @@ export const processPayment = async (req: Request, res: Response) => {
 
 export const createPixPayment = async (req: AuthRequest, res: Response) => {
     try {
-        const { planId, payer } = req.body;
+        const { planId, payer, invoiceId } = req.body;
         const companyId = req.user?.companyId;
 
         if (!companyId) return res.status(401).json({ error: 'User does not belong to a company.' });
@@ -642,6 +721,18 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
 
         const plan = await prisma.plan.findUnique({ where: { id: planId } });
         if (!plan) return res.status(404).json({ error: 'Plan not found.' });
+
+        // If caller selected a specific OVERDUE invoice, validate ownership/status
+        let selectedOverdue = null as null | Awaited<ReturnType<typeof prisma.invoice.findUnique>>;
+        if (invoiceId) {
+            selectedOverdue = await prisma.invoice.findUnique({ where: { id: invoiceId } });
+            if (!selectedOverdue || selectedOverdue.companyId !== companyId) {
+                return res.status(404).json({ error: 'Invoice not found for this company.' });
+            }
+            if (selectedOverdue.status !== 'OVERDUE') {
+                return res.status(400).json({ error: 'Invoice is not overdue.' });
+            }
+        }
 
         // Update company payment method preference
         await prisma.company.update({
@@ -681,9 +772,14 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
             number: String(payer.identification.number).replace(/\D/g, '')
         } : { type: 'CPF', number: '00000000000' };
 
+        // When settling an OVERDUE invoice, charge the original invoice amount — not the
+        // current plan price. Prevents overcharging/undercharging if the plan price changed
+        // between invoice issuance and payment.
+        const chargeAmount = selectedOverdue?.amount ?? plan.price;
+
         const paymentBody = {
             body: {
-                transaction_amount: Number(plan.price),
+                transaction_amount: Number(chargeAmount),
                 description: `FTTH Planner - Assinatura: ${plan.name}`,
                 payment_method_id: 'pix',
                 payer: {
@@ -711,8 +807,8 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
             throw new Error('QR Code was not generated by Mercado Pago.');
         }
 
-        // Check if there's an existing OVERDUE invoice to associate this payment with
-        const overdueInvoice = await prisma.invoice.findFirst({
+        // Pick the invoice to settle: caller-selected wins, otherwise default to oldest OVERDUE
+        const overdueInvoice = selectedOverdue ?? await prisma.invoice.findFirst({
             where: { companyId, status: 'OVERDUE' },
             orderBy: { referenceStart: 'asc' } // Pay oldest debt first
         });
@@ -989,6 +1085,7 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
             status: inv.status,
             paymentMethod: inv.paymentMethod,
             createdAt: inv.createdAt,
+            paidAt: inv.paidAt,
             expiresAt: inv.expiresAt,
             referenceStart: inv.referenceStart,
             referenceEnd: inv.referenceEnd,

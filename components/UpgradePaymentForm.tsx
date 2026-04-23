@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { CreditCard, Lock, Calendar, User, ShieldCheck, Mail, AlertTriangle, Loader2, CheckCircle2, ChevronLeft, Wallet, Minus, Plus, Copy, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -14,6 +14,14 @@ declare global {
     }
 }
 
+interface SelectedInvoice {
+    id: string;
+    amount: number;
+    referenceStart?: string;
+    referenceEnd?: string;
+    createdAt?: string;
+}
+
 interface UpgradePaymentFormProps {
     plan: {
         id: string;
@@ -24,7 +32,18 @@ interface UpgradePaymentFormProps {
     onSuccess: () => void;
     onCancel: () => void;
     email?: string;
+    selectedInvoice?: SelectedInvoice | null;
+    remainingAfter?: { count: number; total: number } | null;
 }
+
+const formatPixCountdown = (ms: number): string => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+};
 
 const CARD_ELEMENT_OPTIONS = {
     style: {
@@ -44,10 +63,28 @@ const CARD_ELEMENT_OPTIONS = {
     },
 };
 
-const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onSuccess: () => void, status: any, setStatus: any }) => {
+const StripeCardForm = ({ plan, onSuccess, status, setStatus, priceLabel, invoiceId }: { plan: any, onSuccess: () => void, status: any, setStatus: any, priceLabel: string, invoiceId?: string }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
+
+    const isMountedRef = useRef(true);
+    const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+            timeoutsRef.current.forEach(clearTimeout);
+        };
+    }, []);
+
+    const safeSetStatus = (next: any) => { if (isMountedRef.current) setStatus(next); };
+    const scheduleSuccess = (ms: number) => {
+        const t = setTimeout(() => {
+            if (isMountedRef.current) onSuccess();
+        }, ms);
+        timeoutsRef.current.push(t);
+    };
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -55,11 +92,14 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
         if (!stripe || !elements) return;
 
         setLoading(true);
-        setStatus(null);
+        safeSetStatus(null);
 
         try {
             // Request the client_secret from backend
-            const { data } = await api.post('/payments/create-stripe-intent', { planId: plan.id });
+            const { data } = await api.post('/payments/create-stripe-intent', {
+                planId: plan.id,
+                ...(invoiceId ? { invoiceId } : {})
+            });
             const { clientSecret, subscriptionId } = data;
 
             // Confirm payment in browser securely
@@ -70,34 +110,40 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
             });
 
             if (result.error) {
-                setStatus({ type: 'error', message: result.error.message || 'Erro no pagamento' });
+                safeSetStatus({ type: 'error', message: result.error.message || 'Erro no pagamento' });
             } else if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'requires_capture') {
-                setStatus({ type: 'success', message: 'Pagamento concluído! Ativando assinatura...' });
+                safeSetStatus({ type: 'success', message: 'Pagamento concluído! Ativando assinatura...' });
                 // Confirm subscription on backend to activate plan immediately
                 try {
                     await api.post('/payments/confirm-stripe-subscription', { subscriptionId });
-                    setStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                    safeSetStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                    scheduleSuccess(1500);
                 } catch (confirmErr: any) {
                     console.error('Stripe confirm error:', confirmErr);
                     // Payment went through but confirmation failed — retry once after short delay
                     await new Promise(r => setTimeout(r, 2000));
                     try {
                         await api.post('/payments/confirm-stripe-subscription', { subscriptionId });
-                        setStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                        safeSetStatus({ type: 'success', message: 'Assinatura ativada com sucesso!' });
+                        scheduleSuccess(1500);
                     } catch {
-                        setStatus({ type: 'success', message: 'Pagamento confirmado! Sua assinatura será ativada em instantes.' });
+                        // Pagamento foi confirmado na Stripe mas ativação no backend falhou.
+                        // Webhook deve finalizar em segundos. Informar usuário com honestidade.
+                        safeSetStatus({
+                            type: 'success',
+                            message: 'Pagamento recebido. A ativação pode levar até 1 minuto — recarregue a página em instantes. Se persistir, contate o suporte.'
+                        });
                     }
                 }
-                setTimeout(onSuccess, 1500);
             } else {
-                setStatus({ type: 'success', message: 'Assinatura criada! Processando pagamento...' });
-                setTimeout(onSuccess, 2000);
+                safeSetStatus({ type: 'success', message: 'Assinatura criada! Processando pagamento...' });
+                scheduleSuccess(2000);
             }
         } catch (err: any) {
             console.error(err);
-            setStatus({ type: 'error', message: err.response?.data?.error || err.message || 'Erro inesperado' });
+            safeSetStatus({ type: 'error', message: err.response?.data?.error || err.message || 'Erro inesperado' });
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) setLoading(false);
         }
     };
 
@@ -111,14 +157,14 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
                 </div>
             )}
             
-            <div className="space-y-4 bg-white dark:bg-[#1a1d23] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
+            <div className="space-y-3 bg-white dark:bg-[#1a1d23] p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
+                <div className="flex items-center gap-2">
                    <CreditCard className="w-5 h-5 text-slate-400" />
                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Dados do Cartão</h3>
                 </div>
-                
-                <div className="p-3 sm:p-4 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl relative">
-                   <CardElement options={CARD_ELEMENT_OPTIONS} className="w-full h-8" />
+
+                <div className="px-4 py-3.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl relative">
+                   <CardElement options={CARD_ELEMENT_OPTIONS} className="w-full" />
                 </div>
             </div>
 
@@ -126,24 +172,25 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus }: { plan: any, onS
                 <button
                     type="submit"
                     disabled={!stripe || loading}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-3 text-lg active:scale-[0.98]"
+                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-3 text-lg active:scale-[0.98]"
                 >
                     {loading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                         <Lock className="w-5 h-5" />
                     )}
-                    {loading ? 'Processando...' : `Assinar Seguro com Stripe`}
+                    {loading ? 'Processando...' : `Pagar ${priceLabel}`}
                 </button>
-                <p className="mt-4 text-[11px] text-slate-400 text-center leading-relaxed px-4">
-                    Seus dados de cartão são processados e armazenados com máxima segurança diretamente no cofre da Stripe (PCI DSS Nível 1).
+                <p className="mt-3 text-[11px] text-slate-400 text-center leading-relaxed px-4 flex items-center justify-center gap-1.5">
+                    <Lock className="w-3 h-3" />
+                    Pagamento protegido por Stripe · PCI DSS Nível 1
                 </p>
             </div>
         </form>
     );
 };
 
-export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, onSuccess, onCancel, email }) => {
+export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, onSuccess, onCancel, email, selectedInvoice, remainingAfter }) => {
     const { t } = useLanguage();
     const [mp, setMp] = useState<any>(null);
     const [deviceId, setDeviceId] = useState<string | null>(null); // New state for deviceId
@@ -155,6 +202,8 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
     const [pixLoading, setPixLoading] = useState(false);
     const [pixData, setPixData] = useState<{ qr_code: string, qr_code_base64: string, invoiceId: string, expires_at: string } | null>(null);
     const [pixCopied, setPixCopied] = useState(false);
+    const [pixRemainingMs, setPixRemainingMs] = useState<number>(0);
+    const pixExpired = pixData !== null && pixRemainingMs <= 0;
 
     // Form State
     const [formData, setFormData] = useState({
@@ -218,10 +267,10 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         };
     }, []);
 
-    // Pix Polling Effect
+    // Pix Polling Effect — stops once QR expired or payment confirmed
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        if (pixData?.invoiceId && !status) {
+        if (pixData?.invoiceId && !status && !pixExpired) {
             interval = setInterval(async () => {
                 try {
                     const res = await api.get(`/payments/invoice/${pixData.invoiceId}/status`);
@@ -238,7 +287,20 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             }, 5000); // Poll every 5 seconds
         }
         return () => clearInterval(interval);
-    }, [pixData, status, onSuccess]);
+    }, [pixData, status, onSuccess, pixExpired, t]);
+
+    // Pix countdown tick
+    useEffect(() => {
+        if (!pixData?.expires_at) { setPixRemainingMs(0); return; }
+        const expiresAt = new Date(pixData.expires_at).getTime();
+        const tick = () => {
+            const remaining = Math.max(0, expiresAt - Date.now());
+            setPixRemainingMs(remaining);
+        };
+        tick();
+        const timer = setInterval(tick, 1000);
+        return () => clearInterval(timer);
+    }, [pixData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -386,6 +448,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
         try {
             const res = await api.post('/payments/create_pix', {
                 planId: plan.id,
+                ...(selectedInvoice?.id ? { invoiceId: selectedInvoice.id } : {}),
                 payer: {
                     email: formData.email,
                     first_name: formData.cardholderName || 'Cliente FTTH',
@@ -397,7 +460,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
             });
 
             setPixData(res.data);
-            setFormData(prev => ({ ...prev, email: '', identificationNumber: '', cardholderName: '' })); // Clear slightly to avoid confusion, or keep it.
+            // Preservar dados do pagador — caso QR expire, usuário pode regenerar sem digitar tudo de novo.
         } catch (err: any) {
             console.error('Pix Error:', err);
 
@@ -440,12 +503,21 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
     const labelClasses = "block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 ml-1";
     const iconClasses = "absolute left-3.5 top-3.5 w-4.5 h-4.5 text-slate-400";
 
-    const features = Array.from(new Set(plan.features || [
+    const defaultFeatures = [
         "Acesso total ao sistema de mapas",
         "Suporte técnico prioritário",
         "Exportação de arquivos KMZ/KML",
         "Infraestrutura de alta performance"
-    ]));
+    ];
+    const features = Array.from(new Set(
+        plan.features && plan.features.length > 0 ? plan.features : defaultFeatures
+    ));
+    const chargeAmount = selectedInvoice?.amount ?? plan.priceRaw;
+    const priceLabel = `R$ ${chargeAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+    const selectedPeriodLabel = selectedInvoice && selectedInvoice.referenceStart && selectedInvoice.referenceEnd
+        ? `${new Date(selectedInvoice.referenceStart).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – ${new Date(selectedInvoice.referenceEnd).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+        : null;
 
     return (
         <div className="max-w-8xl mx-auto animate-in fade-in duration-700 pt-2 pb-8 sm:pb-0">
@@ -479,8 +551,8 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                     </div>
 
                     {paymentTab === 'card' ? (
-                        <Elements stripe={stripePromise}>
-                            <StripeCardForm plan={plan} onSuccess={onSuccess} status={status} setStatus={setStatus} />
+                        <Elements stripe={stripePromise} options={{ locale: 'pt-BR' } as any}>
+                            <StripeCardForm plan={plan} onSuccess={onSuccess} status={status} setStatus={setStatus} priceLabel={priceLabel} invoiceId={selectedInvoice?.id} />
                         </Elements>
                     ) : (
                         <div className="space-y-4">
@@ -494,24 +566,37 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
 
                             {pixData ? (
                                 <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm animate-in zoom-in duration-300">
-                                    <div className="text-center mb-6">
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Pague com Pix</h3>
+                                    <div className="text-center mb-5">
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1.5">Pague com Pix</h3>
                                         <p className="text-sm text-slate-500 max-w-xs">
                                             Abra o app do seu banco, escolha a opção Pix e escaneie o código abaixo.
                                         </p>
                                     </div>
 
-                                    <div className="bg-white p-4 rounded-2xl border-4 border-emerald-50 shadow-inner mb-6 relative">
+                                    <div className={`bg-white p-4 rounded-2xl border-4 shadow-inner mb-5 relative transition-all ${pixExpired ? 'border-slate-200 grayscale opacity-50' : 'border-emerald-50'}`}>
                                         <img src={`data:image/png;base64,${pixData.qr_code_base64}`} alt="QR Code Pix" className="w-48 h-48 object-contain" />
                                         {status?.type === 'success' && (
-                                            <div className="absolute inset-0 bg-emerald-500/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center flex flex-col text-white animate-in zoom-in">
+                                            <div className="absolute inset-0 bg-emerald-500/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-white animate-in zoom-in">
                                                 <CheckCircle2 className="w-12 h-12 mb-2" />
                                                 <span className="font-bold text-sm">Pago!</span>
                                             </div>
                                         )}
+                                        {pixExpired && !status?.type && (
+                                            <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center text-white">
+                                                <AlertTriangle className="w-10 h-10 mb-2 text-amber-400" />
+                                                <span className="font-bold text-sm">QR expirado</span>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="w-full max-w-sm space-y-3">
+                                    {!pixExpired && !status?.type && pixRemainingMs > 0 && (
+                                        <div className="mb-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                            <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                                            Expira em <span className="font-mono tabular-nums">{formatPixCountdown(pixRemainingMs)}</span>
+                                        </div>
+                                    )}
+
+                                    <div className={`w-full max-w-sm space-y-3 transition-opacity ${pixExpired ? 'opacity-40 pointer-events-none' : ''}`}>
                                         <label className="block text-xs font-bold text-slate-500 text-center uppercase tracking-wider">Ou use o Copia e Cola</label>
                                         <div className="flex gap-2">
                                             <input
@@ -523,6 +608,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                                             />
                                             <button
                                                 onClick={handleCopyPix}
+                                                disabled={pixExpired}
                                                 className={`px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 transition-all ${pixCopied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800'}`}
                                             >
                                                 {pixCopied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -531,9 +617,19 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                                         </div>
                                     </div>
 
-                                    {!status?.type && (
-                                        <div className="mt-8 flex items-center justify-center gap-3 text-sm text-slate-500 animate-pulse">
-                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                    {pixExpired && !status?.type && (
+                                        <button
+                                            onClick={() => { setPixData(null); setStatus(null); }}
+                                            className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-all"
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                            Gerar novo QR Code
+                                        </button>
+                                    )}
+
+                                    {!pixExpired && !status?.type && (
+                                        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-500">
+                                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                                             Aguardando pagamento...
                                         </div>
                                     )}
@@ -612,43 +708,63 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                 </div>
 
                 {/* Coluna Direita: Resumo do Plano */}
-                <div className="w-full lg:w-[350px] order-2 lg:order-2">
-                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-[#151820] text-white p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-2xl relative overflow-hidden border border-white/5">
+                <div className="w-full lg:w-[340px] order-2 lg:order-2">
+                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-[#151820] text-white p-5 sm:p-6 rounded-2xl shadow-xl relative overflow-hidden border border-white/5">
 
                         <div className="relative z-10">
-                            <div className="mb-6">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500/60 block mb-1">Assinando o plano</span>
-                                <h2 className="text-3xl font-black text-white tracking-tight">{plan.name}</h2>
+                            <div className="mb-5">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400/70 block mb-0.5">
+                                    {selectedInvoice ? 'Pagando fatura' : 'Assinando o plano'}
+                                </span>
+                                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                                    {selectedPeriodLabel || plan.name}
+                                </h2>
+                                {selectedInvoice && (
+                                    <p className="text-xs text-slate-400 mt-1">Plano {plan.name}</p>
+                                )}
                             </div>
 
-                            <h3 className="text-sm font-bold mb-6 flex items-center gap-3 text-slate-400 border-t border-white/5 pt-6">
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                Resumo dos Benefícios
-                            </h3>
+                            {!selectedInvoice && (
+                                <div className="border-t border-white/10 pt-4 mb-5">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 text-slate-400">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                        Benefícios inclusos
+                                    </h3>
 
-                            <div className="space-y-4 mb-10 pt-6 border-t border-white/10">
-                                {features.map((feature, idx) => (
-                                    <div key={idx} className="flex gap-3 text-sm">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                        <span className="text-slate-300">{feature}</span>
+                                    <div className="space-y-2">
+                                        {features.map((feature, idx) => (
+                                            <div key={idx} className="flex gap-2.5 text-[13px]">
+                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-[3px]" />
+                                                <span className="text-slate-300 leading-snug">{feature}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                </div>
+                            )}
+
+                            <div className="space-y-2 pt-4 border-t border-white/10">
+                                <div className="flex justify-between items-center text-[13px]">
+                                    <span className="text-slate-400">{selectedInvoice ? 'Valor da fatura' : 'Mensalidade'}</span>
+                                    <span className="font-semibold text-slate-200">R$ {chargeAmount?.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 mt-1 border-t border-white/10">
+                                    <span className="font-bold text-sm">Total hoje</span>
+                                    <span className="font-black text-xl text-emerald-400">R$ {chargeAmount?.toFixed(2)}</span>
+                                </div>
                             </div>
 
-                            <div className="space-y-3 pt-6 border-t border-white/10">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-400">Total Mensal</span>
-                                    <span className="font-bold">R$ {plan.priceRaw?.toFixed(2)}</span>
+                            {remainingAfter && remainingAfter.count > 0 && (
+                                <div className="mt-4 py-3 px-3.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                                    <p className="text-[11px] text-amber-300 leading-relaxed">
+                                        Após este pagamento, <span className="font-bold">{remainingAfter.count} {remainingAfter.count === 1 ? 'fatura' : 'faturas'}</span> {remainingAfter.count === 1 ? 'continuará' : 'continuarão'} pendente{remainingAfter.count === 1 ? '' : 's'}
+                                        <span className="block font-bold text-amber-200 mt-0.5">R$ {remainingAfter.total.toFixed(2)}</span>
+                                    </p>
                                 </div>
-                                <div className="flex justify-between items-center pt-4 mt-2 border-t border-white/20">
-                                    <span className="font-bold text-lg">Total hoje</span>
-                                    <span className="font-black text-2xl text-emerald-400">R$ {plan.priceRaw?.toFixed(2)}</span>
-                                </div>
-                            </div>
+                            )}
 
-                            <div className="mt-10 py-4 px-6 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3 justify-center">
-                                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Pagamento Seguro</span>
+                            <div className="mt-5 py-2.5 px-3 bg-white/5 rounded-lg border border-white/5 flex items-center gap-2 justify-center">
+                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                <span className="text-[10px] font-medium tracking-wide text-slate-400">Cancele quando quiser · Sem fidelidade</span>
                             </div>
                         </div>
                     </div>
