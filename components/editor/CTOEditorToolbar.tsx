@@ -35,6 +35,7 @@ interface CTOEditorToolbarProps {
     onAddConnector: (e: React.MouseEvent) => void;
     isConnectorToolActive: boolean;
     onAddNote: (e: React.MouseEvent) => void;
+    onAddDIO: (e: React.MouseEvent) => void;
 
     // Connections
     isAutoSpliceOpen: boolean;
@@ -60,7 +61,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
     isMaximized, isCollapsed, onToggleCollapse, onToggleMaximize, onClose, onWindowDragStart,
     isRotateMode, isDeleteMode, showSplitterDropdown, isFusionToolActive, isSmartAlignMode,
     isVflToolActive, isOtdrToolActive, isSnapping, onToggleSnapping, toggleToolMode,
-    onAddFusion, onAddConnector, isConnectorToolActive, onAddNote,
+    onAddFusion, onAddConnector, isConnectorToolActive, onAddNote, onAddDIO,
     isAutoSpliceOpen, onOpenAutoSplice, onClearConnections,
     showHotkeys, onToggleHotkeys, hotkeysRef,
     onExportPNG, exportingType, onOpenQRCode,
@@ -185,6 +186,24 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                                 <rect x="7" y="7" width="10" height="10" rx="1" stroke="currentColor" fill="none" />
                                 <rect x="2" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none" />
                                 <rect x="16" y="9" width="6" height="6" rx="1" fill="currentColor" stroke="none" />
+                            </svg>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={onAddDIO}
+                            className="h-8 w-8"
+                            title={t('add_dio') || 'Adicionar DIO'}
+                            disabled={readOnly}
+                        >
+                            {/* DIO mini-chassis: vertical body with rows of ports — mirrors DIONode design */}
+                            <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                                <rect x="7" y="3" width="10" height="18" rx="1.5" />
+                                <line x1="9" y1="6.5"  x2="15" y2="6.5" />
+                                <line x1="9" y1="9.5"  x2="15" y2="9.5" />
+                                <line x1="9" y1="12.5" x2="15" y2="12.5" />
+                                <line x1="9" y1="15.5" x2="15" y2="15.5" />
+                                <line x1="9" y1="18.5" x2="15" y2="18.5" />
                             </svg>
                         </Button>
                         <Button

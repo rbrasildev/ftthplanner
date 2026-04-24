@@ -43,11 +43,18 @@ interface CableData {
     catalogId?: string | null;
 }
 
+interface DIOInline {
+    id: string;
+    name: string;
+    ports: number;
+}
+
 interface CTONode {
     id: string;
     name: string;
     splitters: Splitter[];
     fusions: FusionPoint[];
+    dios?: DIOInline[];
     connections: FiberConnection[];
     inputCableIds: string[];
 }
@@ -343,10 +350,38 @@ export function traceOpticalPower(
                 }
             }
 
-            // E. DIO port
-            if ('dios' in node) {
+            // E0. Inline DIO port inside a CTO (CTO-side patch panel).
+            // Crossing one port adds a connector pair → 0.5 dB. Guarded with
+            // `'splitters' in node` to keep the CTO/POP discriminator unambiguous.
+            const inlineDioMatch = ('splitters' in node)
+                ? sourceId.match(/^(dio-\d+)-port-(\d+)-(in|out)$/)
+                : null;
+            if (inlineDioMatch) {
+                const [, dioId, portIdxStr, side] = inlineDioMatch;
+                const inlineDios = (node as CTONode).dios;
+                const dio = inlineDios?.find(d => d.id === dioId);
+                if (dio) {
+                    const portNum = parseInt(portIdxStr, 10) + 1;
+                    path.unshift({
+                        type: 'CONNECTOR',
+                        id: `${dio.id}-port-${portIdxStr}`,
+                        name: `${dio.name} P${portNum}`,
+                        loss: 0.5,
+                        details: `Port ${portNum}`,
+                    });
+                    const otherSide = side === 'in' ? 'out' : 'in';
+                    currPortId = `${dioId}-port-${portIdxStr}-${otherSide}`;
+                    continue;
+                }
+                // Orphan DIO reference — stop the trace cleanly to avoid fall-through.
+                break;
+            }
+
+            // E. DIO port (POP-side, full DIO with `portIds`)
+            // Guard with `'olts' in node` so a CTO carrying inline `dios` doesn't fall in here.
+            if ('dios' in node && 'olts' in node) {
                 const pop = node as POPNode;
-                const dio = pop.dios.find(d => d.portIds.some(pid => pid.trim() === sourceId.trim()));
+                const dio = pop.dios.find(d => Array.isArray(d.portIds) && d.portIds.some(pid => pid.trim() === sourceId.trim()));
                 if (dio) {
                     path.unshift({ type: 'CONNECTOR', id: dio.id, name: dio.name, loss: 0.5, details: `Port ${sourceId}` });
                     currPortId = sourceId;

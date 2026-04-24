@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { CTOData, CableData, ElementLayout } from '../types';
+import { parseDIOPortId, isDIOPortIdLike } from '../utils/dioPortId';
 
 interface ViewState {
     x: number;
@@ -109,7 +110,7 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
         }
 
         // 3. Reconcile Cables
-        const cableLayoutKeys = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
+        const cableLayoutKeys = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-') && !k.includes('dio-'));
         const cablesWithoutLayout = cables.filter(c => !data.layout![c.id]);
 
         if (cablesWithoutLayout.length > 0 && cableLayoutKeys.length > 0) {
@@ -137,7 +138,7 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
         }
 
         // 4. CLEANUP - Remove genuinely orphan cable layouts
-        const finalCableLayoutsToCheck = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-'));
+        const finalCableLayoutsToCheck = Object.keys(data.layout).filter(k => !k.includes('fus-') && !k.includes('spl-') && !k.includes('dio-'));
         const finalCurrentCableIds = cables.map(c => c.id);
 
         const layoutKeysToRemove = finalCableLayoutsToCheck.filter(layoutKey => {
@@ -146,6 +147,30 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
         });
 
         layoutKeysToRemove.forEach(key => delete data.layout![key]);
+
+        // 5. CLEANUP - Heal orphan DIO references.
+        // Existing CTOs may have ghost connections / layout entries pointing at DIOs
+        // whose data was lost on the backend before `dios` got persisted. Drop them
+        // so re-opening doesn't show fibers attached to nothing.
+        const knownDioIds = new Set((data.dios || []).map(d => d.id));
+
+        // Drop layout entries for dio-XXX with no matching DIO record
+        Object.keys(data.layout).forEach(k => {
+            if (isDIOPortIdLike(k) && !knownDioIds.has(k)) {
+                delete data.layout![k];
+            }
+        });
+
+        // Drop connections referencing a dio-XXX port whose DIO no longer exists.
+        // Prefix check short-circuits the regex on the ~majority of non-DIO endpoints.
+        const isOrphanDioPort = (portId: string): boolean => {
+            if (!isDIOPortIdLike(portId)) return false;
+            const parsed = parseDIOPortId(portId);
+            return parsed ? !knownDioIds.has(parsed.dioId) : false;
+        };
+        data.connections = data.connections.filter(c =>
+            !isOrphanDioPort(c.sourceId) && !isOrphanDioPort(c.targetId)
+        );
     }, []);
 
     // --- Apply default layouts to a CTO (shared init logic) ---
@@ -226,6 +251,7 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
                 });
             }
             if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
+            if (prev.dios) merged.dios = JSON.parse(JSON.stringify(prev.dios));
             if (prev.viewState) merged.viewState = prev.viewState;
             if (prev.inputCableIds !== undefined) merged.inputCableIds = prev.inputCableIds;
 

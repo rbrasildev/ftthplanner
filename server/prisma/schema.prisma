@@ -185,6 +185,7 @@ model Cto {
   lng               Float
   splitters         Json?           @default("[]")
   fusions           Json?           @default("[]")
+  dios              Json?           @default("[]")
   connections       Json?           @default("[]")
   inputCableIds     String[]        @default([]) @map("input_cable_ids")
   layout            Json?           @default("{}")

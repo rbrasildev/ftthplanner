@@ -1,6 +1,7 @@
 
-import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note, Customer } from '../types';
+import { CTOData, CableData, FiberConnection, getFiberColor, Splitter, FusionPoint, Note, Customer, DIOInline } from '../types';
 import { SplitterCatalogItem } from '../services/catalogService';
+import { parseDIOPortId, isDIOPortIdLike, makeDIOPortId } from '../utils/dioPortId';
 import jsPDF from 'jspdf';
 
 // --- CONSTANTS ---
@@ -321,6 +322,97 @@ const renderFusion = (fusion: FusionPoint, x: number, y: number, rotation: numbe
     return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${geo.cx}, ${geo.cy})">${content}</g>`;
 };
 
+// --- DIO INLINE (CTO patch panel) ---
+// Geometry mirrors components/editor/DIONode.tsx exactly so connection endpoints
+// land on the exported SVG ports without offset.
+const DIO_WIDTH = 36;
+const DIO_PORT_ROW = 12;
+const DIO_CAP = 12; // 6 top + 6 bottom inner padding
+
+const getDIOGeometry = (dio: DIOInline) => {
+    const portCount = dio.ports;
+    const width = DIO_WIDTH;
+    const height = DIO_CAP + portCount * DIO_PORT_ROW;
+    const size = Math.max(width, height);
+    const offsetX = (size - width) / 2;
+    const offsetY = (size - height) / 2;
+
+    // Each port has IN (left) and OUT (right) connection points centered in a 12px row.
+    // Matches DIONode rendering: row container starts at top=6, each port is centered
+    // within a 12px tall row, IN sits flush left and OUT flush right with 2px padding.
+    const ports = Array.from({ length: portCount }).map((_, idx) => {
+        const rowCenterY = offsetY + 6 + idx * DIO_PORT_ROW + DIO_PORT_ROW / 2;
+        return {
+            inId: makeDIOPortId(dio.id, idx, 'in'),
+            outId: makeDIOPortId(dio.id, idx, 'out'),
+            // 2px padding + 5px (half of 10px port) — keeps centers aligned with the live editor.
+            inX: offsetX + 2 + 5,
+            outX: offsetX + width - 2 - 5,
+            y: rowCenterY,
+        };
+    });
+
+    return { size, width, height, offsetX, offsetY, ports };
+};
+
+const renderDIO = (dio: DIOInline, x: number, y: number, rotation: number, litPorts: Set<string>): string => {
+    const geo = getDIOGeometry(dio);
+    let content = '';
+
+    // Body — vertical chassis with subtle gradient feel via fill + darker stroke
+    content += `<rect x="${geo.offsetX}" y="${geo.offsetY}" width="${geo.width}" height="${geo.height}" rx="3" fill="#334155" stroke="#0f172a" stroke-width="1" />`;
+
+    // Decorative screw dots (top + bottom)
+    const screwR = 0.8;
+    const screwInset = 3;
+    content += `<circle cx="${geo.offsetX + screwInset}" cy="${geo.offsetY + 3}" r="${screwR}" fill="#64748b" />`;
+    content += `<circle cx="${geo.offsetX + geo.width - screwInset}" cy="${geo.offsetY + 3}" r="${screwR}" fill="#64748b" />`;
+    content += `<circle cx="${geo.offsetX + screwInset}" cy="${geo.offsetY + geo.height - 3}" r="${screwR}" fill="#64748b" />`;
+    content += `<circle cx="${geo.offsetX + geo.width - screwInset}" cy="${geo.offsetY + geo.height - 3}" r="${screwR}" fill="#64748b" />`;
+
+    // Ports
+    geo.ports.forEach((p, idx) => {
+        const isLitIn = litPorts.has(p.inId);
+        const isLitOut = litPorts.has(p.outId);
+        const patched = isLitIn && isLitOut;
+
+        // Center slot bar (amber when patched-through and lit, neutral otherwise)
+        content += `<line x1="${p.inX + 4}" y1="${p.y}" x2="${p.outX - 4}" y2="${p.y}" stroke="${patched ? '#f59e0b' : '#64748b'}" stroke-width="1.2" stroke-linecap="round" />`;
+
+        // IN port — circle, white/red
+        content += `<circle cx="${p.inX}" cy="${p.y}" r="5" fill="${isLitIn ? '#ef4444' : 'white'}" stroke="#0f172a" stroke-width="1" />`;
+        content += `<text x="${p.inX}" y="${p.y}" dominant-baseline="middle" text-anchor="middle" font-size="6" font-weight="bold" fill="${isLitIn ? 'white' : '#1e293b'}" opacity="0.7">${idx + 1}</text>`;
+
+        // OUT port — square, slate/red
+        content += `<rect x="${p.outX - 5}" y="${p.y - 5}" width="10" height="10" rx="1" fill="${isLitOut ? '#ef4444' : '#cbd5e1'}" stroke="#0f172a" stroke-width="1" />`;
+        content += `<text x="${p.outX}" y="${p.y}" dominant-baseline="middle" text-anchor="middle" font-size="6" font-weight="bold" fill="${isLitOut ? 'white' : '#1e293b'}" opacity="0.7">${idx + 1}</text>`;
+    });
+
+    // Label beside body — mirrors DIONode label logic exactly:
+    //   - Flips to the OTHER side of the body when outer rotation is in 45°–135°
+    //     (so it never overlaps the chassis after rotation).
+    //   - Uses a fixed local rotation (+90 / −90) so the text reads vertically
+    //     in the unrotated frame; the parent <g rotate> composes the final angle.
+    const rotNorm = ((rotation % 360) + 360) % 360;
+    const useRightSide = rotNorm > 45 && rotNorm < 135;
+    const textRot = useRightSide ? -90 : 90;
+
+    const labelText = escapeXML(`${dio.name} · ${dio.ports}p`);
+    const labelW = labelText.length * 4.5 + 8;
+    const labelH = 12;
+    const labelCx = useRightSide ? geo.offsetX + geo.width + 8 : geo.offsetX - 8;
+    const labelCy = geo.offsetY + geo.height / 2;
+
+    content += `<g transform="translate(${labelCx}, ${labelCy}) rotate(${textRot})">` +
+        `<rect x="${-labelW / 2}" y="${-labelH / 2}" width="${labelW}" height="${labelH}" fill="white" fill-opacity="0.85" />` +
+        `<text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="black">${labelText}</text>` +
+        `</g>`;
+
+    const cx = geo.size / 2;
+    const cy = geo.size / 2;
+    return `<g transform="translate(${x}, ${y}) rotate(${rotation}, ${cx}, ${cy})">${content}</g>`;
+};
+
 const renderNote = (note: Note): string => {
     const width = note.width || 120;
     const height = note.height || 80;
@@ -366,6 +458,12 @@ export interface FooterData {
     clientNames?: string[]; // All client names
     clientDetails?: { name: string; port: string; power?: string }[]; // Client with port and power
     totalPower?: string; // e.g. "1:8 = -10.5 dBm"
+    /**
+     * Aggregated component counts for the COMPONENTES box. Each entry is
+     * rendered as a compact stat card with a colored accent bar (`color`).
+     * Cards with `count === 0` are omitted. Order in the array is preserved.
+     */
+    componentCounts?: { label: string; count: number; color?: string }[];
 }
 
 const breakText = (text: string, maxChars: number): string[] => {
@@ -588,21 +686,63 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
     // Divider
     content += `<line x1="${infoX}" y1="${y + 70}" x2="${infoX + INFO_W}" y2="${y + 70}" stroke="${ENG.colors.border}" stroke-width="0.5" stroke-dasharray="2,2" />`;
 
-    // Row 3: Splitters & Cables summary
+    // Row 3: Component inventory — compact dashboard-style stat cards
     const r3y = y + 80;
     content += renderText(col1X, r3y, 'COMPONENTES', 7, 'bold', ENG.colors.textLabel);
-    let compY = r3y + 12;
-    if (data.splittersSummary) {
-        data.splittersSummary.slice(0, 2).forEach(s => {
-            content += renderText(col1X, compY, s, 7, 'normal', '#0f172a');
-            compY += 10;
+    let compY = r3y + 10;
+
+    if (data.componentCounts && data.componentCounts.length > 0) {
+        const visible = data.componentCounts.filter(c => c.count > 0);
+
+        // 3-column grid; each card has a left accent bar (color), big bold count and
+        // small uppercase label. Adapts column count if inventory is small.
+        const COLS = Math.min(3, Math.max(1, visible.length));
+        const GAP = 4;
+        const innerW = INFO_W - 10; // matches col1X left margin
+        const cardW = (innerW - GAP * (COLS - 1)) / COLS;
+        const cardH = 24;
+        const ROWS = Math.ceil(visible.length / COLS);
+
+        visible.forEach((entry, i) => {
+            const col = i % COLS;
+            const row = Math.floor(i / COLS);
+            const cx = col1X + col * (cardW + GAP);
+            const cy = compY + row * (cardH + GAP);
+            const accent = entry.color || '#64748b';
+
+            // Card background + border
+            content += `<rect x="${cx}" y="${cy}" width="${cardW}" height="${cardH}" rx="2" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.5" />`;
+            // Left accent bar (rounded on the left, square on the right)
+            content += `<path d="M ${cx + 2} ${cy} L ${cx + 3} ${cy} L ${cx + 3} ${cy + cardH} L ${cx + 2} ${cy + cardH} A 2 2 0 0 1 ${cx} ${cy + cardH - 2} L ${cx} ${cy + 2} A 2 2 0 0 1 ${cx + 2} ${cy} Z" fill="${accent}" />`;
+
+            // Big count number
+            const countText = String(entry.count);
+            content += `<text x="${cx + 9}" y="${cy + 16}" font-family="${ENG.fontFamily}" font-size="13" font-weight="700" fill="#0f172a">${countText}</text>`;
+            // Label — placed to the right of the number, uppercase + tracking
+            const labelX = cx + 9 + countText.length * 8 + 4;
+            // Truncate label if it would overflow the card
+            const maxLabelChars = Math.max(3, Math.floor((cardW - (labelX - cx) - 4) / 4.2));
+            const label = entry.label.length > maxLabelChars
+                ? entry.label.slice(0, maxLabelChars - 1) + '…'
+                : entry.label;
+            content += `<text x="${labelX}" y="${cy + 16}" font-family="${ENG.fontFamily}" font-size="6.5" font-weight="600" fill="${ENG.colors.textLabel}" letter-spacing="0.4" style="text-transform: uppercase;">${escapeXML(label)}</text>`;
         });
-    }
-    if (data.cablesSummary) {
-        data.cablesSummary.slice(0, 2).forEach(c => {
-            content += renderText(col1X, compY, c, 7, 'normal', '#0f172a');
-            compY += 10;
-        });
+
+        compY += ROWS * cardH + (ROWS - 1) * GAP + 4;
+    } else {
+        // Legacy fallback when no counts were provided
+        if (data.splittersSummary) {
+            data.splittersSummary.slice(0, 2).forEach(s => {
+                content += renderText(col1X, compY, s, 7, 'normal', '#0f172a');
+                compY += 10;
+            });
+        }
+        if (data.cablesSummary) {
+            data.cablesSummary.slice(0, 2).forEach(c => {
+                content += renderText(col1X, compY, c, 7, 'normal', '#0f172a');
+                compY += 10;
+            });
+        }
     }
 
     // --- ZONE 4: Minimap (Right Column) ---
@@ -679,6 +819,14 @@ export const generateCTOSVG = (
         cto.fusions.forEach(f => {
             const l = cto.layout![f.id];
             if (l) { checkPt(l.x, l.y); checkPt(l.x + 24, l.y + 12); }
+        });
+        (cto.dios || []).forEach(d => {
+            const l = cto.layout![d.id];
+            if (l) {
+                const geo = getDIOGeometry(d);
+                checkPt(l.x, l.y);
+                checkPt(l.x + geo.size, l.y + geo.size);
+            }
         });
         cto.connections.forEach(c => {
             if (c.points) c.points.forEach(p => checkPt(p.x, p.y));
@@ -811,13 +959,36 @@ export const generateCTOSVG = (
             return { x: l.x + rotated.x, y: l.y + rotated.y };
         }
 
+        // DIO INLINE USING SHARED GEOMETRY
+        const parsedDio = parseDIOPortId(portId);
+        if (parsedDio) {
+            const dio = (cto.dios || []).find(d => d.id === parsedDio.dioId);
+            if (!dio) return null;
+            const l = cto.layout?.[dio.id];
+            if (!l) return null;
+            const rotation = l.rotation || 0;
+
+            const geo = getDIOGeometry(dio);
+            const port = geo.ports[parsedDio.portIndex];
+            if (!port) return null;
+
+            const px = parsedDio.side === 'in' ? port.inX : port.outX;
+            const py = port.y;
+
+            const cx = geo.size / 2;
+            const cy = geo.size / 2;
+            const rotated = rotatePoint(px, py, cx, cy, rotation);
+
+            return { x: l.x + rotated.x, y: l.y + rotated.y };
+        }
+
         return null; // Fallback
     };
 
     // RENDER CONNECTIONS
     cto.connections.forEach(conn => {
         // FIXED: Force Math Calculation for Components (Splitter/Fusion) 
-        const isComponent = (id: string) => id.includes('spl-') || id.includes('fus-');
+        const isComponent = (id: string) => id.includes('spl-') || id.includes('fus-') || isDIOPortIdLike(id);
         let p1 = isComponent(conn.sourceId) ? getCalculatedPortCenter(conn.sourceId) : (portPositions[conn.sourceId] || getCalculatedPortCenter(conn.sourceId));
         let p2 = isComponent(conn.targetId) ? getCalculatedPortCenter(conn.targetId) : (portPositions[conn.targetId] || getCalculatedPortCenter(conn.targetId));
 
@@ -879,6 +1050,11 @@ export const generateCTOSVG = (
                 : null;
             diagramContent += renderFusion(f, l.x, l.y, l.rotation || 0, litPorts, attachedCustomer);
         }
+    });
+
+    (cto.dios || []).forEach(d => {
+        const l = cto.layout![d.id];
+        if (l) diagramContent += renderDIO(d, l.x, l.y, l.rotation || 0, litPorts);
     });
 
     if (cto.notes) {

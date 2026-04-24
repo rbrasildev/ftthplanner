@@ -118,6 +118,15 @@ export interface DIO {
   splicingLayout?: { col1: string[]; col2: string[]; col3: string[] };
 }
 
+// Lightweight DIO used inside the CTO editor.
+// Each port exposes two distinct connection points (in / out), so fibers can
+// land on either side. Port IDs follow `${id}-port-${i}-in|out`.
+export interface DIOInline {
+  id: string;
+  name: string;
+  ports: number;
+}
+
 // --- SWITCH / SFP / GBIC ---
 
 export type GbicFormFactor = 'SFP' | 'SFP+' | 'SFP28' | 'QSFP+' | 'QSFP28' | 'XFP' | 'GBIC';
@@ -282,6 +291,7 @@ export interface CTOData {
   coordinates: Coordinates;
   splitters: Splitter[];
   fusions: FusionPoint[];
+  dios?: DIOInline[]; // Optional inline DIOs placed inside the CTO diagram
   connections: FiberConnection[];
   // Simulating physical structure
   inputCableIds: string[];

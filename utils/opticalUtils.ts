@@ -11,6 +11,7 @@ import {
     OLT
 } from '../types';
 import { SplitterCatalogItem, CableCatalogItem, FusionCatalogItem, OLTCatalogItem } from '../services/catalogService';
+import { parseDIOPortId, makeDIOPortId, flipDIOPortSide } from './dioPortId';
 
 // Interfaces for the Calculation Result
 export interface OpticalElement {
@@ -318,6 +319,10 @@ export function traceOpticalPath(
                 const cableId = sourceId.split('-fiber-')[0];
                 const cable = network.cables.find(c => c.id === cableId);
 
+                if (!cable) {
+                    console.warn(`[Trace] Cable '${cableId}' not present in network.cables (${network.cables.length} cables). Trace will stall.`);
+                }
+
                 if (cable) {
                     const cableCatalog = catalogs.cables.find(c => c.id === cable.catalogId);
                     const cLoss = getCableLoss(cable, cableCatalog);
@@ -334,14 +339,17 @@ export function traceOpticalPath(
 
                     // Move to the other end of the cable
                     // If we are at 'toNode', go to 'fromNode'. If at 'fromNode', go to 'toNode'.
-                    // NOTE: Input Cable implies we are at the 'toNode' end usually? 
-                    // Not necessarily, cable direction is arbitrary. 
+                    // NOTE: Input Cable implies we are at the 'toNode' end usually?
+                    // Not necessarily, cable direction is arbitrary.
 
                     let nextNodeId: string | null = null;
                     if (cable.toNodeId === currNodeId) nextNodeId = cable.fromNodeId;
                     else if (cable.fromNodeId === currNodeId) nextNodeId = cable.toNodeId;
 
-                    if (!nextNodeId) break; // Floating cable?
+                    if (!nextNodeId) {
+                        console.warn(`[Trace] Cable '${cable.name}' (${cable.id}) endpoints (from=${cable.fromNodeId}, to=${cable.toNodeId}) don't link to current node '${currNodeId}'.`);
+                        break; // Floating cable?
+                    }
 
                     currNodeId = nextNodeId;
 
@@ -428,6 +436,31 @@ export function traceOpticalPath(
                 }
             }
 
+            // C2. Inline DIO port inside a CTO (patch panel placed in CTO editor).
+            // Each port has two sides; crossing one adds a connector pair → 0.5 dB.
+            // Guarded with `'splitters' in node` to avoid casting POPData → CTOData.
+            const ctoDioParsed = 'splitters' in node ? parseDIOPortId(sourceId) : null;
+            if (ctoDioParsed) {
+                const inlineDios = (node as CTOData).dios;
+                const dio = inlineDios?.find(d => d.id === ctoDioParsed.dioId);
+                if (dio) {
+                    const portNum = ctoDioParsed.portIndex + 1;
+                    path.unshift({
+                        type: 'CONNECTOR',
+                        id: `${dio.id}-port-${ctoDioParsed.portIndex}`,
+                        name: `${dio.name} P${portNum}`,
+                        loss: 0.5,
+                        details: `Port ${portNum}`
+                    });
+                    currPortId = makeDIOPortId(ctoDioParsed.dioId, ctoDioParsed.portIndex, flipDIOPortSide(ctoDioParsed.side));
+                    continue;
+                }
+                // Regex matched but DIO record absent — orphan connection from a deleted DIO.
+                // Stop the trace cleanly so we don't fall through into unrelated branches.
+                console.warn(`[Trace] Connection references DIO port ${sourceId} but '${ctoDioParsed.dioId}' is not in node.dios (size=${(inlineDios || []).length}).`);
+                break;
+            }
+
             // D. Is it an OLT / PON Port? (In POP)
             if ('olts' in node) {
                 const pop = node as POPData;
@@ -479,10 +512,12 @@ export function traceOpticalPath(
                     break;
                 }
             }
-            // E. Is it a DIO Port? (Patch Panel)
-            if ('dios' in node) {
+            // E. Is it a DIO Port? (Patch Panel — POP-side, full DIO with `portIds`)
+            // Guard against CTO inline DIOs (DIOInline has no `portIds`) which now
+            // also satisfy `'dios' in node` since CTOData carries an optional `dios` field.
+            if ('dios' in node && 'olts' in node) {
                 const pop = node as POPData;
-                const dio = pop.dios.find(d => d.portIds.some(pid => pid.trim() === sourceId.trim()));
+                const dio = pop.dios.find(d => Array.isArray(d.portIds) && d.portIds.some(pid => pid.trim() === sourceId.trim()));
                 if (dio) {
                     // Found a DIO.
                     // A DIO is a pass-through. We are currently at 'sourceId' (one side of the port).

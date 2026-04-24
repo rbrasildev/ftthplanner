@@ -221,6 +221,7 @@ export const getProject = async (req: Request, res: Response) => {
                 coordinates: { lat: c.lat, lng: c.lng },
                 splitters: c.splitters || [],
                 fusions: c.fusions || [],
+                dios: c.dios || [],
                 connections: c.connections || [],
                 inputCableIds: c.inputCableIds,
                 layout: c.layout || {},
@@ -310,6 +311,7 @@ export const getProject = async (req: Request, res: Response) => {
                         id: c.id, name: c.name, status: c.status,
                         coordinates: { lat: c.lat, lng: c.lng },
                         splitters: c.splitters || [], fusions: c.fusions || [],
+                        dios: c.dios || [],
                         connections: c.connections || [], inputCableIds: c.inputCableIds,
                         layout: c.layout || {}, clientCount: c.clientCount,
                         catalogId: c.catalogId || null, type: c.type,
@@ -778,6 +780,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             lng: c.coordinates.lng,
                             splitters: c.splitters || [],
                             fusions: c.fusions || [],
+                            dios: c.dios || [],
                             connections: c.connections || [],
                             inputCableIds: c.inputCableIds || [],
                             layout: c.layout || {},
@@ -807,6 +810,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.reserveLoopLength !== c.reserveLoopLength ||
                             JSON.stringify(dbC.splitters) !== JSON.stringify(c.splitters || []) ||
                             JSON.stringify(dbC.fusions) !== JSON.stringify(c.fusions || []) ||
+                            JSON.stringify(dbC.dios || []) !== JSON.stringify(c.dios || []) ||
                             JSON.stringify(dbC.connections) !== JSON.stringify(c.connections || []) ||
                             JSON.stringify(dbC.inputCableIds) !== JSON.stringify(c.inputCableIds || []) ||
                             JSON.stringify(dbC.layout) !== JSON.stringify(c.layout || {});
@@ -846,6 +850,7 @@ export const syncProject = async (req: Request, res: Response) => {
                         // Only overwrite diagram fields if explicitly provided (not undefined)
                         if (c.splitters !== undefined) data.splitters = c.splitters;
                         if (c.fusions !== undefined) data.fusions = c.fusions;
+                        if (c.dios !== undefined) data.dios = c.dios;
                         if (c.connections !== undefined) data.connections = c.connections;
                         if (c.inputCableIds !== undefined) data.inputCableIds = c.inputCableIds;
                         if (c.layout !== undefined) data.layout = c.layout;
@@ -1157,6 +1162,7 @@ export const updateCTO = async (req: Request, res: Response) => {
                 lng: cto.coordinates?.lng ?? cto.lng,
                 splitters: cto.splitters || [],
                 fusions: cto.fusions || [],
+                dios: cto.dios || [],
                 connections: cto.connections || [],
                 inputCableIds: cto.inputCableIds || [],
                 layout: cto.layout || {},
@@ -1275,6 +1281,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
         const network = {
             ctos: project.ctos.map((c: any) => ({
                 id: c.id, name: c.name, splitters: c.splitters || [], fusions: c.fusions || [],
+                dios: c.dios || [],
                 connections: c.connections || [], inputCableIds: c.inputCableIds || [],
             })),
             pops: project.pops.map((p: any) => ({
@@ -1442,6 +1449,7 @@ export const getParentProjectNetwork = async (req: Request, res: Response) => {
                     id: c.id, name: c.name, status: c.status,
                     coordinates: { lat: c.lat, lng: c.lng },
                     splitters: c.splitters || [], fusions: c.fusions || [],
+                    dios: c.dios || [],
                     connections: c.connections || [], inputCableIds: c.inputCableIds,
                     layout: c.layout || {}, clientCount: c.clientCount,
                     catalogId: c.catalogId || null, type: c.type,

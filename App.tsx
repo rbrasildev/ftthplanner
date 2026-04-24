@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Button } from './components/common/Button';
 import { calculateDistance } from './utils/geometryUtils';
 import { isSubscriptionExpired } from './utils/subscriptionUtils';
+import { parseDIOPortId, makeDIOPortId, flipDIOPortSide, isDIOPortIdLike } from './utils/dioPortId';
 const CTOEditor = lazy(() => import('./components/CTOEditor').then(m => ({ default: m.CTOEditor })));
 const POPEditor = lazy(() => import('./components/POPEditor').then(m => ({ default: m.POPEditor })));
 import { ProjectManager } from './components/ProjectManager';
@@ -868,6 +869,19 @@ export default function App() {
 
         while (queue.length > 0) {
             const curr = queue.shift()!;
+
+            // Inline-DIO pass-through is curr-only (independent of which node we're inspecting).
+            // Resolve once per visit instead of re-running the regex inside the per-node loop.
+            // Only CTO nodes carry inline DIOs (POPData.dios is the full DIO type with `portIds`).
+            const dioParsed = isDIOPortIdLike(curr) ? parseDIOPortId(curr) : null;
+            if (dioParsed) {
+                const owningCto = network.ctos.find(c => c.dios?.some(d => d.id === dioParsed.dioId));
+                if (owningCto) {
+                    const otherPort = makeDIOPortId(dioParsed.dioId, dioParsed.portIndex, flipDIOPortSide(dioParsed.side));
+                    if (!litPorts.has(otherPort)) { litPorts.add(otherPort); queue.push(otherPort); }
+                }
+            }
+
             for (const node of allNodes) {
                 const attachedConns = node.connections.filter(c => c.sourceId === curr || c.targetId === curr);
                 attachedConns.forEach(conn => {

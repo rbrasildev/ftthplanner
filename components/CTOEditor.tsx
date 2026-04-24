@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
-import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus, Note } from '../types';
+import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus, Note, DIOInline } from '../types';
+import { makeDIOPortId } from '../utils/dioPortId';
 import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
@@ -10,6 +11,8 @@ import { NotesLayer } from './editor/NotesLayer';
 import { CableRenderer } from './editor/CableRenderer';
 import { FusionRenderer } from './editor/FusionRenderer';
 import { SplitterRenderer } from './editor/SplitterRenderer';
+import { DIORenderer } from './editor/DIORenderer';
+import { DIOAddModal } from './editor/modals/DIOAddModal';
 import { FusionTypeModal } from './editor/modals/FusionTypeModal';
 import { ConnectorTypeModal } from './editor/modals/ConnectorTypeModal';
 import { SplitterSelectionModal } from './editor/modals/SplitterSelectionModal';
@@ -734,6 +737,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // `isCollapsed` invalidates the cache too: while collapsed the canvas is `display:none`,
     // so getBoundingClientRect() returns zeros. Without this, expanding the modal would
     // reuse poisoned 0,0 port positions, making connections originate from the top-left corner.
+    // `localCTO.dios` is intentionally NOT in deps: every DIO add/remove also mutates
+    // `localCTO.layout`, so port-position cache invalidation already happens via that dep.
+    // Including the array would invalidate on every prop sync (deep clone produces a new ref).
     }, [incomingCables, localCTO.connections, localCTO.layout, localCTO.splitters, localCTO.fusions, isMaximized, modalSize, isCollapsed]);
 
 
@@ -777,7 +783,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         initialConnectionPoints?: { x: number, y: number }[];
     } | null>(null);
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
-    const [hoveredElement, setHoveredElement] = useState<{ id: string, type: 'cable' | 'connection' | 'splitter' | 'fusion' } | null>(null);
+    const [hoveredElement, setHoveredElement] = useState<{ id: string, type: 'cable' | 'connection' | 'splitter' | 'fusion' | 'dio' } | null>(null);
+    const [showDIOModal, setShowDIOModal] = useState(false);
     // Ref mirror of dragState — used by stable hover callbacks to suppress
     // re-renders during element drag (direct-DOM transforms would otherwise
     // be overwritten by React's re-render, causing the element/fibers to jitter).
@@ -1547,6 +1554,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             footerData.clientCount = ctoCustomers.length;
             footerData.clientNames = ctoCustomers.map(c => c.name);
 
+            // Aggregate inventory counts for the COMPONENTES box.
+            // Fusões e conectores convivem na mesma lista (`fusions`) — o discriminador é `category`.
+            const fusionCount = localCTO.fusions.filter(f => (f.category || 'fusion') !== 'connector').length;
+            const connectorCount = localCTO.fusions.filter(f => f.category === 'connector').length;
+            const dioCount = (localCTO.dios || []).length;
+            const totalDioPorts = (localCTO.dios || []).reduce((sum, d) => sum + d.ports, 0);
+            const noteCount = (localCTO.notes || []).length;
+
+            // DIO card folds the port total into the label: "1 DIO 12FO" / "2 DIO 36FO".
+            const dioLabel = dioCount > 0 ? `DIO ${totalDioPorts}FO` : 'DIO';
+
+            footerData.componentCounts = [
+                { label: 'Cabos',      count: incomingCables.length,     color: '#0ea5e9' }, // sky
+                { label: 'Splitters',  count: localCTO.splitters.length, color: '#10b981' }, // emerald
+                { label: 'Fusões',     count: fusionCount,               color: '#6366f1' }, // indigo
+                { label: 'Conectores', count: connectorCount,            color: '#f59e0b' }, // amber
+                { label: dioLabel,     count: dioCount,                  color: '#334155' }, // slate-700 (matches DIO node)
+                { label: 'Clientes',   count: ctoCustomers.length,       color: '#f43f5e' }, // rose
+                { label: 'Notas',      count: noteCount,                 color: '#eab308' }, // yellow
+            ];
+
             // Build client details with port number, sorted by port
             footerData.clientDetails = ctoCustomers.map(c => {
                 let port = '-';
@@ -1745,7 +1773,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         });
     }, []);
 
-    const handleElementAction = useCallback((e: React.MouseEvent, id: string, type: 'splitter' | 'fusion' | 'cable') => {
+    const handleDeleteDIO = useCallback((id: string) => {
+        setLocalCTO(prev => {
+            const dio = (prev.dios || []).find(d => d.id === id);
+            if (!dio) return prev;
+            const portIds = new Set<string>();
+            for (let i = 0; i < dio.ports; i++) {
+                portIds.add(makeDIOPortId(id, i, 'in'));
+                portIds.add(makeDIOPortId(id, i, 'out'));
+            }
+            const nextLayout = { ...(prev.layout || {}) };
+            delete nextLayout[id];
+            return {
+                ...prev,
+                dios: (prev.dios || []).filter(d => d.id !== id),
+                connections: prev.connections.filter(c => !portIds.has(c.sourceId) && !portIds.has(c.targetId)),
+                layout: nextLayout,
+            };
+        });
+    }, []);
+
+    const handleElementAction = useCallback((e: React.MouseEvent, id: string, type: 'splitter' | 'fusion' | 'cable' | 'dio') => {
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
 
@@ -1769,10 +1817,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 handleDeleteSplitter(id);
             } else if (type === 'fusion') {
                 handleDeleteFusion(id);
+            } else if (type === 'dio') {
+                handleDeleteDIO(id);
             }
             // Cable deletion not requested, but safe to ignore or add later
         }
-    }, [isVflToolActive, isOtdrToolActive, isRotateMode, isDeleteMode, handleDeleteSplitter, handleDeleteFusion]);
+    }, [isVflToolActive, isOtdrToolActive, isRotateMode, isDeleteMode, handleDeleteSplitter, handleDeleteFusion, handleDeleteDIO]);
 
     const handleMirrorElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -1886,7 +1936,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (target) {
             setHoveredElement({
                 id: target.dataset.hoverId!,
-                type: target.dataset.hoverType as 'cable' | 'connection' | 'splitter' | 'fusion'
+                type: target.dataset.hoverType as 'cable' | 'connection' | 'splitter' | 'fusion' | 'dio'
             });
         }
     }, []);
@@ -3082,6 +3132,52 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }));
     }, [setLocalCTO]);
 
+    // --- DIO HANDLERS ---
+    const handleAddDIOClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setShowDIOModal(true);
+    }, []);
+
+    const handleConfirmAddDIO = useCallback((portCount: number, customName?: string) => {
+        const id = `dio-${Date.now()}`;
+
+        // Drop in canvas center so user can immediately drag it
+        let cx = 300;
+        let cy = 200;
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            cx = (rect.width / 2 - viewState.x) / viewState.zoom;
+            cy = (rect.height / 2 - viewState.y) / viewState.zoom;
+        }
+        const width = 36;
+        const height = 12 + portCount * 12;
+        const size = Math.max(width, height);
+        const halfSize = size / 2;
+        const x = Math.round((cx - halfSize) / GRID_SIZE) * GRID_SIZE;
+        const y = Math.round((cy - halfSize) / GRID_SIZE) * GRID_SIZE;
+        const initialLayout: ElementLayout = { x, y, rotation: 0 };
+
+        setLocalCTO(prev => {
+            const existing = prev.dios || [];
+            const newDIO: DIOInline = {
+                id,
+                name: customName || `DIO ${existing.length + 1}`,
+                ports: portCount,
+            };
+            return {
+                ...prev,
+                dios: [...existing, newDIO],
+                layout: { ...prev.layout, [id]: initialLayout },
+            };
+        });
+
+        setHoveredElement({ id, type: 'dio' });
+    }, [viewState.x, viewState.y, viewState.zoom]);
+
+    const handleDIOAction = useCallback((e: React.MouseEvent, dioId: string) => {
+        handleElementAction(e, dioId, 'dio');
+    }, [handleElementAction]);
+
     const handleAddFusion = (e: React.MouseEvent) => {
         e.stopPropagation();
 
@@ -3434,6 +3530,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     onAddConnector={handleAddConnector}
                     isConnectorToolActive={isConnectorToolActive}
                     onAddNote={handleAddNote}
+                    onAddDIO={handleAddDIOClick}
                     isAutoSpliceOpen={isAutoSpliceOpen}
                     onOpenAutoSplice={() => setIsAutoSpliceOpen(true)}
                     onClearConnections={() => { if (window.confirm(t('clear_connections_confirm'))) setLocalCTO(prev => ({ ...prev, connections: [] })); }}
@@ -3676,6 +3773,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             onHoverLeave={handleElementHoverClear}
                         />
 
+                        <DIORenderer
+                            dios={localCTO.dios || []}
+                            layoutMap={localCTO.layout}
+                            connections={localCTO.connections}
+                            litPorts={litPorts}
+                            hoveredPortId={hoveredPortId}
+                            isElementVisible={isElementVisible}
+                            onDragStart={handleElementDragStart}
+                            onAction={handleDIOAction}
+                            onPortMouseDown={handlePortMouseDown}
+                            onPortMouseEnter={handlePortMouseEnter}
+                            onPortMouseLeave={handlePortMouseLeave}
+                            onHoverEnter={handleElementHover}
+                            onHoverLeave={handleElementHoverClear}
+                        />
+
                     </div>
                 </div>
 
@@ -3853,6 +3966,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     filter={splitterFilter}
                     onFilterChange={setSplitterFilter}
                     onSelect={handleAddSplitter}
+                />
+
+                <DIOAddModal
+                    isOpen={showDIOModal}
+                    onClose={() => setShowDIOModal(false)}
+                    onConfirm={handleConfirmAddDIO}
+                    suggestedName={`DIO ${(localCTO.dios?.length || 0) + 1}`}
                 />
 
 
