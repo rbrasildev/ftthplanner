@@ -222,6 +222,7 @@ export const getProject = async (req: Request, res: Response) => {
                 splitters: c.splitters || [],
                 fusions: c.fusions || [],
                 dios: c.dios || [],
+                notes: c.notes || [],
                 connections: c.connections || [],
                 inputCableIds: c.inputCableIds,
                 layout: c.layout || {},
@@ -312,6 +313,7 @@ export const getProject = async (req: Request, res: Response) => {
                         coordinates: { lat: c.lat, lng: c.lng },
                         splitters: c.splitters || [], fusions: c.fusions || [],
                         dios: c.dios || [],
+                        notes: c.notes || [],
                         connections: c.connections || [], inputCableIds: c.inputCableIds,
                         layout: c.layout || {}, clientCount: c.clientCount,
                         catalogId: c.catalogId || null, type: c.type,
@@ -781,6 +783,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             splitters: c.splitters || [],
                             fusions: c.fusions || [],
                             dios: c.dios || [],
+                            notes: c.notes || [],
                             connections: c.connections || [],
                             inputCableIds: c.inputCableIds || [],
                             layout: c.layout || {},
@@ -811,6 +814,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             JSON.stringify(dbC.splitters) !== JSON.stringify(c.splitters || []) ||
                             JSON.stringify(dbC.fusions) !== JSON.stringify(c.fusions || []) ||
                             JSON.stringify(dbC.dios || []) !== JSON.stringify(c.dios || []) ||
+                            JSON.stringify(dbC.notes || []) !== JSON.stringify(c.notes || []) ||
                             JSON.stringify(dbC.connections) !== JSON.stringify(c.connections || []) ||
                             JSON.stringify(dbC.inputCableIds) !== JSON.stringify(c.inputCableIds || []) ||
                             JSON.stringify(dbC.layout) !== JSON.stringify(c.layout || {});
@@ -851,10 +855,11 @@ export const syncProject = async (req: Request, res: Response) => {
                         if (c.splitters !== undefined) data.splitters = c.splitters;
                         if (c.fusions !== undefined) data.fusions = c.fusions;
                         if (c.dios !== undefined) data.dios = c.dios;
+                        if (c.notes !== undefined) data.notes = c.notes;
                         if (c.connections !== undefined) data.connections = c.connections;
                         if (c.inputCableIds !== undefined) data.inputCableIds = c.inputCableIds;
                         if (c.layout !== undefined) data.layout = c.layout;
-                        // notes and viewState are frontend-only fields (not in Prisma schema), do not send to DB
+                        // viewState is editor-only (zoom/pan), not sent to DB
 
                         await tx.cto.update({
                             where: { id: c.id },
@@ -1163,6 +1168,7 @@ export const updateCTO = async (req: Request, res: Response) => {
                 splitters: cto.splitters || [],
                 fusions: cto.fusions || [],
                 dios: cto.dios || [],
+                notes: cto.notes || [],
                 connections: cto.connections || [],
                 inputCableIds: cto.inputCableIds || [],
                 layout: cto.layout || {},
@@ -1282,6 +1288,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
             ctos: project.ctos.map((c: any) => ({
                 id: c.id, name: c.name, splitters: c.splitters || [], fusions: c.fusions || [],
                 dios: c.dios || [],
+                notes: c.notes || [],
                 connections: c.connections || [], inputCableIds: c.inputCableIds || [],
             })),
             pops: project.pops.map((p: any) => ({
@@ -1450,6 +1457,7 @@ export const getParentProjectNetwork = async (req: Request, res: Response) => {
                     coordinates: { lat: c.lat, lng: c.lng },
                     splitters: c.splitters || [], fusions: c.fusions || [],
                     dios: c.dios || [],
+                    notes: c.notes || [],
                     connections: c.connections || [], inputCableIds: c.inputCableIds,
                     layout: c.layout || {}, clientCount: c.clientCount,
                     catalogId: c.catalogId || null, type: c.type,

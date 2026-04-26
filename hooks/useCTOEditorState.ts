@@ -252,6 +252,7 @@ export function useCTOEditorState({ cto, incomingCables, onSave, onClose }: UseC
             }
             if (prev.fusions) merged.fusions = JSON.parse(JSON.stringify(prev.fusions));
             if (prev.dios) merged.dios = JSON.parse(JSON.stringify(prev.dios));
+            if (prev.notes) merged.notes = JSON.parse(JSON.stringify(prev.notes));
             if (prev.viewState) merged.viewState = prev.viewState;
             if (prev.inputCableIds !== undefined) merged.inputCableIds = prev.inputCableIds;
 
