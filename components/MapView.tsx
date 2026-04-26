@@ -3,7 +3,8 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState } from '../types';
+import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState, CableType } from '../types';
+import { isCableTypeVisible, getEffectiveCableType } from '../utils/cableTypeUtils';
 import { computeCableStatusMap, CableOpticalStatus } from '../utils/switchCableStatus';
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
@@ -957,8 +958,26 @@ export const MapView: React.FC<MapViewProps> = ({
     // (Moved to top of component)
 
     // Visibility States
-    const [showCables, setShowCables] = useState(() => getSaved('ftth_show_cables', true));
-    const [showCTOs, setShowCTOs] = useState(() => getSaved('ftth_show_ctos', true));
+    // Cable subtype filters. Default each child to whatever the legacy
+    // `ftth_show_cables` master flag was set to so existing users see no change
+    // on first load after upgrade. Subsequent changes persist per-subtype.
+    const legacyShowCables = getSaved('ftth_show_cables', true);
+    const [showCableBackbone, setShowCableBackbone] = useState(() => getSaved('ftth_show_cable_backbone', legacyShowCables));
+    const [showCableDistribution, setShowCableDistribution] = useState(() => getSaved('ftth_show_cable_distribution', legacyShowCables));
+    const [showCableDrop, setShowCableDrop] = useState(() => getSaved('ftth_show_cable_drop', legacyShowCables));
+    const [cablesGroupExpanded, setCablesGroupExpanded] = useState(() => getSaved('ftth_layer_expanded_cables', false));
+
+    // CTO subtype filters (CTO box vs CEO splice closure).
+    const legacyShowCtos = getSaved('ftth_show_ctos', true);
+    const [showCtoTypeCto, setShowCtoTypeCto] = useState(() => getSaved('ftth_show_cto_type_cto', legacyShowCtos));
+    const [showCtoTypeCeo, setShowCtoTypeCeo] = useState(() => getSaved('ftth_show_cto_type_ceo', legacyShowCtos));
+    const [ctosGroupExpanded, setCtosGroupExpanded] = useState(() => getSaved('ftth_layer_expanded_ctos', false));
+
+    // Derived master flags — keep existing call sites (`if (!showCables)`,
+    // `<D3CablesLayer visible={showCables} />`) working without sweeping renames.
+    const showCables = showCableBackbone || showCableDistribution || showCableDrop;
+    const showCTOs = showCtoTypeCto || showCtoTypeCeo;
+
     const [showPOPs, setShowPOPs] = useState(() => getSaved('ftth_show_pops', true));
     const [showPoles, setShowPoles] = useState(() => getSaved('ftth_show_poles', false));
     const [isLayersOpen, setIsLayersOpen] = useState(false);
@@ -966,8 +985,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // --- PERSISTENCE EFFECTS ---
     useEffect(() => { localStorage.setItem('ftth_map_type', JSON.stringify(mapType)); }, [mapType]);
-    useEffect(() => { localStorage.setItem('ftth_show_cables', JSON.stringify(showCables)); }, [showCables]);
-    useEffect(() => { localStorage.setItem('ftth_show_ctos', JSON.stringify(showCTOs)); }, [showCTOs]);
+    useEffect(() => { localStorage.setItem('ftth_show_cable_backbone', JSON.stringify(showCableBackbone)); }, [showCableBackbone]);
+    useEffect(() => { localStorage.setItem('ftth_show_cable_distribution', JSON.stringify(showCableDistribution)); }, [showCableDistribution]);
+    useEffect(() => { localStorage.setItem('ftth_show_cable_drop', JSON.stringify(showCableDrop)); }, [showCableDrop]);
+    useEffect(() => { localStorage.setItem('ftth_layer_expanded_cables', JSON.stringify(cablesGroupExpanded)); }, [cablesGroupExpanded]);
+    useEffect(() => { localStorage.setItem('ftth_show_cto_type_cto', JSON.stringify(showCtoTypeCto)); }, [showCtoTypeCto]);
+    useEffect(() => { localStorage.setItem('ftth_show_cto_type_ceo', JSON.stringify(showCtoTypeCeo)); }, [showCtoTypeCeo]);
+    useEffect(() => { localStorage.setItem('ftth_layer_expanded_ctos', JSON.stringify(ctosGroupExpanded)); }, [ctosGroupExpanded]);
     useEffect(() => { localStorage.setItem('ftth_show_pops', JSON.stringify(showPOPs)); }, [showPOPs]);
     useEffect(() => { localStorage.setItem('ftth_show_poles', JSON.stringify(showPoles)); }, [showPoles]);
     useEffect(() => { if (mode === 'add_pole' && !showPoles) setShowPoles(true); }, [mode]);
@@ -1057,8 +1081,11 @@ export const MapView: React.FC<MapViewProps> = ({
     const visibleCables = useMemo(() => {
         if (!showCables) return [];
 
+        const cableVisibility = { backbone: showCableBackbone, distribution: showCableDistribution, drop: showCableDrop };
+        const passesType = (c: CableData) => isCableTypeVisible(c, cableVisibility);
+
         // If no bounds yet (initial load), return a safe subset to prevent freeze
-        if (!mapBoundsState) return cables.slice(0, 500);
+        if (!mapBoundsState) return cables.filter(passesType).slice(0, 500);
 
         const paddedBounds = mapBoundsState.pad(0.2); // 20% buffer
         const viewMinLat = paddedBounds.getSouth();
@@ -1069,13 +1096,14 @@ export const MapView: React.FC<MapViewProps> = ({
         // Performance: optimization for large datasets (70k+ cables)
         // Only render cables that intersect with the current viewport via BBox check
         return cablesWithBBox
-            .filter(({ bbox }) => {
+            .filter(({ bbox, cable }) => {
                 if (!bbox) return false;
+                if (!passesType(cable)) return false;
                 // Standard BBox overlap check is very fast
                 return !(bbox.maxLat < viewMinLat || bbox.minLat > viewMaxLat || bbox.maxLng < viewMinLng || bbox.minLng > viewMaxLng);
             })
             .map(({ cable }) => cable);
-    }, [showCables, cablesWithBBox, mapBoundsState]);
+    }, [showCables, showCableBackbone, showCableDistribution, showCableDrop, cablesWithBBox, mapBoundsState, cables]);
 
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole', targetType?: "CTO" | "POP" } | null>(null);
 
@@ -1143,10 +1171,15 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const visibleCTOs = useMemo(() => {
         if (!showCTOs) return [];
-        if (!mapBoundsState) return ctos.slice(0, 100); // Initial load safety
+        // Treat missing/legacy `type` as 'CTO' (the default before CEO existed).
+        const passesType = (c: CTOData) => {
+            const isCeo = c.type === 'CEO';
+            return isCeo ? showCtoTypeCeo : showCtoTypeCto;
+        };
+        if (!mapBoundsState) return ctos.filter(passesType).slice(0, 100); // Initial load safety
         const paddedBounds = mapBoundsState.pad(0.3); // Reduced buffer to 30% (was 50%)
-        return ctos.filter(c => paddedBounds.contains(c.coordinates));
-    }, [showCTOs, ctos, mapBoundsState]);
+        return ctos.filter(c => passesType(c) && paddedBounds.contains(c.coordinates));
+    }, [showCTOs, showCtoTypeCto, showCtoTypeCeo, ctos, mapBoundsState]);
 
     const visiblePOPs = useMemo(() => {
         if (!showPOPs) return [];
@@ -1414,63 +1447,86 @@ export const MapView: React.FC<MapViewProps> = ({
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Unified Layer & Map Panel */}
-                <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
+                <div className="bg-white/95 dark:bg-[#22262e]/95 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-stretch gap-0.5 w-52">
 
-                    {/* Map Type Switcher */}
-                    <LayerToggle
-                        active={mapType === 'satellite'}
+                    {/* Map Type Switcher — always shown as active since it switches between two modes */}
+                    <LayerRow
+                        active={true}
                         onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-                        label={mapType === 'street' ? t('map_satellite') : t('map_street')}
+                        label={mapType === 'satellite' ? t('map_satellite') : t('map_street')}
                         color="emerald"
-                        icon={mapType === 'street' ? <Layers className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                        icon={mapType === 'satellite' ? <Globe className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
                     />
 
-                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 w-full mx-1 my-0.5"></div>
+                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-1"></div>
 
                     {/* Section: Elements */}
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_elements')}</span>
+                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] leading-none px-2.5 pt-1 pb-1">{t('layer_panel_elements')}</span>
 
-                    <LayerToggle active={showCTOs} onClick={() => setShowCTOs(!showCTOs)} label={t('layer_ctos')} color="blue" icon={<Box className="w-5 h-5" />} />
-                    <LayerToggle active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-5 h-5" />} />
-                    <LayerToggle active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles')} color="stone" icon={<UtilityPole className="w-5 h-5" />} />
-                    <LayerToggle active={showCables} onClick={() => setShowCables(!showCables)} label={t('layer_cables')} color="slate" icon={<Share2 className="w-5 h-5" />} />
-                    <LayerToggle active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="green" icon={<User className="w-5 h-5" />} />
+                    <LayerGroup
+                        label={t('layer_ctos')}
+                        color="blue"
+                        icon={<Box className="w-4 h-4" />}
+                        expanded={ctosGroupExpanded}
+                        setExpanded={setCtosGroupExpanded}
+                        childrenStates={[
+                            { key: 'cto', label: t('layer_cto_type_cto') || 'CTO', icon: <Box className="w-4 h-4" />, active: showCtoTypeCto, onToggle: () => setShowCtoTypeCto(!showCtoTypeCto) },
+                            { key: 'ceo', label: t('layer_cto_type_ceo') || 'CEO', icon: <Box className="w-4 h-4" />, active: showCtoTypeCeo, onToggle: () => setShowCtoTypeCeo(!showCtoTypeCeo) },
+                        ]}
+                    />
+                    <LayerRow active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-4 h-4" />} />
+                    <LayerRow active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles')} color="stone" icon={<UtilityPole className="w-4 h-4" />} />
+                    <LayerGroup
+                        label={t('layer_cables')}
+                        color="slate"
+                        icon={<Share2 className="w-4 h-4" />}
+                        expanded={cablesGroupExpanded}
+                        setExpanded={setCablesGroupExpanded}
+                        childrenStates={[
+                            { key: 'backbone', label: t('layer_cable_backbone') || 'Backbone', icon: <Share2 className="w-4 h-4" />, active: showCableBackbone, onToggle: () => setShowCableBackbone(!showCableBackbone) },
+                            { key: 'distribution', label: t('layer_cable_distribution') || 'Distribuição', icon: <Share2 className="w-4 h-4" />, active: showCableDistribution, onToggle: () => setShowCableDistribution(!showCableDistribution) },
+                            { key: 'drop', label: t('layer_cable_drop') || 'Drop', icon: <Share2 className="w-4 h-4" />, active: showCableDrop, onToggle: () => setShowCableDrop(!showCableDrop) },
+                        ]}
+                    />
+                    <LayerRow active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="green" icon={<User className="w-4 h-4" />} />
 
                     {parentNetwork && (
-                        <div className="flex flex-col items-center gap-1">
-                            <div className="relative flex items-center">
-                                <LayerToggle active={showParentLayer} onClick={() => setShowParentLayer(!showParentLayer)} label={parentProjectName || t('base_project_layer_label')} color="emerald" icon={<GitBranch className="w-5 h-5" />} />
-                                <button
-                                    onClick={() => setParentLayerExpanded(!parentLayerExpanded)}
-                                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center shadow border border-slate-300 dark:border-slate-500 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors z-10"
-                                >
-                                    <ChevronDown className={`w-3 h-3 text-slate-600 dark:text-slate-300 transition-transform duration-200 ${parentLayerExpanded ? 'rotate-180' : ''}`} />
-                                </button>
-                            </div>
+                        <div className="flex flex-col w-full">
+                            <LayerRow
+                                active={showParentLayer}
+                                onClick={() => setShowParentLayer(!showParentLayer)}
+                                label={parentProjectName || t('base_project_layer_label')}
+                                color="emerald"
+                                icon={<GitBranch className="w-4 h-4" />}
+                                chevron={{
+                                    expanded: parentLayerExpanded,
+                                    onToggle: () => setParentLayerExpanded(!parentLayerExpanded),
+                                }}
+                            />
                             <div
                                 className="overflow-hidden transition-all duration-300 ease-in-out"
                                 style={{
-                                    maxHeight: parentLayerExpanded && showParentLayer ? 200 : 0,
+                                    maxHeight: parentLayerExpanded && showParentLayer ? 240 : 0,
                                     opacity: parentLayerExpanded && showParentLayer ? 1 : 0,
                                 }}
                             >
-                                <div className="flex flex-col items-center gap-0.5 bg-emerald-50/80 dark:bg-emerald-900/20 rounded-lg p-1 border border-emerald-200 dark:border-emerald-800/40 mt-0.5">
-                                    <LayerToggle active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={`${t('layer_cables')} (${t('base_project')})`} color="emerald" icon={<Share2 className="w-4 h-4" />} />
-                                    <LayerToggle active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label={`CTOs (${t('base_project')})`} color="emerald" icon={<Box className="w-4 h-4" />} />
-                                    <LayerToggle active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label={`POPs (${t('base_project')})`} color="emerald" icon={<Building2 className="w-4 h-4" />} />
-                                    <LayerToggle active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={`${t('layer_poles')} (${t('base_project')})`} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
+                                <div className="flex flex-col gap-0.5 bg-emerald-50/60 dark:bg-emerald-900/10 rounded-lg p-1 ml-2 border border-emerald-200/60 dark:border-emerald-800/40 mt-0.5">
+                                    <LayerRow indent active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={t('layer_cables')} color="emerald" icon={<Share2 className="w-4 h-4" />} />
+                                    <LayerRow indent active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label="CTOs" color="emerald" icon={<Box className="w-4 h-4" />} />
+                                    <LayerRow indent active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label="POPs" color="emerald" icon={<Building2 className="w-4 h-4" />} />
+                                    <LayerRow indent active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={t('layer_poles')} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 w-full mx-1 my-0.5"></div>
+                    <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-1"></div>
 
                     {/* Section: Display */}
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-[0.15em] text-center leading-none pt-0.5 pb-0.5">{t('layer_panel_display')}</span>
+                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] leading-none px-2.5 pt-1 pb-1">{t('layer_panel_display')}</span>
 
-                    <LayerToggle active={showLabels} onClick={() => onToggleLabels && onToggleLabels()} label={t('show_labels')} color="emerald" icon={<Tag className="w-5 h-5" />} />
-                    <LayerToggle active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering')} color="purple" icon={<Layers className="w-5 h-5" />} />
+                    <LayerRow active={showLabels} onClick={() => onToggleLabels && onToggleLabels()} label={t('show_labels')} color="emerald" icon={<Tag className="w-4 h-4" />} />
+                    <LayerRow active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering')} color="purple" icon={<Layers className="w-4 h-4" />} />
                 </div>
             </div>
 
@@ -1556,7 +1612,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <DropsLayer
                     customers={visibleCustomers}
-                    visible={isCustomersVisible}
+                    visible={isCustomersVisible && showCableDrop}
                     editingDropCustomerId={editingDropCustomerId}
                     editingDropCoords={editingDropCoords}
                     onDropContextMenu={handleDropContextMenu}
@@ -2430,36 +2486,139 @@ export const MapView: React.FC<MapViewProps> = ({
     );
 };
 
-// --- Layer Toggle Sub-Component ---
+// --- Layer Toggle Sub-Components (row-style list) ---
 
-const LAYER_COLORS: Record<string, { active: string; shadow: string }> = {
-    blue: { active: 'bg-blue-500 border-blue-500 shadow-blue-500/30', shadow: 'shadow-lg' },
-    indigo: { active: 'bg-indigo-500 border-indigo-500 shadow-indigo-500/30', shadow: 'shadow-lg' },
-    stone: { active: 'bg-stone-500 border-stone-500 shadow-stone-500/30', shadow: 'shadow-lg' },
-    slate: { active: 'bg-slate-800 border-slate-800 shadow-slate-800/30', shadow: 'shadow-lg' },
-    green: { active: 'bg-green-600 border-green-600 shadow-green-600/30', shadow: 'shadow-lg' },
-    emerald: { active: 'bg-emerald-600 border-emerald-600 shadow-emerald-600/30', shadow: 'shadow-lg' },
-    purple: { active: 'bg-purple-600 border-purple-600 shadow-purple-600/30', shadow: 'shadow-lg' },
+type GroupState = 'on' | 'off' | 'mixed';
+
+// Color tokens for the small icon dot per row. Tailwind needs literal class
+// strings here so it can extract them at build time — do not interpolate.
+const ROW_TOKENS: Record<string, { iconOn: string; barOn: string; trayBorder: string; trayBg: string }> = {
+    blue: { iconOn: 'text-blue-500 dark:text-blue-400', barOn: 'bg-blue-500 dark:bg-blue-400', trayBorder: 'border-blue-200/60 dark:border-blue-800/40', trayBg: 'bg-blue-50/60 dark:bg-blue-900/10' },
+    indigo: { iconOn: 'text-indigo-500 dark:text-indigo-400', barOn: 'bg-indigo-500 dark:bg-indigo-400', trayBorder: 'border-indigo-200/60 dark:border-indigo-800/40', trayBg: 'bg-indigo-50/60 dark:bg-indigo-900/10' },
+    stone: { iconOn: 'text-stone-600 dark:text-stone-400', barOn: 'bg-stone-500 dark:bg-stone-400', trayBorder: 'border-stone-200/60 dark:border-stone-700/40', trayBg: 'bg-stone-50/60 dark:bg-stone-800/30' },
+    slate: { iconOn: 'text-slate-700 dark:text-slate-300', barOn: 'bg-slate-700 dark:bg-slate-300', trayBorder: 'border-slate-200/60 dark:border-slate-700/40', trayBg: 'bg-slate-50/60 dark:bg-slate-800/30' },
+    green: { iconOn: 'text-green-600 dark:text-green-400', barOn: 'bg-green-500 dark:bg-green-400', trayBorder: 'border-green-200/60 dark:border-green-800/40', trayBg: 'bg-green-50/60 dark:bg-green-900/10' },
+    emerald: { iconOn: 'text-emerald-600 dark:text-emerald-400', barOn: 'bg-emerald-500 dark:bg-emerald-400', trayBorder: 'border-emerald-200/60 dark:border-emerald-800/40', trayBg: 'bg-emerald-50/60 dark:bg-emerald-900/10' },
+    purple: { iconOn: 'text-purple-600 dark:text-purple-400', barOn: 'bg-purple-500 dark:bg-purple-400', trayBorder: 'border-purple-200/60 dark:border-purple-800/40', trayBg: 'bg-purple-50/60 dark:bg-purple-900/10' },
 };
 
-const LayerToggle: React.FC<{ active: boolean; onClick: () => void; label: string; color: string; icon: React.ReactNode }> = ({ active, onClick, label, color, icon }) => {
-    const [hovered, setHovered] = useState(false);
-    const c = LAYER_COLORS[color] || LAYER_COLORS.slate;
+// Generic labeled row: small icon + name + optional chevron. Used both as a
+// standalone leaf (POPs, Postes...) and inside a LayerGroup tray. `state`
+// overrides `active` to allow tri-state visuals on group parents.
+const LayerRow: React.FC<{
+    active: boolean;
+    onClick: () => void;
+    label: string;
+    color: string;
+    icon: React.ReactNode;
+    state?: GroupState;
+    chevron?: { expanded: boolean; onToggle: () => void };
+    indent?: boolean;
+}> = ({ active, onClick, label, color, icon, state, chevron, indent }) => {
+    const tokens = ROW_TOKENS[color] || ROW_TOKENS.slate;
+    const effState: GroupState = state ?? (active ? 'on' : 'off');
 
     return (
-        <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        <div className="flex items-center w-full rounded-lg overflow-hidden">
             <button
                 onClick={onClick}
-                className={`group relative p-3 rounded-lg transition-all flex items-center justify-center border ${active ? `${c.active} ${c.shadow} text-white` : 'bg-slate-50 dark:bg-[#1a1d23] text-slate-400 border-slate-100 dark:border-slate-700/30'}`}
+                className={`flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-700/40 ${indent ? 'pl-4' : ''}`}
+                aria-pressed={effState !== 'off'}
             >
-                {icon}
-                {!active && <div className="absolute inset-0 flex items-center justify-center"><div className="w-6 h-[2px] bg-red-500 rotate-45 opacity-60"></div></div>}
-            </button>
-            {hovered && (
-                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-bold shadow-lg whitespace-nowrap z-[9999] pointer-events-none animate-in fade-in duration-150">
+                <span className={`relative w-5 h-5 flex items-center justify-center shrink-0 ${effState === 'on' ? tokens.iconOn : effState === 'mixed' ? `${tokens.iconOn} opacity-70` : 'text-slate-400 dark:text-slate-500'}`}>
+                    {icon}
+                    {effState === 'off' && (
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="w-4 h-[1.5px] bg-red-500 rotate-45 opacity-70 block rounded-full" />
+                        </span>
+                    )}
+                    {effState === 'mixed' && (
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className={`w-3 h-[2px] ${tokens.barOn} opacity-95 rounded-full block`} />
+                        </span>
+                    )}
+                </span>
+                <span className={`text-[12px] truncate ${effState === 'off' ? 'text-slate-400 dark:text-slate-500 font-medium' : 'text-slate-700 dark:text-slate-200 font-semibold'}`}>
                     {label}
-                </div>
+                </span>
+            </button>
+            {chevron && (
+                <button
+                    onClick={chevron.onToggle}
+                    className="px-2 py-2 hover:bg-slate-100/70 dark:hover:bg-slate-700/40 transition-colors shrink-0"
+                    aria-label="Expandir"
+                >
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${chevron.expanded ? 'rotate-180' : ''}`} />
+                </button>
             )}
+        </div>
+    );
+};
+
+// Backward-compatible wrapper so existing call sites (POPs, Postes, etc) keep
+// working — just renders a LayerRow.
+const LayerToggle: React.FC<{ active: boolean; onClick: () => void; label: string; color: string; icon: React.ReactNode }> = (props) => (
+    <LayerRow {...props} />
+);
+
+// Wraps a tri-state parent row + an animated tray of indented children rows.
+// Degrades to a plain leaf when 0 or 1 children are effectively visible, so the
+// UI never shows a chevron with nothing useful behind it.
+const LayerGroup: React.FC<{
+    label: string;
+    color: string;
+    icon: React.ReactNode;
+    childrenStates: Array<{ key: string; label: string; icon: React.ReactNode; active: boolean; onToggle: () => void; visible?: boolean }>;
+    expanded: boolean;
+    setExpanded: (v: boolean) => void;
+}> = ({ label, color, icon, childrenStates, expanded, setExpanded }) => {
+    const visibleChildren = childrenStates.filter(c => c.visible !== false);
+    const tokens = ROW_TOKENS[color] || ROW_TOKENS.slate;
+
+    if (visibleChildren.length <= 1) {
+        const only = visibleChildren[0];
+        if (!only) return null;
+        return <LayerRow active={only.active} onClick={only.onToggle} label={label} color={color} icon={icon} />;
+    }
+
+    const allOn = visibleChildren.every(c => c.active);
+    const anyOn = visibleChildren.some(c => c.active);
+    const state: GroupState = allOn ? 'on' : (!anyOn ? 'off' : 'mixed');
+
+    const onToggleAll = () => {
+        const target = !allOn; // forgiving default: mixed/off → all on
+        visibleChildren.forEach(child => { if (child.active !== target) child.onToggle(); });
+    };
+
+    return (
+        <div className="flex flex-col w-full">
+            <LayerRow
+                active={state !== 'off'}
+                state={state}
+                onClick={onToggleAll}
+                label={label}
+                color={color}
+                icon={icon}
+                chevron={{ expanded, onToggle: () => setExpanded(!expanded) }}
+            />
+            <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{ maxHeight: expanded ? 240 : 0, opacity: expanded ? 1 : 0 }}
+            >
+                <div className={`flex flex-col gap-0.5 rounded-lg p-1 mt-0.5 ml-2 border ${tokens.trayBorder} ${tokens.trayBg}`}>
+                    {visibleChildren.map(child => (
+                        <LayerRow
+                            key={child.key}
+                            indent
+                            active={child.active}
+                            onClick={child.onToggle}
+                            label={child.label}
+                            color={color}
+                            icon={child.icon}
+                        />
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

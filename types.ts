@@ -336,6 +336,9 @@ export interface CableData {
   fromNodeId?: string | null;
   toNodeId?: string | null;
   catalogId?: string;
+  // Optional explicit subtype. When null/undefined, the UI infers it from
+  // fiberCount via getEffectiveCableType() — see utils/cableTypeUtils.ts.
+  type?: CableType | null;
   technicalReserve?: number; // @deprecated — usar reserves
   reserveLocation?: Coordinates; // @deprecated — usar reserves
   showReserveLabel?: boolean; // @deprecated — usar reserves

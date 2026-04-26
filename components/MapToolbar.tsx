@@ -3,6 +3,38 @@ import { MousePointer2, Box, Building2, UtilityPole, Waypoints, Ruler, UserPlus 
 import { useLanguage } from '../LanguageContext';
 import { hasPermission } from '../shared/permissions';
 
+// Custom icon mirroring the vertical-condo map marker so the toolbar button
+// reads as the same "thing" the user sees on the map. Lucide's Building2 is
+// already used by the POP button, so we draw our own to keep Condo distinct.
+const CondoIcon: React.FC<{ className?: string; strokeWidth?: number }> = ({ className, strokeWidth = 2 }) => (
+    <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        {/* Roof slab */}
+        <path d="M5 4h14" />
+        {/* Building body */}
+        <rect x="4" y="4" width="16" height="18" rx="0.5" />
+        {/* Windows: 3 rows × 3 cols */}
+        <line x1="8" y1="8" x2="8" y2="9" />
+        <line x1="12" y1="8" x2="12" y2="9" />
+        <line x1="16" y1="8" x2="16" y2="9" />
+        <line x1="8" y1="12" x2="8" y2="13" />
+        <line x1="12" y1="12" x2="12" y2="13" />
+        <line x1="16" y1="12" x2="16" y2="13" />
+        <line x1="8" y1="16" x2="8" y2="17" />
+        <line x1="16" y1="16" x2="16" y2="17" />
+        {/* Door */}
+        <path d="M11 22v-4h2v4" />
+    </svg>
+);
+
 interface MapToolbarProps {
     toolMode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area';
     setToolMode: (mode: any) => void;
@@ -84,7 +116,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {showConstructionGroup && (
                 <div className="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700/50">
                     {showCto && <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />}
-                    {showCto && <ToolButton mode="add_condo" icon={Building2} label={t('toolbar_condo') || "Condomínio"} />}
+                    {showCto && <ToolButton mode="add_condo" icon={CondoIcon} label={t('toolbar_condo') || "Condomínio"} />}
                     {showPop && <ToolButton mode="add_pop" icon={Building2} label="POP" />}
                     {showCustomer && <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_customer') || "Cliente"} />}
                     {showPole && (

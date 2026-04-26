@@ -64,7 +64,9 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
 
     const selected = catalogCables.find(c => c.id === catalogId);
     if (selected) {
-      // Map catalog properties to cable data
+      // Map catalog properties to cable data. We persist `defaultLevel` raw
+      // into `cable.type` — the layer filter normalizes PT/EN aliases on read
+      // (see utils/cableTypeUtils.ts), so any string the catalog uses works.
       setFormData(prev => ({
         ...prev,
         catalogId: catalogId,
@@ -74,6 +76,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
         color: selected.deployedSpec?.color || prev.color,
         colorStandard: (selected.fiberProfile === 'EIA' ? 'EIA598' : 'ABNT') as any,
         width: (prev.status === 'DEPLOYED' ? selected.deployedSpec?.width : selected.plannedSpec?.width) || 3,
+        type: (selected.defaultLevel as any) || prev.type,
       }));
     } else {
       // If cleared/reset (though option value="" usually handles this if we add logic)

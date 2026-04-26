@@ -256,6 +256,7 @@ model Cable {
   technicalReserve Float?   @default(0) @map("technical_reserve") // @deprecated — usar reserves
   reserves         Json?    @default("[]") // [{id, length, location: {lat,lng}, showLabel}]
   width            Float?   @map("width")
+  type             String?  // Optional subtype: DROP | DISTRIBUTION | FEEDER. Null = infer from fiberCount.
   company          Company? @relation(fields: [companyId], references: [id])
   project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   deletedAt        DateTime? @map("deleted_at")

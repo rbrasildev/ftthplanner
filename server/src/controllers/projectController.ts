@@ -262,6 +262,7 @@ export const getProject = async (req: Request, res: Response) => {
                 fromNodeId: c.fromNodeId || null,
                 toNodeId: c.toNodeId || null,
                 catalogId: c.catalogId || null,
+                type: c.type || null,
                 technicalReserve: c.technicalReserve,
                 reserveLocation: c.reserveLocation,
                 showReserveLabel: c.showReserveLabel,
@@ -336,6 +337,7 @@ export const getProject = async (req: Request, res: Response) => {
                         color: c.color, colorStandard: c.colorStandard,
                         coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
                         toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
+                        type: c.type || null,
                         reserves: c.reserves || [], width: c.width || null
                     })) : [],
                     poles: parent.poles ? (parent.poles as any[]).map((p: any) => ({
@@ -380,6 +382,7 @@ export const getProject = async (req: Request, res: Response) => {
                     color: c.color, colorStandard: c.colorStandard,
                     coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
                     toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
+                    type: c.type || null,
                     reserves: c.reserves || [], width: c.width || null,
                     projectName: childProjectNameMap.get(c.projectId) || 'Projeto Vinculado',
                 }));
@@ -982,6 +985,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             fromNodeId: c.fromNodeId || null,
                             toNodeId: c.toNodeId || null,
                             catalogId: c.catalogId || null,
+                            type: c.type || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
@@ -998,6 +1002,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.fromNodeId !== c.fromNodeId ||
                             dbC.toNodeId !== c.toNodeId ||
                             dbC.catalogId !== c.catalogId ||
+                            (dbC.type || null) !== (c.type || null) ||
                             dbC.technicalReserve !== (c.technicalReserve || 0) ||
                             dbC.showReserveLabel !== (c.showReserveLabel !== undefined ? c.showReserveLabel : true) ||
                             dbC.width !== (c.width || null) ||
@@ -1025,6 +1030,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             fromNodeId: c.fromNodeId || null,
                             toNodeId: c.toNodeId || null,
                             catalogId: c.catalogId || null,
+                            type: c.type || null,
                             technicalReserve: c.technicalReserve || 0,
                             reserveLocation: c.reserveLocation || null,
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
