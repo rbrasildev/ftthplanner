@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Customer, CTOData, Splitter } from '../../types';
 import { useLanguage } from '../../LanguageContext';
-import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle, Zap } from 'lucide-react';
+import { X, Save, MapPin, User, Phone, FileText, Search, Network, AlertTriangle, Zap, Building2 } from 'lucide-react';
 import { CustomInput } from '../common/CustomInput';
 import { CustomSelect } from '../common/CustomSelect';
 import { getSplitterPortCount } from '../../utils/splitterUtils';
@@ -52,7 +52,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         onuMac: initialData?.onuMac || '',
         pppoeService: initialData?.pppoeService || '',
         onuPower: initialData?.onuPower ? String(initialData?.onuPower) : '',
-        connectionStatus: initialData?.connectionStatus || null
+        connectionStatus: initialData?.connectionStatus || null,
+        floor: initialData?.floor ?? null,
+        unit: initialData?.unit ?? null
     });
 
     // Connection State
@@ -85,7 +87,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 onuMac: initialData.onuMac || '',
                 pppoeService: initialData.pppoeService || '',
                 onuPower: initialData.onuPower ? String(initialData.onuPower) : '',
-                connectionStatus: initialData.connectionStatus || null
+                connectionStatus: initialData.connectionStatus || null,
+                floor: initialData.floor ?? null,
+                unit: initialData.unit ?? null
             });
             setSelectedCtoId(initialData.ctoId || null);
             setSelectedSplitterId(initialData.splitterId || null);
@@ -300,11 +304,18 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 ? { splitterId: null, splitterPortIndex: null, connectorId: selectedConnectorId }
                 : { splitterId: selectedSplitterId, splitterPortIndex: selectedPortIndex, connectorId: null };
 
+            // Floor/unit only meaningful for vertical condos. Strip them if the
+            // selected CTO isn't a vertical condo so we don't pollute regular customers.
+            const condoFields = selectedCto?.building
+                ? { floor: formData.floor ?? null, unit: formData.unit ?? null }
+                : { floor: null, unit: null };
+
             await onSave({
                 ...formData,
                 address: finalAddress, // Use the processed address
                 ctoId: selectedCtoId,
                 ...attachmentFields,
+                ...condoFields,
                 updatedAt: new Date().toISOString()
             });
             onClose();
@@ -319,7 +330,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
     return (
         <>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3100] backdrop-blur-sm">
             <div 
                 className="bg-white dark:bg-[#1a1d23] w-[600px] max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
@@ -602,6 +613,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                         setSelectedSplitterId(null);
                                                         setSelectedPortIndex(sgpSuggestedPort !== null ? sgpSuggestedPort : null);
                                                         setSelectedConnectorId(null);
+                                                        // Reset floor/unit when switching CTOs — limits/semantics differ between
+                                                        // condos and don't apply at all to regular CTOs.
+                                                        setFormData(prev => ({ ...prev, floor: null, unit: null }));
                                                     }}
                                                     className={`p-2 text-left rounded text-sm flex justify-between items-center ${selectedCtoId === cto.id
                                                         ? 'bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300 dark:border-indigo-600'
@@ -616,6 +630,39 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     )
                                 )}
                             </div>
+
+                            {selectedCto?.building && (
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 space-y-3">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                                        <Building2 className="w-3.5 h-3.5" />
+                                        {t('vertical_condo') || 'Condomínio Vertical'}
+                                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 normal-case ml-auto">
+                                            {selectedCto.building.floors} {t('floors_short') || 'and.'}
+                                            {selectedCto.building.unitsPerFloor ? ` × ${selectedCto.building.unitsPerFloor}` : ''}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <CustomInput
+                                            label={t('floor') || 'Andar'}
+                                            type="number"
+                                            min={1}
+                                            max={selectedCto.building.floors}
+                                            value={formData.floor != null ? String(formData.floor) : ''}
+                                            onChange={(e) => {
+                                                const v = e.target.value;
+                                                setFormData({ ...formData, floor: v === '' ? null : Number(v) });
+                                            }}
+                                            placeholder="Ex: 5"
+                                        />
+                                        <CustomInput
+                                            label={t('unit') || 'Apto/Unidade'}
+                                            value={formData.unit || ''}
+                                            onChange={(e) => setFormData({ ...formData, unit: e.target.value || null })}
+                                            placeholder="Ex: 101"
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedCtoId && (() => {
                                 // Connectors live in the CTO's fusions array with category='connector'.

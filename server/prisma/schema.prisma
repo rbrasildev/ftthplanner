@@ -197,6 +197,7 @@ model Cto {
   reserveLoopLength Float?          @map("reserve_loop_length")
   type              String?         @default("CTO")
   poleId            String?         @map("pole_id")
+  building          Json?           // Vertical condo config: { floors, unitsPerFloor }
   company           Company?        @relation(fields: [companyId], references: [id])
   project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   customers         Customer[]
@@ -783,6 +784,8 @@ model Customer {
   onuPower          Float?   @map("onu_power")
   projectId         String?  @map("project_id")
   connectionStatus  String?  @map("connection_status")
+  floor             Int?
+  unit              String?
 
   cto     Cto?     @relation(fields: [ctoId], references: [id])
   project Project? @relation(fields: [projectId], references: [id])

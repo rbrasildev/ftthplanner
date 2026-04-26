@@ -280,6 +280,14 @@ export interface POPData {
   poleId?: string; // Associated pole for licensing/anchoring
 }
 
+// MVP modeling for vertical condominiums: a CTO at the building entrance with
+// floors × units. Customers reference floor/unit. Riser splitters per floor are
+// not modeled here yet — promote to its own entity if/when needed.
+export interface BuildingConfig {
+  floors: number;
+  unitsPerFloor?: number;
+}
+
 export interface CTOData {
   id: string;
   name: string;
@@ -306,6 +314,7 @@ export interface CTOData {
     zoom: number;
   };
   poleId?: string; // Associated pole for licensing/anchoring
+  building?: BuildingConfig | null; // When set, this CTO is a vertical condominium
 }
 
 export interface CableReserve {
@@ -609,6 +618,10 @@ export interface Customer {
   dropCoordinates?: Coordinates[]; // Optional for API updates
   projectId?: string | null;
   connectionStatus?: 'online' | 'offline' | null;
+  // Vertical condominium attachment — only meaningful when ctoId points to a
+  // CTO with `building` set. Free-form unit string supports labels like "101", "A-12".
+  floor?: number | null;
+  unit?: string | null;
 }
 
 export interface PaginatedResponse<T> {

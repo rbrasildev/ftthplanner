@@ -108,7 +108,8 @@ export const createCustomer = async (req: Request, res: Response) => {
             ctoId, splitterId, splitterPortIndex, connectorId, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
-            connectionStatus
+            connectionStatus,
+            floor, unit
         } = req.body;
 
 
@@ -203,7 +204,9 @@ export const createCustomer = async (req: Request, res: Response) => {
                     onuMac,
                     pppoeService,
                     onuPower: onuPower ? parseFloat(onuPower) : null,
-                    connectionStatus
+                    connectionStatus,
+                    floor: floor !== undefined && floor !== null && floor !== '' ? Number(floor) : null,
+                    unit: unit || null
                 }
             });
 
@@ -279,7 +282,8 @@ export const updateCustomer = async (req: Request, res: Response) => {
             ctoId, splitterId, splitterPortIndex, connectorId, fiberId,
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
-            connectionStatus
+            connectionStatus,
+            floor, unit
         } = req.body;
 
         // Verify ownership
@@ -391,7 +395,11 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     pppoeService,
                     onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined,
                     projectId: projectId !== undefined ? (projectId || null) : undefined,
-                    connectionStatus
+                    connectionStatus,
+                    floor: floor === undefined
+                        ? undefined
+                        : (floor === null || floor === '' ? null : Number(floor)),
+                    unit: unit === undefined ? undefined : (unit || null)
                 }
             });
 

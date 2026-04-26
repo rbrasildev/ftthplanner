@@ -257,15 +257,24 @@ const renderSplitter = (splitter: Splitter, x: number, y: number, rotation: numb
     // Triangle
     content += `<polygon points="${geo.polygonPoints}" fill="${triangleFill}" stroke="${triangleStroke}" stroke-width="1" />`;
 
-    // Label — outside triangle, counter-rotated to stay horizontal
+    // Label — outside triangle, counter-rotated to stay horizontal.
+    // When the splitter has a descriptive name (e.g. "Andar 1"), we render it
+    // on a second line above the type so floor identification carries into PDF/PNG
+    // exports. Generic numeric names ("1", "2"...) are skipped to keep label compact.
     const labelOffsetY = geo.width / 2 + 8;
-    const labelText = escapeXML(splitter.type);
-    const labelW = labelText.length * 4.5 + 8;
-    const labelH = 12;
-    content += `<g transform="translate(${geo.labelPos.x}, ${geo.labelPos.y}) rotate(${-rotation}) translate(0, ${labelOffsetY})">` +
-        `<rect x="${-labelW / 2}" y="${-labelH / 2}" width="${labelW}" height="${labelH}" fill="white" fill-opacity="0.9" />` +
-        `<text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="black">${labelText}</text>` +
-        `</g>`;
+    const typeText = escapeXML(splitter.type);
+    const hasDescriptiveName = !!splitter.name && !/^\d+$/.test(splitter.name.trim());
+    const nameText = hasDescriptiveName ? escapeXML(splitter.name) : '';
+    const labelW = Math.max(typeText.length, nameText.length) * 4.5 + 8;
+    const labelH = hasDescriptiveName ? 22 : 12;
+    let labelInner = `<rect x="${-labelW / 2}" y="${-labelH / 2}" width="${labelW}" height="${labelH}" fill="white" fill-opacity="0.9" />`;
+    if (hasDescriptiveName) {
+        labelInner += `<text x="0" y="-4" dominant-baseline="middle" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#047857">${nameText}</text>`;
+        labelInner += `<text x="0" y="6" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="black">${typeText}</text>`;
+    } else {
+        labelInner += `<text x="0" y="0" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="black">${typeText}</text>`;
+    }
+    content += `<g transform="translate(${geo.labelPos.x}, ${geo.labelPos.y}) rotate(${-rotation}) translate(0, ${labelOffsetY})">${labelInner}</g>`;
 
     // Input Port (Always Circle)
     const inputLit = isLitIn;
@@ -456,8 +465,13 @@ export interface FooterData {
     cablesSummary?: string[]; // e.g. ["Cabo A - 12F", "Cabo B - 6F"]
     clientCount?: number;
     clientNames?: string[]; // All client names
-    clientDetails?: { name: string; port: string; power?: string }[]; // Client with port and power
+    clientDetails?: { name: string; port: string; power?: string; floor?: number | null; unit?: string | null }[]; // Client with port and power; floor/unit for vertical condos
     totalPower?: string; // e.g. "1:8 = -10.5 dBm"
+    /** When set, the export switches to the "vertical condo" layout: header
+     *  shows "CONDOMÍNIO VERTICAL", client column becomes "MORADORES X/Y",
+     *  and rows display floor/unit instead of just splitter port. */
+    isVerticalCondo?: boolean;
+    building?: { floors: number; unitsPerFloor?: number };
     /**
      * Aggregated component counts for the COMPONENTES box. Each entry is
      * rendered as a compact stat card with a colored accent bar (`color`).
@@ -575,10 +589,14 @@ const renderEngineeringHeader = (x: number, y: number, w: number, data: FooterDa
     content += renderText(col2X, y + 42, (data.projectName || 'SEM NOME').toUpperCase(), 13, 'bold', '#0f172a');
     content += renderText(col2X, y + 58, 'DIAGRAMA UNIFILAR', 8, 'normal', ENG.colors.textLabel);
 
-    // 3. CTO (Center-Right)
-    content += renderText(col3X, y + 22, 'CAIXA / CTO', 8, 'bold', ENG.colors.textLabel);
+    // 3. CTO / Condo (Center-Right)
+    const headerLabel = data.isVerticalCondo ? 'CONDOMÍNIO VERTICAL' : 'CAIXA / CTO';
+    content += renderText(col3X, y + 22, headerLabel, 8, 'bold', ENG.colors.textLabel);
     content += renderText(col3X, y + 42, (data.boxName || '-').toUpperCase(), 13, 'bold', '#0f172a');
-    content += renderText(col3X, y + 58, `${data.lat}, ${data.lng}`, 7, 'normal', ENG.colors.textLabel);
+    const subLine = data.isVerticalCondo && data.building
+        ? `${data.building.floors} andares${data.building.unitsPerFloor ? ` × ${data.building.unitsPerFloor} unidades` : ''} · ${data.lat}, ${data.lng}`
+        : `${data.lat}, ${data.lng}`;
+    content += renderText(col3X, y + 58, subLine, 7, 'normal', ENG.colors.textLabel);
 
     // 4. Date & Rev (Right)
     content += renderText(col4X, y + 22, 'DATA DE EMISSÃO', 8, 'bold', ENG.colors.textLabel);
@@ -633,13 +651,22 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
     content += `<line x1="${clientX}" y1="${y}" x2="${clientX}" y2="${y + h}" stroke="${ENG.colors.border}" stroke-width="1" />`;
 
     const clientCount = data.clientDetails?.length || data.clientCount || 0;
-    content += renderText(clientX + 10, y + 16, `CLIENTES (${clientCount})`, 8, 'bold', ENG.colors.textLabel);
+    const condoCapacity = data.isVerticalCondo && data.building
+        ? data.building.floors * (data.building.unitsPerFloor || 1)
+        : 0;
+    const clientHeader = data.isVerticalCondo
+        ? `MORADORES (${clientCount}/${condoCapacity})`
+        : `CLIENTES (${clientCount})`;
+    content += renderText(clientX + 10, y + 16, clientHeader, 8, 'bold', ENG.colors.textLabel);
 
     if (data.clientDetails && data.clientDetails.length > 0) {
-        // Table header
+        // Table header — for vertical condos the first column shows floor/unit
+        // (e.g. "5·503") instead of the splitter port number.
         const tableY = y + 30;
-        content += renderText(clientX + 10, tableY, 'P', 6, 'bold', ENG.colors.textLabel);
-        content += renderText(clientX + 30, tableY, 'CLIENTE', 6, 'bold', ENG.colors.textLabel);
+        const firstColLabel = data.isVerticalCondo ? 'AND·APT' : 'P';
+        const firstColWidth = data.isVerticalCondo ? 50 : 20;
+        content += renderText(clientX + 10, tableY, firstColLabel, 6, 'bold', ENG.colors.textLabel);
+        content += renderText(clientX + 10 + firstColWidth, tableY, 'CLIENTE', 6, 'bold', ENG.colors.textLabel);
         content += renderText(clientX + CLIENT_W - 10, tableY, 'SINAL', 6, 'bold', ENG.colors.textLabel, 'end');
 
         content += `<line x1="${clientX + 5}" y1="${tableY + 4}" x2="${clientX + CLIENT_W - 5}" y2="${tableY + 4}" stroke="${ENG.colors.border}" stroke-width="0.5" />`;
@@ -651,8 +678,11 @@ const renderEngineeringFooter = (x: number, y: number, w: number, data: FooterDa
             if (i % 2 === 0) {
                 content += `<rect x="${clientX + 3}" y="${rowY - 8}" width="${CLIENT_W - 6}" height="11" fill="#f8fafc" />`;
             }
-            content += renderText(clientX + 10, rowY, client.port, 7, 'bold', '#0f172a');
-            content += renderText(clientX + 30, rowY, client.name, 7, 'normal', '#0f172a');
+            const firstColText = data.isVerticalCondo
+                ? `${client.floor != null ? client.floor : '–'}${client.unit ? `·${client.unit}` : ''}`
+                : client.port;
+            content += renderText(clientX + 10, rowY, firstColText, 7, 'bold', '#0f172a');
+            content += renderText(clientX + 10 + firstColWidth, rowY, client.name, 7, 'normal', '#0f172a');
             if (client.power) {
                 content += renderText(clientX + CLIENT_W - 10, rowY, client.power, 7, 'normal', '#64748b', 'end');
             }

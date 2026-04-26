@@ -267,7 +267,7 @@ export default function App() {
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve' | 'export_area'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve' | 'export_area'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -340,6 +340,7 @@ export default function App() {
         poles: any[];
     } | null>(null);
     const [globalCustomers, setGlobalCustomers] = useState<Customer[]>([]);
+    const [pendingEditCustomerId, setPendingEditCustomerId] = useState<string | null>(null);
 
     // --- Sidebar & Responsive State ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
@@ -2028,7 +2029,13 @@ export default function App() {
                         onReservePositionSet={handleReservePositionSet}
                         showToast={showToast}
                         onCustomerSaved={(customer?: Customer) => {
-                            setToolMode('view');
+                            // Only flip back to view when we were in the customer-creation
+                            // flow. Triggering it on every save (e.g. drop updates from a
+                            // node drag) flips us into view mode and re-opens the details
+                            // panel — like clicking the just-moved node.
+                            if (toolMode === 'add_customer') {
+                                setToolMode('view');
+                            }
                             if (customer) {
                                 setGlobalCustomers(prev => {
                                     const exists = prev.some(c => c.id === customer.id);
@@ -2053,6 +2060,8 @@ export default function App() {
                         parentProjectName={parentProjectName}
                         onParentNodeClick={handleParentNodeClick}
                         onParentBlockedEdit={handleParentBlockedEdit}
+                        editCustomerId={pendingEditCustomerId}
+                        onEditCustomerHandled={() => setPendingEditCustomerId(null)}
                     />
 
                     {toolMode === 'edit_cable' && (
@@ -2236,6 +2245,8 @@ export default function App() {
                 <CTODetailsPanel
                     cto={getCurrentNetwork().ctos.find(c => c.id === selectedId)!}
                     poles={getCurrentNetwork().poles || []}
+                    customers={globalCustomers}
+                    onEditCustomer={(c) => setPendingEditCustomerId(c.id)}
                     onRename={handleRenameCTO}
                     onUpdateStatus={handleUpdateCTOStatus}
                     onUpdate={(updates) => {

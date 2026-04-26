@@ -405,7 +405,7 @@ const MapEvents: React.FC<{
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'export_area') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
-            } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+            } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (isEditingDrop) {
                 // Don't close editing on map click — only Escape or context menu finishes editing
@@ -523,7 +523,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area';
+    mode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -589,6 +589,11 @@ interface MapViewProps {
     parentProjectName?: string;
     onParentNodeClick?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
     onParentBlockedEdit?: () => void;
+    // External trigger to open the customer edit modal (e.g. from CTODetailsPanel
+    // for tenants of vertical condos, who are hidden from the map). MapView clears
+    // it via `onEditCustomerHandled` after opening so the prop can fire again later.
+    editCustomerId?: string | null;
+    onEditCustomerHandled?: () => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -618,7 +623,9 @@ export const MapView: React.FC<MapViewProps> = ({
     showParentElements = true,
     parentProjectName = '',
     onParentNodeClick,
-    onParentBlockedEdit
+    onParentBlockedEdit,
+    editCustomerId,
+    onEditCustomerHandled
 }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
@@ -696,6 +703,18 @@ export const MapView: React.FC<MapViewProps> = ({
         setSelectedCustomer(customer);
         setCustomerModalOpen(true);
     }, []);
+
+    // Allow parents (e.g. CTODetailsPanel for vertical condo tenants) to open
+    // the customer modal externally. Clears the prop after handling.
+    useEffect(() => {
+        if (!editCustomerId) return;
+        const c = allCustomers.find(x => x.id === editCustomerId);
+        if (c) {
+            setSelectedCustomer(c);
+            setCustomerModalOpen(true);
+        }
+        onEditCustomerHandled?.();
+    }, [editCustomerId, allCustomers, onEditCustomerHandled]);
 
     const handleCustomerDragEnd = useCallback((customer: Customer, lat: number, lng: number) => {
         const updates: Partial<Customer> = { lat, lng };
@@ -1069,6 +1088,16 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const [repositioningCustomer, setRepositioningCustomer] = useState<{ id: string, name: string } | null>(null);
 
+    // Switching to any non-view tool (add_condo, add_cto, draw_cable, ruler, ...)
+    // must cancel a pending customer reposition. Otherwise the next map click is
+    // intercepted by the reposition handler instead of the active tool — e.g.
+    // clicking to place a condo would move the previously-selected customer.
+    useEffect(() => {
+        if (mode !== 'view' && repositioningCustomer) {
+            setRepositioningCustomer(null);
+        }
+    }, [mode, repositioningCustomer]);
+
     // Close menus on interaction (escape key)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -1151,6 +1180,21 @@ export const MapView: React.FC<MapViewProps> = ({
         visiblePoles.filter(p => !(mode === 'move_node' && p.id === selectedId)),
         [visiblePoles, mode, selectedId]);
 
+    // Vertical condo CTOs aggregate many customers at the same building point —
+    // showing each tenant as a separate marker creates clutter and overlapping
+    // pins. Hide them on the map; they remain visible inside the customer list
+    // and the CTO modal where they belong.
+    const verticalCondoCtoIds = useMemo(() => {
+        const ids = new Set<string>();
+        const all = parentNetwork ? [...ctos, ...parentNetwork.ctos] : ctos;
+        for (const c of all) if ((c as any).building) ids.add(c.id);
+        return ids;
+    }, [ctos, parentNetwork]);
+    const visibleCustomers = useMemo(
+        () => allCustomers.filter(c => !c.ctoId || !verticalCondoCtoIds.has(c.ctoId)),
+        [allCustomers, verticalCondoCtoIds]
+    );
+
     // Merge parent network nodes for snap detection (cable endpoint connections)
     const snapCTOs = useMemo(() =>
         parentNetwork ? [...ctos, ...parentNetwork.ctos] : ctos,
@@ -1186,7 +1230,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableClickInternal = useCallback((e: any, cable: CableData) => {
         // Fix propagation: Use originalEvent if available (Leaflet), otherwise e (DOM/D3)
         const domEvent = e.originalEvent || e;
-        const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
+        const isAddMode = ['add_cto', 'add_condo', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
         if (mode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(domEvent);
 
         // Single click: Only for selection/view/otdr
@@ -1316,7 +1360,7 @@ export const MapView: React.FC<MapViewProps> = ({
             if (onExportAreaPolygonChange) {
                 onExportAreaPolygonChange([...exportAreaPolygon, { lat, lng }]);
             }
-        } else if (mode === 'add_cto' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+        } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
             onAddPoint(lat, lng);
         }
     }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t, exportAreaPolygon, onExportAreaPolygonChange]);
@@ -1367,7 +1411,7 @@ export const MapView: React.FC<MapViewProps> = ({
     }), []);
 
     return (
-        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Unified Layer & Map Panel */}
                 <div className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur p-2 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-1.5">
@@ -1511,7 +1555,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
                 <DropsLayer
-                    customers={allCustomers}
+                    customers={visibleCustomers}
                     visible={isCustomersVisible}
                     editingDropCustomerId={editingDropCustomerId}
                     editingDropCoords={editingDropCoords}
@@ -1708,7 +1752,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
                         <CustomersLayer
-                            customers={allCustomers}
+                            customers={visibleCustomers}
                             onCustomerClick={handleCustomerClick}
                             selectedId={selectedCustomer && (selectedCustomer as any).id}
                             visible={isCustomersVisible}
@@ -1784,7 +1828,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             />
                         ))}
                         <CustomersLayer
-                            customers={allCustomers}
+                            customers={visibleCustomers}
                             onCustomerClick={handleCustomerClick}
                             selectedId={selectedCustomer && (selectedCustomer as any).id}
                             visible={isCustomersVisible}

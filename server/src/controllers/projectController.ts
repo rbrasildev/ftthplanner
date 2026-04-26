@@ -231,7 +231,8 @@ export const getProject = async (req: Request, res: Response) => {
                 type: c.type,
                 color: c.color,
                 reserveLoopLength: c.reserveLoopLength,
-                poleId: c.poleId || null
+                poleId: c.poleId || null,
+                building: c.building || null
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id,
@@ -318,7 +319,8 @@ export const getProject = async (req: Request, res: Response) => {
                         layout: c.layout || {}, clientCount: c.clientCount,
                         catalogId: c.catalogId || null, type: c.type,
                         color: c.color, reserveLoopLength: c.reserveLoopLength,
-                        poleId: c.poleId || null
+                        poleId: c.poleId || null,
+                        building: c.building || null
                     })) : [],
                     pops: parent.pops ? (parent.pops as any[]).map((p: any) => ({
                         id: p.id, name: p.name, status: p.status,
@@ -792,7 +794,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             type: c.type,
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
-                            poleId: c.poleId || null
+                            poleId: c.poleId || null,
+                            building: c.building ?? null
                         });
                     } else {
                         // DIFFING: Compare crucial fields to decide if update is needed
@@ -811,6 +814,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.color !== c.color ||
                             dbC.poleId !== c.poleId ||
                             dbC.reserveLoopLength !== c.reserveLoopLength ||
+                            JSON.stringify(dbC.building ?? null) !== JSON.stringify(c.building ?? null) ||
                             JSON.stringify(dbC.splitters) !== JSON.stringify(c.splitters || []) ||
                             JSON.stringify(dbC.fusions) !== JSON.stringify(c.fusions || []) ||
                             JSON.stringify(dbC.dios || []) !== JSON.stringify(c.dios || []) ||
@@ -849,7 +853,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             type: c.type,
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
-                            poleId: c.poleId || null
+                            poleId: c.poleId || null,
+                            building: c.building ?? null
                         };
                         // Only overwrite diagram fields if explicitly provided (not undefined)
                         if (c.splitters !== undefined) data.splitters = c.splitters;
@@ -1177,7 +1182,8 @@ export const updateCTO = async (req: Request, res: Response) => {
                 type: cto.type,
                 color: cto.color,
                 reserveLoopLength: cto.reserveLoopLength,
-                poleId: cto.poleId || null
+                poleId: cto.poleId || null,
+                building: cto.building ?? null
             }
         });
 

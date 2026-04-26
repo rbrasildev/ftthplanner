@@ -82,6 +82,23 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 return { ...prev, ctos: [...prev.ctos, newCTO] };
             });
             showToast(t('toast_cto_added'));
+        } else if (toolMode === 'add_condo') {
+            // Vertical condominium: same Cto entity with `building` set. User adjusts
+            // floors/units in the properties panel. Defaults pick a small, easy-to-edit
+            // 1×1 layout — they're meant to be replaced, not used as-is.
+            updateCurrentNetwork(prev => {
+                const condoCount = prev.ctos.filter(c => (c as any).building).length;
+                const newCTO: CTOData = {
+                    id: `cto-${Date.now()}`,
+                    name: `${t('vertical_condo') || 'Condomínio'}-${condoCount + 1}`,
+                    status: 'PLANNED',
+                    coordinates: { lat, lng },
+                    splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0,
+                    building: { floors: 1, unitsPerFloor: 1 }
+                };
+                return { ...prev, ctos: [...prev.ctos, newCTO] };
+            });
+            showToast(t('toast_condo_added') || (t('vertical_condo') || 'Condomínio') + ' criado');
         } else if (toolMode === 'add_pop') {
             updateCurrentNetwork(prev => {
                 const newPOP: POPData = {
@@ -124,27 +141,19 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 updatedPOPs = updatedPOPs.map(p => p.poleId === id ? { ...p, coordinates: { lat, lng } } : p);
             }
 
+            // Only drag cable endpoints that are LOGICALLY connected to this node.
+            // The previous proximity-based fallback caused disconnected cables (whose
+            // endpoint coords were left at the old node position) to follow the node
+            // when moved, even though they were no longer attached.
             const updatedCables = prev.cables.map(cable => {
-                let changed = false;
-                const newCoords = cable.coordinates.map(coord => {
-                    const d = Math.sqrt(Math.pow(coord.lat - oldLat, 2) + Math.pow(coord.lng - oldLng, 2));
-                    if (d < 0.00000001) {
-                        changed = true;
-                        return { lat, lng };
-                    }
-                    return coord;
-                });
-
-                if (cable.fromNodeId === id) {
-                    newCoords[0] = { lat, lng };
-                    changed = true;
-                }
-                if (cable.toNodeId === id) {
-                    newCoords[newCoords.length - 1] = { lat, lng };
-                    changed = true;
-                }
-                return changed ? { ...cable, coordinates: newCoords } : cable;
+                if (cable.fromNodeId !== id && cable.toNodeId !== id) return cable;
+                const newCoords = [...cable.coordinates];
+                if (cable.fromNodeId === id) newCoords[0] = { lat, lng };
+                if (cable.toNodeId === id) newCoords[newCoords.length - 1] = { lat, lng };
+                return { ...cable, coordinates: newCoords };
             });
+            // Suppress unused-var warnings now that the proximity branch is gone.
+            void oldLat; void oldLng;
 
             return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables, poles: updatedPoles };
         });

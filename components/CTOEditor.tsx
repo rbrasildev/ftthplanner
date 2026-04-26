@@ -22,11 +22,9 @@ import { CableRemoveModal } from './editor/modals/CableRemoveModal';
 import { generateCTOSVG, exportToPNG, FooterData } from './CTOExporter';
 import {
     SplitterCatalogItem,
-    BoxCatalogItem,
     FusionCatalogItem,
     CableCatalogItem,
     getSplitters,
-    getBoxes,
     getCables,
     getFusions,
     getOLTs,
@@ -655,6 +653,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [propertiesName, setPropertiesName] = useState('');
     const [propertiesStatus, setPropertiesStatus] = useState<CTOStatus>('PLANNED');
     const [cableToRemove, setCableToRemove] = useState<string | null>(null);
+    const [splitterRename, setSplitterRename] = useState<{ id: string; value: string } | null>(null);
 
     // Sync properties states with localCTO when it changes (initial load)
     useEffect(() => {
@@ -681,32 +680,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const [availableFusions, setAvailableFusions] = useState<FusionCatalogItem[]>([]);
     const [availableOLTs, setAvailableOLTs] = useState<OLTCatalogItem[]>([]);
     const [availableSplitters, setAvailableSplitters] = useState<SplitterCatalogItem[]>([]);
-    const [availableBoxes, setAvailableBoxes] = useState<BoxCatalogItem[]>([]);
-    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
-
-    // Load catalogs on mount (splitters, fusions, cables, boxes, OLTs)
+    // Load catalogs on mount (splitters, fusions, cables, OLTs).
+    // Box catalog is not loaded here — model selection lives in the CTO Properties panel.
     useEffect(() => {
         const loadCatalogs = async () => {
-            setIsCatalogLoading(true);
             try {
-                const [splitters, fusions, connectors, cables, boxes, olts] = await Promise.all([
+                const [splitters, fusions, connectors, cables, olts] = await Promise.all([
                     getSplitters(),
                     getFusions('fusion'),
                     getFusions('connector'),
                     getCables(),
-                    getBoxes(),
                     getOLTs()
                 ]);
                 setAvailableSplitters(splitters);
                 setAvailableFusions(fusions);
                 setAvailableConnectors(connectors);
                 setAvailableCables(cables);
-                setAvailableBoxes(boxes);
                 setAvailableOLTs(olts);
             } catch (err) {
                 console.error("Failed to load catalogs", err);
-            } finally {
-                setIsCatalogLoading(false);
             }
         };
         loadCatalogs();
@@ -1500,6 +1492,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const now = new Date();
             const dateStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            const isVerticalCondo = !!localCTO.building;
             const footerData: FooterData = {
                 projectName: projectName || '',
                 boxName: localCTO.name,
@@ -1507,11 +1500,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 lat: localCTO.coordinates.lat.toFixed(6),
                 lng: localCTO.coordinates.lng.toFixed(6),
                 status: 'Implantada',
-                level: 'CTO',
+                level: isVerticalCondo ? 'CONDOMÍNIO' : 'CTO',
                 pole: '-',
                 obs: '',
                 mapImage: '',
-                logo: ''
+                logo: '',
+                isVerticalCondo,
+                building: localCTO.building || undefined
             };
 
             // Load static assets (map, logo, QR code)
@@ -1575,7 +1570,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 { label: 'Notas',      count: noteCount,                 color: '#eab308' }, // yellow
             ];
 
-            // Build client details with port number, sorted by port
+            // Build client details. For vertical condos sort by floor then unit so
+            // the table reads bottom-up like the building. For regular CTOs keep the
+            // original behavior (sorted by splitter port number).
             footerData.clientDetails = ctoCustomers.map(c => {
                 let port = '-';
                 let sortKey = 9999;
@@ -1587,8 +1584,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     sortKey = 10000;
                 }
                 const power = c.onuPower !== null && c.onuPower !== undefined ? `${c.onuPower} dBm` : undefined;
-                return { name: c.name, port, power, _sort: sortKey };
-            }).sort((a, b) => a._sort - b._sort).map(({ _sort, ...rest }) => rest);
+                return {
+                    name: c.name,
+                    port,
+                    power,
+                    floor: c.floor ?? null,
+                    unit: c.unit ?? null,
+                    _sort: sortKey
+                };
+            }).sort((a, b) => {
+                if (isVerticalCondo) {
+                    const af = a.floor ?? Number.POSITIVE_INFINITY;
+                    const bf = b.floor ?? Number.POSITIVE_INFINITY;
+                    if (af !== bf) return af - bf;
+                    return (a.unit || '').localeCompare(b.unit || '', undefined, { numeric: true });
+                }
+                return a._sort - b._sort;
+            }).map(({ _sort, ...rest }) => rest);
 
             const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers, availableSplitters);
             const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
@@ -1761,6 +1773,27 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             };
         });
     }, []);
+
+    const handleRenameSplitter = useCallback((id: string) => {
+        const current = localCTO.splitters.find(s => s.id === id);
+        if (!current) return;
+        setSplitterRename({ id, value: current.name });
+    }, [localCTO.splitters]);
+
+    const commitSplitterRename = useCallback(() => {
+        if (!splitterRename) return;
+        const trimmed = splitterRename.value.trim();
+        const current = localCTO.splitters.find(s => s.id === splitterRename.id);
+        if (!current || !trimmed || trimmed === current.name) {
+            setSplitterRename(null);
+            return;
+        }
+        setLocalCTO(prev => ({
+            ...prev,
+            splitters: prev.splitters.map(s => s.id === splitterRename.id ? { ...s, name: trimmed } : s)
+        }));
+        setSplitterRename(null);
+    }, [splitterRename, localCTO.splitters]);
 
     const handleDeleteFusion = useCallback((id: string) => {
         setLocalCTO(prev => {
@@ -3792,40 +3825,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     </div>
                 </div>
 
-                {/* Footer: Redesigned with Model and Status Controls */}
+                {/* Footer: Status Controls. Box model is edited from the CTO
+                    Properties panel only — keeping it out of the editor avoids
+                    two competing places to change the same field. */}
                 <div className={`h-16 bg-slate-100 dark:bg-[#1a1d23] border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-50 cursor-default select-none ${isMaximized ? 'pr-24' : ''}`}>
                     {!readOnly && <div className="flex items-center gap-8">
-                        {/* Model Select */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('model') || 'Modelo'}</span>
-                            <div className="w-48">
-                                {isCatalogLoading ? (
-                                    <div className="h-10 w-full bg-slate-200 dark:bg-[#22262e] animate-pulse rounded-xl border border-slate-300 dark:border-slate-700" />
-                                ) : (
-                                    <CustomSelect
-                                        value={localCTO.catalogId || ''}
-                                        placement="top"
-                                        showSearch={false}
-                                        onChange={(selectedId) => {
-                                            const box = availableBoxes.find(b => b.id === selectedId);
-                                            setLocalCTO(prev => ({
-                                                ...prev,
-                                                catalogId: selectedId,
-                                                type: box?.type || prev.type
-                                            }));
-                                        }}
-                                        options={[
-                                            { value: '', label: t('select_box_model') || 'Selecionar Modelo...' },
-                                            ...availableBoxes.map(box => ({
-                                                value: box.id,
-                                                label: `${box.name} (${box.brand})`
-                                            }))
-                                        ]}
-                                    />
-                                )}
-                            </div>
-                        </div>
-
                         {/* Status Radio Buttons — hidden when readOnly */}
                         {!readOnly && (
                             <div className="flex items-center gap-4">
@@ -3936,6 +3940,64 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 <Button
                                     variant="ghost"
                                     onClick={() => setShowCloseConfirm(false)}
+                                    className="px-3 text-slate-500 text-xs font-medium"
+                                >
+                                    {t('cancel')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SPLITTER RENAME MODAL */}
+                {splitterRename && (
+                    <div
+                        className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/70 backdrop-blur-sm pointer-events-auto"
+                        onClick={() => setSplitterRename(null)}
+                    >
+                        <div
+                            className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center shrink-0 border border-emerald-300 dark:border-emerald-500/30">
+                                    <Pencil className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                                        {t('rename') || 'Renomear'}
+                                    </h3>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t('rename_splitter_prompt') || 'Novo nome do splitter:'}
+                                    </p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                autoFocus
+                                value={splitterRename.value}
+                                onChange={(e) => setSplitterRename({ ...splitterRename, value: e.target.value })}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { e.preventDefault(); commitSplitterRename(); }
+                                    else if (e.key === 'Escape') { e.preventDefault(); setSplitterRename(null); }
+                                }}
+                                onFocus={(e) => e.currentTarget.select()}
+                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                                placeholder={t('rename_splitter_prompt') || 'Novo nome do splitter:'}
+                            />
+                            <div className="flex flex-row gap-3 mt-6">
+                                <Button
+                                    onClick={commitSplitterRename}
+                                    disabled={!splitterRename.value.trim()}
+                                    variant="emerald"
+                                    className="flex-1 font-bold shadow-lg"
+                                    icon={<Save className="w-4 h-4" />}
+                                >
+                                    <span className="whitespace-nowrap">{t('save') || 'Salvar'}</span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setSplitterRename(null)}
                                     className="px-3 text-slate-500 text-xs font-medium"
                                 >
                                     {t('cancel')}
@@ -4119,6 +4181,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 >
                                     {t('ctx_details')}
                                 </Button>
+                                {!readOnly && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            handleRenameSplitter(contextMenu.id);
+                                            setContextMenu(null);
+                                        }}
+                                        className="w-full !justify-start text-left px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors gap-2 h-auto border-0"
+                                        icon={<Pencil className="w-3.5 h-3.5" />}
+                                    >
+                                        {t('rename') || 'Renomear'}
+                                    </Button>
+                                )}
                                 {!readOnly && (
                                     <Button
                                         variant="ghost"

@@ -4,7 +4,7 @@ import { useLanguage } from '../LanguageContext';
 import { hasPermission } from '../shared/permissions';
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area';
+    toolMode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
@@ -84,6 +84,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {showConstructionGroup && (
                 <div className="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700/50">
                     {showCto && <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />}
+                    {showCto && <ToolButton mode="add_condo" icon={Building2} label={t('toolbar_condo') || "Condomínio"} />}
                     {showPop && <ToolButton mode="add_pop" icon={Building2} label="POP" />}
                     {showCustomer && <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_customer') || "Cliente"} />}
                     {showPole && (
