@@ -242,7 +242,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         onMouseEnter={() => onPortMouseEnter(fiberId)}
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
-                                        w-3 h-3 rounded-full cursor-pointer select-none
+                                        w-3 h-3 rounded-full cursor-pointer select-none transform-gpu
                                         hover:scale-125 z-30
                                         absolute ${isMirrored ? '-left-[4px]' : '-right-[4px]'} shadow-sm text-[8px] font-bold
                                         ${hasLight ? filledTextColor : 'text-slate-900'}
