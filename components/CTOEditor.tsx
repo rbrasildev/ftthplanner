@@ -263,6 +263,7 @@ interface ConnectionsLayerProps {
     dragState: any;
     cacheVersion: number;
     getPortCenter: (portId: string) => { x: number; y: number } | null;
+    resolveFiberPortColor: (portId: string) => string | null;
     handleSmartAlignConnection: (connId: string) => void;
     onDisconnectConnection?: (connId: string) => void;
     handlePathMouseDown: (e: React.MouseEvent, connId: string) => void;
@@ -283,6 +284,7 @@ const ConnectionsLayer = React.memo(({
     isOtdrToolActive,
     dragState,
     getPortCenter,
+    resolveFiberPortColor,
     handleSmartAlignConnection,
     handlePathMouseDown,
     handlePointMouseDown,
@@ -309,7 +311,12 @@ const ConnectionsLayer = React.memo(({
                 const isDefaultSplitterColor = conn.color === '#0f172a' || conn.color === '#94a3b8';
                 const useThemeColor = isSplitterConn && isDefaultSplitterColor && !isLit;
 
-                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : conn.color);
+                // Live fiber color lookup — keeps line color in sync with bolinha even when
+                // the connection's stored `color` is stale (created before palette tweaks).
+                const liveFiberColor = resolveFiberPortColor(conn.sourceId) || resolveFiberPortColor(conn.targetId);
+                const baseColor = liveFiberColor || conn.color;
+
+                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : baseColor);
                 const finalWidth = isLit ? 3.5 : 2.5;
 
                 let d = `M ${p1.x} ${p1.y} `;
@@ -355,7 +362,7 @@ const ConnectionsLayer = React.memo(({
                                     cy={pt.y}
                                     r={5}
                                     fill="#fff"
-                                    stroke={conn.color}
+                                    stroke={baseColor}
                                     strokeWidth={2}
                                     className={`cursor-move hover:r-6 transition-opacity duration-200 ${isDraggingThisConnection ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                                     onMouseDown={(e) => handlePointMouseDown(e as any, conn.id, idx)}
@@ -1010,6 +1017,22 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const getPortDirection = useCallback((portId: string): 'fromCable' | 'fromPort' | null => {
         return portPowerMap.get(portId)?.direction ?? null;
     }, [portPowerMap]);
+
+    // Resolve the live fiber color for a given fiber port id. Used by the connection
+    // renderer so SVG line color always matches the bolinha (overrides any stale color
+    // baked into the FiberConnection at creation time).
+    const resolveFiberPortColor = useCallback((portId: string): string | null => {
+        const match = portId.match(/(.*)-fiber-(\d+)$/);
+        if (!match) return null;
+        const cableId = match[1];
+        const fiberGlobalIndex = parseInt(match[2], 10);
+        const cable = incomingCables.find(c => c.id === cableId);
+        if (!cable) return null;
+        const looseTubeCount = cable.looseTubeCount || 1;
+        const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
+        const positionInTube = fiberGlobalIndex % fibersPerTube;
+        return getFiberColor(positionInTube, cable.colorStandard);
+    }, [incomingCables]);
 
     // Ports that actually carry OLT signal — derived from the power map. A fiber
     // is "lit" only when there's a finite power reaching it (not merely connected).
@@ -3769,6 +3792,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                 dragState={dragState}
                                 cacheVersion={cacheVersion}
                                 getPortCenter={getPortCenter}
+                                resolveFiberPortColor={resolveFiberPortColor}
                                 onHoverConnection={handleHoverConnection}
                                 handleSmartAlignConnection={handleSmartAlignConnection}
                                 handlePathMouseDown={handlePathMouseDown}

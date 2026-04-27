@@ -186,7 +186,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                         className={`w-2.5 h-2.5 rounded-full border cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
-                        ${hoveredPortId === splitter.inputPortId ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
+                        ${hoveredPortId === splitter.inputPortId ? 'ring-1 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                         ${isLitIn
                                 ? 'border-red-400 bg-red-600 text-white'
                                 : 'border-slate-900 dark:border-slate-300 bg-black dark:bg-[#151820] text-white dark:text-slate-100'}
@@ -241,7 +241,7 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                 text-[6.5px] font-semibold select-none flex items-center justify-center
                                 ${isHighPower ? 'w-3 h-3 z-40' : 'w-2.5 h-2.5'}
                                 ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
-                                ${hoveredPortId === pid ? 'ring-2 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
+                                ${hoveredPortId === pid ? 'ring-1 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-400 bg-red-600 text-white'
                                         : customerName

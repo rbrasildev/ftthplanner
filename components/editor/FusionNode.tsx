@@ -100,13 +100,14 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px]
+                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px] top-1/2 -translate-y-1/2
+                        flex items-center justify-center
                         ${isConnector ? `rounded-[1px] ${isLitA ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
-                        ${hoveredPortId === portA ? `ring-2 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
+                        ${hoveredPortId === portA ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                         ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitA && isConnectedA && !isConnector && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                    {!isLitA && isConnectedA && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
                 </div>
 
                 {/* Right Port */}
@@ -116,13 +117,14 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
                     className={`
-                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px]
+                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px] top-1/2 -translate-y-1/2
+                        flex items-center justify-center
                         ${isConnector ? `rounded-[1px] ${isLitB ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
-                        ${hoveredPortId === portB ? `ring-2 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
+                        ${hoveredPortId === portB ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                         ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitB && isConnectedB && !isConnector && <div className="w-0.5 h-0.5 bg-emerald-500 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                    {!isLitB && isConnectedB && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
                 </div>
 
                 {/* Attached Customer Label — only for connectors. Extends horizontally from the RIGHT tip
