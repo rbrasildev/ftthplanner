@@ -242,7 +242,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         onMouseEnter={() => onPortMouseEnter(fiberId)}
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
-                                        rounded-full cursor-pointer select-none
+                                        w-3 h-3 rounded-full cursor-pointer select-none
                                         hover:scale-125 z-30
                                         absolute ${isMirrored ? '-left-[4px]' : '-right-[4px]'} shadow-sm text-[8px] font-bold
                                         ${hasLight ? filledTextColor : 'text-slate-900'}
@@ -250,14 +250,6 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                         ${isLit ? 'ring-1 ring-red-400' : ''}
                                     `}
                                         style={{
-                                            width: '12px',
-                                            height: '12px',
-                                            minWidth: '12px',
-                                            minHeight: '12px',
-                                            maxWidth: '12px',
-                                            maxHeight: '12px',
-                                            flex: '0 0 auto',
-                                            boxSizing: 'border-box',
                                             backgroundColor: hasLight ? color : '#ffffff',
                                             border: `1px solid ${hasLight ? color : emptyBorderColor}`,
                                             display: 'grid',

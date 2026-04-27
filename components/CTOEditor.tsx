@@ -976,25 +976,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return lit;
     }, [litPorts, localCTO.connections]);
 
-    // All fiber ports in incoming cables PLUS any locally-connected non-fiber ports.
-    // We trace every fiber (not just connected ones) so a fiber whose cable still carries
-    // OLT signal lights up even after its local connection is removed — meanwhile the
-    // OTHER end of a removed splice naturally goes dark because its cable doesn't reach OLT.
-    const tracedPorts = useMemo(() => {
+    // Ports that have at least one connection in this CTO — treated as "carrying light"
+    // for visual purposes (filled circle vs border-only).
+    const connectedPorts = useMemo(() => {
         const set = new Set<string>();
-        incomingCables.forEach(cable => {
-            for (let i = 0; i < cable.fiberCount; i++) {
-                set.add(`${cable.id}-fiber-${i}`);
-            }
-        });
         localCTO.connections.forEach(conn => {
-            if (!conn.sourceId.includes('-fiber-')) set.add(conn.sourceId);
-            if (!conn.targetId.includes('-fiber-')) set.add(conn.targetId);
+            set.add(conn.sourceId);
+            set.add(conn.targetId);
         });
         return set;
-    }, [incomingCables, localCTO.connections]);
+    }, [localCTO.connections]);
 
-    // Pre-computed power + flow direction per port. Memo depends on the network
+    // Pre-computed power + flow direction per connected port. Used for hover tooltips
+    // and the direction indicator on fiber stubs. Only connected ports are traced
+    // (others have no light → no indicator needed). Memo depends on the network
     // topology pieces that influence power, not on layout drags, to avoid retracing
     // on every mouse move.
     const portPowerMap = useMemo(() => {
@@ -1005,7 +1000,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             cables: availableCables,
             olts: availableOLTs,
         };
-        tracedPorts.forEach(portId => {
+        connectedPorts.forEach(portId => {
             try {
                 map.set(portId, tracePortPower(portId, cto.id, network, catalogs, localCTO));
             } catch {
@@ -1013,7 +1008,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         });
         return map;
-    }, [tracedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, availableFusions, availableCables, availableOLTs]);
+    }, [connectedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, availableFusions, availableCables, availableOLTs]);
 
     const getPortPower = useCallback((portId: string): number | null => {
         return portPowerMap.get(portId)?.power ?? null;
@@ -3933,9 +3928,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         }}
                                         className="flex items-center gap-2 group cursor-pointer transition-all"
                                     >
-                                        <div className={`w-4 h-4 flex-shrink-0 aspect-square rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
+                                        <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
                                             <div
-                                                className={`w-2.5 h-2.5 flex-shrink-0 aspect-square rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                                                className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
                                                 style={{ backgroundColor: status.color }}
                                             />
                                         </div>
