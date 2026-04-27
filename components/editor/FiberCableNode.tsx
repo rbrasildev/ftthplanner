@@ -10,6 +10,7 @@ interface FiberCableNodeProps {
     litPorts: Set<string>;
     poweredPorts: Set<string>;
     getPortPower: (portId: string) => number | null;
+    getPortDirection: (portId: string) => 'fromCable' | 'fromPort' | null;
     hoveredPortId: string | null;
     streetName?: string;
     onDragStart: (e: React.MouseEvent, id: string) => void;
@@ -35,6 +36,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     litPorts,
     poweredPorts,
     getPortPower,
+    getPortDirection,
     hoveredPortId,
     streetName,
     onDragStart,
@@ -195,23 +197,41 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                             const isWhiteFiber = color.toLowerCase() === '#ffffff' || color.toLowerCase() === '#fff' || color.toLowerCase() === 'white';
                             const emptyBorderColor = isWhiteFiber ? '#94a3b8' : color;
                             let powerTitle: string | undefined;
+                            let flowDirection: 'fromCable' | 'fromPort' | null = null;
                             if (hasLight) {
                                 const power = getPortPower(fiberId);
                                 if (power !== null) {
                                     powerTitle = `${t('fiber') || 'Fibra'} ${i + 1}: ${power.toFixed(2)} dBm`;
                                 }
+                                flowDirection = getPortDirection(fiberId);
                             }
+
+                            // Marching-ants direction:
+                            //   Default view: cable on LEFT, port on RIGHT. Keyframe moves stripes left→right.
+                            //     'fromCable' (light cable→port) → natural direction (no reverse)
+                            //     'fromPort'  (light port→cable) → reverse
+                            //   Mirrored view flips the visual layout, so directions invert.
+                            const animationReverse = flowDirection === 'fromPort'
+                                ? !isMirrored
+                                : isMirrored;
 
                             return (
                                 <div
                                     key={fiberId}
                                     className={`relative h-3 w-4 flex items-center ${isMirrored ? 'justify-start' : 'justify-end'}`}
                                 >
-                                    {/* Connecting line */}
-                                    <div
-                                        style={{ backgroundColor: isLit ? '#f87171' : color, opacity: 1 }}
-                                        className={`w-full h-[1px] ${isMirrored ? 'ml-2' : 'mr-2'}`}
-                                    ></div>
+                                    {/* Connecting line — marching ants when fiber carries OLT signal, static otherwise */}
+                                    {flowDirection ? (
+                                        <div
+                                            style={{ color: isLit ? '#f87171' : color }}
+                                            className={`fiber-flow ${animationReverse ? 'reverse' : ''} w-full h-[1px] ${isMirrored ? 'ml-2' : 'mr-2'}`}
+                                        ></div>
+                                    ) : (
+                                        <div
+                                            style={{ backgroundColor: isLit ? '#f87171' : color, opacity: 1 }}
+                                            className={`w-full h-[1px] ${isMirrored ? 'ml-2' : 'mr-2'}`}
+                                        ></div>
+                                    )}
 
                                     {/* Port Circle - Center at 12px height and aligned with grid */}
                                     <div

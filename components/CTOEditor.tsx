@@ -980,12 +980,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return set;
     }, [localCTO.connections]);
 
-    // Pre-computed power per connected port. Used for hover tooltips on fibers.
-    // Only connected ports are traced (others have no light → no tooltip needed).
-    // Memo depends on the network topology pieces that influence power, not on
-    // layout drags, to avoid retracing on every mouse move.
+    // Pre-computed power + flow direction per connected port. Used for hover tooltips
+    // and the direction indicator on fiber stubs. Only connected ports are traced
+    // (others have no light → no indicator needed). Memo depends on the network
+    // topology pieces that influence power, not on layout drags, to avoid retracing
+    // on every mouse move.
     const portPowerMap = useMemo(() => {
-        const map = new Map<string, number | null>();
+        const map = new Map<string, { power: number | null; direction: 'fromCable' | 'fromPort' | null }>();
         const catalogs = {
             splitters: availableSplitters,
             fusions: availableFusions,
@@ -996,22 +997,26 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             try {
                 map.set(portId, tracePortPower(portId, cto.id, network, catalogs, localCTO));
             } catch {
-                map.set(portId, null);
+                map.set(portId, { power: null, direction: null });
             }
         });
         return map;
     }, [connectedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, availableFusions, availableCables, availableOLTs]);
 
     const getPortPower = useCallback((portId: string): number | null => {
-        return portPowerMap.get(portId) ?? null;
+        return portPowerMap.get(portId)?.power ?? null;
+    }, [portPowerMap]);
+
+    const getPortDirection = useCallback((portId: string): 'fromCable' | 'fromPort' | null => {
+        return portPowerMap.get(portId)?.direction ?? null;
     }, [portPowerMap]);
 
     // Ports that actually carry OLT signal — derived from the power map. A fiber
     // is "lit" only when there's a finite power reaching it (not merely connected).
     const poweredPorts = useMemo(() => {
         const set = new Set<string>();
-        portPowerMap.forEach((power, portId) => {
-            if (power !== null && isFinite(power)) set.add(portId);
+        portPowerMap.forEach((entry, portId) => {
+            if (entry.power !== null && isFinite(entry.power)) set.add(portId);
         });
         return set;
     }, [portPowerMap]);
@@ -1045,11 +1050,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
     const getLayout = (id: string) => localCTO.layout?.[id] || { x: 0, y: 0, rotation: 0 };
 
-    // Viewport culling — compute visible canvas bounds to skip rendering off-screen elements
     // Viewport culling — skip rendering off-screen elements to reduce DOM nodes.
     // At high zoom (>1.5), culling is disabled: few elements are on screen anyway,
     // and the margin becomes too tight (200px / zoom), causing false culling.
-    // Also reads from viewStateRef to stay accurate after DOM-direct panning.
+    // Reads from viewStateRef to stay accurate even after DOM-direct panning, but
+    // depends on `viewState` in the deps so that React-driven viewport changes
+    // (zoom via setViewState, fit-to-content, etc.) invalidate downstream React.memo'd
+    // renderers — otherwise newly-visible elements stay culled until some other prop forces a re-check.
     const isElementVisible = useCallback((layout: { x: number; y: number }, width: number, height: number) => {
         const vs = viewStateRef.current;
         if (vs.zoom > 1.5) return true; // High zoom = few elements, culling not needed
@@ -1062,7 +1069,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const maxY = (-vs.y + vh + MARGIN) / vs.zoom;
         return layout.x + width > minX && layout.x < maxX
             && layout.y + height > minY && layout.y < maxY;
-    }, [isMaximized]);
+    }, [isMaximized, viewState, modalSize.w, modalSize.h]);
 
     const screenToCanvas = (sx: number, sy: number) => {
         if (!containerRef.current) return { x: 0, y: 0 };
@@ -3793,6 +3800,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             litPorts={litPorts}
                             poweredPorts={poweredPorts}
                             getPortPower={getPortPower}
+                            getPortDirection={getPortDirection}
                             hoveredPortId={hoveredPortId}
                             cableStreetNames={cableStreetNamesRef.current}
                             isElementVisible={isElementVisible}

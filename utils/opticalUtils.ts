@@ -873,14 +873,29 @@ function walkUpstreamForPower(
 }
 
 /**
+ * Direction the optical signal arrives at a fiber port:
+ *  - 'fromCable': light travels through the fiber strand into the local node and
+ *    exits via the local connection (e.g., into a splitter input).
+ *  - 'fromPort':  light arrives via the local connection (e.g., a splitter output)
+ *    and exits via the cable strand toward the other endpoint.
+ */
+export type FiberFlowDirection = 'fromCable' | 'fromPort';
+
+export interface PortPowerResult {
+    power: number | null;
+    direction: FiberFlowDirection | null;
+}
+
+/**
  * Public entry point. Tries the trace from the starting fiber port AND, when the
  * port is a fiber, also tries crossing the starting fiber's cable first. This
  * handles the case where the local connection in the editor's CTO leads downstream
  * (e.g., to another fiber whose cable dead-ends) but the actual OLT path lives on
  * the OTHER endpoint of the starting fiber's cable.
  *
- * Returns the highest-power result among the attempts (closest to OLT), or null
- * if no path to any OLT is reachable.
+ * Returns the highest-power result among the attempts (closest to OLT) along with
+ * the direction the light flows at this port. Returns null power when no path to
+ * any OLT is reachable.
  */
 export function tracePortPower(
     startPortId: string,
@@ -888,11 +903,13 @@ export function tracePortPower(
     network: NetworkState,
     catalogs: Catalogs,
     startNodeOverride?: CTOData | POPData
-): number | null {
-    // Attempt 1: trace from the starting position directly.
+): PortPowerResult {
+    // Attempt 1: trace from the starting position directly. Winning here means the
+    // upstream path goes through the LOCAL connection — light arrives 'fromPort'.
     const r1 = walkUpstreamForPower(startPortId, startNodeId, network, catalogs, startNodeOverride, [], new Set());
 
-    // Attempt 2: if the start is a fiber, cross its cable first then trace.
+    // Attempt 2: if the start is a fiber, cross its cable first then trace. Winning
+    // here means the upstream path goes through the CABLE — light arrives 'fromCable'.
     let r2: { power: number | null; loss: number } = { power: null, loss: 0 };
     if (startPortId.includes('-fiber-')) {
         const cableId = startPortId.split('-fiber-')[0];
@@ -911,9 +928,11 @@ export function tracePortPower(
         }
     }
 
-    if (r1.power === null && r2.power === null) return null;
-    if (r1.power === null) return r2.power;
-    if (r2.power === null) return r1.power;
-    // Both reached an OLT; prefer the higher power (less loss = more direct upstream path).
-    return Math.max(r1.power, r2.power);
+    if (r1.power === null && r2.power === null) return { power: null, direction: null };
+    if (r1.power === null) return { power: r2.power, direction: 'fromCable' };
+    if (r2.power === null) return { power: r1.power, direction: 'fromPort' };
+    // Both reached an OLT; pick the higher power (less loss = more direct path).
+    return r1.power >= r2.power
+        ? { power: r1.power, direction: 'fromPort' }
+        : { power: r2.power, direction: 'fromCable' };
 }
