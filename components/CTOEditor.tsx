@@ -3933,9 +3933,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                                         }}
                                         className="flex items-center gap-2 group cursor-pointer transition-all"
                                     >
-                                        <div className={`w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
+                                        <div className={`w-4 h-4 flex-shrink-0 aspect-square rounded-full border-2 transition-all flex items-center justify-center ${propertiesStatus === status.id ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-[#22262e]' : 'border-slate-300 dark:border-slate-600 bg-transparent group-hover:border-slate-400'}`}>
                                             <div
-                                                className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                                                className={`w-2.5 h-2.5 flex-shrink-0 aspect-square rounded-full transition-all shadow-sm ${propertiesStatus === status.id ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
                                                 style={{ backgroundColor: status.color }}
                                             />
                                         </div>
