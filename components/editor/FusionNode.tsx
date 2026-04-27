@@ -83,7 +83,8 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
 
             {/* Body */}
             <div
-                className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+                style={{ position: 'relative', width: '24px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="cursor-grab active:cursor-grabbing"
                 onMouseDown={(e) => onDragStart(e, fusion.id)}
                 onClick={(e) => onAction(e, fusion.id)}
             >
@@ -101,10 +102,9 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseDown={(e) => onPortMouseDown(e, portA)}
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
-                    style={{ width: '8px', height: '8px', minWidth: '8px', minHeight: '8px', maxWidth: '8px', maxHeight: '8px', flex: '0 0 auto', boxSizing: 'border-box' }}
+                    style={{ position: 'absolute', left: '2px', top: '2px', width: '8px', height: '8px', minWidth: '8px', minHeight: '8px', maxWidth: '8px', maxHeight: '8px', flex: '0 0 auto', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     className={`
-                        cursor-pointer select-none transition-all z-30 absolute left-[2px] top-1/2 -translate-y-1/2
-                        flex items-center justify-center
+                        cursor-pointer select-none transition-all z-30
                         ${isConnector ? `rounded-[1px] ${isLitA ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
                         ${hoveredPortId === portA ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                         ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
@@ -119,10 +119,9 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseDown={(e) => onPortMouseDown(e, portB)}
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
-                    style={{ width: '8px', height: '8px', minWidth: '8px', minHeight: '8px', maxWidth: '8px', maxHeight: '8px', flex: '0 0 auto', boxSizing: 'border-box' }}
+                    style={{ position: 'absolute', right: '2px', top: '2px', width: '8px', height: '8px', minWidth: '8px', minHeight: '8px', maxWidth: '8px', maxHeight: '8px', flex: '0 0 auto', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     className={`
-                        cursor-pointer select-none transition-all z-30 absolute right-[2px] top-1/2 -translate-y-1/2
-                        flex items-center justify-center
+                        cursor-pointer select-none transition-all z-30
                         ${isConnector ? `rounded-[1px] ${isLitB ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
                         ${hoveredPortId === portB ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                         ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
