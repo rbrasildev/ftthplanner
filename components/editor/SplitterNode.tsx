@@ -183,7 +183,8 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             e.stopPropagation();
                             if (onContextMenu) onContextMenu(e, splitter.id);
                         }}
-                        className={`w-2.5 h-2.5 flex-shrink-0 aspect-square rounded-full border cursor-pointer pointer-events-auto
+                        style={{ width: '10px', height: '10px', minWidth: '10px', minHeight: '10px', maxWidth: '10px', maxHeight: '10px', flex: '0 0 auto', boxSizing: 'border-box' }}
+                        className={`rounded-full border cursor-pointer pointer-events-auto
                         hover:scale-150 transition-all text-center flex items-center justify-center
                         text-[6.5px] font-bold select-none shadow-sm
                         ${hoveredPortId === splitter.inputPortId ? 'ring-1 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
@@ -236,11 +237,11 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                                     : t('port_label', { number: idx + 1 })
                                 }
                                 className={`
-                                border cursor-pointer pointer-events-auto flex-shrink-0 aspect-square
+                                border cursor-pointer pointer-events-auto
                                 hover:scale-150 transition-all text-center absolute
                                 text-[6.5px] font-semibold select-none flex items-center justify-center
-                                ${isHighPower ? 'w-3 h-3 z-40' : 'w-2.5 h-2.5'}
-                                ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'} 
+                                ${isHighPower ? 'z-40' : ''}
+                                ${isConnectorized ? 'rounded-[1px]' : 'rounded-full'}
                                 ${hoveredPortId === pid ? 'ring-1 ring-emerald-500 border-emerald-400 bg-emerald-50 dark:bg-emerald-900' : ''}
                                 ${isLitOut
                                         ? 'border-red-400 bg-red-600 text-white'
@@ -255,7 +256,15 @@ const SplitterNodeComponent: React.FC<SplitterNodeProps> = ({
                             `}
                                 style={{
                                     left: `${actualLeft}px`,
-                                    top: `${actualTop}px`
+                                    top: `${actualTop}px`,
+                                    width: isHighPower ? '12px' : '10px',
+                                    height: isHighPower ? '12px' : '10px',
+                                    minWidth: isHighPower ? '12px' : '10px',
+                                    minHeight: isHighPower ? '12px' : '10px',
+                                    maxWidth: isHighPower ? '12px' : '10px',
+                                    maxHeight: isHighPower ? '12px' : '10px',
+                                    flex: '0 0 auto',
+                                    boxSizing: 'border-box'
                                 }}
                             >
                                 {customerName && (() => {
