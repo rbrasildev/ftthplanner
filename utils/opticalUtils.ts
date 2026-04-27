@@ -842,11 +842,13 @@ function walkUpstreamForPower(
             }
         }
 
-        // FALLBACK: if we didn't progress this iteration AND the current port is a fiber,
-        // cross the cable to the other endpoint. This handles the common case where the
-        // fiber feeds into a downstream element (e.g., splitter input) — the actual
-        // upstream lives on the other end of the cable.
-        if (!progressed && currPortId.includes('-fiber-')) {
+        // FALLBACK: if we didn't progress this iteration AND the current port is a fiber
+        // AND we already moved past the start (iter > 0), cross the cable to keep tracing.
+        // We deliberately skip the fallback at iter 0 — the public `tracePortPower` runs
+        // a separate Attempt 2 that crosses the starting cable explicitly. If we ALSO crossed
+        // here, Attempt 1 would silently succeed for disconnected fibers (no local conn) and
+        // get tagged as 'fromPort', flipping the visual flow direction incorrectly.
+        if (!progressed && iter > 0 && currPortId.includes('-fiber-')) {
             const cableId = currPortId.split('-fiber-')[0];
             const cable = network.cables.find(c => c.id === cableId);
             if (!cable) break;
