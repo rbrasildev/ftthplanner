@@ -108,9 +108,7 @@
       "Read(//c/Users/rairo/AppData/Local/Temp/**)",
       "Read(//c/Users/rairo/AppData/Roaming/Code/User/**)",
       "Read(//c/Users/rairo/AppData/**)",
-      "Read(//c/Users/rairo/**)",
-      "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Read(//c/Users/rairo/**)"
     ]
   }
 }

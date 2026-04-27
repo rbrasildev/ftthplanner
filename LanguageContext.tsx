@@ -2958,7 +2958,7 @@ const translations = {
     'pole_table': 'Tabela de Postes',
     'map_layers': 'Camadas',
     'layer_cables': 'Cabos',
-    'layer_ctos': 'CTOs',
+    'layer_ctos': 'Caixas',
     'layer_pops': 'POPs',
 
     // Backup
