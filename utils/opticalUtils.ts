@@ -672,3 +672,248 @@ export function traceOpticalPath(
         oltDetails: foundOltDetails
     };
 }
+
+/**
+ * Computes the optical power (dBm) arriving at a specific fiber port by
+ * walking upstream from that port through the network until reaching an OLT.
+ *
+ * Returns null when no OLT can be reached (port disconnected / orphan).
+ *
+ * Mirrors the trace logic of `traceOpticalPath` but starts at an arbitrary
+ * port (not a splitter input) and does not add any "destination element" loss.
+ */
+function walkUpstreamForPower(
+    startPortId: string,
+    startNodeId: string,
+    network: NetworkState,
+    catalogs: Catalogs,
+    startNodeOverride: CTOData | POPData | undefined,
+    initialPath: OpticalElement[],
+    initialVisited: Set<string>
+): { power: number | null; loss: number } {
+    const path: OpticalElement[] = [...initialPath];
+    let oltPower = 3;
+    let currPortId = startPortId;
+    let currNodeId = startNodeId;
+    let lastConnectionId: string | null = null;
+    let foundOlt = false;
+    const visited = new Set(initialVisited);
+    visited.add(`${currNodeId}|${currPortId}`);
+
+    for (let iter = 0; iter < 100; iter++) {
+        const node: CTOData | POPData | undefined =
+            (startNodeOverride && startNodeOverride.id === currNodeId)
+                ? startNodeOverride
+                : network.ctos.find(c => c.id === currNodeId) || network.pops.find(p => p.id === currNodeId);
+        if (!node) break;
+
+        let conn = node.connections.find(c => c.id !== lastConnectionId && c.targetId === currPortId);
+        let upstreamId: string | undefined;
+        if (conn) {
+            upstreamId = conn.sourceId;
+        } else {
+            conn = node.connections.find(c => c.id !== lastConnectionId && c.sourceId === currPortId);
+            if (conn) upstreamId = conn.targetId;
+        }
+
+        let progressed = false;
+
+        if (conn && upstreamId) {
+            lastConnectionId = conn.id;
+            const sourceId = upstreamId;
+
+            // A. Fiber from a cable
+            if (sourceId.includes('-fiber-')) {
+                const cableId = sourceId.split('-fiber-')[0];
+                const cable = network.cables.find(c => c.id === cableId);
+                if (cable) {
+                    const cableCatalog = catalogs.cables.find(c => c.id === cable.catalogId);
+                    path.push({ type: 'CABLE', id: cable.id, name: cable.name, loss: getCableLoss(cable, cableCatalog) });
+                    let nextNodeId: string | null = null;
+                    if (cable.toNodeId === currNodeId) nextNodeId = cable.fromNodeId;
+                    else if (cable.fromNodeId === currNodeId) nextNodeId = cable.toNodeId;
+                    if (!nextNodeId) break;
+                    currNodeId = nextNodeId;
+                    currPortId = sourceId;
+                    progressed = true;
+                }
+            }
+
+            // B. Fusion
+            if (!progressed) {
+                const fusion = node.fusions.find(f => f.id + '-a' === sourceId || f.id + '-b' === sourceId);
+                if (fusion) {
+                    let fusionData = catalogs.fusions.find(f => f.id === fusion.catalogId);
+                    if (!fusionData && fusion.type && fusion.type !== 'generic' && fusion.type !== 'tray') {
+                        const norm = (fusion.type as string).trim().toLowerCase();
+                        fusionData = catalogs.fusions.find(f => f.name.trim().toLowerCase() === norm);
+                    }
+                    path.push({ type: 'FUSION', id: fusion.id, name: fusion.name, loss: getFusionLoss(fusion, fusionData) });
+                    currPortId = sourceId.endsWith('-a') ? `${fusion.id}-b` : `${fusion.id}-a`;
+                    progressed = true;
+                }
+            }
+
+            // C. Cascading splitter (sourceId is a splitter output)
+            if (!progressed && 'splitters' in node) {
+                const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
+                if (parentSplitter) {
+                    let psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
+                    if (!psCatalog) {
+                        const norm = parentSplitter.type.trim().toLowerCase();
+                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
+                    }
+                    if (!psCatalog) {
+                        psCatalog = catalogs.splitters.find(c => c.outputs === parentSplitter.outputPortIds.length);
+                    }
+                    path.push({ type: 'SPLITTER', id: parentSplitter.id, name: parentSplitter.name, loss: getSplitterLoss(parentSplitter, psCatalog, sourceId) });
+                    currPortId = parentSplitter.inputPortId;
+                    progressed = true;
+                }
+            }
+
+            // C2. Inline DIO inside a CTO
+            if (!progressed) {
+                const dioParsed = 'splitters' in node ? parseDIOPortId(sourceId) : null;
+                if (dioParsed) {
+                    const inlineDios = (node as CTOData).dios;
+                    const dio = inlineDios?.find(d => d.id === dioParsed.dioId);
+                    if (dio) {
+                        path.push({ type: 'CONNECTOR', id: `${dio.id}-port-${dioParsed.portIndex}`, name: dio.name, loss: 0.5 });
+                        currPortId = makeDIOPortId(dioParsed.dioId, dioParsed.portIndex, flipDIOPortSide(dioParsed.side));
+                        progressed = true;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // D. OLT port (POP)
+            if (!progressed && 'olts' in node) {
+                const pop = node as POPData;
+                const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === sourceId.trim()));
+                if (olt) {
+                    const oltNameLower = olt.name.trim().toLowerCase();
+                    const matched = catalogs.olts
+                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
+                        .sort((a, b) => b.name.length - a.name.length)[0];
+                    oltPower = matched ? matched.outputPower : 3;
+                    foundOlt = true;
+                    break;
+                }
+            }
+
+            // E. POP-side DIO (patch panel)
+            if (!progressed && 'dios' in node && 'olts' in node) {
+                const pop = node as POPData;
+                const dio = pop.dios.find(d => Array.isArray(d.portIds) && d.portIds.some(pid => pid.trim() === sourceId.trim()));
+                if (dio) {
+                    path.push({ type: 'CONNECTOR', id: dio.id, name: dio.name, loss: 0.5 });
+                    currPortId = sourceId;
+                    progressed = true;
+                }
+            }
+
+            // F. Pass-through: upstream is a splitter INPUT in current node.
+            // The splitter input feeds the splitter outputs; the actual upstream is on
+            // the OTHER connection involving this splitter input. Hop onto the input
+            // and let the next iteration find that feeding connection.
+            if (!progressed && 'splitters' in node) {
+                const inputSplitter = (node as CTOData).splitters.find(s => s.inputPortId === sourceId);
+                if (inputSplitter) {
+                    currPortId = sourceId;
+                    progressed = true;
+                }
+            }
+        } else {
+            // No connection — check if current port itself is an OLT port (direct attach)
+            if ('olts' in node) {
+                const pop = node as POPData;
+                const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === currPortId.trim()));
+                if (olt) {
+                    const oltNameLower = olt.name.trim().toLowerCase();
+                    const matched = catalogs.olts
+                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
+                        .sort((a, b) => b.name.length - a.name.length)[0];
+                    oltPower = matched ? matched.outputPower : 3;
+                    foundOlt = true;
+                    break;
+                }
+            }
+        }
+
+        // FALLBACK: if we didn't progress this iteration AND the current port is a fiber,
+        // cross the cable to the other endpoint. This handles the common case where the
+        // fiber feeds into a downstream element (e.g., splitter input) — the actual
+        // upstream lives on the other end of the cable.
+        if (!progressed && currPortId.includes('-fiber-')) {
+            const cableId = currPortId.split('-fiber-')[0];
+            const cable = network.cables.find(c => c.id === cableId);
+            if (!cable) break;
+            let nextNodeId: string | null = null;
+            if (cable.toNodeId === currNodeId) nextNodeId = cable.fromNodeId;
+            else if (cable.fromNodeId === currNodeId) nextNodeId = cable.toNodeId;
+            if (!nextNodeId || nextNodeId === currNodeId) break;
+            const visitKey = `${nextNodeId}|${currPortId}`;
+            if (visited.has(visitKey)) break;
+            visited.add(visitKey);
+            const cableCatalog = catalogs.cables.find(c => c.id === cable.catalogId);
+            path.push({ type: 'CABLE', id: cable.id, name: cable.name, loss: getCableLoss(cable, cableCatalog) });
+            currNodeId = nextNodeId;
+            // currPortId stays the same — fiber id is consistent across both endpoints
+            lastConnectionId = null; // reset so we can find connections in the new node
+            continue;
+        }
+
+        if (!progressed) break;
+    }
+
+    const totalLoss = path.reduce((acc, el) => acc + el.loss, 0);
+    return { power: foundOlt ? oltPower - totalLoss : null, loss: totalLoss };
+}
+
+/**
+ * Public entry point. Tries the trace from the starting fiber port AND, when the
+ * port is a fiber, also tries crossing the starting fiber's cable first. This
+ * handles the case where the local connection in the editor's CTO leads downstream
+ * (e.g., to another fiber whose cable dead-ends) but the actual OLT path lives on
+ * the OTHER endpoint of the starting fiber's cable.
+ *
+ * Returns the highest-power result among the attempts (closest to OLT), or null
+ * if no path to any OLT is reachable.
+ */
+export function tracePortPower(
+    startPortId: string,
+    startNodeId: string,
+    network: NetworkState,
+    catalogs: Catalogs,
+    startNodeOverride?: CTOData | POPData
+): number | null {
+    // Attempt 1: trace from the starting position directly.
+    const r1 = walkUpstreamForPower(startPortId, startNodeId, network, catalogs, startNodeOverride, [], new Set());
+
+    // Attempt 2: if the start is a fiber, cross its cable first then trace.
+    let r2: { power: number | null; loss: number } = { power: null, loss: 0 };
+    if (startPortId.includes('-fiber-')) {
+        const cableId = startPortId.split('-fiber-')[0];
+        const cable = network.cables.find(c => c.id === cableId);
+        if (cable) {
+            let otherEnd: string | undefined;
+            if (cable.toNodeId === startNodeId) otherEnd = cable.fromNodeId;
+            else if (cable.fromNodeId === startNodeId) otherEnd = cable.toNodeId;
+            if (otherEnd && otherEnd !== startNodeId) {
+                const cableCatalog = catalogs.cables.find(c => c.id === cable.catalogId);
+                const cableLoss = getCableLoss(cable, cableCatalog);
+                const initialPath: OpticalElement[] = [{ type: 'CABLE', id: cable.id, name: cable.name, loss: cableLoss }];
+                const initialVisited = new Set<string>([`${startNodeId}|${startPortId}`]);
+                r2 = walkUpstreamForPower(startPortId, otherEnd, network, catalogs, startNodeOverride, initialPath, initialVisited);
+            }
+        }
+    }
+
+    if (r1.power === null && r2.power === null) return null;
+    if (r1.power === null) return r2.power;
+    if (r2.power === null) return r1.power;
+    // Both reached an OLT; prefer the higher power (less loss = more direct upstream path).
+    return Math.max(r1.power, r2.power);
+}

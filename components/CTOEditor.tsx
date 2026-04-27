@@ -32,7 +32,7 @@ import {
 } from '../services/catalogService';
 import { OpticalPowerModal } from './modals/OpticalPowerModal';
 import { QRCodeModal } from './modals/QRCodeModal';
-import { traceOpticalPath, OpticalPathResult } from '../utils/opticalUtils';
+import { traceOpticalPath, tracePortPower, OpticalPathResult } from '../utils/opticalUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
 import { useCTOEditorState } from '../hooks/useCTOEditorState';
@@ -968,6 +968,53 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         });
         return lit;
     }, [litPorts, localCTO.connections]);
+
+    // Ports that have at least one connection in this CTO — treated as "carrying light"
+    // for visual purposes (filled circle vs border-only).
+    const connectedPorts = useMemo(() => {
+        const set = new Set<string>();
+        localCTO.connections.forEach(conn => {
+            set.add(conn.sourceId);
+            set.add(conn.targetId);
+        });
+        return set;
+    }, [localCTO.connections]);
+
+    // Pre-computed power per connected port. Used for hover tooltips on fibers.
+    // Only connected ports are traced (others have no light → no tooltip needed).
+    // Memo depends on the network topology pieces that influence power, not on
+    // layout drags, to avoid retracing on every mouse move.
+    const portPowerMap = useMemo(() => {
+        const map = new Map<string, number | null>();
+        const catalogs = {
+            splitters: availableSplitters,
+            fusions: availableFusions,
+            cables: availableCables,
+            olts: availableOLTs,
+        };
+        connectedPorts.forEach(portId => {
+            try {
+                map.set(portId, tracePortPower(portId, cto.id, network, catalogs, localCTO));
+            } catch {
+                map.set(portId, null);
+            }
+        });
+        return map;
+    }, [connectedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, availableFusions, availableCables, availableOLTs]);
+
+    const getPortPower = useCallback((portId: string): number | null => {
+        return portPowerMap.get(portId) ?? null;
+    }, [portPowerMap]);
+
+    // Ports that actually carry OLT signal — derived from the power map. A fiber
+    // is "lit" only when there's a finite power reaching it (not merely connected).
+    const poweredPorts = useMemo(() => {
+        const set = new Set<string>();
+        portPowerMap.forEach((power, portId) => {
+            if (power !== null && isFinite(power)) set.add(portId);
+        });
+        return set;
+    }, [portPowerMap]);
 
     // Pre-computed customer lookups to avoid O(n) scans per render of each splitter/fusion.
     // Keyed by splitter id → port index → customer info, and by connector id → customer info.
@@ -3744,6 +3791,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             layoutMap={localCTO.layout}
                             connections={localCTO.connections}
                             litPorts={litPorts}
+                            poweredPorts={poweredPorts}
+                            getPortPower={getPortPower}
                             hoveredPortId={hoveredPortId}
                             cableStreetNames={cableStreetNamesRef.current}
                             isElementVisible={isElementVisible}

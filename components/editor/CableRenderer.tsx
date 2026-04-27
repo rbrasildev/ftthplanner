@@ -7,6 +7,8 @@ interface CableRendererProps {
     layoutMap: Record<string, ElementLayout> | undefined;
     connections: FiberConnection[];
     litPorts: Set<string>;
+    poweredPorts: Set<string>;
+    getPortPower: (portId: string) => number | null;
     hoveredPortId: string | null;
     cableStreetNames: Map<string, string>;
     isElementVisible: (layout: { x: number; y: number }, width: number, height: number) => boolean;
@@ -39,7 +41,7 @@ const CABLE_ALIGN = 24;
 const CABLE_VISUAL_WIDTH = 192;
 
 export const CableRenderer = React.memo<CableRendererProps>(({
-    cables, layoutMap, connections, litPorts, hoveredPortId, cableStreetNames, isElementVisible,
+    cables, layoutMap, connections, litPorts, poweredPorts, getPortPower, hoveredPortId, cableStreetNames, isElementVisible,
     onDragStart, onRotate, onMirror, onPortMouseDown, onPortMouseEnter, onPortMouseLeave,
     onCableMouseEnter, onCableMouseLeave, onCableClick, onEdit, onContextMenu,
     onHoverEnter, onHoverLeave,
@@ -70,6 +72,8 @@ export const CableRenderer = React.memo<CableRendererProps>(({
                         layout={layout}
                         connections={connections}
                         litPorts={litPorts}
+                        poweredPorts={poweredPorts}
+                        getPortPower={getPortPower}
                         hoveredPortId={hoveredPortId}
                         streetName={cableStreetNames.get(cable.id)}
                         onDragStart={onDragStart}

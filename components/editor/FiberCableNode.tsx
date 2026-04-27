@@ -8,6 +8,8 @@ interface FiberCableNodeProps {
     layout: ElementLayout;
     connections: FiberConnection[];
     litPorts: Set<string>;
+    poweredPorts: Set<string>;
+    getPortPower: (portId: string) => number | null;
     hoveredPortId: string | null;
     streetName?: string;
     onDragStart: (e: React.MouseEvent, id: string) => void;
@@ -31,6 +33,8 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
     layout,
     connections,
     litPorts,
+    poweredPorts,
+    getPortPower,
     hoveredPortId,
     streetName,
     onDragStart,
@@ -185,8 +189,18 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                             const positionInTube = i % fibersPerTube;
                             const color = getFiberColor(positionInTube, cable.colorStandard);
                             const isLit = litPorts.has(fiberId);
+                            const hasLight = poweredPorts.has(fiberId);
                             const isLightColor = ['#ffffff', '#eab308', '#22d3ee', '#ec4899', '#f97316'].includes(color); // Approximate check for black text
-                            const textColor = isLightColor ? 'text-black' : 'text-white';
+                            const filledTextColor = isLightColor ? 'text-black' : 'text-white';
+                            const isWhiteFiber = color.toLowerCase() === '#ffffff' || color.toLowerCase() === '#fff' || color.toLowerCase() === 'white';
+                            const emptyBorderColor = isWhiteFiber ? '#94a3b8' : color;
+                            let powerTitle: string | undefined;
+                            if (hasLight) {
+                                const power = getPortPower(fiberId);
+                                if (power !== null) {
+                                    powerTitle = `${t('fiber') || 'Fibra'} ${i + 1}: ${power.toFixed(2)} dBm`;
+                                }
+                            }
 
                             return (
                                 <div
@@ -203,18 +217,21 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                                     <div
 
                                         id={fiberId}
+                                        title={powerTitle}
                                         onMouseDown={(e) => onPortMouseDown(e, fiberId)}
                                         onMouseEnter={() => onPortMouseEnter(fiberId)}
                                         onMouseLeave={onPortMouseLeave}
                                         className={`
-                                        w-2.5 h-2.5 rounded-full border border-black dark:border-white cursor-pointer select-none
+                                        w-3 h-3 rounded-full cursor-pointer select-none
                                         hover:scale-125 z-30
-                                        absolute ${isMirrored ? '-left-[3px]' : '-right-[3px]'} shadow-sm ${textColor} text-[7px] font-bold
-                                        ${hoveredPortId === fiberId ? 'ring-2 ring-emerald-500' : ''}
-                                        ${isLit ? 'ring-2 ring-red-400 border-red-400' : ''}
+                                        absolute ${isMirrored ? '-left-[4px]' : '-right-[4px]'} shadow-sm text-[8px] font-bold
+                                        ${hasLight ? filledTextColor : 'text-slate-900'}
+                                        ${hoveredPortId === fiberId ? 'ring-1 ring-emerald-500' : ''}
+                                        ${isLit ? 'ring-1 ring-red-400' : ''}
                                     `}
                                         style={{
-                                            backgroundColor: color,
+                                            backgroundColor: hasLight ? color : '#ffffff',
+                                            border: `1px solid ${hasLight ? color : emptyBorderColor}`,
                                             display: 'grid',
                                             placeContent: 'center',
                                             lineHeight: 1
