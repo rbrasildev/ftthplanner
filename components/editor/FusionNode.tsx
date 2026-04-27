@@ -107,7 +107,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitA && isConnectedA && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
+                    {!isLitA && isConnectedA && !isConnector && <svg width="4" height="4" viewBox="0 0 4 4" className="pointer-events-none"><circle cx="2" cy="2" r="2" fill="#10b981" /></svg>}
                 </div>
 
                 {/* Right Port */}
@@ -124,7 +124,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitB && isConnectedB && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full" />}
+                    {!isLitB && isConnectedB && !isConnector && <svg width="4" height="4" viewBox="0 0 4 4" className="pointer-events-none"><circle cx="2" cy="2" r="2" fill="#10b981" /></svg>}
                 </div>
 
                 {/* Attached Customer Label — only for connectors. Extends horizontally from the RIGHT tip
