@@ -110,7 +110,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitA && isConnectedA && !isConnector && <div style={{ position: 'absolute', left: '2px', top: '2px', width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#10b981', pointerEvents: 'none', boxSizing: 'border-box' }} />}
+                    {!isLitA && isConnectedA && !isConnector && <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#10b981', pointerEvents: 'none', boxSizing: 'border-box' }} />}
                 </div>
 
                 {/* Right Port */}
@@ -127,7 +127,7 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
-                    {!isLitB && isConnectedB && !isConnector && <div style={{ position: 'absolute', left: '2px', top: '2px', width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#10b981', pointerEvents: 'none', boxSizing: 'border-box' }} />}
+                    {!isLitB && isConnectedB && !isConnector && <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '2px', height: '2px', borderRadius: '50%', backgroundColor: '#10b981', pointerEvents: 'none', boxSizing: 'border-box' }} />}
                 </div>
 
                 {/* Attached Customer Label — only for connectors. Extends horizontally from the RIGHT tip
