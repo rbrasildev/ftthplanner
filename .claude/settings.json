@@ -104,7 +104,11 @@
       "Bash(npm audit *)",
       "Bash(git checkout *)",
       "Bash(netstat -ano)",
-      "Bash(taskkill //PID 23472 //F)"
+      "Bash(taskkill //PID 23472 //F)",
+      "Read(//c/Users/rairo/AppData/Local/Temp/**)",
+      "Read(//c/Users/rairo/AppData/Roaming/Code/User/**)",
+      "Read(//c/Users/rairo/AppData/**)",
+      "Read(//c/Users/rairo/**)"
     ]
   }
 }

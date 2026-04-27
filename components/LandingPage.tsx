@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X, Mail, Phone } from 'lucide-react';
+import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X, Mail, Phone, Smartphone, WifiOff, GitBranch } from 'lucide-react';
 import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
 import { VideoDemoModal } from './modals/VideoDemoModal';
@@ -11,6 +11,43 @@ interface LandingPageProps {
     onRegisterClick: (planName?: string) => void;
     saasConfig?: any | null;
 }
+
+const PhoneFrame: React.FC<{ src: string; alt: string; featured?: boolean }> = ({ src, alt, featured = false }) => (
+    <div
+        className={`relative ${featured ? 'w-[260px] h-[540px]' : 'w-[240px] h-[500px]'} rounded-[2.6rem] bg-slate-950 border-[10px] border-slate-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] ring-1 ring-white/5`}
+    >
+        {/* Dynamic Island */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[90px] h-[26px] bg-black rounded-full z-20 flex items-center justify-end pr-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80"></div>
+        </div>
+        {/* Side buttons */}
+        <div className="absolute -left-[14px] top-24 w-1 h-12 bg-slate-800 rounded-l"></div>
+        <div className="absolute -left-[14px] top-40 w-1 h-16 bg-slate-800 rounded-l"></div>
+        <div className="absolute -right-[14px] top-32 w-1 h-20 bg-slate-800 rounded-r"></div>
+        {/* Screen */}
+        <div className="relative w-full h-full overflow-hidden rounded-[1.9rem] bg-slate-100">
+            <img
+                src={src}
+                alt={alt}
+                className="w-full h-full object-cover object-top"
+                loading="lazy"
+                onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('.phone-fallback')) {
+                        const fb = document.createElement('div');
+                        fb.className = 'phone-fallback absolute inset-0 flex items-center justify-center text-slate-400 text-xs px-4 text-center bg-slate-200';
+                        fb.textContent = alt;
+                        parent.appendChild(fb);
+                    }
+                }}
+            />
+        </div>
+        {/* Subtle screen reflection */}
+        <div className="absolute inset-[10px] rounded-[1.9rem] pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-white/10"></div>
+    </div>
+);
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegisterClick, saasConfig }) => {
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -121,6 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         <div className="hidden md:flex items-center space-x-8">
                             <a href="#features" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_features')}</a>
                             <a href="#pricing" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_pricing')}</a>
+                            <a href="#mobile" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_mobile')}</a>
                             <a href="#performance" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_performance')}</a>
                             <a href="#how-it-works" className="text-sm font-semibold text-slate-300 hover:text-emerald-400 transition-colors">{t('landing_how_it_works')}</a>
                         </div>
@@ -164,6 +202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     <div className="md:hidden absolute top-20 left-0 w-full bg-slate-950 border-b border-slate-800 p-4 shadow-xl flex flex-col space-y-4 animate-in slide-in-from-top-10">
                         <a href="#features" className="text-base font-semibold p-2" onClick={() => setIsMenuOpen(false)}>{t('landing_features')}</a>
                         <a href="#pricing" className="text-base font-semibold p-2" onClick={() => setIsMenuOpen(false)}>{t('landing_pricing')}</a>
+                        <a href="#mobile" className="text-base font-semibold p-2" onClick={() => setIsMenuOpen(false)}>{t('landing_mobile')}</a>
                         <a href="#performance" className="text-base font-semibold p-2" onClick={() => setIsMenuOpen(false)}>{t('landing_performance')}</a>
                         <div className="pt-4 border-t border-slate-800 flex flex-col gap-3">
                             <button
@@ -592,6 +631,124 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 </div>
             </section>
 
+            {/* --- MOBILE APP --- */}
+            <section id="mobile" className="py-24 bg-slate-950 border-t border-slate-800 relative overflow-hidden">
+                {/* Background blobs */}
+                <div className="absolute top-1/2 left-0 -z-10 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] -translate-x-1/3 -translate-y-1/2"></div>
+                <div className="absolute bottom-0 right-0 -z-10 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3"></div>
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                        {/* LEFT — copy + features + store badges */}
+                        <div className="order-2 lg:order-1">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/30 border border-emerald-800 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-6">
+                                <Smartphone className="w-3 h-3" /> {t('landing_mobile_badge')}
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 leading-[1.1]">
+                                {t('landing_mobile_title_1')}{' '}
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-500">{t('landing_mobile_title_2')}</span>
+                            </h2>
+                            <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-xl">
+                                {t('landing_mobile_desc')}
+                            </p>
+
+                            {/* Feature list */}
+                            <ul className="space-y-5 mb-10">
+                                {[
+                                    { icon: <MapIcon className="w-5 h-5" />, color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', title: t('landing_mobile_feat_1_title'), desc: t('landing_mobile_feat_1_desc') },
+                                    { icon: <GitBranch className="w-5 h-5" />, color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30', title: t('landing_mobile_feat_2_title'), desc: t('landing_mobile_feat_2_desc') },
+                                    { icon: <WifiOff className="w-5 h-5" />, color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', title: t('landing_mobile_feat_3_title'), desc: t('landing_mobile_feat_3_desc') },
+                                ].map((f, i) => (
+                                    <li key={i} className="flex gap-4">
+                                        <div className={`shrink-0 w-11 h-11 rounded-xl border ${f.color} flex items-center justify-center`}>
+                                            {f.icon}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-white text-base mb-0.5">{f.title}</div>
+                                            <div className="text-sm text-slate-400 leading-relaxed">{f.desc}</div>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {/* Store badges */}
+                            <div className="space-y-3">
+                                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('landing_mobile_download')}</div>
+                                <div className="flex flex-wrap gap-3">
+                                    {/* App Store badge */}
+                                    <a
+                                        href="https://apps.apple.com/br/app/ftth-planner/id6762696888"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group relative flex items-center gap-3 bg-black hover:bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-2xl pl-4 pr-5 py-3 transition-all hover:-translate-y-0.5"
+                                        aria-label="Download on the App Store"
+                                    >
+                                        <svg className="w-8 h-8 text-white" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                                            <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zM256.4 84.5c30.1-35.8 27.4-68.4 26.5-80.5-26.6 1.5-57.4 18.1-74.9 38.5-19.3 21.9-30.6 49-28.2 79.9 28.8 2.2 55.1-12.6 76.6-37.9z" />
+                                        </svg>
+                                        <div className="flex flex-col leading-tight text-left">
+                                            <span className="text-[10px] text-slate-300 uppercase tracking-wider">{t('landing_mobile_appstore')}</span>
+                                            <span className="text-base font-semibold text-white">{t('landing_mobile_appstore_name')}</span>
+                                        </div>
+                                    </a>
+
+                                    {/* Google Play badge */}
+                                    <a
+                                        href="https://play.google.com/store/apps/details?id=com.ftthplanner.app"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group relative flex items-center gap-3 bg-black hover:bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-2xl pl-4 pr-5 py-3 transition-all hover:-translate-y-0.5"
+                                        aria-label="Get it on Google Play"
+                                    >
+                                        <svg className="w-8 h-8" viewBox="0 0 512 512" aria-hidden="true">
+                                            <path fill="#34A853" d="M48 59.5v393c0 13.5 7.5 25.5 18.7 31.7l232.4-228.2L66.7 27.8C55.5 34 48 46 48 59.5z" />
+                                            <path fill="#FBBC04" d="M384.2 256l-85.1-85.1L66.7 484.2c11.2 6.2 24.7 6.2 35.9 0l281.6-159.4-.0-.0z" transform="translate(0 -.6)" />
+                                            <path fill="#4285F4" d="M461.5 235.4L384.2 191.4l-85.1 64.6 85.1 85.1 77.3-44c19.7-11.2 19.7-39.5 0-50.7z" />
+                                            <path fill="#EA4335" d="M299.1 256L102.6 27.8c-11.2-6.2-24.7-6.2-35.9 0L299.1 256z" />
+                                        </svg>
+                                        <div className="flex flex-col leading-tight text-left">
+                                            <span className="text-[10px] text-slate-300 uppercase tracking-wider">{t('landing_mobile_playstore')}</span>
+                                            <span className="text-base font-semibold text-white">{t('landing_mobile_playstore_name')}</span>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div className="inline-flex items-center gap-2 mt-1 text-xs text-emerald-300/90 bg-emerald-900/20 border border-emerald-800/40 px-3 py-1 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    {t('landing_mobile_available')}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT — phone mockups */}
+                        <div className="order-1 lg:order-2 relative h-[640px] flex items-center justify-center">
+                            {/* Soft glow */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-transparent to-indigo-500/10 blur-2xl"></div>
+
+                            {/* Phone 3 (back-left): offline maps */}
+                            <div className="absolute left-0 top-12 transform -rotate-[8deg] scale-[0.78] hidden md:block transition-transform duration-500 hover:scale-[0.82] hover:-rotate-[6deg]">
+                                <PhoneFrame src="/mobile/app-offline.jpg" alt="Mapas offline" />
+                            </div>
+
+                            {/* Phone 2 (back-right): diagram */}
+                            <div className="absolute right-0 top-12 transform rotate-[8deg] scale-[0.78] hidden md:block transition-transform duration-500 hover:scale-[0.82] hover:rotate-[6deg]">
+                                <PhoneFrame src="/mobile/app-diagram.jpg" alt="Diagrama de fusão" />
+                            </div>
+
+                            {/* Phone 1 (foreground): map */}
+                            <div className="relative z-10 transform transition-transform duration-500 hover:-translate-y-2">
+                                <PhoneFrame src="/mobile/app-map.jpg" alt="Mapa interativo" featured />
+                            </div>
+
+                            {/* Floating badges */}
+                            <div className="absolute -top-2 right-4 lg:right-12 bg-slate-900/90 backdrop-blur border border-slate-700 px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-bounce-slow z-20">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                <span className="text-xs font-bold text-white">iOS · Android</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* --- HOW IT WORKS --- */}
             <section id="how-it-works" className="py-24 bg-slate-900 border-t border-slate-800" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -677,6 +834,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <ul className="space-y-4 text-sm text-slate-400">
                                 <li><a href="#features" className="hover:text-emerald-600 transition-colors">{t('landing_features')}</a></li>
                                 <li><a href="#pricing" className="hover:text-emerald-600 transition-colors">{t('landing_pricing')}</a></li>
+                                <li><a href="#mobile" className="hover:text-emerald-600 transition-colors">{t('landing_mobile')}</a></li>
                                 <li><a href="#performance" className="hover:text-emerald-600 transition-colors">{t('landing_performance')}</a></li>
                                 <li><a href="#how-it-works" className="hover:text-emerald-600 transition-colors">{t('landing_how_it_works')}</a></li>
                             </ul>
