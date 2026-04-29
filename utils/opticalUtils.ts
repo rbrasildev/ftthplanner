@@ -77,13 +77,16 @@ function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | unde
 
     if (!catalog) return 0;
 
+    // Catálogos antigos podem ter port1/port2 mesmo no Balanced (resíduo de quando foram cadastrados
+    // como Unbalanced). Respeitar `mode` evita usar valores assimétricos pra splitter balanceado.
+    const isUnbalanced = (catalog.mode || '').trim().toLowerCase() === 'unbalanced';
 
     // Try to extract from catalog
     if (catalog.attenuation !== undefined && catalog.attenuation !== null) {
         const att: any = catalog.attenuation; // Cast to any to handle mixed types (string/number/object)
 
-        // NEW: Check for Port-Specific Attenuation (Unbalanced)
-        if (outputPortId && splitter.outputPortIds.includes(outputPortId)) {
+        // Port-Specific Attenuation: somente quando catálogo é UNBALANCED.
+        if (isUnbalanced && outputPortId && splitter.outputPortIds.includes(outputPortId)) {
             // Determine port index (0 = Port 1, 1 = Port 2, etc.)
             const portIndex = splitter.outputPortIds.indexOf(outputPortId);
 
@@ -219,7 +222,14 @@ export function traceOpticalPath(
     if (!targetSplitter) throw new Error("Splitter not found");
 
     // ROBUST CATALOG MATCHING
-    let splitterCatalog = catalogs.splitters.find(c => c.name === targetSplitter.type);
+    // Prioridade: catalogId (link exato) > name exato > name normalizado > fallback por contagem
+    let splitterCatalog = targetSplitter.catalogId
+        ? catalogs.splitters.find(c => c.id === targetSplitter!.catalogId)
+        : undefined;
+
+    if (!splitterCatalog) {
+        splitterCatalog = catalogs.splitters.find(c => c.name === targetSplitter.type);
+    }
 
     if (!splitterCatalog) {
         // Fallback 1: Normalized Name (case-insensitive, trimmed)
@@ -403,13 +413,16 @@ export function traceOpticalPath(
                 continue;
             }
 
-            // C. Is it another Splitter? (Cascading)
+            // C. Is it another Splitter? (Cascading inside CTO)
             // If sourceId is an OUTPUT of a splitter
-            if ('splitters' in node) {
+            if ('clientCount' in node) {
                 const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    // ROBUST LOOKUP (Copied from main logic)
-                    let psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
+                    // ROBUST LOOKUP — prioriza catalogId
+                    let psCatalog = parentSplitter.catalogId
+                        ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId)
+                        : undefined;
+                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
                     if (!psCatalog) {
                         const psNameNorm = parentSplitter.type.trim().toLowerCase();
                         psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === psNameNorm);
@@ -438,8 +451,8 @@ export function traceOpticalPath(
 
             // C2. Inline DIO port inside a CTO (patch panel placed in CTO editor).
             // Each port has two sides; crossing one adds a connector pair → 0.5 dB.
-            // Guarded with `'splitters' in node` to avoid casting POPData → CTOData.
-            const ctoDioParsed = 'splitters' in node ? parseDIOPortId(sourceId) : null;
+            // Guarded with `'clientCount' in node` to avoid casting POPData → CTOData.
+            const ctoDioParsed = 'clientCount' in node ? parseDIOPortId(sourceId) : null;
             if (ctoDioParsed) {
                 const inlineDios = (node as CTOData).dios;
                 const dio = inlineDios?.find(d => d.id === ctoDioParsed.dioId);
@@ -459,6 +472,35 @@ export function traceOpticalPath(
                 // Stop the trace cleanly so we don't fall through into unrelated branches.
                 console.warn(`[Trace] Connection references DIO port ${sourceId} but '${ctoDioParsed.dioId}' is not in node.dios (size=${(inlineDios || []).length}).`);
                 break;
+            }
+
+            // C3. Splitter inside the POP (sourceId is an output of a splitter mounted in the POP)
+            if ('olts' in node) {
+                const popNode = node as POPData;
+                const popSplitter = (popNode.splitters || []).find(s => s.outputPortIds.includes(sourceId));
+                if (popSplitter) {
+                    let psCatalog = popSplitter.catalogId
+                        ? catalogs.splitters.find(c => c.id === popSplitter.catalogId)
+                        : undefined;
+                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === popSplitter.type);
+                    if (!psCatalog) {
+                        const norm = popSplitter.type.trim().toLowerCase();
+                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
+                    }
+                    if (!psCatalog) {
+                        psCatalog = catalogs.splitters.find(c => c.outputs === popSplitter.outputPortIds.length);
+                    }
+                    const psLoss = getSplitterLoss(popSplitter, psCatalog, sourceId);
+                    path.unshift({
+                        type: 'SPLITTER',
+                        id: popSplitter.id,
+                        name: popSplitter.name,
+                        loss: psLoss,
+                        details: `1:${popSplitter.outputPortIds.length}`
+                    });
+                    currPortId = popSplitter.inputPortId;
+                    continue;
+                }
             }
 
             // D. Is it an OLT / PON Port? (In POP)
@@ -762,11 +804,14 @@ function walkUpstreamForPower(
                 }
             }
 
-            // C. Cascading splitter (sourceId is a splitter output)
-            if (!progressed && 'splitters' in node) {
+            // C. Cascading splitter (sourceId is a splitter output) — CTO
+            if (!progressed && 'clientCount' in node) {
                 const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    let psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
+                    let psCatalog = parentSplitter.catalogId
+                        ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId)
+                        : undefined;
+                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
                     if (!psCatalog) {
                         const norm = parentSplitter.type.trim().toLowerCase();
                         psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
@@ -782,7 +827,7 @@ function walkUpstreamForPower(
 
             // C2. Inline DIO inside a CTO
             if (!progressed) {
-                const dioParsed = 'splitters' in node ? parseDIOPortId(sourceId) : null;
+                const dioParsed = 'clientCount' in node ? parseDIOPortId(sourceId) : null;
                 if (dioParsed) {
                     const inlineDios = (node as CTOData).dios;
                     const dio = inlineDios?.find(d => d.id === dioParsed.dioId);
@@ -793,6 +838,27 @@ function walkUpstreamForPower(
                     } else {
                         break;
                     }
+                }
+            }
+
+            // C3. Splitter inside the POP (cascading) — second trace path
+            if (!progressed && 'olts' in node) {
+                const popSplitter = ((node as POPData).splitters || []).find(s => s.outputPortIds.includes(sourceId));
+                if (popSplitter) {
+                    let psCatalog = popSplitter.catalogId
+                        ? catalogs.splitters.find(c => c.id === popSplitter.catalogId)
+                        : undefined;
+                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === popSplitter.type);
+                    if (!psCatalog) {
+                        const norm = popSplitter.type.trim().toLowerCase();
+                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
+                    }
+                    if (!psCatalog) {
+                        psCatalog = catalogs.splitters.find(c => c.outputs === popSplitter.outputPortIds.length);
+                    }
+                    path.push({ type: 'SPLITTER', id: popSplitter.id, name: popSplitter.name, loss: getSplitterLoss(popSplitter, psCatalog, sourceId) });
+                    currPortId = popSplitter.inputPortId;
+                    progressed = true;
                 }
             }
 
@@ -835,13 +901,14 @@ function walkUpstreamForPower(
                 }
             }
 
-            // F. Pass-through: upstream is a splitter INPUT in current node.
+            // F. Pass-through: upstream is a splitter INPUT in current node (CTO or POP).
             // The splitter input feeds the splitter outputs; the actual upstream is on
             // the OTHER connection involving this splitter input. Hop onto the input
             // and let the next iteration find that feeding connection.
-            if (!progressed && 'splitters' in node) {
-                const inputSplitter = (node as CTOData).splitters.find(s => s.inputPortId === sourceId);
-                if (inputSplitter) {
+            if (!progressed) {
+                const ctoInput = 'clientCount' in node ? (node as CTOData).splitters.find(s => s.inputPortId === sourceId) : undefined;
+                const popInput = 'olts' in node ? ((node as POPData).splitters || []).find(s => s.inputPortId === sourceId) : undefined;
+                if (ctoInput || popInput) {
                     currPortId = sourceId;
                     progressed = true;
                 }

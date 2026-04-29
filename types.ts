@@ -54,6 +54,9 @@ export interface Splitter {
   connectorType?: string; // 'Connectorized' | 'Unconnectorized'
   polishType?: string; // 'APC' | 'UPC' | 'PC'
   allowCustomConnections?: boolean;
+  // POP-side splitters live inside a specific DIO's splice tray.
+  // CTO splitters don't use this field.
+  dioId?: string;
 }
 
 export interface FusionPoint {
@@ -268,6 +271,7 @@ export interface POPData {
   coordinates: Coordinates;
   olts: OLT[];
   dios: DIO[];
+  splitters?: Splitter[]; // Optical splitters mounted inside the POP (master/secundário)
   switches?: SwitchData[]; // Ethernet switches with SFP/GBIC ports
   fusions: FusionPoint[]; // Allows splicing inside POP if needed (or fusion trays inside DIO concept)
   connections: FiberConnection[]; // Internal Patch Cords

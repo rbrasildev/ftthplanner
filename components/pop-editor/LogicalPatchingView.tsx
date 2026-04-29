@@ -136,11 +136,15 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     };
 
     // Fast lookup for bidirectional connections
+    // Manobra mostra APENAS patches externos (port↔port sem fiber e sem splitter).
+    // Fusões internas (port↔fiber ou port↔splitter.IN) são gerenciadas no modo de fusão
+    // do DIO e não devem aparecer/bloquear seleções aqui.
     const connectionMap = useMemo(() => {
         const map: Record<string, string> = {};
         localPOP.connections.forEach(c => {
-            // Only include non-fiber connections (patch cords)
-            if (!c.sourceId.includes('fiber') && !c.targetId.includes('fiber')) {
+            const isSplice = c.sourceId.includes('fiber') || c.targetId.includes('fiber') ||
+                c.sourceId.startsWith('splitter-') || c.targetId.startsWith('splitter-');
+            if (!isSplice) {
                 map[c.sourceId] = c.targetId;
                 map[c.targetId] = c.sourceId;
             }

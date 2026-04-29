@@ -4,6 +4,7 @@ import { X, Save, AlertCircle, Link2, Search, Check, Cable as CableIcon, Split, 
 import { useLanguage } from '../LanguageContext';
 import { CustomInput } from './common/CustomInput';
 import { LogicalSplicingView } from './pop-editor/LogicalSplicingView';
+import type { SplitterCatalogItem } from '../services/catalogService';
 
 interface DIOEditorProps {
     dio: DIO;
@@ -13,6 +14,11 @@ interface DIOEditorProps {
     onSave: (updatedConnections: FiberConnection[]) => void;
     onUpdateDio?: (updatedDio: DIO) => void;
     onUpdateConnections?: (updatedConnections: FiberConnection[]) => void;
+
+    // Splitter handlers (POP-side splitters live inside DIOs)
+    onAddSplitter?: (catalogItem: SplitterCatalogItem, dioId: string) => void;
+    onDeleteSplitter?: (id: string) => void;
+    onRenameSplitter?: (id: string, newName: string) => void;
 
     // VFL Props
     litPorts?: Set<string>;
@@ -34,6 +40,9 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
     onSave,
     onUpdateDio,
     onUpdateConnections,
+    onAddSplitter,
+    onDeleteSplitter,
+    onRenameSplitter,
     litPorts,
     vflSource,
     onToggleVfl,
@@ -69,14 +78,22 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
             color: '#22c55e',
             points: []
         };
-        setCurrentConnections(prev => [...prev, newConn]);
+        setCurrentConnections(prev => {
+            const next = [...prev, newConn];
+            if (onUpdateConnections) onUpdateConnections(next);
+            return next;
+        });
     };
 
     const handleRemoveLogicalConnection = (source: string, target: string) => {
-        setCurrentConnections(prev => prev.filter(c =>
-            !(c.sourceId === source && c.targetId === target) &&
-            !(c.sourceId === target && c.targetId === source)
-        ));
+        setCurrentConnections(prev => {
+            const next = prev.filter(c =>
+                !(c.sourceId === source && c.targetId === target) &&
+                !(c.sourceId === target && c.targetId === source)
+            );
+            if (onUpdateConnections) onUpdateConnections(next);
+            return next;
+        });
     };
 
     const handleToggleCableLink = (cableId: string) => {
@@ -223,9 +240,13 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                         localPOP={pop}
                         incomingCables={incomingCables}
                         currentConnections={currentConnections}
+                        splittersInDio={(pop.splitters || []).filter(sp => sp.dioId === dio.id)}
                         onAddConnection={handleAddLogicalConnection}
                         onRemoveConnection={handleRemoveLogicalConnection}
                         onUpdateSplicingLayout={handleUpdateSplicingLayout}
+                        onAddSplitter={onAddSplitter ? (cat) => onAddSplitter(cat, dio.id) : undefined}
+                        onDeleteSplitter={onDeleteSplitter}
+                        onRenameSplitter={onRenameSplitter}
                         isOtdrToolActive={isOtdrToolActive}
                         onSelectOtdrTarget={setOtdrTargetPort}
                         isVflToolActive={isVflToolActive}

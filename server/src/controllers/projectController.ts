@@ -242,6 +242,7 @@ export const getProject = async (req: Request, res: Response) => {
                 olts: p.olts || [],
                 dios: p.dios || [],
                 switches: p.switches || [],
+                splitters: p.splitters || [],
                 fusions: p.fusions || [],
                 connections: p.connections || [],
                 inputCableIds: p.inputCableIds,
@@ -327,6 +328,7 @@ export const getProject = async (req: Request, res: Response) => {
                         id: p.id, name: p.name, status: p.status,
                         coordinates: { lat: p.lat, lng: p.lng },
                         olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
+                        splitters: p.splitters || [],
                         fusions: p.fusions || [], connections: p.connections || [],
                         inputCableIds: p.inputCableIds, layout: p.layout || {},
                         color: p.color, size: p.size, poleId: p.poleId || null
@@ -902,6 +904,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             olts: p.olts || [],
                             dios: p.dios || [],
                             switches: p.switches || [],
+                            splitters: p.splitters || [],
                             fusions: p.fusions || [],
                             connections: p.connections || [],
                             inputCableIds: p.inputCableIds || [],
@@ -922,6 +925,7 @@ export const syncProject = async (req: Request, res: Response) => {
                             JSON.stringify(dbP.olts) !== JSON.stringify(p.olts || []) ||
                             JSON.stringify(dbP.dios) !== JSON.stringify(p.dios || []) ||
                             JSON.stringify(dbP.switches) !== JSON.stringify(p.switches || []) ||
+                            JSON.stringify((dbP as any).splitters) !== JSON.stringify(p.splitters || []) ||
                             JSON.stringify(dbP.fusions) !== JSON.stringify(p.fusions || []) ||
                             JSON.stringify(dbP.connections) !== JSON.stringify(p.connections || []) ||
                             JSON.stringify(dbP.inputCableIds) !== JSON.stringify(p.inputCableIds || []) ||
@@ -946,6 +950,7 @@ export const syncProject = async (req: Request, res: Response) => {
                     if (p.olts !== undefined) data.olts = p.olts;
                     if (p.dios !== undefined) data.dios = p.dios;
                     if (p.switches !== undefined) data.switches = p.switches;
+                    if (p.splitters !== undefined) data.splitters = p.splitters;
                     if (p.fusions !== undefined) data.fusions = p.fusions;
                     if (p.connections !== undefined) data.connections = p.connections;
                     if (p.inputCableIds !== undefined) data.inputCableIds = p.inputCableIds;
@@ -1244,6 +1249,7 @@ export const updatePOP = async (req: Request, res: Response) => {
                 olts: pop.olts || [],
                 dios: pop.dios || [],
                 switches: pop.switches || [],
+                splitters: pop.splitters || [],
                 fusions: pop.fusions || [],
                 connections: pop.connections || [],
                 inputCableIds: pop.inputCableIds || [],
@@ -1305,6 +1311,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id, name: p.name, olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
+                splitters: p.splitters || [],
                 fusions: p.fusions || [], connections: p.connections || [], inputCableIds: p.inputCableIds || [],
             })),
             cables: project.cables.map((c: any) => ({
@@ -1315,7 +1322,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
         };
 
         const catalogs = {
-            splitters: catSplitters.map((s: any) => ({ id: s.id, name: s.name, outputs: s.outputs, attenuation: s.attenuation })),
+            splitters: catSplitters.map((s: any) => ({ id: s.id, name: s.name, outputs: s.outputs, mode: s.mode, attenuation: s.attenuation })),
             cables: catCables.map((c: any) => ({ id: c.id, name: c.name, attenuation: c.attenuation })),
             fusions: catFusions.map((f: any) => ({ id: f.id, name: f.name, attenuation: f.attenuation })),
             olts: catOlts.map((o: any) => ({ id: o.id, name: o.name, outputPower: o.outputPower, portPowers: o.portPowers })),
@@ -1483,6 +1490,7 @@ export const getParentProjectNetwork = async (req: Request, res: Response) => {
                 id: p.id, name: p.name, status: p.status,
                 coordinates: { lat: p.lat, lng: p.lng },
                 olts: p.olts || [], dios: p.dios || [], switches: p.switches || [],
+                splitters: p.splitters || [],
                 fusions: p.fusions || [], connections: p.connections || [],
                 inputCableIds: p.inputCableIds, layout: p.layout || {},
                 color: p.color, size: p.size, poleId: p.poleId || null

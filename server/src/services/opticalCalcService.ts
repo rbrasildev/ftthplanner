@@ -80,6 +80,7 @@ interface POPNode {
     name: string;
     olts: OLT[];
     dios: DIO[];
+    splitters?: Splitter[];
     fusions: FusionPoint[];
     connections: FiberConnection[];
     inputCableIds: string[];
@@ -95,6 +96,7 @@ interface CatalogSplitter {
     id: string;
     name: string;
     outputs: number;
+    mode?: string;
     attenuation: any;
 }
 
@@ -160,9 +162,11 @@ function getSplitterLoss(splitter: Splitter, catalog: CatalogSplitter | undefine
     if (att === undefined || att === null) return 0;
 
     const parseVal = (v: any) => { const p = parseFloat(v); return isNaN(p) ? null : p; };
+    // Catálogos antigos podem ter port1/port2 mesmo no Balanced. Só aplicar quando explicitamente Unbalanced.
+    const isUnbalanced = (catalog.mode || '').trim().toLowerCase() === 'unbalanced';
 
     // Port-specific attenuation (unbalanced splitters)
-    if (outputPortId && splitter.outputPortIds.includes(outputPortId)) {
+    if (isUnbalanced && outputPortId && splitter.outputPortIds.includes(outputPortId)) {
         const portIndex = splitter.outputPortIds.indexOf(outputPortId);
         if (typeof att === 'object' && !Array.isArray(att)) {
             if (portIndex === 0 && att.port1 !== undefined) { const v = parseVal(att.port1); if (v !== null) return v; }
@@ -230,8 +234,11 @@ export function traceOpticalPower(
         return { finalPower: -Infinity, oltPower: 0, totalLoss: 0, status: 'FAIL', sourceName: 'NO_SIGNAL', path: [] };
     }
 
-    // Match splitter catalog
-    let splitterCatalog = catalogs.splitters.find(c => c.name === targetSplitter!.type);
+    // Match splitter catalog — prioriza catalogId (link exato), depois name, fallback por outputs
+    let splitterCatalog = targetSplitter!.catalogId
+        ? catalogs.splitters.find(c => c.id === targetSplitter!.catalogId)
+        : undefined;
+    if (!splitterCatalog) splitterCatalog = catalogs.splitters.find(c => c.name === targetSplitter!.type);
     if (!splitterCatalog) {
         const norm = targetSplitter.type.trim().toLowerCase();
         splitterCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
@@ -311,16 +318,32 @@ export function traceOpticalPower(
                 continue;
             }
 
-            // C. Cascading splitter
-            if ('splitters' in node) {
+            // C. Cascading splitter (CTO)
+            if ('clientCount' in node) {
                 const parentSplitter = (node as CTONode).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    let psCat = catalogs.splitters.find(c => c.name === parentSplitter.type);
+                    let psCat = parentSplitter.catalogId ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId) : undefined;
+                    if (!psCat) psCat = catalogs.splitters.find(c => c.name === parentSplitter.type);
                     if (!psCat) { const n = parentSplitter.type.trim().toLowerCase(); psCat = catalogs.splitters.find(c => c.name.trim().toLowerCase() === n); }
                     if (!psCat) { const oc = parentSplitter.outputPortIds.length; psCat = catalogs.splitters.find(c => c.outputs === oc); }
                     const psLoss = getSplitterLoss(parentSplitter, psCat, sourceId);
                     path.unshift({ type: 'SPLITTER', id: parentSplitter.id, name: parentSplitter.name, loss: psLoss, details: `1:${parentSplitter.outputPortIds.length}` });
                     currPortId = parentSplitter.inputPortId;
+                    continue;
+                }
+            }
+
+            // C3. Splitter inside POP (output → input)
+            if ('olts' in node) {
+                const popSplitter = ((node as POPNode).splitters || []).find(s => s.outputPortIds.includes(sourceId));
+                if (popSplitter) {
+                    let psCat = popSplitter.catalogId ? catalogs.splitters.find(c => c.id === popSplitter.catalogId) : undefined;
+                    if (!psCat) psCat = catalogs.splitters.find(c => c.name === popSplitter.type);
+                    if (!psCat) { const n = popSplitter.type.trim().toLowerCase(); psCat = catalogs.splitters.find(c => c.name.trim().toLowerCase() === n); }
+                    if (!psCat) { const oc = popSplitter.outputPortIds.length; psCat = catalogs.splitters.find(c => c.outputs === oc); }
+                    const psLoss = getSplitterLoss(popSplitter, psCat, sourceId);
+                    path.unshift({ type: 'SPLITTER', id: popSplitter.id, name: popSplitter.name, loss: psLoss, details: `1:${popSplitter.outputPortIds.length}` });
+                    currPortId = popSplitter.inputPortId;
                     continue;
                 }
             }
@@ -359,8 +382,8 @@ export function traceOpticalPower(
 
             // E0. Inline DIO port inside a CTO (CTO-side patch panel).
             // Crossing one port adds a connector pair → 0.5 dB. Guarded with
-            // `'splitters' in node` to keep the CTO/POP discriminator unambiguous.
-            const inlineDioMatch = ('splitters' in node)
+            // `'clientCount' in node` to keep the CTO/POP discriminator unambiguous.
+            const inlineDioMatch = ('clientCount' in node)
                 ? sourceId.match(/^(dio-\d+)-port-(\d+)-(in|out)$/)
                 : null;
             if (inlineDioMatch) {

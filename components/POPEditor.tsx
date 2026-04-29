@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { POPData, CableData, CTOData, FiberConnection, OLT, DIO, SwitchData, SwitchPort, ActiveEquipmentType, getFiberColor, ElementLayout } from '../types';
+import { POPData, CableData, CTOData, FiberConnection, OLT, DIO, SwitchData, SwitchPort, Splitter, ActiveEquipmentType, getFiberColor, ElementLayout } from '../types';
+import type { SplitterCatalogItem } from '../services/catalogService';
 import { ZoomIn, ZoomOut, GripHorizontal, Pencil, Maximize, AlertTriangle, Loader2, Save, Box, X, Link, Trash2, FileText } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
@@ -82,6 +83,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
         portCount: 8,
         name: '',
     });
+
 
     // Equipment EDITING State
     const [editingOLT, setEditingOLT] = useState<OLT | null>(null);
@@ -337,10 +339,17 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
             }
         }
 
-        // Clean existing for both ends, but ONLY if they are not fibers
+        // Clean existing for both ends — mas preserva fusões (fibers) E fusões internas
+        // do splitter (porta DIO ↔ splitter.IN). Uma porta DIO pode ter simultaneamente:
+        //   - 1 patch externo (manobra: port↔port com OLT/Switch)
+        //   - 1 splice interno (fusão: port↔fiber ou port↔splitter.IN)
+        // Recriar o patch externo NÃO deve apagar a fusão interna.
+        const isSpliceConn = (c: FiberConnection) =>
+            c.sourceId.includes('fiber') || c.targetId.includes('fiber') ||
+            c.sourceId.startsWith('splitter-') || c.targetId.startsWith('splitter-');
+
         let cleanedConnections = localPOP.connections.filter(c => {
-            const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
-            if (isFiber) return true; // Keep fibers
+            if (isSpliceConn(c)) return true; // Keep all splice/fusion connections
 
             const involvesSource = c.sourceId === sourceId || c.targetId === sourceId;
             const involvesTarget = c.sourceId === targetId || c.targetId === targetId;
@@ -377,8 +386,11 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
         }
 
         let cleanedConnections = localPOP.connections.filter(c => {
-            const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
-            if (isFiber) return true; // Keep fibers
+            // Preserva fusões (fibers) E fusões internas do splitter — uma porta DIO pode
+            // ter 1 patch externo + 1 splice interno simultaneamente.
+            const isSplice = c.sourceId.includes('fiber') || c.targetId.includes('fiber') ||
+                c.sourceId.startsWith('splitter-') || c.targetId.startsWith('splitter-');
+            if (isSplice) return true;
 
             const involvesOltPort = c.sourceId === configuringOltPortId || c.targetId === configuringOltPortId;
             const involvesDioPort = c.sourceId === targetDioPortId || c.targetId === targetDioPortId;
@@ -875,6 +887,57 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
         }));
         setShowAddDIOModal(false);
     };
+
+    /**
+     * Adiciona um splitter dentro de um DIO específico (chamado da LogicalSplicingView).
+     * Splitters em POP vivem sempre dentro de um DIO (vinculados via `dioId`).
+     */
+    const handleAddSplitterToDio = useCallback((catalogItem: SplitterCatalogItem, dioId: string) => {
+        const id = `splitter-${Date.now()}`;
+        const outputs = Math.max(1, catalogItem.outputs || 0);
+        const newSplitter: Splitter = {
+            id,
+            name: `${catalogItem.name} ${(localPOP.splitters?.length || 0) + 1}`,
+            type: catalogItem.type || `1x${outputs}`,
+            catalogId: catalogItem.id,
+            inputPortId: `${id}-in`,
+            outputPortIds: Array.from({ length: outputs }).map((_, i) => `${id}-out-${i}`),
+            connectorType: catalogItem.connectorType,
+            polishType: catalogItem.polishType,
+            allowCustomConnections: catalogItem.allowCustomConnections,
+            dioId,
+        };
+
+        setLocalPOP(prev => ({
+            ...prev,
+            splitters: [...(prev.splitters || []), newSplitter],
+        }));
+    }, [localPOP.splitters]);
+
+    const handleDeleteSplitter = useCallback((id: string) => {
+        setLocalPOP(prev => {
+            const splitter = (prev.splitters || []).find(s => s.id === id);
+            if (!splitter) return prev;
+            const allPortIds = new Set<string>([splitter.inputPortId, ...splitter.outputPortIds]);
+            const newConnections = prev.connections.filter(c =>
+                !allPortIds.has(c.sourceId) && !allPortIds.has(c.targetId)
+            );
+            return {
+                ...prev,
+                splitters: (prev.splitters || []).filter(s => s.id !== id),
+                connections: newConnections,
+            };
+        });
+    }, []);
+
+    const handleRenameSplitter = useCallback((id: string, newName: string) => {
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        setLocalPOP(prev => ({
+            ...prev,
+            splitters: (prev.splitters || []).map(s => s.id === id ? { ...s, name: trimmed } : s)
+        }));
+    }, []);
 
     const handleSaveEditedDIO = () => {
         if (!editingDIO) return;
@@ -1384,6 +1447,16 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                 return `${sw.name} (${port.label || `P${sw.ports.indexOf(port) + 1}`})`;
             }
         }
+        // Splitter (POP)
+        for (const sp of localPOP.splitters || []) {
+            if (sp.inputPortId === otherEnd) {
+                return `${sp.name} (IN)`;
+            }
+            const outIdx = sp.outputPortIds.indexOf(otherEnd);
+            if (outIdx !== -1) {
+                return `${sp.name} (OUT ${outIdx + 1})`;
+            }
+        }
         // Fibra de cabo (splice): cableId-fiber-N
         const fiberMatch = otherEnd.match(/^(.+)-fiber-(\d+)$/);
         if (fiberMatch) {
@@ -1704,6 +1777,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                                 );
                             })}
 
+
                             {/* Switch Units */}
                             {(localPOP.switches || []).map(sw => {
                                 const layout = getLayout(sw.id);
@@ -1768,6 +1842,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                     setNewActiveConfig={setNewActiveConfig}
                     onAddActive={handleAddActive}
                     onCloseActive={() => setShowAddActiveModal(false)}
+
                 />
 
                 <EditEquipmentModals
@@ -1835,6 +1910,9 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                             onSave={handleDIOSave}
                             onUpdateDio={handleUpdateDIO}
                             onUpdateConnections={handleUpdateConnections}
+                            onAddSplitter={canEdit ? handleAddSplitterToDio : undefined}
+                            onDeleteSplitter={canEdit ? handleDeleteSplitter : undefined}
+                            onRenameSplitter={canEdit ? handleRenameSplitter : undefined}
                             litPorts={litPorts}
                             vflSource={vflSource}
                             onToggleVfl={onToggleVfl}

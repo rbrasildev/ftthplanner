@@ -219,6 +219,7 @@ model Pop {
   olts          Json?           @default("[]")
   dios          Json?           @default("[]")
   switches      Json?           @default("[]")
+  splitters     Json?           @default("[]")
   fusions       Json?           @default("[]")
   connections   Json?           @default("[]")
   inputCableIds String[]        @default([]) @map("input_cable_ids")

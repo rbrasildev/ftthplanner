@@ -163,6 +163,7 @@ const useCatalogOLTs = (show: boolean) => {
     return olts;
 };
 
+
 // Tipos de ativos Ethernet — reutilizam a funcionalidade de Switch.
 // A única diferença entre eles é label/ícone; a mecânica (SFP, DIO, peer) é idêntica.
 const ACTIVE_TYPES: { value: ActiveEquipmentType; labelKey: string; icon: any }[] = [
@@ -482,6 +483,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     </div>
                 </DraggableModal>
             )}
+
         </>
     );
 };
