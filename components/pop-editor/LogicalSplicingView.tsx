@@ -480,33 +480,46 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                     );
                 })()}
                 {viewingConnectionStr && (() => {
-                    const vFiberId = viewingConnectionStr.sourceId.includes('fiber')
-                        ? viewingConnectionStr.sourceId
-                        : (viewingConnectionStr.targetId.includes('fiber') ? viewingConnectionStr.targetId : null);
+                    // Resolve cada ponta para um label legível.
+                    // Suporta: fibra de cabo, porta DIO, IN/OUT de splitter.
+                    const labelForId = (id: string): { kind: string; label: string } | null => {
+                        if (id.includes('-fiber-')) {
+                            const cId = id.split('-fiber-')[0];
+                            const fNum = Number(id.split('-fiber-')[1]) + 1;
+                            const cable = incomingCables.find(c => c.id === cId);
+                            return { kind: t('conn_fiber'), label: `${cable?.name ?? 'Cabo'} (F:${fNum})` };
+                        }
+                        if (id.startsWith('splitter-')) {
+                            const sp = splittersInDio.find(s => s.inputPortId === id || s.outputPortIds.includes(id));
+                            if (sp) {
+                                const role = sp.inputPortId === id ? 'IN' : `OUT ${sp.outputPortIds.indexOf(id) + 1}`;
+                                return { kind: 'Splitter', label: `${sp.name} (${role})` };
+                            }
+                            return { kind: 'Splitter', label: id };
+                        }
+                        const portIdx = dio.portIds.indexOf(id);
+                        if (portIdx !== -1) {
+                            return { kind: t('conn_port'), label: `${portIdx + 1}` };
+                        }
+                        return null;
+                    };
 
-                    const vPortId = viewingConnectionStr.sourceId.includes('-p') && viewingConnectionStr.sourceId !== vFiberId
-                        ? viewingConnectionStr.sourceId
-                        : (viewingConnectionStr.targetId.includes('-p') && viewingConnectionStr.targetId !== vFiberId ? viewingConnectionStr.targetId : null);
-
-                    if (!vFiberId || !vPortId) return null;
-
-                    const cId = vFiberId.split('-fiber-')[0];
-                    const fNum = Number(vFiberId.split('-fiber-')[1]) + 1;
-                    const vCable = incomingCables.find(c => c.id === cId);
-                    const pNum = (dio.portIds.indexOf(vPortId) + 1);
+                    const a = labelForId(viewingConnectionStr.sourceId);
+                    const b = labelForId(viewingConnectionStr.targetId);
+                    if (!a || !b) return null;
 
                     return (
                         <div className="mt-3 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-lg text-sm text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <span className="opacity-70">{t('type_FUSION')}:</span>
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-[#22262e] rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
-                                <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{t('conn_fiber')}</span>
-                                <strong>{vCable?.name} (F:{fNum})</strong>
+                                <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{a.kind}</span>
+                                <strong>{a.label}</strong>
                             </div>
                             <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400 mx-1" />
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-[#22262e] rounded-md shadow-sm border border-emerald-100 dark:border-emerald-900/50">
-                                <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{t('conn_port')}</span>
-                                <strong>{pNum}</strong>
+                                <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">{b.kind}</span>
+                                <strong>{b.label}</strong>
                             </div>
 
                             <div className="ml-auto flex items-center gap-2">
