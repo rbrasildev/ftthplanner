@@ -114,6 +114,7 @@ interface CatalogOLT {
     id: string;
     name: string;
     outputPower: number;
+    portPowers?: Record<string, number> | null;
 }
 
 interface Catalogs {
@@ -333,7 +334,6 @@ export function traceOpticalPower(
                     const matched = catalogs.olts
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
-                    oltPower = matched ? matched.outputPower : 3;
 
                     let slot: number | undefined, port: number | undefined;
                     if (olt.structure) {
@@ -344,6 +344,13 @@ export function traceOpticalPower(
                             port = (idx % pps) + 1;
                         }
                     }
+
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matched ? matched.outputPower : 3);
+
                     path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${slot || '?'} / Port ${port || '?'}` });
                     foundOltDetails = { name: olt.name, slot, port };
                     break;
@@ -400,7 +407,6 @@ export function traceOpticalPower(
                     const matched = catalogs.olts
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
-                    oltPower = matched ? matched.outputPower : 3;
 
                     let slot: number | undefined, port: number | undefined;
                     if (olt.structure) {
@@ -411,6 +417,13 @@ export function traceOpticalPower(
                             port = (idx % pps) + 1;
                         }
                     }
+
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matched ? matched.outputPower : 3);
+
                     path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${slot || '?'} / Port ${port || '?'}` });
                     foundOltDetails = { name: olt.name, slot, port };
                     break;

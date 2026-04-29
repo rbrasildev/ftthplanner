@@ -580,6 +580,7 @@ model CatalogOLT {
   slots        Int      @default(1)
   portsPerSlot Int      @default(16) @map("ports_per_slot")
   uplinkPorts  Int      @default(0) @map("uplink_ports")
+  portPowers   Json?    @map("port_powers")
   description  String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
@@ -598,6 +599,7 @@ model TemplateOLT {
   slots        Int      @default(1)
   portsPerSlot Int      @default(16) @map("ports_per_slot")
   uplinkPorts  Int      @default(0) @map("uplink_ports")
+  portPowers   Json?    @map("port_powers")
   description  String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")

@@ -85,7 +85,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
 
     // Equipment EDITING State
     const [editingOLT, setEditingOLT] = useState<OLT | null>(null);
-    const [editingDIO, setEditingDIO] = useState<{ id: string, name: string, ports: number } | null>(null);
+    const [editingDIO, setEditingDIO] = useState<{ id: string, name: string, ports: number, portIds: string[], portLabels: Record<string, string> } | null>(null);
     const [editingSwitchId, setEditingSwitchId] = useState<string | null>(null);
     const [editingSwitchPortId, setEditingSwitchPortId] = useState<string | null>(null);
 
@@ -878,15 +878,23 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
 
     const handleSaveEditedDIO = () => {
         if (!editingDIO) return;
-        const { id, name, ports } = editingDIO;
+        const { id, name, ports, portLabels } = editingDIO;
         const newPortIds = Array.from({ length: ports }).map((_, i) => `${id}-p-${i}`);
+
+        // Keep only labels for surviving portIds, and drop empty strings
+        const cleanedLabels: Record<string, string> = {};
+        for (const pid of newPortIds) {
+            const label = portLabels?.[pid]?.trim();
+            if (label) cleanedLabels[pid] = label;
+        }
 
         setLocalPOP(prev => {
             const updatedDios = prev.dios.map(d => d.id === id ? {
                 ...d,
                 name,
                 ports,
-                portIds: newPortIds
+                portIds: newPortIds,
+                portLabels: Object.keys(cleanedLabels).length > 0 ? cleanedLabels : undefined,
             } : d);
 
             const updatedConnections = prev.connections.filter(c => {
@@ -1315,7 +1323,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
 
     const handleEditDIOCallback = useCallback((e: React.MouseEvent, dio: any) => {
         e.stopPropagation();
-        setEditingDIO({ id: dio.id, name: dio.name, ports: dio.ports });
+        setEditingDIO({
+            id: dio.id,
+            name: dio.name,
+            ports: dio.ports,
+            portIds: dio.portIds || [],
+            portLabels: { ...(dio.portLabels || {}) },
+        });
     }, []);
 
     const handleDeleteDIOCallback = useCallback((e: React.MouseEvent, dio: any) => {

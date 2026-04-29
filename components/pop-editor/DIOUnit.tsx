@@ -162,12 +162,15 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                             ? { bg: '#10b981', border: '#34d399', shadow: 'rgba(16,185,129,0.4)' }
                                             : { bg: '#06b6d4', border: '#22d3ee', shadow: 'rgba(6,182,212,0.4)' };
 
+                                        const customName: string | undefined = dio.portLabels?.[pid];
+
                                         return (
                                             <div
                                                 key={pid}
                                                 id={pid}
                                                 title={(() => {
-                                                    const label = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
+                                                    const baseLabel = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
+                                                    const label = customName ? `${customName} · ${baseLabel}` : baseLabel;
                                                     if (connInfo) return `${label} → ${connInfo}`;
                                                     if (switchConn) return `${label} → Switch`;
                                                     if (isSpliced) return `${label} - Spliced`;

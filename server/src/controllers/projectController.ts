@@ -1318,7 +1318,7 @@ export const getCTOPower = async (req: Request, res: Response) => {
             splitters: catSplitters.map((s: any) => ({ id: s.id, name: s.name, outputs: s.outputs, attenuation: s.attenuation })),
             cables: catCables.map((c: any) => ({ id: c.id, name: c.name, attenuation: c.attenuation })),
             fusions: catFusions.map((f: any) => ({ id: f.id, name: f.name, attenuation: f.attenuation })),
-            olts: catOlts.map((o: any) => ({ id: o.id, name: o.name, outputPower: o.outputPower })),
+            olts: catOlts.map((o: any) => ({ id: o.id, name: o.name, outputPower: o.outputPower, portPowers: o.portPowers })),
         };
 
         // Find the CTO and trace each splitter

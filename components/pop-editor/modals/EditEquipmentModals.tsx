@@ -401,7 +401,11 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                     return (
                                         <button
                                             key={preset.ports}
-                                            onClick={() => setEditingDIO({ ...editingDIO, ports: preset.ports })}
+                                            onClick={() => setEditingDIO({
+                                                ...editingDIO,
+                                                ports: preset.ports,
+                                                portIds: Array.from({ length: preset.ports }).map((_, i) => `${editingDIO.id}-p-${i}`),
+                                            })}
                                             className={`
                                                 flex flex-col items-center justify-center gap-0.5 py-3 rounded-xl border-2 transition-all
                                                 ${isSelected
@@ -418,6 +422,59 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                 })}
                             </div>
                         </div>
+
+                        {/* Per-port rename list */}
+                        {(() => {
+                            const TRAY_SIZE = 12;
+                            const portIds: string[] = editingDIO.portIds && editingDIO.portIds.length === editingDIO.ports
+                                ? editingDIO.portIds
+                                : Array.from({ length: editingDIO.ports }).map((_, i) => `${editingDIO.id}-p-${i}`);
+                            const trayCount = Math.ceil(portIds.length / TRAY_SIZE);
+                            const labels: Record<string, string> = editingDIO.portLabels || {};
+                            const updateLabel = (pid: string, value: string) => {
+                                const next = { ...labels };
+                                if (value) next[pid] = value;
+                                else delete next[pid];
+                                setEditingDIO({ ...editingDIO, portIds, portLabels: next });
+                            };
+                            return (
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                                        {t('rename_ports') || 'Renomear portas'}
+                                    </label>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                                        {Array.from({ length: trayCount }).map((_, tIdx) => {
+                                            const trayPorts = portIds.slice(tIdx * TRAY_SIZE, (tIdx + 1) * TRAY_SIZE);
+                                            if (trayPorts.length === 0) return null;
+                                            return (
+                                                <div key={tIdx} className="bg-slate-50 dark:bg-[#22262e]/40 border border-slate-200 dark:border-slate-700/40 rounded-lg p-2">
+                                                    <div className="text-[9px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5">
+                                                        {t('tray')} {tIdx + 1}
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-1.5">
+                                                        {trayPorts.map((pid, localIdx) => (
+                                                            <div key={pid} className="flex items-center gap-1.5">
+                                                                <span className="w-7 shrink-0 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 text-right">
+                                                                    P{localIdx + 1}
+                                                                </span>
+                                                                <input
+                                                                    type="text"
+                                                                    maxLength={24}
+                                                                    value={labels[pid] || ''}
+                                                                    placeholder={`P${localIdx + 1}`}
+                                                                    onChange={e => updateLabel(pid, e.target.value)}
+                                                                    className="flex-1 min-w-0 h-7 px-2 text-[11px] rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-2">

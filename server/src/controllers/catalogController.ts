@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import logger from '../lib/logger';
@@ -524,11 +525,24 @@ export const getOLTs = async (req: Request, res: Response) => {
     }
 };
 
+// Sanitize portPowers: keep only entries whose key is "slot-port" (1-indexed)
+// and value is a finite number. Returns undefined if the result is empty or input invalid.
+const sanitizePortPowers = (raw: any): Record<string, number> | undefined => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+    const out: Record<string, number> = {};
+    for (const [key, value] of Object.entries(raw)) {
+        if (!/^\d+-\d+$/.test(key)) continue;
+        const num = typeof value === 'number' ? value : parseFloat(value as string);
+        if (Number.isFinite(num)) out[key] = num;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+};
+
 export const createOLT = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, type, outputPower, slots, portsPerSlot, uplinkPorts, description } = req.body;
+        const { name, type, outputPower, slots, portsPerSlot, uplinkPorts, portPowers, description } = req.body;
         const olt = await prisma.catalogOLT.create({
             data: {
                 companyId: user.companyId,
@@ -538,6 +552,7 @@ export const createOLT = async (req: Request, res: Response) => {
                 slots: Number(slots) || 1,
                 portsPerSlot: Number(portsPerSlot),
                 uplinkPorts: Number(uplinkPorts) || 0,
+                portPowers: sanitizePortPowers(portPowers) ?? undefined,
                 description
             }
         });
@@ -553,10 +568,12 @@ export const updateOLT = async (req: Request, res: Response) => {
     try {
         const user = (req as AuthRequest).user;
         if (!user || !user.companyId) return res.status(401).send();
-        const { name, type, outputPower, slots, portsPerSlot, uplinkPorts, description } = req.body;
+        const { name, type, outputPower, slots, portsPerSlot, uplinkPorts, portPowers, description } = req.body;
 
         const exists = await prisma.catalogOLT.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "OLT not found" });
+
+        const cleaned = sanitizePortPowers(portPowers);
 
         const olt = await prisma.catalogOLT.update({
             where: { id },
@@ -567,6 +584,7 @@ export const updateOLT = async (req: Request, res: Response) => {
                 slots: Number(slots) || 1,
                 portsPerSlot: Number(portsPerSlot),
                 uplinkPorts: Number(uplinkPorts) || 0,
+                portPowers: cleaned ?? Prisma.JsonNull,
                 description
             }
         });

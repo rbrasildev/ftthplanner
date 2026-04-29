@@ -122,6 +122,7 @@ export const cloneTemplatesToCompany = async (companyId: string, prisma: any = d
                     outputPower: t.outputPower,
                     slots: t.slots,
                     portsPerSlot: t.portsPerSlot,
+                    portPowers: t.portPowers ?? undefined,
                     description: t.description
                 });
             }

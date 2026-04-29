@@ -177,7 +177,12 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
             if (dIdx !== -1) {
                 const trayIdx = Math.floor(dIdx / TRAY_SIZE);
                 const localIdx = dIdx % TRAY_SIZE;
-                return { eqName: dio.name, label: `${t('tray')} ${trayIdx + 1} P${localIdx + 1}` };
+                const baseLabel = `${t('tray')} ${trayIdx + 1} P${localIdx + 1}`;
+                const customName = dio.portLabels?.[portId];
+                return {
+                    eqName: dio.name,
+                    label: customName ? `${customName} (${baseLabel})` : baseLabel,
+                };
             }
         }
 
@@ -575,13 +580,21 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                         {Array.from({ length: trayCount }).map((_, tIdx) => {
                             const trayPorts = dio.portIds.slice(tIdx * TRAY_SIZE, (tIdx + 1) * TRAY_SIZE);
                             if (trayPorts.length === 0) return null;
+                            const trayHasNames = trayPorts.some(p => !!dio.portLabels?.[p]);
+
+                            // When any port in the tray has a custom name, use a wider/taller grid
+                            // so the names are actually readable. Otherwise keep the dense layout.
+                            const gridCls = trayHasNames
+                                ? 'p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-2 bg-slate-100 dark:bg-[#15171c]'
+                                : 'p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-12 gap-2 bg-slate-100 dark:bg-[#15171c]';
+                            const buttonHeightCls = trayHasNames ? 'h-12' : 'h-8';
 
                             return (
                                 <div key={tIdx} className="border border-slate-200 dark:border-slate-700/40 rounded-lg overflow-hidden">
                                     <div className="bg-slate-50 dark:bg-[#22262e] px-3 py-1 text-xs font-bold text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700/40 uppercase flex items-center gap-2">
                                         <Layers className="w-3 h-3 text-blue-500" /> {t('tray')} {tIdx + 1}
                                     </div>
-                                    <div className="p-3 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-6 xl:grid-cols-12 gap-2 bg-slate-100 dark:bg-[#15171c]">
+                                    <div className={gridCls}>
                                         {trayPorts.map((pId, localIdx) => {
                                             const absIdx = (tIdx * TRAY_SIZE) + localIdx;
                                             const isConnected = !!connectionMap[pId];
@@ -589,24 +602,40 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                             const isViewed = viewingConnection?.sourceId === pId || viewingConnection?.targetId === pId;
                                             const target = connectionMap[pId];
                                             const targetDetail = isConnected ? resolvePortDetail(target) : null;
+                                            const customName = dio.portLabels?.[pId];
 
                                                 const isSpliced = localPOP.connections.some(c =>
                                                     (c.sourceId === pId && c.targetId.includes('fiber')) ||
                                                     (c.targetId === pId && c.sourceId.includes('fiber'))
                                                 );
 
+                                                const baseLabel = `${t('tray')} ${tIdx + 1} P${localIdx + 1}`;
+                                                const titleParts: string[] = [];
+                                                titleParts.push(customName ? `${customName} (${baseLabel})` : baseLabel);
+                                                if (isConnected) titleParts.push(`${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]`);
+                                                else titleParts.push(t('port_free'));
+
                                                 return (
                                                     <button
                                                         key={pId}
                                                         onClick={() => handlePortClick(pId)}
-                                                        className={`h-8 rounded-md border text-xs font-bold transition-all relative group
+                                                        className={`${buttonHeightCls} rounded-md border transition-all relative group flex flex-col items-center justify-center gap-0 px-1.5 overflow-hidden
                                                             ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                                 isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                     isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
                                                                         'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
-                                                        title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
+                                                        title={titleParts.join(' · ')}
                                                     >
-                                                        {absIdx + 1}
+                                                        {trayHasNames ? (
+                                                            <>
+                                                                <span className="text-[9px] font-mono font-bold opacity-60 leading-none">P{absIdx + 1}</span>
+                                                                <span className={`text-[11px] font-semibold leading-tight max-w-full truncate mt-0.5 ${customName ? '' : 'italic opacity-50'}`}>
+                                                                    {customName || '—'}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-xs font-bold">{absIdx + 1}</span>
+                                                        )}
                                                         <div className="absolute top-1 right-1 flex gap-0.5 pointer-events-none">
                                                             {isSpliced && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" title={t('type_FUSION')}></div>}
                                                             {isConnected && !isSelected && !isViewed && <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>}

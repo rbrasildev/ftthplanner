@@ -111,6 +111,7 @@ export interface DIO {
   name: string;
   ports: number; // Number of ports (e.g., 12, 24, 48)
   portIds: string[];
+  portLabels?: Record<string, string>; // Optional custom names per portId
   status?: CTOStatus;
   inputCableIds?: string[]; // Array of Cable IDs linked to this DIO
   cableLayout?: Record<string, { x: number; y: number }>; // Saved visual position of cables

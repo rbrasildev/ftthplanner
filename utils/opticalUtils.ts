@@ -474,14 +474,6 @@ export function traceOpticalPath(
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
 
-                    oltPower = matchedCatalog ? matchedCatalog.outputPower : 3; // Default 3
-
-                    if (matchedCatalog) {
-                        console.log(`Matched OLT Catalog: "${matchedCatalog.name}" (${matchedCatalog.outputPower}dBm) for "${olt.name}"`);
-                    } else {
-                        console.log(`No OLT Catalog match for "${olt.name}". Using default 3dBm.`);
-                    }
-
                     // Extract Slot/Port details
                     let slot: number | undefined;
                     let port: number | undefined;
@@ -493,6 +485,18 @@ export function traceOpticalPath(
                             slot = Math.floor(globalPortIndex / pps) + 1;
                             port = (globalPortIndex % pps) + 1;
                         }
+                    }
+
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matchedCatalog?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matchedCatalog ? matchedCatalog.outputPower : 3);
+
+                    if (matchedCatalog) {
+                        console.log(`Matched OLT Catalog: "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
+                    } else {
+                        console.log(`No OLT Catalog match for "${olt.name}". Using default 3dBm.`);
                     }
 
                     console.log("OLT Found (Direct):", olt.name, "Slot:", slot, "Port:", port);
@@ -568,12 +572,6 @@ export function traceOpticalPath(
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
 
-                    oltPower = matchedCatalog ? matchedCatalog.outputPower : 3; // Default 3
-
-                    if (matchedCatalog) {
-                        console.log(`Matched OLT Catalog (Fallback): "${matchedCatalog.name}" (${matchedCatalog.outputPower}dBm) for "${olt.name}"`);
-                    }
-
                     let slot: number | undefined;
                     let port: number | undefined;
 
@@ -584,6 +582,16 @@ export function traceOpticalPath(
                             slot = Math.floor(globalPortIndex / pps) + 1;
                             port = (globalPortIndex % pps) + 1;
                         }
+                    }
+
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matchedCatalog?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matchedCatalog ? matchedCatalog.outputPower : 3);
+
+                    if (matchedCatalog) {
+                        console.log(`Matched OLT Catalog (Fallback): "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
                     }
 
                     console.log("OLT Found (No Conn):", olt.name, "Slot:", slot, "Port:", port);
@@ -797,7 +805,20 @@ function walkUpstreamForPower(
                     const matched = catalogs.olts
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
-                    oltPower = matched ? matched.outputPower : 3;
+                    let slot: number | undefined, port: number | undefined;
+                    if (olt.structure) {
+                        const idx = olt.portIds.findIndex(pid => pid.trim() === sourceId.trim());
+                        if (idx !== -1) {
+                            const pps = olt.structure.portsPerSlot || 16;
+                            slot = Math.floor(idx / pps) + 1;
+                            port = (idx % pps) + 1;
+                        }
+                    }
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matched ? matched.outputPower : 3);
                     foundOlt = true;
                     break;
                 }
@@ -835,7 +856,20 @@ function walkUpstreamForPower(
                     const matched = catalogs.olts
                         .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
                         .sort((a, b) => b.name.length - a.name.length)[0];
-                    oltPower = matched ? matched.outputPower : 3;
+                    let slot: number | undefined, port: number | undefined;
+                    if (olt.structure) {
+                        const idx = olt.portIds.findIndex(pid => pid.trim() === currPortId.trim());
+                        if (idx !== -1) {
+                            const pps = olt.structure.portsPerSlot || 16;
+                            slot = Math.floor(idx / pps) + 1;
+                            port = (idx % pps) + 1;
+                        }
+                    }
+                    const portKey = slot && port ? `${slot}-${port}` : undefined;
+                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
+                    oltPower = Number.isFinite(portOverride as number)
+                        ? (portOverride as number)
+                        : (matched ? matched.outputPower : 3);
                     foundOlt = true;
                     break;
                 }

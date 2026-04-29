@@ -173,6 +173,9 @@ export interface OLTCatalogItem {
     slots?: number;
     portsPerSlot?: number;
     uplinkPorts?: number;
+    // Per-port output power overrides, keyed by `${slot}-${port}` (1-indexed) → dBm.
+    // Missing/empty = use the global outputPower.
+    portPowers?: Record<string, number>;
     description?: string;
     updatedAt?: string;
 }
