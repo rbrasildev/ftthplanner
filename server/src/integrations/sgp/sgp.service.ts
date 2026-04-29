@@ -6,6 +6,7 @@ import { NormalizedSgpEvent, SgpEventType } from './sgp.types';
 import { ISgpAdapter } from './adapters/SgpAdapter.interface';
 import { IxcAdapter } from './adapters/IxcAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
+import { BeeswebAdapter } from './adapters/BeeswebAdapter';
 import { decryptIfNeeded } from '../../lib/encryption';
 
 /** Decrypts sensitive fields in-place so all downstream code reads plaintext. */
@@ -21,10 +22,21 @@ export class SgpService {
     private static lastSyncMap = new Map<string, Date>();
 
     public static getAdapter(sgpType: string): ISgpAdapter {
-        if (sgpType.toUpperCase() === 'IXC') {
-            return new IxcAdapter();
-        }
+        const upper = sgpType.toUpperCase();
+        if (upper === 'IXC') return new IxcAdapter();
+        if (upper === 'BEESWEB') return new BeeswebAdapter();
         return new GenericAdapter();
+    }
+
+    /** Map a BeesWeb customer record to our internal account status enum. */
+    private static mapBeeswebStatus(beeswebCustomer: any): 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | null {
+        if (!beeswebCustomer) return null;
+        if (beeswebCustomer.deleted_at) return 'INACTIVE';
+        if (beeswebCustomer.disabled_at) return 'SUSPENDED';
+        const status = beeswebCustomer.status;
+        if (status === 1 || status === '1' || status === true) return 'ACTIVE';
+        if (status === 0 || status === '0' || status === false) return 'SUSPENDED';
+        return null;
     }
 
     public static async processWebhook(tenantId: string, sgpType: string, payload: any, headers: any): Promise<void> {
@@ -365,6 +377,39 @@ export class SgpService {
 
         let sgpCustomer: any = null;
 
+        if (settings.sgpType === 'BEESWEB') {
+            const adapter = this.getAdapter('BEESWEB');
+            try {
+                sgpCustomer = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, customer.document);
+            } catch (err) {
+                logger.warn(`[SGP Service] BeesWeb search failed for ${customer.document}: ${err instanceof Error ? err.message : String(err)}`);
+                return false;
+            }
+            if (!sgpCustomer) return false;
+
+            // Adapter returns a normalized envelope; unwrap to raw BeesWeb record for status mapping
+            const rawBees = sgpCustomer._raw || sgpCustomer;
+            const newAccountStatus = this.mapBeeswebStatus(rawBees);
+
+            const updateData: any = {};
+            if (newAccountStatus && newAccountStatus !== (customer as any).status) {
+                updateData.status = newAccountStatus;
+            }
+
+            if (Object.keys(updateData).length === 0) return false;
+
+            try {
+                await prisma.customer.update({
+                    where: { id: customer.id },
+                    data: updateData
+                });
+                return true;
+            } catch (e) {
+                logger.error(`[SGP Service] BeesWeb DB update failed for ${customer.document}`);
+                return false;
+            }
+        }
+
         if (settings.sgpType === 'IXC') {
             // Use IXC adapter for search
             const adapter = this.getAdapter('IXC');
@@ -559,6 +604,8 @@ export class SgpService {
 
                     if (setting.sgpType === 'IXC') {
                         await this.runDailySyncIxc(setting, baseUrl, mappingMap, customerMap);
+                    } else if (setting.sgpType === 'BEESWEB') {
+                        await this.runDailySyncBeesweb(setting, baseUrl, customerMap);
                     } else {
                         await this.runDailySyncGeneric(setting, baseUrl, mappingMap, customerMap);
                     }
@@ -676,6 +723,81 @@ export class SgpService {
                 logger.error(`[SGP Daily Sync IXC] Fetch error: ${err.message}`);
                 break;
             }
+        }
+    }
+
+    /**
+     * Daily sync for BeesWeb provider — paginated /adm/customers, status-only.
+     * Matches by document (cpf_cnpj) and updates account status.
+     */
+    private static async runDailySyncBeesweb(
+        setting: any,
+        baseUrl: string,
+        customerMap: Map<string, any>
+    ) {
+        if (!setting.apiApp) {
+            logger.warn(`[SGP Daily Sync BEESWEB] Tenant ${setting.userId} missing apiApp (email). Skipping.`);
+            return;
+        }
+
+        const email = setting.apiApp;
+        const password = setting.apiToken;
+
+        const customersByDoc = new Map<string, any>();
+        for (const c of customerMap.values()) {
+            const doc = String((c as any).document || '').replace(/\D/g, '');
+            if (doc) customersByDoc.set(doc, c);
+        }
+
+        if (customersByDoc.size === 0) return;
+
+        let page = 1;
+        let loopCount = 0;
+
+        while (true) {
+            loopCount++;
+            if (loopCount > 400) {
+                logger.warn(`[SGP Daily Sync BEESWEB] Hard stop for tenant ${setting.userId} at page ${page}`);
+                break;
+            }
+
+            let data: any;
+            try {
+                data = await BeeswebAdapter.fetchCustomersPage(baseUrl, email, password, page);
+            } catch (err: any) {
+                logger.error(`[SGP Daily Sync BEESWEB] Fetch error page ${page}: ${err.message}`);
+                break;
+            }
+
+            const list: any[] = data?.data || [];
+            if (list.length === 0) break;
+
+            for (const beesCustomer of list) {
+                const doc = String(beesCustomer?.cpf_cnpj || '').replace(/\D/g, '');
+                if (!doc) continue;
+
+                const customer = customersByDoc.get(doc);
+                if (!customer) continue;
+
+                const newAccountStatus = this.mapBeeswebStatus(beesCustomer);
+                if (!newAccountStatus || newAccountStatus === (customer as any).status) continue;
+
+                try {
+                    await prisma.customer.update({
+                        where: { id: customer.id },
+                        data: { status: newAccountStatus }
+                    });
+                    (customer as any).status = newAccountStatus;
+                } catch {
+                    // ignore single update failures
+                }
+            }
+
+            const lastPage = Number(data?.last_page) || page;
+            if (page >= lastPage || !data?.next_page_url) break;
+
+            page++;
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
 

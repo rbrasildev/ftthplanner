@@ -6,7 +6,7 @@ import { Button } from '../common/Button';
 import api from '../../services/api';
 
 interface SgpSettingsModalProps {
-    providerType: 'IXC' | 'GENERIC';
+    providerType: 'IXC' | 'GENERIC' | 'BEESWEB';
     showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -172,7 +172,11 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                     label={t('api_url_label')}
                     type="url"
                     icon={Globe}
-                    placeholder={providerType === 'IXC' ? t('ixc_url_placeholder') : t('sgp_url_placeholder')}
+                    placeholder={
+                        providerType === 'IXC' ? t('ixc_url_placeholder') :
+                        providerType === 'BEESWEB' ? t('beesweb_url_placeholder') :
+                        t('sgp_url_placeholder')
+                    }
                     value={settings.apiUrl}
                     onChange={(e) => setSettings({ ...settings, apiUrl: e.target.value })}
                     required
@@ -190,18 +194,41 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
                     />
                 )}
 
+                {providerType === 'BEESWEB' && (
+                    <CustomInput
+                        label={t('beesweb_email_label')}
+                        type="email"
+                        icon={KeyRound}
+                        placeholder={t('beesweb_email_placeholder')}
+                        value={settings.apiApp || ''}
+                        onChange={(e) => setSettings({ ...settings, apiApp: e.target.value })}
+                        required
+                    />
+                )}
+
                 <div>
                     <CustomInput
-                        label={providerType === 'IXC' ? t('ixc_token_label') : t('sgp_token_label')}
+                        label={
+                            providerType === 'IXC' ? t('ixc_token_label') :
+                            providerType === 'BEESWEB' ? t('beesweb_password_label') :
+                            t('sgp_token_label')
+                        }
                         type="password"
                         icon={KeyRound}
-                        placeholder={providerType === 'IXC' ? t('ixc_token_placeholder') : t('sgp_token_placeholder')}
+                        placeholder={
+                            providerType === 'IXC' ? t('ixc_token_placeholder') :
+                            providerType === 'BEESWEB' ? t('beesweb_password_placeholder') :
+                            t('sgp_token_placeholder')
+                        }
                         value={settings.apiToken}
                         onChange={(e) => setSettings({ ...settings, apiToken: e.target.value })}
                         required
                     />
                     {providerType === 'IXC' && (
                         <p className="text-[10px] text-slate-400 mt-1.5 ml-1">{t('ixc_token_help')}</p>
+                    )}
+                    {providerType === 'BEESWEB' && (
+                        <p className="text-[10px] text-slate-400 mt-1.5 ml-1">{t('beesweb_password_help')}</p>
                     )}
                 </div>
 

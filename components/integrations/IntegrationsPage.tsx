@@ -7,7 +7,7 @@ import api from '../../services/api';
 import { SgpSettingsModal } from './SgpSettingsModal';
 import { SgpConflictsTab } from './SgpConflictsTab';
 
-type ProviderType = 'IXC' | 'GENERIC';
+type ProviderType = 'IXC' | 'GENERIC' | 'BEESWEB';
 
 interface ProviderOption {
     type: ProviderType;
@@ -40,6 +40,7 @@ export const IntegrationsPage: React.FC = () => {
     const [providerStatuses, setProviderStatuses] = useState<Record<ProviderType, ProviderStatus>>({
         IXC: { active: false, configured: false, conflictCount: 0 },
         GENERIC: { active: false, configured: false, conflictCount: 0 },
+        BEESWEB: { active: false, configured: false, conflictCount: 0 },
     });
 
     const showToast = useCallback((msg: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -66,20 +67,34 @@ export const IntegrationsPage: React.FC = () => {
             tag: t('integration_tag_polling'),
             tagColor: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
         },
+        {
+            type: 'BEESWEB',
+            label: t('integration_provider_beesweb'),
+            description: t('beesweb_provider_description'),
+            icon: <img src="/integrations/beesweb-logo.png" alt="BeesWeb" className="w-full h-full object-contain p-1.5" />,
+            iconBg: 'bg-white dark:bg-white overflow-hidden rounded-xl',
+            tag: t('integration_tag_polling'),
+            tagColor: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+        },
     ];
 
     const fetchStatuses = useCallback(async () => {
         try {
-            const [ixcRes, genericRes, conflictsRes] = await Promise.all([
+            const [ixcRes, genericRes, beeswebRes, conflictsRes] = await Promise.all([
                 api.get('/integrations/sgp/settings/IXC').catch(() => ({ data: null })),
                 api.get('/integrations/sgp/settings/GENERIC').catch(() => ({ data: null })),
+                api.get('/integrations/sgp/settings/BEESWEB').catch(() => ({ data: null })),
                 api.get('/integrations/sgp/conflicts').catch(() => ({ data: [] })),
             ]);
 
             const conflicts = Array.isArray(conflictsRes.data) ? conflictsRes.data : [];
-            // Split conflict counts by sgpType stored in payload
-            const ixcConflicts = conflicts.filter((c: any) => c.status === 'PENDING' && c.payload?.sgpType === 'IXC').length;
-            const genericConflicts = conflicts.filter((c: any) => c.status === 'PENDING' && c.payload?.sgpType !== 'IXC').length;
+            const isPending = (c: any) => c.status === 'PENDING';
+            const ixcConflicts = conflicts.filter((c: any) => isPending(c) && c.payload?.sgpType === 'IXC').length;
+            const beeswebConflicts = conflicts.filter((c: any) => isPending(c) && c.payload?.sgpType === 'BEESWEB').length;
+            // GENERIC absorbs anything that isn't IXC or BEESWEB (including legacy/unknown sgpType values)
+            const genericConflicts = conflicts.filter((c: any) =>
+                isPending(c) && c.payload?.sgpType !== 'IXC' && c.payload?.sgpType !== 'BEESWEB'
+            ).length;
 
             setProviderStatuses({
                 IXC: {
@@ -91,6 +106,11 @@ export const IntegrationsPage: React.FC = () => {
                     active: !!genericRes.data?.active,
                     configured: !!(genericRes.data?.apiUrl && genericRes.data?.apiToken),
                     conflictCount: genericConflicts,
+                },
+                BEESWEB: {
+                    active: !!beeswebRes.data?.active,
+                    configured: !!(beeswebRes.data?.apiUrl && beeswebRes.data?.apiToken && beeswebRes.data?.apiApp),
+                    conflictCount: beeswebConflicts,
                 },
             });
         } catch {

@@ -4,7 +4,7 @@ import { Loader2, CheckCircle2, AlertTriangle, RefreshCw, ArrowLeftRight, Check,
 import api from '../../services/api';
 
 interface SgpConflictsTabProps {
-    providerType: 'IXC' | 'GENERIC';
+    providerType: 'IXC' | 'GENERIC' | 'BEESWEB';
     showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
     onConflictChange?: () => void;
 }
@@ -48,7 +48,9 @@ export const SgpConflictsTab: React.FC<SgpConflictsTabProps> = ({ providerType, 
             const filtered = all.filter((c: any) => {
                 const conflictType = c.payload?.sgpType;
                 if (providerType === 'IXC') return conflictType === 'IXC';
-                return conflictType !== 'IXC'; // GENERIC gets everything that's not IXC
+                if (providerType === 'BEESWEB') return conflictType === 'BEESWEB';
+                // GENERIC absorbs anything that isn't IXC or BEESWEB
+                return conflictType !== 'IXC' && conflictType !== 'BEESWEB';
             });
             setConflicts(filtered);
         } catch {
