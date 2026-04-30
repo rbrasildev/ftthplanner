@@ -182,8 +182,24 @@ export const getCompanies = async (req: AuthRequest, res: Response) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Enrich with financial summary
+        // Enrich with financial summary.
+        // Trial-plan companies are zeroed-out: they're evaluation users with no
+        // billing obligation, so they must not appear as "inadimplente" or count
+        // toward revenue metrics — even if legacy OVERDUE invoices exist in DB.
         const enriched = companies.map(c => {
+            const isTrial = c.plan?.type === 'TRIAL' || c.status === 'TRIAL';
+            if (isTrial) {
+                return {
+                    ...c,
+                    _financial: {
+                        overdueCount: 0,
+                        overdueTotal: 0,
+                        paidCount: 0,
+                        paidTotal: 0,
+                        lastPayment: null,
+                    },
+                };
+            }
             const overdueInvoices = c.invoices.filter(inv => inv.status === 'OVERDUE');
             const paidInvoices = c.invoices.filter(inv => inv.status === 'PAID');
             // Prefer the authoritative `paidAt` timestamp; fall back to `updatedAt`

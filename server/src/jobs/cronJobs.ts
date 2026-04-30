@@ -93,6 +93,8 @@ export const initCronJobs = () => {
 
             for (const company of overdueCompanies) {
                 if (!company.plan || company.plan.price <= 0 || !company.subscriptionExpiresAt) continue;
+                // Trial plans are free-to-use evaluation; never bill them.
+                if (company.plan.type === 'TRIAL') continue;
 
                 let periodStart = new Date(company.subscriptionExpiresAt);
                 let generated = 0;
