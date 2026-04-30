@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
 import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon } from 'lucide-react';
@@ -422,6 +423,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [planFilter, setPlanFilter] = useState('ALL');
+    type QuickFilter = 'expiring' | 'overdue' | 'inactive' | 'trial' | null;
+    const [quickFilter, setQuickFilter] = useState<QuickFilter>(null);
+
+    type SortColumn = 'name' | 'expiry' | 'financial' | 'lastActivity' | 'status';
+    const [sortBy, setSortBy] = useState<{ column: SortColumn; direction: 'asc' | 'desc' }>({ column: 'name', direction: 'asc' });
 
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -456,18 +462,45 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', variant: 'danger', onConfirm: () => {} });
 
-    // Which company's "Cortesia" popover is open (null = none)
-    const [trustMenuOpenFor, setTrustMenuOpenFor] = useState<string | null>(null);
+    // "Cortesia" popover — rendered via portal to escape overflow-hidden ancestors.
+    // Tracks anchor rect so the menu can be positioned with `position: fixed`.
+    const [trustMenuTarget, setTrustMenuTarget] = useState<{
+        id: string;
+        name: string;
+        top: number;
+        right: number;
+    } | null>(null);
 
     useEffect(() => {
-        if (!trustMenuOpenFor) return;
+        if (!trustMenuTarget) return;
         const close = (e: MouseEvent) => {
             const target = e.target as HTMLElement | null;
-            if (!target?.closest('[data-trust-menu]')) setTrustMenuOpenFor(null);
+            if (!target?.closest('[data-trust-menu]')) setTrustMenuTarget(null);
         };
+        const dismiss = () => setTrustMenuTarget(null);
         document.addEventListener('mousedown', close);
-        return () => document.removeEventListener('mousedown', close);
-    }, [trustMenuOpenFor]);
+        window.addEventListener('scroll', dismiss, true);
+        window.addEventListener('resize', dismiss);
+        return () => {
+            document.removeEventListener('mousedown', close);
+            window.removeEventListener('scroll', dismiss, true);
+            window.removeEventListener('resize', dismiss);
+        };
+    }, [trustMenuTarget]);
+
+    const openTrustMenu = (e: React.MouseEvent<HTMLButtonElement>, id: string, name: string) => {
+        if (trustMenuTarget?.id === id) {
+            setTrustMenuTarget(null);
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTrustMenuTarget({
+            id,
+            name,
+            top: rect.bottom + 4,
+            right: window.innerWidth - rect.right,
+        });
+    };
 
     const showConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
         setConfirmDialog({ isOpen: true, title, message, variant, onConfirm });
@@ -477,17 +510,115 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         setAlertConfig({ isOpen: true, message, type, title });
     };
 
+    const getUsagePercentage = (current: number, max: number | undefined) => {
+        if (!max || max >= 999999) return 0;
+        return Math.min(Math.round((current / max) * 100), 100);
+    };
+
+    // Most-recent login across all users in a company.
+    // Used as the engagement signal in the "Última atividade" column.
+    const getLastActivity = (company: Company): Date | null => {
+        const stamps = (company.users || [])
+            .map(u => u.lastLoginAt)
+            .filter((s): s is string => !!s)
+            .map(s => new Date(s).getTime());
+        if (stamps.length === 0) return null;
+        return new Date(Math.max(...stamps));
+    };
+
     const filteredCompanies = companies.filter(company => {
         const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             company.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
         const matchesPlan = planFilter === 'ALL' || company.plan?.id === planFilter;
-        return matchesSearch && matchesStatus && matchesPlan;
+
+        let matchesQuick = true;
+        if (quickFilter === 'expiring') {
+            // ACTIVE companies whose subscription expires in the next 7 days (and not already expired)
+            if (company.status !== 'ACTIVE' || !company.subscriptionExpiresAt) matchesQuick = false;
+            else {
+                const days = (new Date(company.subscriptionExpiresAt).getTime() - Date.now()) / 86400000;
+                matchesQuick = days >= 0 && days <= 7;
+            }
+        } else if (quickFilter === 'overdue') {
+            matchesQuick = ((company as any)._financial?.overdueCount || 0) > 0;
+        } else if (quickFilter === 'inactive') {
+            const last = getLastActivity(company);
+            matchesQuick = !last || (Date.now() - last.getTime()) > 30 * 86400000;
+        } else if (quickFilter === 'trial') {
+            matchesQuick = company.status === 'TRIAL' || company.plan?.type === 'TRIAL';
+        }
+
+        return matchesSearch && matchesStatus && matchesPlan && matchesQuick;
     });
 
-    const getUsagePercentage = (current: number, max: number | undefined) => {
-        if (!max || max >= 999999) return 0;
-        return Math.min(Math.round((current / max) * 100), 100);
+    // Sort key extractor — values returned must be comparable with < and >.
+    // Companies with no value land at the end regardless of asc/desc.
+    const getSortValue = (c: Company, col: SortColumn): string | number => {
+        switch (col) {
+            case 'name': return c.name.toLowerCase();
+            case 'expiry': return c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).getTime() : Number.POSITIVE_INFINITY;
+            case 'financial': return (c as any)._financial?.overdueTotal || 0;
+            case 'lastActivity': {
+                const d = getLastActivity(c);
+                return d ? d.getTime() : 0;
+            }
+            case 'status': return c.status;
+        }
+    };
+
+    const sortedCompanies = [...filteredCompanies].sort((a, b) => {
+        const av = getSortValue(a, sortBy.column);
+        const bv = getSortValue(b, sortBy.column);
+        if (av < bv) return sortBy.direction === 'asc' ? -1 : 1;
+        if (av > bv) return sortBy.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const toggleSort = (column: SortColumn) => {
+        setSortBy(prev => prev.column === column
+            ? { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+            : { column, direction: 'asc' });
+    };
+
+    // Counts for quick-filter chips. O(n) per render — fine for typical SaaS scale.
+    const quickFilterCounts = {
+        expiring: companies.filter(c => {
+            if (c.status !== 'ACTIVE' || !c.subscriptionExpiresAt) return false;
+            const days = (new Date(c.subscriptionExpiresAt).getTime() - Date.now()) / 86400000;
+            return days >= 0 && days <= 7;
+        }).length,
+        overdue: companies.filter(c => ((c as any)._financial?.overdueCount || 0) > 0).length,
+        inactive: companies.filter(c => {
+            const last = getLastActivity(c);
+            return !last || (Date.now() - last.getTime()) > 30 * 86400000;
+        }).length,
+        trial: companies.filter(c => c.status === 'TRIAL' || c.plan?.type === 'TRIAL').length,
+    };
+
+    // Formats a "há Xd / DD/MM" label and assigns a tone reflecting customer
+    // engagement — green ≤7d, slate ≤30d, amber ≤90d, red older / never.
+    const formatLastActivity = (date: Date | null): { label: string; toneClass: string } => {
+        if (!date) return { label: 'Nunca', toneClass: 'text-red-600 dark:text-red-400' };
+        const diffMs = Date.now() - date.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffH = Math.floor(diffMs / 3600000);
+        const diffD = Math.floor(diffMs / 86400000);
+
+        let label: string;
+        if (diffMin < 1) label = 'agora';
+        else if (diffMin < 60) label = `há ${diffMin}min`;
+        else if (diffH < 24) label = `há ${diffH}h`;
+        else if (diffD < 30) label = `há ${diffD}d`;
+        else label = date.toLocaleDateString();
+
+        let toneClass: string;
+        if (diffD <= 7) toneClass = 'text-emerald-600 dark:text-emerald-400';
+        else if (diffD <= 30) toneClass = 'text-slate-600 dark:text-slate-300';
+        else if (diffD <= 90) toneClass = 'text-amber-600 dark:text-amber-400';
+        else toneClass = 'text-red-600 dark:text-red-400';
+
+        return { label, toneClass };
     };
 
     const UsageBar = ({ label, current, max, color }: { label: string, current: number, max: number | undefined, color: string }) => {
@@ -636,7 +767,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     // Desbloqueio de confiança: reativa a empresa e estende `subscriptionExpiresAt`
     // por N dias. Faturas em aberto permanecem OVERDUE — o cliente continua devendo.
     const handleTrustUnlock = (id: string, name: string, days: number) => {
-        setTrustMenuOpenFor(null);
+        setTrustMenuTarget(null);
         const expiry = new Date();
         expiry.setDate(expiry.getDate() + days);
         expiry.setHours(23, 59, 59, 999);
@@ -1328,6 +1459,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <option value="ALL">{t('saas_all_status')}</option>
                                             <option value="ACTIVE">{t('saas_active')}</option>
                                             <option value="SUSPENDED">{t('saas_suspender')}</option>
+                                            <option value="CANCELLED">Cancelado</option>
                                         </select>
                                         <select
                                             value={planFilter}
@@ -1343,26 +1475,90 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     {t('saas_showing_results', { val: filteredCompanies.length })}
                                 </div>
                             </div>
+                            <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700/30 flex flex-wrap items-center gap-2 bg-slate-50/30 dark:bg-[#151820]/30">
+                                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Filtros rápidos:</span>
+                                {([
+                                    { key: 'expiring' as const, label: 'Vencendo em 7 dias', count: quickFilterCounts.expiring, activeClass: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700' },
+                                    { key: 'overdue' as const, label: 'Inadimplentes', count: quickFilterCounts.overdue, activeClass: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700' },
+                                    { key: 'inactive' as const, label: 'Inativos 30+ dias', count: quickFilterCounts.inactive, activeClass: 'bg-slate-200 text-slate-700 border-slate-400 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-500' },
+                                    { key: 'trial' as const, label: 'Trial', count: quickFilterCounts.trial, activeClass: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' },
+                                ]).map(chip => {
+                                    const active = quickFilter === chip.key;
+                                    return (
+                                        <button
+                                            key={chip.key}
+                                            onClick={() => setQuickFilter(active ? null : chip.key)}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${active ? chip.activeClass : 'bg-white dark:bg-[#1a1d23] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'}`}
+                                        >
+                                            {chip.label}
+                                            <span className={`min-w-[18px] text-center px-1 py-0.5 rounded-full text-[10px] ${active ? 'bg-white/60 dark:bg-black/30' : 'bg-slate-100 dark:bg-slate-800'}`}>{chip.count}</span>
+                                        </button>
+                                    );
+                                })}
+                                {quickFilter && (
+                                    <button
+                                        onClick={() => setQuickFilter(null)}
+                                        className="ml-auto text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline-offset-2 hover:underline"
+                                    >
+                                        Limpar filtro
+                                    </button>
+                                )}
+                            </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-50/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
-                                            <th className="px-6 py-4">{t('saas_company_name')}</th>
-                                            <th className="px-6 py-4">{t('saas_current_plan')}</th>
-                                            <th className="px-6 py-4 text-center">Vencimento</th>
-                                            <th className="px-6 py-4 text-center">Financeiro</th>
-                                            <th className="px-6 py-4 text-center">{t('admin_col_infrastructure')}</th>
-                                            <th className="px-6 py-4">{t('status')}</th>
-                                            <th className="px-6 py-4 text-right">{t('actions')}</th>
+                                            {(() => {
+                                                const SortableTh = ({ column, label, align = 'left' }: { column: SortColumn; label: string; align?: 'left' | 'center' | 'right' }) => {
+                                                    const isActive = sortBy.column === column;
+                                                    const arrow = isActive ? (sortBy.direction === 'asc' ? '↑' : '↓') : '';
+                                                    return (
+                                                        <th className={`px-6 py-4 ${align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : ''}`}>
+                                                            <button
+                                                                onClick={() => toggleSort(column)}
+                                                                className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                                            >
+                                                                {label}
+                                                                <span className="text-[10px] w-2.5">{arrow}</span>
+                                                            </button>
+                                                        </th>
+                                                    );
+                                                };
+                                                return (
+                                                    <>
+                                                        <SortableTh column="name" label={t('saas_company_name')} />
+                                                        <th className="px-6 py-4">{t('saas_current_plan')}</th>
+                                                        <SortableTh column="expiry" label="Vencimento" align="center" />
+                                                        <SortableTh column="financial" label="Financeiro" align="center" />
+                                                        <th className="px-6 py-4 text-center">{t('admin_col_infrastructure')}</th>
+                                                        <SortableTh column="lastActivity" label="Última atividade" align="center" />
+                                                        <SortableTh column="status" label={t('status')} />
+                                                        <th className="px-6 py-4 text-right">{t('actions')}</th>
+                                                    </>
+                                                );
+                                            })()}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {filteredCompanies.map(company => (
+                                        {sortedCompanies.map(company => (
                                             <tr key={company.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="px-6 py-4">
-                                                    <div>
-                                                        <div className="font-bold text-slate-900 dark:text-white">{company.name}</div>
-                                                        <div className="text-xs text-slate-500">ID: {company.id.slice(0, 8)}...</div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-bold text-slate-900 dark:text-white truncate">{company.name}</div>
+                                                        {(() => {
+                                                            const email = company.businessEmail || company.users?.[0]?.username || null;
+                                                            const phone = company.phone || null;
+                                                            if (!email && !phone) {
+                                                                return <div className="text-xs text-slate-400 truncate">ID: {company.id.slice(0, 8)}...</div>;
+                                                            }
+                                                            return (
+                                                                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                                    {email && <span title={email}>{email}</span>}
+                                                                    {email && phone && <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>}
+                                                                    {phone && <span>{phone}</span>}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -1393,19 +1589,28 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    {(company as any)._financial?.overdueCount > 0 ? (
-                                                        <div className="inline-flex flex-col items-center">
-                                                            <span className="text-xs font-black text-red-600">R$ {(company as any)._financial.overdueTotal.toFixed(2)}</span>
-                                                            <span className="text-[10px] text-red-500">{(company as any)._financial.overdueCount} {(company as any)._financial.overdueCount === 1 ? 'fatura' : 'faturas'}</span>
-                                                        </div>
-                                                    ) : (company as any)._financial?.paidCount > 0 ? (
-                                                        <div className="inline-flex flex-col items-center">
-                                                            <span className="text-xs font-bold text-emerald-600">Em dia</span>
-                                                            <span className="text-[10px] text-slate-400">{(company as any)._financial.paidCount} pagos</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-xs text-slate-400">—</span>
-                                                    )}
+                                                    {(() => {
+                                                        const fin = (company as any)._financial;
+                                                        const mrr = company.plan?.price || 0;
+                                                        const mrrLabel = mrr > 0 ? `R$ ${mrr.toFixed(2)}/mês` : 'Grátis';
+                                                        const isOverdue = fin?.overdueCount > 0;
+                                                        const isPaid = fin?.paidCount > 0;
+                                                        return (
+                                                            <div className="inline-flex flex-col items-center gap-0.5">
+                                                                {isOverdue ? (
+                                                                    <>
+                                                                        <span className="text-xs font-black text-red-600">R$ {fin.overdueTotal.toFixed(2)}</span>
+                                                                        <span className="text-[10px] text-red-500">{fin.overdueCount} {fin.overdueCount === 1 ? 'fatura vencida' : 'faturas vencidas'}</span>
+                                                                    </>
+                                                                ) : isPaid ? (
+                                                                    <span className="text-xs font-bold text-emerald-600">Em dia</span>
+                                                                ) : null}
+                                                                <span className={`text-[10px] ${isOverdue || isPaid ? 'text-slate-400 dark:text-slate-500 mt-0.5' : 'font-bold text-slate-600 dark:text-slate-300'}`}>
+                                                                    {mrrLabel}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {(() => {
@@ -1428,6 +1633,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         );
                                                     })()}
                                                 </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    {(() => {
+                                                        const last = getLastActivity(company);
+                                                        const { label, toneClass } = formatLastActivity(last);
+                                                        return (
+                                                            <div
+                                                                className={`text-xs font-bold ${toneClass}`}
+                                                                title={last ? last.toLocaleString() : 'Nenhum login registrado'}
+                                                            >
+                                                                {label}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm ${company.status === 'ACTIVE'
                                                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
@@ -1442,12 +1661,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         {company.status === 'ACTIVE' ? (
-                                                            <button
-                                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${company.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(company.id, { status: 'SUSPENDED' }), 'warning')}
-                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800"
-                                                            >
-                                                                Suspender
-                                                            </button>
+                                                            <>
+                                                                <button
+                                                                    onClick={() => showConfirm('Suspender Empresa', `Suspender "${company.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(company.id, { status: 'SUSPENDED' }), 'warning')}
+                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                                                                >
+                                                                    Suspender
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${company.name}"? Não serão geradas novas faturas. O acesso permanece até o fim do período pago.`, () => handleCompanyUpdate(company.id, { status: 'CANCELLED' }), 'warning')}
+                                                                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
+                                                                >
+                                                                    Cancelar
+                                                                </button>
+                                                            </>
                                                         ) : (
                                                             <>
                                                                 <button
@@ -1456,29 +1683,23 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 >
                                                                     Reativar
                                                                 </button>
-                                                                <div className="relative" data-trust-menu>
+                                                                <button
+                                                                    data-trust-menu
+                                                                    onClick={(e) => openTrustMenu(e, company.id, company.name)}
+                                                                    title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
+                                                                    className="flex items-center gap-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-amber-200 dark:hover:border-amber-800"
+                                                                >
+                                                                    Cortesia
+                                                                    <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuTarget?.id === company.id ? 'rotate-90' : ''}`} />
+                                                                </button>
+                                                                {company.status !== 'CANCELLED' && (
                                                                     <button
-                                                                        onClick={() => setTrustMenuOpenFor(trustMenuOpenFor === company.id ? null : company.id)}
-                                                                        title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
-                                                                        className="flex items-center gap-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-amber-200 dark:hover:border-amber-800"
+                                                                        onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${company.name}"? Não serão geradas novas faturas.`, () => handleCompanyUpdate(company.id, { status: 'CANCELLED' }), 'warning')}
+                                                                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
                                                                     >
-                                                                        Cortesia
-                                                                        <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuOpenFor === company.id ? 'rotate-90' : ''}`} />
+                                                                        Cancelar
                                                                     </button>
-                                                                    {trustMenuOpenFor === company.id && (
-                                                                        <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[140px]">
-                                                                            {[1, 3, 5, 7].map(days => (
-                                                                                <button
-                                                                                    key={days}
-                                                                                    onClick={() => handleTrustUnlock(company.id, company.name, days)}
-                                                                                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
-                                                                                >
-                                                                                    Liberar por {days} {days === 1 ? 'dia' : 'dias'}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                )}
                                                             </>
                                                         )}
                                                         <button
@@ -2617,13 +2838,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         {selectedCompany.status === 'ACTIVE' ? (
-                                            <button
-                                                onClick={() => showConfirm('Suspender Empresa', `Suspender "${selectedCompany.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' }), 'warning')}
-                                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-lg text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
-                                            >
-                                                <Lock className="w-3.5 h-3.5" />
-                                                {t('saas_suspend')}
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => showConfirm('Suspender Empresa', `Suspender "${selectedCompany.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'SUSPENDED' }), 'warning')}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-lg text-xs font-bold border border-red-100 dark:border-red-900/50 hover:bg-red-100 transition-colors"
+                                                >
+                                                    <Lock className="w-3.5 h-3.5" />
+                                                    {t('saas_suspend')}
+                                                </button>
+                                                <button
+                                                    onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${selectedCompany.name}"? Não serão geradas novas faturas. O acesso permanece até o fim do período pago.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'CANCELLED' }), 'warning')}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-[#22262e] text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                    Cancelar
+                                                </button>
+                                            </>
                                         ) : (
                                             <>
                                                 <button
@@ -2633,30 +2863,25 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <Shield className="w-3.5 h-3.5" />
                                                     {t('saas_activate')}
                                                 </button>
-                                                <div className="relative" data-trust-menu>
+                                                <button
+                                                    data-trust-menu
+                                                    onClick={(e) => openTrustMenu(e, selectedCompany.id, selectedCompany.name)}
+                                                    title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-lg text-xs font-bold border border-amber-100 dark:border-amber-900/50 hover:bg-amber-100 transition-colors"
+                                                >
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    Cortesia
+                                                    <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuTarget?.id === selectedCompany.id ? 'rotate-90' : ''}`} />
+                                                </button>
+                                                {selectedCompany.status !== 'CANCELLED' && (
                                                     <button
-                                                        onClick={() => setTrustMenuOpenFor(trustMenuOpenFor === selectedCompany.id ? null : selectedCompany.id)}
-                                                        title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
-                                                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-lg text-xs font-bold border border-amber-100 dark:border-amber-900/50 hover:bg-amber-100 transition-colors"
+                                                        onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${selectedCompany.name}"? Não serão geradas novas faturas.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'CANCELLED' }), 'warning')}
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-[#22262e] text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors"
                                                     >
-                                                        <Clock className="w-3.5 h-3.5" />
-                                                        Cortesia
-                                                        <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuOpenFor === selectedCompany.id ? 'rotate-90' : ''}`} />
+                                                        <X className="w-3.5 h-3.5" />
+                                                        Cancelar
                                                     </button>
-                                                    {trustMenuOpenFor === selectedCompany.id && (
-                                                        <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]">
-                                                            {[1, 3, 5, 7].map(days => (
-                                                                <button
-                                                                    key={days}
-                                                                    onClick={() => handleTrustUnlock(selectedCompany.id, selectedCompany.name, days)}
-                                                                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
-                                                                >
-                                                                    Liberar por {days} {days === 1 ? 'dia' : 'dias'}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                )}
                                             </>
                                         )}
                                         <button
@@ -3349,6 +3574,29 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     </div>
                 )
             }
+            {trustMenuTarget && createPortal(
+                <div
+                    data-trust-menu
+                    style={{
+                        position: 'fixed',
+                        top: trustMenuTarget.top,
+                        right: trustMenuTarget.right,
+                        zIndex: 9999,
+                    }}
+                    className="bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]"
+                >
+                    {[1, 3, 5, 7].map(days => (
+                        <button
+                            key={days}
+                            onClick={() => handleTrustUnlock(trustMenuTarget.id, trustMenuTarget.name, days)}
+                            className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                        >
+                            Liberar por {days} {days === 1 ? 'dia' : 'dias'}
+                        </button>
+                    ))}
+                </div>,
+                document.body
+            )}
         </div >
     );
 };

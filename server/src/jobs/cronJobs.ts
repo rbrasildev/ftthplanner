@@ -57,10 +57,13 @@ export const initCronJobs = () => {
                 console.log(`[Cron] Expired ${expiredInvoices.count} pending invoices.`);
             }
 
-            // 2. Suspend Companies with expired subscriptions (ACTIVE or CANCELLED)
+            // 2. Suspend Companies with expired subscriptions
+            // CANCELLED is intentionally excluded — once a customer cancels,
+            // they stay CANCELLED and never enter the OVERDUE invoice pipeline.
+            // Access is still blocked post-expiry via `isSubscriptionExpired`.
             const suspendedCompanies = await prisma.company.updateMany({
                 where: {
-                    status: { in: ['ACTIVE', 'CANCELLED'] },
+                    status: 'ACTIVE',
                     subscriptionExpiresAt: { lt: startToday }
                 },
                 data: {
