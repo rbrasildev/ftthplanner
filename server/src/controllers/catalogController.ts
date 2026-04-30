@@ -59,20 +59,22 @@ export const updateSplitter = async (req: Request, res: Response) => {
         const exists = await prisma.catalogSplitter.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Splitter not found" });
 
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (type !== undefined) data.type = type;
+        if (mode !== undefined) data.mode = mode;
+        if (inputs !== undefined) data.inputs = Number(inputs);
+        if (outputs !== undefined) data.outputs = Number(outputs);
+        if (connectorType !== undefined) data.connectorType = connectorType;
+        if (polishType !== undefined) data.polishType = polishType;
+        if (allowCustomConnections !== undefined) data.allowCustomConnections = allowCustomConnections;
+        if (attenuation !== undefined) data.attenuation = attenuation;
+        if (description !== undefined) data.description = description;
+
         const updatedSplitter = await prisma.catalogSplitter.update({
             where: { id },
-            data: {
-                name,
-                type,
-                mode,
-                inputs: Number(inputs),
-                outputs: Number(outputs),
-                connectorType,
-                polishType: polishType || null,
-                allowCustomConnections,
-                attenuation: attenuation || {},
-                description
-            }
+            data
         });
 
         // Propagate changes to existing splitters in CTOs
@@ -203,18 +205,24 @@ export const updateCable = async (req: Request, res: Response) => {
         const exists = await prisma.catalogCable.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Cable not found" });
 
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (brand !== undefined) data.brand = brand;
+        if (model !== undefined) data.model = model;
+        if (defaultLevel !== undefined) data.defaultLevel = defaultLevel;
+        if (fiberCount !== undefined) data.fiberCount = Number(fiberCount);
+        if (looseTubeCount !== undefined) data.looseTubeCount = Number(looseTubeCount);
+        if (fibersPerTube !== undefined) data.fibersPerTube = Number(fibersPerTube);
+        if (attenuation !== undefined) data.attenuation = Number(attenuation);
+        if (fiberProfile !== undefined) data.fiberProfile = fiberProfile;
+        if (description !== undefined) data.description = description;
+        if (deployedSpec !== undefined) data.deployedSpec = deployedSpec;
+        if (plannedSpec !== undefined) data.plannedSpec = plannedSpec;
+
         const updatedCable = await prisma.catalogCable.update({
             where: { id },
-            data: {
-                name, brand, model, defaultLevel,
-                fiberCount: Number(fiberCount),
-                looseTubeCount: Number(looseTubeCount),
-                fibersPerTube: Number(fibersPerTube),
-                attenuation: Number(attenuation),
-                fiberProfile, description,
-                deployedSpec: deployedSpec || {},
-                plannedSpec: plannedSpec || {}
-            }
+            data
         });
 
         // Propagate color changes to existing cables
@@ -314,26 +322,35 @@ export const updateBox = async (req: Request, res: Response) => {
         const exists = await prisma.catalogBox.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Box not found" });
 
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (brand !== undefined) data.brand = brand;
+        if (model !== undefined) data.model = model;
+        if (type !== undefined) data.type = type;
+        if (reserveLoopLength !== undefined) data.reserveLoopLength = Number(reserveLoopLength);
+        if (color !== undefined) data.color = color;
+        if (description !== undefined) data.description = description;
+
         const updatedBox = await prisma.catalogBox.update({
             where: { id },
-            data: {
-                name, brand, model, type,
-                reserveLoopLength: Number(reserveLoopLength),
-                color: color || '#64748b',
-                description
-            }
+            data
         });
 
-        // Propagate changes to existing CTOs (color, type, reserveLoopLength)
+        // Propagate changes to existing CTOs — only fields that were explicitly provided.
         try {
-            await prisma.cto.updateMany({
-                where: { catalogId: id, companyId: user.companyId, deletedAt: null },
-                data: { 
-                    color: color || '#64748b',
-                    type: type || 'CTO',
-                    reserveLoopLength: reserveLoopLength ? Number(reserveLoopLength) : null
-                }
-            });
+            const propagateData: any = {};
+            if (color !== undefined) propagateData.color = color;
+            if (type !== undefined) propagateData.type = type;
+            if (reserveLoopLength !== undefined) {
+                propagateData.reserveLoopLength = reserveLoopLength ? Number(reserveLoopLength) : null;
+            }
+            if (Object.keys(propagateData).length > 0) {
+                await prisma.cto.updateMany({
+                    where: { catalogId: id, companyId: user.companyId, deletedAt: null },
+                    data: propagateData
+                });
+            }
         } catch (propError) {
             logger.error(`[CatalogController] Error propagating box changes: ${propError}`);
             // Non-blocking error
@@ -407,9 +424,18 @@ export const updatePole = async (req: Request, res: Response) => {
         const exists = await prisma.catalogPole.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Pole not found" });
 
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (type !== undefined) data.type = type;
+        if (height !== undefined) data.height = Number(height);
+        if (strength !== undefined) data.strength = Number(strength);
+        if (shape !== undefined) data.shape = shape;
+        if (description !== undefined) data.description = description;
+
         const pole = await prisma.catalogPole.update({
             where: { id },
-            data: { name, type, height: Number(height), strength: Number(strength), shape, description }
+            data
         });
         res.json(pole);
     } catch (error) {
@@ -480,9 +506,16 @@ export const updateFusion = async (req: Request, res: Response) => {
         const exists = await prisma.catalogFusion.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "Fusion not found" });
 
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (attenuation !== undefined) data.attenuation = Number(attenuation);
+        if (category !== undefined) data.category = category;
+        if (polishType !== undefined) data.polishType = polishType;
+
         const fusion = await prisma.catalogFusion.update({
             where: { id },
-            data: { name, attenuation: Number(attenuation), category: category || exists.category, polishType: polishType !== undefined ? polishType : exists.polishType }
+            data
         });
         res.json(fusion);
     } catch (error) {
@@ -573,20 +606,23 @@ export const updateOLT = async (req: Request, res: Response) => {
         const exists = await prisma.catalogOLT.findFirst({ where: { id, companyId: user.companyId } });
         if (!exists) return res.status(404).json({ error: "OLT not found" });
 
-        const cleaned = sanitizePortPowers(portPowers);
+        // Partial update — only set fields explicitly provided in the body.
+        const data: any = {};
+        if (name !== undefined) data.name = name;
+        if (type !== undefined) data.type = type;
+        if (outputPower !== undefined) data.outputPower = Number(outputPower);
+        if (slots !== undefined) data.slots = Number(slots) || 1;
+        if (portsPerSlot !== undefined) data.portsPerSlot = Number(portsPerSlot);
+        if (uplinkPorts !== undefined) data.uplinkPorts = Number(uplinkPorts) || 0;
+        if (portPowers !== undefined) {
+            const cleaned = sanitizePortPowers(portPowers);
+            data.portPowers = cleaned ?? Prisma.JsonNull;
+        }
+        if (description !== undefined) data.description = description;
 
         const olt = await prisma.catalogOLT.update({
             where: { id },
-            data: {
-                name,
-                type,
-                outputPower: Number(outputPower),
-                slots: Number(slots) || 1,
-                portsPerSlot: Number(portsPerSlot),
-                uplinkPorts: Number(uplinkPorts) || 0,
-                portPowers: cleaned ?? Prisma.JsonNull,
-                description
-            }
+            data
         });
         res.json(olt);
     } catch (error) {

@@ -1173,29 +1173,36 @@ export const updateCTO = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'CTO not found in this project' });
         }
 
-        // Update single CTO
+        // Partial update — only set fields that are explicitly provided in the body.
+        // Sending an undefined field leaves it untouched (avoids wiping splitters/connections/layout
+        // when the client sends only { status, color }, etc.).
+        const data: any = {};
+        if (cto.name !== undefined) data.name = cto.name;
+        if (cto.status !== undefined) data.status = cto.status;
+        if (cto.coordinates?.lat !== undefined || cto.lat !== undefined) {
+            data.lat = cto.coordinates?.lat ?? cto.lat;
+        }
+        if (cto.coordinates?.lng !== undefined || cto.lng !== undefined) {
+            data.lng = cto.coordinates?.lng ?? cto.lng;
+        }
+        if (cto.splitters !== undefined) data.splitters = cto.splitters;
+        if (cto.fusions !== undefined) data.fusions = cto.fusions;
+        if (cto.dios !== undefined) data.dios = cto.dios;
+        if (cto.notes !== undefined) data.notes = cto.notes;
+        if (cto.connections !== undefined) data.connections = cto.connections;
+        if (cto.inputCableIds !== undefined) data.inputCableIds = cto.inputCableIds;
+        if (cto.layout !== undefined) data.layout = cto.layout;
+        if (cto.clientCount !== undefined) data.clientCount = cto.clientCount;
+        if (cto.catalogId !== undefined) data.catalogId = cto.catalogId;
+        if (cto.type !== undefined) data.type = cto.type;
+        if (cto.color !== undefined) data.color = cto.color;
+        if (cto.reserveLoopLength !== undefined) data.reserveLoopLength = cto.reserveLoopLength;
+        if (cto.poleId !== undefined) data.poleId = cto.poleId;
+        if (cto.building !== undefined) data.building = cto.building;
+
         const updated = await prisma.cto.update({
             where: { id: ctoId },
-            data: {
-                name: cto.name,
-                status: cto.status,
-                lat: cto.coordinates?.lat ?? cto.lat,
-                lng: cto.coordinates?.lng ?? cto.lng,
-                splitters: cto.splitters || [],
-                fusions: cto.fusions || [],
-                dios: cto.dios || [],
-                notes: cto.notes || [],
-                connections: cto.connections || [],
-                inputCableIds: cto.inputCableIds || [],
-                layout: cto.layout || {},
-                clientCount: cto.clientCount || 0,
-                catalogId: cto.catalogId || null,
-                type: cto.type,
-                color: cto.color,
-                reserveLoopLength: cto.reserveLoopLength,
-                poleId: cto.poleId || null,
-                building: cto.building ?? null
-            }
+            data
         });
 
         // Touch project updatedAt
@@ -1238,26 +1245,33 @@ export const updatePOP = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'POP not found in this project' });
         }
 
-        // Update single POP
+        // Partial update — only set fields that are explicitly provided in the body.
+        // Sending an undefined field leaves it untouched (avoids wiping olts/splitters/connections/layout
+        // when the client sends only { status, color }, etc.).
+        const data: any = {};
+        if (pop.name !== undefined) data.name = pop.name;
+        if (pop.status !== undefined) data.status = pop.status;
+        if (pop.coordinates?.lat !== undefined || pop.lat !== undefined) {
+            data.lat = pop.coordinates?.lat ?? pop.lat;
+        }
+        if (pop.coordinates?.lng !== undefined || pop.lng !== undefined) {
+            data.lng = pop.coordinates?.lng ?? pop.lng;
+        }
+        if (pop.olts !== undefined) data.olts = pop.olts;
+        if (pop.dios !== undefined) data.dios = pop.dios;
+        if (pop.switches !== undefined) data.switches = pop.switches;
+        if (pop.splitters !== undefined) data.splitters = pop.splitters;
+        if (pop.fusions !== undefined) data.fusions = pop.fusions;
+        if (pop.connections !== undefined) data.connections = pop.connections;
+        if (pop.inputCableIds !== undefined) data.inputCableIds = pop.inputCableIds;
+        if (pop.layout !== undefined) data.layout = pop.layout;
+        if (pop.color !== undefined) data.color = pop.color;
+        if (pop.size !== undefined) data.size = pop.size;
+        if (pop.poleId !== undefined) data.poleId = pop.poleId;
+
         const updated = await prisma.pop.update({
             where: { id: popId },
-            data: {
-                name: pop.name,
-                status: pop.status,
-                lat: pop.coordinates?.lat ?? pop.lat,
-                lng: pop.coordinates?.lng ?? pop.lng,
-                olts: pop.olts || [],
-                dios: pop.dios || [],
-                switches: pop.switches || [],
-                splitters: pop.splitters || [],
-                fusions: pop.fusions || [],
-                connections: pop.connections || [],
-                inputCableIds: pop.inputCableIds || [],
-                layout: pop.layout || {},
-                color: pop.color,
-                size: pop.size,
-                poleId: pop.poleId || null
-            }
+            data
         });
 
         // Touch project updatedAt
