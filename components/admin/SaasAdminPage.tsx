@@ -456,6 +456,19 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         onConfirm: () => void;
     }>({ isOpen: false, title: '', message: '', variant: 'danger', onConfirm: () => {} });
 
+    // Which company's "Cortesia" popover is open (null = none)
+    const [trustMenuOpenFor, setTrustMenuOpenFor] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!trustMenuOpenFor) return;
+        const close = (e: MouseEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target?.closest('[data-trust-menu]')) setTrustMenuOpenFor(null);
+        };
+        document.addEventListener('mousedown', close);
+        return () => document.removeEventListener('mousedown', close);
+    }, [trustMenuOpenFor]);
+
     const showConfirm = (title: string, message: string, onConfirm: () => void, variant: 'danger' | 'warning' | 'info' = 'danger') => {
         setConfirmDialog({ isOpen: true, title, message, variant, onConfirm });
     };
@@ -618,6 +631,21 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             console.error('Failed to update company', error);
             showAlert('Failed to update company', 'error');
         }
+    };
+
+    // Desbloqueio de confiança: reativa a empresa e estende `subscriptionExpiresAt`
+    // por N dias. Faturas em aberto permanecem OVERDUE — o cliente continua devendo.
+    const handleTrustUnlock = (id: string, name: string, days: number) => {
+        setTrustMenuOpenFor(null);
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + days);
+        expiry.setHours(23, 59, 59, 999);
+        showConfirm(
+            'Desbloqueio de Confiança',
+            `Liberar acesso de "${name}" por ${days} dia${days > 1 ? 's' : ''}? Faturas em aberto permanecem pendentes; após esse prazo o sistema suspende novamente se não houver pagamento.`,
+            () => handleCompanyUpdate(id, { status: 'ACTIVE', subscriptionExpiresAt: expiry.toISOString() }),
+            'info'
+        );
     };
 
     const handleSaaSConfigUpdate = async (updates: Partial<SaaSConfig>) => {
@@ -1421,12 +1449,37 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 Suspender
                                                             </button>
                                                         ) : (
-                                                            <button
-                                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${company.name}"? O acesso será liberado.`, () => handleCompanyUpdate(company.id, { status: 'ACTIVE' }), 'info')}
-                                                                className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
-                                                            >
-                                                                Reativar
-                                                            </button>
+                                                            <>
+                                                                <button
+                                                                    onClick={() => showConfirm('Reativar Empresa', `Reativar "${company.name}"? O acesso será liberado.`, () => handleCompanyUpdate(company.id, { status: 'ACTIVE' }), 'info')}
+                                                                    className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800"
+                                                                >
+                                                                    Reativar
+                                                                </button>
+                                                                <div className="relative" data-trust-menu>
+                                                                    <button
+                                                                        onClick={() => setTrustMenuOpenFor(trustMenuOpenFor === company.id ? null : company.id)}
+                                                                        title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
+                                                                        className="flex items-center gap-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-amber-200 dark:hover:border-amber-800"
+                                                                    >
+                                                                        Cortesia
+                                                                        <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuOpenFor === company.id ? 'rotate-90' : ''}`} />
+                                                                    </button>
+                                                                    {trustMenuOpenFor === company.id && (
+                                                                        <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[140px]">
+                                                                            {[1, 3, 5, 7].map(days => (
+                                                                                <button
+                                                                                    key={days}
+                                                                                    onClick={() => handleTrustUnlock(company.id, company.name, days)}
+                                                                                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                                                                                >
+                                                                                    Liberar por {days} {days === 1 ? 'dia' : 'dias'}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </>
                                                         )}
                                                         <button
                                                             onClick={() => { setSelectedCompany(company); setCompanyDetailTab('overview'); }}
@@ -2572,13 +2625,39 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 {t('saas_suspend')}
                                             </button>
                                         ) : (
-                                            <button
-                                                onClick={() => showConfirm('Reativar Empresa', `Reativar "${selectedCompany.name}"? O acesso será liberado.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' }), 'info')}
-                                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
-                                            >
-                                                <Shield className="w-3.5 h-3.5" />
-                                                {t('saas_activate')}
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => showConfirm('Reativar Empresa', `Reativar "${selectedCompany.name}"? O acesso será liberado.`, () => handleCompanyUpdate(selectedCompany.id, { status: 'ACTIVE' }), 'info')}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 transition-colors"
+                                                >
+                                                    <Shield className="w-3.5 h-3.5" />
+                                                    {t('saas_activate')}
+                                                </button>
+                                                <div className="relative" data-trust-menu>
+                                                    <button
+                                                        onClick={() => setTrustMenuOpenFor(trustMenuOpenFor === selectedCompany.id ? null : selectedCompany.id)}
+                                                        title="Desbloqueio de confiança — libera por alguns dias mantendo a fatura em aberto"
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 text-amber-600 rounded-lg text-xs font-bold border border-amber-100 dark:border-amber-900/50 hover:bg-amber-100 transition-colors"
+                                                    >
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        Cortesia
+                                                        <ChevronRight className={`w-3 h-3 transition-transform ${trustMenuOpenFor === selectedCompany.id ? 'rotate-90' : ''}`} />
+                                                    </button>
+                                                    {trustMenuOpenFor === selectedCompany.id && (
+                                                        <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]">
+                                                            {[1, 3, 5, 7].map(days => (
+                                                                <button
+                                                                    key={days}
+                                                                    onClick={() => handleTrustUnlock(selectedCompany.id, selectedCompany.name, days)}
+                                                                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                                                                >
+                                                                    Liberar por {days} {days === 1 ? 'dia' : 'dias'}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
                                         )}
                                         <button
                                             onClick={() => handleCompanyDelete(selectedCompany)}
