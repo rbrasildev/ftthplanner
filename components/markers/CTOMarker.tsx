@@ -254,7 +254,7 @@ export const CTOMarker = React.memo(({
             center={[cto.coordinates.lat, cto.coordinates.lng]}
             radius={circleRadius}
             pathOptions={pathOptions}
-            pane="markerPane"
+            pane="cto-circles-pane"
             eventHandlers={eventHandlers}
         >
             <Tooltip

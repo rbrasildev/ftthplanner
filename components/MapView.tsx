@@ -1550,6 +1550,11 @@ export const MapView: React.FC<MapViewProps> = ({
             >
                 <ZoomControl position="bottomleft" />
 
+                {/* Dedicated pane for CTO CircleMarkers — sits above cables (overlay/d3-visual)
+                    and below regular markers (POPs, poles, customers in markerPane=600),
+                    so canvas-based circle hit-testing doesn't steal clicks from divIcon markers. */}
+                <Pane name="cto-circles-pane" style={{ zIndex: 550 }} />
+
                 <MapJumpController viewKey={viewKey} />
 
                 <MapResizeHandler />
