@@ -966,6 +966,23 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         }
     };
 
+    const [runningReminders, setRunningReminders] = useState(false);
+    const handleRunBillingReminders = async () => {
+        setRunningReminders(true);
+        try {
+            const res = await saasService.runBillingReminders();
+            const s = res.stats || {};
+            showAlert(
+                `Lembretes processados — vencendo em breve: ${s.soon || 0}, hoje: ${s.today || 0}, em atraso: ${s.overdue || 0}, ignorados: ${s.skipped || 0}, falhas: ${s.failed || 0}`,
+                'success'
+            );
+        } catch (error: any) {
+            showAlert(error.response?.data?.error || 'Falha ao processar lembretes de cobrança', 'error');
+        } finally {
+            setRunningReminders(false);
+        }
+    };
+
     const handleSaveTemplate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -2161,9 +2178,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </div>
                                                 <h2 className="text-lg font-bold">{t('saas_email_templates')}</h2>
                                             </div>
-                                            <button onClick={() => openTemplateModal()} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
-                                                <Zap className="w-4 h-4" />
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={handleRunBillingReminders}
+                                                    disabled={runningReminders}
+                                                    title="Disparar lembretes de cobrança agora (mesma lógica do cron diário 08:00)"
+                                                    className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <CalendarClock className="w-4 h-4" />
+                                                    {runningReminders ? 'Processando...' : 'Disparar Cobranças'}
+                                                </button>
+                                                <button onClick={() => openTemplateModal()} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                                    <Zap className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="space-y-3">

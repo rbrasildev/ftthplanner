@@ -717,7 +717,26 @@ model SaaSConfig {
   socialTwitter   String?  @map("social_twitter")
   socialYoutube   String?  @map("social_youtube")
 
+  billingReminderEnabled     Boolean @default(true) @map("billing_reminder_enabled")
+  billingReminderDaysBefore  Int     @default(5)    @map("billing_reminder_days_before")
+  billingOverdueIntervalDays Int     @default(3)    @map("billing_overdue_interval_days")
+
   @@map("saas_configs")
+}
+
+model EmailLog {
+  id             String   @id @default(uuid())
+  templateSlug   String   @map("template_slug")
+  targetType     String   @map("target_type")
+  targetId       String   @map("target_id")
+  recipientEmail String   @map("recipient_email")
+  status         String   @default("SENT")
+  errorMessage   String?  @map("error_message")
+  sentAt         DateTime @default(now()) @map("sent_at")
+
+  @@index([templateSlug, targetId, sentAt])
+  @@index([sentAt])
+  @@map("email_logs")
 }
 
 enum EquipmentStatus {

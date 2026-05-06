@@ -154,6 +154,11 @@ export const sendTemplate = async (data: { templateId: string, targetType: strin
     return response.data;
 };
 
+export const runBillingReminders = async () => {
+    const response = await api.post('/saas/email/billing-reminders/run');
+    return response.data;
+};
+
 // SaaS Global Config
 export const getSaaSConfig = async () => {
     const response = await api.get('/saas/config');

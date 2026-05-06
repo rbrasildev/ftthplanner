@@ -4,6 +4,7 @@ import { executeAutomations } from '../services/automationService';
 import { prisma } from '../lib/prisma';
 import { startOfTodayUTC } from '../lib/subscriptionUtils';
 import { SgpService } from '../integrations/sgp/sgp.service';
+import { processBillingReminders } from '../services/billingReminderService';
 
 export const initCronJobs = () => {
     // Run daily at 02:00 AM for retention
@@ -29,6 +30,16 @@ export const initCronJobs = () => {
         console.log('[Cron] Running full daily SGP synchronization...');
         await SgpService.runDailySync();
         console.log('[Cron] Full SGP daily sync completed.');
+    });
+
+    // Daily at 08:00 UTC for billing reminder emails
+    cron.schedule('0 8 * * *', async () => {
+        console.log('[Cron] Running billing reminders...');
+        try {
+            await processBillingReminders();
+        } catch (error) {
+            console.error('[Cron Error] Billing reminders failed:', error);
+        }
     });
 
     // Run every hour to check for expired invoices and subscriptions

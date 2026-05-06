@@ -3,7 +3,7 @@ import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject, getCompanyInvoices, markInvoicePaid } from '../controllers/saasController';
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
-import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate } from '../controllers/emailController';
+import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate, runBillingReminders } from '../controllers/emailController';
 import { getRetentionDashboard, processRetentionManual } from '../controllers/retentionController';
 
 const router = express.Router();
@@ -61,6 +61,7 @@ router.post('/email/templates', authenticateToken, requireSuperAdmin, createEmai
 router.put('/email/templates/:id', authenticateToken, requireSuperAdmin, updateEmailTemplate);
 router.delete('/email/templates/:id', authenticateToken, requireSuperAdmin, deleteEmailTemplate);
 router.post('/email/send', authenticateToken, requireSuperAdmin, sendTemplate);
+router.post('/email/billing-reminders/run', authenticateToken, requireSuperAdmin, runBillingReminders);
 
 // Retention Intelligence
 router.get('/retention', authenticateToken, requireSuperAdmin, getRetentionDashboard);

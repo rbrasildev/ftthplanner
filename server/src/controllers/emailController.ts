@@ -4,6 +4,8 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { testSmtpConnection, sendEmail } from '../services/emailService';
+import { buildBillingVars } from '../services/billingEmailVars';
+import { processBillingReminders } from '../services/billingReminderService';
 import logger from '../lib/logger';
 
 // SMTP Config
@@ -155,19 +157,19 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
         if (targetType === 'ALL') {
             users = await prisma.user.findMany({
                 where: { active: true, email: { not: '' } },
-                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
+                select: { email: true, username: true, companyId: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'COMPANY') {
             if (!targetId) return res.status(400).json({ error: 'targetId é obrigatório para o tipo COMPANY' });
             users = await prisma.user.findMany({
                 where: { companyId: targetId, active: true, email: { not: '' } },
-                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
+                select: { email: true, username: true, companyId: true, company: { select: { name: true, logoUrl: true } } }
             });
         } else if (targetType === 'USER') {
             if (!targetId) return res.status(400).json({ error: 'targetId é obrigatório para o tipo USER' });
             const user = await prisma.user.findUnique({
                 where: { id: targetId },
-                select: { email: true, username: true, company: { select: { name: true, logoUrl: true } } }
+                select: { email: true, username: true, companyId: true, company: { select: { name: true, logoUrl: true } } }
             });
             if (user && user.email) users = [user];
         } else {
@@ -181,15 +183,17 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
         const loginUrl = (process.env.APP_URL || process.env.FRONTEND_URL || 'https://ftthplanner.com.br').replace(/\/$/, '');
 
         // Send emails
-        await Promise.all(users.map(user =>
-            sendEmail(template.slug, user.email, {
+        await Promise.all(users.map(async user => {
+            const billingVars = await buildBillingVars(template.slug, user.companyId ?? null);
+            return sendEmail(template.slug, user.email, {
                 username: user.username,
                 company_name: user.company?.name || '',
                 company_logo: user.company?.logoUrl || '',
                 login_url: loginUrl,
-                app_url: loginUrl
-            }).catch((err: Error) => logger.error(`Failed to send targeted email to ${user.email}: ${err.message}`))
-        ));
+                app_url: loginUrl,
+                ...billingVars
+            }).catch((err: Error) => logger.error(`Failed to send targeted email to ${user.email}: ${err.message}`));
+        }));
 
         res.json({
             success: true,
@@ -205,5 +209,19 @@ export const sendTemplate = async (req: AuthRequest, res: Response) => {
     } catch (error) {
         logger.error(`Send template failed: ${error instanceof Error ? error.message : String(error)}`);
         res.status(500).json({ error: 'Falha ao processar o envio do template' });
+    }
+};
+
+export const runBillingReminders = async (req: AuthRequest, res: Response) => {
+    try {
+        const stats = await processBillingReminders();
+        if (req.user?.id) {
+            const { logAudit } = require('./auditController');
+            await logAudit(req.user.id, 'RUN_BILLING_REMINDERS', 'BillingReminder', null, stats, req.ip);
+        }
+        res.json({ success: true, stats });
+    } catch (error) {
+        logger.error(`Billing reminders failed: ${error instanceof Error ? error.message : String(error)}`);
+        res.status(500).json({ error: 'Falha ao processar os lembretes de cobrança' });
     }
 };

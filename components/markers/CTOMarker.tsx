@@ -54,7 +54,7 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
                 const wy = 9 + row * 5;
                 return `<rect x="${wx}" y="${wy}" width="3" height="3" rx="0.3" fill="white" fill-opacity="0.9" />`;
             }).join('')
-          ).join('')}
+        ).join('')}
           <!-- Door -->
           <rect x="10" y="29" width="4" height="5" fill="${borderHex}" />
         </svg>
