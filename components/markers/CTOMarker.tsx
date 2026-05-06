@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Marker, Tooltip } from 'react-leaflet';
+import { CircleMarker, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
@@ -157,9 +157,37 @@ export const CTOMarker = React.memo(({
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline
 }: CTOMarkerProps) => {
     const isVerticalCondo = !!cto.building;
-    const icon = useMemo(() =>
-        createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo),
-        [cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo]);
+    const isDragMode = mode === 'move_node' && userRole !== 'MEMBER';
+
+    const icon = useMemo(() => {
+        if (!isDragMode) return null;
+        return createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo);
+    }, [isDragMode, cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo]);
+
+    const pathOptions = useMemo(() => {
+        let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+        if (isOnline === true) statusColor = '#22c55e';
+        else if (isOnline === false) statusColor = '#ef4444';
+        const fill = statusColor.substring(0, 7);
+        return {
+            color: isSelected ? '#22c55e' : fill,
+            fillColor: fill,
+            fillOpacity: 0.85,
+            weight: isSelected ? 3 : 2,
+        };
+    }, [cto.status, isOnline, isSelected]);
+
+    const circleRadius = useMemo(() => {
+        const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));
+        return Math.round(9 * zoomScale);
+    }, [currentZoom]);
+
+    // Visibility tiers — keeps the map readable in dense clusters:
+    // selected always wins (provided we're zoomed enough to give it room),
+    // the global toggle requires more zoom because it affects every CTO at once.
+    const shouldShowPermanentLabel = isSelected
+        ? currentZoom >= 17
+        : showLabels && currentZoom >= 19;
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -205,17 +233,39 @@ export const CTOMarker = React.memo(({
         }
     }, [mode, userRole]);
 
+    if (isDragMode && icon) {
+        return (
+            <Marker
+                ref={markerRef}
+                position={[cto.coordinates.lat, cto.coordinates.lng]}
+                icon={icon}
+                draggable={true}
+                eventHandlers={eventHandlers}
+            >
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                    <div className="text-xs font-bold">{cto.name}</div>
+                </Tooltip>
+            </Marker>
+        );
+    }
+
     return (
-        <Marker
-            ref={markerRef}
-            position={[cto.coordinates.lat, cto.coordinates.lng]}
-            icon={icon}
-            draggable={mode === 'move_node' && userRole !== 'MEMBER'}
+        <CircleMarker
+            center={[cto.coordinates.lat, cto.coordinates.lng]}
+            radius={circleRadius}
+            pathOptions={pathOptions}
+            pane="markerPane"
             eventHandlers={eventHandlers}
         >
-            <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                <div className="text-xs font-bold">{cto.name}</div>
+            <Tooltip
+                direction="top"
+                offset={[0, -circleRadius]}
+                opacity={1}
+                permanent={shouldShowPermanentLabel}
+                className={`cto-label${shouldShowPermanentLabel ? ' cto-label--permanent' : ''}${isSelected ? ' cto-label--selected' : ''}`}
+            >
+                {cto.name}
             </Tooltip>
-        </Marker>
+        </CircleMarker>
     );
 });

@@ -263,6 +263,33 @@
     .fiber-flow.reverse {
       animation-direction: reverse;
     }
+
+    /* CTO label tooltip — small, legible, no chrome */
+    .leaflet-tooltip.cto-label {
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      border: none;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+    .leaflet-tooltip.cto-label::before {
+      display: none;
+    }
+    .leaflet-tooltip.cto-label.cto-label--selected {
+      background: rgba(22, 163, 74, 0.95);
+      color: #ffffff;
+    }
+    /* Instant hide when label toggle is off — affects only permanent labels;
+       hover tooltips keep working since they don't carry the --permanent modifier */
+    .leaflet-container.labels-off .leaflet-tooltip.cto-label--permanent:not(.cto-label--selected) {
+      display: none;
+    }
   </style>
   <script type="importmap">
 {

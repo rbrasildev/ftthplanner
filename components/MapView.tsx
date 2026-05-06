@@ -487,9 +487,15 @@ const BoundsUpdater = ({
         [map, setBounds, setZoom]
     );
 
+    const updateZoomFast = useMemo(
+        () => debounce(() => setZoom(map.getZoom()), 50),
+        [map, setZoom]
+    );
+
     useMapEvents({
         moveend: () => updateMapState(),
-        zoomend: () => updateMapState()
+        zoomend: () => updateMapState(),
+        zoom: () => updateZoomFast()
     });
 
     useEffect(() => {
@@ -1535,7 +1541,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 zoom={initialZoom || 15}
                 maxZoom={24}
                 style={{ height: '100%', width: '100%' }}
-                className="z-0"
+                className={`z-0${showLabels ? '' : ' labels-off'}`}
                 preferCanvas={true}
                 zoomControl={false}
                 zoomAnimation={true}
