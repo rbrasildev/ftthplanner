@@ -6,15 +6,18 @@ import { POPData } from '../../types';
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
 
-const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = true, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18) => {
-    const effectiveZoom = Math.floor(currentZoom);
-    const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
-    const size = Math.round(baseSize * zoomScale);
-    const borderSize = Math.max(2, Math.round(2.5 * zoomScale));
-    const pulseSize = Math.round(size * 2.2);
-    const iconSize = Math.round(size * 0.5);
+// Returns icon size (used both for divIcon dims and Tooltip offset).
+const getPOPSize = (baseSize: number, currentZoom: number) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));
+    return Math.round(baseSize * zoomScale);
+};
 
-    const cacheKey = `pop-${name}-${isSelected}-${showLabels}-${color}-${baseSize}-${effectiveZoom}`;
+const createPOPIcon = (isSelected: boolean, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18) => {
+    const effectiveZoom = Math.floor(currentZoom);
+    const size = getPOPSize(baseSize, effectiveZoom);
+    const pulseSize = Math.round(size * 2.2);
+
+    const cacheKey = `pop-${isSelected}-${color}-${baseSize}-${effectiveZoom}`;
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
 
     const icon = L.divIcon({
@@ -41,24 +44,6 @@ const createPOPIcon = (name: string, isSelected: boolean, showLabels: boolean = 
           <path d="M10 18h4" stroke="white" stroke-width="2"/>
         </svg>
       </div>
-      <div style="
-        display:${showLabels ? 'block' : 'none'};
-        position:absolute;
-        top:${size + 3}px;
-        left:50%;
-        transform:translateX(-50%);
-        background:rgba(15,23,42,0.92);
-        color:white;
-        padding:2px 6px;
-        border-radius:4px;
-        font-size:${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
-        font-weight:700;
-        letter-spacing:0.01em;
-        white-space:nowrap;
-        pointer-events:none;
-        box-shadow:0 1px 3px rgba(0,0,0,0.3);
-        z-index:20;
-      ">${name}</div>
 `,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2]
@@ -91,8 +76,11 @@ export const POPMarker = React.memo(({
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole
 }: POPMarkerProps) => {
     const icon = useMemo(() =>
-        createPOPIcon(pop.name, isSelected, showLabels, pop.color, pop.size, currentZoom),
-        [pop.name, isSelected, showLabels, pop.color, pop.size, currentZoom]);
+        createPOPIcon(isSelected, pop.color, pop.size, currentZoom),
+        [isSelected, pop.color, pop.size, currentZoom]);
+
+    const popSize = getPOPSize(pop.size || 24, currentZoom);
+    const shouldShowPermanentLabel = isSelected || showLabels;
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -142,8 +130,14 @@ export const POPMarker = React.memo(({
             draggable={mode === 'move_node' && userRole !== 'MEMBER'}
             eventHandlers={eventHandlers}
         >
-            <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                <div className="text-xs font-bold">{pop.name}</div>
+            <Tooltip
+                direction="top"
+                offset={[0, -popSize / 2]}
+                opacity={1}
+                permanent={shouldShowPermanentLabel}
+                className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
+            >
+                {pop.name}
             </Tooltip>
         </Marker>
     );

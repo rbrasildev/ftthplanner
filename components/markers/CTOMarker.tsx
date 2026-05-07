@@ -182,12 +182,10 @@ export const CTOMarker = React.memo(({
         return Math.round(9 * zoomScale);
     }, [currentZoom]);
 
-    // Visibility tiers — keeps the map readable in dense clusters:
-    // selected always wins (provided we're zoomed enough to give it room),
-    // the global toggle requires more zoom because it affects every CTO at once.
-    const shouldShowPermanentLabel = isSelected
-        ? currentZoom >= 17
-        : showLabels && currentZoom >= 19;
+    // Selected CTO always shows label; otherwise honor the global toggle.
+    // MapView already gates `showLabels` at zoom > 16 via `effectiveShowLabels`,
+    // so no extra zoom check is needed here.
+    const shouldShowPermanentLabel = isSelected || showLabels;
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -242,8 +240,13 @@ export const CTOMarker = React.memo(({
                 draggable={true}
                 eventHandlers={eventHandlers}
             >
-                <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                    <div className="text-xs font-bold">{cto.name}</div>
+                <Tooltip
+                    direction="top"
+                    offset={[0, -10]}
+                    opacity={1}
+                    className={`map-label${isSelected ? ' map-label--selected' : ''}`}
+                >
+                    {cto.name}
                 </Tooltip>
             </Marker>
         );
@@ -262,7 +265,7 @@ export const CTOMarker = React.memo(({
                 offset={[0, -circleRadius]}
                 opacity={1}
                 permanent={shouldShowPermanentLabel}
-                className={`cto-label${shouldShowPermanentLabel ? ' cto-label--permanent' : ''}${isSelected ? ' cto-label--selected' : ''}`}
+                className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
             >
                 {cto.name}
             </Tooltip>

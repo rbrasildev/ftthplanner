@@ -505,6 +505,18 @@ const BoundsUpdater = ({
     return null;
 };
 
+// Toggles a class on the leaflet-container so CSS can instantly hide permanent
+// labels without waiting for React to unmount thousands of Tooltips.
+// MapContainer's className prop isn't reactive after mount, so we set it manually.
+const LabelsToggleClass = ({ showLabels }: { showLabels: boolean }) => {
+    const map = useMap();
+    useEffect(() => {
+        const container = map.getContainer();
+        container.classList.toggle('labels-off', !showLabels);
+    }, [map, showLabels]);
+    return null;
+};
+
 // --- MAP JUMP LOGIC (FOR LOCATE ON MAP) ---
 const MapJumpController = ({ viewKey }: { viewKey?: string }) => {
     const map = useMap();
@@ -1541,7 +1553,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 zoom={initialZoom || 15}
                 maxZoom={24}
                 style={{ height: '100%', width: '100%' }}
-                className={`z-0${showLabels ? '' : ' labels-off'}`}
+                className="z-0"
                 preferCanvas={true}
                 zoomControl={false}
                 zoomAnimation={true}
@@ -1549,6 +1561,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 markerZoomAnimation={true}
             >
                 <ZoomControl position="bottomleft" />
+
+                <LabelsToggleClass showLabels={showLabels} />
 
                 {/* Dedicated pane for CTO CircleMarkers — sits above cables (overlay/d3-visual)
                     and below regular markers (POPs, poles, customers in markerPane=600),

@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Marker } from 'react-leaflet';
+import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { PoleData, PoleApprovalStatus, POLE_APPROVAL_COLORS, PoleSituation, POLE_SITUATION_COLORS } from '../../types';
 
@@ -15,21 +15,24 @@ const getApprovalColor = (approvalStatus?: PoleApprovalStatus, situation?: PoleS
     return '#6b7280';
 };
 
+const POLE_BASE_SIZE = 9;
+const getPoleSize = (currentZoom: number) => {
+    const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));
+    return Math.round(POLE_BASE_SIZE * zoomScale);
+};
+
 const createPoleIcon = (
     isSelected: boolean,
-    showLabels: boolean = false,
     type: string = 'concrete',
     currentZoom: number = 18,
     approvalStatus?: PoleApprovalStatus,
     situation?: PoleSituation,
-    poleName?: string,
 ) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
-    const baseSize = 9;
-    const size = Math.round(baseSize * zoomScale);
+    const size = getPoleSize(effectiveZoom);
 
-    const cacheKey = `pole-${type}-${isSelected}-${showLabels}-${effectiveZoom}-${approvalStatus || 'none'}-${situation || 'none'}`;
+    const cacheKey = `pole-${type}-${isSelected}-${effectiveZoom}-${approvalStatus || 'none'}-${situation || 'none'}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
@@ -52,7 +55,6 @@ const createPoleIcon = (
         z-index: 5;
       ">
       </div>
-      ${showLabels ? `<div style="position: absolute; top: ${size + 2}px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 1px 3px; font-size: ${Math.max(7, Math.round(8 * Math.min(1.5, zoomScale)))}px; border-radius: 2px; white-space: nowrap;">Poste</div>` : ''}
     `,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2]
@@ -86,8 +88,11 @@ export const PoleMarker = React.memo(({
     onDragStart, onDrag, onDragEnd, onContextMenu
 }: PoleMarkerProps) => {
     const icon = useMemo(() =>
-        createPoleIcon(isSelected, showLabels, pole.type, currentZoom, pole.approvalStatus, pole.situation, pole.name),
-        [isSelected, showLabels, pole.type, currentZoom, pole.approvalStatus, pole.situation]);
+        createPoleIcon(isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation),
+        [isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation]);
+
+    const poleSize = getPoleSize(currentZoom);
+    const shouldShowPermanentLabel = isSelected || showLabels;
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -142,6 +147,15 @@ export const PoleMarker = React.memo(({
             draggable={mode === 'move_node'}
             eventHandlers={eventHandlers}
         >
+            <Tooltip
+                direction="top"
+                offset={[0, -poleSize / 2]}
+                opacity={1}
+                permanent={shouldShowPermanentLabel}
+                className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
+            >
+                Poste
+            </Tooltip>
         </Marker>
     );
 });
