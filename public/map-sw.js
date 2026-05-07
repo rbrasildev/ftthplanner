@@ -4,6 +4,12 @@ const TILE_URLS = [
     'server.arcgisonline.com'
 ];
 
+// Take control of open tabs as soon as a new SW activates, so users get bug fixes
+// without having to fully close & reopen the browser.
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
     const url = event.request.url;
 
@@ -25,11 +31,14 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.filter((name) => name !== CACHE_NAME)
-                    .map((name) => caches.delete(name))
-            );
-        })
+        Promise.all([
+            caches.keys().then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.filter((name) => name !== CACHE_NAME)
+                        .map((name) => caches.delete(name))
+                );
+            }),
+            self.clients.claim(),
+        ])
     );
 });
