@@ -1123,7 +1123,7 @@ export const MapView: React.FC<MapViewProps> = ({
             .map(({ cable }) => cable);
     }, [showCables, showCableBackbone, showCableDistribution, showCableDrop, cablesWithBBox, mapBoundsState, cables]);
 
-    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole', targetType?: "CTO" | "POP" } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, id: string, type: 'CABLE' | 'CTO' | 'POP' | 'Pole', targetType?: "CTO" | "POP" | "Pole" } | null>(null);
 
     const [mapContextMenu, setMapContextMenu] = useState<{
         x: number,
@@ -1304,8 +1304,8 @@ export const MapView: React.FC<MapViewProps> = ({
         const clientY = e.originalEvent.clientY;
         const latlng = e.latlng;
 
-        // Tenta detectar se o clique foi perto de um POP para mudar o rótulo de conexão
-        let targetType: "CTO" | "POP" | undefined = undefined;
+        // Tenta detectar se o clique foi perto de um POP/CTO/Poste para mudar o rótulo de conexão
+        let targetType: "CTO" | "POP" | "Pole" | undefined = undefined;
         if (latlng) {
             const snapLimit = 15; // 15 metros de tolerância para o rótulo
             const nearPOP = pops.some(p => {
@@ -1319,12 +1319,20 @@ export const MapView: React.FC<MapViewProps> = ({
                     const cLatLng = L.latLng(c.coordinates.lat, c.coordinates.lng);
                     return latlng.distanceTo(cLatLng) < snapLimit;
                 });
-                if (nearCTO) targetType = "CTO";
+                if (nearCTO) {
+                    targetType = "CTO";
+                } else {
+                    const nearPole = poles.some(p => {
+                        const pLatLng = L.latLng(p.coordinates.lat, p.coordinates.lng);
+                        return latlng.distanceTo(pLatLng) < snapLimit;
+                    });
+                    if (nearPole) targetType = "Pole";
+                }
             }
         }
 
         setContextMenu({ x: clientX, y: clientY, id: cable.id, type: 'CABLE', targetType });
-    }, [pops, ctos]);
+    }, [pops, ctos, poles]);
 
     const handleNodeContextMenu = useCallback((e: any, id: string, type: 'CTO' | 'POP' | 'Pole') => {
         L.DomEvent.stopPropagation(e.originalEvent || e); // Ensure propagation stops

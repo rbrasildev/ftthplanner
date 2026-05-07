@@ -131,29 +131,46 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
             let updatedPOPs = prev.pops;
             let updatedPoles = prev.poles || [];
 
+            // Track linked cable IDs and which point indices to update — set when the
+            // moved node is a pole, since pole-cable links are stored in
+            // `pole.linkedCableIds` rather than `cable.fromNodeId/toNodeId`. Without
+            // this, cables anchored or terminated on a pole stay put when the pole moves.
+            let movedPole: typeof updatedPoles[number] | null = null;
+
             if (prev.ctos.some(c => c.id === id)) {
                 updatedCTOs = prev.ctos.map(c => c.id === id ? { ...c, coordinates: { lat, lng } } : c);
             } else if (prev.pops.some(p => p.id === id)) {
                 updatedPOPs = prev.pops.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p);
             } else if (updatedPoles.some(p => p.id === id)) {
+                movedPole = updatedPoles.find(p => p.id === id) || null;
                 updatedPoles = updatedPoles.map(p => p.id === id ? { ...p, coordinates: { lat, lng } } : p);
                 updatedCTOs = updatedCTOs.map(c => c.poleId === id ? { ...c, coordinates: { lat, lng } } : c);
                 updatedPOPs = updatedPOPs.map(p => p.poleId === id ? { ...p, coordinates: { lat, lng } } : p);
             }
 
-            // Only drag cable endpoints that are LOGICALLY connected to this node.
-            // The previous proximity-based fallback caused disconnected cables (whose
-            // endpoint coords were left at the old node position) to follow the node
-            // when moved, even though they were no longer attached.
+            const linkedCableIdsForPole = movedPole ? new Set(movedPole.linkedCableIds || []) : null;
+
             const updatedCables = prev.cables.map(cable => {
-                if (cable.fromNodeId !== id && cable.toNodeId !== id) return cable;
+                const isLogicallyConnected = cable.fromNodeId === id || cable.toNodeId === id;
+                const isPoleLinked = !!linkedCableIdsForPole && linkedCableIdsForPole.has(cable.id);
+                if (!isLogicallyConnected && !isPoleLinked) return cable;
+
                 const newCoords = [...cable.coordinates];
                 if (cable.fromNodeId === id) newCoords[0] = { lat, lng };
                 if (cable.toNodeId === id) newCoords[newCoords.length - 1] = { lat, lng };
+
+                // For pole-linked cables, the pole sits at one or more waypoint indices
+                // exactly equal to the pole's old coords (set on connect/anchor).
+                // Match by exact equality to avoid dragging coincidentally-nearby points.
+                if (isPoleLinked) {
+                    for (let i = 0; i < newCoords.length; i++) {
+                        if (newCoords[i].lat === oldLat && newCoords[i].lng === oldLng) {
+                            newCoords[i] = { lat, lng };
+                        }
+                    }
+                }
                 return { ...cable, coordinates: newCoords };
             });
-            // Suppress unused-var warnings now that the proximity branch is gone.
-            void oldLat; void oldLng;
 
             return { ...prev, ctos: updatedCTOs, pops: updatedPOPs, cables: updatedCables, poles: updatedPoles };
         });

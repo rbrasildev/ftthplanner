@@ -15,7 +15,7 @@ interface CableContextMenuProps {
     showReserveLabel?: boolean;
     onToggleReserve?: () => void;
     onPositionReserve?: () => void;
-    targetType?: "CTO" | "POP";
+    targetType?: "CTO" | "POP" | "Pole";
     cableName?: string;
     /** Fase 4: status óptico de switch links atravessando este cabo. */
     opticalStatus?: CableOpticalStatus;
@@ -101,7 +101,11 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
 
                 <MenuItem
                     icon={<Unplug className="w-3.5 h-3.5" />}
-                    label={targetType === 'POP' ? t('connect_to_pop') : t('connect_to_box')}
+                    label={
+                        targetType === 'POP' ? t('connect_to_pop')
+                        : targetType === 'Pole' ? t('connect_to_pole')
+                        : t('connect_to_box')
+                    }
                     iconColor="text-amber-500 dark:text-amber-400"
                     onClick={() => { if (onConnect) onConnect(); onClose(); }}
                 />

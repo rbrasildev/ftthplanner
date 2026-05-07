@@ -247,7 +247,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 else lineWidth = baseWidth;
 
                 const dashed = currentZoom >= LOD_HIDE_DASHED_ZOOM && cable.status === 'NOT_DEPLOYED';
-                const alpha = isLit ? 1 : 0.8;
+                const alpha = 1;
 
                 // Stroke.
                 ctx.beginPath();
