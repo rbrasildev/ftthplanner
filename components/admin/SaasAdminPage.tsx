@@ -529,6 +529,32 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
         return Math.min(Math.round((current / max) * 100), 100);
     };
 
+    // Formats the audit log `details` object into a human-readable line.
+    // When the backend resolves targetId → targetName, we display the name
+    // and hide the raw UUID; otherwise falls back to a compact key:value list.
+    const formatAuditDetails = (details: any): string => {
+        if (!details || typeof details !== 'object') return 'Sem detalhes';
+        const parts: string[] = [];
+        const targetName = details.targetName;
+        const targetType = details.targetType;
+        if (targetName) {
+            parts.push(targetType ? `→ ${targetName} (${targetType})` : `→ ${targetName}`);
+        } else if (targetType) {
+            parts.push(`alvo: ${targetType}`);
+        }
+        if (typeof details.count === 'number') {
+            parts.push(`${details.count} ${details.count === 1 ? 'destinatário' : 'destinatários'}`);
+        }
+        const skip = new Set(['targetName', 'targetId', 'targetType', 'count']);
+        for (const [k, v] of Object.entries(details)) {
+            if (skip.has(k)) continue;
+            if (v === null || v === undefined) continue;
+            const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            if (val.length > 0) parts.push(`${k}: ${val}`);
+        }
+        return parts.length > 0 ? parts.join(' · ') : 'Sem detalhes';
+    };
+
     // Most-recent login across all users in a company.
     // Used as the engagement signal in the "Última atividade" column.
     const getLastActivity = (company: Company): Date | null => {
@@ -1451,7 +1477,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 </span>
                                                             </div>
                                                             <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                                                                {log.details ? JSON.stringify(log.details).replace(/"/g, '').replace(/[{}]/g, '') : 'No details'}
+                                                                {formatAuditDetails(log.details)}
                                                             </p>
                                                             <p className="text-[10px] text-slate-400 mt-1">
                                                                 {new Date(log.createdAt).toLocaleDateString()}
@@ -1915,8 +1941,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         {log.entity} <span className="text-xs opacity-50">#{log.entityId?.slice(0, 6)}</span>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-[#151820] px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700/30 block w-full max-w-[200px] truncate" title={JSON.stringify(log.details)}>
-                                                            {JSON.stringify(log.details)}
+                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-[#151820] px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700/30 block w-full max-w-[260px] truncate" title={JSON.stringify(log.details)}>
+                                                            {formatAuditDetails(log.details)}
                                                         </code>
                                                     </td>
                                                 </tr>
