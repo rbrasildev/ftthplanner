@@ -1572,21 +1572,10 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <LabelsToggleClass showLabels={showLabels} />
 
-                {/* Dedicated panes for circle-style markers.
-                    CTOs are canvas-rendered (perf-driven, many of them) — the canvas
-                    captures pointer events across its whole area regardless of drawn
-                    content. Poles are SVG-rendered (each pole = own path), and the
-                    pole pane sits ABOVE the CTO canvas so that pole-area clicks reach
-                    the SVG path instead of being absorbed by the CTO canvas.
-
-                    The pole pane DIV uses pointer-events:none so empty areas fall
-                    through to the CTO canvas (and cables) underneath; Leaflet's CSS
-                    re-enables pointer-events on `.leaflet-interactive` paths inside
-                    the SVG, so clicks on actual poles still land. Without this, the
-                    pole pane DIV (full map size) would absorb every click outside a
-                    pole and CTO/POP/cable interactions would all break. */}
+                {/* Dedicated pane for canvas-rendered CTO CircleMarkers — sits above
+                    cables (overlay/d3-visual) and below regular markers (POPs, poles,
+                    customers in markerPane=600). */}
                 <Pane name="cto-circles-pane" style={{ zIndex: 550 }} />
-                <Pane name="pole-circles-pane" style={{ zIndex: 560, pointerEvents: 'none' }} />
 
                 <MapJumpController viewKey={viewKey} />
 

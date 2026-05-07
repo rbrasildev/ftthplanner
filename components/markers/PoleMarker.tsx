@@ -1,22 +1,7 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { CircleMarker, Marker, Tooltip, useMap } from 'react-leaflet';
+import { Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { PoleData, PoleApprovalStatus, POLE_APPROVAL_COLORS, PoleSituation, POLE_SITUATION_COLORS } from '../../types';
-
-// One SVG renderer per Leaflet map instance — created lazily inside the component
-// (after the map and `pole-circles-pane` exist) rather than at module-load time,
-// because the bundled production build can evaluate this module before the pane
-// has been created, leaving the renderer attached to a non-existent pane and
-// silently rendering paths without the `.leaflet-interactive` class.
-const poleRenderersByMap = new WeakMap<L.Map, L.Renderer>();
-const getPoleRenderer = (map: L.Map): L.Renderer => {
-    let renderer = poleRenderersByMap.get(map);
-    if (!renderer) {
-        renderer = L.svg({ pane: 'pole-circles-pane' });
-        poleRenderersByMap.set(map, renderer);
-    }
-    return renderer;
-};
 
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
@@ -102,39 +87,12 @@ export const PoleMarker = React.memo(({
     pole, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, cableStartPoint, isDrawingCable, onAddPoint, onMoveNode,
     onDragStart, onDrag, onDragEnd, onContextMenu
 }: PoleMarkerProps) => {
-    const map = useMap();
-    const isDragMode = mode === 'move_node';
-
-    // Only build the divIcon when we actually need it (drag mode) — view mode uses
-    // the lightweight CircleMarker, which doesn't need the cached divIcon.
-    const icon = useMemo(() => {
-        if (!isDragMode) return null;
-        return createPoleIcon(isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation);
-    }, [isDragMode, isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation]);
+    const icon = useMemo(() =>
+        createPoleIcon(isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation),
+        [isSelected, pole.type, currentZoom, pole.approvalStatus, pole.situation]);
 
     const poleSize = getPoleSize(currentZoom);
-    // Match the divIcon's visual footprint exactly so the swap to/from drag mode
-    // doesn't visibly resize the pole. The divIcon's outer div uses Tailwind's
-    // `box-sizing: border-box`, so its border lives INSIDE the `${poleSize}px`
-    // width — total visible diameter equals poleSize. CircleMarker's visible
-    // diameter is 2*radius + weight, hence radius = (poleSize - borderWidth) / 2
-    // with weight = borderWidth.
-    const zoomScaleForBorder = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));
-    const borderWidth = Math.max(2, 2.5 * zoomScaleForBorder);
-    const circleRadius = Math.max(2, (poleSize - borderWidth) / 2);
     const shouldShowPermanentLabel = isSelected || showLabels;
-
-    const pathOptions = useMemo(() => {
-        const fillColor = pole.type === 'wood' ? '#78350f' : '#57534e';
-        const borderColor = isSelected ? '#f59e0b' : getApprovalColor(pole.approvalStatus, pole.situation);
-        return {
-            color: borderColor,
-            fillColor,
-            fillOpacity: 1,
-            weight: borderWidth,
-            renderer: getPoleRenderer(map),
-        };
-    }, [map, pole.type, pole.approvalStatus, pole.situation, isSelected, borderWidth]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
@@ -181,44 +139,23 @@ export const PoleMarker = React.memo(({
         }
     }, [mode]);
 
-    if (isDragMode && icon) {
-        return (
-            <Marker
-                ref={markerRef}
-                position={[pole.coordinates.lat, pole.coordinates.lng]}
-                icon={icon}
-                draggable={true}
-                eventHandlers={eventHandlers}
-            >
-                <Tooltip
-                    direction="top"
-                    offset={[0, -poleSize / 2]}
-                    opacity={1}
-                    className={`map-label${isSelected ? ' map-label--selected' : ''}`}
-                >
-                    Poste
-                </Tooltip>
-            </Marker>
-        );
-    }
-
     return (
-        <CircleMarker
-            center={[pole.coordinates.lat, pole.coordinates.lng]}
-            radius={circleRadius}
-            pathOptions={pathOptions}
-            pane="pole-circles-pane"
+        <Marker
+            ref={markerRef}
+            position={[pole.coordinates.lat, pole.coordinates.lng]}
+            icon={icon}
+            draggable={mode === 'move_node'}
             eventHandlers={eventHandlers}
         >
             <Tooltip
                 direction="top"
-                offset={[0, -circleRadius]}
+                offset={[0, -poleSize / 2]}
                 opacity={1}
                 permanent={shouldShowPermanentLabel}
                 className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
             >
                 Poste
             </Tooltip>
-        </CircleMarker>
+        </Marker>
     );
 });
