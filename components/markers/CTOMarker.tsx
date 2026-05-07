@@ -10,6 +10,14 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
 const iconCache = new Map<string, L.DivIcon>();
 
+const darkenHex = (hex: string, factor: number = 0.7): string => {
+    const h = hex.startsWith('#') ? hex.substring(1, 7) : hex.substring(0, 6);
+    const r = Math.max(0, Math.round(parseInt(h.slice(0, 2), 16) * factor));
+    const g = Math.max(0, Math.round(parseInt(h.slice(2, 4), 16) * factor));
+    const b = Math.max(0, Math.round(parseInt(h.slice(4, 6), 16) * factor));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO', isVerticalCondo: boolean = false) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
@@ -139,7 +147,7 @@ export const CTOMarker = React.memo(({
         else if (isOnline === false) statusColor = '#ef4444';
         const fill = statusColor.substring(0, 7);
         return {
-            color: isSelected ? '#22c55e' : fill,
+            color: isSelected ? '#22c55e' : darkenHex(fill),
             fillColor: fill,
             fillOpacity: 0.85,
             weight: isSelected ? 3 : 2,

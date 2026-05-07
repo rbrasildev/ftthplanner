@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "Bash(grep -rn \"stroke-width-4\\\\|\\\\\\\\bhover:stroke\" d:/ftthplanner/components d:/ftthplanner/index.html d:/ftthplanner/index.css)"
     ]
   }
 }
