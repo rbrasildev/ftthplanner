@@ -53,19 +53,34 @@ export const initCronJobs = () => {
             // their due date has fully passed, not on the day itself.
             const startToday = startOfTodayUTC();
 
-            // 1. Expire PENDING Pix Invoices
-            const expiredInvoices = await prisma.invoice.updateMany({
+            // 1a. Expire one-shot Pix invoices (no billing period) — these are
+            // ad-hoc QR codes; if the customer didn't pay in time they're done.
+            const expiredOneShot = await prisma.invoice.updateMany({
                 where: {
                     status: 'PENDING',
-                    expiresAt: { lt: now }
+                    expiresAt: { lt: now },
+                    referenceStart: null
                 },
-                data: {
-                    status: 'EXPIRED'
-                }
+                data: { status: 'EXPIRED' }
             });
 
-            if (expiredInvoices.count > 0) {
-                console.log(`[Cron] Expired ${expiredInvoices.count} pending invoices.`);
+            // 1b. Subscription renewal invoices (with billing period) that
+            // weren't paid → OVERDUE. They represent unpaid debt, not just an
+            // expired QR, so they must remain visible in financial summaries.
+            const overduedRenewals = await prisma.invoice.updateMany({
+                where: {
+                    status: 'PENDING',
+                    expiresAt: { lt: now },
+                    referenceStart: { not: null }
+                },
+                data: { status: 'OVERDUE' }
+            });
+
+            if (expiredOneShot.count > 0) {
+                console.log(`[Cron] Expired ${expiredOneShot.count} one-shot Pix invoices.`);
+            }
+            if (overduedRenewals.count > 0) {
+                console.log(`[Cron] Marked ${overduedRenewals.count} renewal invoices as OVERDUE.`);
             }
 
             // 2. Suspend Companies with expired subscriptions
@@ -150,6 +165,71 @@ export const initCronJobs = () => {
 
         } catch (error) {
             console.error('[Cron Error] Failed to process expirations:', error);
+        }
+    });
+
+    // Daily 04:00 — pre-emit a PENDING renewal invoice ~5 days before
+    // `subscriptionExpiresAt`. Gives the customer something to pay BEFORE
+    // the due date, instead of waiting for OVERDUE generation. Idempotent
+    // via the `unique_billing_period` constraint.
+    const PRE_EMIT_DAYS_AHEAD = 5;
+    cron.schedule('0 4 * * *', async () => {
+        console.log('[Cron] Pre-emitting upcoming renewal invoices...');
+        try {
+            const startToday = startOfTodayUTC();
+            const windowEnd = new Date(startToday);
+            windowEnd.setDate(windowEnd.getDate() + PRE_EMIT_DAYS_AHEAD + 1); // exclusive
+
+            const upcoming = await prisma.company.findMany({
+                where: {
+                    status: 'ACTIVE',
+                    subscriptionExpiresAt: { gte: startToday, lt: windowEnd },
+                    planId: { not: null }
+                },
+                include: { plan: true }
+            });
+
+            let preEmitted = 0;
+            for (const company of upcoming) {
+                if (!company.plan || company.plan.price <= 0 || !company.subscriptionExpiresAt) continue;
+                if (company.plan.type === 'TRIAL') continue;
+
+                const periodStart = new Date(company.subscriptionExpiresAt);
+                const periodEnd = new Date(periodStart);
+                periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+                const existing = await prisma.invoice.findFirst({
+                    where: {
+                        companyId: company.id,
+                        referenceStart: periodStart,
+                        referenceEnd: periodEnd
+                    }
+                });
+                if (existing) continue;
+
+                await prisma.invoice.create({
+                    data: {
+                        companyId: company.id,
+                        planId: company.planId!,
+                        amount: company.plan.price,
+                        status: 'PENDING',
+                        paymentMethod: company.paymentMethod || 'PIX',
+                        // expiresAt = due date so the hourly cron flips it to
+                        // OVERDUE the moment the subscription lapses.
+                        expiresAt: periodStart,
+                        referenceStart: periodStart,
+                        referenceEnd: periodEnd
+                    }
+                });
+                preEmitted++;
+                console.log(`[Cron] Pre-emitted PENDING invoice for ${company.name} (vencimento ${periodStart.toISOString()})`);
+            }
+
+            if (preEmitted > 0) {
+                console.log(`[Cron] Pre-emitted ${preEmitted} renewal invoices.`);
+            }
+        } catch (error) {
+            console.error('[Cron Error] Failed to pre-emit renewal invoices:', error);
         }
     });
 };

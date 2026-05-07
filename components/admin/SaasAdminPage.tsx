@@ -233,6 +233,20 @@ const CustomLimitsEditor: React.FC<{
     );
 };
 
+// Maps stored paymentMethod codes to user-friendly PT-BR labels.
+// CREDIT_CARD/STRIPE both come from the Stripe flow (legacy invoices may have
+// either) — surface them as the same thing to the user.
+const formatPaymentMethod = (method: string | null | undefined): string => {
+    switch ((method || '').toUpperCase()) {
+        case 'PIX': return 'Pix';
+        case 'CREDIT_CARD':
+        case 'STRIPE': return 'Cartão de Crédito';
+        case 'MANUAL': return 'Manual';
+        case 'BOLETO': return 'Boleto';
+        default: return method || '—';
+    }
+};
+
 // --- Company Invoices Section (used in company detail panel) ---
 const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdueCount: number, overdueTotal: number, paidCount: number, paidTotal: number, lastPayment: string | null } }> = ({ companyId, financial }) => {
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -351,7 +365,7 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
                                         <span>Criada: {new Date(inv.createdAt).toLocaleDateString('pt-BR')}</span>
                                     )}
                                     <span>•</span>
-                                    <span className="capitalize">{inv.paymentMethod?.replace('_', ' ').toLowerCase()}</span>
+                                    <span>{formatPaymentMethod(inv.paymentMethod)}</span>
                                 </div>
 
                                 {/* Status-specific second line */}
@@ -3143,10 +3157,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         const lastLogin = (owner as any)?.lastLoginAt ? new Date((owner as any).lastLoginAt) : null;
 
                                         // Payment method label
-                                        const pmLabel = (selectedCompany.paymentMethod || 'PIX')
-                                            .replace('_', ' ')
-                                            .toLowerCase()
-                                            .replace(/\b\w/g, (c) => c.toUpperCase());
+                                        const pmLabel = formatPaymentMethod(selectedCompany.paymentMethod || 'PIX');
 
                                         const fmtDate = (d: Date | null) => d ? d.toLocaleDateString('pt-BR') : '—';
                                         const fmtMoney = (v: number | undefined) => v != null ? `R$ ${v.toFixed(2)}` : '—';

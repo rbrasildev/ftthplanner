@@ -257,7 +257,8 @@ export const confirmStripeSubscription = async (req: AuthRequest, res: Response)
             data: {
                 planId,
                 status: 'ACTIVE',
-                subscriptionExpiresAt: nextBilling
+                subscriptionExpiresAt: nextBilling,
+                paymentMethod: 'CREDIT_CARD'
             }
         });
 
@@ -333,16 +334,32 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
             }
         }
 
-        // Fallback: look up company by stripeCustomerId
+        // Fallback 1: look up company by stripeCustomerId
         if (!companyId && customerId) {
             const company = await prisma.company.findFirst({
                 where: { stripeCustomerId: customerId },
             });
             if (company) {
                 companyId = company.id;
-                // NOTE: don't fallback planId to current plan - it must come from subscription metadata
                 resolvedVia = 'stripe_customer_id';
                 logger.info(`Stripe resolve: found company ${companyId} via stripeCustomerId`);
+            }
+        }
+
+        // Fallback 2: when planId isn't in any metadata but we identified the
+        // company, trust the company's current plan. Stripe is renewing what
+        // we already have on file — without this, recurring invoice webhooks
+        // whose metadata isn't propagated would silently fail to settle the
+        // local invoice and the customer would stay SUSPENDED despite paying.
+        if (companyId && !planId) {
+            const company = await prisma.company.findUnique({
+                where: { id: companyId },
+                select: { planId: true }
+            });
+            if (company?.planId) {
+                planId = company.planId;
+                resolvedVia = `${resolvedVia}+current_plan`;
+                logger.info(`Stripe resolve: fell back to current planId=${planId} for company ${companyId}`);
             }
         }
 
@@ -375,7 +392,12 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                     data: {
                         planId: planId,
                         status: 'ACTIVE',
-                        subscriptionExpiresAt: nextBilling
+                        subscriptionExpiresAt: nextBilling,
+                        // Recurring Stripe charges → customer is on credit card.
+                        // Without this, company-level "FORMA DE PAGAMENTO" stays
+                        // as the original Pix and reminder service treats them
+                        // as a manual payer.
+                        paymentMethod: 'CREDIT_CARD'
                     }
                 });
 
@@ -396,6 +418,39 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                     }
                 } catch (invErr: any) {
                     logger.warn(`Stripe Webhook: Failed to settle local invoice: ${invErr.message}`);
+                }
+
+                // Recurring renewals: match by Stripe's billing period and mark
+                // the corresponding local invoice as PAID. Without this, the
+                // pre-emitted PENDING (or already-OVERDUE) row stays unsettled
+                // even though Stripe charged the customer's card successfully.
+                try {
+                    const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : null;
+                    if (periodStart) {
+                        // ±1 day tolerance — Stripe's exact cycle time may drift
+                        // from our day-aligned referenceStart by hours.
+                        const lo = new Date(periodStart.getTime() - 86400000);
+                        const hi = new Date(periodStart.getTime() + 86400000);
+                        const local = await prisma.invoice.findFirst({
+                            where: {
+                                companyId,
+                                status: { in: ['PENDING', 'OVERDUE', 'EXPIRED'] },
+                                referenceStart: { gte: lo, lte: hi }
+                            },
+                            orderBy: { createdAt: 'asc' }
+                        });
+                        if (local) {
+                            await prisma.invoice.update({
+                                where: { id: local.id },
+                                data: { status: 'PAID', paymentMethod: 'CREDIT_CARD', paidAt: new Date() }
+                            });
+                            logger.info(`Stripe Webhook: Marked renewal invoice ${local.id} as PAID (period ${periodStart.toISOString()}).`);
+                        } else {
+                            logger.info(`Stripe Webhook: No matching local invoice for period ${periodStart.toISOString()} on company ${companyId} — likely a first-cycle charge with no pre-emitted invoice.`);
+                        }
+                    }
+                } catch (renewErr: any) {
+                    logger.warn(`Stripe Webhook: Failed to settle renewal invoice: ${renewErr.message}`);
                 }
 
                 logger.info(`Stripe Webhook [${event.type}]: Activated company ${companyId} on plan ${planId} until ${nextBilling.toISOString()}`);
@@ -420,7 +475,8 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         data: {
                             planId: planId,
                             status: 'ACTIVE',
-                            subscriptionExpiresAt: nextBilling
+                            subscriptionExpiresAt: nextBilling,
+                            paymentMethod: 'CREDIT_CARD'
                         }
                     });
                     logger.info(`Stripe Webhook [subscription.updated]: Activated company ${companyId} on plan ${planId}`);
