@@ -719,9 +719,22 @@ export default function App() {
 
 
     const handleToggleReserveCable = useCallback((id: string) => {
+        // Toggle visibility for both legacy (cable.showReserveLabel) and new format
+        // (each reserve.showLabel). The render filter checks per-reserve flags, so
+        // cable-level toggle alone wouldn't hide reserves in the new array format.
         updateCurrentNetwork(prev => ({
             ...prev,
-            cables: prev.cables.map(c => c.id === id ? { ...c, showReserveLabel: !c.showReserveLabel } : c)
+            cables: prev.cables.map(c => {
+                if (c.id !== id) return c;
+                const isShowing = c.showReserveLabel !== false
+                    && (c.reserves || []).every(r => r.showLabel !== false);
+                const newShow = !isShowing;
+                return {
+                    ...c,
+                    showReserveLabel: newShow,
+                    reserves: (c.reserves || []).map(r => ({ ...r, showLabel: newShow })),
+                };
+            })
         }));
     }, [updateCurrentNetwork]);
 
@@ -740,19 +753,39 @@ export default function App() {
 
     const handleReservePositionSet = useCallback((lat: number, lng: number, cableId?: string, reserveId?: string) => {
         const targetCableId = cableId || pendingReserveCableId;
+        const targetReserveId = reserveId || pendingReserveId;
         if (!targetCableId) return;
         updateCurrentNetwork(prev => ({
             ...prev,
             cables: prev.cables.map(c => {
                 if (c.id !== targetCableId) return c;
-                // If we have a specific reserveId, update that reserve's location
-                if (reserveId && c.reserves && c.reserves.length > 0) {
+                const hasNewReserves = c.reserves && c.reserves.length > 0;
+                // Specific reserve targeted (e.g. dragged marker) — update that one.
+                if (targetReserveId && hasNewReserves) {
                     return {
                         ...c,
-                        reserves: c.reserves.map(r => r.id === reserveId ? { ...r, location: { lat, lng }, showLabel: true } : r)
+                        reserves: c.reserves!.map(r => r.id === targetReserveId
+                            ? { ...r, location: { lat, lng }, showLabel: true }
+                            : r),
                     };
                 }
-                // Legacy fallback
+                // Map-click flow without a specific reserve: if the cable already has
+                // exactly one reserve in the new array format, move it (unambiguous).
+                // Creating a legacy entry alongside an existing array would render as a
+                // ghost duplicate, so we never write to the legacy fields when the new
+                // array is populated.
+                if (hasNewReserves) {
+                    if (c.reserves!.length === 1) {
+                        return {
+                            ...c,
+                            reserves: c.reserves!.map(r => ({ ...r, location: { lat, lng }, showLabel: true })),
+                        };
+                    }
+                    // Multiple reserves and no target — drag is the only safe path.
+                    showToast(t('toast_reserve_drag_required') || 'Multiple reserves: drag the marker to reposition', 'info');
+                    return c;
+                }
+                // Legacy single-reserve cable.
                 return { ...c, reserveLocation: { lat, lng }, showReserveLabel: true };
             })
         }));
@@ -760,7 +793,7 @@ export default function App() {
         setPendingReserveCableId(null);
         setPendingReserveId(null);
         showToast(t('toast_reserve_positioned'), 'success');
-    }, [pendingReserveCableId, updateCurrentNetwork, t]);
+    }, [pendingReserveCableId, pendingReserveId, updateCurrentNetwork, t]);
 
     const { handleImportPoles, handleAdvancedImport } = useNetworkImport({
         currentProjectId,
@@ -1998,7 +2031,13 @@ export default function App() {
                         initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
                         onMapMoveEnd={handleMapMoveEnd}
                         onToggleLabels={() => setShowLabels(!showLabels)}
-                        onAddPoint={(lat, lng) => handleAddPoint(lat, lng, toolMode)}
+                        onAddPoint={(lat, lng) => {
+                            if (toolMode === 'position_reserve') {
+                                handleReservePositionSet(lat, lng);
+                                return;
+                            }
+                            handleAddPoint(lat, lng, toolMode);
+                        }}
                         onUndoDrawingPoint={handleUndoDrawingPoint}
                         onNodeClick={handleNodeClick}
                         onMoveNode={handleMoveNode}

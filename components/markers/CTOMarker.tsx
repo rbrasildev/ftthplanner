@@ -10,14 +10,14 @@ import { CTOData, CTO_STATUS_COLORS } from '../../types';
 
 const iconCache = new Map<string, L.DivIcon>();
 
-const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLANNED', showLabels: boolean = true, customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO', isVerticalCondo: boolean = false) => {
+const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO', isVerticalCondo: boolean = false) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(18 * zoomScale);
     const borderSize = Math.max(2, Math.round(3 * zoomScale));
     const pulseSize = Math.round(36 * zoomScale);
 
-    const cacheKey = `cto-${name}-${isSelected}-${status}-${showLabels}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}-${isVerticalCondo ? 'vc' : 'std'}`;
+    const cacheKey = `cto-${isSelected}-${status}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}-${isVerticalCondo ? 'vc' : 'std'}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
@@ -65,29 +65,12 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
         ? `
       ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${pulseSize}px; height: ${Math.round(pulseSize * 1.4)}px; background: rgba(34, 197, 94, 0.4); border-radius: 12%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="position: relative; width: ${condoW}px; height: ${condoH}px;">${condoSvg}</div>
-      <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: ${condoH / 2 + 2}px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15, 23, 42, 0.9);
-        color: white;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-size: ${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
-        font-weight: 600;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
-      ">${name}</div>
 `
         : `
       ${isSelected ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: ${pulseSize}px; height: ${pulseSize}px; background: rgba(34, 197, 94, 0.4); border-radius: 50%; animation: pulse-green 2s infinite; pointer-events: none; z-index: 5;"></div>` : ''}
       <div style="
         position: relative;
-        background-color: ${fillHex}cc; /* 60% opacity */
+        background-color: ${fillHex}cc;
         border: ${borderSize}px solid ${borderHex};
         border-radius: ${type === 'CEO' ? '30%' : '50%'};
         width: ${size}px;
@@ -97,23 +80,6 @@ const createCTOIcon = (name: string, isSelected: boolean, status: string = 'PLAN
         z-index: 10;
       ">
       </div>
-      <div style="
-        display: ${showLabels ? 'block' : 'none'};
-        position: absolute;
-        top: ${size + 2}px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15, 23, 42, 0.9);
-        color: white;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-size: ${Math.max(8, Math.round(10 * Math.min(1.5, zoomScale)))}px;
-        font-weight: 600;
-        white-space: nowrap;
-        pointer-events: none;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        z-index: 20;
-      ">${name}</div>
 `;
 
     const iconSize: [number, number] = isVerticalCondo ? [condoW, condoH] : [size, size];
@@ -158,11 +124,14 @@ export const CTOMarker = React.memo(({
 }: CTOMarkerProps) => {
     const isVerticalCondo = !!cto.building;
     const isDragMode = mode === 'move_node' && userRole !== 'MEMBER';
+    // Condos render with the full divIcon (building silhouette) at all times — they're
+    // a minority of CTOs and the shape is essential to distinguish them at a glance.
+    const useDivIcon = isDragMode || isVerticalCondo;
 
     const icon = useMemo(() => {
-        if (!isDragMode) return null;
-        return createCTOIcon(cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo);
-    }, [isDragMode, cto.name, isSelected, cto.status, showLabels, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo]);
+        if (!useDivIcon) return null;
+        return createCTOIcon(isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo);
+    }, [useDivIcon, isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo]);
 
     const pathOptions = useMemo(() => {
         let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
@@ -231,20 +200,24 @@ export const CTOMarker = React.memo(({
         }
     }, [mode, userRole]);
 
-    if (isDragMode && icon) {
+    if (useDivIcon && icon) {
+        // Condo silhouette is ~1.45× taller than wide; offset compensates so the label
+        // sits just above the roof instead of overlapping the building body.
+        const divIconHalfHeight = isVerticalCondo ? Math.round(circleRadius * 1.45) : circleRadius;
         return (
             <Marker
                 ref={markerRef}
                 position={[cto.coordinates.lat, cto.coordinates.lng]}
                 icon={icon}
-                draggable={true}
+                draggable={isDragMode}
                 eventHandlers={eventHandlers}
             >
                 <Tooltip
                     direction="top"
-                    offset={[0, -10]}
+                    offset={[0, -divIconHalfHeight]}
                     opacity={1}
-                    className={`map-label${isSelected ? ' map-label--selected' : ''}`}
+                    permanent={!isDragMode && shouldShowPermanentLabel}
+                    className={`map-label${!isDragMode && shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
                 >
                     {cto.name}
                 </Tooltip>
