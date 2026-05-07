@@ -8,34 +8,14 @@ import { PoleData, PoleApprovalStatus, POLE_APPROVAL_COLORS, PoleSituation, POLE
 // because the bundled production build can evaluate this module before the pane
 // has been created, leaving the renderer attached to a non-existent pane and
 // silently rendering paths without the `.leaflet-interactive` class.
-//
-// We also handle the case where a project switch (e.g. support mode) causes the
-// `<Pane>` component to unmount/remount, which destroys the original pane DIV.
-// The cached renderer's container becomes orphaned, so on each access we verify
-// the pane still exists in the DOM and rebuild if not.
-const POLE_PANE_NAME = 'pole-circles-pane';
 const poleRenderersByMap = new WeakMap<L.Map, L.Renderer>();
-
-const ensurePolePane = (map: L.Map): HTMLElement => {
-    let pane = map.getPane(POLE_PANE_NAME);
-    if (!pane || !document.contains(pane)) {
-        pane = map.createPane(POLE_PANE_NAME);
-        pane.style.zIndex = '560';
-        pane.style.pointerEvents = 'none';
-    }
-    return pane;
-};
-
 const getPoleRenderer = (map: L.Map): L.Renderer => {
-    ensurePolePane(map);
     let renderer = poleRenderersByMap.get(map);
-    const rendererContainer = renderer && (renderer as any)._container;
-    const isStale = !renderer || !rendererContainer || !document.contains(rendererContainer);
-    if (isStale) {
-        renderer = L.svg({ pane: POLE_PANE_NAME });
+    if (!renderer) {
+        renderer = L.svg({ pane: 'pole-circles-pane' });
         poleRenderersByMap.set(map, renderer);
     }
-    return renderer!;
+    return renderer;
 };
 
 // Icon Cache
