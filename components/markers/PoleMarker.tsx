@@ -1,13 +1,22 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { CircleMarker, Marker, Tooltip } from 'react-leaflet';
+import { CircleMarker, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { PoleData, PoleApprovalStatus, POLE_APPROVAL_COLORS, PoleSituation, POLE_SITUATION_COLORS } from '../../types';
 
-// Shared SVG renderer for pole CircleMarkers — using SVG (instead of the default
-// canvas under preferCanvas=true) gives each pole its own DOM element with
-// `.leaflet-interactive`, so the cable layer's capture-phase guard skips clicks
-// on poles correctly even when a cable runs through the same point.
-const poleSvgRenderer = L.svg({ pane: 'pole-circles-pane' });
+// One SVG renderer per Leaflet map instance — created lazily inside the component
+// (after the map and `pole-circles-pane` exist) rather than at module-load time,
+// because the bundled production build can evaluate this module before the pane
+// has been created, leaving the renderer attached to a non-existent pane and
+// silently rendering paths without the `.leaflet-interactive` class.
+const poleRenderersByMap = new WeakMap<L.Map, L.Renderer>();
+const getPoleRenderer = (map: L.Map): L.Renderer => {
+    let renderer = poleRenderersByMap.get(map);
+    if (!renderer) {
+        renderer = L.svg({ pane: 'pole-circles-pane' });
+        poleRenderersByMap.set(map, renderer);
+    }
+    return renderer;
+};
 
 // Icon Cache
 const iconCache = new Map<string, L.DivIcon>();
@@ -93,6 +102,7 @@ export const PoleMarker = React.memo(({
     pole, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, cableStartPoint, isDrawingCable, onAddPoint, onMoveNode,
     onDragStart, onDrag, onDragEnd, onContextMenu
 }: PoleMarkerProps) => {
+    const map = useMap();
     const isDragMode = mode === 'move_node';
 
     // Only build the divIcon when we actually need it (drag mode) — view mode uses
@@ -122,9 +132,9 @@ export const PoleMarker = React.memo(({
             fillColor,
             fillOpacity: 1,
             weight: borderWidth,
-            renderer: poleSvgRenderer,
+            renderer: getPoleRenderer(map),
         };
-    }, [pole.type, pole.approvalStatus, pole.situation, isSelected, borderWidth]);
+    }, [map, pole.type, pole.approvalStatus, pole.situation, isSelected, borderWidth]);
 
     const eventHandlers = useMemo(() => ({
         click: (e: any) => {
