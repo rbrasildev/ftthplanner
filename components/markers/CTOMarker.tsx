@@ -131,10 +131,12 @@ export const CTOMarker = React.memo(({
     onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline
 }: CTOMarkerProps) => {
     const isVerticalCondo = !!cto.building;
+    const isCEO = cto.type === 'CEO';
     const isDragMode = mode === 'move_node' && userRole !== 'MEMBER';
-    // Condos render with the full divIcon (building silhouette) at all times — they're
-    // a minority of CTOs and the shape is essential to distinguish them at a glance.
-    const useDivIcon = isDragMode || isVerticalCondo;
+    // Condos and CEOs render with the full divIcon at all times — both rely on a
+    // non-circular shape (building silhouette / squared border-radius) that CircleMarker
+    // can't reproduce. CTOs use the lightweight CircleMarker by default.
+    const useDivIcon = isDragMode || isVerticalCondo || isCEO;
 
     const icon = useMemo(() => {
         if (!useDivIcon) return null;

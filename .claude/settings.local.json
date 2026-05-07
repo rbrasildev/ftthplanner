@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(npx expo:*)",
-      "Bash(grep -rn \"stroke-width-4\\\\|\\\\\\\\bhover:stroke\" d:/ftthplanner/components d:/ftthplanner/index.html d:/ftthplanner/index.css)"
+      "Bash(grep -rn \"stroke-width-4\\\\|\\\\\\\\bhover:stroke\" d:/ftthplanner/components d:/ftthplanner/index.html d:/ftthplanner/index.css)",
+      "Bash(grep -n \"className=\\\\`.*\\\\${\" /d/ftthplanner/components/editor/SplitterNode.tsx)",
+      "Bash(grep -n \"className=\\\\`[^}]*dark:[^ }]*\\\\`\" /d/ftthplanner/components/editor/SplitterNode.tsx)",
+      "Bash(grep -n \"hover:.*\\\\$\\\\|.*\\\\${.*hover:\" /d/ftthplanner/components/editor/SplitterNode.tsx)"
     ]
   }
 }
