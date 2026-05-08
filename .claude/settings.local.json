@@ -10,7 +10,12 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Read(//d//**)",
-      "Bash(git revert *)"
+      "Bash(git revert *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"done exit=$?\")",
+      "Bash(git reset *)",
+      "Bash(cd d:\\\\\\\\ftthplanner)",
+      "Bash(npm ls *)"
     ]
   }
 }
