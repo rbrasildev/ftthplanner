@@ -82,6 +82,13 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
           updates.type = box.type as any;
           updates.color = box.color;
           updates.reserveLoopLength = box.reserveLoopLength;
+          // Auto-rename when the user keeps the default "CTO-N" / "CEO-N" pattern.
+          // Skipped if they already typed a custom name, so we never clobber edits.
+          const effectiveName = updates.name ?? cto.name;
+          const autoNameMatch = effectiveName.match(/^(CTO|CEO)-(\d+)$/);
+          if (autoNameMatch && autoNameMatch[1] !== box.type) {
+            updates.name = `${box.type}-${autoNameMatch[2]}`;
+          }
         }
       }
       if (poleId !== cto.poleId) updates.poleId = poleId || undefined;
@@ -328,7 +335,16 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
                   <CustomSelect
                     label={t('box_model') || 'Modelo de Caixa'}
                     value={catalogId}
-                    onChange={(selectedId) => setCatalogId(selectedId)}
+                    onChange={(selectedId) => {
+                      setCatalogId(selectedId);
+                      // Live-update the auto-generated "CTO-N" / "CEO-N" name so the
+                      // user sees the consistent label before saving.
+                      const box = availableBoxes.find(b => b.id === selectedId);
+                      if (box) {
+                        const m = name.match(/^(CTO|CEO)-(\d+)$/);
+                        if (m && m[1] !== box.type) setName(`${box.type}-${m[2]}`);
+                      }
+                    }}
                     options={[
                       { value: '', label: t('select_box_model') || 'Selecione Modelo...' },
                       ...availableBoxes.map(box => ({

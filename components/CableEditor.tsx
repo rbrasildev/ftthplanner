@@ -249,44 +249,6 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               disabled={userRole === 'MEMBER'}
             />
 
-            {/* Technical Specs Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <CustomInput
-                label={t('fiber_count')}
-                value={selectedCatalogId ? `${formData.fiberCount} FO` : '-'}
-                onChange={() => { }}
-                disabled
-              />
-
-              <CustomInput
-                label={t('loose_tubes')}
-                value={selectedCatalogId ? String(formData.looseTubeCount) : '-'}
-                onChange={() => { }}
-                disabled
-              />
-
-              <CustomInput
-                label={t('fibers_per_tube')}
-                value={selectedCatalogId && formData.fiberCount && formData.looseTubeCount
-                  ? String(Math.ceil(formData.fiberCount / (formData.looseTubeCount || 1)))
-                  : '-'}
-                onChange={() => { }}
-                disabled
-              />
-
-              <CustomInput
-                label={t('cable_thickness')}
-                value={(() => {
-                  const cat = catalogCables.find(c => c.id === selectedCatalogId);
-                  if (!cat) return '-';
-                  const w = formData.status === 'DEPLOYED' ? cat.deployedSpec?.width : cat.plannedSpec?.width;
-                  return w ? String(w) : '-';
-                })()}
-                onChange={() => { }}
-                disabled
-              />
-            </div>
-
             <CustomSelect
               label={t('status')}
               value={formData.status}
