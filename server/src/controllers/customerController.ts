@@ -109,6 +109,7 @@ export const createCustomer = async (req: Request, res: Response) => {
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
             connectionStatus,
+            sgpContractId,
             floor, unit
         } = req.body;
 
@@ -205,6 +206,7 @@ export const createCustomer = async (req: Request, res: Response) => {
                     pppoeService,
                     onuPower: onuPower ? parseFloat(onuPower) : null,
                     connectionStatus,
+                    sgpContractId: sgpContractId || null,
                     floor: floor !== undefined && floor !== null && floor !== '' ? Number(floor) : null,
                     unit: unit || null
                 }
@@ -283,6 +285,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
             status, onuSerial, onuMac, pppoeService, onuPower,
             projectId,
             connectionStatus,
+            sgpContractId,
             floor, unit
         } = req.body;
 
@@ -396,6 +399,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
                     onuPower: onuPower !== undefined ? (onuPower ? parseFloat(onuPower) : null) : undefined,
                     projectId: projectId !== undefined ? (projectId || null) : undefined,
                     connectionStatus,
+                    sgpContractId: sgpContractId !== undefined ? (sgpContractId || null) : undefined,
                     floor: floor === undefined
                         ? undefined
                         : (floor === null || floor === '' ? null : Number(floor)),

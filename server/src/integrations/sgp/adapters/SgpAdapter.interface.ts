@@ -22,4 +22,11 @@ export interface ISgpAdapter {
      * Searches for a customer in the external system by CPF/CNPJ.
      */
     searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any>;
+
+    /**
+     * Lightweight reachability/auth probe. Should make the cheapest possible
+     * authenticated request and resolve when credentials work — without invoking
+     * the full searchCustomer pipeline.
+     */
+    testConnection?(baseUrl: string, token: string, apiApp: string | null): Promise<void>;
 }

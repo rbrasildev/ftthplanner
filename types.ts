@@ -626,6 +626,7 @@ export interface Customer {
   dropCoordinates?: Coordinates[]; // Optional for API updates
   projectId?: string | null;
   connectionStatus?: 'online' | 'offline' | null;
+  sgpContractId?: string | null;
   // Vertical condominium attachment — only meaningful when ctoId points to a
   // CTO with `building` set. Free-form unit string supports labels like "101", "A-12".
   floor?: number | null;

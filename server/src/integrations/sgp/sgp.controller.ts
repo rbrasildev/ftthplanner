@@ -198,6 +198,20 @@ export const searchSgpCustomer = async (req: Request, res: Response) => {
     }
 };
 
+export const testSgpConnection = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const { sgpType } = req.params;
+        if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+        await SgpService.testConnection(userId, sgpType);
+        res.json({ ok: true });
+    } catch (error: any) {
+        logger.warn(`[SGP Controller] Test connection failed: ${error.message}`);
+        res.status(400).json({ ok: false, error: error.message || 'Connection test failed' });
+    }
+};
+
 export const syncAllStatuses = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id || (req as any).user?.userId;

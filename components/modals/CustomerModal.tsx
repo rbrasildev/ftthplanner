@@ -53,6 +53,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         pppoeService: initialData?.pppoeService || '',
         onuPower: initialData?.onuPower ? String(initialData?.onuPower) : '',
         connectionStatus: initialData?.connectionStatus || null,
+        sgpContractId: initialData?.sgpContractId || null,
         floor: initialData?.floor ?? null,
         unit: initialData?.unit ?? null
     });
@@ -88,6 +89,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 pppoeService: initialData.pppoeService || '',
                 onuPower: initialData.onuPower ? String(initialData.onuPower) : '',
                 connectionStatus: initialData.connectionStatus || null,
+                sgpContractId: initialData.sgpContractId || null,
                 floor: initialData.floor ?? null,
                 unit: initialData.unit ?? null
             });
@@ -151,6 +153,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             connectionStatus: onuData.conexao?.status
                 ? String(onuData.conexao.status).toLowerCase().trim()
                 : (onuData.serial || service.mac ? 'offline' : formData.connectionStatus),
+            sgpContractId: (() => {
+                // SGPs are inconsistent about the contract id field name.
+                const raw = contract?.id ?? contract?.contratoId ?? contract?.contrato_id
+                    ?? contract?.numero ?? service?.contratoId ?? service?.id_contrato;
+                return raw !== undefined && raw !== null && raw !== ''
+                    ? String(raw)
+                    : formData.sgpContractId;
+            })(),
             lat: !isNaN(newLat) && latStr !== "" && latStr !== null ? newLat : formData.lat,
             lng: !isNaN(newLng) && lngStr !== "" && lngStr !== null ? newLng : formData.lng
         };
@@ -345,11 +355,19 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                         </h2>
                         {formData.connectionStatus && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
-                                String(formData.connectionStatus).toLowerCase() === 'online' 
-                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+                                String(formData.connectionStatus).toLowerCase() === 'online'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'
                             }`}>
                                 {String(formData.connectionStatus).toLowerCase() === 'online' ? 'Online' : 'Offline'}
+                            </span>
+                        )}
+                        {formData.sgpContractId && (
+                            <span
+                                className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
+                                title="Número do contrato no SGP"
+                            >
+                                Contrato #{formData.sgpContractId}
                             </span>
                         )}
                     </div>
@@ -826,37 +844,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     <User className="w-4 h-4 text-indigo-500" />
                                     {t('onu_data_section')}
                                 </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="relative group">
-                                        <CustomInput
-                                            label={t('customer_document')}
-                                            value={formData.document || ''}
-                                            onChange={e => setFormData({ ...formData, document: e.target.value })}
-                                            placeholder={t('customer_document_placeholder')}
-                                            icon={FileText}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleSgpSearch}
-                                            disabled={isSearchingSgp || !formData.document}
-                                            className="absolute right-2 top-[30px] p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-all disabled:opacity-50"
-                                            title={t('search_in_sgp') || "Buscar no SGP"}
-                                        >
-                                            {isSearchingSgp ? (
-                                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                                            ) : (
-                                                <Search className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                    </div>
-                                    <CustomInput
-                                        label={t('customer_phone')}
-                                        value={formData.phone || ''}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        placeholder="(00) 00000-0000"
-                                        icon={Phone}
-                                    />
-                                </div>
                                 <div className="space-y-4">
                                     <CustomInput
                                         label={t('onu_serial')}

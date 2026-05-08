@@ -807,6 +807,7 @@ model Customer {
   onuPower          Float?   @map("onu_power")
   projectId         String?  @map("project_id")
   connectionStatus  String?  @map("connection_status")
+  sgpContractId     String?  @map("sgp_contract_id")
   floor             Int?
   unit              String?
 
@@ -818,6 +819,7 @@ model Customer {
 
   @@index([companyId])
   @@index([ctoId])
+  @@index([companyId, document])
   @@map("customers")
 }
 
@@ -993,6 +995,10 @@ model IntegrationMapping {
   id                 String   @id @default(uuid())
   userId             String   @map("user_id") // tenant
   sgpType            String   @map("sgp_type") // IXC, GENERIC
+  // Canonical key: CPF/CNPJ digits-only (no dots/dashes/slash). All lookups in
+  // sgp.service.ts normalize incoming external IDs the same way before hitting
+  // this column. The IXC incremental path (radusuarios) only exposes id_cliente
+  // and therefore requires a translation step before it can match here.
   externalCustomerId String   @map("external_customer_id")
   internalCustomerId String?  @map("internal_customer_id")
   ctoId              String?  @map("cto_id")

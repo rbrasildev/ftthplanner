@@ -1,6 +1,7 @@
 import { ISgpAdapter } from './SgpAdapter.interface';
 import { NormalizedSgpEvent } from '../sgp.types';
 import logger from '../../../lib/logger';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 
 interface CachedToken {
     token: string;
@@ -39,7 +40,7 @@ export class BeeswebAdapter implements ISgpAdapter {
 
         let response: Response;
         try {
-            response = await fetch(url, {
+            response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export class BeeswebAdapter implements ISgpAdapter {
             const headers = new Headers(init.headers as any || {});
             headers.set('Authorization', `Bearer ${token}`);
             headers.set('Accept', 'application/json');
-            return fetch(url, { ...init, headers });
+            return fetchWithTimeout(url, { ...init, headers });
         };
 
         let token = await this.getBearer(baseUrl, email, password);
@@ -137,6 +138,13 @@ export class BeeswebAdapter implements ISgpAdapter {
             throw new Error(`BeesWeb /customers failed (${res.status}): ${text.substring(0, 200)}`);
         }
         return res.json();
+    }
+
+    async testConnection(baseUrl: string, password: string, email: string | null): Promise<void> {
+        if (!email) throw new Error('BeesWeb integration requires email (apiApp field is empty)');
+        if (!password) throw new Error('BeesWeb integration requires password (apiToken field is empty)');
+        // login() throws on auth failure; force=true bypasses any cached token.
+        await BeeswebAdapter.getBearer(baseUrl, email, password, true);
     }
 
     async searchCustomer(

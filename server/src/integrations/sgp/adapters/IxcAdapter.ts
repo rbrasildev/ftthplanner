@@ -1,6 +1,7 @@
 import { ISgpAdapter } from './SgpAdapter.interface';
 import { NormalizedSgpEvent, SgpEventType } from '../sgp.types';
 import logger from '../../../lib/logger';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 
 export class IxcAdapter implements ISgpAdapter {
 
@@ -99,101 +100,118 @@ export class IxcAdapter implements ISgpAdapter {
         return null;
     }
 
+    async testConnection(baseUrl: string, token: string): Promise<void> {
+        const url = `${this.normalizeBaseUrl(baseUrl)}/webservice/v1/cliente`;
+        const response = await fetchWithTimeout(url, {
+            method: 'POST',
+            headers: this.buildAuthHeaders(token),
+            body: JSON.stringify({
+                qtype: 'cliente.id',
+                query: '0',
+                oper: '>',
+                page: '1',
+                rp: '1',
+                sortname: 'cliente.id',
+                sortorder: 'asc',
+            })
+        });
+        if (response.status === 401 || response.status === 403) {
+            throw new Error(`Autenticação falhou (${response.status}). Verifique o token.`);
+        }
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`IXC API error (${response.status}): ${text.substring(0, 200)}`);
+        }
+    }
+
     async searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any> {
         const normalizedBase = this.normalizeBaseUrl(baseUrl);
         const headers = this.buildAuthHeaders(token);
+        const url = `${normalizedBase}/webservice/v1/cliente`;
 
         const digits = query.replace(/\D/g, '');
         const formatted = this.formatCpfCnpj(digits);
+        const trimmed = query.trim();
 
-        // IXC stores CPF/CNPJ formatted (e.g. "965.236.202-63")
-        // Try: 1) formatted CPF/CNPJ exact match, 2) as-typed exact match, 3) LIKE with digits
-        const searchVariants = [
-            formatted ? { query: formatted, oper: '=' } : null,   // Formatted CPF/CNPJ exact match
-            { query: query.trim(), oper: '=' },                    // As-typed exact match
-            { query: digits, oper: '%' },                          // LIKE with digits only
-        ].filter((v): v is { query: string; oper: string } => v !== null && v.query.length > 0);
+        // IXC stores CPF/CNPJ formatted (e.g. "965.236.202-63").
+        // Strategy:
+        //   - Valid CPF/CNPJ (11/14 digits) → single request on the formatted exact match.
+        //     A 200-OK with no records is conclusive ("not in this SGP"); no LIKE fallback needed.
+        //   - Anything else (partial digits, free text) → LIKE on digits/text as a best-effort.
+        const variants: { query: string; oper: string }[] = [];
+        if (formatted) {
+            variants.push({ query: formatted, oper: '=' });
+        } else if (digits) {
+            variants.push({ query: digits, oper: '%' });
+        } else if (trimmed) {
+            variants.push({ query: trimmed, oper: '%' });
+        }
 
-        const endpoints = ['/webservice/v1/cliente'];
         let lastError = '';
 
-        for (const variant of searchVariants) {
-            const bodyData = {
-                qtype: 'cliente.cnpj_cpf',
-                query: variant.query,
-                oper: variant.oper,
-                page: '1',
-                rp: '20',
-                sortname: 'cliente.id',
-                sortorder: 'desc',
-            };
+        for (const variant of variants) {
+            logger.info(`[IXC Adapter] Searching ${variant.query} (oper: ${variant.oper})`);
 
-            for (const endpoint of endpoints) {
-                const url = `${normalizedBase}${endpoint}`;
-                logger.info(`[IXC Adapter] Trying ${url} for CPF: ${variant.query} (oper: ${variant.oper})`);
+            try {
+                const response = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        qtype: 'cliente.cnpj_cpf',
+                        query: variant.query,
+                        oper: variant.oper,
+                        page: '1',
+                        rp: '20',
+                        sortname: 'cliente.id',
+                        sortorder: 'desc',
+                    })
+                });
 
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers,
-                        body: JSON.stringify(bodyData)
-                    });
+                const responseText = await response.text();
 
-                    // Read body as text first to avoid "body already read" errors
-                    const responseText = await response.text();
-
-                    if (!response.ok) {
-                        lastError = `IXC API error (${response.status}): ${responseText.substring(0, 300)}`;
-                        logger.warn(`[IXC Adapter] ${lastError}`);
-
-                        if (response.status === 401 || response.status === 403) {
-                            throw new Error(`Autenticação falhou (${response.status}). Verifique o token.`);
-                        }
-                        continue;
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error(`Autenticação falhou (${response.status}). Verifique o token.`);
                     }
-
-                    let data: any;
-                    try {
-                        data = JSON.parse(responseText);
-                    } catch {
-                        logger.warn(`[IXC Adapter] Invalid JSON from ${endpoint}: ${responseText.substring(0, 200)}`);
-                        continue;
-                    }
-
-                    logger.info(`[IXC Adapter] Response from ${endpoint}: total=${data?.total}, registros=${Array.isArray(data?.registros) ? data.registros.length : 'N/A'}`);
-
-                    if (data?.type === 'error') {
-                        lastError = `IXC: ${data.message || 'Unknown error'}`;
-                        logger.warn(`[IXC Adapter] ${lastError}`);
-                        continue;
-                    }
-
-                    const registros = data?.registros || [];
-                    const ixcClient = registros[0] || null;
-
-                    if (ixcClient) {
-                        logger.info(`[IXC Adapter] Found customer ${ixcClient.id} via ${variant.oper} search`);
-                        return this.normalizeIxcClient(ixcClient, normalizedBase, headers);
-                    }
-
-                    // No result with this variant — try next
-                    logger.info(`[IXC Adapter] No customer found with oper=${variant.oper} for ${variant.query}`);
-                } catch (error: any) {
-                    if (error.message.includes('Autenticação')) throw error;
-                    lastError = error.message;
-                    logger.warn(`[IXC Adapter] Fetch error for ${endpoint}: ${error.message}`);
+                    lastError = `IXC API error (${response.status}): ${responseText.substring(0, 300)}`;
+                    logger.warn(`[IXC Adapter] ${lastError}`);
                     continue;
                 }
+
+                let data: any;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    logger.warn(`[IXC Adapter] Invalid JSON: ${responseText.substring(0, 200)}`);
+                    continue;
+                }
+
+                if (data?.type === 'error') {
+                    lastError = `IXC: ${data.message || 'Unknown error'}`;
+                    logger.warn(`[IXC Adapter] ${lastError}`);
+                    continue;
+                }
+
+                const ixcClient = (data?.registros || [])[0] || null;
+                if (ixcClient) {
+                    logger.info(`[IXC Adapter] Found customer ${ixcClient.id} via ${variant.oper}`);
+                    return this.normalizeIxcClient(ixcClient, normalizedBase, headers);
+                }
+
+                // 200 OK with no records — only fall through to LIKE if we haven't tried it yet.
+            } catch (error: any) {
+                if (error.message?.includes('Autenticação')) throw error;
+                lastError = error.message;
+                logger.warn(`[IXC Adapter] Fetch error: ${error.message}`);
+                continue;
             }
         }
 
-        // If we had API errors (not just empty results), throw so the user knows
         if (lastError) {
             logger.error(`[IXC Adapter] All search variants failed. Last error: ${lastError}`);
             throw new Error(lastError);
         }
 
-        // All variants returned empty results — customer genuinely not found
         logger.info(`[IXC Adapter] Customer not found for query: ${query}`);
         return null;
     }
@@ -251,13 +269,14 @@ export class IxcAdapter implements ISgpAdapter {
      * Fetch client contracts and their services from IXC
      */
     private async fetchClientContracts(baseUrl: string, headers: Record<string, string>, clientId: string): Promise<any[]> {
-        // Fetch contracts
+        // Try the canonical endpoint first; only fall back on actual errors.
+        // Empty results from a 200 response are accepted as-is (don't retry).
         const endpoints = ['/webservice/v1/cliente_contrato', '/api/v1/cliente_contrato'];
 
         let contractData: any = null;
         for (const endpoint of endpoints) {
             try {
-                const res = await fetch(`${baseUrl}${endpoint}`, {
+                const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -270,11 +289,10 @@ export class IxcAdapter implements ISgpAdapter {
                         sortorder: 'desc'
                     })
                 });
+                if (!res.ok) continue;
                 const text = await res.text();
-                if (res.ok) {
-                    try { contractData = JSON.parse(text); } catch { continue; }
-                    if (contractData?.registros?.length > 0) break;
-                }
+                try { contractData = JSON.parse(text); } catch { continue; }
+                break; // 2xx + valid JSON → trust the response, even if empty
             } catch {
                 continue;
             }
@@ -282,16 +300,17 @@ export class IxcAdapter implements ISgpAdapter {
 
         if (!contractData?.registros?.length) return [];
 
-        const contratos: any[] = [];
+        // Fetch services for all contracts in parallel.
+        const servicesByContract = await Promise.all(
+            contractData.registros.map((contrato: any) =>
+                this.fetchContractServices(baseUrl, headers, contrato.id).catch(() => [])
+            )
+        );
 
-        for (const contrato of contractData.registros) {
-            // Fetch services (radusuarios) for each contract
-            let servicos: any[] = [];
-            try {
-                servicos = await this.fetchContractServices(baseUrl, headers, contrato.id);
-            } catch {
-                // Use basic service info
-            }
+        const contratos: any[] = [];
+        for (let i = 0; i < contractData.registros.length; i++) {
+            const contrato = contractData.registros[i];
+            let servicos = servicesByContract[i];
 
             if (servicos.length === 0) {
                 servicos = [{
@@ -317,11 +336,13 @@ export class IxcAdapter implements ISgpAdapter {
      * Fetch radius users (services/connections) for a contract
      */
     private async fetchContractServices(baseUrl: string, headers: Record<string, string>, contractId: string): Promise<any[]> {
+        // Same fallback policy as fetchClientContracts: only retry on transport/HTTP failure.
+        // A 200 with empty `registros` means "no services" and is final.
         const endpoints = ['/webservice/v1/radusuarios', '/api/v1/radusuarios'];
 
         for (const endpoint of endpoints) {
             try {
-                const res = await fetch(`${baseUrl}${endpoint}`, {
+                const res = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -335,14 +356,15 @@ export class IxcAdapter implements ISgpAdapter {
                     })
                 });
 
-                const text = await res.text();
                 if (!res.ok) continue;
+                const text = await res.text();
 
                 let data: any;
                 try { data = JSON.parse(text); } catch { continue; }
-                if (!data?.registros?.length) continue;
+                const registros: any[] = data?.registros || [];
+                if (registros.length === 0) return [];
 
-                return data.registros.map((rad: any) => ({
+                return registros.map((rad: any) => ({
                     id: rad.id,
                     descricao: rad.info || rad.login || 'PPPoE',
                     login: rad.login,

@@ -78,21 +78,13 @@ export const SgpSettingsModal: React.FC<SgpSettingsModalProps> = ({ providerType
         setIsTesting(true);
         setTestResult(null);
         try {
-            // Use the search endpoint with a dummy CPF to test connectivity
-            await api.post(`/integrations/sgp/search-customer/${providerType}`, { cpfCnpj: '00000000000' });
+            await api.post(`/integrations/sgp/test-connection/${providerType}`);
             setTestResult('success');
             showToast(t('sgp_test_success'), 'success');
         } catch (error: any) {
-            // A 404/no-result is still a valid connection — only network/auth errors are failures
-            const status = error.response?.status;
-            if (status && status >= 200 && status < 500) {
-                setTestResult('success');
-                showToast(t('sgp_test_success'), 'success');
-            } else {
-                setTestResult('error');
-                const msg = error.response?.data?.error || error.message || 'Unknown error';
-                showToast(t('sgp_test_error', { error: msg }), 'error');
-            }
+            setTestResult('error');
+            const msg = error.response?.data?.error || error.message || 'Unknown error';
+            showToast(t('sgp_test_error', { error: msg }), 'error');
         } finally {
             setIsTesting(false);
             if (testTimeoutRef.current) clearTimeout(testTimeoutRef.current);

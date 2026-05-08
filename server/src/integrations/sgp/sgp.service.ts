@@ -8,6 +8,7 @@ import { IxcAdapter } from './adapters/IxcAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
 import { BeeswebAdapter } from './adapters/BeeswebAdapter';
 import { decryptIfNeeded } from '../../lib/encryption';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 
 /** Decrypts sensitive fields in-place so all downstream code reads plaintext. */
 function decryptSettings<T extends { apiToken?: string | null; webhookSecret?: string | null }>(settings: T): T {
@@ -305,6 +306,28 @@ export class SgpService {
         }
     }
     
+    /**
+     * Probe SGP credentials/connectivity for a tenant. Cheaper than searchCustomer
+     * because it never enters the customer-search pipeline.
+     */
+    public static async testConnection(userId: string, sgpType: string): Promise<void> {
+        const settingsRaw = await prisma.integrationSettings.findFirst({
+            where: { userId, sgpType }
+        });
+        if (!settingsRaw || !settingsRaw.apiUrl || !settingsRaw.apiToken) {
+            throw new Error('Integration not configured (URL and token required)');
+        }
+        const settings = decryptSettings(settingsRaw);
+        const baseUrl = settings.apiUrl!.replace(/\/$/, '');
+        const adapter = this.getAdapter(sgpType);
+        if (!adapter.testConnection) {
+            // Fallback for adapters that haven't implemented the probe yet.
+            await adapter.searchCustomer(baseUrl, settings.apiToken!, settings.apiApp, '00000000000');
+            return;
+        }
+        await adapter.testConnection(baseUrl, settings.apiToken!, settings.apiApp);
+    }
+
     public static async searchCustomer(userId: string, sgpType: string, cpfCnpj: string) {
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -332,38 +355,52 @@ export class SgpService {
             throw new Error('Integration not configured (URL and Token required)');
         }
 
-        // If specific sgpType requested, use only that one. If 'auto', try all providers.
-        const settingsToTry = sgpType === 'auto' ? allSettings : [allSettings[0]];
-        let lastError = '';
-
-        for (const settings of settingsToTry) {
+        // Specific provider → single attempt with original error semantics.
+        if (sgpType !== 'auto') {
+            const settings = allSettings[0];
             const baseUrl = settings.apiUrl?.replace(/\/$/, '');
-            if (!baseUrl || !settings.apiToken) continue;
-
-            logger.info(`[SGP Service] Searching customer using ${settings.sgpType} provider (Active: ${settings.active}) for company ${user.companyId}`);
-
+            if (!baseUrl || !settings.apiToken) return null;
+            logger.info(`[SGP Service] Searching customer using ${settings.sgpType} for company ${user.companyId}`);
             const adapter = this.getAdapter(settings.sgpType);
+            const result = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, cpfCnpj);
+            if (result) logger.info(`[SGP Service] Found customer via ${settings.sgpType} for ${cpfCnpj}`);
+            return result;
+        }
+
+        // Auto mode: race all providers in parallel and return the first hit.
+        // Each provider's search resolves to a result on success and rejects with
+        // a sentinel { empty: true } when there's simply no record (so Promise.any
+        // can keep waiting on other providers). Real errors carry their message.
+        const usableSettings = allSettings.filter(s => s.apiUrl && s.apiToken);
+        if (usableSettings.length === 0) return null;
+
+        type EmptyMiss = { empty: true; provider: string };
+        type ProviderError = { empty: false; provider: string; message: string };
+
+        const attempts = usableSettings.map(async (settings) => {
+            const baseUrl = settings.apiUrl!.replace(/\/$/, '');
+            const adapter = this.getAdapter(settings.sgpType);
+            logger.info(`[SGP Service] Searching customer via ${settings.sgpType} (auto) for company ${user.companyId}`);
             try {
-                const result = await adapter.searchCustomer(baseUrl, settings.apiToken, settings.apiApp, cpfCnpj);
-                if (result) {
-                    logger.info(`[SGP Service] Found customer via ${settings.sgpType} for ${cpfCnpj}`);
-                    return result;
-                }
-                logger.info(`[SGP Service] No customer found via ${settings.sgpType} for ${cpfCnpj}`);
-            } catch (error: any) {
-                lastError = error.message;
-                logger.warn(`[SGP Service] Provider ${settings.sgpType} error: ${error.message}`);
-                // Continue to next provider in auto mode
-                if (sgpType !== 'auto') throw error;
+                const result = await adapter.searchCustomer(baseUrl, settings.apiToken!, settings.apiApp, cpfCnpj);
+                if (result) return result;
+                throw { empty: true, provider: settings.sgpType } as EmptyMiss;
+            } catch (err: any) {
+                if (err && err.empty === true) throw err;
+                logger.warn(`[SGP Service] Provider ${settings.sgpType} error: ${err.message}`);
+                throw { empty: false, provider: settings.sgpType, message: err.message } as ProviderError;
             }
-        }
+        });
 
-        // If all providers had errors (not just empty results), throw the last one
-        if (lastError && sgpType === 'auto') {
-            throw new Error(lastError);
+        try {
+            const result = await Promise.any(attempts);
+            return result;
+        } catch (aggregate: any) {
+            const errors: (EmptyMiss | ProviderError)[] = aggregate?.errors || [];
+            const realError = errors.find((e): e is ProviderError => e.empty === false);
+            if (realError) throw new Error(realError.message);
+            return null; // All providers cleanly returned "not found"
         }
-
-        return null;
     }
 
     // Process a single customer sync against SGP API (supports both IXC and GENERIC providers)
@@ -430,7 +467,7 @@ export class SgpService {
                 omitir_titulos: true
             };
 
-            const response = await fetch(`${baseUrl}/api/ura/clientes/`, {
+            const response = await fetchWithTimeout(`${baseUrl}/api/ura/clientes/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
@@ -451,9 +488,19 @@ export class SgpService {
         const onuData = mainService.onu || {};
 
         // 1. Connection & Account Status Sync
-        const newStatus = onuData.conexao?.status
+        let newStatus: string | null = onuData.conexao?.status
             ? String(onuData.conexao.status).toLowerCase().trim()
             : (onuData.serial || mainService.mac ? 'offline' : null);
+
+        // GENERIC fallback: when the customer payload has no ONU data at all,
+        // probe /api/ura/verificaacesso/ on the main contract for a definitive
+        // online/offline answer. Skipped for IXC/BEESWEB since they have their
+        // own signals (radusuarios.online and "no support" respectively).
+        if (!newStatus && mainContract?.id && settings.sgpType !== 'IXC' && settings.sgpType !== 'BEESWEB') {
+            const generic = this.getAdapter('GENERIC') as GenericAdapter;
+            const fallback = await generic.checkServiceAccess(baseUrl, settings.apiApp, settings.apiToken, mainContract.id);
+            if (fallback) newStatus = fallback;
+        }
 
         const servicoStatus = mainService.status || mainContract.status || sgpCustomer.status;
         const newAccountStatus = servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
@@ -506,6 +553,57 @@ export class SgpService {
         return updated;
     }
 
+    /**
+     * Stage a customer update (last-write-wins). The actual DB writes are deferred
+     * to flushPendingUpdates so we can collapse N customers with identical change
+     * sets into a single updateMany.
+     */
+    private static stagePendingUpdate(
+        pending: Map<string, Record<string, any>>,
+        customerId: string,
+        fields: Record<string, any>
+    ) {
+        if (Object.keys(fields).length === 0) return;
+        const existing = pending.get(customerId);
+        pending.set(customerId, existing ? { ...existing, ...fields } : fields);
+    }
+
+    /**
+     * Flush staged updates. Buckets entries by data shape and issues one
+     * updateMany per shape (chunked at 500 IDs to keep query size sane).
+     */
+    private static async flushPendingUpdates(
+        pending: Map<string, Record<string, any>>
+    ): Promise<number> {
+        if (pending.size === 0) return 0;
+        const buckets = new Map<string, { ids: string[]; data: Record<string, any> }>();
+        for (const [customerId, data] of pending) {
+            const key = JSON.stringify(data);
+            let bucket = buckets.get(key);
+            if (!bucket) {
+                bucket = { ids: [], data };
+                buckets.set(key, bucket);
+            }
+            bucket.ids.push(customerId);
+        }
+        let total = 0;
+        for (const { ids, data } of buckets.values()) {
+            for (let i = 0; i < ids.length; i += 500) {
+                try {
+                    const res = await prisma.customer.updateMany({
+                        where: { id: { in: ids.slice(i, i + 500) } },
+                        data
+                    });
+                    total += res.count;
+                } catch (err: any) {
+                    logger.warn(`[SGP Service] updateMany batch failed: ${err.message}`);
+                }
+            }
+        }
+        pending.clear();
+        return total;
+    }
+
     // Run async tasks with a concurrency limit
     private static async runWithConcurrency<T>(tasks: (() => Promise<T>)[], concurrency: number): Promise<T[]> {
         const results: T[] = [];
@@ -544,6 +642,15 @@ export class SgpService {
                 companyId: user.companyId,
                 document: { not: null },
                 deletedAt: null
+            },
+            select: {
+                id: true,
+                name: true,
+                document: true,
+                status: true,
+                connectionStatus: true,
+                splitterPortIndex: true,
+                ctoId: true
             }
         });
 
@@ -587,11 +694,26 @@ export class SgpService {
                 try {
                     const userCompanyId = setting.user?.companyId;
                     const mappings = await prisma.integrationMapping.findMany({
-                        where: { userId: setting.userId }
+                        where: { userId: setting.userId },
+                        select: {
+                            id: true,
+                            internalCustomerId: true,
+                            externalCustomerId: true,
+                            splitterPort: true
+                        }
                     });
 
                     const customers = userCompanyId ? await prisma.customer.findMany({
-                        where: { companyId: userCompanyId }
+                        where: { companyId: userCompanyId },
+                        select: {
+                            id: true,
+                            name: true,
+                            document: true,
+                            status: true,
+                            connectionStatus: true,
+                            splitterPortIndex: true,
+                            ctoId: true
+                        }
                     }) : [];
 
                     const mappingMap = new Map();
@@ -636,93 +758,92 @@ export class SgpService {
         baseUrl = adapter.normalizeBaseUrl(baseUrl);
         const headers = adapter.buildAuthHeaders(token);
 
-        let page = 1;
         const rp = 100;
         const processedIds = new Set<string>();
+        const pendingUpdates = new Map<string, Record<string, any>>();
+        const PAGE_SPACING_MS = 100;
+
+        // Fire one request and return parsed JSON. Throws on HTTP/parse errors.
+        const fetchPage = async (pageNum: number): Promise<any> => {
+            const response = await fetchWithTimeout(`${baseUrl}/webservice/v1/cliente`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    qtype: 'cliente.id',
+                    query: '0',
+                    oper: '>',
+                    page: String(pageNum),
+                    rp: String(rp),
+                    sortname: 'cliente.id',
+                    sortorder: 'asc',
+                })
+            });
+            if (!response.ok) throw new Error(`API ${response.status}`);
+            return response.json();
+        };
+
+        // Speculative prefetch: while we process page N, page N+1 is already in flight.
+        let page = 1;
+        let inFlight: Promise<any> | null = fetchPage(page);
         let loopCount = 0;
 
-        while (true) {
+        while (inFlight) {
             loopCount++;
             if (loopCount > 400) {
                 logger.warn(`[SGP Daily Sync IXC] Hard stop for tenant ${setting.userId} at page ${page}`);
                 break;
             }
 
-            logger.info(`[SGP Service] IXC: Fetching clients page ${page} for tenant ${setting.userId}`);
+            logger.info(`[SGP Service] IXC: Processing clients page ${page} for tenant ${setting.userId}`);
 
-            const bodyData = {
-                qtype: 'cliente.id',
-                query: '0',
-                oper: '>',
-                page: String(page),
-                rp: String(rp),
-                sortname: 'cliente.id',
-                sortorder: 'asc',
-            };
-
+            let data: any;
             try {
-                const response = await fetch(`${baseUrl}/webservice/v1/cliente`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(bodyData)
-                });
-
-                if (!response.ok) {
-                    logger.error(`[SGP Daily Sync IXC] API error ${response.status} for tenant ${setting.userId}`);
-                    break;
-                }
-
-                const data: any = await response.json();
-                const registros = data?.registros || [];
-
-                if (registros.length === 0) break;
-
-                for (const cliente of registros) {
-                    const cpfCnpj = cliente.cnpj_cpf;
-                    if (!cpfCnpj) continue;
-
-                    const cleanDoc = cpfCnpj.replace(/\D/g, '');
-                    if (processedIds.has(cleanDoc)) continue;
-                    processedIds.add(cleanDoc);
-
-                    const externalId = cleanDoc;
-                    const mapping = mappingMap.get(externalId);
-
-                    // Status sync
-                    if (mapping && mapping.internalCustomerId) {
-                        const customer = customerMap.get(mapping.internalCustomerId);
-                        if (customer) {
-                            const isAtivo = cliente.ativo === 'S';
-                            const newAccountStatus = isAtivo ? 'ACTIVE' : 'INACTIVE';
-
-                            const updateData: any = {};
-                            if (newAccountStatus !== (customer as any).status) {
-                                updateData.status = newAccountStatus;
-                                (customer as any).status = newAccountStatus;
-                            }
-
-                            if (Object.keys(updateData).length > 0) {
-                                try {
-                                    await prisma.customer.update({
-                                        where: { id: customer.id },
-                                        data: updateData
-                                    });
-                                } catch (e) {
-                                    // Ignore single update failures
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (registros.length < rp) break; // Last page
-
-                page++;
-                await new Promise(resolve => setTimeout(resolve, 500));
+                data = await inFlight;
             } catch (err: any) {
-                logger.error(`[SGP Daily Sync IXC] Fetch error: ${err.message}`);
+                logger.error(`[SGP Daily Sync IXC] Fetch error on page ${page}: ${err.message}`);
                 break;
             }
+
+            const registros = data?.registros || [];
+            const isLastPage = registros.length === 0 || registros.length < rp;
+
+            // Kick off next page in parallel BEFORE processing current,
+            // with a small spacing to avoid bursting the SGP server.
+            inFlight = isLastPage ? null : (async () => {
+                await new Promise(resolve => setTimeout(resolve, PAGE_SPACING_MS));
+                return fetchPage(page + 1);
+            })();
+
+            for (const cliente of registros) {
+                const cpfCnpj = cliente.cnpj_cpf;
+                if (!cpfCnpj) continue;
+
+                const cleanDoc = cpfCnpj.replace(/\D/g, '');
+                if (processedIds.has(cleanDoc)) continue;
+                processedIds.add(cleanDoc);
+
+                const mapping = mappingMap.get(cleanDoc);
+                if (!mapping || !mapping.internalCustomerId) continue;
+
+                const customer = customerMap.get(mapping.internalCustomerId);
+                if (!customer) continue;
+
+                const newAccountStatus = cliente.ativo === 'S' ? 'ACTIVE' : 'INACTIVE';
+                if (newAccountStatus !== (customer as any).status) {
+                    this.stagePendingUpdate(pendingUpdates, customer.id, { status: newAccountStatus });
+                    (customer as any).status = newAccountStatus;
+                }
+            }
+
+            page++;
+        }
+
+        // Swallow any in-flight error from a discarded prefetch
+        if (inFlight) (inFlight as Promise<any>).catch(() => {});
+
+        const updated = await this.flushPendingUpdates(pendingUpdates);
+        if (updated > 0) {
+            logger.info(`[SGP Daily Sync IXC] Updated ${updated} customers for tenant ${setting.userId}`);
         }
     }
 
@@ -753,6 +874,7 @@ export class SgpService {
 
         let page = 1;
         let loopCount = 0;
+        const pendingUpdates = new Map<string, Record<string, any>>();
 
         while (true) {
             loopCount++;
@@ -782,22 +904,20 @@ export class SgpService {
                 const newAccountStatus = this.mapBeeswebStatus(beesCustomer);
                 if (!newAccountStatus || newAccountStatus === (customer as any).status) continue;
 
-                try {
-                    await prisma.customer.update({
-                        where: { id: customer.id },
-                        data: { status: newAccountStatus }
-                    });
-                    (customer as any).status = newAccountStatus;
-                } catch {
-                    // ignore single update failures
-                }
+                this.stagePendingUpdate(pendingUpdates, customer.id, { status: newAccountStatus });
+                (customer as any).status = newAccountStatus;
             }
 
             const lastPage = Number(data?.last_page) || page;
             if (page >= lastPage || !data?.next_page_url) break;
 
             page++;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        const updated = await this.flushPendingUpdates(pendingUpdates);
+        if (updated > 0) {
+            logger.info(`[SGP Daily Sync BEESWEB] Updated ${updated} customers for tenant ${setting.userId}`);
         }
     }
 
@@ -810,63 +930,73 @@ export class SgpService {
         mappingMap: Map<string, any>,
         customerMap: Map<string, any>
     ) {
-        let offset = 0;
         const limit = 100;
-        let fetching = true;
         const processedDailyIds = new Set<string>();
+        const pendingUpdates = new Map<string, Record<string, any>>();
+        const PAGE_SPACING_MS = 100;
+
+        const fetchPage = async (offsetNum: number): Promise<any> => {
+            const response = await fetchWithTimeout(`${baseUrl}/api/ura/clientes/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app: setting.apiApp,
+                    token: setting.apiToken,
+                    limit,
+                    offset: offsetNum,
+                    exibir_conexao: 's',
+                    omitir_titulos: true
+                })
+            });
+            if (!response.ok) throw new Error(`API ${response.status}`);
+            return response.json();
+        };
+
+        let offset = 0;
+        let inFlight: Promise<any> | null = fetchPage(offset);
         let dailyLoopCount = 0;
 
-        while (fetching) {
+        while (inFlight) {
             dailyLoopCount++;
             if (dailyLoopCount > 400) {
                 logger.warn(`[SGP Daily Sync] Hard stop for tenant ${setting.userId} at offset ${offset} to prevent freeze.`);
                 break;
             }
 
-            logger.info(`[SGP Service] Fetching clients for tenant ${setting.userId} (offset: ${offset})`);
+            logger.info(`[SGP Service] Processing clients for tenant ${setting.userId} (offset: ${offset})`);
 
-            const bodyData = {
-                app: setting.apiApp,
-                token: setting.apiToken,
-                limit: limit,
-                offset: offset,
-                exibir_conexao: "s",
-                omitir_titulos: true
-            };
-
-            const response = await fetch(`${baseUrl}/api/ura/clientes/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bodyData)
-            });
-
-            if (!response.ok) {
-                logger.error(`[SGP Service] Failed to fetch SGP API for tenant ${setting.userId}: ${response.statusText}`);
+            let data: any;
+            try {
+                data = await inFlight;
+            } catch (err: any) {
+                logger.error(`[SGP Service] Failed to fetch SGP API for tenant ${setting.userId}: ${err.message}`);
                 break;
             }
 
-            const data: any = await response.json();
             const clientes = data?.clientes || [];
+            const isLastPage = clientes.length === 0 || clientes.length !== limit;
 
-            if (clientes.length === 0) {
-                fetching = false;
-                break;
-            }
+            inFlight = isLastPage ? null : (async () => {
+                await new Promise(resolve => setTimeout(resolve, PAGE_SPACING_MS));
+                return fetchPage(offset + limit);
+            })();
 
-            if (clientes.length < limit || clientes.length > limit) {
-                fetching = false;
-            }
+            // Per-page queue of customers needing the verificaacesso fallback
+            // (no ONU data in payload). Resolved with bounded concurrency at the
+            // end of the page so we don't slow down processing inline.
+            const accessFallbackQueue: { customerId: string; contratoId: string | number }[] = [];
 
             for (const cliente of clientes) {
                 const cpfCnpj = cliente.cpfcnpj;
                 if (!cpfCnpj) continue;
 
-                if (processedDailyIds.has(cpfCnpj)) continue;
-                processedDailyIds.add(cpfCnpj);
+                // Canonical mapping key is digits-only CPF/CNPJ (see IntegrationMapping
+                // schema doc). Whether the SGP returned formatted or raw, we normalize.
+                const externalId = String(cpfCnpj).replace(/\D/g, '');
+                if (!externalId) continue;
+                if (processedDailyIds.has(externalId)) continue;
+                processedDailyIds.add(externalId);
 
-                const externalId = String(cpfCnpj);
                 const mapping = mappingMap.get(externalId);
 
                 const contratos = cliente.contratos || [];
@@ -885,7 +1015,7 @@ export class SgpService {
                                                         (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
                                                         (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : null));
 
-                                const updateData: any = {};
+                                const updateData: Record<string, any> = {};
                                 if (newStatus && newStatus !== (customer as any).connectionStatus) {
                                     updateData.connectionStatus = newStatus;
                                     (customer as any).connectionStatus = newStatus;
@@ -895,15 +1025,11 @@ export class SgpService {
                                     (customer as any).status = newAccountStatus;
                                 }
 
-                                if (Object.keys(updateData).length > 0) {
-                                    try {
-                                        await prisma.customer.update({
-                                            where: { id: customer.id },
-                                            data: updateData
-                                        });
-                                    } catch (e) {
-                                        // Ignore single update failures
-                                    }
+                                this.stagePendingUpdate(pendingUpdates, customer.id, updateData);
+
+                                // Queue verificaacesso fallback when ONU data is missing.
+                                if (!newStatus && contrato.id) {
+                                    accessFallbackQueue.push({ customerId: customer.id, contratoId: contrato.id });
                                 }
                             }
                         }
@@ -931,8 +1057,34 @@ export class SgpService {
                 }
             }
 
+            // Resolve verificaacesso fallbacks for this page with bounded
+            // concurrency. Runs in parallel with the prefetch of the next page.
+            if (accessFallbackQueue.length > 0) {
+                const generic = this.getAdapter('GENERIC') as GenericAdapter;
+                let resolved = 0;
+                const tasks = accessFallbackQueue.map(item => async () => {
+                    const status = await generic.checkServiceAccess(
+                        baseUrl, setting.apiApp, setting.apiToken, item.contratoId
+                    );
+                    if (status) {
+                        this.stagePendingUpdate(pendingUpdates, item.customerId, { connectionStatus: status });
+                        resolved++;
+                    }
+                });
+                await this.runWithConcurrency(tasks, 3);
+                if (resolved > 0) {
+                    logger.info(`[SGP Daily Sync GENERIC] verificaacesso fallback resolved ${resolved}/${accessFallbackQueue.length} customers (page offset ${offset})`);
+                }
+            }
+
             offset += limit;
-            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        if (inFlight) (inFlight as Promise<any>).catch(() => {});
+
+        const updated = await this.flushPendingUpdates(pendingUpdates);
+        if (updated > 0) {
+            logger.info(`[SGP Daily Sync GENERIC] Updated ${updated} customers for tenant ${setting.userId}`);
         }
     }
 
@@ -990,110 +1142,155 @@ export class SgpService {
 
         // Load mappings for this tenant
         const mappings = await prisma.integrationMapping.findMany({
-            where: { userId: setting.userId }
+            where: { userId: setting.userId },
+            select: {
+                id: true,
+                internalCustomerId: true,
+                externalCustomerId: true,
+                splitterPort: true
+            }
         });
         const mappingByClient = new Map<string, any>();
         for (const m of mappings) mappingByClient.set(m.externalCustomerId, m);
 
         const userCompanyId = setting.user?.companyId;
         const customers = userCompanyId ? await prisma.customer.findMany({
-            where: { companyId: userCompanyId }
+            where: { companyId: userCompanyId },
+            select: {
+                id: true,
+                name: true,
+                document: true,
+                status: true,
+                connectionStatus: true,
+                splitterPortIndex: true,
+                ctoId: true
+            }
         }) : [];
         const customerMap = new Map<string, any>();
         for (const c of customers) customerMap.set(c.id, c);
 
-        // Query radusuarios updated since last sync
-        let page = 1;
+        // Query radusuarios updated since last sync, with speculative prefetch
         const rp = 100;
-        let totalUpdated = 0;
+        const pendingUpdates = new Map<string, Record<string, any>>();
+        const PAGE_SPACING_MS = 100;
 
-        while (true) {
-            const bodyData = {
-                qtype: 'radusuarios.ultima_atualizacao',
-                query: sinceStr,
-                oper: '>',
-                page: String(page),
-                rp: String(rp),
-                sortname: 'radusuarios.ultima_atualizacao',
-                sortorder: 'asc',
-            };
+        const fetchPage = async (pageNum: number): Promise<any> => {
+            const response = await fetchWithTimeout(`${baseUrl}/webservice/v1/radusuarios`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    qtype: 'radusuarios.ultima_atualizacao',
+                    query: sinceStr,
+                    oper: '>',
+                    page: String(pageNum),
+                    rp: String(rp),
+                    sortname: 'radusuarios.ultima_atualizacao',
+                    sortorder: 'asc',
+                })
+            });
+            const responseText = await response.text();
+            if (!response.ok) {
+                throw new Error(`API ${response.status}: ${responseText.substring(0, 200)}`);
+            }
+            return JSON.parse(responseText);
+        };
 
+        let page = 1;
+        let inFlight: Promise<any> | null = fetchPage(page);
+
+        while (inFlight) {
+            let data: any;
             try {
-                const response = await fetch(`${baseUrl}/webservice/v1/radusuarios`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(bodyData)
-                });
-
-                const responseText = await response.text();
-                if (!response.ok) {
-                    logger.warn(`[SGP Incremental IXC] API error ${response.status}: ${responseText.substring(0, 200)}`);
-                    break;
-                }
-
-                let data: any;
-                try { data = JSON.parse(responseText); } catch { break; }
-
-                if (data?.type === 'error') {
-                    logger.warn(`[SGP Incremental IXC] ${data.message}`);
-                    break;
-                }
-
-                const registros = data?.registros || [];
-                if (registros.length === 0) break;
-
-                logger.info(`[SGP Incremental IXC] Found ${registros.length} updated radusuarios (page ${page})`);
-
-                for (const rad of registros) {
-                    const clientId = rad.id_cliente;
-                    if (!clientId) continue;
-
-                    // Try to find this client in our mappings (by clientId or document)
-                    // We need the customer's document to match mappings
-                    const mapping = mappingByClient.get(String(clientId));
-                    if (!mapping || !mapping.internalCustomerId) continue;
-
-                    const customer = customerMap.get(mapping.internalCustomerId);
-                    if (!customer) continue;
-
-                    // Update connection status
-                    const isOnline = rad.online === 'S';
-                    const isAtivo = rad.ativo === 'S';
-                    const newConnectionStatus = isOnline ? 'online' : 'offline';
-                    const newAccountStatus = isAtivo ? 'ACTIVE' : 'INACTIVE';
-
-                    const updateData: any = {};
-                    if (newConnectionStatus !== (customer as any).connectionStatus) {
-                        updateData.connectionStatus = newConnectionStatus;
-                        (customer as any).connectionStatus = newConnectionStatus;
-                    }
-                    if (newAccountStatus !== (customer as any).status) {
-                        updateData.status = newAccountStatus;
-                        (customer as any).status = newAccountStatus;
-                    }
-
-                    if (Object.keys(updateData).length > 0) {
-                        try {
-                            await prisma.customer.update({
-                                where: { id: customer.id },
-                                data: updateData
-                            });
-                            totalUpdated++;
-                        } catch {
-                            // Ignore individual update failures
-                        }
-                    }
-                }
-
-                if (registros.length < rp) break; // Last page
-                page++;
-                await new Promise(resolve => setTimeout(resolve, 300));
+                data = await inFlight;
             } catch (err: any) {
-                logger.error(`[SGP Incremental IXC] Fetch error: ${err.message}`);
+                logger.warn(`[SGP Incremental IXC] Fetch error on page ${page}: ${err.message}`);
                 break;
             }
+
+            if (data?.type === 'error') {
+                logger.warn(`[SGP Incremental IXC] ${data.message}`);
+                break;
+            }
+
+            const registros = data?.registros || [];
+            const isLastPage = registros.length === 0 || registros.length < rp;
+
+            inFlight = isLastPage ? null : (async () => {
+                await new Promise(resolve => setTimeout(resolve, PAGE_SPACING_MS));
+                return fetchPage(page + 1);
+            })();
+
+            if (registros.length > 0) {
+                logger.info(`[SGP Incremental IXC] Found ${registros.length} updated radusuarios (page ${page})`);
+            }
+
+            // radusuarios only exposes id_cliente; mappings are keyed by digits-only
+            // CPF/CNPJ. Batch-translate id_cliente → CPF in a single IXC call so the
+            // mapping lookup below can succeed.
+            const uniqueClientIds = [...new Set(registros.map((r: any) => r.id_cliente).filter(Boolean).map(String))];
+            const clientIdToDoc = new Map<string, string>();
+            if (uniqueClientIds.length > 0) {
+                try {
+                    const lookupRes = await fetchWithTimeout(`${baseUrl}/webservice/v1/cliente`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                            qtype: 'cliente.id',
+                            query: uniqueClientIds.join(','),
+                            oper: 'IN',
+                            page: '1',
+                            rp: String(uniqueClientIds.length),
+                            sortname: 'cliente.id',
+                            sortorder: 'asc',
+                        })
+                    });
+                    if (lookupRes.ok) {
+                        const lookupData: any = await lookupRes.json();
+                        for (const c of (lookupData?.registros || [])) {
+                            const doc = String(c.cnpj_cpf || '').replace(/\D/g, '');
+                            if (doc) clientIdToDoc.set(String(c.id), doc);
+                        }
+                    }
+                } catch (err: any) {
+                    logger.warn(`[SGP Incremental IXC] id_cliente→CPF batch translate failed: ${err.message}`);
+                }
+            }
+
+            for (const rad of registros) {
+                const clientId = rad.id_cliente;
+                if (!clientId) continue;
+
+                const externalKey = clientIdToDoc.get(String(clientId));
+                if (!externalKey) continue; // Couldn't translate id_cliente; skip rather than silently no-op
+
+                const mapping = mappingByClient.get(externalKey);
+                if (!mapping || !mapping.internalCustomerId) continue;
+
+                const customer = customerMap.get(mapping.internalCustomerId);
+                if (!customer) continue;
+
+                const newConnectionStatus = rad.online === 'S' ? 'online' : 'offline';
+                const newAccountStatus = rad.ativo === 'S' ? 'ACTIVE' : 'INACTIVE';
+
+                const updateData: Record<string, any> = {};
+                if (newConnectionStatus !== (customer as any).connectionStatus) {
+                    updateData.connectionStatus = newConnectionStatus;
+                    (customer as any).connectionStatus = newConnectionStatus;
+                }
+                if (newAccountStatus !== (customer as any).status) {
+                    updateData.status = newAccountStatus;
+                    (customer as any).status = newAccountStatus;
+                }
+
+                this.stagePendingUpdate(pendingUpdates, customer.id, updateData);
+            }
+
+            page++;
         }
 
+        if (inFlight) (inFlight as Promise<any>).catch(() => {});
+
+        const totalUpdated = await this.flushPendingUpdates(pendingUpdates);
         if (totalUpdated > 0) {
             logger.info(`[SGP Incremental IXC] Updated ${totalUpdated} customers for tenant ${setting.userId}`);
         }
@@ -1109,7 +1306,8 @@ export class SgpService {
 
         // Only sync customers that have an active mapping
         const mappings = await prisma.integrationMapping.findMany({
-            where: { userId: setting.userId }
+            where: { userId: setting.userId },
+            select: { internalCustomerId: true }
         });
 
         if (mappings.length === 0) return;
@@ -1120,6 +1318,15 @@ export class SgpService {
                 document: { not: null },
                 deletedAt: null,
                 id: { in: mappings.map(m => m.internalCustomerId).filter(Boolean) as string[] }
+            },
+            select: {
+                id: true,
+                name: true,
+                document: true,
+                status: true,
+                connectionStatus: true,
+                splitterPortIndex: true,
+                ctoId: true
             }
         });
 

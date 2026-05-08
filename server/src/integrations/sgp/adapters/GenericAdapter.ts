@@ -1,5 +1,6 @@
 import { ISgpAdapter } from './SgpAdapter.interface';
 import { NormalizedSgpEvent, SgpEventType } from '../sgp.types';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 
 export class GenericAdapter implements ISgpAdapter {
     normalizeWebhookPayload(payload: any): NormalizedSgpEvent {
@@ -38,6 +39,80 @@ export class GenericAdapter implements ISgpAdapter {
         return token === secret || token === `Bearer ${secret}`;
     }
 
+    /**
+     * Probe the SGP /api/ura/verificaacesso/ endpoint to determine whether a
+     * given contract's internet service is currently online. Used as a fallback
+     * by the sync paths when the regular customer payload arrives without any
+     * ONU data (no serial, no MAC, no conexao.status) — in that case we can't
+     * tell offline from "no info", so this endpoint gives us a definitive answer.
+     *
+     * The endpoint is documented as form-data; the URL-encoded body is accepted
+     * by every SGP we've tested and avoids the multipart boundary overhead.
+     *
+     * Returns 'online' | 'offline' on a confident match, or null when the SGP
+     * doesn't respond cleanly — null leaves the existing connectionStatus
+     * untouched downstream.
+     */
+    async checkServiceAccess(
+        baseUrl: string,
+        app: string | null,
+        token: string,
+        contratoId: string | number
+    ): Promise<'online' | 'offline' | null> {
+        const body = new URLSearchParams();
+        if (app) body.append('app', app);
+        body.append('token', token);
+        body.append('contrato', String(contratoId));
+
+        try {
+            const res = await fetchWithTimeout(
+                `${baseUrl.replace(/\/$/, '')}/api/ura/verificaacesso/`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                }
+            );
+            if (!res.ok) return null;
+            const text = await res.text();
+            let data: any;
+            try { data = JSON.parse(text); } catch { return null; }
+
+            // Primary signal: the numeric `status` field (0=offline, 1=online).
+            const s = data?.status;
+            if (s === 1 || s === '1') return 'online';
+            if (s === 0 || s === '0') return 'offline';
+
+            // Fallback: textual `msg` ("Serviço Online" / "Serviço Offline").
+            const msg = String(data?.msg || '').toLowerCase();
+            if (msg.includes('online')) return 'online';
+            if (msg.includes('offline')) return 'offline';
+
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
+    async testConnection(baseUrl: string, token: string, apiApp: string | null): Promise<void> {
+        const response = await fetchWithTimeout(`${baseUrl.replace(/\/$/, '')}/api/ura/clientes/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app: apiApp,
+                token,
+                limit: 1,
+                offset: 0,
+                exibir_conexao: 's',
+                omitir_titulos: true
+            })
+        });
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`SGP API error (${response.status}): ${text.substring(0, 200)}`);
+        }
+    }
+
     async searchCustomer(baseUrl: string, token: string, apiApp: string | null, query: string): Promise<any> {
         const bodyData = {
             app: apiApp,
@@ -46,7 +121,7 @@ export class GenericAdapter implements ISgpAdapter {
             exibir_conexao: true
         };
 
-        const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/ura/clientes/`, {
+        const response = await fetchWithTimeout(`${baseUrl.replace(/\/$/, '')}/api/ura/clientes/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
