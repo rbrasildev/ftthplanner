@@ -236,6 +236,9 @@ export const CTOMarker = React.memo(({
     }
 
     return (
+        // Render in cto-circles-pane (z=550) where drop polylines also live. Sharing
+        // the same pane means a single canvas, so Leaflet's hit-test iterates both
+        // CTOs and drops in one pass — no inter-pane click absorption.
         <CircleMarker
             center={[cto.coordinates.lat, cto.coordinates.lng]}
             radius={circleRadius}

@@ -91,12 +91,13 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({
                 const positions = drop.coords.map(c => [c.lat, c.lng] as [number, number]);
                 return (
                     <React.Fragment key={drop.id}>
-                        <Polyline positions={positions} pathOptions={DROP_PATH_OPTIONS} interactive={false} />
+                        <Polyline positions={positions} pathOptions={DROP_PATH_OPTIONS} interactive={false} pane="cto-circles-pane" />
                         {/* Wide invisible hit area for right-click and double-click */}
                         <Polyline
                             positions={positions}
                             pathOptions={DROP_HIT_AREA}
                             interactive={true}
+                            pane="cto-circles-pane"
                             eventHandlers={{
                                 contextmenu: (e) => {
                                     L.DomEvent.stopPropagation(e as any);
@@ -117,6 +118,7 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({
                         positions={editingCoords.map(c => [c.lat, c.lng] as [number, number])}
                         pathOptions={DROP_PATH_ACTIVE}
                         interactive={true}
+                        pane="cto-circles-pane"
                         eventHandlers={{
                             dblclick: (e) => {
                                 L.DomEvent.stopPropagation(e as any);
@@ -129,6 +131,7 @@ export const DropsLayer: React.FC<DropsLayerProps> = React.memo(({
                         positions={editingCoords.map(c => [c.lat, c.lng] as [number, number])}
                         pathOptions={DROP_HIT_AREA}
                         interactive={true}
+                        pane="cto-circles-pane"
                         eventHandlers={{
                             dblclick: (e) => {
                                 L.DomEvent.stopPropagation(e as any);

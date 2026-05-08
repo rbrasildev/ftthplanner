@@ -1572,15 +1572,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 <LabelsToggleClass showLabels={showLabels} />
 
-                {/* Dedicated pane for canvas-rendered CTO CircleMarkers — sits above
-                    cables (overlay/d3-visual) and below regular markers (POPs, poles,
-                    customers in markerPane=600).
-                    `pointerEvents:none` on the pane DIV is critical: without it the
-                    full-map-sized DIV at z=550 absorbs every click in its area, blocking
-                    right-clicks on drop polylines (overlayPane=400) below. The canvas
-                    rendered inside still receives events via its own auto pointer-events,
-                    so CircleMarker hit-testing keeps working. */}
-                <Pane name="cto-circles-pane" style={{ zIndex: 550, pointerEvents: 'none' }} />
+                {/* CTOs and drop polylines render together in this pane at z=550 so
+                    they sit above d3-visual cables (z=500) yet share a single canvas.
+                    Sharing matters: separate canvases at different z-indices cause
+                    the topmost one to absorb empty-area clicks, blocking right-click
+                    on the layer underneath. With a shared canvas, Leaflet's native
+                    hit-testing iterates every interactive path in one pass. */}
+                <Pane name="cto-circles-pane" style={{ zIndex: 550 }} />
 
                 <MapJumpController viewKey={viewKey} />
 

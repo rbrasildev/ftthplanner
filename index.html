@@ -290,15 +290,6 @@
     .leaflet-container.labels-off .leaflet-tooltip.map-label--permanent:not(.map-label--selected) {
       display: none;
     }
-    /* The cto-circles-pane DIV is set to pointer-events:none so empty areas
-       fall through to drop polylines below. But pointer-events is inherited,
-       so the canvas inside would also stop receiving events — breaking CTO
-       clicks. This rule re-enables events specifically on the canvas, so
-       CircleMarker hit-testing keeps working while the empty pane area is
-       click-transparent. */
-    .leaflet-cto-circles-pane-pane > canvas {
-      pointer-events: auto;
-    }
   </style>
   <script type="importmap">
 {
