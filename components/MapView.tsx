@@ -1574,8 +1574,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
                 {/* Dedicated pane for canvas-rendered CTO CircleMarkers — sits above
                     cables (overlay/d3-visual) and below regular markers (POPs, poles,
-                    customers in markerPane=600). */}
-                <Pane name="cto-circles-pane" style={{ zIndex: 550 }} />
+                    customers in markerPane=600).
+                    `pointerEvents:none` on the pane DIV is critical: without it the
+                    full-map-sized DIV at z=550 absorbs every click in its area, blocking
+                    right-clicks on drop polylines (overlayPane=400) below. The canvas
+                    rendered inside still receives events via its own auto pointer-events,
+                    so CircleMarker hit-testing keeps working. */}
+                <Pane name="cto-circles-pane" style={{ zIndex: 550, pointerEvents: 'none' }} />
 
                 <MapJumpController viewKey={viewKey} />
 
