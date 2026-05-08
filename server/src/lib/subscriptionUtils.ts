@@ -1,30 +1,31 @@
 /**
  * Subscription expiration helpers.
  *
- * Semantic: `subscriptionExpiresAt` is the *due date* — the customer remains
- * valid through the END of that day. We only consider the subscription
- * expired once the calendar day stored in `subscriptionExpiresAt` has fully
- * passed (i.e. today's date is strictly after it).
- *
- * Without this normalization, a value stored as `2026-04-10T00:00:00Z` would
- * be treated as expired the very instant April 10 begins, suspending the
- * customer on their own due date.
+ * Semantic: `subscriptionExpiresAt` is the *due date* in São Paulo time —
+ * the customer remains valid through the END of that local calendar day.
+ * Comparisons must therefore be anchored to BR-midnight, not UTC-midnight,
+ * because timestamps stored as `2026-05-08 02:59 UTC` (= 2026-05-07 23:59 BRT)
+ * would otherwise stay "valid" for nearly a full extra day.
  */
 
-/**
- * Returns midnight (UTC) of the current day.
- */
-export const startOfTodayUTC = (): Date => {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    return d;
+// Returns midnight of today in São Paulo (UTC-3, no DST since 2019).
+// The returned Date's underlying UTC timestamp is "today 03:00 UTC", which
+// represents "today 00:00 BRT".
+export const startOfTodayBR = (): Date => {
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    });
+    const [y, m, d] = fmt.format(new Date()).split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 3, 0, 0));
 };
 
 /**
- * True only if the subscription's due date is strictly before today
- * (i.e. it expired yesterday or earlier).
+ * True only if the subscription's due date is strictly before today (BRT)
+ * — i.e. the customer's local calendar day stored in `expiresAt` has fully
+ * passed.
  */
 export const isSubscriptionExpired = (expiresAt: Date | null | undefined): boolean => {
     if (!expiresAt) return false;
-    return new Date(expiresAt) < startOfTodayUTC();
+    return new Date(expiresAt) < startOfTodayBR();
 };

@@ -5,7 +5,7 @@ import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
 import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon } from 'lucide-react';
 import * as saasService from '../../services/saasService';
-import { isSubscriptionExpired } from '../../utils/subscriptionUtils';
+import { isSubscriptionExpired, toBRDateMidnight } from '../../utils/subscriptionUtils';
 import { getEffectiveLimits } from '../../utils/limitsUtils';
 import { SaasAnalytics } from './SaasAnalytics';
 import { SaasGlobalMap } from './SaasGlobalMap';
@@ -3164,14 +3164,15 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         const expiresAt = selectedCompany.subscriptionExpiresAt ? new Date(selectedCompany.subscriptionExpiresAt) : null;
                                         const createdAt = new Date(selectedCompany.createdAt);
                                         const now = new Date();
-                                        const startToday = new Date();
-                                        startToday.setUTCHours(0, 0, 0, 0);
+                                        // Day comparison anchored to São Paulo time — UTC midnight would put a
+                                        // customer with vencimento "07/05" (BRT) into "today" until ~21h BRT
+                                        // of 08/05, leaving them ~24h "active" past their actual due date.
+                                        const startToday = toBRDateMidnight(now);
 
-                                        // Days until / since expiration (date-only, mirrors backend semantic)
+                                        // Days until / since expiration (date-only)
                                         let daysDiff: number | null = null;
                                         if (expiresAt) {
-                                            const expDay = new Date(expiresAt);
-                                            expDay.setUTCHours(0, 0, 0, 0);
+                                            const expDay = toBRDateMidnight(expiresAt);
                                             daysDiff = Math.round((expDay.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24));
                                         }
                                         const isExpired = daysDiff !== null && daysDiff < 0;
@@ -3179,8 +3180,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         // Days as customer
                                         const daysAsCustomer = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-                                        // Payment day of month (extracted from due date)
-                                        const paymentDay = expiresAt ? expiresAt.getUTCDate() : null;
+                                        // Payment day of month (extracted from due date in BR locale —
+                                        // getUTCDate would be off by one when the timestamp is late evening BRT).
+                                        const paymentDay = expiresAt ? toBRDateMidnight(expiresAt).getUTCDate() : null;
 
                                         // Owner last login
                                         const owner = selectedCompany.users?.find((u: any) => u.role === 'OWNER');

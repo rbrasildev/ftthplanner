@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { sendEmail } from './emailService';
 import { buildBillingVars } from './billingEmailVars';
-import { startOfTodayUTC } from '../lib/subscriptionUtils';
+import { startOfTodayBR } from '../lib/subscriptionUtils';
 import logger from '../lib/logger';
 
 const ELIGIBLE_ROLES = ['OWNER', 'ADMIN'];
@@ -102,7 +102,7 @@ export const processBillingReminders = async () => {
     const daysBefore = config?.billingReminderDaysBefore ?? 5;
     const overdueIntervalDays = config?.billingOverdueIntervalDays ?? 3;
 
-    const startToday = startOfTodayUTC();
+    const startToday = startOfTodayBR();
     const tomorrow = addDays(startToday, 1);
     const rangeStart = addDays(startToday, Math.max(1, daysBefore - 2));
     const rangeEnd = addDays(startToday, daysBefore + 2);

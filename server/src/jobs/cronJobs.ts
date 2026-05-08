@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { processRetentionMetrics } from '../services/retentionService';
 import { executeAutomations } from '../services/automationService';
 import { prisma } from '../lib/prisma';
-import { startOfTodayUTC } from '../lib/subscriptionUtils';
+import { startOfTodayBR } from '../lib/subscriptionUtils';
 import { SgpService } from '../integrations/sgp/sgp.service';
 import { processBillingReminders } from '../services/billingReminderService';
 
@@ -51,7 +51,7 @@ export const initCronJobs = () => {
             // Start-of-today (UTC) — used for date-only comparisons against
             // `subscriptionExpiresAt` so a customer is only suspended AFTER
             // their due date has fully passed, not on the day itself.
-            const startToday = startOfTodayUTC();
+            const startToday = startOfTodayBR();
 
             // 1a. Expire one-shot Pix invoices (no billing period) — these are
             // ad-hoc QR codes; if the customer didn't pay in time they're done.
@@ -176,7 +176,7 @@ export const initCronJobs = () => {
     cron.schedule('0 4 * * *', async () => {
         console.log('[Cron] Pre-emitting upcoming renewal invoices...');
         try {
-            const startToday = startOfTodayUTC();
+            const startToday = startOfTodayBR();
             const windowEnd = new Date(startToday);
             windowEnd.setDate(windowEnd.getDate() + PRE_EMIT_DAYS_AHEAD + 1); // exclusive
 
