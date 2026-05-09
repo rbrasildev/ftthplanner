@@ -148,6 +148,24 @@ export class GenericAdapter implements ISgpAdapter {
             throw new Error(`SGP API returned invalid JSON: ${text.substring(0, 100)}`);
         }
         const clientes = data?.clientes || [];
-        return clientes[0] || null;
+        const cliente = clientes[0] || null;
+        if (!cliente) return null;
+
+        // Enrich the first service with verificaacesso when ONU data is missing,
+        // so the frontend's `applySgpService` (which reads onu.conexao.status)
+        // gets a concrete online/offline instead of falling to the offline default.
+        // Only one extra HTTP call per search and only when needed.
+        const mainContract = cliente.contratos?.[0];
+        const mainService = mainContract?.servicos?.[0];
+        const hasOnuStatus = !!mainService?.onu?.conexao?.status;
+        if (!hasOnuStatus && mainContract?.id) {
+            const access = await this.checkServiceAccess(baseUrl, apiApp, token, mainContract.id);
+            if (access) {
+                mainService.onu = mainService.onu || {};
+                mainService.onu.conexao = { ...(mainService.onu.conexao || {}), status: access };
+            }
+        }
+
+        return cliente;
     }
 }
