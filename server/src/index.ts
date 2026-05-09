@@ -3,6 +3,7 @@ dotenv.config();
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 
 import logger from './lib/logger';
 
@@ -98,8 +99,18 @@ app.get('/api/health', (req, res) => {
 const uploadsPath = path.resolve(__dirname, '..', 'uploads');
 app.use('/api/uploads', express.static(uploadsPath));
 
-app.use(express.json({ 
-    limit: '5mb',
+// gzip/deflate response compression. JSON-heavy responses (project state,
+// listings) shrink ~5-10x. body-parser already inflates compressed REQUEST
+// bodies natively when Content-Encoding is set, so the inbound side is
+// covered without extra middleware.
+app.use(compression());
+
+// 50mb covers large project syncs (many CTOs/customers/cables in one payload).
+// Bumped from 5mb after PayloadTooLargeError on /projects/:id/sync for accounts
+// with thousands of network elements. With request gzip from the frontend,
+// effective headroom is ~250-500mb of raw JSON.
+app.use(express.json({
+    limit: '50mb',
     verify: (req: any, res, buf) => {
         if (req.originalUrl && req.originalUrl.includes('/stripe-webhook')) {
             req.rawBody = buf;
@@ -107,7 +118,7 @@ app.use(express.json({
     }
 }));
 
-app.use(express.urlencoded({ limit: '5mb', extended: true }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use((req, res, next) => {
     // console.log(`[Request] ${req.method} ${req.url}`);

@@ -5,8 +5,19 @@ const api = axios.create({
     withCredentials: true,
 });
 
+// Threshold above which request bodies get gzip'd before sending. Below this,
+// compression overhead isn't worth it (small payloads typically compress poorly
+// and the round-trip latency dominates anyway).
+const GZIP_THRESHOLD_BYTES = 64 * 1024; // 64 KB
+
+async function gzipString(input: string): Promise<Uint8Array> {
+    const stream = new Blob([input]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return new Uint8Array(buf);
+}
+
 api.interceptors.request.use(
-    (config) => {
+    async (config) => {
         const supportToken = localStorage.getItem('ftth_support_token');
         const authToken = localStorage.getItem('ftth_token');
 
@@ -15,6 +26,27 @@ api.interceptors.request.use(
         } else if (authToken) {
             config.headers['Authorization'] = `Bearer ${authToken}`;
         }
+
+        // Compress large JSON bodies. Server's body-parser auto-inflates when
+        // Content-Encoding=gzip, so no backend changes needed beyond the existing
+        // express.json() middleware. Only kicks in for browsers with native
+        // CompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+) — older
+        // browsers fall through and send uncompressed.
+        const supportsGzip = typeof CompressionStream !== 'undefined';
+        if (supportsGzip && config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
+            try {
+                const json = JSON.stringify(config.data);
+                if (json.length >= GZIP_THRESHOLD_BYTES) {
+                    const gz = await gzipString(json);
+                    config.data = gz;
+                    config.headers['Content-Type'] = 'application/json';
+                    config.headers['Content-Encoding'] = 'gzip';
+                }
+            } catch {
+                // If anything goes wrong, fall through to the uncompressed path.
+            }
+        }
+
         return config;
     },
     (error) => {
