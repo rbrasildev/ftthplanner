@@ -15,7 +15,10 @@
       "Bash(echo \"done exit=$?\")",
       "Bash(git reset *)",
       "Bash(cd d:\\\\\\\\ftthplanner)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(grep -rn \"CTO-\\\\${\\\\|CTO -\\\\|nome.*cto\\\\|cto_default_name\\\\|default.*name.*cto\\\\|new_cto_name\\\\|defaultCtoName\" components/ hooks/ --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(git log *)",
+      "Bash(xargs wc *)"
     ]
   }
 }

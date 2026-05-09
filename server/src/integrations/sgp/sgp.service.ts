@@ -488,18 +488,24 @@ export class SgpService {
         const onuData = mainService.onu || {};
 
         // 1. Connection & Account Status Sync
+        // Trust conexao.status when present. When it's missing, prefer the
+        // verificaacesso probe (GENERIC only) over guessing 'offline' from
+        // serial/MAC presence — having equipment registered doesn't actually
+        // mean the link is down.
         let newStatus: string | null = onuData.conexao?.status
             ? String(onuData.conexao.status).toLowerCase().trim()
-            : (onuData.serial || mainService.mac ? 'offline' : null);
+            : null;
 
-        // GENERIC fallback: when the customer payload has no ONU data at all,
-        // probe /api/ura/verificaacesso/ on the main contract for a definitive
-        // online/offline answer. Skipped for IXC/BEESWEB since they have their
-        // own signals (radusuarios.online and "no support" respectively).
         if (!newStatus && mainContract?.id && settings.sgpType !== 'IXC' && settings.sgpType !== 'BEESWEB') {
             const generic = this.getAdapter('GENERIC') as GenericAdapter;
             const fallback = await generic.checkServiceAccess(baseUrl, settings.apiApp, settings.apiToken, mainContract.id);
             if (fallback) newStatus = fallback;
+        }
+
+        // Last-resort heuristic: only if we still have nothing AND the SGP
+        // recorded equipment for this customer, assume offline.
+        if (!newStatus && (onuData.serial || mainService.mac)) {
+            newStatus = 'offline';
         }
 
         const servicoStatus = mainService.status || mainContract.status || sgpCustomer.status;
@@ -984,7 +990,7 @@ export class SgpService {
             // Per-page queue of customers needing the verificaacesso fallback
             // (no ONU data in payload). Resolved with bounded concurrency at the
             // end of the page so we don't slow down processing inline.
-            const accessFallbackQueue: { customerId: string; contratoId: string | number }[] = [];
+            const accessFallbackQueue: { customerId: string; contratoId: string | number; equipmentRegistered: boolean }[] = [];
 
             for (const cliente of clientes) {
                 const cpfCnpj = cliente.cpfcnpj;
@@ -1006,9 +1012,12 @@ export class SgpService {
                         if (mapping && mapping.internalCustomerId) {
                             const customer = customerMap.get(mapping.internalCustomerId);
                             if (customer) {
-                                const newStatus = servico.onu?.conexao?.status
+                                // Prefer verificaacesso over the serial/mac=offline guess —
+                                // having equipment doesn't mean the link is down.
+                                const liveStatus = servico.onu?.conexao?.status
                                     ? String(servico.onu.conexao.status).toLowerCase().trim()
-                                    : (servico.onu?.serial || servico.mac ? 'offline' : null);
+                                    : null;
+                                const equipmentRegistered = !!(servico.onu?.serial || servico.mac);
 
                                 const servicoStatus = servico.status || cliente.status;
                                 const newAccountStatus = servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
@@ -1016,9 +1025,9 @@ export class SgpService {
                                                         (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : null));
 
                                 const updateData: Record<string, any> = {};
-                                if (newStatus && newStatus !== (customer as any).connectionStatus) {
-                                    updateData.connectionStatus = newStatus;
-                                    (customer as any).connectionStatus = newStatus;
+                                if (liveStatus && liveStatus !== (customer as any).connectionStatus) {
+                                    updateData.connectionStatus = liveStatus;
+                                    (customer as any).connectionStatus = liveStatus;
                                 }
                                 if (newAccountStatus && newAccountStatus !== (customer as any).status) {
                                     updateData.status = newAccountStatus;
@@ -1027,9 +1036,15 @@ export class SgpService {
 
                                 this.stagePendingUpdate(pendingUpdates, customer.id, updateData);
 
-                                // Queue verificaacesso fallback when ONU data is missing.
-                                if (!newStatus && contrato.id) {
-                                    accessFallbackQueue.push({ customerId: customer.id, contratoId: contrato.id });
+                                // Queue verificaacesso when there's no live ONU status,
+                                // regardless of equipment presence. Mark equipment so
+                                // we can fall back to 'offline' if verificaacesso fails.
+                                if (!liveStatus && contrato.id) {
+                                    accessFallbackQueue.push({
+                                        customerId: customer.id,
+                                        contratoId: contrato.id,
+                                        equipmentRegistered
+                                    });
                                 }
                             }
                         }
@@ -1066,8 +1081,12 @@ export class SgpService {
                     const status = await generic.checkServiceAccess(
                         baseUrl, setting.apiApp, setting.apiToken, item.contratoId
                     );
-                    if (status) {
-                        this.stagePendingUpdate(pendingUpdates, item.customerId, { connectionStatus: status });
+                    // Prefer the live verificaacesso answer; fall back to the
+                    // 'offline' guess only if the probe failed AND the customer
+                    // has equipment registered (mirrors syncSingleCustomer).
+                    const finalStatus = status ?? (item.equipmentRegistered ? 'offline' : null);
+                    if (finalStatus) {
+                        this.stagePendingUpdate(pendingUpdates, item.customerId, { connectionStatus: finalStatus });
                         resolved++;
                     }
                 });
