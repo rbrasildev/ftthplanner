@@ -601,7 +601,9 @@ export const getCompanyInvoices = async (req: AuthRequest, res: Response) => {
             expiresAt: inv.expiresAt,
             referenceStart: inv.referenceStart,
             referenceEnd: inv.referenceEnd,
-            mercadopagoPaymentId: inv.mercadopagoPaymentId
+            mercadopagoPaymentId: inv.mercadopagoPaymentId,
+            failureMessage: inv.failureMessage,
+            failedAt: inv.failedAt
         })));
     } catch (error) {
         res.status(500).json({

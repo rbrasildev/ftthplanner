@@ -442,7 +442,13 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         if (local) {
                             await prisma.invoice.update({
                                 where: { id: local.id },
-                                data: { status: 'PAID', paymentMethod: 'CREDIT_CARD', paidAt: new Date() }
+                                data: {
+                                    status: 'PAID',
+                                    paymentMethod: 'CREDIT_CARD',
+                                    paidAt: new Date(),
+                                    failureMessage: null,
+                                    failedAt: null
+                                }
                             });
                             logger.info(`Stripe Webhook: Marked renewal invoice ${local.id} as PAID (period ${periodStart.toISOString()}).`);
                         } else {
@@ -457,30 +463,119 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
             } else {
                 logger.warn(`Stripe Webhook [${event.type}]: Could not resolve company for invoice ${invoice.id} (customer: ${customerId}, companyId=${companyId}, planId=${planId})`);
             }
-        } else if (event.type === 'customer.subscription.updated') {
-            const subscription = event.data.object as any;
+        } else if (event.type === 'invoice.payment_failed') {
+            // Stripe failed to charge the card. Don't suspend yet — Stripe will
+            // retry (Smart Retries: typically 3-4 attempts over ~3 weeks). We
+            // surface the debt locally as OVERDUE so the admin can see who's at
+            // risk; final suspension comes from subscription.updated when status
+            // flips to 'unpaid' (Stripe gave up).
+            const invoice = event.data.object as any;
+            const subscriptionId = invoice.subscription as string;
+            const customerId = invoice.customer as string;
+            const attemptCount = invoice.attempt_count || 1;
+            const nextAttempt = invoice.next_payment_attempt
+                ? new Date(invoice.next_payment_attempt * 1000)
+                : null;
+            // Stripe nests the human-readable error in different places depending
+            // on whether the failure originated from the PaymentIntent or from
+            // the charge directly. Try the most informative source first.
+            const failureMessage: string =
+                invoice.last_payment_error?.message ||
+                invoice.last_finalization_error?.message ||
+                invoice.charge?.failure_message ||
+                `Cobrança falhou (tentativa ${attemptCount})`;
+            const failedAt = new Date();
 
-            // Only activate when subscription becomes active
-            if (subscription.status === 'active') {
-                const customerId = subscription.customer as string;
-                const { companyId, planId } = await resolveCompanyAndPlan(
-                    subscription.id, customerId, subscription.metadata
-                );
+            logger.info(`Stripe Webhook [invoice.payment_failed]: invoice=${invoice.id} attempt=${attemptCount} reason="${failureMessage}" nextAttempt=${nextAttempt?.toISOString() || 'none'}`);
 
-                if (companyId && planId) {
-                    const nextBilling = await getNextBillingDate(companyId);
+            const { companyId, planId } = await resolveCompanyAndPlan(
+                subscriptionId, customerId, invoice.metadata
+            );
 
-                    await prisma.company.update({
-                        where: { id: companyId },
-                        data: {
-                            planId: planId,
-                            status: 'ACTIVE',
-                            subscriptionExpiresAt: nextBilling,
-                            paymentMethod: 'CREDIT_CARD'
+            if (companyId && planId) {
+                const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : null;
+                const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000) : null;
+
+                if (periodStart && periodEnd) {
+                    // ±1 day tolerance for matching against locally pre-emitted PENDING
+                    const lo = new Date(periodStart.getTime() - 86400000);
+                    const hi = new Date(periodStart.getTime() + 86400000);
+                    const local = await prisma.invoice.findFirst({
+                        where: {
+                            companyId,
+                            referenceStart: { gte: lo, lte: hi }
                         }
                     });
-                    logger.info(`Stripe Webhook [subscription.updated]: Activated company ${companyId} on plan ${planId}`);
+
+                    if (local) {
+                        // Don't downgrade an already-PAID invoice (race with retry success)
+                        if (local.status !== 'PAID') {
+                            await prisma.invoice.update({
+                                where: { id: local.id },
+                                data: {
+                                    status: 'OVERDUE',
+                                    paymentMethod: 'CREDIT_CARD',
+                                    failureMessage,
+                                    failedAt
+                                }
+                            });
+                            logger.info(`Stripe Webhook: Marked local invoice ${local.id} as OVERDUE (failed charge attempt ${attemptCount}).`);
+                        }
+                    } else {
+                        // No pre-emitted invoice — create the OVERDUE record now
+                        // so the admin sees the debt immediately. amount_due is
+                        // in cents; convert to currency unit.
+                        await prisma.invoice.create({
+                            data: {
+                                companyId,
+                                planId,
+                                amount: (invoice.amount_due || 0) / 100,
+                                status: 'OVERDUE',
+                                paymentMethod: 'CREDIT_CARD',
+                                expiresAt: periodEnd,
+                                referenceStart: periodStart,
+                                referenceEnd: periodEnd,
+                                failureMessage,
+                                failedAt
+                            }
+                        });
+                        logger.info(`Stripe Webhook: Created OVERDUE invoice for failed charge on company ${companyId}.`);
+                    }
                 }
+            } else {
+                logger.warn(`Stripe Webhook [invoice.payment_failed]: Could not resolve company for invoice ${invoice.id}`);
+            }
+        } else if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object as any;
+            const customerId = subscription.customer as string;
+            const { companyId, planId } = await resolveCompanyAndPlan(
+                subscription.id, customerId, subscription.metadata
+            );
+
+            if (subscription.status === 'active' && companyId && planId) {
+                const nextBilling = await getNextBillingDate(companyId);
+
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: {
+                        planId: planId,
+                        status: 'ACTIVE',
+                        subscriptionExpiresAt: nextBilling,
+                        paymentMethod: 'CREDIT_CARD'
+                    }
+                });
+                logger.info(`Stripe Webhook [subscription.updated]: Activated company ${companyId} on plan ${planId}`);
+            } else if ((subscription.status === 'unpaid' || subscription.status === 'incomplete_expired') && companyId) {
+                // Stripe exhausted retry attempts — suspend access. Existing
+                // OVERDUE invoices remain so admin can collect manually if needed.
+                await prisma.company.update({
+                    where: { id: companyId },
+                    data: { status: 'SUSPENDED' }
+                });
+                logger.info(`Stripe Webhook [subscription.updated]: Suspended company ${companyId} (subscription status=${subscription.status})`);
+            } else if (subscription.status === 'past_due') {
+                // Stripe is still retrying; access remains during the retry window.
+                logger.info(`Stripe Webhook [subscription.updated]: Company ${companyId} is past_due — Stripe still retrying`);
             }
         } else if (event.type === 'customer.subscription.deleted') {
             const subscription = event.data.object as any;

@@ -132,6 +132,8 @@ model Invoice {
   referenceStart       DateTime? @map("reference_start") // Billing period start (e.g. 2026-03-15)
   referenceEnd         DateTime? @map("reference_end")   // Billing period end (e.g. 2026-04-15)
   paidAt               DateTime? @map("paid_at")         // Set when status transitions to PAID — authoritative payment timestamp
+  failureMessage       String?   @map("failure_message")  // Stripe's last_payment_error.message (e.g. "Your card was declined.")
+  failedAt             DateTime? @map("failed_at")        // Timestamp of the most recent failed charge attempt
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
 

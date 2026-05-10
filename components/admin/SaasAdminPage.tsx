@@ -400,6 +400,17 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
                                         </button>
                                     )}
                                 </div>
+                                {/* Stripe failure detail — only shows when present (i.e. card was declined) */}
+                                {inv.failureMessage && !isPaid && (
+                                    <div className="mt-1.5 px-2 py-1 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-[10px] text-red-700 dark:text-red-300">
+                                        <span className="font-bold">Erro do cartão:</span> {inv.failureMessage}
+                                        {inv.failedAt && (
+                                            <span className="ml-1 opacity-75">
+                                                ({new Date(inv.failedAt).toLocaleDateString('pt-BR')} {new Date(inv.failedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
