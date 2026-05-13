@@ -21,6 +21,7 @@ export const MapModeTooltip: React.FC<MapModeTooltipProps> = ({ toolMode, drawin
             {toolMode === 'draw_cable' && (drawingPath.length === 0 ? t('tooltip_draw_cable_start') : t('tooltip_draw_cable'))}
             {toolMode === 'pick_connection_target' && t('toast_select_next_box')}
             {toolMode === 'position_reserve' && t('tooltip_position_reserve')}
+            {toolMode === 'draw_polygon' && (t('tooltip_draw_polygon') || 'Clique para adicionar pontos · botão direito desfaz · finalize com 3+ pontos')}
         </div>
     );
 };

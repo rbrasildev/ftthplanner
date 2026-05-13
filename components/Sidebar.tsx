@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint
+    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet
 } from 'lucide-react';
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
@@ -49,6 +49,7 @@ export interface SidebarProps {
     onImportClick: () => void;
     onExportClick?: () => void;
     onExportAreaClick?: () => void;
+    onReportAreaClick?: () => void;
     isExporting?: boolean;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
@@ -124,6 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onImportClick,
     onExportClick,
     onExportAreaClick,
+    onReportAreaClick,
     isExporting,
     isCollapsed,
     onToggleCollapse,
@@ -408,6 +410,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                 icon={<ScanSearch className="w-5 h-5" />}
                                                 label={t('export_area')}
                                                 onClick={() => { onExportAreaClick(); onCloseMobile(); }}
+                                                isCollapsed={isCollapsed}
+                                                variant="slate"
+                                            />
+                                        )}
+                                        {onReportAreaClick && (
+                                            <NavButton
+                                                icon={<FileSpreadsheet className="w-5 h-5" />}
+                                                label={t('report_area')}
+                                                onClick={() => { onReportAreaClick(); onCloseMobile(); }}
                                                 isCollapsed={isCollapsed}
                                                 variant="slate"
                                             />

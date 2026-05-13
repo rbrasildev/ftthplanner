@@ -24,7 +24,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CompanySettings } from './components/settings/CompanySettings';
 import { ParentProjectSettings } from './components/settings/ParentProjectSettings';
 import { SearchBox } from './components/SearchBox';
-import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer, InheritedElementsConfig, DEFAULT_INHERITED_ELEMENTS } from './types';
+import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, PolygonData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer, InheritedElementsConfig, DEFAULT_INHERITED_ELEMENTS } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
 import { useKMZExport } from './hooks/useKMZExport';
@@ -57,6 +57,10 @@ import { SupportChatBubble } from './components/support/SupportChatBubble';
 // Map Overlays
 import { MapModeTooltip } from './components/map/MapModeTooltip';
 import { RulerToolbar } from './components/map/RulerToolbar';
+import { PolygonDrawToolbar } from './components/map/PolygonDrawToolbar';
+import { PolygonEditor } from './components/PolygonEditor';
+import { ReportModal } from './components/modals/ReportModal';
+import type { ReportSelection } from './utils/reportXlsx';
 import { CableEditToolbar } from './components/map/CableEditToolbar';
 
 const parseJwt = (token: string) => {
@@ -267,7 +271,7 @@ export default function App() {
     const [companyStatus, setCompanyStatus] = useState<string>('ACTIVE');
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
-    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve' | 'export_area'>('view');
+    const [toolMode, setToolMode] = useState<'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'position_reserve' | 'export_area' | 'draw_polygon' | 'report_area'>('view');
     const [toast, setToast] = useState<{ msg: string, type: 'success' | 'info' | 'error' } | null>(null);
 
     // Pole Modal State
@@ -311,6 +315,42 @@ export default function App() {
     // New Cable Creation State (Multipoint)
     const [drawingPath, setDrawingPath] = useState<Coordinates[]>([]);
     const [drawingFromId, setDrawingFromId] = useState<string | null>(null);
+
+    // Polygon Drawing State (Multipoint area)
+    const [drawingPolygonPath, setDrawingPolygonPath] = useState<Coordinates[]>([]);
+    const [drawingPolygonColor, setDrawingPolygonColor] = useState<string>('#ef4444');
+    const [editingPolygonId, setEditingPolygonId] = useState<string | null>(null);
+
+    // Report (Shift + drag → traça polígono livre → modal de exportação XLSX)
+    const [reportCandidates, setReportCandidates] = useState<ReportSelection | null>(null);
+    // Polígono em construção do modo "report_area" (botão na sidebar). Click adiciona ponto.
+    const [reportAreaPolygon, setReportAreaPolygon] = useState<{ lat: number; lng: number }[]>([]);
+
+    // Ray-casting point-in-polygon. Coordinates em lat/lng (sphere-flat approximation;
+    // suficiente pra escalas de mapa de planejamento, mesmo padrão do exportKMZWorker).
+    const pointInArea = useCallback((lat: number, lng: number, polygon: Coordinates[]): boolean => {
+        if (polygon.length < 3) return false;
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const xi = polygon[i].lng, yi = polygon[i].lat;
+            const xj = polygon[j].lng, yj = polygon[j].lat;
+            const intersect = ((yi > lat) !== (yj > lat))
+                && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }, []);
+
+    // Limpa o desenho em progresso ao sair do modo (evita resíduo se o usuário
+    // troca direto para outra ferramenta sem clicar em Cancelar).
+    useEffect(() => {
+        if (toolMode !== 'draw_polygon' && drawingPolygonPath.length > 0) {
+            setDrawingPolygonPath([]);
+        }
+        if (toolMode !== 'report_area' && reportAreaPolygon.length > 0) {
+            setReportAreaPolygon([]);
+        }
+    }, [toolMode]);
 
     const [mapBounds, setMapBounds] = useState<L.LatLngBoundsExpression | null>(null);
 
@@ -605,7 +645,7 @@ export default function App() {
 
     const getCurrentNetwork = useCallback((): NetworkState => {
         const p = projectRef.current;
-        return p ? { ctos: p.network.ctos, pops: p.network.pops || [], cables: p.network.cables, poles: p.network.poles || [], fusionTypes: p.network.fusionTypes || [] } : { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
+        return p ? { ctos: p.network.ctos, pops: p.network.pops || [], cables: p.network.cables, poles: p.network.poles || [], polygons: p.network.polygons || [], fusionTypes: p.network.fusionTypes || [] } : { ctos: [], pops: [], cables: [], poles: [], polygons: [], fusionTypes: [] };
     }, []);
 
     const totalFusionsCount = useMemo(() => {
@@ -1409,6 +1449,14 @@ export default function App() {
             showToast(t('connection_cancelled') || "Ação Cancelada", 'info');
             return;
         }
+        if (toolMode === 'draw_polygon') {
+            setDrawingPolygonPath(prev => prev.slice(0, -1));
+            return;
+        }
+        if (toolMode === 'report_area') {
+            setReportAreaPolygon(prev => prev.slice(0, -1));
+            return;
+        }
         setDrawingPath(prev => {
             if (prev.length <= 1) {
                 setDrawingFromId(null);
@@ -1417,6 +1465,95 @@ export default function App() {
             return prev.slice(0, -1);
         });
     }, [toolMode, t]);
+
+    const finalizePolygon = useCallback(() => {
+        if (drawingPolygonPath.length < 3) {
+            showToast(t('toast_polygon_min_points') || 'Polígono precisa de ao menos 3 pontos', 'info');
+            return;
+        }
+        updateCurrentNetwork(prev => {
+            const existing = prev.polygons || [];
+            const newPolygon: PolygonData = {
+                id: `polygon-${Date.now()}`,
+                name: `${t('polygon_default_name')} ${existing.length + 1}`,
+                points: drawingPolygonPath,
+                color: drawingPolygonColor,
+                fillOpacity: 0.25,
+                weight: 2,
+                createdAt: Date.now(),
+            };
+            return { ...prev, polygons: [...existing, newPolygon] };
+        });
+        setDrawingPolygonPath([]);
+        setToolMode('view');
+        showToast(t('toast_polygon_created') || 'Área criada', 'success');
+    }, [drawingPolygonPath, drawingPolygonColor, updateCurrentNetwork, t]);
+
+    const cancelPolygonDrawing = useCallback(() => {
+        setDrawingPolygonPath([]);
+        setToolMode('view');
+    }, []);
+
+    const handleUpdatePolygon = useCallback((updated: PolygonData) => {
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            polygons: (prev.polygons || []).map(p => p.id === updated.id ? updated : p),
+        }));
+    }, [updateCurrentNetwork]);
+
+    const handleDeletePolygon = useCallback((id: string) => {
+        updateCurrentNetwork(prev => ({
+            ...prev,
+            polygons: (prev.polygons || []).filter(p => p.id !== id),
+        }));
+        setEditingPolygonId(null);
+        showToast(t('toast_polygon_deleted') || 'Área removida', 'info');
+    }, [updateCurrentNetwork, t]);
+
+    const handleConfirmReportArea = useCallback(() => {
+        if (reportAreaPolygon.length < 3) {
+            showToast(t('toast_polygon_min_points') || 'Polígono precisa de ao menos 3 pontos', 'info');
+            return;
+        }
+        const points = reportAreaPolygon.map(p => ({ lat: p.lat, lng: p.lng }));
+        setReportAreaPolygon([]);
+        setToolMode('view');
+        // Reaproveita o mesmo coletor do shift+drag
+        handleAreaSelectRef.current?.(points);
+    }, [reportAreaPolygon, t]);
+
+    // Mantemos handleAreaSelect num ref pra evitar dependência circular (handleConfirmReportArea
+    // precisa chamá-lo, mas handleAreaSelect é declarado abaixo).
+    const handleAreaSelectRef = useRef<((polygon: Coordinates[]) => void) | null>(null);
+
+    const handleAreaSelect = useCallback((polygon: Coordinates[]) => {
+        const net = getCurrentNetwork();
+        const inArea = (lat: number, lng: number) => pointInArea(lat, lng, polygon);
+
+        const ctos = net.ctos.filter(c => inArea(c.coordinates.lat, c.coordinates.lng));
+        const pops = net.pops.filter(p => inArea(p.coordinates.lat, p.coordinates.lng));
+        const poles = net.poles.filter(p => inArea(p.coordinates.lat, p.coordinates.lng));
+        const cables = net.cables.filter(c =>
+            (c.coordinates || []).some(pt => inArea(pt.lat, pt.lng))
+        );
+        const customers = globalCustomers.filter(c => inArea(c.lat, c.lng));
+
+        const total = ctos.length + pops.length + poles.length + cables.length + customers.length;
+        if (total === 0) {
+            showToast(t('report_no_items_in_area') || 'Nenhum item na área selecionada', 'info');
+            return;
+        }
+        setReportCandidates({ ctos, pops, cables, poles, customers });
+    }, [getCurrentNetwork, globalCustomers, showToast, t, pointInArea]);
+
+    useEffect(() => { handleAreaSelectRef.current = handleAreaSelect; }, [handleAreaSelect]);
+
+    const handlePolygonClick = useCallback((id: string) => {
+        if (toolMode === 'view') {
+            setEditingPolygonId(id);
+            setSelectedId(null);
+        }
+    }, [toolMode]);
 
     const handleInitConnection = useCallback((id: string) => {
         setToolMode('connect_cable');
@@ -1855,6 +1992,7 @@ export default function App() {
                 onImportClick={() => setIsAdvancedImportOpen(true)}
                 onExportClick={() => setIsExportKMZModalOpen(true)}
                 onExportAreaClick={() => setToolMode('export_area')}
+                onReportAreaClick={() => setToolMode('report_area')}
                 isExporting={isExporting}
                 onReportClick={() => setIsReportModalOpen(true)}
                 onPoleTableClick={() => setShowPoleTable(true)}
@@ -2094,6 +2232,17 @@ export default function App() {
                                 setIsExportKMZModalOpen(true);
                             }
                         }}
+                        reportAreaPolygon={reportAreaPolygon}
+                        onReportAreaPolygonChange={setReportAreaPolygon}
+                        polygons={currentProject?.network.polygons || []}
+                        drawingPolygonPath={drawingPolygonPath}
+                        drawingPolygonColor={drawingPolygonColor}
+                        onDrawingPolygonPathChange={setDrawingPolygonPath}
+                        onPolygonClick={handlePolygonClick}
+                        onUpdatePolygon={handleUpdatePolygon}
+                        onDeletePolygon={handleDeletePolygon}
+                        selectedPolygonId={editingPolygonId}
+                        onAreaSelect={handleAreaSelect}
                         parentNetwork={parentNetwork}
                         showParentElements={true}
                         parentProjectName={parentProjectName}
@@ -2181,6 +2330,38 @@ export default function App() {
                             <Button
                                 variant="secondary"
                                 onClick={() => { setDrawingPath([]); setDrawingFromId(null); }}
+                                className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur rounded-full px-6 py-6 shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700"
+                            >
+                                <X className="w-5 h-5" />
+                                {t('cancel')}
+                            </Button>
+                        </div>
+                    )}
+
+                    {toolMode === 'draw_polygon' && (
+                        <PolygonDrawToolbar
+                            pointCount={drawingPolygonPath.length}
+                            color={drawingPolygonColor}
+                            onColorChange={setDrawingPolygonColor}
+                            onFinish={finalizePolygon}
+                            onCancel={cancelPolygonDrawing}
+                        />
+                    )}
+
+                    {toolMode === 'report_area' && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2000] flex gap-3">
+                            <Button
+                                variant="emerald"
+                                onClick={handleConfirmReportArea}
+                                disabled={reportAreaPolygon.length < 3}
+                                className="rounded-full px-6 py-6 shadow-2xl font-bold flex items-center gap-2"
+                            >
+                                <CheckCircle2 className="w-5 h-5" />
+                                {t('report_area_confirm') || 'Gerar Relatório'} ({reportAreaPolygon.length})
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => { setReportAreaPolygon([]); setToolMode('view'); }}
                                 className="bg-white/90 dark:bg-[#22262e]/90 backdrop-blur rounded-full px-6 py-6 shadow-2xl font-bold flex items-center gap-2 border border-slate-200 dark:border-slate-700"
                             >
                                 <X className="w-5 h-5" />
@@ -2347,6 +2528,27 @@ export default function App() {
                     userRole={userRole}
                 />
             )}
+
+            {editingPolygonId && (() => {
+                const polygon = (currentProject?.network.polygons || []).find(p => p.id === editingPolygonId);
+                if (!polygon) return null;
+                return (
+                    <PolygonEditor
+                        polygon={polygon}
+                        onClose={() => setEditingPolygonId(null)}
+                        onSave={handleUpdatePolygon}
+                        onDelete={handleDeletePolygon}
+                    />
+                );
+            })()}
+
+            <ReportModal
+                isOpen={reportCandidates !== null}
+                onClose={() => setReportCandidates(null)}
+                candidates={reportCandidates || { ctos: [], pops: [], cables: [], poles: [], customers: [] }}
+                network={currentProject?.network || { ctos: [], pops: [], cables: [], poles: [] }}
+                projectName={currentProject?.name || 'projeto'}
+            />
 
             {showProjectManager && (
                 <ProjectManager

@@ -450,12 +450,35 @@ export interface FusionType {
   attenuation: number;
 }
 
+export interface PolygonData {
+  id: string;
+  name: string;
+  points: Coordinates[];
+  color: string;        // hex (#rrggbb) — borda e preenchimento (com fillOpacity)
+  fillOpacity?: number; // default 0.25
+  weight?: number;      // espessura da borda em px (default 2)
+  createdAt?: number;
+}
+
+export const POLYGON_PALETTE: string[] = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#eab308', // yellow
+  '#22c55e', // green
+  '#0ea5e9', // sky
+  '#6366f1', // indigo
+  '#a855f7', // violet
+  '#ec4899', // pink
+  '#64748b', // slate
+];
+
 export interface NetworkState {
   // Added POPs
   ctos: CTOData[];
   pops: POPData[];
   cables: CableData[];
   poles: PoleData[]; // Added Poles
+  polygons?: PolygonData[]; // Áreas demarcadas no mapa (cobertura, zonas, anotações)
   fusionTypes?: FusionType[]; // Modules de FusÃ£o
 }
 

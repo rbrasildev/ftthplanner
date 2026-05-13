@@ -18,7 +18,8 @@
       "Bash(npm ls *)",
       "Bash(grep -rn \"CTO-\\\\${\\\\|CTO -\\\\|nome.*cto\\\\|cto_default_name\\\\|default.*name.*cto\\\\|new_cto_name\\\\|defaultCtoName\" components/ hooks/ --include=\"*.ts\" --include=\"*.tsx\")",
       "Bash(git log *)",
-      "Bash(xargs wc *)"
+      "Bash(xargs wc *)",
+      "Bash(npm uninstall *)"
     ]
   }
 }

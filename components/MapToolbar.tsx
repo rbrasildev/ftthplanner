@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer2, Box, Building2, UtilityPole, Waypoints, Ruler, UserPlus } from 'lucide-react';
+import { MousePointer2, Box, Building2, UtilityPole, Waypoints, Ruler, UserPlus, Hexagon } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { hasPermission } from '../shared/permissions';
 
@@ -36,7 +36,7 @@ const CondoIcon: React.FC<{ className?: string; strokeWidth?: number }> = ({ cla
 );
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area';
+    toolMode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area' | 'draw_polygon';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
@@ -133,6 +133,7 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             <div className="flex items-center gap-1 pl-2">
                 {showCable && <ToolButton mode="draw_cable" icon={Waypoints} label="Cabo" />}
                 <ToolButton mode="ruler" icon={Ruler} label={t('mode_ruler') || "Régua"} />
+                <ToolButton mode="draw_polygon" icon={Hexagon} label={t('mode_polygon') || "Área"} />
             </div>
 
         </div>

@@ -391,6 +391,9 @@ export const getProject = async (req: Request, res: Response) => {
             }
         }
 
+        // Hydrate persistent polygons stored as JSON on the project row
+        (network as any).polygons = ((project as any).polygons as any[] | null) || [];
+
         res.json({
             id: project.id,
             name: project.name,
@@ -740,8 +743,9 @@ export const syncProject = async (req: Request, res: Response) => {
         }
 
         await prisma.$transaction(async (tx: any) => {
-            // 0. Update Map State (unchanged)
-            if (mapState || settings) {
+            // 0. Update Map State + Polygons (JSON field on Project)
+            const hasPolygons = Array.isArray(network.polygons);
+            if (mapState || settings || hasPolygons) {
                 await tx.project.update({
                     where: { id },
                     data: {
@@ -750,7 +754,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             centerLng: mapState.center.lng,
                             zoom: mapState.zoom
                         } : {}),
-                        ...(settings ? { settings } : {})
+                        ...(settings ? { settings } : {}),
+                        ...(hasPolygons ? { polygons: network.polygons } : {})
                     }
                 });
             }

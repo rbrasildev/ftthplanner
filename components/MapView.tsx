@@ -3,14 +3,15 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Polygon, useMapEvents, Tooltip, useMap, Pane, Popup, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { CTOData, POPData, CableData, PoleData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState, CableType } from '../types';
+import { CTOData, POPData, CableData, PoleData, PolygonData, Coordinates, CTO_STATUS_COLORS, CABLE_STATUS_COLORS, POLE_STATUS_COLORS, PoleStatus, NetworkState, CableType } from '../types';
 import { isCableTypeVisible, getEffectiveCableType } from '../utils/cableTypeUtils';
 import { computeCableStatusMap, CableOpticalStatus } from '../utils/switchCableStatus';
 import { CableContextMenu } from './CableContextMenu';
 import { NodeContextMenu } from './NodeContextMenu';
+import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
@@ -387,7 +388,7 @@ const MapEvents: React.FC<{
     useMapEvents({
         contextmenu(e) {
             // Block context menu
-            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve' || mode === 'export_area' || isDrawingDrop) {
+            if (mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve' || mode === 'export_area' || mode === 'draw_polygon' || mode === 'report_area' || isDrawingDrop) {
                 L.DomEvent.preventDefault(e as any);
                 if (onUndoDrawingPoint) {
                     onUndoDrawingPoint();
@@ -405,6 +406,10 @@ const MapEvents: React.FC<{
             } else if (mode === 'add_customer') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'export_area') {
+                onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (mode === 'report_area') {
+                onMapClick(e.latlng.lat, e.latlng.lng);
+            } else if (mode === 'draw_polygon') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
@@ -517,6 +522,119 @@ const LabelsToggleClass = ({ showLabels }: { showLabels: boolean }) => {
     return null;
 };
 
+// --- FREEHAND SELECT (Shift + drag → traça polígono livre, dispara callback com pontos) ---
+const FreehandSelectController: React.FC<{
+    onAreaSelect?: (points: Coordinates[]) => void;
+}> = ({ onAreaSelect }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!onAreaSelect) return;
+        const container = map.getContainer();
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const MIN_DIST_PX = 4; // distância mínima entre pontos consecutivos (evita ruído)
+
+        // Desabilita o boxZoom nativo do Leaflet (Shift+drag faz zoom por padrão)
+        const wasBoxZoomEnabled = map.boxZoom.enabled();
+        map.boxZoom.disable();
+
+        let isDrawing = false;
+        let pixelPath: Array<{ x: number; y: number }> = [];
+        let svg: SVGSVGElement | null = null;
+        let polyEl: SVGPolygonElement | null = null;
+
+        const formatPoints = () => pixelPath.map(p => `${p.x},${p.y}`).join(' ');
+
+        const cleanupOverlay = () => {
+            if (svg && container.contains(svg)) container.removeChild(svg);
+            svg = null;
+            polyEl = null;
+        };
+
+        const onMouseDown = (e: MouseEvent) => {
+            if (e.button !== 0) return;
+            if (!e.shiftKey) return;
+
+            const rect = container.getBoundingClientRect();
+            pixelPath = [{ x: e.clientX - rect.left, y: e.clientY - rect.top }];
+            isDrawing = true;
+
+            e.preventDefault();
+            e.stopPropagation();
+            map.dragging.disable();
+
+            // Cria SVG overlay (preenche o container)
+            svg = document.createElementNS(SVG_NS, 'svg');
+            svg.style.cssText = `
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1500;
+            `;
+            polyEl = document.createElementNS(SVG_NS, 'polygon');
+            polyEl.setAttribute('fill', 'rgba(16, 185, 129, 0.15)');
+            polyEl.setAttribute('stroke', '#10b981');
+            polyEl.setAttribute('stroke-width', '2');
+            polyEl.setAttribute('stroke-dasharray', '6 6');
+            polyEl.setAttribute('stroke-linejoin', 'round');
+            polyEl.setAttribute('points', formatPoints());
+            svg.appendChild(polyEl);
+            container.appendChild(svg);
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isDrawing || !polyEl) return;
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const last = pixelPath[pixelPath.length - 1];
+            if (last) {
+                const dx = x - last.x;
+                const dy = y - last.y;
+                if (dx * dx + dy * dy < MIN_DIST_PX * MIN_DIST_PX) return;
+            }
+            pixelPath.push({ x, y });
+            polyEl.setAttribute('points', formatPoints());
+        };
+
+        const onMouseUp = () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            map.dragging.enable();
+            const path = pixelPath;
+            pixelPath = [];
+            cleanupOverlay();
+
+            // Precisa de pelo menos 3 pontos pra formar um polígono fechável
+            if (path.length < 3) return;
+
+            const latLngPath: Coordinates[] = path.map(p => {
+                const ll = map.containerPointToLatLng([p.x, p.y]);
+                return { lat: ll.lat, lng: ll.lng };
+            });
+            onAreaSelect(latLngPath);
+        };
+
+        // Capture phase no mousedown — vence handlers de markers/paths
+        container.addEventListener('mousedown', onMouseDown, true);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+
+        return () => {
+            if (wasBoxZoomEnabled) map.boxZoom.enable();
+            container.removeEventListener('mousedown', onMouseDown, true);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            cleanupOverlay();
+            map.dragging.enable();
+        };
+    }, [map, onAreaSelect]);
+
+    return null;
+};
+
 // --- MAP JUMP LOGIC (FOR LOCATE ON MAP) ---
 const MapJumpController = ({ viewKey }: { viewKey?: string }) => {
     const map = useMap();
@@ -542,7 +660,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area';
+    mode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area' | 'draw_polygon' | 'report_area';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -602,6 +720,18 @@ interface MapViewProps {
     exportAreaPolygon?: { lat: number; lng: number }[];
     onExportAreaPolygonChange?: (points: { lat: number; lng: number }[]) => void;
     onExportAreaConfirm?: () => void;
+    // Mesmo padrão do export_area, mas serve à modal de relatório XLSX.
+    reportAreaPolygon?: { lat: number; lng: number }[];
+    onReportAreaPolygonChange?: (points: { lat: number; lng: number }[]) => void;
+    // Persistent polygons (delimitação de áreas — cobertura, anotações, etc.)
+    polygons?: PolygonData[];
+    drawingPolygonPath?: Coordinates[];
+    drawingPolygonColor?: string;
+    onDrawingPolygonPathChange?: (points: Coordinates[]) => void;
+    onPolygonClick?: (id: string) => void;
+    onUpdatePolygon?: (polygon: PolygonData) => void;
+    onDeletePolygon?: (id: string) => void;
+    selectedPolygonId?: string | null;
     // Parent Project
     parentNetwork?: NetworkState | null;
     showParentElements?: boolean;
@@ -613,6 +743,8 @@ interface MapViewProps {
     // it via `onEditCustomerHandled` after opening so the prop can fire again later.
     editCustomerId?: string | null;
     onEditCustomerHandled?: () => void;
+    // Shift + drag → traça polígono livre. Dispara para o pai com a sequência de pontos.
+    onAreaSelect?: (points: Coordinates[]) => void;
 }
 
 const noOp = (..._args: any[]) => { };
@@ -638,13 +770,24 @@ export const MapView: React.FC<MapViewProps> = ({
     exportAreaPolygon = [],
     onExportAreaPolygonChange,
     onExportAreaConfirm,
+    reportAreaPolygon = [],
+    onReportAreaPolygonChange,
+    polygons = [],
+    drawingPolygonPath = [],
+    drawingPolygonColor = '#ef4444',
+    onDrawingPolygonPathChange,
+    onPolygonClick,
+    onUpdatePolygon,
+    onDeletePolygon,
+    selectedPolygonId = null,
     parentNetwork = null,
     showParentElements = true,
     parentProjectName = '',
     onParentNodeClick,
     onParentBlockedEdit,
     editCustomerId,
-    onEditCustomerHandled
+    onEditCustomerHandled,
+    onAreaSelect,
 }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
@@ -901,6 +1044,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const [customerContextMenu, setCustomerContextMenu] = useState<{ x: number; y: number; customer: Customer } | null>(null);
     const [dropContextMenu, setDropContextMenu] = useState<{ x: number; y: number; customerId: string } | null>(null);
+    const [polygonContextMenu, setPolygonContextMenu] = useState<{ x: number; y: number; polygonId: string } | null>(null);
 
     const handleDropContextMenu = useCallback((e: L.LeafletMouseEvent, customerId: string) => {
         if (mode !== 'view') return;
@@ -998,6 +1142,8 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const [showPOPs, setShowPOPs] = useState(() => getSaved('ftth_show_pops', true));
     const [showPoles, setShowPoles] = useState(() => getSaved('ftth_show_poles', false));
+    const [showPolygons, setShowPolygons] = useState(() => getSaved('ftth_show_polygons', true));
+    const [showReserves, setShowReserves] = useState(() => getSaved('ftth_show_reserves', true));
     const [isLayersOpen, setIsLayersOpen] = useState(false);
     const [enableClustering, setEnableClustering] = useState(() => getSaved('ftth_clustering', true));
 
@@ -1012,7 +1158,11 @@ export const MapView: React.FC<MapViewProps> = ({
     useEffect(() => { localStorage.setItem('ftth_layer_expanded_ctos', JSON.stringify(ctosGroupExpanded)); }, [ctosGroupExpanded]);
     useEffect(() => { localStorage.setItem('ftth_show_pops', JSON.stringify(showPOPs)); }, [showPOPs]);
     useEffect(() => { localStorage.setItem('ftth_show_poles', JSON.stringify(showPoles)); }, [showPoles]);
+    useEffect(() => { localStorage.setItem('ftth_show_polygons', JSON.stringify(showPolygons)); }, [showPolygons]);
+    useEffect(() => { localStorage.setItem('ftth_show_reserves', JSON.stringify(showReserves)); }, [showReserves]);
     useEffect(() => { if (mode === 'add_pole' && !showPoles) setShowPoles(true); }, [mode]);
+    // Garante visibilidade ao entrar no modo de desenho de polígono
+    useEffect(() => { if (mode === 'draw_polygon' && !showPolygons) setShowPolygons(true); }, [mode]);
     useEffect(() => { localStorage.setItem('ftth_clustering', JSON.stringify(enableClustering)); }, [enableClustering]);
 
     // --- PERFORMANCE REFS (Stabilize Callbacks) ---
@@ -1419,10 +1569,18 @@ export const MapView: React.FC<MapViewProps> = ({
             if (onExportAreaPolygonChange) {
                 onExportAreaPolygonChange([...exportAreaPolygon, { lat, lng }]);
             }
+        } else if (mode === 'draw_polygon') {
+            if (onDrawingPolygonPathChange) {
+                onDrawingPolygonPathChange([...drawingPolygonPath, { lat, lng }]);
+            }
+        } else if (mode === 'report_area') {
+            if (onReportAreaPolygonChange) {
+                onReportAreaPolygonChange([...reportAreaPolygon, { lat, lng }]);
+            }
         } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
             onAddPoint(lat, lng);
         }
-    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t, exportAreaPolygon, onExportAreaPolygonChange]);
+    }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t, exportAreaPolygon, onExportAreaPolygonChange, drawingPolygonPath, onDrawingPolygonPathChange, reportAreaPolygon, onReportAreaPolygonChange]);
 
     const handleMapClearSelection = useCallback(() => {
         setActiveCableId(null);
@@ -1430,6 +1588,7 @@ export const MapView: React.FC<MapViewProps> = ({
         setMapContextMenu(null);
         setDropContextMenu(null);
         setCustomerContextMenu(null);
+        setPolygonContextMenu(null);
     }, []);
 
     const handleUndoDrawingPoint = useCallback(() => {
@@ -1439,16 +1598,63 @@ export const MapView: React.FC<MapViewProps> = ({
             }
         } else if (mode === 'ruler') {
             onRulerPointsChange(rulerPoints.slice(0, -1));
+        } else if (mode === 'draw_polygon') {
+            if (onDrawingPolygonPathChange) {
+                onDrawingPolygonPathChange(drawingPolygonPath.slice(0, -1));
+            }
+        } else if (mode === 'report_area') {
+            if (onReportAreaPolygonChange) {
+                onReportAreaPolygonChange(reportAreaPolygon.slice(0, -1));
+            }
         } else if (onUndoDrawingPoint) {
             onUndoDrawingPoint();
         }
-    }, [mode, rulerPoints, onRulerPointsChange, onUndoDrawingPoint, exportAreaPolygon, onExportAreaPolygonChange]);
+    }, [mode, rulerPoints, onRulerPointsChange, onUndoDrawingPoint, exportAreaPolygon, onExportAreaPolygonChange, drawingPolygonPath, onDrawingPolygonPathChange, reportAreaPolygon, onReportAreaPolygonChange]);
+
+    // Ray-casting point-in-polygon. Markers (CircleMarker em panes acima do
+    // overlayPane) cobrem o evento `contextmenu` do polígono quando o cursor
+    // está em cima deles — então capturamos o evento no map e testamos
+    // geometricamente se o clique caiu dentro de alguma área.
+    const pointInPolygon = useCallback((lat: number, lng: number, points: Coordinates[]): boolean => {
+        if (points.length < 3) return false;
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const xi = points[i].lng, yi = points[i].lat;
+            const xj = points[j].lng, yj = points[j].lat;
+            const intersect = ((yi > lat) !== (yj > lat))
+                && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }, []);
 
     const handleMapContextMenuInternal = useCallback((e: L.LeafletMouseEvent) => {
         if (drawingCustomerDrop) {
             setDrawingCustomerDrop(null);
         }
         L.DomEvent.preventDefault(e as any);
+
+        // Em modo `view`: se o clique caiu dentro de algum polígono visível,
+        // abre o PolygonContextMenu em vez do menu do mapa. Cobre o caso de
+        // markers sobrepostos interceptando o contextmenu nativo do polígono.
+        if (mode === 'view' && showPolygons && polygons.length > 0) {
+            // Iterar do último pro primeiro pra respeitar ordem de desenho
+            // (polígonos criados depois ficam visualmente em cima).
+            for (let i = polygons.length - 1; i >= 0; i--) {
+                const poly = polygons[i];
+                if (pointInPolygon(e.latlng.lat, e.latlng.lng, poly.points)) {
+                    setContextMenu(null);
+                    setMapContextMenu(null);
+                    setPolygonContextMenu({
+                        x: e.originalEvent.clientX,
+                        y: e.originalEvent.clientY,
+                        polygonId: poly.id,
+                    });
+                    return;
+                }
+            }
+        }
+
         setMapContextMenu(prev => {
             if (prev) return null; // Toggle: close if already open
             setContextMenu(null);
@@ -1459,7 +1665,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 lng: e.latlng.lng
             };
         });
-    }, [drawingCustomerDrop]);
+    }, [drawingCustomerDrop, mode, polygons, pointInPolygon, showPolygons]);
 
     // Cached ruler dot icon (avoids recreating L.divIcon on every render)
     const rulerDotIcon = useMemo(() => L.divIcon({
@@ -1470,7 +1676,7 @@ export const MapView: React.FC<MapViewProps> = ({
     }), []);
 
     return (
-        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Unified Layer & Map Panel */}
                 <div className="bg-white/95 dark:bg-[#22262e]/95 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-stretch gap-0.5 w-52">
@@ -1515,6 +1721,8 @@ export const MapView: React.FC<MapViewProps> = ({
                         ]}
                     />
                     <LayerRow active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="green" icon={<User className="w-4 h-4" />} />
+                    <LayerRow active={showPolygons} onClick={() => setShowPolygons(!showPolygons)} label={t('layer_polygons')} color="rose" icon={<Hexagon className="w-4 h-4" />} />
+                    <LayerRow active={showReserves} onClick={() => setShowReserves(!showReserves)} label={t('layer_reserves')} color="amber" icon={<CircleDot className="w-4 h-4" />} />
 
                     {parentNetwork && (
                         <div className="flex flex-col w-full">
@@ -1583,6 +1791,8 @@ export const MapView: React.FC<MapViewProps> = ({
                 <MapJumpController viewKey={viewKey} />
 
                 <MapResizeHandler />
+
+                <FreehandSelectController onAreaSelect={onAreaSelect} />
 
                 {mapType === 'street' ? (
                     <TileLayer
@@ -1744,6 +1954,30 @@ export const MapView: React.FC<MapViewProps> = ({
                     </>
                 )}
 
+                {/* Report Area Polygon (modo report_area: click-based) */}
+                {mode === 'report_area' && reportAreaPolygon.length > 0 && (
+                    <>
+                        {reportAreaPolygon.length >= 3 ? (
+                            <Polygon
+                                positions={reportAreaPolygon.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: '#10b981', weight: 2, fillColor: '#10b981', fillOpacity: 0.15, dashArray: '6, 6' }}
+                            />
+                        ) : (
+                            <Polyline
+                                positions={reportAreaPolygon.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: '#10b981', weight: 2, dashArray: '6, 6' }}
+                            />
+                        )}
+                        {reportAreaPolygon.map((p, idx) => (
+                            <Marker
+                                key={`report-pt-${idx}`}
+                                position={[p.lat, p.lng]}
+                                icon={rulerDotIcon}
+                            />
+                        ))}
+                    </>
+                )}
+
                 {/* Export Area Polygon */}
                 {mode === 'export_area' && exportAreaPolygon.length > 0 && (
                     <>
@@ -1761,6 +1995,82 @@ export const MapView: React.FC<MapViewProps> = ({
                         {exportAreaPolygon.map((p, idx) => (
                             <Marker
                                 key={`export-pt-${idx}`}
+                                position={[p.lat, p.lng]}
+                                icon={rulerDotIcon}
+                            />
+                        ))}
+                    </>
+                )}
+
+                {/* Polygons ficam numa pane baixa (atrás de cabos/CTOs/markers).
+                    Eventos de contextmenu em cima de markers são capturados via
+                    pointInPolygon no handleMapContextMenuInternal. */}
+                <Pane name="polygons-pane" style={{ zIndex: 350 }} />
+
+                {/* Persistent Polygons (áreas delimitadas: cobertura, anotações, etc.) */}
+                {showPolygons && polygons.map(poly => {
+                    const isSelected = selectedPolygonId === poly.id;
+                    const color = poly.color || '#ef4444';
+                    const fillOpacity = poly.fillOpacity ?? 0.25;
+                    const weight = poly.weight ?? 2;
+                    return (
+                        <Polygon
+                            key={poly.id}
+                            pane="polygons-pane"
+                            positions={poly.points.map(p => [p.lat, p.lng])}
+                            pathOptions={{
+                                color,
+                                weight: isSelected ? weight + 2 : weight,
+                                fillColor: color,
+                                fillOpacity,
+                                opacity: isSelected ? 1 : 0.9,
+                            }}
+                            eventHandlers={{
+                                click: (e) => {
+                                    if (mode === 'view' && onPolygonClick) {
+                                        L.DomEvent.stopPropagation(e as any);
+                                        onPolygonClick(poly.id);
+                                    }
+                                },
+                                contextmenu: (e: any) => {
+                                    if (mode !== 'view') return;
+                                    L.DomEvent.stopPropagation(e);
+                                    L.DomEvent.preventDefault(e);
+                                    const orig = e.originalEvent as MouseEvent | undefined;
+                                    setContextMenu(null);
+                                    setMapContextMenu(null);
+                                    setPolygonContextMenu({
+                                        x: orig?.clientX ?? 0,
+                                        y: orig?.clientY ?? 0,
+                                        polygonId: poly.id,
+                                    });
+                                },
+                            }}
+                        >
+                            <Tooltip sticky direction="top" opacity={0.9}>
+                                <span className="font-semibold">{poly.name}</span>
+                            </Tooltip>
+                        </Polygon>
+                    );
+                })}
+
+                {/* Polygon Drawing in Progress */}
+                {mode === 'draw_polygon' && drawingPolygonPath.length > 0 && (
+                    <>
+                        {drawingPolygonPath.length >= 3 ? (
+                            <Polygon
+                                positions={drawingPolygonPath.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: drawingPolygonColor, weight: 2, fillColor: drawingPolygonColor, fillOpacity: 0.25 }}
+                            />
+                        ) : (
+                            <Polyline
+                                positions={drawingPolygonPath.map(p => [p.lat, p.lng])}
+                                pathOptions={{ color: drawingPolygonColor, weight: 2 }}
+                            />
+                        )}
+                        {drawingPolygonPath.map((p, idx) => (
+                            <Marker
+                                key={`polygon-draw-pt-${idx}`}
                                 position={[p.lat, p.lng]}
                                 icon={rulerDotIcon}
                             />
@@ -1933,7 +2243,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
                 {/* TECHNICAL RESERVES (Draggable Markers) - Multiple per cable */}
-                {cablesWithReserves.flatMap(cable => {
+                {showReserves && cablesWithReserves.flatMap(cable => {
                     const reserves = cable.reserves && cable.reserves.length > 0
                         ? cable.reserves
                         : (cable.technicalReserve || 0) > 0
@@ -2265,6 +2575,30 @@ export const MapView: React.FC<MapViewProps> = ({
                     />
                 )
             }
+
+            {/* Polygon Context Menu */}
+            {polygonContextMenu && (() => {
+                const poly = polygons.find(p => p.id === polygonContextMenu.polygonId);
+                if (!poly) return null;
+                return (
+                    <PolygonContextMenu
+                        x={polygonContextMenu.x}
+                        y={polygonContextMenu.y}
+                        name={poly.name}
+                        color={poly.color}
+                        onChangeColor={(color) => {
+                            if (onUpdatePolygon) onUpdatePolygon({ ...poly, color });
+                        }}
+                        onEdit={() => {
+                            if (onPolygonClick) onPolygonClick(poly.id);
+                        }}
+                        onDelete={() => {
+                            if (onDeletePolygon) onDeletePolygon(poly.id);
+                        }}
+                        onClose={() => setPolygonContextMenu(null)}
+                    />
+                );
+            })()}
 
 
 

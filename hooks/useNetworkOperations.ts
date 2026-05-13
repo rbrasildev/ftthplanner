@@ -224,7 +224,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
         setIsSaving(true);
         try {
             await projectService.updateCTO(currentProject.id, updatedCTO.id, updatedCTO);
-            showToast(t('toast_cto_splicing_saved'));
+            showToast(t('changes_saved'));
         } catch (e) {
             showToast(t('error_saving_changes'), 'error');
             throw e;

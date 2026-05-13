@@ -80,6 +80,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     const treeRef = useRef<CableRTree>(new CableRTree());
     const cablesByIdRef = useRef<Map<string, CableData>>(new Map());
     const hoveredCableIdRef = useRef<string | null>(null);
+    const hoverTooltipRef = useRef<L.Tooltip | null>(null);
 
     // Stable refs for callbacks
     const onClickRef = useRef(onClick);
@@ -355,6 +356,26 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             return !!target.closest(INTERACTIVE_SELECTORS);
         };
 
+        // Lazy-init reusable tooltip — one instance, opened/closed on hover.
+        const ensureTooltip = (): L.Tooltip => {
+            if (!hoverTooltipRef.current) {
+                hoverTooltipRef.current = L.tooltip({
+                    direction: 'top',
+                    offset: [0, -8],
+                    opacity: 0.95,
+                    className: 'cable-hover-tooltip',
+                });
+            }
+            return hoverTooltipRef.current;
+        };
+
+        const closeHoverTooltip = () => {
+            const tt = hoverTooltipRef.current;
+            if (tt && map.hasLayer(tt)) {
+                map.removeLayer(tt);
+            }
+        };
+
         // Hover: no conflict with other listeners, use map.on for simplicity.
         let rafPending = false;
         const onMouseMove = (e: L.LeafletMouseEvent) => {
@@ -367,6 +388,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     if (hoveredCableIdRef.current !== null) {
                         hoveredCableIdRef.current = null;
                         container.style.cursor = '';
+                        closeHoverTooltip();
                     }
                     return;
                 }
@@ -375,6 +397,14 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 if (newId !== hoveredCableIdRef.current) {
                     hoveredCableIdRef.current = newId;
                     container.style.cursor = newId ? 'pointer' : '';
+                    if (!newId) {
+                        closeHoverTooltip();
+                    }
+                }
+                if (cable) {
+                    const tt = ensureTooltip();
+                    tt.setLatLng(e.latlng).setContent(`<span class="font-semibold">${cable.name}</span>`);
+                    if (!map.hasLayer(tt)) tt.addTo(map);
                 }
             });
         };
@@ -452,6 +482,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 container.style.cursor = '';
                 hoveredCableIdRef.current = null;
             }
+            closeHoverTooltip();
+            hoverTooltipRef.current = null;
         };
     }, [map, visible]);
 
