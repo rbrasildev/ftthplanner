@@ -23,6 +23,14 @@ export interface OpticalElement {
     length?: number; // meters (for cables)
 }
 
+export interface OpticalWarning {
+    severity: 'high' | 'medium';
+    elementType: 'SPLITTER' | 'FUSION' | 'OLT' | 'CABLE';
+    elementId: string;
+    elementName: string;
+    message: string;
+}
+
 export interface OpticalPathResult {
     path: OpticalElement[];
     totalLoss: number;
@@ -35,6 +43,7 @@ export interface OpticalPathResult {
         slot?: number;
         port?: number;
     };
+    warnings?: OpticalWarning[];
 }
 
 interface Catalogs {
@@ -80,6 +89,15 @@ function getSplitterLoss(splitter: Splitter, catalog: SplitterCatalogItem | unde
     // Catálogos antigos podem ter port1/port2 mesmo no Balanced (resíduo de quando foram cadastrados
     // como Unbalanced). Respeitar `mode` evita usar valores assimétricos pra splitter balanceado.
     const isUnbalanced = (catalog.mode || '').trim().toLowerCase() === 'unbalanced';
+
+    // Splitter-alvo (sem outputPortId específico) num catálogo unbalanced:
+    // não dá pra escolher uma porta. O `value` salvo pelo cadastro espelha `port1`, então
+    // retorná-lo aqui faria a UI subtrair port1 duas vezes (uma no totalLoss/finalPower e
+    // outra no breakdown por porta). Devolvemos 0; o cálculo de potência por porta acontece
+    // a jusante, em quem consome `finalPower` como entrada do splitter.
+    if (isUnbalanced && !outputPortId) {
+        return 0;
+    }
 
     // Try to extract from catalog
     if (catalog.attenuation !== undefined && catalog.attenuation !== null) {
@@ -186,8 +204,17 @@ function getCableLoss(cable: CableData, catalog: CableCatalogItem | undefined): 
 
 // Helper: Get Fusion Loss
 function getFusionLoss(fusion: FusionPoint, catalog: FusionCatalogItem | undefined): number {
-    if (catalog) return catalog.attenuation;
-    return 0; // Was 0.1. User requested 0 if not found.
+    if (!catalog) return 0; // Was 0.1. User requested 0 if not found.
+
+    const raw: any = catalog.attenuation;
+    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
+    if (typeof raw === 'string') {
+        // Tolera vírgula como separador decimal (locale pt-BR). Cadastros antigos
+        // podem ter persistido "0,2" como string antes da normalização no formulário.
+        const v = parseFloat(raw.replace(',', '.'));
+        return Number.isFinite(v) ? v : 0;
+    }
+    return 0;
 }
 
 // --- MAIN TRACE FUNCTION ---
@@ -201,6 +228,7 @@ export function traceOpticalPath(
 ): OpticalPathResult {
 
     const path: OpticalElement[] = [];
+    const warnings: OpticalWarning[] = [];
     let currentPower = 0; // Will be set by OLT
     let oltPower = 3; // Default Class B+ (+3dBm)
 
@@ -252,6 +280,13 @@ export function traceOpticalPath(
     if (!splitterCatalog) {
         console.warn(`[OpticalCalc] Splitter Catalog NOT FOUND for type: '${targetSplitter.type}' (Outputs: ${targetSplitter.outputPortIds.length})`);
         console.log("Available Splitters:", catalogs.splitters.map(s => `'${s.name}' (Out: ${s.outputs})`));
+        warnings.push({
+            severity: 'high',
+            elementType: 'SPLITTER',
+            elementId: targetSplitter.id,
+            elementName: targetSplitter.name,
+            message: `Catálogo não encontrado para "${targetSplitter.type}". Perda do splitter assumida como 0 dB.`,
+        });
     } else {
         console.log(`[OpticalCalc] Found Catalog: ${splitterCatalog.name}, Attenuation: ${splitterCatalog.attenuation}`);
     }
@@ -395,7 +430,39 @@ export function traceOpticalPath(
                     fusionData = catalogs.fusions.find(f => f.name.trim().toLowerCase() === fusionTypeNorm);
                 }
 
-                // If not found, defaults to 0 in getFusionLoss
+                // Toda fusão é criada com `type: 'generic'` (CTOEditor.handleAddFusion),
+                // então o discriminador real é `catalogId`. Quando ele está vazio (fusões
+                // criadas antes do catálogo existir, ou com catalogId apontando pra item
+                // removido), usamos o primeiro item do catálogo de fusões como "padrão"
+                // — preferindo um item explicitamente nomeado "padrão"/"default" se existir.
+                // Sem fallback, o cálculo ficava com 0 dB silencioso e o orçamento parecia
+                // melhor do que era na prática.
+                let fallbackUsed: { name: string; attenuation: number } | null = null;
+                if (!fusionData) {
+                    const defaultFusion =
+                        catalogs.fusions.find(f => /padr(ã|a)o|default/i.test(f.name))
+                        || catalogs.fusions[0];
+
+                    if (defaultFusion) {
+                        fusionData = defaultFusion;
+                        fallbackUsed = { name: defaultFusion.name, attenuation: defaultFusion.attenuation };
+                    }
+
+                    warnings.push({
+                        severity: 'medium',
+                        elementType: 'FUSION',
+                        elementId: fusion.id,
+                        elementName: fusion.name,
+                        message: fallbackUsed
+                            ? `Sem tipo associado ao catálogo. Aplicada perda padrão de "${fallbackUsed.name}" (${fallbackUsed.attenuation} dB).`
+                            : (fusion.catalogId
+                                ? `Catálogo de fusão referenciado não existe mais e nenhum padrão disponível. Perda assumida como 0 dB.`
+                                : `Fusão sem tipo associado ao catálogo e nenhum padrão disponível. Perda assumida como 0 dB.`),
+                    });
+                }
+
+                // getFusionLoss usa fusionData se existir (incluindo o padrão acima);
+                // senão volta a 0 (caso extremo: catálogo de fusões totalmente vazio).
                 const fLoss = getFusionLoss(fusion, fusionData);
 
                 path.unshift({
@@ -434,6 +501,16 @@ export function traceOpticalPath(
 
                     // Pass sourceId (which is the output port we are connected to) to determine specific loss
                     const psLoss = getSplitterLoss(parentSplitter, psCatalog, sourceId);
+
+                    if (!psCatalog) {
+                        warnings.push({
+                            severity: 'high',
+                            elementType: 'SPLITTER',
+                            elementId: parentSplitter.id,
+                            elementName: parentSplitter.name,
+                            message: `Catálogo não encontrado para splitter em cascata "${parentSplitter.type}". Perda assumida como 0 dB.`,
+                        });
+                    }
 
                     path.unshift({
                         type: 'SPLITTER',
@@ -491,6 +568,15 @@ export function traceOpticalPath(
                         psCatalog = catalogs.splitters.find(c => c.outputs === popSplitter.outputPortIds.length);
                     }
                     const psLoss = getSplitterLoss(popSplitter, psCatalog, sourceId);
+                    if (!psCatalog) {
+                        warnings.push({
+                            severity: 'high',
+                            elementType: 'SPLITTER',
+                            elementId: popSplitter.id,
+                            elementName: popSplitter.name,
+                            message: `Catálogo não encontrado para splitter no POP "${popSplitter.type}". Perda assumida como 0 dB.`,
+                        });
+                    }
                     path.unshift({
                         type: 'SPLITTER',
                         id: popSplitter.id,
@@ -539,6 +625,13 @@ export function traceOpticalPath(
                         console.log(`Matched OLT Catalog: "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
                     } else {
                         console.log(`No OLT Catalog match for "${olt.name}". Using default 3dBm.`);
+                        warnings.push({
+                            severity: 'medium',
+                            elementType: 'OLT',
+                            elementId: olt.id,
+                            elementName: olt.name,
+                            message: `Catálogo de OLT não encontrado para "${olt.name}". Potência de saída assumida como +3 dBm (Class B+).`,
+                        });
                     }
 
                     console.log("OLT Found (Direct):", olt.name, "Slot:", slot, "Port:", port);
@@ -634,6 +727,14 @@ export function traceOpticalPath(
 
                     if (matchedCatalog) {
                         console.log(`Matched OLT Catalog (Fallback): "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
+                    } else {
+                        warnings.push({
+                            severity: 'medium',
+                            elementType: 'OLT',
+                            elementId: olt.id,
+                            elementName: olt.name,
+                            message: `Catálogo de OLT não encontrado para "${olt.name}". Potência de saída assumida como +3 dBm (Class B+).`,
+                        });
                     }
 
                     console.log("OLT Found (No Conn):", olt.name, "Slot:", slot, "Port:", port);
@@ -719,7 +820,8 @@ export function traceOpticalPath(
         finalPower,
         status,
         sourceName,
-        oltDetails: foundOltDetails
+        oltDetails: foundOltDetails,
+        warnings: warnings.length > 0 ? warnings : undefined,
     };
 }
 

@@ -167,8 +167,16 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Aceitar vírgula como separador decimal (locale pt-BR). Sem normalizar,
+            // "0,2" persiste como string e o parseFloat a jusante (opticalUtils.getSplitterLoss)
+            // devolve 0 → splitter sem perda no orçamento óptico.
+            const normalize = (v: any) => {
+                if (v === null || v === undefined || v === '') return v;
+                return String(v).replace(',', '.');
+            };
+
             // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
-            let attenuationValue: any = formData.attenuation;
+            let attenuationValue: any = normalize(formData.attenuation);
 
             // SPECIAL LOGIC FOR UNBALANCED
             if (formData.mode === 'Unbalanced') {
@@ -176,12 +184,14 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                 // Usually unbalanced is like 70/30. The "loss" depends on the port.
                 // But opticalUtils.ts expects a single 'value' for generic loss if it doesn't know better.
                 // We'll store: { value: <p1>, port1: <p1>, port2: <p2> }
-                // So if legacy code reads .value, it gets port1 attenuation (highest usually? or lowest?). 
+                // So if legacy code reads .value, it gets port1 attenuation (highest usually? or lowest?).
                 // Let's assume port 1 is the first output group.
+                const p1 = normalize(formData.port1);
+                const p2 = normalize(formData.port2);
                 attenuationValue = {
-                    value: formData.port1,
-                    port1: formData.port1,
-                    port2: formData.port2
+                    value: p1,
+                    port1: p1,
+                    port2: p2
                 };
             } else {
                 try {
@@ -189,10 +199,10 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                     if (attStr.trim().startsWith('{')) {
                         attenuationValue = JSON.parse(attStr);
                     } else {
-                        attenuationValue = { value: formData.attenuation };
+                        attenuationValue = { value: normalize(formData.attenuation) };
                     }
                 } catch (e) {
-                    attenuationValue = { value: formData.attenuation };
+                    attenuationValue = { value: normalize(formData.attenuation) };
                 }
             }
 

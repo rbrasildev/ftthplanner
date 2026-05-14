@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { OpticalPathResult } from '../../utils/opticalUtils';
 import { Splitter } from '../../types';
 import { SplitterCatalogItem } from '../../services/catalogService';
-import { X, CheckCircle, AlertTriangle, XCircle, Activity, ArrowDown, Network, Unplug, Zap, GitFork } from 'lucide-react';
+import { X, CheckCircle, AlertTriangle, XCircle, Activity, ArrowDown, Network, Unplug, Zap, GitFork, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 
 interface OpticalPowerModalProps {
@@ -34,6 +34,8 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
         const isDisc = !isFinite(result.finalPower);
         if (isDisc) return null;
 
+        // result.finalPower agora representa a entrada do splitter quando o catálogo é
+        // unbalanced (getSplitterLoss devolve 0 nesse caso pra evitar double-count).
         const inputPower = result.finalPower;
         let att: any = catalogItem.attenuation;
         if (typeof att === 'string' && att.trim().startsWith('{')) {
@@ -58,9 +60,28 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
         return ports;
     }, [result, splitter, catalogItem, t]);
 
+    // Quando o splitter-alvo é unbalanced, `result.finalPower` é a potência de ENTRADA
+    // do splitter (não a final de uma porta). O card-resumo deve refletir o pior caso
+    // entre as saídas pra que o status (OK/MARGINAL/FAIL) corresponda à pior porta.
+    const summary = useMemo(() => {
+        if (outputPorts && outputPorts.length > 0) {
+            const worst = outputPorts.reduce((acc, p) => p.power < acc.power ? p : acc, outputPorts[0]);
+            return {
+                power: worst.power,
+                status: getPortStatus(worst.power),
+                isPerPort: true,
+            };
+        }
+        return {
+            power: result?.finalPower ?? -Infinity,
+            status: result?.status ?? 'FAIL',
+            isPerPort: false,
+        };
+    }, [outputPorts, result]);
+
     if (!isOpen || !result) return null;
 
-    const isDisconnected = !isFinite(result.finalPower);
+    const isDisconnected = !isFinite(summary.power);
 
     const getStatusColor = (status: string) => {
         if (isDisconnected) return 'text-slate-500 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700';
@@ -114,19 +135,21 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                 <div className="p-6 overflow-y-auto space-y-6 bg-slate-50/30 dark:bg-[#1a1d23]">
 
                     {/* Summary Card */}
-                    <div className={`p-5 rounded-xl border flex items-center justify-between ${getStatusColor(result.status)}`}>
+                    <div className={`p-5 rounded-xl border flex items-center justify-between ${getStatusColor(summary.status)}`}>
                         <div className="flex items-center gap-4">
-                            {getStatusIcon(result.status)}
+                            {getStatusIcon(summary.status)}
                             <div>
-                                <div className="text-[10px] font-bold opacity-70 uppercase tracking-wider">{t('final_power')}</div>
+                                <div className="text-[10px] font-bold opacity-70 uppercase tracking-wider">
+                                    {summary.isPerPort ? (t('worst_port_power') || 'Pior Saída') : t('final_power')}
+                                </div>
                                 <div className="text-3xl font-bold font-mono tracking-tight">
-                                    {isDisconnected ? '-- ' : result.finalPower.toFixed(2)} dBm
+                                    {isDisconnected ? '-- ' : summary.power.toFixed(2)} dBm
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
                             <div className="text-[10px] font-bold opacity-70 uppercase tracking-wider">{t('status')}</div>
-                            <div className="text-xl font-bold">{getStatusLabel(result.status)}</div>
+                            <div className="text-xl font-bold">{getStatusLabel(summary.status)}</div>
                         </div>
                     </div>
 
@@ -188,6 +211,25 @@ export const OpticalPowerModal: React.FC<OpticalPowerModalProps> = ({ isOpen, on
                             <div className="text-xs text-slate-500 mt-1.5">{t('path_elements')}: <strong>{result.path.length}</strong></div>
                         </div>
                     </div>
+
+                    {/* Warnings — sinaliza catálogos faltantes que tornam o cálculo otimista */}
+                    {result.warnings && result.warnings.length > 0 && (
+                        <div className="rounded-xl border border-amber-300 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20 p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                                    {t('optical_warnings_title') || 'Cálculo Incompleto'}
+                                </h4>
+                            </div>
+                            <ul className="space-y-1.5 ml-6">
+                                {result.warnings.map((w, i) => (
+                                    <li key={i} className="text-xs text-amber-800 dark:text-amber-200 list-disc">
+                                        <span className="font-bold">{w.elementName}:</span> {w.message}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
                     {/* Path Details */}
                     <div>

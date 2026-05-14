@@ -2,6 +2,7 @@ import React from 'react';
 import { SplitterNode } from './SplitterNode';
 import { Splitter, FiberConnection, ElementLayout } from '../../types';
 import { SplitterCatalogItem } from '../../services/catalogService';
+import { findSplitterCatalog } from '../../utils/splitterUtils';
 
 interface SplitterRendererProps {
     splitters: Splitter[];
@@ -47,11 +48,7 @@ export const SplitterRenderer = React.memo<SplitterRendererProps>(({
                     inner.forEach((info, portIdx) => { attachedCustomers[portIdx] = info; });
                 }
 
-                const catalogItem = availableSplitters.find(c =>
-                    c.name === splitter.type ||
-                    c.type === splitter.type ||
-                    (c.outputs === splitter.outputPortIds.length && splitter.type.includes(c.name))
-                );
+                const catalogItem = findSplitterCatalog(splitter, availableSplitters);
 
                 return (
                     <SplitterNode

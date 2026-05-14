@@ -1425,6 +1425,8 @@ const translations = {
     'type_OLT': 'OLT',
     'optical_no_path': 'No optical path found to the OLT.',
     'output_distribution': 'Output Power',
+    'worst_port_power': 'Worst Output',
+    'optical_warnings_title': 'Incomplete Calculation',
     'action_cancelled': 'Action cancelled',
 
     // Retention Intelligence
@@ -2369,6 +2371,8 @@ const translations = {
     'type_OLT': 'OLT',
     'optical_no_path': 'Nenhum caminho óptico encontrado até a OLT.',
     'output_distribution': 'Potência nas Saídas',
+    'worst_port_power': 'Pior Saída',
+    'optical_warnings_title': 'Cálculo Incompleto',
 
     // Common
     // Modals & Panels general UI

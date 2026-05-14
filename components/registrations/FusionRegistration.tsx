@@ -63,9 +63,13 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
         if (!formData.name) return;
 
         try {
+            // Aceitar tanto "0.2" quanto "0,2" (locale pt-BR digita vírgula no input).
+            // parseFloat("0,2") devolve 0, então sem normalização o cadastro silenciosamente
+            // virava 0 dB e o orçamento óptico ficava sem perda de fusão.
+            const normalized = String(formData.attenuation).replace(',', '.');
             const payload = {
                 name: formData.name,
-                attenuation: parseFloat(formData.attenuation) || 0,
+                attenuation: parseFloat(normalized) || 0,
                 category: 'fusion' as string
             };
 

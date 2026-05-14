@@ -33,6 +33,7 @@ import {
 import { OpticalPowerModal } from './modals/OpticalPowerModal';
 import { QRCodeModal } from './modals/QRCodeModal';
 import { traceOpticalPath, tracePortPower, OpticalPathResult } from '../utils/opticalUtils';
+import { findSplitterCatalog } from '../utils/splitterUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
 import { useCTOEditorState } from '../hooks/useCTOEditorState';
@@ -669,7 +670,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     }, [localCTO.id]);
 
 
-    const [splitterFilter, setSplitterFilter] = useState<'all' | 'Balanced' | 'Unbalanced'>('all');
+    const [splitterFilter, setSplitterFilter] = useState<'Balanced' | 'Unbalanced'>('Balanced');
 
     // FUSION TOOL STATE (isFusionToolActive is managed by useToolModes above)
     const [selectedFusionTypeId, setSelectedFusionTypeId] = useState<string | null>(null);
@@ -997,11 +998,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     // Pre-computed power + flow direction per port. Memo depends on the network
     // topology pieces that influence power, not on layout drags, to avoid retracing
     // on every mouse move.
+    // Fusions e Connectors são listas separadas no catálogo (getFusions('fusion') vs
+    // getFusions('connector')), mas ambas são FusionCatalogItem e ambas podem ser
+    // referenciadas como `fusion.catalogId` (CTOEditor.createFusionAtCursor procura nas
+    // duas). O trace precisa enxergar a UNIÃO; do contrário fusões cadastradas como
+    // conector caem no fallback "sem catálogo" e ficam com perda 0.
+    const allFusionCatalogs = useMemo(
+        () => [...availableFusions, ...availableConnectors],
+        [availableFusions, availableConnectors]
+    );
+
     const portPowerMap = useMemo(() => {
         const map = new Map<string, { power: number | null; direction: 'fromCable' | 'fromPort' | null }>();
         const catalogs = {
             splitters: availableSplitters,
-            fusions: availableFusions,
+            fusions: allFusionCatalogs,
             cables: availableCables,
             olts: availableOLTs,
         };
@@ -1013,7 +1024,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         });
         return map;
-    }, [tracedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, availableFusions, availableCables, availableOLTs]);
+    }, [tracedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, allFusionCatalogs, availableCables, availableOLTs]);
 
     const getPortPower = useCallback((portId: string): number | null => {
         return portPowerMap.get(portId)?.power ?? null;
@@ -1613,7 +1624,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // Build summary data for footer
             const catalogs = {
                 splitters: availableSplitters,
-                fusions: availableFusions,
+                fusions: allFusionCatalogs,
                 cables: availableCables,
                 olts: availableOLTs
             };
@@ -1710,7 +1721,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         try {
             const catalogs = {
                 splitters: availableSplitters,
-                fusions: availableFusions,
+                fusions: allFusionCatalogs,
                 cables: availableCables,
                 olts: availableOLTs
             };
@@ -1718,14 +1729,24 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             console.log("Tracing path for:", splitter.name);
             const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
             setOpticalResult(result);
-            setSelectedSplitterName(splitter.name);
+
+            // Nome exibido no orçamento óptico precisa refletir o cadastro do catálogo,
+            // não o rótulo sequencial ("1", "2"...) gerado em handleAddSplitter.
+            // Resolvemos via catalogId (canônico) e caímos pra splitter.type / nome bruto
+            // se o catálogo foi removido/renomeado. Quando o usuário deu um nome
+            // descritivo (não-numérico) ao splitter, mostramos os dois.
+            const catalog = findSplitterCatalog(splitter, availableSplitters);
+            const catalogName = catalog?.name || splitter.type || splitter.name;
+            const isDescriptive = splitter.name && !/^\d+$/.test(splitter.name.trim());
+            const displayName = isDescriptive ? `${splitter.name} — ${catalogName}` : catalogName;
+            setSelectedSplitterName(displayName);
             setSelectedSplitterForModal(splitter);
             setIsOpticalModalOpen(true);
         } catch (error) {
             console.error("Error calculating optical path:", error);
             alert(`Erro: ${(error as Error).message}`);
         }
-    }, [localCTO, availableSplitters, availableFusions, availableCables, availableOLTs, cto.id, network]);
+    }, [localCTO, availableSplitters, allFusionCatalogs, availableCables, availableOLTs, cto.id, network]);
 
 
     // --- Event Handlers ---
@@ -4151,11 +4172,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     result={opticalResult}
                     splitterName={selectedSplitterName}
                     splitter={selectedSplitterForModal}
-                    catalogItem={selectedSplitterForModal ? availableSplitters.find(c =>
-                        c.name === selectedSplitterForModal.type ||
-                        c.type === selectedSplitterForModal.type ||
-                        (c.outputs === selectedSplitterForModal.outputPortIds.length && selectedSplitterForModal.type.includes(c.name))
-                    ) : undefined}
+                    catalogItem={findSplitterCatalog(selectedSplitterForModal, availableSplitters)}
                 />
 
                 <QRCodeModal

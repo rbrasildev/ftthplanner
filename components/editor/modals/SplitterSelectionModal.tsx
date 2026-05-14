@@ -4,7 +4,7 @@ import { Button } from '../../common/Button';
 import { useLanguage } from '../../../LanguageContext';
 import { SplitterCatalogItem } from '../../../services/catalogService';
 
-export type SplitterFilterMode = 'all' | 'Balanced' | 'Unbalanced';
+export type SplitterFilterMode = 'Balanced' | 'Unbalanced';
 
 interface SplitterSelectionModalProps {
     isOpen: boolean;
@@ -21,7 +21,7 @@ export const SplitterSelectionModal: React.FC<SplitterSelectionModalProps> = ({
     const { t } = useLanguage();
     if (!isOpen) return null;
 
-    const filtered = options.filter(s => filter === 'all' || s.mode === filter);
+    const filtered = options.filter(s => s.mode === filter);
 
     const tabClass = (active: boolean) =>
         `flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all ${
@@ -48,9 +48,6 @@ export const SplitterSelectionModal: React.FC<SplitterSelectionModalProps> = ({
                 </div>
 
                 <div className="flex bg-slate-100 dark:bg-[#22262e] p-1 rounded-xl mb-3 gap-1">
-                    <button onClick={() => onFilterChange('all')} className={tabClass(filter === 'all')}>
-                        {t('all')}
-                    </button>
                     <button onClick={() => onFilterChange('Balanced')} className={tabClass(filter === 'Balanced')}>
                         {t('splitter_mode_balanced')}
                     </button>
