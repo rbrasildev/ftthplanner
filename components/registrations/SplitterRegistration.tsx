@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle, L
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
+import { parseFloatLocale } from '../../utils/parseUtils';
 
 interface SplitterRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -167,12 +168,11 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Aceitar vírgula como separador decimal (locale pt-BR). Sem normalizar,
-            // "0,2" persiste como string e o parseFloat a jusante (opticalUtils.getSplitterLoss)
-            // devolve 0 → splitter sem perda no orçamento óptico.
+            // Normaliza vírgula → ponto e mantém como string (a forma serializada
+            // que o backend espera continua sendo string para preservar o input original).
             const normalize = (v: any) => {
                 if (v === null || v === undefined || v === '') return v;
-                return String(v).replace(',', '.');
+                return String(parseFloatLocale(v));
             };
 
             // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
@@ -180,19 +180,12 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
             // SPECIAL LOGIC FOR UNBALANCED
             if (formData.mode === 'Unbalanced') {
-                // Construct JSON object with port1, port2, and a default value (use P1 as value or max of both?)
-                // Usually unbalanced is like 70/30. The "loss" depends on the port.
-                // But opticalUtils.ts expects a single 'value' for generic loss if it doesn't know better.
-                // We'll store: { value: <p1>, port1: <p1>, port2: <p2> }
-                // So if legacy code reads .value, it gets port1 attenuation (highest usually? or lowest?).
-                // Let's assume port 1 is the first output group.
+                // Stored shape: { value, port1, port2 }. `value` espelha port1 por
+                // compatibilidade com leitores antigos; opticalUtils trata unbalanced
+                // separadamente via port1/port2.
                 const p1 = normalize(formData.port1);
                 const p2 = normalize(formData.port2);
-                attenuationValue = {
-                    value: p1,
-                    port1: p1,
-                    port2: p2
-                };
+                attenuationValue = { value: p1, port1: p1, port2: p2 };
             } else {
                 try {
                     const attStr = String(formData.attenuation);

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
 import { Plus, Trash2, Search, Loader2, Edit2, X, Save, AlertTriangle, Plug } from 'lucide-react';
 import { CustomInput, CustomSelect } from '../common';
+import { parseFloatLocale } from '../../utils/parseUtils';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface ConnectorRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -11,86 +13,61 @@ interface ConnectorRegistrationProps {
 
 export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [connectors, setConnectors] = useState<FusionCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<FusionCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        polishType: 'UPC',
-        attenuation: '0.3'
+    const service = useMemo(() => ({
+        list: () => getFusions('connector'),
+        create: createFusion,
+        update: updateFusion,
+        remove: deleteFusion,
+    }), []);
+
+    const {
+        filteredItems: filtered,
+        loading,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<FusionCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado',
+            updated: t('toast_updated_success') || 'Atualizado',
+            deleted: t('toast_deleted_success') || 'Excluído',
+            errorSave: t('error_save') || 'Erro ao salvar',
+            errorDelete: t('error_delete') || 'Erro ao deletar',
+        },
+        filterFn: (item, term) => item.name.toLowerCase().includes(term.toLowerCase()),
     });
 
-    useEffect(() => { loadConnectors(); }, []);
+    const [formData, setFormData] = useState({ name: '', polishType: 'UPC', attenuation: '0.3' });
 
-    const loadConnectors = async () => {
-        setLoading(true);
-        try {
-            const data = await getFusions('connector');
-            setConnectors(data);
-        } catch (error) {
-            console.error("Failed to load connectors", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        if (!isModalOpen) return;
+        setFormData(editingItem
+            ? { name: editingItem.name, polishType: editingItem.polishType || 'UPC', attenuation: String(editingItem.attenuation) }
+            : { name: '', polishType: 'UPC', attenuation: '0.3' }
+        );
+    }, [isModalOpen, editingItem]);
 
-    const handleOpenModal = (item?: FusionCatalogItem) => {
-        if (item) {
-            setEditingItem(item);
-            setFormData({
-                name: item.name,
-                polishType: item.polishType || 'UPC',
-                attenuation: String(item.attenuation)
-            });
-        } else {
-            setEditingItem(null);
-            setFormData({ name: '', polishType: 'UPC', attenuation: '0.3' });
-        }
-        setIsModalOpen(true);
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name) return;
-        try {
-            const payload = {
-                name: formData.name,
-                attenuation: parseFloat(formData.attenuation) || 0,
-                category: 'connector' as string,
-                polishType: formData.polishType
-            };
-            if (editingItem) {
-                const updated = await updateFusion(editingItem.id, payload);
-                setConnectors(prev => prev.map(c => c.id === updated.id ? updated : c));
-            } else {
-                const created = await createFusion(payload);
-                setConnectors(prev => [...prev, created]);
-            }
-            setIsModalOpen(false);
-            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado') : (t('toast_created_success') || 'Criado'), 'success');
-        } catch (error) {
-            console.error("Failed to save connector", error);
-            if (showToast) showToast(t('error_save') || "Erro ao salvar", 'error');
-        }
+        await save({
+            name: formData.name,
+            attenuation: parseFloatLocale(formData.attenuation),
+            category: 'connector',
+            polishType: formData.polishType,
+        });
     };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteFusion(id);
-            setConnectors(prev => prev.filter(c => c.id !== id));
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído', 'success');
-        } catch (error) {
-            console.error("Failed to delete connector", error);
-            if (showToast) showToast(t('error_delete') || "Erro ao deletar", 'error');
-        }
-    };
-
-    const filtered = connectors.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const polishColor = (type?: string) => type === 'APC' ? 'bg-green-500' : type === 'PC' ? 'bg-slate-400' : 'bg-blue-500';
 
@@ -107,7 +84,7 @@ export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ sh
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || "Adicionar Novo"}
@@ -163,7 +140,7 @@ export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ sh
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button onClick={() => handleOpenModal(item)} className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title={t('edit')}>
+                                            <button onClick={() => openEdit(item)} className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors" title={t('edit')}>
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button onClick={() => setShowDeleteConfirm(item.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title={t('delete')}>
@@ -187,7 +164,7 @@ export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ sh
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium">{t('cancel')}</button>
-                            <button onClick={() => handleDelete(showDeleteConfirm!)} className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20">{t('delete')}</button>
+                            <button onClick={confirmDelete} className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20">{t('delete')}</button>
                         </div>
                     </div>
                 </div>
@@ -201,12 +178,12 @@ export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ sh
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingItem ? (t('edit_connector') || "Editar Conector") : (t('new_connector') || "Novo Conector")}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-4">
+                        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
                             <CustomInput
                                 label={t('name') || "Nome"}
                                 value={formData.name || ''}
@@ -243,7 +220,7 @@ export const ConnectorRegistration: React.FC<ConnectorRegistrationProps> = ({ sh
                             />
 
                             <div className="pt-2 flex gap-3">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition">{t('cancel')}</button>
+                                <button type="button" onClick={closeModal} className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition">{t('cancel')}</button>
                                 <button type="submit" className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2">
                                     <Save className="w-4 h-4" /> {t('save')}
                                 </button>

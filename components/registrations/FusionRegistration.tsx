@@ -1,10 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { getFusions, createFusion, updateFusion, deleteFusion, FusionCatalogItem } from '../../services/catalogService';
-import { Plus, Trash2, Zap, Search, Loader2, Edit2, X, Save, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Zap, Search, Edit2, X, Save, AlertTriangle } from 'lucide-react';
 import { CustomInput } from '../common';
+import { parseFloatLocale } from '../../utils/parseUtils';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface FusionRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -12,97 +13,63 @@ interface FusionRegistrationProps {
 
 export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [fusions, setFusions] = useState<FusionCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
 
-    // Form State
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<FusionCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        attenuation: '0.01'
+    // Service binding: getFusions é parametrizado por categoria, então fechamos no 'fusion'
+    // antes de passar pro hook (que assume list() sem argumentos).
+    const service = useMemo(() => ({
+        list: () => getFusions('fusion'),
+        create: createFusion,
+        update: updateFusion,
+        remove: deleteFusion,
+    }), []);
+
+    const {
+        filteredItems: filteredFusions,
+        loading,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<FusionCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_save_fusion') || 'Erro ao salvar fusão',
+            errorDelete: t('error_delete_fusion') || 'Erro ao deletar fusão',
+        },
+        filterFn: (item, term) => item.name.toLowerCase().includes(term.toLowerCase()),
     });
 
-    useEffect(() => {
-        loadFusions();
-    }, []);
+    const [formData, setFormData] = useState({ name: '', attenuation: '0.01' });
 
-    const loadFusions = async () => {
-        setLoading(true);
-        try {
-            const data = await getFusions('fusion');
-            setFusions(data);
-        } catch (error) {
-            console.error("Failed to load fusions", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Sincroniza form com editingItem sempre que o modal abre.
+    React.useEffect(() => {
+        if (!isModalOpen) return;
+        setFormData(editingItem
+            ? { name: editingItem.name, attenuation: String(editingItem.attenuation) }
+            : { name: '', attenuation: '0.01' }
+        );
+    }, [isModalOpen, editingItem]);
 
-    const handleOpenModal = (item?: FusionCatalogItem) => {
-        if (item) {
-            setEditingItem(item);
-            setFormData({
-                name: item.name,
-                attenuation: String(item.attenuation)
-            });
-        } else {
-            setEditingItem(null);
-            setFormData({
-                name: '',
-                attenuation: '0.01'
-            });
-        }
-        setIsModalOpen(true);
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name) return;
-
-        try {
-            // Aceitar tanto "0.2" quanto "0,2" (locale pt-BR digita vírgula no input).
-            // parseFloat("0,2") devolve 0, então sem normalização o cadastro silenciosamente
-            // virava 0 dB e o orçamento óptico ficava sem perda de fusão.
-            const normalized = String(formData.attenuation).replace(',', '.');
-            const payload = {
-                name: formData.name,
-                attenuation: parseFloat(normalized) || 0,
-                category: 'fusion' as string
-            };
-
-            if (editingItem) {
-                const updated = await updateFusion(editingItem.id, payload);
-                setFusions(prev => prev.map(f => f.id === updated.id ? updated : f));
-            } else {
-                const created = await createFusion(payload);
-                setFusions(prev => [...prev, created]);
-            }
-            setIsModalOpen(false);
-            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-        } catch (error) {
-            console.error("Failed to save fusion", error);
-            if (showToast) showToast(t('error_save_fusion') || "Erro ao salvar fusão", 'error');
-        }
+        await save({
+            name: formData.name,
+            attenuation: parseFloatLocale(formData.attenuation),
+            category: 'fusion',
+        });
     };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteFusion(id);
-            setFusions(prev => prev.filter(f => f.id !== id));
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error("Failed to delete fusion", error);
-            if (showToast) showToast(t('error_delete_fusion') || "Erro ao deletar fusão", 'error');
-        }
-    };
-
-    const filteredFusions = fusions.filter(f =>
-        f.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -118,7 +85,7 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || "Adicionar Novo"}
@@ -183,7 +150,7 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(fusion)}
+                                                onClick={() => openEdit(fusion)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
@@ -220,7 +187,7 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
                                 {t('cancel')}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete')}
@@ -238,12 +205,12 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingItem ? (t('edit_fusion') || "Editar Fusão") : (t('new_fusion') || "Nova Fusão")}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-4">
+                        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
                             <div>
                                 <CustomInput
                                     label={t('name') || "Nome"}
@@ -266,7 +233,7 @@ export const FusionRegistration: React.FC<FusionRegistrationProps> = ({ showToas
                             <div className="pt-2 flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={closeModal}
                                     className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold transition"
                                 >
                                     {t('cancel')}
