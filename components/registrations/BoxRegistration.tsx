@@ -1,108 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, Edit2, Trash2, X, Save, Box, AlertTriangle, Palette, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Save, Box, AlertTriangle, Palette } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getBoxes, createBox, updateBox, deleteBox, BoxCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface BoxRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const emptyForm: Partial<BoxCatalogItem> = {
+    name: '', brand: '', model: '', type: 'CTO',
+    reserveLoopLength: 0, color: '#64748b', description: ''
+};
+
 const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [boxes, setBoxes] = useState<BoxCatalogItem[]>([]);
-    const [search, setSearch] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingBox, setEditingBox] = useState<BoxCatalogItem | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-    // Initial Form State
-    const [formData, setFormData] = useState<Partial<BoxCatalogItem>>({
-        name: '',
-        brand: '',
-        model: '',
-        type: 'CTO',
-        reserveLoopLength: 0,
-        color: '#64748b',
-        description: ''
+    const service = useMemo(() => ({
+        list: getBoxes,
+        create: createBox,
+        update: updateBox,
+        remove: deleteBox,
+    }), []);
+
+    const {
+        filteredItems: filteredBoxes,
+        loading: isLoading,
+        searchTerm: search,
+        setSearchTerm: setSearch,
+        isModalOpen,
+        editingItem: editingBox,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<BoxCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_save') || 'Falha ao salvar caixa',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (box, term) => {
+            const t = term.toLowerCase();
+            return box.name.toLowerCase().includes(t)
+                || (box.brand?.toLowerCase().includes(t) ?? false)
+                || (box.model?.toLowerCase().includes(t) ?? false);
+        },
     });
 
+    const [formData, setFormData] = useState<Partial<BoxCatalogItem>>(emptyForm);
+
     useEffect(() => {
-        loadBoxes();
-    }, []);
-
-    const loadBoxes = async () => {
-        setIsLoading(true);
-        try {
-            const data = await getBoxes();
-            setBoxes(data);
-        } catch (error) {
-            console.error("Failed to load boxes", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleOpenModal = (box?: BoxCatalogItem) => {
-        if (box) {
-            setEditingBox(box);
-            setFormData({ ...box });
-        } else {
-            setEditingBox(null);
-            setFormData({
-                name: '',
-                brand: '',
-                model: '',
-                type: 'CTO',
-                reserveLoopLength: 0,
-                color: '#64748b',
-                description: ''
-            });
-        }
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingBox(null);
-    };
+        if (!isModalOpen) return;
+        setFormData(editingBox ? { ...editingBox } : emptyForm);
+    }, [isModalOpen, editingBox]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            if (editingBox) {
-                await updateBox(editingBox.id, formData);
-            } else {
-                await createBox(formData as BoxCatalogItem);
-            }
-            loadBoxes();
-            handleCloseModal();
-            if (showToast) showToast(editingBox ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-        } catch (error) {
-            console.error("Failed to save box", error);
-            if (showToast) showToast(t('error_save') || 'Falha ao salvar caixa', 'error');
-        }
+        await save(formData);
     };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteBox(id);
-            setBoxes(prev => prev.filter(b => b.id !== id));
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error("Failed to delete box", error);
-            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
-        }
-    };
-
-    const filteredBoxes = boxes.filter(box =>
-        box.name.toLowerCase().includes(search.toLowerCase()) ||
-        box.brand?.toLowerCase().includes(search.toLowerCase()) ||
-        box.model?.toLowerCase().includes(search.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -118,7 +83,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || 'Adicionar Nova'}
@@ -198,7 +163,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(box)}
+                                                onClick={() => openEdit(box)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
@@ -235,7 +200,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                                 {t('cancel') || 'Cancelar'}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete') || 'Excluir'}
@@ -254,7 +219,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                                 <Box className="w-6 h-6 text-emerald-600" />
                                 {editingBox ? (t('edit_box') || 'Editar Caixa') : (t('new_box') || 'Nova Caixa')}
                             </h2>
-                            <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -343,7 +308,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                             <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/30 mt-4">
                                 <button
                                     type="button"
-                                    onClick={handleCloseModal}
+                                    onClick={closeModal}
                                     className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition"
                                 >
                                     {t('cancel')}

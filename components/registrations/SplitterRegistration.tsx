@@ -1,56 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
 import { parseFloatLocale } from '../../utils/parseUtils';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface SplitterRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const emptyForm = {
+    name: '',
+    type: 'PLC',
+    mode: 'Balanced',
+    inputs: 1,
+    outputs: 8,
+    connectorType: 'Unconnectorized',
+    polishType: '' as string,
+    allowCustomConnections: false,
+    attenuation: '',
+    port1: '',
+    port2: '',
+    description: ''
+};
+
 export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [splitters, setSplitters] = useState<SplitterCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<SplitterCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-    const [saving, setSaving] = useState(false);
 
-    // Form State
-    const [formData, setFormData] = useState({
-        name: '',
-        type: 'PLC',
-        mode: 'Balanced',
-        inputs: 1,
-        outputs: 8,
-        connectorType: 'Unconnectorized',
-        polishType: '' as string,
-        allowCustomConnections: false,
-        attenuation: '',
-        port1: '',
-        port2: '',
-        description: ''
+    const service = useMemo(() => ({
+        list: getSplitters,
+        create: createSplitter,
+        update: updateSplitter,
+        remove: deleteSplitter,
+    }), []);
+
+    const {
+        filteredItems: filteredSplitters,
+        loading,
+        saving,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<SplitterCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_saving_splitter') || 'Falha ao salvar splitter',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (s, term) => {
+            const t = term.toLowerCase();
+            return s.name.toLowerCase().includes(t) || s.type.toLowerCase().includes(t);
+        },
     });
 
-    useEffect(() => {
-        loadSplitters();
-    }, []);
-
-    const loadSplitters = async () => {
-        setLoading(true);
-        try {
-            const data = await getSplitters();
-            setSplitters(data);
-        } catch (error) {
-            console.error("Failed to load splitters", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [formData, setFormData] = useState(emptyForm);
 
     // Helper to extract display value from attenuation (which might be JSON)
     const getAttenuationValue = (val: any): string => {
@@ -96,146 +113,88 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
         return String(displayVal);
     };
 
-    const handleOpenModal = (item?: SplitterCatalogItem) => {
-        if (item) {
-            setEditingItem(item);
-
-            // Extract port1 and port2 if available
-            let p1 = '';
-            let p2 = '';
-            let att = getAttenuationValue(item.attenuation);
-            // NOTE: getAttenuationValue returns formatted string. We need raw values for inputs.
-            // Let's re-parse for the form state.
-
-            let rawAtt = item.attenuation;
-            if (typeof rawAtt === 'string' && String(rawAtt).trim().startsWith('{')) {
-                try { rawAtt = JSON.parse(rawAtt); } catch (e) { }
-            }
-
-            if (rawAtt && typeof rawAtt === 'object') {
-                if (rawAtt.port1) p1 = rawAtt.port1;
-                if (rawAtt.port2) p2 = rawAtt.port2;
-            }
-
-            // Extract attenuation value from any JSON format: { value: X }, { x: X }, { "1": X }, or plain string
-            let attValue = '';
-            if (rawAtt && typeof rawAtt === 'object') {
-                if (rawAtt.value !== undefined) attValue = String(rawAtt.value);
-                else if (rawAtt.x !== undefined) attValue = String(rawAtt.x);
-                else {
-                    // Try first numeric value found (e.g. { "1": 3.7 })
-                    const keys = Object.keys(rawAtt).filter(k => k !== 'port1' && k !== 'port2');
-                    if (keys.length > 0) attValue = String(rawAtt[keys[0]]);
-                }
-            } else if (rawAtt !== undefined && rawAtt !== null) {
-                attValue = String(rawAtt);
-            }
-
-            setFormData({
-                name: item.name,
-                type: item.type,
-                mode: item.mode,
-                inputs: item.inputs,
-                outputs: item.outputs,
-                connectorType: item.connectorType || 'Unconnectorized',
-                polishType: item.polishType || '',
-                allowCustomConnections: (item.connectorType === 'Connectorized') ? (item.allowCustomConnections !== false) : (item.allowCustomConnections === true),
-                attenuation: attValue,
-                port1: p1,
-                port2: p2,
-                description: item.description || ''
-            });
-        } else {
-            setEditingItem(null);
-            setFormData({
-                name: '',
-                type: 'PLC',
-                mode: 'Balanced',
-                inputs: 1,
-                outputs: 8,
-                connectorType: 'Unconnectorized',
-                polishType: '',
-                allowCustomConnections: false,
-                attenuation: '',
-                port1: '',
-                port2: '',
-                description: ''
-            });
+    // Sincroniza form com editingItem ao abrir o modal. Reextrai port1/port2/value
+    // do shape persistido (que pode ser objeto JSON, string-com-objeto, ou número plano)
+    // pra repopular os inputs corretamente.
+    useEffect(() => {
+        if (!isModalOpen) return;
+        if (!editingItem) {
+            setFormData(emptyForm);
+            return;
         }
-        setIsModalOpen(true);
-    };
+
+        let p1 = '';
+        let p2 = '';
+        let rawAtt: any = editingItem.attenuation;
+        if (typeof rawAtt === 'string' && rawAtt.trim().startsWith('{')) {
+            try { rawAtt = JSON.parse(rawAtt); } catch { /* keep as string */ }
+        }
+        if (rawAtt && typeof rawAtt === 'object') {
+            if (rawAtt.port1) p1 = rawAtt.port1;
+            if (rawAtt.port2) p2 = rawAtt.port2;
+        }
+
+        let attValue = '';
+        if (rawAtt && typeof rawAtt === 'object') {
+            if (rawAtt.value !== undefined) attValue = String(rawAtt.value);
+            else if (rawAtt.x !== undefined) attValue = String(rawAtt.x);
+            else {
+                const keys = Object.keys(rawAtt).filter(k => k !== 'port1' && k !== 'port2');
+                if (keys.length > 0) attValue = String(rawAtt[keys[0]]);
+            }
+        } else if (rawAtt !== undefined && rawAtt !== null) {
+            attValue = String(rawAtt);
+        }
+
+        setFormData({
+            name: editingItem.name,
+            type: editingItem.type,
+            mode: editingItem.mode,
+            inputs: editingItem.inputs,
+            outputs: editingItem.outputs,
+            connectorType: editingItem.connectorType || 'Unconnectorized',
+            polishType: editingItem.polishType || '',
+            allowCustomConnections: (editingItem.connectorType === 'Connectorized')
+                ? (editingItem.allowCustomConnections !== false)
+                : (editingItem.allowCustomConnections === true),
+            attenuation: attValue,
+            port1: p1,
+            port2: p2,
+            description: editingItem.description || ''
+        });
+    }, [isModalOpen, editingItem]);
 
     const handleSave = async () => {
-        setSaving(true);
-        try {
-            // Normaliza vírgula → ponto e mantém como string (a forma serializada
-            // que o backend espera continua sendo string para preservar o input original).
-            const normalize = (v: any) => {
-                if (v === null || v === undefined || v === '') return v;
-                return String(parseFloatLocale(v));
-            };
+        // Normaliza vírgula → ponto e mantém como string (forma serializada que o backend
+        // espera). parseFloatLocale tolera locale pt-BR sem precisar repetir replace(',','.').
+        const normalize = (v: any) => {
+            if (v === null || v === undefined || v === '') return v;
+            return String(parseFloatLocale(v));
+        };
 
-            // Ensure we save as a JSON object with 'value' key if it's not already complex JSON
-            let attenuationValue: any = normalize(formData.attenuation);
+        let attenuationValue: any = normalize(formData.attenuation);
 
-            // SPECIAL LOGIC FOR UNBALANCED
-            if (formData.mode === 'Unbalanced') {
-                // Stored shape: { value, port1, port2 }. `value` espelha port1 por
-                // compatibilidade com leitores antigos; opticalUtils trata unbalanced
-                // separadamente via port1/port2.
-                const p1 = normalize(formData.port1);
-                const p2 = normalize(formData.port2);
-                attenuationValue = { value: p1, port1: p1, port2: p2 };
-            } else {
-                try {
-                    const attStr = String(formData.attenuation);
-                    if (attStr.trim().startsWith('{')) {
-                        attenuationValue = JSON.parse(attStr);
-                    } else {
-                        attenuationValue = { value: normalize(formData.attenuation) };
-                    }
-                } catch (e) {
+        if (formData.mode === 'Unbalanced') {
+            // Shape: { value, port1, port2 }. `value` espelha port1 por compatibilidade
+            // com leitores antigos; opticalUtils trata unbalanced via port1/port2.
+            const p1 = normalize(formData.port1);
+            const p2 = normalize(formData.port2);
+            attenuationValue = { value: p1, port1: p1, port2: p2 };
+        } else {
+            try {
+                const attStr = String(formData.attenuation);
+                if (attStr.trim().startsWith('{')) {
+                    attenuationValue = JSON.parse(attStr);
+                } else {
                     attenuationValue = { value: normalize(formData.attenuation) };
                 }
+            } catch {
+                attenuationValue = { value: normalize(formData.attenuation) };
             }
-
-            const payload = {
-                ...formData,
-                attenuation: attenuationValue
-            };
-
-            if (editingItem) {
-                await updateSplitter(editingItem.id, payload);
-            } else {
-                await createSplitter(payload);
-            }
-            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-            setIsModalOpen(false);
-            loadSplitters();
-        } catch (error) {
-            console.error("Failed to save splitter", error);
-            if (showToast) showToast(t('error_saving_splitter') || 'Falha ao salvar splitter', 'error');
-        } finally {
-            setSaving(false);
         }
-    };
 
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteSplitter(id);
-            loadSplitters();
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error("Failed to delete", error);
-            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
-        }
+        await save({ ...formData, attenuation: attenuationValue });
     };
-
-    const filteredSplitters = splitters.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.type.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -251,7 +210,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_splitter') || 'Add Splitter'}
@@ -327,7 +286,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(splitter)}
+                                                onClick={() => openEdit(splitter)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -367,7 +326,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                 {t('cancel')}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-600/20 transform active:scale-95 transition-all"
                             >
                                 {t('delete')}
@@ -394,7 +353,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
                                     <p className="text-xs text-slate-500">{t('splitter_catalog_desc') || 'Gerencie os modelos de splitters no catálogo.'}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+                            <button onClick={closeModal} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
                                 <X className="w-5 h-5 text-slate-500" />
                             </button>
                         </div>
@@ -536,7 +495,7 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
                         <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3 shrink-0">
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={closeModal}
                                 className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
                             >
                                 {t('cancel')}

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
     getCables, createCable, updateCable, deleteCable, CableCatalogItem
@@ -7,6 +7,7 @@ import {
 import { Plus, Edit2, Trash2, Search, Cable, AlertTriangle, X, Save } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { CustomSelect, CustomInput } from '../common';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 const SPEC_COLORS = ['#10b981', '#86efac', '#3b82f6', '#93c5fd', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5', '#8b5cf6', '#c4b5fd', '#ec4899', '#f9a8d4', '#6b7280', '#d1d5db'];
 
@@ -14,108 +15,75 @@ interface CableRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const emptyForm: Partial<CableCatalogItem> = {
+    name: '',
+    brand: '',
+    model: '',
+    defaultLevel: 'DISTRIBUICAO',
+    fiberCount: 12,
+    looseTubeCount: 1,
+    fibersPerTube: 12,
+    attenuation: 0.35,
+    fiberProfile: 'ABNT',
+    description: '',
+    deployedSpec: { color: '#10b981', width: 3 },
+    plannedSpec: { color: '#86efac', width: 3 }
+};
+
 const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [cables, setCables] = useState<CableCatalogItem[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingCable, setEditingCable] = useState<CableCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Form State
-    const [formData, setFormData] = useState<Partial<CableCatalogItem>>({
-        name: '',
-        brand: '',
-        model: '',
-        defaultLevel: 'DISTRIBUICAO',
-        fiberCount: 12,
-        looseTubeCount: 1,
-        fibersPerTube: 12,
-        attenuation: 0.35,
-        fiberProfile: 'ABNT',
-        description: '',
-        deployedSpec: { color: '#10b981', width: 3 },
-        plannedSpec: { color: '#86efac', width: 3 }
+    const service = useMemo(() => ({
+        list: getCables,
+        create: createCable,
+        update: updateCable,
+        remove: deleteCable,
+    }), []);
+
+    const {
+        filteredItems: filteredCables,
+        loading: isLoading,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem: editingCable,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<CableCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_save_cable') || 'Falha ao salvar cabo',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (c, term) => {
+            const t = term.toLowerCase();
+            return c.name.toLowerCase().includes(t) || (c.brand?.toLowerCase().includes(t) ?? false);
+        },
     });
 
+    const [formData, setFormData] = useState<Partial<CableCatalogItem>>(emptyForm);
+
     useEffect(() => {
-        loadCables();
-    }, []);
-
-    const loadCables = async () => {
-        setIsLoading(true);
-        try {
-            const data = await getCables();
-            setCables(data);
-        } catch (error) {
-            console.error("Failed to load cables", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleOpenModal = (cable?: CableCatalogItem) => {
-        if (cable) {
-            setEditingCable(cable);
-            setFormData(cable);
-        } else {
-            setEditingCable(null);
-            setFormData({
-                name: '',
-                brand: '',
-                model: '',
-                defaultLevel: 'DISTRIBUICAO',
-                fiberCount: 12,
-                looseTubeCount: 1,
-                fibersPerTube: 12,
-                attenuation: 0.35,
-                fiberProfile: 'ABNT',
-                description: '',
-                deployedSpec: { color: '#10b981', width: 3 },
-                plannedSpec: { color: '#86efac', width: 3 }
-            });
-        }
-        setIsModalOpen(true);
-    };
+        if (!isModalOpen) return;
+        setFormData(editingCable ? { ...editingCable } : emptyForm);
+    }, [isModalOpen, editingCable]);
 
     const handleSave = async () => {
-        try {
-            if (!formData.name) {
-                if (showToast) showToast(t('name_required') || 'Nome é obrigatório', 'error');
-                return;
-            }
-
-            if (editingCable) {
-                await updateCable(editingCable.id, formData);
-            } else {
-                await createCable(formData as Omit<CableCatalogItem, 'id' | 'updatedAt'>);
-            }
-            loadCables();
-            setIsModalOpen(false);
-            if (showToast) showToast(editingCable ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-        } catch (error) {
-            console.error("Failed to save cable", error);
-            if (showToast) showToast(t('error_save_cable') || 'Falha ao salvar cabo', 'error');
+        if (!formData.name) {
+            if (showToast) showToast(t('name_required') || 'Nome é obrigatório', 'error');
+            return;
         }
+        await save(formData);
     };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteCable(id);
-            loadCables();
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error("Failed to delete cable", error);
-            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
-        }
-    };
-
-    const filteredCables = cables.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.brand?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -131,7 +99,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new')}
@@ -209,7 +177,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(cable)}
+                                                onClick={() => openEdit(cable)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
@@ -246,7 +214,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                                 {t('cancel')}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete')}
@@ -264,7 +232,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingCable ? t('edit_cable') : t('new_cable')}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -470,7 +438,7 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
                         {/* Footer */}
                         <div className="p-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3 bg-slate-50 dark:bg-[#22262e]/80 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm">
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={closeModal}
                                 className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             >
                                 {t('cancel')}

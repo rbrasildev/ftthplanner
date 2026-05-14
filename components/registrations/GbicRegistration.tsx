@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Save, Search, Fingerprint, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
@@ -7,6 +7,7 @@ import {
     GbicCatalogItem, GbicFormFactorDTO, GbicFiberModeDTO, GbicTransmissionDTO,
 } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface GbicRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -30,55 +31,70 @@ const EMPTY_FORM = {
 
 export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [items, setItems] = useState<GbicCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<GbicCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+    const service = useMemo(() => ({
+        list: getGbics,
+        create: createGbic,
+        update: updateGbic,
+        remove: deleteGbic,
+    }), []);
+
+    const {
+        filteredItems: filtered,
+        loading,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<GbicCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: 'Falha ao salvar GBIC',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (o, term) => {
+            const q = term.toLowerCase();
+            return o.name.toLowerCase().includes(q)
+                || (o.brand ?? '').toLowerCase().includes(q)
+                || (o.model ?? '').toLowerCase().includes(q);
+        },
+    });
 
     const [formData, setFormData] = useState(EMPTY_FORM);
 
     useEffect(() => {
-        load();
-    }, []);
-
-    const load = async () => {
-        setLoading(true);
-        try {
-            const data = await getGbics();
-            setItems(data);
-        } catch (error) {
-            console.error('Failed to load GBICs', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleOpenModal = (item?: GbicCatalogItem) => {
-        if (item) {
-            setEditingItem(item);
-            setFormData({
-                name: item.name,
-                brand: item.brand ?? '',
-                model: item.model ?? '',
-                tipo: item.tipo,
-                modoFibra: item.modoFibra,
-                transmissao: item.transmissao,
-                rateGbps: item.rateGbps != null ? String(item.rateGbps) : '',
-                waveTxNm: item.waveTxNm != null ? String(item.waveTxNm) : '',
-                waveRxNm: item.waveRxNm != null ? String(item.waveRxNm) : '',
-                reachKm: item.reachKm != null ? String(item.reachKm) : '',
-                potenciaTx: item.potenciaTx,
-                sensibilidadeRx: item.sensibilidadeRx,
-                description: item.description ?? '',
-            });
-        } else {
-            setEditingItem(null);
+        if (!isModalOpen) return;
+        if (!editingItem) {
             setFormData(EMPTY_FORM);
+            return;
         }
-        setIsModalOpen(true);
-    };
+        setFormData({
+            name: editingItem.name,
+            brand: editingItem.brand ?? '',
+            model: editingItem.model ?? '',
+            tipo: editingItem.tipo,
+            modoFibra: editingItem.modoFibra,
+            transmissao: editingItem.transmissao,
+            rateGbps: editingItem.rateGbps != null ? String(editingItem.rateGbps) : '',
+            waveTxNm: editingItem.waveTxNm != null ? String(editingItem.waveTxNm) : '',
+            waveRxNm: editingItem.waveRxNm != null ? String(editingItem.waveRxNm) : '',
+            reachKm: editingItem.reachKm != null ? String(editingItem.reachKm) : '',
+            potenciaTx: editingItem.potenciaTx,
+            sensibilidadeRx: editingItem.sensibilidadeRx,
+            description: editingItem.description ?? '',
+        });
+    }, [isModalOpen, editingItem]);
 
     const parseOptionalNumber = (v: string): number | null => {
         if (v.trim() === '') return null;
@@ -87,67 +103,33 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
     };
 
     const handleSave = async () => {
-        try {
-            const payload = {
-                name: formData.name.trim(),
-                brand: formData.brand.trim() || null,
-                model: formData.model.trim() || null,
-                tipo: formData.tipo,
-                modoFibra: formData.modoFibra,
-                transmissao: formData.transmissao,
-                rateGbps: parseOptionalNumber(formData.rateGbps),
-                waveTxNm: parseOptionalNumber(formData.waveTxNm),
-                waveRxNm: formData.transmissao === 'bidi' ? parseOptionalNumber(formData.waveRxNm) : null,
-                reachKm: parseOptionalNumber(formData.reachKm),
-                potenciaTx: Number(formData.potenciaTx),
-                sensibilidadeRx: Number(formData.sensibilidadeRx),
-                description: formData.description.trim() || null,
-            };
+        const payload = {
+            name: formData.name.trim(),
+            brand: formData.brand.trim() || null,
+            model: formData.model.trim() || null,
+            tipo: formData.tipo,
+            modoFibra: formData.modoFibra,
+            transmissao: formData.transmissao,
+            rateGbps: parseOptionalNumber(formData.rateGbps),
+            waveTxNm: parseOptionalNumber(formData.waveTxNm),
+            waveRxNm: formData.transmissao === 'bidi' ? parseOptionalNumber(formData.waveRxNm) : null,
+            reachKm: parseOptionalNumber(formData.reachKm),
+            potenciaTx: Number(formData.potenciaTx),
+            sensibilidadeRx: Number(formData.sensibilidadeRx),
+            description: formData.description.trim() || null,
+        };
 
-            if (!payload.name) {
-                showToast?.('Informe o nome do GBIC', 'error');
-                return;
-            }
-            if (!Number.isFinite(payload.potenciaTx) || !Number.isFinite(payload.sensibilidadeRx)) {
-                showToast?.('Potência TX e sensibilidade RX são obrigatórias', 'error');
-                return;
-            }
-
-            if (editingItem) {
-                await updateGbic(editingItem.id, payload);
-            } else {
-                await createGbic(payload);
-            }
-            setIsModalOpen(false);
-            load();
-            showToast?.(
-                editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'),
-                'success'
-            );
-        } catch (error) {
-            console.error('Failed to save GBIC', error);
-            showToast?.('Falha ao salvar GBIC', 'error');
+        if (!payload.name) {
+            showToast?.('Informe o nome do GBIC', 'error');
+            return;
         }
-    };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteGbic(id);
-            load();
-            setShowDeleteConfirm(null);
-            showToast?.(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error('Failed to delete GBIC', error);
-            showToast?.(t('error_delete') || 'Falha ao excluir', 'error');
+        if (!Number.isFinite(payload.potenciaTx) || !Number.isFinite(payload.sensibilidadeRx)) {
+            showToast?.('Potência TX e sensibilidade RX são obrigatórias', 'error');
+            return;
         }
-    };
 
-    const filtered = items.filter(o => {
-        const q = searchTerm.toLowerCase();
-        return o.name.toLowerCase().includes(q)
-            || (o.brand ?? '').toLowerCase().includes(q)
-            || (o.model ?? '').toLowerCase().includes(q);
-    });
+        await save(payload);
+    };
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -163,7 +145,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || 'Adicionar'}
@@ -255,7 +237,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(g)}
+                                                onClick={() => openEdit(g)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -294,7 +276,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
                                 {t('cancel') || 'Cancelar'}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete') || 'Excluir'}
@@ -312,7 +294,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingItem ? 'Editar GBIC' : 'Novo GBIC'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -460,7 +442,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
 
                         <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={closeModal}
                                 className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                             >
                                 {t('cancel') || 'Cancelar'}

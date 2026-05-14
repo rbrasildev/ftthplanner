@@ -1,97 +1,71 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { PoleCatalogItem, getPoles, createPole, updatePole, deletePole } from '../../services/catalogService';
 import { Search, Plus, Edit2, Trash2, X, Save, AlertTriangle, Loader2, Zap } from 'lucide-react';
 import { CustomSelect, CustomInput } from '../common';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface PoleRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const emptyForm: Partial<PoleCatalogItem> = {
+    type: 'Concreto', shape: 'Circular', height: 10, strength: 600
+};
+
 export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [poles, setPoles] = useState<PoleCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingPole, setEditingPole] = useState<PoleCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-    const [formData, setFormData] = useState<Partial<PoleCatalogItem>>({
-        type: 'Concreto',
-        shape: 'Circular',
-        height: 10,
-        strength: 600
+
+    const service = useMemo(() => ({
+        list: getPoles,
+        create: createPole,
+        update: updatePole,
+        remove: deletePole,
+    }), []);
+
+    const {
+        filteredItems: filteredPoles,
+        loading,
+        saving,
+        searchTerm: search,
+        setSearchTerm: setSearch,
+        isModalOpen,
+        editingItem: editingPole,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<PoleCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_save') || 'Falha ao salvar poste',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (p, term) => {
+            const t = term.toLowerCase();
+            return p.name.toLowerCase().includes(t) || p.type.toLowerCase().includes(t);
+        },
     });
-    const [saving, setSaving] = useState(false);
+
+    const [formData, setFormData] = useState<Partial<PoleCatalogItem>>(emptyForm);
 
     useEffect(() => {
-        loadPoles();
-    }, []);
+        if (!isModalOpen) return;
+        setFormData(editingPole ? { ...editingPole } : emptyForm);
+    }, [isModalOpen, editingPole]);
 
-    const loadPoles = async () => {
-        try {
-            setLoading(true);
-            const data = await getPoles();
-            setPoles(data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSaving(true);
-        try {
-            if (editingPole) {
-                const updated = await updatePole(editingPole.id, formData);
-                setPoles(prev => prev.map(p => p.id === updated.id ? updated : p));
-            } else {
-                const created = await createPole(formData as any);
-                setPoles(prev => [...prev, created]);
-            }
-            setIsModalOpen(false);
-            setEditingPole(null);
-            setFormData({ type: 'Concreto', shape: 'Circular', height: 10, strength: 600 });
-            if (showToast) showToast(editingPole ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-        } catch (error) {
-            console.error(error);
-            if (showToast) showToast(t('error_save') || 'Falha ao salvar poste', 'error');
-        } finally {
-            setSaving(false);
-        }
+        await save(formData);
     };
-
-    const handleDelete = async (id: string) => {
-        try {
-            await deletePole(id);
-            setPoles(prev => prev.filter(p => p.id !== id));
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error(error);
-            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
-        }
-    };
-
-    const openModal = (pole?: PoleCatalogItem) => {
-        if (pole) {
-            setEditingPole(pole);
-            setFormData(pole);
-        } else {
-            setEditingPole(null);
-            setFormData({ type: 'Concreto', shape: 'Circular', height: 10, strength: 600 });
-        }
-        setIsModalOpen(true);
-    };
-
-    const filteredPoles = poles.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.type.toLowerCase().includes(search.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -107,7 +81,7 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                     </p>
                 </div>
                 <button
-                    onClick={() => openModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new') || 'Adicionar Novo'}
@@ -179,7 +153,7 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => openModal(pole)}
+                                                onClick={() => openEdit(pole)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                                 title={t('edit')}
                                             >
@@ -216,7 +190,7 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                                 {t('cancel')}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete')}
@@ -234,12 +208,12 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 {editingPole ? (t('edit_pole') || 'Editar Poste') : (t('new_pole') || 'Novo Poste')}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
                             <div>
                                 <CustomInput
                                     label={t('name')}
@@ -317,7 +291,7 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                             <div className="pt-2 flex gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={closeModal}
                                     className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-bold text-sm transition"
                                 >
                                     {t('cancel')}

@@ -1,149 +1,124 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X, Save, Search, Server, AlertTriangle, Layers, Zap, FileText, Sparkles, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getOLTs, createOLT, updateOLT, deleteOLT, OLTCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
+import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
 
 interface OLTRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+interface OLTFormData {
+    name: string;
+    outputPower: number;
+    slots: number;
+    portsPerSlot: number;
+    uplinkPorts: number;
+    portPowers: Record<string, string>; // string in form, parsed on save
+    description: string;
+}
+
+const emptyForm: OLTFormData = {
+    name: '',
+    outputPower: 3, // Default Class B+
+    slots: 1,
+    portsPerSlot: 16,
+    uplinkPorts: 0,
+    portPowers: {},
+    description: ''
+};
+
 export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
-    const [olts, setOlts] = useState<OLTCatalogItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<OLTCatalogItem | null>(null);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-    // Form State (sempre OLT — esta tela é só pra OLT)
-    const [formData, setFormData] = useState<{
-        name: string;
-        outputPower: number;
-        slots: number;
-        portsPerSlot: number;
-        uplinkPorts: number;
-        portPowers: Record<string, string>; // string in form, parsed on save
-        description: string;
-    }>({
-        name: '',
-        outputPower: 3, // Default Class B+
-        slots: 1,
-        portsPerSlot: 16,
-        uplinkPorts: 0,
-        portPowers: {},
-        description: ''
+    const service = useMemo(() => ({
+        list: getOLTs,
+        create: createOLT,
+        update: updateOLT,
+        remove: deleteOLT,
+    }), []);
+
+    const {
+        filteredItems: filteredOLTs,
+        loading,
+        searchTerm,
+        setSearchTerm,
+        isModalOpen,
+        editingItem,
+        openCreate,
+        openEdit,
+        closeModal,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        save,
+        confirmDelete,
+    } = useCatalogRegistration<OLTCatalogItem>({
+        service,
+        showToast,
+        messages: {
+            created: t('toast_created_success') || 'Criado com sucesso',
+            updated: t('toast_updated_success') || 'Atualizado com sucesso',
+            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            errorSave: t('error_saving_olt') || 'Falha ao salvar equipamento',
+            errorDelete: t('error_delete') || 'Falha ao excluir',
+        },
+        filterFn: (o, term) => o.name.toLowerCase().includes(term.toLowerCase()),
     });
 
+    const [formData, setFormData] = useState<OLTFormData>(emptyForm);
+
     useEffect(() => {
-        loadOLTs();
-    }, []);
-
-    const loadOLTs = async () => {
-        setLoading(true);
-        try {
-            const data = await getOLTs();
-            setOlts(data);
-        } catch (error) {
-            console.error("Failed to load OLTs", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleOpenModal = (item?: OLTCatalogItem) => {
-        if (item) {
-            setEditingItem(item);
+        if (!isModalOpen) return;
+        if (editingItem) {
             const portPowersStr: Record<string, string> = {};
-            if (item.portPowers) {
-                for (const [k, v] of Object.entries(item.portPowers)) {
+            if (editingItem.portPowers) {
+                for (const [k, v] of Object.entries(editingItem.portPowers)) {
                     if (Number.isFinite(v)) portPowersStr[k] = String(v);
                 }
             }
             setFormData({
-                name: item.name,
-                outputPower: item.outputPower,
-                slots: item.slots || 1,
-                portsPerSlot: item.portsPerSlot || 16,
-                uplinkPorts: item.uplinkPorts || 0,
+                name: editingItem.name,
+                outputPower: editingItem.outputPower,
+                slots: editingItem.slots || 1,
+                portsPerSlot: editingItem.portsPerSlot || 16,
+                uplinkPorts: editingItem.uplinkPorts || 0,
                 portPowers: portPowersStr,
-                description: item.description || ''
+                description: editingItem.description || ''
             });
         } else {
-            setEditingItem(null);
-            setFormData({
-                name: '',
-                outputPower: 3,
-                slots: 1,
-                portsPerSlot: 16,
-                uplinkPorts: 0,
-                portPowers: {},
-                description: ''
-            });
+            setFormData(emptyForm);
         }
-        setIsModalOpen(true);
-    };
+    }, [isModalOpen, editingItem]);
 
     const handleSave = async () => {
-        try {
-            const slotsN = Number(formData.slots) || 1;
-            const ppsN = Number(formData.portsPerSlot) || 0;
-            // Drop overrides outside the current grid AND empty/non-numeric values
-            const cleanedPortPowers: Record<string, number> = {};
-            for (const [k, v] of Object.entries(formData.portPowers)) {
-                const m = k.match(/^(\d+)-(\d+)$/);
-                if (!m) continue;
-                const slot = parseInt(m[1], 10);
-                const port = parseInt(m[2], 10);
-                if (slot < 1 || slot > slotsN || port < 1 || port > ppsN) continue;
-                const trimmed = (v ?? '').trim();
-                if (!trimmed) continue;
-                const num = parseFloat(trimmed);
-                if (Number.isFinite(num)) cleanedPortPowers[k] = num;
-            }
-
-            const payload = {
-                ...formData,
-                type: 'OLT' as const,  // esta tela registra apenas OLTs
-                // Ensure number types
-                outputPower: Number(formData.outputPower),
-                slots: slotsN,
-                portsPerSlot: ppsN,
-                uplinkPorts: Number(formData.uplinkPorts),
-                portPowers: Object.keys(cleanedPortPowers).length > 0 ? cleanedPortPowers : undefined,
-            };
-
-            if (editingItem) {
-                await updateOLT(editingItem.id, payload);
-            } else {
-                await createOLT(payload);
-            }
-            setIsModalOpen(false);
-            loadOLTs();
-            if (showToast) showToast(editingItem ? (t('toast_updated_success') || 'Atualizado com sucesso') : (t('toast_created_success') || 'Criado com sucesso'), 'success');
-        } catch (error) {
-            console.error("Failed to save OLT", error);
-            if (showToast) showToast(t('error_saving_olt') || 'Falha ao salvar equipamento', 'error');
+        const slotsN = Number(formData.slots) || 1;
+        const ppsN = Number(formData.portsPerSlot) || 0;
+        // Drop overrides outside the current grid AND empty/non-numeric values
+        const cleanedPortPowers: Record<string, number> = {};
+        for (const [k, v] of Object.entries(formData.portPowers)) {
+            const m = k.match(/^(\d+)-(\d+)$/);
+            if (!m) continue;
+            const slot = parseInt(m[1], 10);
+            const port = parseInt(m[2], 10);
+            if (slot < 1 || slot > slotsN || port < 1 || port > ppsN) continue;
+            const trimmed = String(v ?? '').trim();
+            if (!trimmed) continue;
+            const num = parseFloat(trimmed);
+            if (Number.isFinite(num)) cleanedPortPowers[k] = num;
         }
-    };
 
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteOLT(id);
-            loadOLTs();
-            setShowDeleteConfirm(null);
-            if (showToast) showToast(t('toast_deleted_success') || 'Excluído com sucesso', 'success');
-        } catch (error) {
-            console.error("Failed to delete", error);
-            if (showToast) showToast(t('error_delete') || 'Falha ao excluir', 'error');
-        }
+        await save({
+            ...formData,
+            type: 'OLT' as const,
+            outputPower: Number(formData.outputPower),
+            slots: slotsN,
+            portsPerSlot: ppsN,
+            uplinkPorts: Number(formData.uplinkPorts),
+            portPowers: Object.keys(cleanedPortPowers).length > 0 ? cleanedPortPowers : undefined,
+        });
     };
-
-    const filteredOLTs = olts.filter(o =>
-        o.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -159,7 +134,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                     </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
+                    onClick={openCreate}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
                 >
                     <Plus className="w-4 h-4" /> {t('add_new')}
@@ -244,7 +219,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
-                                                onClick={() => handleOpenModal(olt)}
+                                                onClick={() => openEdit(olt)}
                                                 className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -279,7 +254,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                 {t('cancel')}
                             </button>
                             <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
+                                onClick={confirmDelete}
                                 className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
                             >
                                 {t('delete')}
@@ -309,7 +284,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={closeModal}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0"
                             >
                                 <X className="w-5 h-5" />
@@ -527,7 +502,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                         {/* Footer */}
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700/30 flex gap-3 bg-slate-50/50 dark:bg-[#151820]/40 rounded-b-2xl shrink-0">
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={closeModal}
                                 className="flex-1 h-11 rounded-xl font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                             >
                                 {t('cancel')}
