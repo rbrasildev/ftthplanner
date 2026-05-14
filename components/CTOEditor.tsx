@@ -1008,14 +1008,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         [availableFusions, availableConnectors]
     );
 
+    // Objeto compartilhado entre os 3 sites que invocam tracePortPower / traceOpticalPath
+    // (portPowerMap, exportação PNG, modal de orçamento óptico). Antes a montagem era
+    // duplicada inline e divergiu (cada site precisava lembrar de incluir allFusionCatalogs).
+    const tracingCatalogs = useMemo(() => ({
+        splitters: availableSplitters,
+        fusions: allFusionCatalogs,
+        cables: availableCables,
+        olts: availableOLTs,
+    }), [availableSplitters, allFusionCatalogs, availableCables, availableOLTs]);
+
     const portPowerMap = useMemo(() => {
         const map = new Map<string, { power: number | null; direction: 'fromCable' | 'fromPort' | null }>();
-        const catalogs = {
-            splitters: availableSplitters,
-            fusions: allFusionCatalogs,
-            cables: availableCables,
-            olts: availableOLTs,
-        };
+        const catalogs = tracingCatalogs;
         tracedPorts.forEach(portId => {
             try {
                 map.set(portId, tracePortPower(portId, cto.id, network, catalogs, localCTO));
@@ -1024,7 +1029,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
         });
         return map;
-    }, [tracedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, availableSplitters, allFusionCatalogs, availableCables, availableOLTs]);
+    }, [tracedPorts, localCTO.splitters, localCTO.fusions, localCTO.dios, cto.id, network, tracingCatalogs]);
 
     const getPortPower = useCallback((portId: string): number | null => {
         return portPowerMap.get(portId)?.power ?? null;
@@ -1622,12 +1627,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
 
             // Build summary data for footer
-            const catalogs = {
-                splitters: availableSplitters,
-                fusions: allFusionCatalogs,
-                cables: availableCables,
-                olts: availableOLTs
-            };
+            const catalogs = tracingCatalogs;
             footerData.splittersSummary = localCTO.splitters.map(s => {
                 let powerStr = '';
                 try {
@@ -1719,12 +1719,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
 
         try {
-            const catalogs = {
-                splitters: availableSplitters,
-                fusions: allFusionCatalogs,
-                cables: availableCables,
-                olts: availableOLTs
-            };
+            const catalogs = tracingCatalogs;
 
             console.log("Tracing path for:", splitter.name);
             const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
@@ -1746,7 +1741,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             console.error("Error calculating optical path:", error);
             alert(`Erro: ${(error as Error).message}`);
         }
-    }, [localCTO, availableSplitters, allFusionCatalogs, availableCables, availableOLTs, cto.id, network]);
+    }, [localCTO, tracingCatalogs, cto.id, network]);
 
 
     // --- Event Handlers ---

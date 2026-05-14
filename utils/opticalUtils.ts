@@ -12,6 +12,8 @@ import {
 } from '../types';
 import { SplitterCatalogItem, CableCatalogItem, FusionCatalogItem, OLTCatalogItem } from '../services/catalogService';
 import { parseDIOPortId, makeDIOPortId, flipDIOPortSide } from './dioPortId';
+import { findSplitterCatalog } from './splitterUtils';
+import { resolveOLTPower } from './oltUtils';
 
 // Interfaces for the Calculation Result
 export interface OpticalElement {
@@ -249,32 +251,10 @@ export function traceOpticalPath(
 
     if (!targetSplitter) throw new Error("Splitter not found");
 
-    // ROBUST CATALOG MATCHING
-    // Prioridade: catalogId (link exato) > name exato > name normalizado > fallback por contagem
-    let splitterCatalog = targetSplitter.catalogId
-        ? catalogs.splitters.find(c => c.id === targetSplitter!.catalogId)
-        : undefined;
-
-    if (!splitterCatalog) {
-        splitterCatalog = catalogs.splitters.find(c => c.name === targetSplitter.type);
-    }
-
-    if (!splitterCatalog) {
-        // Fallback 1: Normalized Name (case-insensitive, trimmed)
-        const targetNameNorm = targetSplitter.type.trim().toLowerCase();
-        splitterCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === targetNameNorm);
-    }
-
-    if (!splitterCatalog) {
-        // Fallback 2: Match by Port Count (Best Guess)
-        // If we have a 1:16 splitter in map, look for a 1:16 splitter in catalog
-        const outputCount = targetSplitter.outputPortIds.length;
-        splitterCatalog = catalogs.splitters.find(c => c.outputs === outputCount);
-
-        if (splitterCatalog) {
-            console.log(`[OpticalCalc] Matched Catalog by Port Count (${outputCount}): ${splitterCatalog.name}`);
-        }
-    }
+    // ROBUST CATALOG MATCHING — prioridade catalogId > name > name normalizado > outputs.
+    // Centralizado em utils/splitterUtils.findSplitterCatalog (mesma prioridade usada
+    // por CTOEditor e SplitterRenderer, evita divergência entre cálculo e UI).
+    const splitterCatalog = findSplitterCatalog(targetSplitter, catalogs.splitters);
 
     // DEBUG: Catalog Mismatch (Only if completely failed)
     if (!splitterCatalog) {
@@ -485,20 +465,7 @@ export function traceOpticalPath(
             if ('clientCount' in node) {
                 const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    // ROBUST LOOKUP — prioriza catalogId
-                    let psCatalog = parentSplitter.catalogId
-                        ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId)
-                        : undefined;
-                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
-                    if (!psCatalog) {
-                        const psNameNorm = parentSplitter.type.trim().toLowerCase();
-                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === psNameNorm);
-                    }
-                    if (!psCatalog) {
-                        const outCount = parentSplitter.outputPortIds.length;
-                        psCatalog = catalogs.splitters.find(c => c.outputs === outCount);
-                    }
-
+                    const psCatalog = findSplitterCatalog(parentSplitter, catalogs.splitters);
                     // Pass sourceId (which is the output port we are connected to) to determine specific loss
                     const psLoss = getSplitterLoss(parentSplitter, psCatalog, sourceId);
 
@@ -556,17 +523,7 @@ export function traceOpticalPath(
                 const popNode = node as POPData;
                 const popSplitter = (popNode.splitters || []).find(s => s.outputPortIds.includes(sourceId));
                 if (popSplitter) {
-                    let psCatalog = popSplitter.catalogId
-                        ? catalogs.splitters.find(c => c.id === popSplitter.catalogId)
-                        : undefined;
-                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === popSplitter.type);
-                    if (!psCatalog) {
-                        const norm = popSplitter.type.trim().toLowerCase();
-                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
-                    }
-                    if (!psCatalog) {
-                        psCatalog = catalogs.splitters.find(c => c.outputs === popSplitter.outputPortIds.length);
-                    }
+                    const psCatalog = findSplitterCatalog(popSplitter, catalogs.splitters);
                     const psLoss = getSplitterLoss(popSplitter, psCatalog, sourceId);
                     if (!psCatalog) {
                         warnings.push({
@@ -595,31 +552,10 @@ export function traceOpticalPath(
                 // Robust check with trim
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === sourceId.trim()));
                 if (olt) {
-                    // FOUND OLT!
-                    // Lookup Power in Catalog by Name (Longest Prefix Match)
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matchedCatalog = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-
-                    // Extract Slot/Port details
-                    let slot: number | undefined;
-                    let port: number | undefined;
-
-                    if (olt.structure) {
-                        const globalPortIndex = olt.portIds.findIndex(pid => pid.trim() === sourceId.trim());
-                        if (globalPortIndex !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(globalPortIndex / pps) + 1;
-                            port = (globalPortIndex % pps) + 1;
-                        }
-                    }
-
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matchedCatalog?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matchedCatalog ? matchedCatalog.outputPower : 3);
+                    // FOUND OLT! Resolve catalog + slot/port + per-port overrides via shared helper.
+                    const resolved = resolveOLTPower(olt, sourceId, catalogs.olts);
+                    oltPower = resolved.oltPower;
+                    const { matchedCatalog, slot, port, portOverride } = resolved;
 
                     if (matchedCatalog) {
                         console.log(`Matched OLT Catalog: "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
@@ -701,29 +637,9 @@ export function traceOpticalPath(
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === currPortId.trim()));
 
                 if (olt) {
-                    // FOUND OLT!
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matchedCatalog = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-
-                    let slot: number | undefined;
-                    let port: number | undefined;
-
-                    if (olt.structure) {
-                        const globalPortIndex = olt.portIds.findIndex(pid => pid.trim() === currPortId.trim());
-                        if (globalPortIndex !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(globalPortIndex / pps) + 1;
-                            port = (globalPortIndex % pps) + 1;
-                        }
-                    }
-
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matchedCatalog?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matchedCatalog ? matchedCatalog.outputPower : 3);
+                    const resolved = resolveOLTPower(olt, currPortId, catalogs.olts);
+                    oltPower = resolved.oltPower;
+                    const { matchedCatalog, slot, port, portOverride } = resolved;
 
                     if (matchedCatalog) {
                         console.log(`Matched OLT Catalog (Fallback): "${matchedCatalog.name}" (${oltPower}dBm${portOverride !== undefined ? ' [port override]' : ''}) for "${olt.name}"`);
@@ -910,17 +826,7 @@ function walkUpstreamForPower(
             if (!progressed && 'clientCount' in node) {
                 const parentSplitter = (node as CTOData).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
-                    let psCatalog = parentSplitter.catalogId
-                        ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId)
-                        : undefined;
-                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === parentSplitter.type);
-                    if (!psCatalog) {
-                        const norm = parentSplitter.type.trim().toLowerCase();
-                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
-                    }
-                    if (!psCatalog) {
-                        psCatalog = catalogs.splitters.find(c => c.outputs === parentSplitter.outputPortIds.length);
-                    }
+                    const psCatalog = findSplitterCatalog(parentSplitter, catalogs.splitters);
                     path.push({ type: 'SPLITTER', id: parentSplitter.id, name: parentSplitter.name, loss: getSplitterLoss(parentSplitter, psCatalog, sourceId) });
                     currPortId = parentSplitter.inputPortId;
                     progressed = true;
@@ -947,17 +853,7 @@ function walkUpstreamForPower(
             if (!progressed && 'olts' in node) {
                 const popSplitter = ((node as POPData).splitters || []).find(s => s.outputPortIds.includes(sourceId));
                 if (popSplitter) {
-                    let psCatalog = popSplitter.catalogId
-                        ? catalogs.splitters.find(c => c.id === popSplitter.catalogId)
-                        : undefined;
-                    if (!psCatalog) psCatalog = catalogs.splitters.find(c => c.name === popSplitter.type);
-                    if (!psCatalog) {
-                        const norm = popSplitter.type.trim().toLowerCase();
-                        psCatalog = catalogs.splitters.find(c => c.name.trim().toLowerCase() === norm);
-                    }
-                    if (!psCatalog) {
-                        psCatalog = catalogs.splitters.find(c => c.outputs === popSplitter.outputPortIds.length);
-                    }
+                    const psCatalog = findSplitterCatalog(popSplitter, catalogs.splitters);
                     path.push({ type: 'SPLITTER', id: popSplitter.id, name: popSplitter.name, loss: getSplitterLoss(popSplitter, psCatalog, sourceId) });
                     currPortId = popSplitter.inputPortId;
                     progressed = true;
@@ -969,24 +865,7 @@ function walkUpstreamForPower(
                 const pop = node as POPData;
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === sourceId.trim()));
                 if (olt) {
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matched = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-                    let slot: number | undefined, port: number | undefined;
-                    if (olt.structure) {
-                        const idx = olt.portIds.findIndex(pid => pid.trim() === sourceId.trim());
-                        if (idx !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(idx / pps) + 1;
-                            port = (idx % pps) + 1;
-                        }
-                    }
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matched ? matched.outputPower : 3);
+                    oltPower = resolveOLTPower(olt, sourceId, catalogs.olts).oltPower;
                     foundOlt = true;
                     break;
                 }
@@ -1021,24 +900,7 @@ function walkUpstreamForPower(
                 const pop = node as POPData;
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === currPortId.trim()));
                 if (olt) {
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matched = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-                    let slot: number | undefined, port: number | undefined;
-                    if (olt.structure) {
-                        const idx = olt.portIds.findIndex(pid => pid.trim() === currPortId.trim());
-                        if (idx !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(idx / pps) + 1;
-                            port = (idx % pps) + 1;
-                        }
-                    }
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matched ? matched.outputPower : 3);
+                    oltPower = resolveOLTPower(olt, currPortId, catalogs.olts).oltPower;
                     foundOlt = true;
                     break;
                 }
