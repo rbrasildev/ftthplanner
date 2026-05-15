@@ -1427,6 +1427,9 @@ const translations = {
     'output_distribution': 'Output Power',
     'worst_port_power': 'Worst Output',
     'optical_warnings_title': 'Incomplete Calculation',
+    'catalog_link': 'Link to catalog',
+    'catalog_none': '— No link (uses name) —',
+    'catalog_link_help': 'Ensures the optical budget uses the registered output power for this model, even if the instance name is custom.',
     'action_cancelled': 'Action cancelled',
 
     // Retention Intelligence
@@ -2373,6 +2376,9 @@ const translations = {
     'output_distribution': 'Potência nas Saídas',
     'worst_port_power': 'Pior Saída',
     'optical_warnings_title': 'Cálculo Incompleto',
+    'catalog_link': 'Vincular ao catálogo',
+    'catalog_none': '— Sem vínculo (usa nome) —',
+    'catalog_link_help': 'Garante que o orçamento óptico use a potência cadastrada para esse modelo, mesmo que o nome da instância seja customizado.',
 
     // Common
     // Modals & Panels general UI

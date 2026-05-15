@@ -750,6 +750,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
             name: (newOLTConfig as any).modelName
                 ? `${(newOLTConfig as any).modelName} ${localPOP.olts.length + 1}`
                 : `${t('type_olt') || 'OLT'} ${localPOP.olts.length + 1}`,
+            // Link canônico com o catálogo: garante que resolveOLTPower puxe a
+            // potência correta mesmo quando o usuário renomear a instância pra
+            // algo que não bate com o nome do catálogo (ex: "vsol_1_final_da_linha").
+            catalogId: (newOLTConfig as any).catalogId,
             ports: totalPorts,
             portIds,
             status: 'PLANNED',
@@ -789,7 +793,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
 
     const handleSaveEditedOLT = () => {
         if (!editingOLT) return;
-        const { id, name, type, structure, uplinkPorts } = editingOLT as OLT;
+        const { id, name, type, structure, uplinkPorts, catalogId } = editingOLT as OLT;
         const slots = structure?.slots || 1;
         const portsPerSlot = structure?.portsPerSlot || 16;
 
@@ -825,6 +829,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
             const updatedOlts = prev.olts.map(o => o.id === id ? {
                 ...o,
                 name,
+                catalogId, // pode ser undefined (usuário desvinculou) — preserva intenção do form
                 ports: totalPorts,
                 portIds: newPortIds,
                 type: type || 'OLT',

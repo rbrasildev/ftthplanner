@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, X, Server, Box, Layers, Settings, Save, Lock, Unlock, GripHorizontal, Cpu, Network, HardDrive, Radio } from 'lucide-react';
+import { AlertTriangle, X, Server, Box, Layers, Settings, Save, Lock, Unlock, GripHorizontal, Cpu, Network, HardDrive, Radio, Tag } from 'lucide-react';
 import { useLanguage } from '../../../LanguageContext';
 import { CustomInput } from '../../common/CustomInput';
+import { CustomSelect } from '../../common/CustomSelect';
+import { getOLTs, OLTCatalogItem } from '../../../services/catalogService';
 
 interface EditEquipmentModalsProps {
     editingOLT: any;
@@ -158,6 +160,16 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
     const { t } = useLanguage();
     const [isTypeUnlocked, setIsTypeUnlocked] = useState(false);
 
+    // Catálogo de OLT carregado on-demand (quando o usuário abre o modal de edição).
+    // Permite vincular instâncias antigas ao item correto do catálogo, fazendo o trace
+    // óptico puxar a potência configurada em vez do default +3 dBm Class B+.
+    const [catalogOLTs, setCatalogOLTs] = useState<OLTCatalogItem[]>([]);
+    useEffect(() => {
+        if (editingOLT && catalogOLTs.length === 0) {
+            getOLTs().then(setCatalogOLTs).catch(console.error);
+        }
+    }, [editingOLT, catalogOLTs.length]);
+
     const initialPos = { x: window.innerWidth / 2 - 240, y: window.innerHeight / 2 - 250 };
 
     const currentOltType = editingOLT?.type || 'OLT';
@@ -183,6 +195,36 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                             value={editingOLT.name}
                             onChange={e => setEditingOLT({ ...editingOLT, name: e.target.value })}
                         />
+
+                        {/* Vincular ao catálogo (só pra OLT) — define qual item do catálogo
+                            o trace óptico vai usar pra puxar potência/portPowers. Sem vínculo,
+                            o trace cai no longest-prefix-match por nome (frágil) e usa default
+                            +3 dBm Class B+ se não bater nada. */}
+                        {(currentOltType === 'OLT' || !editingOLT.type) && (
+                            <div>
+                                <CustomSelect
+                                    label={t('catalog_link') || 'Vincular ao catálogo'}
+                                    value={editingOLT.catalogId || 'none'}
+                                    options={[
+                                        { value: 'none', label: t('catalog_none') || '— Sem vínculo (usa nome) —' },
+                                        ...catalogOLTs.map(o => ({
+                                            value: o.id,
+                                            label: o.name,
+                                            sublabel: `${o.outputPower > 0 ? '+' : ''}${o.outputPower} dBm`,
+                                        })),
+                                    ]}
+                                    onChange={val => setEditingOLT({
+                                        ...editingOLT,
+                                        catalogId: val === 'none' ? undefined : val,
+                                    })}
+                                    showSearch={catalogOLTs.length > 5}
+                                />
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-tight flex items-start gap-1.5">
+                                    <Tag className="w-3 h-3 shrink-0 mt-0.5" />
+                                    {t('catalog_link_help') || 'Garante que o orçamento óptico use a potência cadastrada para esse modelo, mesmo que o nome da instância seja customizado.'}
+                                </p>
+                            </div>
+                        )}
 
                         {/* Type - Cards or Locked Card */}
                         <div>

@@ -479,12 +479,18 @@ export function traceOpticalPath(
                         });
                     }
 
+                    // Splitter em cascata: incluir o índice da porta usada (1-based) ajuda
+                    // o usuário a entender por que a perda exibida é alta — em unbalanced
+                    // 90/10, P2 tem ~10dB enquanto P1 tem ~0.5dB. Sem essa info, o card
+                    // parece estar "exibindo a maior perda" sem motivo aparente.
+                    const psPortIdx = parentSplitter.outputPortIds.indexOf(sourceId);
+                    const psPortLabel = psPortIdx >= 0 ? ` • P${psPortIdx + 1}` : '';
                     path.unshift({
                         type: 'SPLITTER',
                         id: parentSplitter.id,
                         name: parentSplitter.name,
                         loss: psLoss,
-                        details: `1:${parentSplitter.outputPortIds.length}`
+                        details: `1:${parentSplitter.outputPortIds.length}${psPortLabel}`
                     });
 
                     currPortId = parentSplitter.inputPortId;
@@ -534,12 +540,14 @@ export function traceOpticalPath(
                             message: `Catálogo não encontrado para splitter no POP "${popSplitter.type}". Perda assumida como 0 dB.`,
                         });
                     }
+                    const popPortIdx = popSplitter.outputPortIds.indexOf(sourceId);
+                    const popPortLabel = popPortIdx >= 0 ? ` • P${popPortIdx + 1}` : '';
                     path.unshift({
                         type: 'SPLITTER',
                         id: popSplitter.id,
                         name: popSplitter.name,
                         loss: psLoss,
-                        details: `1:${popSplitter.outputPortIds.length}`
+                        details: `1:${popSplitter.outputPortIds.length}${popPortLabel}`
                     });
                     currPortId = popSplitter.inputPortId;
                     continue;

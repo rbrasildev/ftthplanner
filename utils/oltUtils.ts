@@ -18,22 +18,32 @@ export interface OLTPowerResolution {
  * de porta sendo traçado.
  *
  * Antes deste helper, esta lógica de ~25 linhas estava duplicada em 4 ramos do
- * trace óptico (traceOpticalPath × 2 e walkUpstreamForPower × 2), com risco de
- * divergência sempre que regra de matching ou cálculo de slot/porta mudasse.
+ * trace óptico (traceOpticalPath × 2 e walkUpstreamForPower × 2).
  *
- * Match por nome usa "longest prefix": pega o item do catálogo cujo nome é o
- * prefixo mais longo do nome da OLT (case-insensitive). Permite registrar uma
- * família ("OLT-XYZ") no catálogo e várias instâncias herdarem a configuração.
+ * Prioridade de matching:
+ *   1. `olt.catalogId` (canônico, gravado quando a OLT é adicionada a partir
+ *      do catálogo via AddEquipmentModals). Sobrevive a renomear a instância.
+ *   2. Longest-prefix-match por nome — fallback pra OLTs antigas (sem catalogId)
+ *      ou criadas em modo "custom" cujo nome casualmente bata com algum item
+ *      do catálogo.
  */
 export function resolveOLTPower(
     olt: OLT,
     portId: string,
     catalogOLTs: OLTCatalogItem[]
 ): OLTPowerResolution {
-    const oltNameLower = olt.name.trim().toLowerCase();
-    const matchedCatalog = catalogOLTs
-        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-        .sort((a, b) => b.name.length - a.name.length)[0];
+    let matchedCatalog: OLTCatalogItem | undefined;
+
+    if (olt.catalogId) {
+        matchedCatalog = catalogOLTs.find(c => c.id === olt.catalogId);
+    }
+
+    if (!matchedCatalog) {
+        const oltNameLower = olt.name.trim().toLowerCase();
+        matchedCatalog = catalogOLTs
+            .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
+            .sort((a, b) => b.name.length - a.name.length)[0];
+    }
 
     let slot: number | undefined;
     let port: number | undefined;

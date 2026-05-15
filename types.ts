@@ -96,6 +96,13 @@ export interface Note {
 export interface OLT {
   id: string;
   name: string;
+  /**
+   * ID do item no catálogo (OLTCatalogItem.id) quando a OLT foi adicionada via
+   * preset. É a fonte canônica usada pelo `resolveOLTPower` pra puxar
+   * potência/portPowers — o name-prefix-match é só fallback (instâncias com
+   * nome custom como "vsol_1_final_da_linha" não batem com o nome do catálogo).
+   */
+  catalogId?: string;
   ports: number; // Total ports
   portIds: string[];
   uplinkPorts?: number;

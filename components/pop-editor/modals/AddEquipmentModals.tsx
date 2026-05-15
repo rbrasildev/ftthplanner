@@ -16,7 +16,7 @@ interface AddEquipmentModalsProps {
     onCloseOLT: () => void;
     onCloseDIO: () => void;
     onCloseActive?: () => void;
-    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number };
+    newOLTConfig: { slots: number; portsPerSlot: number; modelName?: string; uplinkPorts?: number; catalogId?: string };
     setNewOLTConfig: (config: any) => void;
     newDIOConfig: { ports: number };
     setNewDIOConfig: (config: any) => void;
@@ -208,7 +208,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
 
     const handleOltPresetChange = (val: string) => {
         if (val === 'custom') {
-            setNewOLTConfig({ ...newOLTConfig, modelName: undefined });
+            setNewOLTConfig({ ...newOLTConfig, modelName: undefined, catalogId: undefined });
         } else {
             const selected = catalogOLTs.find(o => o.id === val);
             if (selected) {
@@ -216,6 +216,7 @@ export const AddEquipmentModals: React.FC<AddEquipmentModalsProps> = ({
                     slots: selected.slots || 1,
                     portsPerSlot: selected.portsPerSlot || 16,
                     modelName: selected.name,
+                    catalogId: selected.id,
                     uplinkPorts: selected.uplinkPorts || 2,
                 });
             }
