@@ -1430,6 +1430,7 @@ const translations = {
     'catalog_link': 'Link to catalog',
     'catalog_none': '— No link (uses name) —',
     'catalog_link_help': 'Ensures the optical budget uses the registered output power for this model, even if the instance name is custom.',
+    'no_fusions_in_catalog': 'Register at least one fusion type in the catalog before using this tool.',
     'action_cancelled': 'Action cancelled',
 
     // Retention Intelligence
@@ -2379,6 +2380,7 @@ const translations = {
     'catalog_link': 'Vincular ao catálogo',
     'catalog_none': '— Sem vínculo (usa nome) —',
     'catalog_link_help': 'Garante que o orçamento óptico use a potência cadastrada para esse modelo, mesmo que o nome da instância seja customizado.',
+    'no_fusions_in_catalog': 'Cadastre ao menos um tipo de fusão no catálogo antes de usar esta ferramenta.',
 
     // Common
     // Modals & Panels general UI

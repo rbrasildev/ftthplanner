@@ -33,7 +33,7 @@ import {
 import { OpticalPowerModal } from './modals/OpticalPowerModal';
 import { QRCodeModal } from './modals/QRCodeModal';
 import { traceOpticalPath, tracePortPower, OpticalPathResult } from '../utils/opticalUtils';
-import { findSplitterCatalog } from '../utils/splitterUtils';
+import { findSplitterCatalog, formatSplitterDisplayName } from '../utils/splitterUtils';
 import { NetworkState, Customer } from '../types';
 import { getCustomers } from '../services/customerService';
 import { useCTOEditorState } from '../hooks/useCTOEditorState';
@@ -1725,16 +1725,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
             setOpticalResult(result);
 
-            // Nome exibido no orçamento óptico precisa refletir o cadastro do catálogo,
-            // não o rótulo sequencial ("1", "2"...) gerado em handleAddSplitter.
-            // Resolvemos via catalogId (canônico) e caímos pra splitter.type / nome bruto
-            // se o catálogo foi removido/renomeado. Quando o usuário deu um nome
-            // descritivo (não-numérico) ao splitter, mostramos os dois.
+            // Nome exibido no orçamento óptico: combina rótulo da instância com o
+            // modelo do catálogo. Helper compartilhado com opticalUtils pra que a
+            // lista "Detalhes do Percurso" use o mesmo formato.
             const catalog = findSplitterCatalog(splitter, availableSplitters);
-            const catalogName = catalog?.name || splitter.type || splitter.name;
-            const isDescriptive = splitter.name && !/^\d+$/.test(splitter.name.trim());
-            const displayName = isDescriptive ? `${splitter.name} — ${catalogName}` : catalogName;
-            setSelectedSplitterName(displayName);
+            setSelectedSplitterName(formatSplitterDisplayName(splitter, catalog));
             setSelectedSplitterForModal(splitter);
             setIsOpticalModalOpen(true);
         } catch (error) {
@@ -3312,15 +3307,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const handleAddFusion = (e: React.MouseEvent) => {
         e.stopPropagation();
 
-        // LOGIC UPDATE: Check for Fusion Types
         const fusionTypes = availableFusions.length > 0 ? availableFusions : (network.fusionTypes || []);
+
+        // Sem catálogo cadastrado a fusão criada não tem catalogId → o trace cai
+        // no fallback "Fusão Padrão" que TAMBÉM não existe → perda 0 dB silenciosa.
+        // Bloquear aqui evita o usuário criar fusões "fantasma" que não contam perda.
+        if (fusionTypes.length === 0) {
+            alert(t('no_fusions_in_catalog') || 'Cadastre ao menos um tipo de fusão no catálogo antes de usar esta ferramenta.');
+            return;
+        }
 
         if (fusionTypes.length > 1) {
             setShowFusionTypeModal(true);
         } else {
-            // Default behavior: Activate tool immediately
-            const defaultType = fusionTypes.length === 1 ? fusionTypes[0].id : null;
-            activateFusionTool(defaultType);
+            // Único tipo disponível — ativa direto com ele.
+            activateFusionTool(fusionTypes[0].id);
         }
     };
 

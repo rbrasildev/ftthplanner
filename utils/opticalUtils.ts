@@ -12,7 +12,7 @@ import {
 } from '../types';
 import { SplitterCatalogItem, CableCatalogItem, FusionCatalogItem, OLTCatalogItem } from '../services/catalogService';
 import { parseDIOPortId, makeDIOPortId, flipDIOPortSide } from './dioPortId';
-import { findSplitterCatalog } from './splitterUtils';
+import { findSplitterCatalog, formatSplitterDisplayName } from './splitterUtils';
 import { resolveOLTPower } from './oltUtils';
 
 // Interfaces for the Calculation Result
@@ -276,7 +276,7 @@ export function traceOpticalPath(
     path.unshift({
         type: 'SPLITTER',
         id: targetSplitter.id,
-        name: targetSplitter.name,
+        name: formatSplitterDisplayName(targetSplitter, splitterCatalog),
         loss: splitterLoss,
         details: `1:${targetSplitter.outputPortIds.length}`
     });
@@ -417,28 +417,28 @@ export function traceOpticalPath(
                 // — preferindo um item explicitamente nomeado "padrão"/"default" se existir.
                 // Sem fallback, o cálculo ficava com 0 dB silencioso e o orçamento parecia
                 // melhor do que era na prática.
-                let fallbackUsed: { name: string; attenuation: number } | null = null;
                 if (!fusionData) {
                     const defaultFusion =
                         catalogs.fusions.find(f => /padr(ã|a)o|default/i.test(f.name))
                         || catalogs.fusions[0];
 
                     if (defaultFusion) {
+                        // Fallback resolveu — cálculo está correto, sem necessidade de
+                        // alertar o usuário. Adicionar uma fusão deve "fazer o papel dela"
+                        // sem cerimônia: se o catálogo tem algum item, o trace usa.
                         fusionData = defaultFusion;
-                        fallbackUsed = { name: defaultFusion.name, attenuation: defaultFusion.attenuation };
+                    } else {
+                        // Catálogo de fusões totalmente vazio — aí sim o cálculo está
+                        // incorreto (perda 0) e o usuário precisa cadastrar pelo menos
+                        // uma Fusão Padrão pra continuar.
+                        warnings.push({
+                            severity: 'medium',
+                            elementType: 'FUSION',
+                            elementId: fusion.id,
+                            elementName: fusion.name,
+                            message: `Catálogo de fusões está vazio. Cadastre ao menos um tipo de fusão para que a perda seja contabilizada.`,
+                        });
                     }
-
-                    warnings.push({
-                        severity: 'medium',
-                        elementType: 'FUSION',
-                        elementId: fusion.id,
-                        elementName: fusion.name,
-                        message: fallbackUsed
-                            ? `Sem tipo associado ao catálogo. Aplicada perda padrão de "${fallbackUsed.name}" (${fallbackUsed.attenuation} dB).`
-                            : (fusion.catalogId
-                                ? `Catálogo de fusão referenciado não existe mais e nenhum padrão disponível. Perda assumida como 0 dB.`
-                                : `Fusão sem tipo associado ao catálogo e nenhum padrão disponível. Perda assumida como 0 dB.`),
-                    });
                 }
 
                 // getFusionLoss usa fusionData se existir (incluindo o padrão acima);
@@ -488,7 +488,7 @@ export function traceOpticalPath(
                     path.unshift({
                         type: 'SPLITTER',
                         id: parentSplitter.id,
-                        name: parentSplitter.name,
+                        name: formatSplitterDisplayName(parentSplitter, psCatalog),
                         loss: psLoss,
                         details: `1:${parentSplitter.outputPortIds.length}${psPortLabel}`
                     });
@@ -545,7 +545,7 @@ export function traceOpticalPath(
                     path.unshift({
                         type: 'SPLITTER',
                         id: popSplitter.id,
-                        name: popSplitter.name,
+                        name: formatSplitterDisplayName(popSplitter, psCatalog),
                         loss: psLoss,
                         details: `1:${popSplitter.outputPortIds.length}${popPortLabel}`
                     });

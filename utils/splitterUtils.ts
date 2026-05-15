@@ -67,3 +67,27 @@ export const findSplitterCatalog = (
 
     return undefined;
 };
+
+/**
+ * Formata o nome de exibição de um splitter combinando o rótulo da instância
+ * (ex: "1", "Andar 2") com o nome do modelo do catálogo (ex: "1:8 Balanced PLC").
+ *
+ * Regras:
+ *  - Splitter sem nome descritivo (só dígitos como "1", "2"): exibe apenas o
+ *    nome do catálogo, pois o número sequencial sozinho não ajuda a identificar.
+ *  - Splitter com nome descritivo: exibe "Nome — Catálogo" pra dar contexto.
+ *  - Sem catálogo resolvido: cai pro `splitter.type` (nome do catálogo no momento
+ *    da criação) ou `splitter.name` como último recurso.
+ *
+ * Usado pelo header do modal de orçamento óptico e por cada entrada da lista
+ * "Detalhes do Percurso" pra que o usuário consiga identificar qual splitter
+ * é cada item do caminho.
+ */
+export const formatSplitterDisplayName = (
+    splitter: Pick<Splitter, 'name' | 'type'>,
+    catalog: { name: string } | undefined
+): string => {
+    const catalogName = catalog?.name || splitter.type || splitter.name;
+    const isDescriptive = splitter.name && !/^\d+$/.test(splitter.name.trim());
+    return isDescriptive ? `${splitter.name} — ${catalogName}` : catalogName;
+};
