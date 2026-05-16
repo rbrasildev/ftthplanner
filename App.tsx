@@ -6,6 +6,7 @@ import { Button } from './components/common/Button';
 import { calculateDistance } from './utils/geometryUtils';
 import { isSubscriptionExpired } from './utils/subscriptionUtils';
 import { parseDIOPortId, makeDIOPortId, flipDIOPortSide, isDIOPortIdLike } from './utils/dioPortId';
+import { mergeWithParentNetwork } from './utils/networkMerge';
 const CTOEditor = lazy(() => import('./components/CTOEditor').then(m => ({ default: m.CTOEditor })));
 const POPEditor = lazy(() => import('./components/POPEditor').then(m => ({ default: m.POPEditor })));
 import { ProjectManager } from './components/ProjectManager';
@@ -848,6 +849,7 @@ export default function App() {
 
     const { traceOpticalPath } = useOpticalTrace({
         getCurrentNetwork,
+        parentNetwork,
         setOtdrResult,
         setMapBounds,
         setEditingCTO,
@@ -924,7 +926,10 @@ export default function App() {
 
     const litNetwork = useMemo(() => {
         if (!currentProject) return { litPorts: new Set<string>(), litCables: new Set<string>(), litConnections: new Set<string>() };
-        const network = currentProject.network;
+        // Merge com parentNetwork pra que o BFS atravesse conexões child→parent.
+        // Sem isso o feixe vermelho parava na fronteira do projeto base, mesmo
+        // quando o cabo continuava pra dentro dele.
+        const network = mergeWithParentNetwork(currentProject.network, parentNetwork);
         const litPorts = new Set<string>();
         const litCables = new Set<string>();
         const litConnections = new Set<string>();
@@ -994,7 +999,7 @@ export default function App() {
             }
         }
         return { litPorts, litCables, litConnections };
-    }, [vflSource, currentProject]);
+    }, [vflSource, currentProject, parentNetwork]);
 
     // OMNI-RE-RENDER PROTECTION: Memoized props for CTOEditor to prevent jitter/tremor
     const editingCTOIncomingCables = useMemo(() => {
@@ -1032,17 +1037,9 @@ export default function App() {
 
     const editingCTONetwork = useMemo(() => {
         const base = currentProject?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
-        // Merge parent network nodes for optical signal tracing
-        // The trace needs to navigate through all CTOs/POPs/cables to find the OLT path
-        if (parentNetwork) {
-            return {
-                ...base,
-                ctos: [...base.ctos, ...parentNetwork.ctos.filter(c => !base.ctos.some(bc => bc.id === c.id))],
-                pops: [...base.pops, ...parentNetwork.pops.filter(p => !base.pops.some(bp => bp.id === p.id))],
-                cables: [...base.cables, ...parentNetwork.cables.filter(c => !base.cables.some(bc => bc.id === c.id))],
-            };
-        }
-        return base;
+        // Merge parent network nodes for optical signal tracing — o trace precisa
+        // atravessar CTOs/POPs/cables que cruzam a fronteira child→parent.
+        return mergeWithParentNetwork(base, parentNetwork);
     }, [currentProject, parentNetwork]);
 
     const handleCTOHoverCable = useCallback((id: string | null) => {

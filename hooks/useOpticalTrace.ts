@@ -2,9 +2,16 @@ import { useCallback } from 'react';
 import { useLanguage } from '../LanguageContext';
 import L from 'leaflet';
 import { NetworkState, Coordinates } from '../types';
+import { mergeWithParentNetwork } from '../utils/networkMerge';
 
 interface UseOpticalTraceProps {
     getCurrentNetwork: () => NetworkState;
+    /**
+     * Network do projeto base. Quando presente, o trace OTDR é mesclado com ela
+     * antes de iniciar — sem isso, qualquer cabo cuja outra ponta esteja num
+     * CTO/POP do parent faria a busca falhar com "cabo não encontrado".
+     */
+    parentNetwork?: NetworkState | null;
     setOtdrResult: (result: Coordinates | null) => void;
     setMapBounds: (bounds: any) => void;
     setEditingCTO: (cto: any) => void;
@@ -15,6 +22,7 @@ interface UseOpticalTraceProps {
 
 export const useOpticalTrace = ({
     getCurrentNetwork,
+    parentNetwork,
     setOtdrResult,
     setMapBounds,
     setEditingCTO,
@@ -25,7 +33,7 @@ export const useOpticalTrace = ({
     const { t } = useLanguage();
 
     const traceOpticalPath = useCallback((startNodeId: string, startPortId: string, targetDistance: number) => {
-        const net = getCurrentNetwork();
+        const net = mergeWithParentNetwork(getCurrentNetwork(), parentNetwork);
         let remainingDist = targetDistance;
         let currentNodeId = startNodeId;
         let currentPortId = startPortId; // Typically "cable-id-fiber-index"
@@ -252,7 +260,7 @@ export const useOpticalTrace = ({
             }
         }
         showToast(t('otdr_max_depth'), "info");
-    }, [getCurrentNetwork, setOtdrResult, setMapBounds, setEditingCTO, setEditingPOP, setEditingCable, showToast, t]);
+    }, [getCurrentNetwork, parentNetwork, setOtdrResult, setMapBounds, setEditingCTO, setEditingPOP, setEditingCable, showToast, t]);
 
     return { traceOpticalPath };
 };
