@@ -902,6 +902,11 @@ export function computeSwitchPortLedStates(args: {
 
         // --- MODO DIO ---
         if (!port.allocation?.txDioPortId) {
+            // GBIC presente mas porta não foi nem alocada num DIO nem ligada via
+            // direct link. tx='idle' faz o LED ficar âmbar fraco no canvas, dando
+            // dica visual de que falta um passo de configuração (em vez de cinza
+            // total que sugere "porta morta").
+            state.tx = 'idle';
             out.set(port.id, state);
             continue;
         }

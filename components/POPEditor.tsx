@@ -24,10 +24,16 @@ import { LinkCablesModal } from './pop-editor/modals/LinkCablesModal';
 interface POPEditorProps {
     pop: POPData;
     incomingCables: CableData[];
-    /** Todos os POPs do projeto — usado pelo SwitchEditor pra rastrear peer na outra ponta do cabo. */
+    /** Todos os POPs do projeto (mesclados com parent) — usado pelo SwitchEditor pra rastrear peer na outra ponta do cabo. */
     allPops?: POPData[];
-    /** Todos os CTOs/CEOs do projeto — pra atravessar sangrias no trace do peer. */
+    /** Todos os CTOs/CEOs do projeto (mesclados com parent) — pra atravessar sangrias no trace do peer. */
     allCtos?: CTOData[];
+    /**
+     * Todos os cabos do projeto (mesclados com parent). Necessário pro
+     * traceSwitchLinkPath rodar BFS atravessando POPs/CTOs intermediários —
+     * `incomingCables` só tem cabos com endpoint neste POP.
+     */
+    allCables?: CableData[];
     onClose: () => void;
     onSave: (updatedPOP: POPData) => Promise<void> | void;
 
@@ -55,7 +61,7 @@ interface POPEditorProps {
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPops, allCtos, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPops, allCtos, allCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -1791,7 +1797,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                                     sw,
                                     currentPop: localPOP,
                                     allPops: effectivePops,
-                                    cables: uniqueIncomingCables,
+                                    // Precisa de todos os cabos (não só os incoming neste POP)
+                                    // pra traceSwitchLinkPath rodar BFS atravessando sangrias
+                                    // em outros POPs/CTOs até achar o switch peer.
+                                    cables: allCables ?? uniqueIncomingCables,
                                     allCtos,
                                     // Catálogo é carregado sob demanda no SwitchEditor — LEDs no canvas
                                     // vão usar valores estimados até a porta ser editada/salva.
@@ -1889,7 +1898,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                             allSwitches={localPOP.switches || []}
                             olts={localPOP.olts}
                             dios={localPOP.dios}
-                            cables={uniqueIncomingCables}
+                            cables={allCables ?? uniqueIncomingCables}
                             connections={localPOP.connections}
                             allPops={effectivePops}
                             allCtos={allCtos}

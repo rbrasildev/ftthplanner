@@ -40,12 +40,20 @@ interface SwitchUnitProps {
     getPortConnectionInfo?: (portId: string) => string | undefined;
 }
 
-// Convenção de switch real:
-//   - Link UP  → TX âmbar sólido + RX verde piscando
-//   - Link DOWN → LEDs apagados (cinza), indicando porta presente mas sem sync
+// Convenção de cores dos LEDs (cada lado independente, espelha switch real):
+//   TX âmbar sólido        → 'on'   (alocação OK + path OK)
+//   TX âmbar fraco         → 'idle' (GBIC instalado mas alocação/path incompleto — ajuste necessário)
+//   TX cinza               → 'off'  (sem GBIC)
+//   RX verde piscando      → 'on'   (sinal recebido OK)
+//   RX âmbar piscando      → 'warn' (sinal marginal)
+//   RX vermelho sólido     → 'fail' (sinal abaixo da sensibilidade)
+//   RX cinza               → 'idle' / 'off' (sem peer ou path incompleto)
 const TX_LED_AMBER = '#eab308';
+const TX_LED_AMBER_DIM = '#854d0e';
 const RX_LED_GREEN = '#22c55e';
-const LED_OFF = '#3f4451';    // cinza escuro — LED fisicamente presente mas apagado
+const RX_LED_WARN = '#eab308';
+const RX_LED_FAIL = '#ef4444';
+const LED_OFF = '#3f4451';
 
 // Paridade visual com OLTUnit/DIOUnit (26×26).
 const PORT_CELL = 26;
@@ -155,7 +163,12 @@ export const SwitchUnit: React.FC<SwitchUnitProps> = ({
                                         }
                                         if (connInfo) parts.push(`→ ${connInfo}`);
                                         else if (isConnected) parts.push('→ DIO');
-                                        else if (hasGbic) parts.push(t('available') || 'disponível');
+                                        else if (hasGbic) {
+                                            // GBIC mas tx='idle' = sem alocação; deixar a dica explícita
+                                            // pra usuário entender que falta configurar (em vez de "Livre"
+                                            // genérico que não diz o que fazer).
+                                            parts.push(led.tx === 'idle' ? 'sem alocação — abra o editor' : (t('available') || 'disponível'));
+                                        }
                                         else parts.push('sem GBIC');
                                         if (hasGbic) {
                                             parts.push(`TX:${led.tx.toUpperCase()}`);
@@ -188,26 +201,38 @@ export const SwitchUnit: React.FC<SwitchUnitProps> = ({
                                             }}
                                         >
                                             {globalIdx + 1}
-                                            {/* TX âmbar sólido + RX verde piscando quando link está UP.
-                                                Link DOWN (sem peer, peer sem GBIC ou sinal insuficiente) → LEDs cinza (apagados). */}
+                                            {/* Cada LED reflete seu próprio estado. TX âmbar fraco
+                                                quando idle dá pista visual de que falta configuração
+                                                (em vez de cinza total que parece "porta morta"). */}
                                             {hasGbic && (() => {
-                                                const linkUp = led.rx === 'on' || led.rx === 'warn';
+                                                const txColor =
+                                                    led.tx === 'on' ? TX_LED_AMBER
+                                                    : led.tx === 'idle' ? TX_LED_AMBER_DIM
+                                                    : LED_OFF;
+                                                const rxColor =
+                                                    led.rx === 'on' ? RX_LED_GREEN
+                                                    : led.rx === 'warn' ? RX_LED_WARN
+                                                    : led.rx === 'fail' ? RX_LED_FAIL
+                                                    : LED_OFF;
+                                                const txGlow = led.tx === 'on';
+                                                const rxPulse = led.rx === 'on' || led.rx === 'warn';
+                                                const rxGlow = rxPulse || led.rx === 'fail';
                                                 return (
                                                     <div className="absolute bottom-0.5 left-0 right-0 flex items-center justify-center gap-[3px] pointer-events-none">
                                                         <span
                                                             title={`TX ${led.tx.toUpperCase()}`}
                                                             className="w-1.5 h-1.5 rounded-full"
                                                             style={{
-                                                                backgroundColor: linkUp ? TX_LED_AMBER : LED_OFF,
-                                                                boxShadow: linkUp ? `0 0 3px ${TX_LED_AMBER}` : undefined,
+                                                                backgroundColor: txColor,
+                                                                boxShadow: txGlow ? `0 0 3px ${TX_LED_AMBER}` : undefined,
                                                             }}
                                                         />
                                                         <span
                                                             title={`RX ${led.rx.toUpperCase()}`}
-                                                            className={`w-1.5 h-1.5 rounded-full ${linkUp ? 'animate-pulse' : ''}`}
+                                                            className={`w-1.5 h-1.5 rounded-full ${rxPulse ? 'animate-pulse' : ''}`}
                                                             style={{
-                                                                backgroundColor: linkUp ? RX_LED_GREEN : LED_OFF,
-                                                                boxShadow: linkUp ? `0 0 3px ${RX_LED_GREEN}` : undefined,
+                                                                backgroundColor: rxColor,
+                                                                boxShadow: rxGlow ? `0 0 3px ${rxColor}` : undefined,
                                                             }}
                                                         />
                                                     </div>

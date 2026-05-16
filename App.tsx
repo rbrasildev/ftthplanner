@@ -1035,10 +1035,13 @@ export default function App() {
         return localCables;
     }, [editingCTO, currentProject, parentNetwork, childCables]);
 
-    const editingCTONetwork = useMemo(() => {
+    // Network mesclada com o projeto base — usada por TODOS os tracings que
+    // podem atravessar a fronteira child→parent (CTOEditor, POPEditor.allPops/
+    // allCtos pra peer detection de switches, etc.). O nome antigo era
+    // `editingCTONetwork` mas o mesmo merge serve pra POP — renomeei pra
+    // `mergedNetwork` pra refletir.
+    const mergedNetwork = useMemo(() => {
         const base = currentProject?.network || { ctos: [], pops: [], cables: [], poles: [], fusionTypes: [] };
-        // Merge parent network nodes for optical signal tracing — o trace precisa
-        // atravessar CTOs/POPs/cables que cruzam a fronteira child→parent.
         return mergeWithParentNetwork(base, parentNetwork);
     }, [currentProject, parentNetwork]);
 
@@ -2375,8 +2378,9 @@ export default function App() {
                 <POPEditor
                     pop={editingPOP}
                     incomingCables={editingPOPIncomingCables}
-                    allPops={network.pops}
-                    allCtos={network.ctos}
+                    allPops={mergedNetwork.pops}
+                    allCtos={mergedNetwork.ctos}
+                    allCables={mergedNetwork.cables}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
                     onToggleVfl={handlePOPToggleVfl}
@@ -2415,7 +2419,7 @@ export default function App() {
                     userPlan={userPlan}
                     subscriptionExpiresAt={subscriptionExpiresAt}
                     onShowUpgrade={handleCTOShowUpgrade}
-                    network={editingCTONetwork}
+                    network={mergedNetwork}
                     projectId={currentProjectId || undefined}
                     companyLogo={companyLogo}
                     saasLogo={saasConfig?.appLogoUrl}
