@@ -508,10 +508,22 @@ function collectAllConnections(pops: POPData[], ctos?: CTOData[]): FiberConnecti
     return out;
 }
 
+/** ID de uma das pernas (a/b) de um FusionPoint, ex: "fusion-1234-a". */
+const FUSION_LEG_RE = /^(.+)-(a|b)$/;
+
 /**
  * BFS no grafo de splices: expande um fiberId inicial (`${cable}-fiber-${N}`)
- * pra todas as fibras alcançáveis via sangrias/fusões (fibra→fibra) através
- * de qualquer CTO, CEO ou POP.
+ * pra todas as fibras alcançáveis via sangrias/fusões através de qualquer
+ * CTO, CEO ou POP.
+ *
+ * Dois tipos de splice são atravessados:
+ *  1. Sangria direta fibra↔fibra (FiberConnection entre dois `*-fiber-N`).
+ *  2. Fusão via FusionPoint: o fiber está conectado a `fusion-X-a`, e
+ *     `fusion-X-b` está conectado a outro fiber. O BFS entra pela perna
+ *     A e sai automaticamente pela B (e vice-versa).
+ *
+ * Antes da #2, switches conectados via cabo→CTO(fusão)→cabo→outro switch
+ * nunca encontravam o peer porque o BFS parava na primeira perna da fusão.
  *
  * Retorna o Set de fiberIds alcançáveis (inclui o inicial).
  */
@@ -520,7 +532,9 @@ export function expandReachableFibers(
     allConnections: FiberConnection[]
 ): Set<string> {
     const reachable = new Set<string>([startFiberId]);
+    const visitedNonFiber = new Set<string>();
     const queue: string[] = [startFiberId];
+
     while (queue.length > 0) {
         const cur = queue.shift()!;
         for (const c of allConnections) {
@@ -529,12 +543,32 @@ export function expandReachableFibers(
                 : c.targetId === cur ? c.sourceId
                 : null;
             if (!other) continue;
-            // Só seguimos o grafo quando o outro lado também é uma fibra
-            // (fibra→DIO não expande reachability — é endpoint).
-            if (FIBER_ID_RE.test(other) && !reachable.has(other)) {
-                reachable.add(other);
-                queue.push(other);
+
+            // Outra fibra: adiciona ao set e continua o BFS por ela.
+            if (FIBER_ID_RE.test(other)) {
+                if (!reachable.has(other)) {
+                    reachable.add(other);
+                    queue.push(other);
+                }
+                continue;
             }
+
+            // Perna de fusão (`fusion-X-a` / `fusion-X-b`): a outra perna
+            // representa a continuidade óptica da fusão — empurra ela na fila
+            // pra o próximo ciclo achar o fiber do outro lado.
+            const legMatch = other.match(FUSION_LEG_RE);
+            if (legMatch && !visitedNonFiber.has(other)) {
+                visitedNonFiber.add(other);
+                const fusionId = legMatch[1];
+                const side = legMatch[2];
+                const otherLeg = `${fusionId}-${side === 'a' ? 'b' : 'a'}`;
+                if (!visitedNonFiber.has(otherLeg)) {
+                    visitedNonFiber.add(otherLeg);
+                    queue.push(otherLeg);
+                }
+            }
+            // Outros endpoints (DIO ports, splitter ports) são fim de linha —
+            // não expandem a reachability óptica de cabos.
         }
     }
     return reachable;
