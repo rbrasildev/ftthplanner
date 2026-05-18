@@ -1643,19 +1643,36 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </select>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    {company.subscriptionExpiresAt ? (() => {
-                                                        const expired = isSubscriptionExpired(company.subscriptionExpiresAt);
+                                                    {(() => {
+                                                        const expired = company.subscriptionExpiresAt
+                                                            ? isSubscriptionExpired(company.subscriptionExpiresAt)
+                                                            : false;
+                                                        // Converte ISO → YYYY-MM-DD pro <input type="date"> (que só aceita esse formato).
+                                                        const dateValue = company.subscriptionExpiresAt
+                                                            ? new Date(company.subscriptionExpiresAt).toISOString().split('T')[0]
+                                                            : '';
                                                         return (
-                                                            <div className={`text-xs font-bold ${expired ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                                {new Date(company.subscriptionExpiresAt).toLocaleDateString()}
+                                                            <div className="inline-flex flex-col items-center gap-0.5">
+                                                                <input
+                                                                    type="date"
+                                                                    value={dateValue}
+                                                                    onChange={(e) => {
+                                                                        const v = e.target.value;
+                                                                        if (!v) return;
+                                                                        // Persiste como fim do dia local pra evitar shift de fuso
+                                                                        // (input retorna meia-noite, ISO em UTC pode "voltar" 1 dia).
+                                                                        const local = new Date(`${v}T23:59:59`);
+                                                                        handleCompanyUpdate(company.id, { subscriptionExpiresAt: local.toISOString() });
+                                                                    }}
+                                                                    className={`bg-white dark:bg-[#151820] border rounded-lg text-xs font-bold py-1 px-2 focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm ${expired ? 'border-red-300 text-red-600' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
+                                                                    title="Alterar data de vencimento"
+                                                                />
                                                                 {expired && (
-                                                                    <span className="block text-[10px] text-red-500 font-semibold">Vencido</span>
+                                                                    <span className="text-[10px] text-red-500 font-semibold">Vencido</span>
                                                                 )}
                                                             </div>
                                                         );
-                                                    })() : (
-                                                        <span className="text-xs text-slate-400">—</span>
-                                                    )}
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     {(() => {
