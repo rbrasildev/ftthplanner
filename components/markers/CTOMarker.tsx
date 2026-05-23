@@ -18,14 +18,14 @@ const darkenHex = (hex: string, factor: number = 0.7): string => {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
-const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO', isVerticalCondo: boolean = false) => {
+const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customColor?: string, currentZoom: number = 18, isOnline?: boolean, type: string = 'CTO', isVerticalCondo: boolean = false, isLit: boolean = false) => {
     const effectiveZoom = Math.floor(currentZoom);
     const zoomScale = Math.pow(1.15, Math.max(0, effectiveZoom - 16));
     const size = Math.round(18 * zoomScale);
     const borderSize = Math.max(2, Math.round(3 * zoomScale));
     const pulseSize = Math.round(36 * zoomScale);
 
-    const cacheKey = `cto-${isSelected}-${status}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}-${isVerticalCondo ? 'vc' : 'std'}`;
+    const cacheKey = `cto-${isSelected}-${status}-${customColor || 'default'}-${effectiveZoom}-${isOnline}-${type}-${isVerticalCondo ? 'vc' : 'std'}-${isLit ? 'lit' : 'off'}`;
 
     if (iconCache.has(cacheKey)) {
         return iconCache.get(cacheKey)!;
@@ -37,8 +37,10 @@ const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customCo
 
     // Status color drives both fill and border so status changes are always fully visible.
     // CEO and CTO share the same size/colors; they only differ in border-radius (CEO slightly squared).
+    // Quando o nó é atravessado pelo feixe VFL (`isLit`), a borda fica vermelha
+    // pra indicar visualmente o caminho da luz na topologia.
     const fillColor = statusColor;
-    const borderColor = isSelected ? '#22c55e' : statusColor;
+    const borderColor = isLit ? '#ef4444' : (isSelected ? '#22c55e' : statusColor);
 
     // Vertical condo gets a tall building silhouette: rectangular body taller
     // than wide, with a stepped roof and window grid drawn inline so the marker
@@ -83,8 +85,8 @@ const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customCo
         border-radius: ${type === 'CEO' ? '30%' : '50%'};
         width: ${size}px;
         height: ${size}px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        transition: border-color 0.2s ease, background-color 0.2s ease;
+        box-shadow: ${isLit ? `0 0 8px 2px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.4)` : `0 2px 4px rgba(0, 0, 0, 0.4)`};
+        transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
         z-index: 10;
       ">
       </div>
@@ -124,11 +126,13 @@ interface CTOMarkerProps {
     onContextMenu: (e: any, id: string, type: 'CTO') => void;
     userRole?: string | null;
     isOnline?: boolean;
+    /** Borda vermelha quando o feixe VFL atravessa esse nó. */
+    isLit?: boolean;
 }
 
 export const CTOMarker = React.memo(({
     cto, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline, isLit = false
 }: CTOMarkerProps) => {
     const isVerticalCondo = !!cto.building;
     const isCEO = cto.type === 'CEO';
@@ -140,8 +144,8 @@ export const CTOMarker = React.memo(({
 
     const icon = useMemo(() => {
         if (!useDivIcon) return null;
-        return createCTOIcon(isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo);
-    }, [useDivIcon, isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo]);
+        return createCTOIcon(isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo, isLit);
+    }, [useDivIcon, isSelected, cto.status, cto.color, currentZoom, isOnline, cto.type, isVerticalCondo, isLit]);
 
     const pathOptions = useMemo(() => {
         let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
@@ -149,12 +153,12 @@ export const CTOMarker = React.memo(({
         else if (isOnline === false) statusColor = '#ef4444';
         const fill = statusColor.substring(0, 7);
         return {
-            color: isSelected ? '#22c55e' : darkenHex(fill),
+            color: isLit ? '#ef4444' : (isSelected ? '#22c55e' : darkenHex(fill)),
             fillColor: fill,
             fillOpacity: 0.85,
-            weight: isSelected ? 3 : 2,
+            weight: isLit ? 3 : (isSelected ? 3 : 2),
         };
-    }, [cto.status, isOnline, isSelected]);
+    }, [cto.status, isOnline, isSelected, isLit]);
 
     const circleRadius = useMemo(() => {
         const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));

@@ -18,6 +18,8 @@ interface DIOUnitProps {
     onPortClick: (e: React.MouseEvent, portId: string) => void;
     onHoverPort: (portId: string | null) => void;
     getPortConnectionInfo?: (portId: string) => string | undefined;
+    /** Portas acesas pelo VFL — destaque em vermelho. */
+    litPorts?: Set<string>;
 }
 
 export const DIOUnit: React.FC<DIOUnitProps> = ({
@@ -34,7 +36,8 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     onDelete,
     onPortClick,
     onHoverPort,
-    getPortConnectionInfo
+    getPortConnectionInfo,
+    litPorts,
 }) => {
     const { t } = useLanguage();
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
@@ -150,6 +153,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                         );
 
                                         const isHovered = hoveredPortId === pid;
+                                        const isLit = litPorts?.has(pid);
                                         let highlightForActiveOLT = false;
                                         if (configuringOltPortId && patchConn) {
                                             highlightForActiveOLT = patchConn.sourceId === configuringOltPortId || patchConn.targetId === configuringOltPortId;
@@ -181,14 +185,15 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                                 onMouseLeave={handlePortLeave}
                                                 className={`
                                                     flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all relative
+                                                    ${isLit ? 'ring-2 ring-red-400 z-10' : ''}
                                                     ${highlightForActiveOLT ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
                                                     ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
                                                 style={{
-                                                    backgroundColor: isConnected ? connColor.bg : '#1e2028',
-                                                    border: `1px solid ${isConnected ? connColor.border : '#3f4451'}`,
-                                                    color: isConnected ? '#fff' : '#6b7280',
-                                                    boxShadow: isConnected ? `0 0 4px ${connColor.shadow}` : 'none'
+                                                    backgroundColor: isLit ? '#ef4444' : (isConnected ? connColor.bg : '#1e2028'),
+                                                    border: `1px solid ${isLit ? '#dc2626' : (isConnected ? connColor.border : '#3f4451')}`,
+                                                    color: isLit || isConnected ? '#fff' : '#6b7280',
+                                                    boxShadow: isLit ? '0 0 6px rgba(239,68,68,0.7)' : (isConnected ? `0 0 4px ${connColor.shadow}` : 'none'),
                                                 }}
                                             >
                                                 {localIdx + 1}

@@ -63,6 +63,7 @@ interface OLT {
     id: string;
     name: string;
     portIds: string[];
+    catalogId?: string;
     structure?: {
         slots: number;
         portsPerSlot: number;
@@ -205,6 +206,48 @@ function getFusionLoss(catalog: CatalogFusion | undefined): number {
     return catalog ? catalog.attenuation : 0;
 }
 
+// Resolve OLT catalog + slot/port + per-port power override. Mirrors the web's
+// `resolveOLTPower` helper (utils/oltUtils.ts):
+//   - Catalog match prefers `olt.catalogId` (canonical), falls back to longest
+//     prefix match on name. Inline-name matching alone broke when the user
+//     renamed the OLT instance.
+//   - Effective power: per-port override > catalog default > +3 dBm (Class B+).
+function resolveOLTPower(
+    olt: OLT,
+    portId: string,
+    catalogOLTs: CatalogOLT[]
+): { oltPower: number; slot?: number; port?: number; matched?: CatalogOLT } {
+    let matched: CatalogOLT | undefined;
+    if (olt.catalogId) {
+        matched = catalogOLTs.find(c => c.id === olt.catalogId);
+    }
+    if (!matched) {
+        const oltNameLower = olt.name.trim().toLowerCase();
+        matched = catalogOLTs
+            .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
+            .sort((a, b) => b.name.length - a.name.length)[0];
+    }
+
+    let slot: number | undefined;
+    let port: number | undefined;
+    if (olt.structure) {
+        const idx = olt.portIds.findIndex(pid => pid.trim() === portId.trim());
+        if (idx !== -1) {
+            const pps = olt.structure.portsPerSlot || 16;
+            slot = Math.floor(idx / pps) + 1;
+            port = (idx % pps) + 1;
+        }
+    }
+
+    const portKey = slot && port ? `${slot}-${port}` : undefined;
+    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
+    const oltPower = Number.isFinite(portOverride as number)
+        ? (portOverride as number)
+        : (matched ? matched.outputPower : 3);
+
+    return { oltPower, slot, port, matched };
+}
+
 // ---- Main Trace ----
 
 export function traceOpticalPower(
@@ -307,10 +350,20 @@ export function traceOpticalPower(
                 }
             }
 
-            // B. Fusion
+            // B. Fusion. Matching mirrors the web: catalogId → name → default
+            // (item named "padrão/default" or first in catalog). Without the
+            // fallback, fusões antigas sem catalogId ficavam com 0 dB silencioso.
             const fusion = node.fusions.find(f => f.id + '-a' === sourceId || f.id + '-b' === sourceId);
             if (fusion) {
-                const fusionData = catalogs.fusions.find(f => f.id === fusion.catalogId);
+                let fusionData = catalogs.fusions.find(f => f.id === fusion.catalogId);
+                if (!fusionData && fusion.type && fusion.type !== 'generic' && fusion.type !== 'tray') {
+                    const typeNorm = fusion.type.trim().toLowerCase();
+                    fusionData = catalogs.fusions.find(f => f.name.trim().toLowerCase() === typeNorm);
+                }
+                if (!fusionData) {
+                    fusionData = catalogs.fusions.find(f => /padr(ã|a)o|default/i.test(f.name))
+                        || catalogs.fusions[0];
+                }
                 const fLoss = getFusionLoss(fusionData);
                 path.unshift({ type: 'FUSION', id: fusion.id, name: fusion.name, loss: fLoss });
                 const otherSide = sourceId.endsWith('-a') ? `${fusion.id}-b` : `${fusion.id}-a`;
@@ -318,8 +371,12 @@ export function traceOpticalPower(
                 continue;
             }
 
-            // C. Cascading splitter (CTO)
-            if ('clientCount' in node) {
+            // C. Cascading splitter (CTO).
+            // Discriminator: CTO is "not a POP" — POPs are the ones with `olts`.
+            // Earlier this branch was gated by `'clientCount' in node`, but the
+            // CTO objects built in `getCTOPower` don't carry `clientCount`, so
+            // this branch was dead code and cascaded splitters never traced.
+            if (!('olts' in node)) {
                 const parentSplitter = (node as CTONode).splitters.find(s => s.outputPortIds.includes(sourceId));
                 if (parentSplitter) {
                     let psCat = parentSplitter.catalogId ? catalogs.splitters.find(c => c.id === parentSplitter.catalogId) : undefined;
@@ -353,37 +410,18 @@ export function traceOpticalPower(
                 const pop = node as POPNode;
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === sourceId.trim()));
                 if (olt) {
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matched = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-
-                    let slot: number | undefined, port: number | undefined;
-                    if (olt.structure) {
-                        const idx = olt.portIds.findIndex(pid => pid.trim() === sourceId.trim());
-                        if (idx !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(idx / pps) + 1;
-                            port = (idx % pps) + 1;
-                        }
-                    }
-
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matched ? matched.outputPower : 3);
-
-                    path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${slot || '?'} / Port ${port || '?'}` });
-                    foundOltDetails = { name: olt.name, slot, port };
+                    const resolved = resolveOLTPower(olt, sourceId, catalogs.olts);
+                    oltPower = resolved.oltPower;
+                    path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${resolved.slot || '?'} / Port ${resolved.port || '?'}` });
+                    foundOltDetails = { name: olt.name, slot: resolved.slot, port: resolved.port };
                     break;
                 }
             }
 
             // E0. Inline DIO port inside a CTO (CTO-side patch panel).
-            // Crossing one port adds a connector pair → 0.5 dB. Guarded with
-            // `'clientCount' in node` to keep the CTO/POP discriminator unambiguous.
-            const inlineDioMatch = ('clientCount' in node)
+            // Crossing one port adds a connector pair → 0.5 dB. Discriminator
+            // is "not a POP" — POPs have `olts`, CTOs don't.
+            const inlineDioMatch = !('olts' in node)
                 ? sourceId.match(/^(dio-\d+)-port-(\d+)-(in|out)$/)
                 : null;
             if (inlineDioMatch) {
@@ -426,29 +464,10 @@ export function traceOpticalPower(
                 const pop = node as POPNode;
                 const olt = pop.olts.find(o => o.portIds.some(pid => pid.trim() === currPortId.trim()));
                 if (olt) {
-                    const oltNameLower = olt.name.trim().toLowerCase();
-                    const matched = catalogs.olts
-                        .filter(c => oltNameLower.startsWith(c.name.trim().toLowerCase()))
-                        .sort((a, b) => b.name.length - a.name.length)[0];
-
-                    let slot: number | undefined, port: number | undefined;
-                    if (olt.structure) {
-                        const idx = olt.portIds.findIndex(pid => pid.trim() === currPortId.trim());
-                        if (idx !== -1) {
-                            const pps = olt.structure.portsPerSlot || 16;
-                            slot = Math.floor(idx / pps) + 1;
-                            port = (idx % pps) + 1;
-                        }
-                    }
-
-                    const portKey = slot && port ? `${slot}-${port}` : undefined;
-                    const portOverride = portKey ? matched?.portPowers?.[portKey] : undefined;
-                    oltPower = Number.isFinite(portOverride as number)
-                        ? (portOverride as number)
-                        : (matched ? matched.outputPower : 3);
-
-                    path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${slot || '?'} / Port ${port || '?'}` });
-                    foundOltDetails = { name: olt.name, slot, port };
+                    const resolved = resolveOLTPower(olt, currPortId, catalogs.olts);
+                    oltPower = resolved.oltPower;
+                    path.unshift({ type: 'OLT', id: olt.id, name: olt.name, loss: 0, details: `Slot ${resolved.slot || '?'} / Port ${resolved.port || '?'}` });
+                    foundOltDetails = { name: olt.name, slot: resolved.slot, port: resolved.port };
                     break;
                 }
             }

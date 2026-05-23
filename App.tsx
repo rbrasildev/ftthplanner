@@ -357,6 +357,14 @@ export default function App() {
 
     // --- Global VFL State ---
     const [vflSource, setVflSource] = useState<string | null>(null);
+    // ID do nó (CTO/POP) onde a fonte foi clicada. Usado pelo BFS pra
+    // distinguir "lado local" do cabo (no editor) do "lado externo".
+    const [vflSourceNodeId, setVflSourceNodeId] = useState<string | null>(null);
+    // Direção do feixe VFL a partir do `vflSource`.
+    //   'both'       → BFS sem restrição.
+    //   'downstream' (↑) → BFS caminha só no extremo OPOSTO ao editor.
+    //   'upstream'   (↓) → BFS caminha só no extremo DO editor.
+    const [vflDirection, setVflDirection] = useState<'both' | 'upstream' | 'downstream'>('both');
     const [showFusionModule, setShowFusionModule] = useState(false); // FUSION MODULE STATE
 
     // --- OTDR State ---
@@ -925,7 +933,7 @@ export default function App() {
     }, []);
 
     const litNetwork = useMemo(() => {
-        if (!currentProject) return { litPorts: new Set<string>(), litCables: new Set<string>(), litConnections: new Set<string>() };
+        if (!currentProject) return { litPorts: new Set<string>(), litCables: new Set<string>(), litConnections: new Set<string>(), litNodes: new Set<string>() };
         // Merge com parentNetwork pra que o BFS atravesse conexões child→parent.
         // Sem isso o feixe vermelho parava na fronteira do projeto base, mesmo
         // quando o cabo continuava pra dentro dele.
@@ -934,17 +942,42 @@ export default function App() {
         const litCables = new Set<string>();
         const litConnections = new Set<string>();
 
-        if (!vflSource) return { litPorts, litCables, litConnections };
+        if (!vflSource) return { litPorts, litCables, litConnections, litNodes: new Set<string>() };
 
         const queue = [vflSource];
         litPorts.add(vflSource);
 
+        const allNodes = [...network.ctos, ...network.pops];
+
+        // Direção do VFL na fonte (apenas para fibras):
+        // A fibra `cable-X-fiber-N` aparece como porta nos dois nós-extremos do cabo.
+        // Sem restrição, o BFS caminharia em ambos os lados e o mapa acenderia toda
+        // a vizinhança. Restringir a fonte a um único nó-extremo faz a luz "sair"
+        // pelo cabo em uma direção só.
+        //   ↑ (downstream) → caminha no extremo OPOSTO ao editor (luz sai pelo
+        //                    cabo, propaga até OLT pelo outro lado).
+        //   ↓ (upstream)   → caminha no extremo DO editor (luz percorre as
+        //                    conexões locais — splitters, drops, clientes).
+        // Após a fonte, o BFS propaga livre, incluindo splitter pass-through.
+        let restrictSourceToNodeId: string | null = null;
         if (vflSource.includes('-fiber-')) {
             const cableId = vflSource.split('-fiber-')[0];
             litCables.add(cableId);
+            if (vflDirection !== 'both' && vflSourceNodeId) {
+                const cable = network.cables.find(c => c.id === cableId);
+                if (cable && cable.fromNodeId && cable.toNodeId) {
+                    // Só aplica restrição se o nó do editor é realmente um extremo
+                    // do cabo. Se o cabo só está vinculado via `inputCableIds` (sem
+                    // endpoint no nó do editor), restringir produz lado errado — aí
+                    // deixa o BFS livre e o filtro visual no editor cuida da direção.
+                    const localIsEndpoint = cable.fromNodeId === vflSourceNodeId || cable.toNodeId === vflSourceNodeId;
+                    if (localIsEndpoint) {
+                        const otherEnd = cable.fromNodeId === vflSourceNodeId ? cable.toNodeId : cable.fromNodeId;
+                        restrictSourceToNodeId = vflDirection === 'downstream' ? otherEnd : vflSourceNodeId;
+                    }
+                }
+            }
         }
-
-        const allNodes = [...network.ctos, ...network.pops];
 
         while (queue.length > 0) {
             const curr = queue.shift()!;
@@ -962,18 +995,22 @@ export default function App() {
             }
 
             for (const node of allNodes) {
+                // Restrição da fonte: na primeira iteração (curr === vflSource), só
+                // caminha conexões no nó "permitido". Após a fonte, livre.
+                if (curr === vflSource && restrictSourceToNodeId && node.id !== restrictSourceToNodeId) {
+                    continue;
+                }
                 const attachedConns = node.connections.filter(c => c.sourceId === curr || c.targetId === curr);
                 attachedConns.forEach(conn => {
-                    if (!litConnections.has(conn.id)) {
-                        litConnections.add(conn.id);
-                        const neighbor = conn.sourceId === curr ? conn.targetId : conn.sourceId;
-                        if (!litPorts.has(neighbor)) {
-                            litPorts.add(neighbor);
-                            queue.push(neighbor);
-                            if (neighbor.includes('-fiber-')) {
-                                const cid = neighbor.split('-fiber-')[0];
-                                litCables.add(cid);
-                            }
+                    if (litConnections.has(conn.id)) return;
+                    const neighbor = conn.sourceId === curr ? conn.targetId : conn.sourceId;
+                    litConnections.add(conn.id);
+                    if (!litPorts.has(neighbor)) {
+                        litPorts.add(neighbor);
+                        queue.push(neighbor);
+                        if (neighbor.includes('-fiber-')) {
+                            const cid = neighbor.split('-fiber-')[0];
+                            litCables.add(cid);
                         }
                     }
                 });
@@ -998,8 +1035,16 @@ export default function App() {
                 }
             }
         }
-        return { litPorts, litCables, litConnections };
-    }, [vflSource, currentProject, parentNetwork]);
+        // Nós (CTOs/POPs) "atravessados" pelo feixe — usado pra colorir as bordas
+        // dos markers no mapa. Um nó está aceso se é endpoint de um cabo aceso.
+        const litNodes = new Set<string>();
+        for (const cable of network.cables) {
+            if (!litCables.has(cable.id)) continue;
+            if (cable.fromNodeId) litNodes.add(cable.fromNodeId);
+            if (cable.toNodeId) litNodes.add(cable.toNodeId);
+        }
+        return { litPorts, litCables, litConnections, litNodes };
+    }, [vflSource, vflSourceNodeId, vflDirection, currentProject, parentNetwork]);
 
     // OMNI-RE-RENDER PROTECTION: Memoized props for CTOEditor to prevent jitter/tremor
     const editingCTOIncomingCables = useMemo(() => {
@@ -1055,8 +1100,12 @@ export default function App() {
     }, []);
 
     const handleCTOToggleVfl = useCallback((portId: string) => {
-        setVflSource(prev => prev === portId ? null : portId);
-    }, []);
+        setVflSource(prev => {
+            const next = prev === portId ? null : portId;
+            setVflSourceNodeId(next ? (editingCTO?.id || null) : null);
+            return next;
+        });
+    }, [editingCTO?.id]);
 
     const handleCTOShowUpgrade = useCallback(() => {
         setUpgradeModalDetails(t('upgrade_exclusive_msg'));
@@ -1100,8 +1149,12 @@ export default function App() {
     }, []);
 
     const handlePOPToggleVfl = useCallback((portId: string) => {
-        setVflSource(prev => prev === portId ? null : portId);
-    }, []);
+        setVflSource(prev => {
+            const next = prev === portId ? null : portId;
+            setVflSourceNodeId(next ? (editingPOP?.id || null) : null);
+            return next;
+        });
+    }, [editingPOP?.id]);
 
 
     const handleImportKMZ = async (file: File) => {
@@ -2160,6 +2213,7 @@ export default function App() {
                         mapBounds={mapBounds}
                         showLabels={showLabels}
                         litCableIds={litNetwork.litCables}
+                        litNodeIds={litNetwork.litNodes}
                         highlightedCableId={highlightedCableId}
                         drawingPath={drawingPath}
                         snapDistance={systemSettings.snapDistance}
@@ -2383,6 +2437,8 @@ export default function App() {
                     allCables={mergedNetwork.cables}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
+                    vflDirection={vflDirection}
+                    onChangeVflDirection={setVflDirection}
                     onToggleVfl={handlePOPToggleVfl}
                     onClose={handlePOPClose}
                     onSave={handleSavePOP}
@@ -2406,6 +2462,8 @@ export default function App() {
                     incomingCables={editingCTOIncomingCables}
                     litPorts={litNetwork.litPorts}
                     vflSource={vflSource}
+                    vflDirection={vflDirection}
+                    onChangeVflDirection={setVflDirection}
                     onToggleVfl={handleCTOToggleVfl}
                     onClose={handleCTOClose}
                     onSave={handleSaveCTO}

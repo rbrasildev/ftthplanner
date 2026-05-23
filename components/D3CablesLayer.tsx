@@ -240,7 +240,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
 
                 const baseWidth = cable.width || 2.5;
                 let lineWidth: number;
-                if (isLit) lineWidth = currentZoom < 14 ? 2.5 : Math.max(4, baseWidth + 1);
+                if (isLit) lineWidth = currentZoom < 14 ? 1.5 : Math.max(2, baseWidth);
                 else if (isHigh) lineWidth = currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
                 else if (currentZoom < 12) lineWidth = Math.max(1, baseWidth * 0.4);
                 else if (currentZoom < 14) lineWidth = Math.max(1.5, baseWidth * 0.6);
@@ -250,17 +250,43 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 const dashed = currentZoom >= LOD_HIDE_DASHED_ZOOM && cable.status === 'NOT_DEPLOYED';
                 const alpha = 1;
 
-                // Stroke.
+                // Build path once — reusado em ambos modos (lit e normal).
                 ctx.beginPath();
                 ctx.moveTo(pts[0].x - mapTopLeft.x, pts[0].y - mapTopLeft.y);
                 for (let i = 1; i < pts.length; i++) {
                     ctx.lineTo(pts[i].x - mapTopLeft.x, pts[i].y - mapTopLeft.y);
                 }
-                ctx.globalAlpha = alpha;
-                ctx.strokeStyle = strokeStyle;
-                ctx.lineWidth = lineWidth;
-                if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
-                ctx.stroke();
+
+                if (isLit) {
+                    // Renderização "laser": 2 camadas leves — glow vermelho
+                    // sutil + linha vermelha fina. shadowBlur dá o esmaecimento
+                    // radial e o pulse modula a intensidade do brilho.
+                    if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+
+                    const pulse = 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(Date.now() * 0.008));
+
+                    // Glow externo — só o blur, sem engrossar a linha.
+                    ctx.globalAlpha = 0.55 * pulse;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowBlur = 8 * pulse + 3;
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = lineWidth;
+                    ctx.stroke();
+
+                    // Linha principal, sem shadow, alpha cheio.
+                    ctx.globalAlpha = 1;
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = 'transparent';
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = lineWidth;
+                    ctx.stroke();
+                } else {
+                    ctx.globalAlpha = alpha;
+                    ctx.strokeStyle = strokeStyle;
+                    ctx.lineWidth = lineWidth;
+                    if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+                    ctx.stroke();
+                }
 
                 // Build hit entry (layer coords; identical frame as cursor latLng projection).
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -309,11 +335,29 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         map.on('viewreset', onMove);
         map.on('resize', onMove);
 
+        // Loop de pulse para o VFL: enquanto houver pelo menos um cabo aceso,
+        // redesenha modulando o glow via `Date.now()` (sin wave). Throttle pra
+        // ~30 fps — pulse é suave, 60 fps gasta CPU à toa. Para sem cabos lit.
+        let pulseRafId: number | null = null;
+        let lastPulseTime = 0;
+        const PULSE_INTERVAL_MS = 1000 / 30; // ~33ms
+        const pulseLoop = (now: number) => {
+            if (now - lastPulseTime >= PULSE_INTERVAL_MS) {
+                lastPulseTime = now;
+                draw();
+            }
+            pulseRafId = requestAnimationFrame(pulseLoop);
+        };
+        if (litCableIds.size > 0) {
+            pulseRafId = requestAnimationFrame(pulseLoop);
+        }
+
         return () => {
             map.off('moveend', onMove);
             map.off('zoomend', onMove);
             map.off('viewreset', onMove);
             map.off('resize', onMove);
+            if (pulseRafId !== null) cancelAnimationFrame(pulseRafId);
         };
     }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, cableStatusColorMap]);
 

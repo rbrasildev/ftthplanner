@@ -12,13 +12,19 @@ const getPOPSize = (baseSize: number, currentZoom: number) => {
     return Math.round(baseSize * zoomScale);
 };
 
-const createPOPIcon = (isSelected: boolean, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18) => {
+const createPOPIcon = (isSelected: boolean, color: string = '#6366f1', baseSize: number = 24, currentZoom: number = 18, isLit: boolean = false) => {
     const effectiveZoom = Math.floor(currentZoom);
     const size = getPOPSize(baseSize, effectiveZoom);
     const pulseSize = Math.round(size * 2.2);
 
-    const cacheKey = `pop-${isSelected}-${color}-${baseSize}-${effectiveZoom}`;
+    const cacheKey = `pop-${isSelected}-${color}-${baseSize}-${effectiveZoom}-${isLit ? 'lit' : 'off'}`;
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
+
+    const strokeColor = isLit ? '#ef4444' : (isSelected ? '#a5b4fc' : 'white');
+    const strokeWidth = isLit ? 2.4 : 1.5;
+    const dropShadow = isLit
+        ? 'drop-shadow(0 0 4px rgba(239,68,68,0.7)) drop-shadow(0 1px 3px rgba(0,0,0,0.4))'
+        : 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))';
 
     const icon = L.divIcon({
         className: 'custom-icon',
@@ -32,9 +38,9 @@ const createPOPIcon = (isSelected: boolean, color: string = '#6366f1', baseSize:
         align-items:center;
         justify-content:center;
         z-index:15;
-        filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+        filter:${dropShadow};
       ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${isSelected ? '#a5b4fc' : 'white'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
           <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
           <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
@@ -69,15 +75,17 @@ interface POPMarkerProps {
     onDragEnd: () => void;
     onContextMenu: (e: any, id: string, type: 'POP') => void;
     userRole?: string | null;
+    /** Borda vermelha quando o feixe VFL atravessa esse POP. */
+    isLit?: boolean;
 }
 
 export const POPMarker = React.memo(({
     pop, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isLit = false
 }: POPMarkerProps) => {
     const icon = useMemo(() =>
-        createPOPIcon(isSelected, pop.color, pop.size, currentZoom),
-        [isSelected, pop.color, pop.size, currentZoom]);
+        createPOPIcon(isSelected, pop.color, pop.size, currentZoom, isLit),
+        [isSelected, pop.color, pop.size, currentZoom, isLit]);
 
     const popSize = getPOPSize(pop.size || 24, currentZoom);
     const shouldShowPermanentLabel = isSelected || showLabels;

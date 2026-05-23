@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus, Note, DIOInline } from '../types';
 import { makeDIOPortId } from '../utils/dioPortId';
-import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Flashlight, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
+import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
 import { Button } from './common/Button';
 import { useLanguage } from '../LanguageContext';
 import { hasPermission } from '../shared/permissions';
@@ -222,6 +222,8 @@ interface CTOEditorProps {
     // VFL Props
     litPorts: Set<string>;
     vflSource: string | null;
+    vflDirection: 'both' | 'upstream' | 'downstream';
+    onChangeVflDirection: (direction: 'both' | 'upstream' | 'downstream') => void;
     onToggleVfl: (portId: string) => void;
 
     // OTDR Prop
@@ -318,7 +320,9 @@ const ConnectionsLayer = React.memo(({
                 const baseColor = liveFiberColor || conn.color;
 
                 const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : baseColor);
-                const finalWidth = isLit ? 3.5 : 2.5;
+                // Mantém a espessura do cabo normal mesmo quando lit — antes
+                // engrossava pra 3.5 e ficava com aspecto "tubo" pesado.
+                const finalWidth = 2.5;
 
                 let d = `M ${p1.x} ${p1.y} `;
                 if (conn.points && conn.points.length > 0) {
@@ -338,7 +342,7 @@ const ConnectionsLayer = React.memo(({
                             fill="none"
                             strokeLinejoin="round"
                             strokeLinecap="round"
-                            style={{ filter: isLit ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.45))' : 'none' }}
+                            style={{ filter: isLit ? 'drop-shadow(0 0 2.5px rgba(239,68,68,0.55))' : 'none' }}
                             className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
                             onClick={(e) => {
                                 if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
@@ -391,7 +395,7 @@ const ConnectionsLayer = React.memo(({
 
 export const CTOEditor: React.FC<CTOEditorProps> = ({
     cto, projectName, incomingCables, onClose, onSave, onEditCable,
-    litPorts: incomingLitPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
+    litPorts: incomingLitPorts, vflSource, vflDirection, onChangeVflDirection, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole, userPermissions = [],
     projectId, companyLogo, saasLogo,
     autoDownload, readOnly = false, readOnlyLabel, onGoToParentProject
@@ -426,9 +430,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
     }, [autoDownload]);
 
-    useEffect(() => {
-        setLitPorts(incomingLitPorts);
-    }, [incomingLitPorts]);
+    // Nota: o sync `setLitPorts(incomingLitPorts)` quando o set entra novo de App.tsx
+    // é feito pelo useLayoutEffect abaixo (que combina sync + filtro direcional).
+    // Ter os dois separados causava race: o BFS de App.tsx retorna novo Set toda
+    // vez que vflDirection muda, e o `useEffect` antigo sobrescrevia o resultado
+    // filtrado pelo useLayoutEffect.
 
     useEffect(() => {
         if (cto.id) {
@@ -608,6 +614,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         toolModesRef,
         clearAllToolModes, toggleToolMode,
     } = useToolModes(effectiveSnapping);
+
+    // Quando o usuário desativa o modo VFL pelo botão da toolbar, limpa também
+    // a porta-fonte (apaga o laser). Sem isso, a fonte ficava persistente e o
+    // mapa/outros editores continuavam mostrando o feixe aceso mesmo depois de
+    // fechar a ferramenta. `onToggleVflRef` evita disparar o efeito quando o
+    // callback troca de referência (ex: editingCTO mudou).
+    const onToggleVflRef = useRef(onToggleVfl);
+    useEffect(() => { onToggleVflRef.current = onToggleVfl; });
+    const prevVflActiveRef = useRef(isVflToolActive);
+    useEffect(() => {
+        if (prevVflActiveRef.current && !isVflToolActive && vflSource) {
+            onToggleVflRef.current(vflSource); // toggle off (prev === vflSource → null)
+        }
+        prevVflActiveRef.current = isVflToolActive;
+    }, [isVflToolActive, vflSource]);
 
     // Window Position State
     const [windowPos, setWindowPos] = useState(() => {
@@ -970,7 +991,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const litConnections = useMemo(() => {
         const lit = new Set<string>();
         localCTO.connections.forEach(conn => {
-            if (litPorts.has(conn.sourceId) || litPorts.has(conn.targetId)) {
+            // Exige AMBOS os endpoints em litPorts. Antes era `||`, o que fazia
+            // toda conexão da porta-fonte acender automaticamente — quebrando o
+            // filtro direcional (fonte está sempre em litPorts).
+            if (litPorts.has(conn.sourceId) && litPorts.has(conn.targetId)) {
                 lit.add(conn.id);
             }
         });
@@ -1154,6 +1178,16 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         }
         return null;
     }, [viewState.zoom]);
+
+    // Sync litPorts do prop. Sem mais filtro visual por posição — a direção é
+    // tratada inteiramente pela source-restriction no BFS de App.tsx (que limita
+    // o caminhar inicial a um dos extremos do cabo da fonte). O filtro visual
+    // anterior conflitava com a restrição: clicando uma fibra "baixa" com ↓, o
+    // BFS atingia ports topologicamente corretos, mas o filtro visual removia
+    // tudo que estivesse "acima" da fonte (incluindo o cross-connect alvo).
+    useEffect(() => {
+        setLitPorts(incomingLitPorts);
+    }, [incomingLitPorts]);
 
     const handleSmartAlignConnection = useCallback((connId: string) => {
         setLocalCTO(prev => ({
@@ -3654,6 +3688,8 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     isFusionToolActive={isFusionToolActive}
                     isSmartAlignMode={isSmartAlignMode}
                     isVflToolActive={isVflToolActive}
+                    vflDirection={vflDirection}
+                    onChangeVflDirection={onChangeVflDirection}
                     isOtdrToolActive={isOtdrToolActive}
                     isSnapping={isSnapping}
                     onToggleSnapping={() => setIsSnapping(!isSnapping)}
@@ -3720,14 +3756,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         )}
                     </div>
 
-
-                    {/* VFL Info Banner */}
-                    {isVflToolActive && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 dark:bg-red-900/90 text-white px-4 py-2 rounded-full border border-red-400 dark:border-red-500 shadow-xl z-50 text-xs font-bold flex items-center gap-2 pointer-events-none">
-                            <Flashlight className="w-4 h-4 animate-pulse" />
-                            {t('vfl_active_msg')}
-                        </div>
-                    )}
 
                     {/* OTDR Info Banner */}
                     {isOtdrToolActive && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server, Scissors, Zap, Network, Save, X, Link, ExternalLink, Layers } from 'lucide-react';
+import { Server, Scissors, Zap, Network, Save, X, Link, ExternalLink, Layers, Flashlight } from 'lucide-react';
 import { Button } from '../common/Button';
 
 interface PopToolbarProps {
@@ -16,6 +16,11 @@ interface PopToolbarProps {
     stats?: { olts: number; dios: number; switches?: number; connections: number; totalPorts: number; usedPorts: number };
     readOnly?: boolean;
     onGoToParentProject?: () => void;
+    /** Toggle VFL: quando ativo, clique em porta injeta luz. */
+    isVflToolActive?: boolean;
+    onToggleVflTool?: () => void;
+    vflDirection?: 'both' | 'upstream' | 'downstream';
+    onChangeVflDirection?: (d: 'both' | 'upstream' | 'downstream') => void;
 }
 
 export const PopToolbar: React.FC<PopToolbarProps> = ({
@@ -31,7 +36,11 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
     t,
     stats,
     readOnly,
-    onGoToParentProject
+    onGoToParentProject,
+    isVflToolActive,
+    onToggleVflTool,
+    vflDirection,
+    onChangeVflDirection,
 }) => {
     const canEdit = !readOnly && userRole !== 'MEMBER';
     return (
@@ -110,6 +119,42 @@ export const PopToolbar: React.FC<PopToolbarProps> = ({
                 </div>
 
                 <div className="flex items-center ml-auto gap-2">
+                    {/* VFL só no modo 2D — em "Manobra" (logical) o controle
+                        é redundante e o trace não opera sobre essa view. */}
+                    {onToggleVflTool && viewMode === 'canvas' && (
+                        <>
+                            <Button
+                                variant={isVflToolActive ? 'destructive' : 'outline'}
+                                size="sm"
+                                onClick={onToggleVflTool}
+                                className={`h-8 px-3 font-bold text-xs active:scale-95 ${isVflToolActive ? 'bg-red-600 border-red-500 hover:bg-red-500' : 'text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-red-500/60 hover:text-red-600 dark:hover:text-red-400'}`}
+                                icon={<Flashlight className={`w-3.5 h-3.5 ${isVflToolActive ? 'animate-pulse' : 'text-red-500'}`} />}
+                                title={t('tooltip_vfl') || t('vfl_trace') || 'VFL'}
+                            >
+                                {t('vfl_trace') || 'VFL'}
+                            </Button>
+                            {isVflToolActive && vflDirection && onChangeVflDirection && (
+                                <div className="flex items-center gap-0.5 bg-red-600/10 dark:bg-red-900/20 border border-red-300 dark:border-red-700/50 rounded-lg p-0.5">
+                                    {([
+                                        { state: 'both', icon: '↕', hint: t('vfl_dir_both_hint') },
+                                        { state: 'downstream', icon: '↑', hint: t('vfl_dir_downstream_hint') },
+                                        { state: 'upstream', icon: '↓', hint: t('vfl_dir_upstream_hint') },
+                                    ] as const).map(opt => (
+                                        <button
+                                            key={opt.state}
+                                            type="button"
+                                            onClick={() => onChangeVflDirection(opt.state)}
+                                            className={`min-w-[26px] h-6 px-1.5 rounded text-xs font-bold leading-none flex items-center justify-center transition-colors ${vflDirection === opt.state ? 'bg-red-600 text-white' : 'text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}
+                                            title={opt.hint}
+                                            aria-label={opt.hint}
+                                        >
+                                            {opt.icon}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
                     {readOnly && onGoToParentProject && (
                         <Button
                             variant="primary"

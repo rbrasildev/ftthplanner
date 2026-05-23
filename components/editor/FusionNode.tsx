@@ -90,7 +90,9 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 {/* Center Body */}
                 <div className={`
                     w-2.5 h-2.5 border z-20 shadow-sm transition-colors duration-300 transform-gpu
-                    ${isConnector ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}` : `rounded-full border-black dark:border-black ${isLitA || isLitB ? 'bg-red-400' : 'bg-[#949494] dark:bg-slate-500'}`}
+                    ${isConnector
+                        ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
+                        : `rounded-full ${isLitA || isLitB ? 'bg-red-500 border-red-500' : 'bg-[#949494] dark:bg-slate-500 border-black dark:border-black'}`}
                 `} />
 
                 {/* Left Port */}
@@ -101,10 +103,11 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseLeave={onPortMouseLeave}
                     className={`
                         w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px] top-1/2 -translate-y-1/2 transform-gpu
-                        flex items-center justify-center
-                        ${isConnector ? `rounded-[1px] ${isLitA ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
+                        flex items-center justify-center border
+                        ${isConnector
+                            ? `rounded-[1px] ${isLitA ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
+                            : `rounded-full ${isLitA ? 'bg-red-500 border-red-500' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
                         ${hoveredPortId === portA ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
-                        ${!isConnector && isLitA ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
                     {!isLitA && isConnectedA && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full transform-gpu" />}
@@ -118,10 +121,11 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseLeave={onPortMouseLeave}
                     className={`
                         w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px] top-1/2 -translate-y-1/2 transform-gpu
-                        flex items-center justify-center
-                        ${isConnector ? `rounded-[1px] ${isLitB ? `ring-2 ring-red-400 bg-red-500 ${connectorColor.border}` : `${connectorColor.bg} ${connectorColor.border}`} border` : `rounded-full bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black border`}
+                        flex items-center justify-center border
+                        ${isConnector
+                            ? `rounded-[1px] ${isLitB ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
+                            : `rounded-full ${isLitB ? 'bg-red-500 border-red-500' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
                         ${hoveredPortId === portB ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
-                        ${!isConnector && isLitB ? 'ring-2 ring-red-400 bg-red-500' : ''}
                     `}
                 >
                     {!isLitB && isConnectedB && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full transform-gpu" />}

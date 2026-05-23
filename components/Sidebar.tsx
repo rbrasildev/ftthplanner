@@ -87,11 +87,60 @@ function getExpirationInfo(subscriptionExpiresAt: string | null | undefined, can
     return { days, isExpired, isExpiringSoon, isTrialPlan, cancelAtPeriodEnd };
 }
 
-function formatVflSourceLabel(source: string): string {
-    const fiberMatch = source.match(/-fiber-(\d+)$/);
-    if (fiberMatch) return `Fibra ${parseInt(fiberMatch[1], 10) + 1}`;
-    const splitterMatch = source.match(/splitter-.*-(?:in|out)-(\d+)$/i);
-    if (splitterMatch) return `Splitter · Porta ${parseInt(splitterMatch[1], 10) + 1}`;
+// Resolve uma label legível pra fonte do VFL combinando o ID da porta com o
+// nome do equipamento dono (OLT, DIO, splitter, cabo). Sem o network o fallback
+// volta às labels genéricas (Fibra N, Porta N, …) — o que aparecia antes.
+function formatVflSourceLabel(source: string, network?: { ctos?: any[]; pops?: any[]; cables?: any[] } | null): string {
+    // OLT GPON port: `olt-<id>-s<slot>-p<port>`
+    const oltGponMatch = source.match(/^(olt-[^-]+)-s(\d+)-p(\d+)$/i);
+    if (oltGponMatch) {
+        const [, oltId, slot, port] = oltGponMatch;
+        const olt = network?.pops?.flatMap((p: any) => p.olts || []).find((o: any) => o.id === oltId);
+        const name = olt?.name || 'OLT';
+        return `${name} · Slot ${slot} · Porta ${port}`;
+    }
+    // OLT uplink: `olt-<id>-uplink-<n>`
+    const oltUplinkMatch = source.match(/^(olt-[^-]+)-uplink-(\d+)$/i);
+    if (oltUplinkMatch) {
+        const [, oltId, idx] = oltUplinkMatch;
+        const olt = network?.pops?.flatMap((p: any) => p.olts || []).find((o: any) => o.id === oltId);
+        return `${olt?.name || 'OLT'} · Uplink ${idx}`;
+    }
+    // DIO port (POP): `dio-<id>-p-<idx>` (zero-based)
+    const dioPopMatch = source.match(/^(dio-[^-]+)-p-(\d+)$/i);
+    if (dioPopMatch) {
+        const [, dioId, idx] = dioPopMatch;
+        const dio = network?.pops?.flatMap((p: any) => p.dios || []).find((d: any) => d.id === dioId);
+        return `${dio?.name || 'DIO'} · Porta ${parseInt(idx, 10) + 1}`;
+    }
+    // DIO inline (CTO): `dio-<ts>-port-<idx>-<in|out>`
+    const dioInlineMatch = source.match(/^(dio-\d+)-port-(\d+)-(in|out)$/i);
+    if (dioInlineMatch) {
+        const [, dioId, idx, side] = dioInlineMatch;
+        const dio = network?.ctos?.flatMap((c: any) => c.dios || []).find((d: any) => d.id === dioId);
+        return `${dio?.name || 'DIO'} · P${parseInt(idx, 10) + 1} (${side.toUpperCase()})`;
+    }
+    // Splitter port: `splitter-<id>-...-(in|out)-<idx>`
+    const splitterMatch = source.match(/^(splitter-[^-]+).*-(in|out)-(\d+)$/i);
+    if (splitterMatch) {
+        const [, splitterId, side, idx] = splitterMatch;
+        const allSplitters = [
+            ...(network?.ctos?.flatMap((c: any) => c.splitters || []) || []),
+            ...(network?.pops?.flatMap((p: any) => p.splitters || []) || []),
+        ];
+        const sp = allSplitters.find((s: any) => s.id === splitterId);
+        const portLabel = side.toLowerCase() === 'in' ? 'IN' : `OUT ${parseInt(idx, 10) + 1}`;
+        return `${sp?.name || 'Splitter'} · ${portLabel}`;
+    }
+    // Fibra de cabo: `<cableId>-fiber-<N>`
+    const fiberMatch = source.match(/^(.+)-fiber-(\d+)$/);
+    if (fiberMatch) {
+        const [, cableId, idx] = fiberMatch;
+        const cable = network?.cables?.find((c: any) => c.id === cableId);
+        const fiberN = parseInt(idx, 10) + 1;
+        return cable?.name ? `${cable.name} · Fibra ${fiberN}` : `Fibra ${fiberN}`;
+    }
+    // Genérico `-port-<idx>`
     const portMatch = source.match(/-port-(\d+)$/i);
     if (portMatch) return `Porta ${parseInt(portMatch[1], 10) + 1}`;
     return source.length > 24 ? source.slice(0, 24) + '…' : source;
@@ -451,7 +500,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             <span className="flex w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                             {!isCollapsed && <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tighter">VFL ON</span>}
                                         </div>
-                                        {!isCollapsed && <div className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mb-2 truncate max-w-[180px]">{formatVflSourceLabel(vflSource)}</div>}
+                                        {!isCollapsed && <div className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mb-2 truncate max-w-[180px]">{formatVflSourceLabel(vflSource, projects.find(p => p.id === currentProjectId)?.network)}</div>}
                                         <Button
                                             variant="destructive"
                                             size={isCollapsed ? "icon" : "sm"}

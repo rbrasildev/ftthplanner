@@ -665,6 +665,8 @@ interface MapViewProps {
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
     litCableIds?: Set<string>;
+    /** IDs de CTOs/POPs atravessados pelo VFL — bordas ficam vermelhas. */
+    litNodeIds?: Set<string>;
     highlightedCableId?: string | null;
     cableStartPoint?: { lat: number, lng: number } | null;
     drawingPath?: Coordinates[];
@@ -750,7 +752,7 @@ interface MapViewProps {
 const noOp = (..._args: any[]) => { };
 
 export const MapView: React.FC<MapViewProps> = ({
-    ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set<string>(),
+    ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set<string>(), litNodeIds = new Set<string>(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
     initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
@@ -2095,6 +2097,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
+                                isLit={litNodeIds.has(cto.id)}
                                 isOnline={ctoOnlineStatus[cto.id]}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
@@ -2117,6 +2120,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={pop.id}
                                 pop={pop}
                                 isSelected={selectedId === pop.id}
+                                isLit={litNodeIds.has(pop.id)}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}
@@ -2171,6 +2175,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
                                 cto={cto}
                                 isSelected={selectedId === cto.id}
+                                isLit={litNodeIds.has(cto.id)}
                                 isOnline={ctoOnlineStatus[cto.id]}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
@@ -2193,6 +2198,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 key={pop.id}
                                 pop={pop}
                                 isSelected={selectedId === pop.id}
+                                isLit={litNodeIds.has(pop.id)}
                                 showLabels={effectiveShowLabels}
                                 mode={mode}
                                 currentZoom={currentZoom}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { POPData, CableData, FiberConnection, DIO } from '../types';
 import { X, Save, AlertCircle, Link2, Search, Check, Cable as CableIcon, Split, Ruler, Flashlight } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -23,6 +23,8 @@ interface DIOEditorProps {
     // VFL Props
     litPorts?: Set<string>;
     vflSource?: string | null;
+    vflDirection?: 'both' | 'upstream' | 'downstream';
+    onChangeVflDirection?: (direction: 'both' | 'upstream' | 'downstream') => void;
     onToggleVfl?: (portId: string) => void;
 
     // OTDR Prop
@@ -45,6 +47,8 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
     onRenameSplitter,
     litPorts,
     vflSource,
+    vflDirection,
+    onChangeVflDirection,
     onToggleVfl,
     onOtdrTrace,
     isSidebarCollapsed = false
@@ -65,6 +69,19 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
 
     // VFL State
     const [isVflToolActive, setIsVflToolActive] = useState(false);
+
+    // Desativar a ferramenta VFL pelo botão da toolbar limpa também a porta-fonte
+    // (apaga o laser). Mesmo padrão de CTOEditor e POPEditor — sem isto o laser
+    // ficaria persistente mesmo após fechar a ferramenta.
+    const onToggleVflRef = useRef(onToggleVfl);
+    useEffect(() => { onToggleVflRef.current = onToggleVfl; });
+    const prevVflActiveRef = useRef(isVflToolActive);
+    useEffect(() => {
+        if (prevVflActiveRef.current && !isVflToolActive && vflSource) {
+            onToggleVflRef.current?.(vflSource);
+        }
+        prevVflActiveRef.current = isVflToolActive;
+    }, [isVflToolActive, vflSource]);
 
     const relevantCables = useMemo(() => {
         return incomingCables.filter(c => dio.inputCableIds?.includes(c.id));
@@ -214,6 +231,29 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                 <Flashlight className="w-3.5 h-3.5" />
                                 {t('vfl_trace')}
                             </button>
+                        )}
+
+                        {isVflToolActive && vflDirection && onChangeVflDirection && (
+                            <div className="flex items-center gap-0.5 bg-red-600/10 dark:bg-red-900/20 border border-red-300 dark:border-red-700/50 rounded-lg p-0.5">
+                                {/* ↑ = rumo ao cliente (downstream), ↓ = rumo à OLT (upstream).
+                                    Ver comentário no banner do CTOEditor pra o porquê. */}
+                                {([
+                                    { state: 'both', icon: '↕', hint: t('vfl_dir_both_hint') },
+                                    { state: 'downstream', icon: '↑', hint: t('vfl_dir_downstream_hint') },
+                                    { state: 'upstream', icon: '↓', hint: t('vfl_dir_upstream_hint') },
+                                ] as const).map(opt => (
+                                    <button
+                                        key={opt.state}
+                                        type="button"
+                                        onClick={() => onChangeVflDirection(opt.state)}
+                                        className={`min-w-[26px] h-6 px-1.5 rounded text-xs font-bold leading-none flex items-center justify-center transition-colors ${vflDirection === opt.state ? 'bg-red-600 text-white' : 'text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}
+                                        title={opt.hint}
+                                        aria-label={opt.hint}
+                                    >
+                                        {opt.icon}
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
 

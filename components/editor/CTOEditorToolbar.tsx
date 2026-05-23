@@ -25,6 +25,8 @@ interface CTOEditorToolbarProps {
     isFusionToolActive: boolean;
     isSmartAlignMode: boolean;
     isVflToolActive: boolean;
+    vflDirection?: 'both' | 'upstream' | 'downstream';
+    onChangeVflDirection?: (d: 'both' | 'upstream' | 'downstream') => void;
     isOtdrToolActive: boolean;
     isSnapping: boolean;
     onToggleSnapping: () => void;
@@ -60,7 +62,7 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
     t, propertiesName, onNameChange,
     isMaximized, isCollapsed, onToggleCollapse, onToggleMaximize, onClose, onWindowDragStart,
     isRotateMode, isDeleteMode, showSplitterDropdown, isFusionToolActive, isSmartAlignMode,
-    isVflToolActive, isOtdrToolActive, isSnapping, onToggleSnapping, toggleToolMode,
+    isVflToolActive, vflDirection, onChangeVflDirection, isOtdrToolActive, isSnapping, onToggleSnapping, toggleToolMode,
     onAddFusion, onAddConnector, isConnectorToolActive, onAddNote, onAddDIO,
     isAutoSpliceOpen, onOpenAutoSplice, onClearConnections,
     showHotkeys, onToggleHotkeys, hotkeysRef,
@@ -265,6 +267,26 @@ export const CTOEditorToolbar: React.FC<CTOEditorToolbarProps> = React.memo(({
                         >
                             <Flashlight className="w-3.5 h-3.5 animate-pulse" />
                         </Button>
+                        {isVflToolActive && vflDirection && onChangeVflDirection && (
+                            <div className="flex items-center gap-0.5 bg-red-600/10 dark:bg-red-900/20 border border-red-300 dark:border-red-700/50 rounded-lg p-0.5">
+                                {([
+                                    { state: 'both', icon: '↕', hint: t('vfl_dir_both_hint') },
+                                    { state: 'downstream', icon: '↑', hint: t('vfl_dir_downstream_hint') },
+                                    { state: 'upstream', icon: '↓', hint: t('vfl_dir_upstream_hint') },
+                                ] as const).map(opt => (
+                                    <button
+                                        key={opt.state}
+                                        type="button"
+                                        onClick={() => onChangeVflDirection(opt.state)}
+                                        className={`min-w-[26px] h-6 px-1.5 rounded text-xs font-bold leading-none flex items-center justify-center transition-colors ${vflDirection === opt.state ? 'bg-red-600 text-white' : 'text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30'}`}
+                                        title={opt.hint}
+                                        aria-label={opt.hint}
+                                    >
+                                        {opt.icon}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <Button
                             variant={isOtdrToolActive ? 'emerald' : 'outline'}
                             size="icon"

@@ -11,6 +11,8 @@ interface LogicalPatchingViewProps {
     onManageFusions?: (dioId: string) => void;
     onUpdatePatchingLayout?: (newLayout: { col1: string[]; col2: string[]; col3: string[] }) => void;
     onDeleteEquipment?: (type: 'OLT' | 'DIO', id: string, name: string) => void;
+    /** Portas acesas pelo VFL — destaca em vermelho na grade. */
+    litPorts?: Set<string>;
 }
 
 export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
@@ -19,7 +21,8 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
     onRemoveConnection,
     onManageFusions,
     onUpdatePatchingLayout,
-    onDeleteEquipment
+    onDeleteEquipment,
+    litPorts,
 }) => {
     const { t } = useLanguage();
     const [selectedPortA, setSelectedPortA] = useState<string | null>(null);
@@ -340,6 +343,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                             const isConnected = !!connectionMap[pId];
                                             const isSelected = selectedPortA === pId;
                                             const isViewed = viewingConnection?.sourceId === pId || viewingConnection?.targetId === pId;
+                                            const isLit = litPorts?.has(pId);
                                             const target = connectionMap[pId];
                                             const targetDetail = isConnected ? resolvePortDetail(target) : null;
 
@@ -353,10 +357,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                         key={pId}
                                                         onClick={() => handlePortClick(pId)}
                                                         className={`h-8 rounded-md border text-xs font-bold transition-all relative group
-                                                            ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
-                                                                isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                                    isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
-                                                                        'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
+                                                            ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                                isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
+                                                                    isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
+                                                                        isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
+                                                                            'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
                                                         title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
                                                     >
                                                         {localIdx + 1}
@@ -389,6 +394,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                         const isConnected = !!connectionMap[pId];
                                         const isSelected = selectedPortA === pId;
                                         const isViewed = viewingConnection?.sourceId === pId || viewingConnection?.targetId === pId;
+                                        const isLit = litPorts?.has(pId);
                                         const target = connectionMap[pId];
                                         const targetDetail = isConnected ? resolvePortDetail(target) : null;
 
@@ -397,10 +403,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                 key={pId}
                                                 onClick={() => handlePortClick(pId)}
                                                 className={`h-8 rounded-md border text-xs font-bold transition-all relative group
-                                                        ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
-                                                        isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                            isConnected ? 'bg-slate-100 dark:bg-[#2a2e38] text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600/50' :
-                                                                'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
+                                                        ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                        isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
+                                                            isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
+                                                                isConnected ? 'bg-slate-100 dark:bg-[#2a2e38] text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600/50' :
+                                                                    'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
                                                 title={isConnected ? `${t('port_to')}: ${targetDetail?.eqName} [${targetDetail?.label}]` : t('port_free')}
                                             >
                                                 U{uIdx + 1}
@@ -604,6 +611,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                             const isConnected = !!connectionMap[pId];
                                             const isSelected = selectedPortA === pId;
                                             const isViewed = viewingConnection?.sourceId === pId || viewingConnection?.targetId === pId;
+                                            const isLit = litPorts?.has(pId);
                                             const target = connectionMap[pId];
                                             const targetDetail = isConnected ? resolvePortDetail(target) : null;
                                             const customName = dio.portLabels?.[pId];
@@ -624,10 +632,11 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                         key={pId}
                                                         onClick={() => handlePortClick(pId)}
                                                         className={`${buttonHeightCls} rounded-md border transition-all relative group flex flex-col items-center justify-center gap-0 px-1.5 overflow-hidden
-                                                            ${isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
-                                                                isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
-                                                                    isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
-                                                                        'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
+                                                            ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                                isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
+                                                                    isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
+                                                                        isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                                                                            'bg-white dark:bg-[#1e2028] text-slate-500 border-slate-200 dark:border-slate-600/40 hover:border-indigo-400 dark:hover:border-indigo-400/50'}`}
                                                         title={titleParts.join(' · ')}
                                                     >
                                                         {trayHasNames ? (

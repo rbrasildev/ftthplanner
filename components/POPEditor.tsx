@@ -40,6 +40,8 @@ interface POPEditorProps {
     // VFL Props
     litPorts: Set<string>;
     vflSource: string | null;
+    vflDirection: 'both' | 'upstream' | 'downstream';
+    onChangeVflDirection: (direction: 'both' | 'upstream' | 'downstream') => void;
     onToggleVfl: (portId: string) => void;
 
     // OTDR Prop
@@ -61,7 +63,7 @@ interface POPEditorProps {
 
 type DragMode = 'view' | 'element' | 'modal_olt' | 'modal_dio';
 
-export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPops, allCtos, allCables, onClose, onSave, litPorts, vflSource, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
+export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPops, allCtos, allCables, onClose, onSave, litPorts, vflSource, vflDirection, onChangeVflDirection, onToggleVfl, onOtdrTrace, onHoverCable, onEditCable, onDisconnectCable, onDeleteCable, userRole, readOnly = false, readOnlyLabel, onGoToParentProject, isSidebarCollapsed = false }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -102,6 +104,22 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
 
     // Patching State (New Modal Based)
     const [configuringOltPortId, setConfiguringOltPortId] = useState<string | null>(null);
+    // VFL toggle: quando ativo, clicar em qualquer porta (OLT/DIO/etc) injeta
+    // o "laser" naquela porta em vez de iniciar/concluir um patch.
+    const [isVflToolActive, setIsVflToolActive] = useState(false);
+
+    // Desligar a ferramenta VFL pelo botão da toolbar também apaga o laser
+    // (limpa a porta-fonte). Mesmo padrão do CTOEditor — `onToggleVflRef` evita
+    // disparar o efeito quando o callback troca de referência.
+    const onToggleVflRef = useRef(onToggleVfl);
+    useEffect(() => { onToggleVflRef.current = onToggleVfl; });
+    const prevVflActiveRef = useRef(isVflToolActive);
+    useEffect(() => {
+        if (prevVflActiveRef.current && !isVflToolActive && vflSource) {
+            onToggleVflRef.current(vflSource);
+        }
+        prevVflActiveRef.current = isVflToolActive;
+    }, [isVflToolActive, vflSource]);
 
     // Cable Linking State
     const [configuringDioCablesId, setConfiguringDioCablesId] = useState<string | null>(null);
@@ -304,6 +322,13 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
     // --- Patching Logic (Universal Canvas/Modal Selection) ---
     const handlePortClick = (e: React.MouseEvent, portId: string) => {
         e.stopPropagation();
+
+        // VFL mode: clique injeta luz na porta em vez de iniciar/concluir patch.
+        // Setando vflSourceNodeId via onToggleVfl em App.tsx (que já lê editingPOP.id).
+        if (isVflToolActive) {
+            onToggleVfl(portId);
+            return;
+        }
 
         if (configuringOltPortId === portId) {
             setConfiguringOltPortId(null);
@@ -1576,6 +1601,10 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                     onSave={canEdit ? handleCloseRequest : onClose}
                     t={t}
                     userRole={userRole}
+                    isVflToolActive={isVflToolActive}
+                    onToggleVflTool={() => setIsVflToolActive(v => !v)}
+                    vflDirection={vflDirection}
+                    onChangeVflDirection={onChangeVflDirection}
                     stats={useMemo(() => {
                         const totalPorts = localPOP.olts.reduce((a, o) => a + (o.portIds?.length || 0) + (o.uplinkPortIds?.length || 0), 0)
                             + localPOP.dios.reduce((a, d) => a + (d.portIds?.length || 0), 0)
@@ -1648,6 +1677,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                                 onManageFusions={setSpliceDioId}
                                 onUpdatePatchingLayout={handleUpdatePatchingLayout}
                                 onDeleteEquipment={handleDeleteEquipmentFromLogical}
+                                litPorts={litPorts}
                             />
                         </div>
                     ) : (
@@ -1759,6 +1789,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                                         onPortHover={setHoveredPortId}
                                         getFiberColor={getFiberColor}
                                         getPortConnectionInfo={getPortConnectionInfo}
+                                        litPorts={litPorts}
                                     />
                                 );
                             })}
@@ -1784,6 +1815,7 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                                         onPortClick={handlePortClickCallback}
                                         onHoverPort={setHoveredPortId}
                                         getPortConnectionInfo={getPortConnectionInfo}
+                                        litPorts={litPorts}
                                     />
                                 );
                             })}
@@ -1929,6 +1961,8 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
                             onRenameSplitter={canEdit ? handleRenameSplitter : undefined}
                             litPorts={litPorts}
                             vflSource={vflSource}
+                            vflDirection={vflDirection}
+                            onChangeVflDirection={onChangeVflDirection}
                             onToggleVfl={onToggleVfl}
                             onOtdrTrace={onOtdrTrace}
                             isSidebarCollapsed={isSidebarCollapsed}

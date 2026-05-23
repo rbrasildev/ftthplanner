@@ -22,7 +22,10 @@
       "Bash(npm uninstall *)",
       "PowerShell(Get-Process -Id 2588,31768 -ErrorAction SilentlyContinue)",
       "PowerShell(Stop-Process -Id 2588 -Force; Start-Sleep -Seconds 1; $still = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($still\\) { \"AINDA EM USO: $\\($still.OwningProcess -join ','\\)\" } else { \"Porta 3000 liberada.\" })",
-      "Bash(node -e \"console.log\\('parseFloat\\(0,2\\) =', parseFloat\\('0,2'\\)\\); console.log\\('Number\\(0,2\\) =', Number\\('0,2'\\)\\);\")"
+      "Bash(node -e \"console.log\\('parseFloat\\(0,2\\) =', parseFloat\\('0,2'\\)\\); console.log\\('Number\\(0,2\\) =', Number\\('0,2'\\)\\);\")",
+      "Bash(eas whoami *)",
+      "Bash(eas update *)",
+      "Bash(\"C:\\\\Users\\\\rairo\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" devices *)"
     ]
   }
 }
