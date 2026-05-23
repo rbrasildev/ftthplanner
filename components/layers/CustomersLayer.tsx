@@ -13,11 +13,14 @@ const createCustomerIcon = (status: string, isSelected: boolean, connectionStatu
 
     if (iconCache.has(key)) return iconCache.get(key)!;
 
-    let color = status === 'ACTIVE' ? '#22c55e' : (status === 'SUSPENDED' ? '#eab308' : '#ef4444');
+    let color = status === 'ACTIVE' ? '#22c55e' : (status === 'SUSPENDED' ? '#eab308' : '#94a3b8');
 
-    // connectionStatus overrides the default status color
-    if (connectionStatus === 'online') color = '#22c55e';
-    else if (connectionStatus === 'offline') color = '#ef4444';
+    // connectionStatus overrides the default status color — except for cancelled (INACTIVE),
+    // which stays gray so it never gets confused with an offline ACTIVE customer
+    if (status !== 'INACTIVE') {
+        if (connectionStatus === 'online') color = '#22c55e';
+        else if (connectionStatus === 'offline') color = '#ef4444';
+    }
 
     // Render the Lucide icon to string
     const iconHtml = renderToString(<Home color="white" size={10} />);

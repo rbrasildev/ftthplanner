@@ -19,7 +19,10 @@
       "Bash(grep -rn \"CTO-\\\\${\\\\|CTO -\\\\|nome.*cto\\\\|cto_default_name\\\\|default.*name.*cto\\\\|new_cto_name\\\\|defaultCtoName\" components/ hooks/ --include=\"*.ts\" --include=\"*.tsx\")",
       "Bash(git log *)",
       "Bash(xargs wc *)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "PowerShell(Get-Process -Id 2588,31768 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 2588 -Force; Start-Sleep -Seconds 1; $still = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($still\\) { \"AINDA EM USO: $\\($still.OwningProcess -join ','\\)\" } else { \"Porta 3000 liberada.\" })",
+      "Bash(node -e \"console.log\\('parseFloat\\(0,2\\) =', parseFloat\\('0,2'\\)\\); console.log\\('Number\\(0,2\\) =', Number\\('0,2'\\)\\);\")"
     ]
   }
 }
