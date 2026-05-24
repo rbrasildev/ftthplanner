@@ -14,6 +14,7 @@ import { useTheme } from '../ThemeContext';
 import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
+import { MarkersCanvasLayer } from './MarkersCanvasLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -1499,6 +1500,29 @@ export const MapView: React.FC<MapViewProps> = ({
         return list;
     }, [effectiveShowLabels, hoveredLabelId, renderableCTOs, renderablePOPs, selectedId, litNodeIds, parentNetwork, showParentLayer, showParentElements, showParentCTOs, showParentPOPs, mapBoundsState]);
 
+    // Canvas markers (CTOs simples) — substituem o CircleMarker pra eliminar
+    // o "bounce" da animação de zoom do Leaflet. Apenas no fluxo não-clusterizado,
+    // já que o cluster gerencia seus próprios markers DOM.
+    //
+    // Ficam no DOM (excluídos do canvas):
+    //  - CEO / condo vertical (formato customizado via divIcon).
+    //  - Modo move_node (drag handles do Leaflet exigem Marker DOM).
+    //  - Selecionado (mantém comportamento idêntico ao do cluster ativo).
+    const excludeFromCanvas = useMemo(() => {
+        const set = new Set<string>();
+        const allInMoveMode = mode === 'move_node' && userRole !== 'MEMBER';
+        for (const c of renderableCTOs) {
+            if (allInMoveMode) { set.add(c.id); continue; }
+            if (c.type === 'CEO' || (c as any).building) set.add(c.id);
+        }
+        if (selectedId) set.add(selectedId);
+        return set;
+    }, [renderableCTOs, mode, userRole, selectedId]);
+
+    const canvasCTOs = useMemo(() =>
+        renderableCTOs.map(c => ({ ...c, isOnline: ctoOnlineStatus[c.id] })),
+        [renderableCTOs, ctoOnlineStatus]);
+
     // Pre-filter cables with reserves (new array format or legacy single)
     const cablesWithReserves = useMemo(() =>
         cables.filter(c => {
@@ -1611,6 +1635,24 @@ export const MapView: React.FC<MapViewProps> = ({
             onNodeClick(id, type);
         }
     }, [drawingCustomerDrop, handleConnectToCTO, onNodeClick]);
+
+    // Adaptadores pra o MarkersCanvasLayer (canvas overlay de CTOs simples).
+    // Replicam o subset de comportamento do CTOMarker.eventHandlers usado
+    // pelos nós que vão pro canvas (sem CEO/condo/move_node).
+    const handleCanvasCTOClick = useCallback((_e: any, id: string) => {
+        if (mode === 'draw_cable') {
+            if (!cableStartPoint) onCableStart?.(id);
+            else onCableEnd?.(id);
+        } else if (mode === 'view') {
+            handleCTONodeClick(id, 'CTO');
+        }
+    }, [mode, cableStartPoint, onCableStart, onCableEnd, handleCTONodeClick]);
+
+    const handleCanvasCTOContext = useCallback((e: any, id: string) => {
+        if (mode === 'view') {
+            handleNodeContextMenu({ originalEvent: e } as any, id, 'CTO');
+        }
+    }, [mode, handleNodeContextMenu]);
 
     // Stable callback for MapEvents onMapClick - avoids inline closure recreation
     const handleMapClickInternal = useCallback((lat: number, lng: number) => {
@@ -2274,7 +2316,22 @@ export const MapView: React.FC<MapViewProps> = ({
                     </MarkerClusterGroup>
                 ) : (
                     <>
-                        {renderableCTOs.map(cto => (
+                        {/* Canvas overlay pra CTOs simples — sem bounce no zoom (Leaflet
+                            anima CircleMarker via transform e redesenha no final).
+                            CEO/condo/selecionado/modo move_node continuam no DOM abaixo. */}
+                        <MarkersCanvasLayer
+                            ctos={canvasCTOs}
+                            excludeIds={excludeFromCanvas}
+                            selectedId={selectedId}
+                            litNodeIds={litNodeIds}
+                            visible={true}
+                            mode={mode}
+                            interactive={mode === 'view' || mode === 'draw_cable'}
+                            onClick={handleCanvasCTOClick}
+                            onContextMenu={handleCanvasCTOContext}
+                            onHover={handleHoverLabel}
+                        />
+                        {renderableCTOs.filter(cto => excludeFromCanvas.has(cto.id)).map(cto => (
                             <CTOMarker
                                 key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
                                 cto={cto}

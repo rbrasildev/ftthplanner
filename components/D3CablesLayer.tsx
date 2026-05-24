@@ -400,6 +400,17 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             return !!target.closest(INTERACTIVE_SELECTORS);
         };
 
+        // Markers do canvas overlay (MarkersCanvasLayer) NÃO são elementos DOM,
+        // então o seletor acima não os pega. Quando esse hit-test responde com
+        // um id, o ponto está sobre um marker — cabo cede o evento pra ele.
+        // Usa padding extra (8px) pra dar à CTO uma zona de "no-cable" maior
+        // que o hit-test real do marker — clique perto da CTO não pega cabo.
+        const CABLE_EXCLUSION_PAD = 8;
+        const isOnCanvasMarker = (containerPoint: L.Point): boolean => {
+            const fn = (map as any)._canvasMarkerHitTest as ((p: L.Point, pad?: number) => string | null) | undefined;
+            return !!fn?.(containerPoint, CABLE_EXCLUSION_PAD);
+        };
+
         // Lazy-init reusable tooltip — one instance, opened/closed on hover.
         const ensureTooltip = (): L.Tooltip => {
             if (!hoverTooltipRef.current) {
@@ -427,8 +438,8 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             rafPending = true;
             requestAnimationFrame(() => {
                 rafPending = false;
-                // Don't override cursor when hovering a marker/control.
-                if (isOnInteractiveElement(e.originalEvent.target)) {
+                // Don't override cursor when hovering a marker/control (DOM ou canvas).
+                if (isOnInteractiveElement(e.originalEvent.target) || isOnCanvasMarker(e.containerPoint)) {
                     if (hoveredCableIdRef.current !== null) {
                         hoveredCableIdRef.current = null;
                         container.style.cursor = '';
@@ -470,6 +481,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         const onClickDom = (e: MouseEvent) => {
             if (isOnInteractiveElement(e.target)) return;
             const containerPoint = map.mouseEventToContainerPoint(e);
+            if (isOnCanvasMarker(containerPoint)) return;
             const cable = hitTest(containerPoint);
             if (!cable) return;
             if (!onClickRef.current) return;
@@ -486,6 +498,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         const onDblClickDom = (e: MouseEvent) => {
             if (isOnInteractiveElement(e.target)) return;
             const containerPoint = map.mouseEventToContainerPoint(e);
+            if (isOnCanvasMarker(containerPoint)) return;
             const cable = hitTest(containerPoint);
             if (!cable) return;
             if (!onDoubleClickRef.current) return;
@@ -500,6 +513,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
         const onContextMenuDom = (e: MouseEvent) => {
             if (isOnInteractiveElement(e.target)) return;
             const containerPoint = map.mouseEventToContainerPoint(e);
+            if (isOnCanvasMarker(containerPoint)) return;
             const cable = hitTest(containerPoint);
             if (!cable) return;
             if (!onContextMenuRef.current) return;
