@@ -37,10 +37,11 @@ const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customCo
 
     // Status color drives both fill and border so status changes are always fully visible.
     // CEO and CTO share the same size/colors; they only differ in border-radius (CEO slightly squared).
-    // Quando o nó é atravessado pelo feixe VFL (`isLit`), a borda fica vermelha
-    // pra indicar visualmente o caminho da luz na topologia.
+    // Quando o nó é atravessado pelo feixe VFL (`isLit`), a borda fica fuchsia
+    // pra indicar o caminho da luz na topologia sem confundir com vermelho
+    // de cabos NOT_DEPLOYED/offline.
     const fillColor = statusColor;
-    const borderColor = isLit ? '#ef4444' : (isSelected ? '#22c55e' : statusColor);
+    const borderColor = isLit ? '#f87171' : (isSelected ? '#22c55e' : statusColor);
 
     // Vertical condo gets a tall building silhouette: rectangular body taller
     // than wide, with a stepped roof and window grid drawn inline so the marker
@@ -85,7 +86,7 @@ const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customCo
         border-radius: ${type === 'CEO' ? '30%' : '50%'};
         width: ${size}px;
         height: ${size}px;
-        box-shadow: ${isLit ? `0 0 8px 2px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.4)` : `0 2px 4px rgba(0, 0, 0, 0.4)`};
+        box-shadow: ${isLit ? `0 0 8px 2px rgba(248,113,113,0.65), 0 2px 4px rgba(0,0,0,0.4)` : `0 2px 4px rgba(0, 0, 0, 0.4)`};
         transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
         z-index: 10;
       ">
@@ -153,7 +154,7 @@ export const CTOMarker = React.memo(({
         else if (isOnline === false) statusColor = '#ef4444';
         const fill = statusColor.substring(0, 7);
         return {
-            color: isLit ? '#ef4444' : (isSelected ? '#22c55e' : darkenHex(fill)),
+            color: isLit ? '#f87171' : (isSelected ? '#22c55e' : darkenHex(fill)),
             fillColor: fill,
             fillOpacity: 0.85,
             weight: isLit ? 3 : (isSelected ? 3 : 2),

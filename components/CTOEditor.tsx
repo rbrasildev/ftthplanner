@@ -319,7 +319,7 @@ const ConnectionsLayer = React.memo(({
                 const liveFiberColor = resolveFiberPortColor(conn.sourceId) || resolveFiberPortColor(conn.targetId);
                 const baseColor = liveFiberColor || conn.color;
 
-                const finalColor = isLit ? '#ef4444' : (useThemeColor ? undefined : baseColor);
+                const finalColor = isLit ? '#f87171' : (useThemeColor ? undefined : baseColor);
                 // Mantém a espessura do cabo normal mesmo quando lit — antes
                 // engrossava pra 3.5 e ficava com aspecto "tubo" pesado.
                 const finalWidth = 2.5;
@@ -342,7 +342,7 @@ const ConnectionsLayer = React.memo(({
                             fill="none"
                             strokeLinejoin="round"
                             strokeLinecap="round"
-                            style={{ filter: isLit ? 'drop-shadow(0 0 2.5px rgba(239,68,68,0.55))' : 'none' }}
+                            style={{ filter: isLit ? 'drop-shadow(0 0 2.5px rgba(248,113,113,0.6))' : 'none' }}
                             className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
                             onClick={(e) => {
                                 if (isSmartAlignMode) handleSmartAlignConnection(conn.id);

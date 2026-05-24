@@ -185,15 +185,15 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                                                 onMouseLeave={handlePortLeave}
                                                 className={`
                                                     flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all relative
-                                                    ${isLit ? 'ring-2 ring-red-400 z-10' : ''}
+                                                    ${isLit ? 'ring-2 ring-red-300 z-10' : ''}
                                                     ${highlightForActiveOLT ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
                                                     ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
                                                 style={{
-                                                    backgroundColor: isLit ? '#ef4444' : (isConnected ? connColor.bg : '#1e2028'),
-                                                    border: `1px solid ${isLit ? '#dc2626' : (isConnected ? connColor.border : '#3f4451')}`,
+                                                    backgroundColor: isLit ? '#f87171' : (isConnected ? connColor.bg : '#1e2028'),
+                                                    border: `1px solid ${isLit ? '#ef4444' : (isConnected ? connColor.border : '#3f4451')}`,
                                                     color: isLit || isConnected ? '#fff' : '#6b7280',
-                                                    boxShadow: isLit ? '0 0 6px rgba(239,68,68,0.7)' : (isConnected ? `0 0 4px ${connColor.shadow}` : 'none'),
+                                                    boxShadow: isLit ? '0 0 6px rgba(248,113,113,0.7)' : (isConnected ? `0 0 4px ${connColor.shadow}` : 'none'),
                                                 }}
                                             >
                                                 {localIdx + 1}

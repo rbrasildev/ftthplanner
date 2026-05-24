@@ -357,7 +357,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                         key={pId}
                                                         onClick={() => handlePortClick(pId)}
                                                         className={`h-8 rounded-md border text-xs font-bold transition-all relative group
-                                                            ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                            ${isLit ? 'bg-red-400 text-white border-red-500 ring-2 ring-red-300 shadow-lg z-10' :
                                                                 isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                                     isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                         isConnected ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' :
@@ -403,7 +403,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                 key={pId}
                                                 onClick={() => handlePortClick(pId)}
                                                 className={`h-8 rounded-md border text-xs font-bold transition-all relative group
-                                                        ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                        ${isLit ? 'bg-red-400 text-white border-red-500 ring-2 ring-red-300 shadow-lg z-10' :
                                                         isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                             isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                 isConnected ? 'bg-slate-100 dark:bg-[#2a2e38] text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600/50' :
@@ -632,7 +632,7 @@ export const LogicalPatchingView: React.FC<LogicalPatchingViewProps> = ({
                                                         key={pId}
                                                         onClick={() => handlePortClick(pId)}
                                                         className={`${buttonHeightCls} rounded-md border transition-all relative group flex flex-col items-center justify-center gap-0 px-1.5 overflow-hidden
-                                                            ${isLit ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-400 shadow-lg z-10' :
+                                                            ${isLit ? 'bg-red-400 text-white border-red-500 ring-2 ring-red-300 shadow-lg z-10' :
                                                                 isViewed ? 'bg-emerald-500 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-400 scale-110 z-20' :
                                                                     isSelected ? 'bg-indigo-500 text-white border-indigo-600 ring-2 ring-indigo-400 scale-105 z-10' :
                                                                         isConnected ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :

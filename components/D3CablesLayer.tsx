@@ -258,18 +258,18 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 }
 
                 if (isLit) {
-                    // Renderização "laser": 2 camadas leves — glow vermelho
-                    // sutil + linha vermelha fina. shadowBlur dá o esmaecimento
-                    // radial e o pulse modula a intensidade do brilho.
+                    // Renderização "laser" em fuchsia/magenta (#f87171) — cor
+                    // próxima do que um VFL real (650nm) produz no vidro e
+                    // distinta do vermelho usado pra cabos NOT_DEPLOYED/offline.
                     if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
 
                     const pulse = 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(Date.now() * 0.008));
 
                     // Glow externo — só o blur, sem engrossar a linha.
                     ctx.globalAlpha = 0.55 * pulse;
-                    ctx.shadowColor = '#ef4444';
+                    ctx.shadowColor = '#f87171';
                     ctx.shadowBlur = 8 * pulse + 3;
-                    ctx.strokeStyle = '#ef4444';
+                    ctx.strokeStyle = '#f87171';
                     ctx.lineWidth = lineWidth;
                     ctx.stroke();
 
@@ -277,7 +277,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     ctx.globalAlpha = 1;
                     ctx.shadowBlur = 0;
                     ctx.shadowColor = 'transparent';
-                    ctx.strokeStyle = '#ef4444';
+                    ctx.strokeStyle = '#f87171';
                     ctx.lineWidth = lineWidth;
                     ctx.stroke();
                 } else {

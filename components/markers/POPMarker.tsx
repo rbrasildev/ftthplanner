@@ -20,10 +20,12 @@ const createPOPIcon = (isSelected: boolean, color: string = '#6366f1', baseSize:
     const cacheKey = `pop-${isSelected}-${color}-${baseSize}-${effectiveZoom}-${isLit ? 'lit' : 'off'}`;
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)!;
 
-    const strokeColor = isLit ? '#ef4444' : (isSelected ? '#a5b4fc' : 'white');
-    const strokeWidth = isLit ? 2.4 : 1.5;
+    const strokeColor = isLit ? '#f87171' : (isSelected ? '#a5b4fc' : 'white');
+    // Mantém a mesma espessura do normal — antes engrossava (2.4) e ficava com
+    // aspecto de "casca" pesada. O brilho do drop-shadow já indica o estado lit.
+    const strokeWidth = 1.5;
     const dropShadow = isLit
-        ? 'drop-shadow(0 0 4px rgba(239,68,68,0.7)) drop-shadow(0 1px 3px rgba(0,0,0,0.4))'
+        ? 'drop-shadow(0 0 3px rgba(248,113,113,0.7)) drop-shadow(0 1px 3px rgba(0,0,0,0.4))'
         : 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))';
 
     const icon = L.divIcon({

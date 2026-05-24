@@ -91,8 +91,8 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 <div className={`
                     w-2.5 h-2.5 border z-20 shadow-sm transition-colors duration-300 transform-gpu
                     ${isConnector
-                        ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
-                        : `rounded-full ${isLitA || isLitB ? 'bg-red-500 border-red-500' : 'bg-[#949494] dark:bg-slate-500 border-black dark:border-black'}`}
+                        ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
+                        : `rounded-full ${isLitA || isLitB ? 'bg-red-400 border-red-400' : 'bg-[#949494] dark:bg-slate-500 border-black dark:border-black'}`}
                 `} />
 
                 {/* Left Port */}
@@ -105,8 +105,8 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px] top-1/2 -translate-y-1/2 transform-gpu
                         flex items-center justify-center border
                         ${isConnector
-                            ? `rounded-[1px] ${isLitA ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
-                            : `rounded-full ${isLitA ? 'bg-red-500 border-red-500' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
+                            ? `rounded-[1px] ${isLitA ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
+                            : `rounded-full ${isLitA ? 'bg-red-400 border-red-400' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
                         ${hoveredPortId === portA ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                     `}
                 >
@@ -123,8 +123,8 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                         w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px] top-1/2 -translate-y-1/2 transform-gpu
                         flex items-center justify-center border
                         ${isConnector
-                            ? `rounded-[1px] ${isLitB ? 'bg-red-500 border-red-600' : `${connectorColor.bg} ${connectorColor.border}`}`
-                            : `rounded-full ${isLitB ? 'bg-red-500 border-red-500' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
+                            ? `rounded-[1px] ${isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
+                            : `rounded-full ${isLitB ? 'bg-red-400 border-red-400' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
                         ${hoveredPortId === portB ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
                     `}
                 >

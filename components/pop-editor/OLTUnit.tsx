@@ -133,15 +133,15 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                                 onMouseLeave={() => onPortHover(null)}
                                                 className={`
                                                     w-[26px] h-[26px] shrink-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
-                                                    ${isLit ? 'ring-2 ring-red-400 z-10' : ''}
+                                                    ${isLit ? 'ring-2 ring-red-300 z-10' : ''}
                                                     ${isConfiguring ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
                                                     ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
                                                 `}
                                                 style={{
-                                                    backgroundColor: isLit ? '#ef4444' : (isConnected ? '#6366f1' : '#1e2028'),
-                                                    border: `1px solid ${isLit ? '#dc2626' : (isConnected ? '#818cf8' : '#3f4451')}`,
+                                                    backgroundColor: isLit ? '#f87171' : (isConnected ? '#6366f1' : '#1e2028'),
+                                                    border: `1px solid ${isLit ? '#ef4444' : (isConnected ? '#818cf8' : '#3f4451')}`,
                                                     color: isLit || isConnected ? '#fff' : '#6b7280',
-                                                    boxShadow: isLit ? '0 0 6px rgba(239,68,68,0.7)' : (isConnected ? '0 0 4px rgba(99,102,241,0.4)' : 'none')
+                                                    boxShadow: isLit ? '0 0 6px rgba(248,113,113,0.7)' : (isConnected ? '0 0 4px rgba(99,102,241,0.4)' : 'none')
                                                 }}
                                             >
                                                 {pIdx + 1}
@@ -177,15 +177,15 @@ export const OLTUnit: React.FC<OLTUnitProps> = ({
                                             onMouseLeave={() => onPortHover(null)}
                                             className={`
                                                 w-7 h-5 shrink-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all
-                                                ${isLit ? 'ring-2 ring-red-400 z-10' : ''}
+                                                ${isLit ? 'ring-2 ring-red-300 z-10' : ''}
                                                 ${isConfiguring ? 'ring-1 ring-amber-400 scale-110 z-10' : ''}
                                                 ${isHovered ? 'scale-110 z-10' : ''}
                                             `}
                                             style={{
-                                                backgroundColor: isLit ? '#ef4444' : (isConnected ? '#94a3b8' : '#1e2028'),
-                                                border: `1px solid ${isLit ? '#dc2626' : (isConnected ? '#cbd5e1' : '#3f4451')}`,
+                                                backgroundColor: isLit ? '#f87171' : (isConnected ? '#94a3b8' : '#1e2028'),
+                                                border: `1px solid ${isLit ? '#ef4444' : (isConnected ? '#cbd5e1' : '#3f4451')}`,
                                                 color: isLit ? '#fff' : (isConnected ? '#0f172a' : '#6b7280'),
-                                                boxShadow: isLit ? '0 0 6px rgba(239,68,68,0.7)' : 'none',
+                                                boxShadow: isLit ? '0 0 6px rgba(248,113,113,0.7)' : 'none',
                                             }}
                                         >
                                             U{pIdx + 1}
