@@ -2553,12 +2553,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
 
             const modes = toolModesRef.current;
-
-            // Grid snap
-            if (modes.isSnapping) {
-                x = Math.round(x / GRID_SIZE) * GRID_SIZE;
-                y = Math.round(y / GRID_SIZE) * GRID_SIZE;
-            }
+            const FIBER_PITCH = GRID_SIZE * 2; // 12px — distância entre fibras (LANE_SPACING)
 
             // Use ref (not state) to get the latest connections - state may be stale
             // when a point was just created by handlePathMouseDown
@@ -2566,6 +2561,17 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             if (conn) {
                 const p1 = getPortCenter(conn.sourceId);
                 const p2 = getPortCenter(conn.targetId);
+
+                // Pitch snap (12px) ancorado na source port. Grid arbitrário
+                // de 6px não bate com as portas das fibras (que ficam em Y
+                // baseado no layout), então cabos com bends fora do múltiplo
+                // de 6 ficam visualmente desalinhados. Ancorar na source
+                // garante que todos os cabos do mesmo painel compartilham a
+                // mesma régua de 12px → spacing uniforme entre cabos.
+                if (modes.isSnapping && p1) {
+                    x = p1.x + Math.round((x - p1.x) / FIBER_PITCH) * FIBER_PITCH;
+                    y = p1.y + Math.round((y - p1.y) / FIBER_PITCH) * FIBER_PITCH;
+                }
 
                 if (p1 && p2) {
                     const points = conn.points || [];
@@ -2693,15 +2699,20 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 dropY += dragState.offsetY;
             }
 
-            let x = effectiveSnapping ? Math.round(dropX / GRID_SIZE) * GRID_SIZE : dropX;
-            let y = effectiveSnapping ? Math.round(dropY / GRID_SIZE) * GRID_SIZE : dropY;
+            let x = dropX;
+            let y = dropY;
 
-            // Apply same orthogonal snap as during drag (closest neighbor wins)
+            // Pitch snap igual ao live drag (12px ancorado na source).
             if (effectiveSnapping) {
                 const conn = localCTORef.current.connections.find(c => c.id === dragState.connectionId);
                 if (conn) {
+                    const FIBER_PITCH = GRID_SIZE * 2;
                     const p1 = getPortCenter(conn.sourceId);
                     const p2 = getPortCenter(conn.targetId);
+                    if (p1) {
+                        x = p1.x + Math.round((x - p1.x) / FIBER_PITCH) * FIBER_PITCH;
+                        y = p1.y + Math.round((y - p1.y) / FIBER_PITCH) * FIBER_PITCH;
+                    }
                     if (p1 && p2) {
                         const allPoints = [p1, ...(conn.points || []), p2];
                         const idx = dragState.pointIndex! + 1;
