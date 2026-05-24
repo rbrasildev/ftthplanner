@@ -13,6 +13,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot } from 'lucide-react';
 import { D3CablesLayer } from './D3CablesLayer';
+import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -1346,7 +1347,10 @@ export const MapView: React.FC<MapViewProps> = ({
             const isCeo = c.type === 'CEO';
             return isCeo ? showCtoTypeCeo : showCtoTypeCto;
         };
-        if (!mapBoundsState) return ctos.filter(passesType).slice(0, 100); // Initial load safety
+        // Antes: `slice(0, 100)` no initial load — causava percepção de "faltando
+        // caixas" enquanto o `mapBoundsState` não chegava. Agora não filtramos —
+        // a decimação por grid em `labeledCTOIds` cuida do volume visual.
+        if (!mapBoundsState) return ctos.filter(passesType);
         const paddedBounds = mapBoundsState.pad(0.3); // Reduced buffer to 30% (was 50%)
         return ctos.filter(c => passesType(c) && paddedBounds.contains(c.coordinates));
     }, [showCTOs, showCtoTypeCto, showCtoTypeCeo, ctos, mapBoundsState]);
@@ -1409,8 +1413,91 @@ export const MapView: React.FC<MapViewProps> = ({
         parentNetwork ? [...poles, ...parentNetwork.poles] : poles,
         [poles, parentNetwork]);
 
-    // Lazy loading labels based on zoom
-    const effectiveShowLabels = showLabels && currentZoom > 16;
+    // Labels: gate por zoom + toggle. Renderização real é no LabelsCanvasLayer
+    // (canvas overlay com colisão por R-tree O(N²) — sem DOM por marker).
+    const effectiveShowLabels = showLabels && currentZoom >= 14;
+
+    // Hover state — quando o mouse entra num marker, o canvas mostra o label
+    // daquele nó mesmo se o toggle de labels está OFF (ou se o zoom é baixo).
+    // Substitui o tooltip preto antigo do Leaflet por uma versão visualmente
+    // consistente com os labels permanentes.
+    const [hoveredLabelId, setHoveredLabelId] = useState<string | null>(null);
+    const handleHoverLabel = useCallback((id: string | null) => {
+        setHoveredLabelId(id);
+    }, []);
+
+    // Monta lista pra o canvas layer. CTOs + POPs (locais + projeto base),
+    // num set só, com markerRadius pra o label posicionar acima do marker.
+    // Sempre inclui o nó com hover (mesmo com toggle off ou zoom baixo) —
+    // garante que passar o mouse sempre mostre o label, substituindo o
+    // tooltip preto antigo do Leaflet.
+    const labelNodes = useMemo<LabelNode[]>(() => {
+        const list: LabelNode[] = [];
+        const bulkOn = effectiveShowLabels;
+
+        const pushCTO = (c: any, isParent: boolean) => {
+            list.push({
+                id: isParent ? `parent-${c.id}` : c.id,
+                name: c.name,
+                lat: c.coordinates.lat,
+                lng: c.coordinates.lng,
+                isSelected: selectedId === c.id,
+                isLit: litNodeIds.has(c.id),
+                isHovered: hoveredLabelId === c.id,
+                markerRadius: 10,
+            });
+        };
+        const pushPOP = (p: any, isParent: boolean) => {
+            list.push({
+                id: isParent ? `parent-${p.id}` : p.id,
+                name: p.name,
+                lat: p.coordinates.lat,
+                lng: p.coordinates.lng,
+                isSelected: selectedId === p.id,
+                isLit: litNodeIds.has(p.id),
+                isHovered: hoveredLabelId === p.id,
+                markerRadius: 14,
+            });
+        };
+
+        if (bulkOn) {
+            // Locais
+            for (const c of renderableCTOs) pushCTO(c, false);
+            for (const p of renderablePOPs) pushPOP(p, false);
+            // Projeto base
+            if (parentNetwork && showParentLayer && showParentElements) {
+                const padded = mapBoundsState?.pad(0.3);
+                if (showParentCTOs) {
+                    for (const c of parentNetwork.ctos) {
+                        if (padded && !padded.contains(c.coordinates)) continue;
+                        pushCTO(c, true);
+                    }
+                }
+                if (showParentPOPs) {
+                    for (const p of parentNetwork.pops) {
+                        if (padded && !padded.contains(p.coordinates)) continue;
+                        pushPOP(p, true);
+                    }
+                }
+            }
+        } else {
+            // Toggle off: adiciona hovered e/ou selected — sempre visíveis,
+            // independente do toggle. Busca no projeto local e no base.
+            const idsToInclude = new Set<string>();
+            if (hoveredLabelId) idsToInclude.add(hoveredLabelId);
+            if (selectedId) idsToInclude.add(selectedId);
+            for (const id of idsToInclude) {
+                const hc = renderableCTOs.find(c => c.id === id)
+                    || parentNetwork?.ctos.find(c => c.id === id);
+                if (hc) { pushCTO(hc, false); continue; }
+                const hp = renderablePOPs.find(p => p.id === id)
+                    || parentNetwork?.pops.find(p => p.id === id);
+                if (hp) pushPOP(hp, false);
+            }
+        }
+
+        return list;
+    }, [effectiveShowLabels, hoveredLabelId, renderableCTOs, renderablePOPs, selectedId, litNodeIds, parentNetwork, showParentLayer, showParentElements, showParentCTOs, showParentPOPs, mapBoundsState]);
 
     // Pre-filter cables with reserves (new array format or legacy single)
     const cablesWithReserves = useMemo(() =>
@@ -1762,6 +1849,11 @@ export const MapView: React.FC<MapViewProps> = ({
                     <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] leading-none px-2.5 pt-1 pb-1">{t('layer_panel_display')}</span>
 
                     <LayerRow active={showLabels} onClick={() => onToggleLabels && onToggleLabels()} label={t('show_labels')} color="emerald" icon={<Tag className="w-4 h-4" />} />
+                    {showLabels && !effectiveShowLabels && (
+                        <p className="px-3 text-[10px] text-amber-600 dark:text-amber-400 leading-tight">
+                            Aproxime o mapa (zoom ≥ 14) pra ver os nomes.
+                        </p>
+                    )}
                     <LayerRow active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering')} color="purple" icon={<Layers className="w-4 h-4" />} />
                 </div>
             </div>
@@ -1844,6 +1936,8 @@ export const MapView: React.FC<MapViewProps> = ({
                         parentProjectName={parentProjectName}
                         mode={mode}
                         showLabels={effectiveShowLabels}
+                        canvasLabelsActive={true /* nunca mostra Tooltip Leaflet */}
+                        onHoverLabel={handleHoverLabel}
                         currentZoom={currentZoom}
                         selectedId={selectedId}
                         cableStartPoint={cableStartPoint}
@@ -1882,6 +1976,12 @@ export const MapView: React.FC<MapViewProps> = ({
                     mode={mode}
                     showLabels={effectiveShowLabels}
                 />
+
+                {/* Labels permanentes + hover de CTOs/POPs num canvas com colisão.
+                    `visible` sempre true: quando o toggle está off, o canvas só
+                    desenha o nó com hover (substituindo o tooltip preto antigo).
+                    Quando o toggle está on, desenha tudo respeitando colisão. */}
+                <LabelsCanvasLayer nodes={labelNodes} visible={true} />
 
                 {/* Render ONLY active cable with React-Leaflet for editing interactions (drag handles) */}
                 {/* Render ALL active cables from multi-connection set + current active */}
@@ -2099,7 +2199,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 isLit={litNodeIds.has(cto.id)}
                                 isOnline={ctoOnlineStatus[cto.id]}
-                                showLabels={effectiveShowLabels}
+                                showLabels={false}
+                                canvasLabelsActive={true /* nunca mostra Tooltip Leaflet; canvas sempre cobre */}
+                                onHoverLabel={handleHoverLabel}
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={handleCTONodeClick}
@@ -2121,7 +2223,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                 pop={pop}
                                 isSelected={selectedId === pop.id}
                                 isLit={litNodeIds.has(pop.id)}
-                                showLabels={effectiveShowLabels}
+                                showLabels={false}
+                                canvasLabelsActive={true /* nunca mostra Tooltip Leaflet; canvas sempre cobre */}
+                                onHoverLabel={handleHoverLabel}
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
@@ -2177,7 +2281,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                 isSelected={selectedId === cto.id}
                                 isLit={litNodeIds.has(cto.id)}
                                 isOnline={ctoOnlineStatus[cto.id]}
-                                showLabels={effectiveShowLabels}
+                                showLabels={false}
+                                canvasLabelsActive={true /* nunca mostra Tooltip Leaflet; canvas sempre cobre */}
+                                onHoverLabel={handleHoverLabel}
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={handleCTONodeClick}
@@ -2199,7 +2305,9 @@ export const MapView: React.FC<MapViewProps> = ({
                                 pop={pop}
                                 isSelected={selectedId === pop.id}
                                 isLit={litNodeIds.has(pop.id)}
-                                showLabels={effectiveShowLabels}
+                                showLabels={false}
+                                canvasLabelsActive={true /* nunca mostra Tooltip Leaflet; canvas sempre cobre */}
+                                onHoverLabel={handleHoverLabel}
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}

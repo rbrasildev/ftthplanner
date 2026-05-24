@@ -15,6 +15,9 @@ interface ParentProjectLayerProps {
     parentProjectName: string;
     mode?: MapMode;
     showLabels?: boolean;
+    /** Quando true, MapView está usando o LabelsCanvasLayer e os markers daqui
+     *  devem omitir seu Tooltip Leaflet pra não duplicar/sobrepor o rótulo canvas. */
+    canvasLabelsActive?: boolean;
     currentZoom?: number;
     cableStartPoint?: { lat: number; lng: number } | null;
     selectedId?: string | null;
@@ -26,6 +29,7 @@ interface ParentProjectLayerProps {
     onCableStart?: (nodeId: string) => void;
     onCableEnd?: (nodeId: string) => void;
     onNodeClick?: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
+    onHoverLabel?: (id: string | null) => void;
 }
 
 const noOp = () => {};
@@ -38,6 +42,7 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
     parentProjectName,
     mode = 'view',
     showLabels = false,
+    canvasLabelsActive = false,
     currentZoom = 18,
     cableStartPoint,
     selectedId,
@@ -48,7 +53,8 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
     onBlockedEdit,
     onCableStart,
     onCableEnd,
-    onNodeClick
+    onNodeClick,
+    onHoverLabel,
 }) => {
     const { t } = useLanguage();
     // For CTO/POP: in view mode → open read-only; in cable mode → connect cable
@@ -114,7 +120,9 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
                     key={`parent-cto-${cto.id}`}
                     cto={cto}
                     isSelected={selectedId === cto.id}
-                    showLabels={showLabels}
+                    showLabels={false}
+                    canvasLabelsActive={canvasLabelsActive}
+                    onHoverLabel={onHoverLabel}
                     mode={mode}
                     currentZoom={currentZoom}
                     onNodeClick={handleCTOClick}
@@ -136,7 +144,9 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
                     key={`parent-pop-${pop.id}`}
                     pop={pop}
                     isSelected={selectedId === pop.id}
-                    showLabels={showLabels}
+                    showLabels={false}
+                    canvasLabelsActive={canvasLabelsActive}
+                    onHoverLabel={onHoverLabel}
                     mode={mode}
                     currentZoom={currentZoom}
                     onNodeClick={handlePOPClick}
@@ -158,7 +168,7 @@ export const ParentProjectLayer: React.FC<ParentProjectLayerProps> = ({
                     key={`parent-pole-${pole.id}`}
                     pole={pole}
                     isSelected={selectedId === pole.id}
-                    showLabels={showLabels}
+                    showLabels={false /* labels permanentes vêm do LabelsCanvasLayer no MapView */}
                     mode={mode}
                     currentZoom={currentZoom}
                     onNodeClick={handlePoleClick}

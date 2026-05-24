@@ -129,11 +129,17 @@ interface CTOMarkerProps {
     isOnline?: boolean;
     /** Borda vermelha quando o feixe VFL atravessa esse nó. */
     isLit?: boolean;
+    /** Quando true, omite o Tooltip do Leaflet inteiro — assume que `LabelsCanvasLayer`
+     *  está cuidando dos rótulos. Sem isto, hover sobre o marker mostra o tooltip
+     *  preto antigo em cima do label canvas. */
+    canvasLabelsActive?: boolean;
+    /** Callback de hover. Recebe o id quando o mouse entra, null quando sai. */
+    onHoverLabel?: (id: string | null) => void;
 }
 
 export const CTOMarker = React.memo(({
     cto, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline, isLit = false
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isOnline, isLit = false, canvasLabelsActive = false, onHoverLabel,
 }: CTOMarkerProps) => {
     const isVerticalCondo = !!cto.building;
     const isCEO = cto.type === 'CEO';
@@ -201,8 +207,10 @@ export const CTOMarker = React.memo(({
             const marker = e.target;
             const position = marker.getLatLng();
             onMoveNode(cto.id, position.lat, position.lng);
-        }
-    }), [mode, cto.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
+        },
+        mouseover: () => onHoverLabel?.(cto.id),
+        mouseout: () => onHoverLabel?.(null),
+    }), [mode, cto.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu, onHoverLabel]);
 
     const markerRef = useRef<L.Marker>(null);
 
@@ -227,15 +235,17 @@ export const CTOMarker = React.memo(({
                 draggable={isDragMode}
                 eventHandlers={eventHandlers}
             >
-                <Tooltip
-                    direction="top"
-                    offset={[0, -divIconHalfHeight]}
-                    opacity={1}
-                    permanent={!isDragMode && shouldShowPermanentLabel}
-                    className={`map-label${!isDragMode && shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
-                >
-                    {cto.name}
-                </Tooltip>
+                {!canvasLabelsActive && (
+                    <Tooltip
+                        direction="top"
+                        offset={[0, -divIconHalfHeight]}
+                        opacity={1}
+                        permanent={!isDragMode && shouldShowPermanentLabel}
+                        className={`map-label${!isDragMode && shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
+                    >
+                        {cto.name}
+                    </Tooltip>
+                )}
             </Marker>
         );
     }
@@ -251,15 +261,17 @@ export const CTOMarker = React.memo(({
             pane="cto-circles-pane"
             eventHandlers={eventHandlers}
         >
-            <Tooltip
-                direction="top"
-                offset={[0, -circleRadius]}
-                opacity={1}
-                permanent={shouldShowPermanentLabel}
-                className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
-            >
-                {cto.name}
-            </Tooltip>
+            {!canvasLabelsActive && (
+                <Tooltip
+                    direction="top"
+                    offset={[0, -circleRadius]}
+                    opacity={1}
+                    permanent={shouldShowPermanentLabel}
+                    className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
+                >
+                    {cto.name}
+                </Tooltip>
+            )}
         </CircleMarker>
     );
 });

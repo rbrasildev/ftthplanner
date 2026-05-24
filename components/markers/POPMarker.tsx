@@ -79,11 +79,15 @@ interface POPMarkerProps {
     userRole?: string | null;
     /** Borda vermelha quando o feixe VFL atravessa esse POP. */
     isLit?: boolean;
+    /** Quando true, omite o Tooltip do Leaflet — `LabelsCanvasLayer` cuida do rótulo. */
+    canvasLabelsActive?: boolean;
+    /** Callback de hover. Recebe o id quando o mouse entra, null quando sai. */
+    onHoverLabel?: (id: string | null) => void;
 }
 
 export const POPMarker = React.memo(({
     pop, isSelected, showLabels, mode, currentZoom = 18, onNodeClick, onCableStart, onCableEnd, onMoveNode, cableStartPoint,
-    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isLit = false
+    onDragStart, onDrag, onDragEnd, onContextMenu, userRole, isLit = false, canvasLabelsActive = false, onHoverLabel,
 }: POPMarkerProps) => {
     const icon = useMemo(() =>
         createPOPIcon(isSelected, pop.color, pop.size, currentZoom, isLit),
@@ -118,8 +122,10 @@ export const POPMarker = React.memo(({
             const marker = e.target;
             const position = marker.getLatLng();
             onMoveNode(pop.id, position.lat, position.lng);
-        }
-    }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu]);
+        },
+        mouseover: () => onHoverLabel?.(pop.id),
+        mouseout: () => onHoverLabel?.(null),
+    }), [mode, pop.id, isSelected, cableStartPoint, onCableStart, onCableEnd, onNodeClick, onMoveNode, onDragStart, onDrag, onDragEnd, onContextMenu, onHoverLabel]);
 
     const markerRef = useRef<L.Marker>(null);
 
@@ -140,15 +146,17 @@ export const POPMarker = React.memo(({
             draggable={mode === 'move_node' && userRole !== 'MEMBER'}
             eventHandlers={eventHandlers}
         >
-            <Tooltip
-                direction="top"
-                offset={[0, -popSize / 2]}
-                opacity={1}
-                permanent={shouldShowPermanentLabel}
-                className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
-            >
-                {pop.name}
-            </Tooltip>
+            {!canvasLabelsActive && (
+                <Tooltip
+                    direction="top"
+                    offset={[0, -popSize / 2]}
+                    opacity={1}
+                    permanent={shouldShowPermanentLabel}
+                    className={`map-label${shouldShowPermanentLabel ? ' map-label--permanent' : ''}${isSelected ? ' map-label--selected' : ''}`}
+                >
+                    {pop.name}
+                </Tooltip>
+            )}
         </Marker>
     );
 });
