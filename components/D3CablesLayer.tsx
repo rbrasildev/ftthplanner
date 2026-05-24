@@ -400,15 +400,20 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             return !!target.closest(INTERACTIVE_SELECTORS);
         };
 
-        // Markers do canvas overlay (MarkersCanvasLayer) NÃO são elementos DOM,
-        // então o seletor acima não os pega. Quando esse hit-test responde com
-        // um id, o ponto está sobre um marker — cabo cede o evento pra ele.
-        // Usa padding extra (8px) pra dar à CTO uma zona de "no-cable" maior
-        // que o hit-test real do marker — clique perto da CTO não pega cabo.
+        // Markers de qualquer canvas overlay (CTOs, poles, etc.) NÃO são elementos
+        // DOM, então o seletor acima não os pega. Cada layer registra seu hit-test
+        // em `map._canvasMarkerHitTests`. Quando algum responde, o ponto está sobre
+        // um marker — cabo cede o evento.
+        // Padding extra (8px) dá ao marker zona de "no-cable" maior que o hit-test
+        // real — clique perto não pega cabo.
         const CABLE_EXCLUSION_PAD = 8;
         const isOnCanvasMarker = (containerPoint: L.Point): boolean => {
-            const fn = (map as any)._canvasMarkerHitTest as ((p: L.Point, pad?: number) => string | null) | undefined;
-            return !!fn?.(containerPoint, CABLE_EXCLUSION_PAD);
+            const reg = (map as any)._canvasMarkerHitTests as Set<(p: L.Point, pad?: number) => string | null> | undefined;
+            if (!reg) return false;
+            for (const fn of reg) {
+                if (fn(containerPoint, CABLE_EXCLUSION_PAD)) return true;
+            }
+            return false;
         };
 
         // Lazy-init reusable tooltip — one instance, opened/closed on hover.

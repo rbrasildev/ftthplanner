@@ -2,30 +2,23 @@ import React, { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import RBush from 'rbush';
-import { CTOData, CTO_STATUS_COLORS } from '../types';
+import { PoleData, PoleApprovalStatus, PoleSituation, POLE_APPROVAL_COLORS, POLE_SITUATION_COLORS } from '../types';
 
-export interface MarkerNode extends CTOData {
-    /** Override status color quando o estado de conectividade é conhecido. */
-    isOnline?: boolean;
-}
+export interface PoleNode extends PoleData {}
 
 interface Props {
-    ctos: MarkerNode[];
-    /** IDs que NÃO devem ser desenhados aqui — esperam um marker DOM separado
-     *  (selecionado, sendo arrastado, ou tipo especial CEO/condo). */
+    poles: PoleNode[];
+    /** IDs que NÃO devem ser desenhados aqui — esperam marker DOM (selecionado,
+     *  arrastando, modo drag). */
     excludeIds: Set<string>;
     selectedId: string | null;
-    litNodeIds: Set<string>;
-    /** Visível só quando o layer está ativo (toggle). */
     visible: boolean;
-    /** Modo do mapa — afeta clique (draw_cable etc.). */
     mode: string;
-    /** Quando true, hover/click são desabilitados — evita interceptar gestos
-     *  durante drag/ruler/etc. */
+    /** Desliga hover/click — usado durante drag/ruler. */
     interactive: boolean;
-    onClick: (e: any, ctoId: string) => void;
-    onContextMenu: (e: any, ctoId: string) => void;
-    onHover: (ctoId: string | null) => void;
+    onClick: (e: any, poleId: string) => void;
+    onContextMenu: (e: any, poleId: string) => void;
+    onHover: (poleId: string | null) => void;
 }
 
 interface HitEntry {
@@ -33,67 +26,54 @@ interface HitEntry {
     minY: number;
     maxX: number;
     maxY: number;
-    ctoId: string;
+    poleId: string;
     cx: number;
     cy: number;
     radius: number;
 }
 
-class MarkerRTree extends RBush<HitEntry> {}
-
-const darkenHex = (hex: string, factor = 0.7): string => {
-    const h = hex.startsWith('#') ? hex.substring(1, 7) : hex.substring(0, 6);
-    const r = Math.max(0, Math.round(parseInt(h.slice(0, 2), 16) * factor));
-    const g = Math.max(0, Math.round(parseInt(h.slice(2, 4), 16) * factor));
-    const b = Math.max(0, Math.round(parseInt(h.slice(4, 6), 16) * factor));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
+class PoleRTree extends RBush<HitEntry> {}
 
 const HIT_TOL_PX = 4;
+const POLE_BASE_SIZE = 9;
+
+const getApprovalColor = (approvalStatus?: PoleApprovalStatus, situation?: PoleSituation): string => {
+    if (situation === 'NEW') return POLE_SITUATION_COLORS.NEW;
+    if (approvalStatus && POLE_APPROVAL_COLORS[approvalStatus]) return POLE_APPROVAL_COLORS[approvalStatus];
+    return '#6b7280';
+};
 
 /**
- * Pinta CTOs comuns (CircleMarker) num único canvas overlay.
- *
- * Trade vs DOM por marker:
- *  - Sem reflow de DOM em zoom/pan → sem o "bounce" da animação.
- *  - Sem 500 nós SVG/divs → ~10x mais rápido em mapas densos.
- *  - Hit-test via R-tree (rbush), dispatch de eventos via map.on().
- *
- * O que continua em DOM (delegado pro caller):
- *  - Marker selecionado (animação pulse).
- *  - Marker sendo arrastado.
- *  - CEO/Condo (formato customizado).
+ * Mesma ideia do MarkersCanvasLayer, porém pra postes: pinta num canvas único
+ * com hit-test por R-tree. Visual idêntico ao PoleMarker (corpo wood/concrete
+ * + borda de status). Selecionado/dragging continuam em DOM pra preservar
+ * animação/handles do Leaflet.
  */
-export const MarkersCanvasLayer: React.FC<Props> = ({
-    ctos, excludeIds, selectedId, litNodeIds, visible, mode, interactive,
+export const PolesCanvasLayer: React.FC<Props> = ({
+    poles, excludeIds, selectedId, visible, mode, interactive,
     onClick, onContextMenu, onHover,
 }) => {
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const treeRef = useRef<MarkerRTree>(new MarkerRTree());
+    const treeRef = useRef<PoleRTree>(new PoleRTree());
     const hoveredIdRef = useRef<string | null>(null);
 
-    // Refs estáveis pra callbacks dentro do handler do map.on (que é registrado
-    // uma vez por ciclo de vida do layer).
     const onClickRef = useRef(onClick);
     const onContextMenuRef = useRef(onContextMenu);
     const onHoverRef = useRef(onHover);
     const interactiveRef = useRef(interactive);
-    const modeRef = useRef(mode);
     useEffect(() => { onClickRef.current = onClick; }, [onClick]);
     useEffect(() => { onContextMenuRef.current = onContextMenu; }, [onContextMenu]);
     useEffect(() => { onHoverRef.current = onHover; }, [onHover]);
     useEffect(() => { interactiveRef.current = interactive; }, [interactive]);
-    useEffect(() => { modeRef.current = mode; }, [mode]);
 
-    // Cria <canvas> no pane dedicado.
     useEffect(() => {
         if (!visible) return;
-        let pane = map.getPane('markers-canvas');
-        if (!pane) pane = map.createPane('markers-canvas');
-        // z=590 — abaixo do markerPane (600) pra que markers DOM selecionados
-        // fiquem acima dos canvas circles.
-        pane.style.zIndex = '590';
+        let pane = map.getPane('poles-canvas');
+        if (!pane) pane = map.createPane('poles-canvas');
+        // z=585 — abaixo do markers-canvas (590) pra postes ficarem debaixo
+        // de CTOs/POPs em sobreposição rara, mantendo a hierarquia visual.
+        pane.style.zIndex = '585';
         pane.style.pointerEvents = 'none';
 
         const canvas = document.createElement('canvas');
@@ -111,7 +91,6 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
         };
     }, [map, visible]);
 
-    // Draw + rebuild hit-test tree.
     useEffect(() => {
         if (!visible || !canvasRef.current) return;
         const canvas = canvasRef.current;
@@ -138,69 +117,60 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
             ctx.clearRect(0, 0, size.x, size.y);
 
             const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));
-            const radius = Math.round(9 * zoomScale);
+            const poleSize = Math.round(POLE_BASE_SIZE * zoomScale);
+            const radius = poleSize / 2;
+            const borderW = Math.max(1, 1.2 * zoomScale);
+            // Canvas stroke é CENTRADO no path (metade dentro, metade fora).
+            // DOM PoleMarker usa border-box (Tailwind preflight) — borda dentro
+            // do width. Pra bater o tamanho visível total = poleSize, o body
+            // precisa ser desenhado com raio = (poleSize - borderW) / 2 e a
+            // borda traçada nele (extent externo = poleSize / 2).
+            const bodyRadius = Math.max(0.5, (poleSize - borderW) / 2);
 
             const entries: HitEntry[] = [];
 
-            for (const cto of ctos) {
-                if (excludeIds.has(cto.id)) continue;
+            for (const pole of poles) {
+                if (excludeIds.has(pole.id)) continue;
 
-                const layerPoint = map.latLngToLayerPoint([cto.coordinates.lat, cto.coordinates.lng]);
+                const layerPoint = map.latLngToLayerPoint([pole.coordinates.lat, pole.coordinates.lng]);
                 const cx = layerPoint.x - mapTopLeft.x;
                 const cy = layerPoint.y - mapTopLeft.y;
 
-                // Cull fora do canvas com margem do raio + tol.
                 if (cx + radius < -HIT_TOL_PX || cx - radius > size.x + HIT_TOL_PX
                     || cy + radius < -HIT_TOL_PX || cy - radius > size.y + HIT_TOL_PX) continue;
 
-                // Mesma fórmula de cores do CTOMarker (pathOptions).
-                let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
-                if (cto.isOnline === true) statusColor = '#22c55e';
-                else if (cto.isOnline === false) statusColor = '#ef4444';
-                const fill = statusColor.substring(0, 7);
-                const isLit = litNodeIds.has(cto.id);
-                const isSelected = selectedId === cto.id;
-                const stroke = isLit ? '#f87171' : (isSelected ? '#22c55e' : darkenHex(fill));
-                const weight = (isLit || isSelected) ? 3 : 2;
+                // Mesma fórmula visual do PoleMarker.
+                const bodyColor = pole.type === 'wood' ? '#78350f' : '#57534e';
+                const isSelected = selectedId === pole.id;
+                const borderColor = isSelected ? '#f59e0b' : getApprovalColor(pole.approvalStatus, pole.situation);
 
-                // Fill circle.
-                ctx.globalAlpha = 0.85;
-                ctx.fillStyle = fill;
+                // Sombra leve simulando box-shadow do divIcon.
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetY = 1;
+                ctx.fillStyle = bodyColor;
                 ctx.beginPath();
-                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.arc(cx, cy, bodyRadius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
 
-                // Stroke border.
-                ctx.globalAlpha = 1;
-                ctx.strokeStyle = stroke;
-                ctx.lineWidth = weight;
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = borderW;
                 ctx.stroke();
-
-                // Glow pra lit (VFL).
-                if (isLit) {
-                    ctx.shadowColor = 'rgba(248,113,113,0.7)';
-                    ctx.shadowBlur = 6;
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                    ctx.shadowColor = 'transparent';
-                }
 
                 entries.push({
                     minX: cx - radius - HIT_TOL_PX,
                     minY: cy - radius - HIT_TOL_PX,
                     maxX: cx + radius + HIT_TOL_PX,
                     maxY: cy + radius + HIT_TOL_PX,
-                    ctoId: cto.id,
+                    poleId: pole.id,
                     cx, cy, radius,
                 });
             }
 
-            ctx.globalAlpha = 1;
-
-            // Rebuild tree (em coordenadas layer-relative ao topLeft do canvas).
-            // Como a tree usa as mesmas coordenadas que o mouse vai consultar
-            // (via containerPointToLayerPoint - mapTopLeft), o hit-test é direto.
-            const tree = new MarkerRTree();
+            const tree = new PoleRTree();
             tree.load(entries);
             treeRef.current = tree;
         };
@@ -225,9 +195,8 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
             map.off('viewreset', onMove);
             map.off('resize', onMove);
         };
-    }, [map, ctos, excludeIds, selectedId, litNodeIds, visible]);
+    }, [map, poles, excludeIds, selectedId, visible]);
 
-    // Hit-test + event delegation no container Leaflet.
     useEffect(() => {
         if (!visible) return;
 
@@ -244,7 +213,6 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
                 maxX: x + pad, maxY: y + pad,
             });
             if (hits.length === 0) return null;
-            // Múltiplos hits (markers sobrepostos): pega o mais próximo do centro.
             let bestId: string | null = null;
             let bestDistSq = Infinity;
             for (const h of hits) {
@@ -255,19 +223,13 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
                 const inside = d <= r * r;
                 if (inside && d < bestDistSq) {
                     bestDistSq = d;
-                    bestId = h.ctoId;
+                    bestId = h.poleId;
                 }
             }
             return bestId;
         };
 
-        // Registra o hit-test num Set compartilhado no map pra outros layers
-        // (D3CablesLayer) poderem ceder quando o ponto cai sobre QUALQUER
-        // marker de canvas (CTOs, poles, etc.). Set permite múltiplos canvas
-        // layers coexistirem sem um sobrescrever o outro.
-        // `extraPad` deixa o cabo usar uma zona de exclusão maior que o hit-test
-        // real do marker — a "área do marker" fica visualmente generosa sem
-        // interferir no clique preciso.
+        // Registra no Set compartilhado pra D3CablesLayer ceder o evento.
         const reg: Set<(p: L.Point, pad?: number) => string | null> =
             (map as any)._canvasMarkerHitTests || ((map as any)._canvasMarkerHitTests = new Set());
         reg.add(hitTest);
@@ -312,7 +274,6 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
             }
         };
 
-        // Capture-phase pra disparar antes do Leaflet ver e iniciar pan.
         container.addEventListener('mousemove', onMouseMove);
         container.addEventListener('mouseleave', onMouseLeave);
         container.addEventListener('click', onClickEvt, true);

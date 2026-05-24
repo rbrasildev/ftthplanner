@@ -47,7 +47,7 @@ const createPoleIcon = (
       <div style="
         position: relative;
         background-color: ${color};
-        border: ${Math.max(2, 2.5 * zoomScale)}px solid ${borderColor};
+        border: ${Math.max(1, 1.2 * zoomScale)}px solid ${borderColor};
         border-radius: 50%;
         width: ${size}px;
         height: ${size}px;

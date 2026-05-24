@@ -15,6 +15,7 @@ import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ru
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
 import { MarkersCanvasLayer } from './MarkersCanvasLayer';
+import { PolesCanvasLayer } from './PolesCanvasLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../services/customerService';
@@ -1172,6 +1173,8 @@ export const MapView: React.FC<MapViewProps> = ({
     // --- PERFORMANCE REFS (Stabilize Callbacks) ---
     const cablesRef = useRef(cables);
     useEffect(() => { cablesRef.current = cables; }, [cables]);
+    const polesRef = useRef(poles);
+    useEffect(() => { polesRef.current = poles; }, [poles]);
 
     // --- DRAG FEEDBACK STATE ---
     const [dragState, setDragState] = useState<{ isDragging: boolean, currentPosition: Coordinates | null, tetherPoints: Coordinates[] }>({
@@ -1523,6 +1526,16 @@ export const MapView: React.FC<MapViewProps> = ({
         renderableCTOs.map(c => ({ ...c, isOnline: ctoOnlineStatus[c.id] })),
         [renderableCTOs, ctoOnlineStatus]);
 
+    // Poles seguem o mesmo padrão. Em move_node, tudo vai pro DOM pra
+    // manter os drag handles do Leaflet.
+    const excludeFromCanvasPoles = useMemo(() => {
+        const set = new Set<string>();
+        if (mode === 'move_node') {
+            for (const p of renderablePoles) set.add(p.id);
+        }
+        return set;
+    }, [renderablePoles, mode]);
+
     // Pre-filter cables with reserves (new array format or legacy single)
     const cablesWithReserves = useMemo(() =>
         cables.filter(c => {
@@ -1651,6 +1664,28 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCanvasCTOContext = useCallback((e: any, id: string) => {
         if (mode === 'view') {
             handleNodeContextMenu({ originalEvent: e } as any, id, 'CTO');
+        }
+    }, [mode, handleNodeContextMenu]);
+
+    // Adaptadores pra PolesCanvasLayer. Replicam PoleMarker.eventHandlers
+    // pros poles que vão pro canvas (sem modo move_node).
+    const handleCanvasPoleClick = useCallback((_e: any, id: string) => {
+        if (mode === 'draw_cable') {
+            const isDrawingCable = drawingPath.length > 0;
+            if (!isDrawingCable && onCableStart) {
+                onCableStart(id);
+            } else if (isDrawingCable && onAddPoint) {
+                const pole = polesRef.current.find(p => p.id === id);
+                if (pole) onAddPoint(pole.coordinates.lat, pole.coordinates.lng);
+            }
+        } else if (mode === 'view') {
+            onNodeClick(id, 'Pole');
+        }
+    }, [mode, drawingPath.length, onCableStart, onAddPoint, onNodeClick]);
+
+    const handleCanvasPoleContext = useCallback((e: any, id: string) => {
+        if (mode === 'view') {
+            handleNodeContextMenu({ originalEvent: e } as any, id, 'Pole');
         }
     }, [mode, handleNodeContextMenu]);
 
@@ -2379,12 +2414,25 @@ export const MapView: React.FC<MapViewProps> = ({
                                 userRole={userRole}
                             />
                         ))}
-                        {renderablePoles.map(pole => (
+                        {/* Canvas overlay pra poles — mesma ideia das CTOs.
+                            Em move_node, todos voltam pro DOM (drag handles). */}
+                        <PolesCanvasLayer
+                            poles={renderablePoles}
+                            excludeIds={excludeFromCanvasPoles}
+                            selectedId={selectedId}
+                            visible={true}
+                            mode={mode}
+                            interactive={mode === 'view' || mode === 'draw_cable'}
+                            onClick={handleCanvasPoleClick}
+                            onContextMenu={handleCanvasPoleContext}
+                            onHover={handleHoverLabel}
+                        />
+                        {renderablePoles.filter(pole => excludeFromCanvasPoles.has(pole.id)).map(pole => (
                             <PoleMarker
                                 key={pole.id}
                                 pole={pole}
                                 isSelected={selectedId === pole.id}
-                                showLabels={effectiveShowLabels}
+                                showLabels={false /* canvas não mostra; DOM fallback (move_node) também não, pra evitar pop de tooltips ao trocar de modo */}
                                 mode={mode}
                                 currentZoom={currentZoom}
                                 onNodeClick={onNodeClick}
