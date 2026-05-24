@@ -64,9 +64,19 @@ export const SupportChatBubble: React.FC = () => {
     const [supportPhone, setSupportPhone] = useState('');
     const [companyLogo, setCompanyLogo] = useState('');
     const [myUserId, setMyUserId] = useState<string | null>(null);
+    // Contador de mensagens recebidas do agente enquanto o chat estava fechado
+    // ou minimizado. Aparece como bolinha vermelha sobre o ícone do bubble.
+    const [unreadCount, setUnreadCount] = useState(0);
     const { t } = useLanguage();
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // Refs pra ler estado atual dentro do handler do socket sem recriar conexão.
+    const isOpenRef = useRef(isOpen);
+    const isMinimizedRef = useRef(isMinimized);
+    const myUserIdRef = useRef(myUserId);
+    useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+    useEffect(() => { isMinimizedRef.current = isMinimized; }, [isMinimized]);
+    useEffect(() => { myUserIdRef.current = myUserId; }, [myUserId]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -117,7 +127,14 @@ export const SupportChatBubble: React.FC = () => {
             socketRef.current.on('connect', () => {
                 console.log('[SupportChat] Connected to WebSocket server');
                 checkAgents();
-                if (isOpen) loadHistory();
+                if (isOpen) {
+                    loadHistory();
+                } else {
+                    // Mesmo com chat fechado, entra na sala da conversa OPEN do
+                    // usuário pra receber `new_message` e atualizar o badge de
+                    // não lidas. Sem isso, mensagens só chegavam após abrir o chat.
+                    joinExistingConversation();
+                }
             });
 
             socketRef.current.on('agent_status_change', ({ status }: { status: string }) => {
@@ -128,16 +145,35 @@ export const SupportChatBubble: React.FC = () => {
                 setMessages(prev => {
                     if (prev.find(m => m.id === msg.id)) return prev;
 
-                    setIsOpen(true);
-                    setIsMinimized(false);
+                    // Race fix: msg otimista (`temp-…`) com mesmo sender+content
+                    // é substituída no lugar pra evitar duplicar.
+                    const tempIdx = prev.findIndex(m =>
+                        m.id.startsWith('temp-') &&
+                        m.senderId === msg.senderId &&
+                        m.content === msg.content
+                    );
+                    if (tempIdx >= 0) {
+                        const next = [...prev];
+                        next[tempIdx] = msg;
+                        return next;
+                    }
 
-                    // Play notification sound — arquivo local para evitar dependência externa
-                    try {
-                        const audio = new Audio('/sounds/notify.mp3');
-                        audio.volume = 0.5;
-                        audio.play().catch(() => { }); // ignora erro silenciosamente (e.g. autoplay bloqueado)
-                    } catch (e) {
-                        // Silent fail — não crítico
+                    // Mensagem nova de verdade. Decide se é do agente ou eco minha.
+                    const isMine = myUserIdRef.current && msg.senderId === myUserIdRef.current;
+                    const chatHidden = !isOpenRef.current || isMinimizedRef.current;
+
+                    if (!isMine) {
+                        // Som sempre que chega mensagem de agente.
+                        try {
+                            const audio = new Audio('/sounds/notify.mp3');
+                            audio.volume = 0.5;
+                            audio.play().catch(() => { });
+                        } catch (e) { /* não crítico */ }
+                        // Se o chat está escondido, conta como não lida em vez de
+                        // forçar abrir. Antes auto-abria, o que era intrusivo.
+                        if (chatHidden) {
+                            setUnreadCount(c => c + 1);
+                        }
                     }
 
                     return [...prev, msg];
@@ -171,12 +207,30 @@ export const SupportChatBubble: React.FC = () => {
         }
     };
 
-    // Load history when chat is opened
-    useEffect(() => {
-        if (isOpen && socketRef.current?.connected) {
-            loadHistory();
+    // Entra na sala da conversa OPEN do usuário sem precisar abrir o chat.
+    // Necessário pra receber `new_message` e mostrar o badge de não lidas.
+    const joinExistingConversation = async () => {
+        try {
+            const res = await api.get('/support/chat/conversations');
+            const activeConv = (res.data || []).find((c: any) => c.status === 'OPEN');
+            if (activeConv) {
+                setMyUserId(activeConv.user?.id || activeConv.userId || null);
+                socketRef.current?.emit('join_conversation', activeConv.id);
+            }
+        } catch (err) {
+            console.error("[SupportChat] Failed to join existing conversation", err);
         }
-    }, [isOpen]);
+    };
+
+    // Load history when chat is opened. Também zera o contador de não lidas.
+    useEffect(() => {
+        if (isOpen && !isMinimized) {
+            setUnreadCount(0);
+            if (socketRef.current?.connected) {
+                loadHistory();
+            }
+        }
+    }, [isOpen, isMinimized]);
 
     useEffect(() => {
         scrollToBottom();
@@ -252,8 +306,16 @@ export const SupportChatBubble: React.FC = () => {
                 if (messages.length === 0 || isClosed) {
                     socketRef.current?.emit('join_conversation', newMsg.conversationId);
                 }
-                // Replace temp message with real one
-                setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
+                // Substituição da temp é feita pelo handler do socket via match
+                // content+sender. Aqui só atua como fallback se nenhum dos dois
+                // estiver no array (socket caiu, etc).
+                setMessages(prev => {
+                    if (prev.find(m => m.id === newMsg.id)) return prev;
+                    if (prev.find(m => m.id === tempId)) {
+                        return prev.map(m => m.id === tempId ? newMsg : m);
+                    }
+                    return [...prev, newMsg];
+                });
             }
         } catch (err) {
             console.error("[SupportChat] Failed to send message", err);
@@ -277,9 +339,15 @@ export const SupportChatBubble: React.FC = () => {
                 className="fixed bottom-6 right-6 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-[3000] group"
             >
                 <MessageCircle className="w-7 h-7" />
-                {isAgentOnline && (
+                {/* Badge de não-lidas tem prioridade sobre o dot verde de "agente online".
+                    Quando o cliente abre o chat, o contador zera (useEffect acima). */}
+                {unreadCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-rose-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                ) : isAgentOnline ? (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-bounce shadow-sm" />
-                )}
+                ) : null}
             </button>
         );
     }

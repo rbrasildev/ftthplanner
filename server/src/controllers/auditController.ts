@@ -6,22 +6,37 @@ import logger from '../lib/logger';
 // Get Audit Logs
 export const getAuditLogs = async (req: AuthRequest, res: Response) => {
     try {
-        const { limit = 50, entity, action } = req.query;
+        const { limit = 50, skip = 0, entity, action, userId, from, to } = req.query;
 
         const where: any = {};
         if (entity) where.entity = String(entity);
         if (action) where.action = String(action);
+        if (userId) where.userId = String(userId);
+        if (from || to) {
+            where.createdAt = {};
+            if (from) where.createdAt.gte = new Date(String(from));
+            if (to) where.createdAt.lte = new Date(String(to));
+        }
 
-        const logs = await prisma.auditLog.findMany({
-            where,
-            include: {
-                user: {
-                    select: { username: true, role: true }
-                }
-            },
-            orderBy: { createdAt: 'desc' },
-            take: Number(limit)
-        });
+        const safeLimit = Math.min(Number(limit) || 50, 500);
+        const safeSkip = Math.max(Number(skip) || 0, 0);
+
+        // Roda total + página em paralelo. `total` permite o frontend mostrar
+        // "X de Y" e desabilitar "Carregar mais" quando atinge o fim.
+        const [total, logs] = await Promise.all([
+            prisma.auditLog.count({ where }),
+            prisma.auditLog.findMany({
+                where,
+                include: {
+                    user: {
+                        select: { username: true, role: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: safeLimit,
+                skip: safeSkip,
+            })
+        ]);
 
         // Resolve targetId → human name for display.
         // Audit details may carry { targetType: 'USER'|'COMPANY', targetId } —
@@ -67,7 +82,13 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
             return log;
         });
 
-        res.json(enriched);
+        // Backwards-compatible: o frontend antigo recebia o array direto.
+        // Quando o cliente envia `?paginated=1`, devolve envelope com total.
+        if (req.query.paginated) {
+            res.json({ items: enriched, total, skip: safeSkip, limit: safeLimit });
+        } else {
+            res.json(enriched);
+        }
     } catch (error: any) {
         logger.error(`Error fetching audit logs: ${error.message}`);
         res.status(500).json({ error: 'Failed to fetch audit logs' });

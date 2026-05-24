@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, ChevronDown, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon, FileDown } from 'lucide-react';
 import * as saasService from '../../services/saasService';
+import api from '../../services/api';
 import { isSubscriptionExpired, toBRDateMidnight } from '../../utils/subscriptionUtils';
 import { getEffectiveLimits } from '../../utils/limitsUtils';
 import { SaasAnalytics } from './SaasAnalytics';
@@ -13,6 +14,8 @@ import { ChangePasswordModal } from '../modals/ChangePasswordModal';
 import { SendTemplateModal } from './modals/SendTemplateModal';
 import { SaasRetentionIntelligence } from './SaasRetentionIntelligence';
 import { SupportAdminPanel } from './SupportAdminPanel';
+import { SaasAuditLogs } from './SaasAuditLogs';
+import { SaasDashboard } from './SaasDashboard';
 
 interface Company {
     id: string;
@@ -169,7 +172,7 @@ const CustomLimitsEditor: React.FC<{
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/30">
                 <button
                     onClick={() => setEditing(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-lg transition-colors"
                 >
                     <Settings className="w-3.5 h-3.5" />
                     Editar limites personalizados
@@ -197,7 +200,7 @@ const CustomLimitsEditor: React.FC<{
                                 value={values[key as string]}
                                 onChange={(e) => setValues(prev => ({ ...prev, [key as string]: e.target.value }))}
                                 placeholder={isUnlimited ? 'Ilimitado' : (planValue?.toString() ?? '—')}
-                                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                         </div>
                     );
@@ -207,7 +210,7 @@ const CustomLimitsEditor: React.FC<{
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex-1 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+                    className="flex-1 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50"
                 >
                     {saving ? 'Salvando...' : 'Salvar'}
                 </button>
@@ -297,7 +300,7 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
                 </h3>
                 <button
                     onClick={loadInvoices}
-                    className="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
+                    className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 flex items-center gap-1"
                 >
                     {loading ? <RefreshCw className="w-3 h-3 animate-spin" /> : expanded ? 'Ocultar' : 'Ver faturas'}
                 </button>
@@ -450,6 +453,31 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [planFilter, setPlanFilter] = useState('ALL');
     type QuickFilter = 'expiring' | 'overdue' | 'inactive' | 'trial' | null;
     const [quickFilter, setQuickFilter] = useState<QuickFilter>(null);
+    // Paginação client-side. Mais de ~50 empresas vira lista quilométrica sem isso.
+    const COMPANY_PAGE_SIZE = 25;
+    const [companiesVisible, setCompaniesVisible] = useState(COMPANY_PAGE_SIZE);
+    useEffect(() => { setCompaniesVisible(COMPANY_PAGE_SIZE); }, [searchTerm, statusFilter, planFilter, quickFilter]);
+
+    // Contador de conversas de suporte com mensagem pendente (última msg do
+    // cliente, não do admin). Polled a cada 30s pra alimentar o badge do menu.
+    const [unreadSupportCount, setUnreadSupportCount] = useState(0);
+    useEffect(() => {
+        let alive = true;
+        const compute = async () => {
+            try {
+                const res = await api.get('/support/chat/conversations');
+                if (!alive) return;
+                const count = (res.data || []).filter((c: any) =>
+                    c.status === 'OPEN' &&
+                    c.messages?.[0]?.senderId === c.userId
+                ).length;
+                setUnreadSupportCount(count);
+            } catch { /* silencioso — não bloqueia o admin */ }
+        };
+        compute();
+        const interval = setInterval(compute, 30000);
+        return () => { alive = false; clearInterval(interval); };
+    }, []);
 
     type SortColumn = 'name' | 'createdAt' | 'expiry' | 'financial' | 'lastActivity' | 'status';
     const [sortBy, setSortBy] = useState<{ column: SortColumn; direction: 'asc' | 'desc' }>({ column: 'createdAt', direction: 'desc' });
@@ -543,6 +571,20 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     // Formats the audit log `details` object into a human-readable line.
     // When the backend resolves targetId → targetName, we display the name
     // and hide the raw UUID; otherwise falls back to a compact key:value list.
+    // Helpers de formatação compartilhados pela tabela de empresas
+    // ────────────────────────────────────────────────────────────
+    const formatPhone = (raw?: string | null): string => {
+        if (!raw) return '';
+        const d = raw.replace(/\D/g, '');
+        if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+        if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+        return raw;
+    };
+    const STATUS_LABEL: Record<string, string> = {
+        ACTIVE: 'Ativa', TRIAL: 'Trial', SUSPENDED: 'Suspensa', CANCELLED: 'Cancelada', PAYMENT_FAILED: 'Pgto falhou',
+    };
+    const statusLabel = (s: string) => STATUS_LABEL[s] || s;
+
     const formatAuditDetails = (details: any): string => {
         if (!details || typeof details !== 'object') return 'Sem detalhes';
         const parts: string[] = [];
@@ -578,8 +620,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     };
 
     const filteredCompanies = companies.filter(company => {
-        const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            company.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase();
+        // Busca expandida: nome, id, CNPJ, email business, telefone, e usuário admin
+        // (primeira entrada de users). Sem isso, o admin tinha que abrir cada cartão
+        // pra cruzar dados pessoais com o registro.
+        const matchesSearch = !term ||
+            company.name.toLowerCase().includes(term) ||
+            company.id.toLowerCase().includes(term) ||
+            (company.cnpj || '').toLowerCase().includes(term) ||
+            (company.businessEmail || '').toLowerCase().includes(term) ||
+            (company.phone || '').toLowerCase().includes(term) ||
+            (company.users?.[0]?.username || '').toLowerCase().includes(term);
         const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
         const matchesPlan = planFilter === 'ALL' || company.plan?.id === planFilter;
 
@@ -724,7 +775,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             items: [
                 { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
                 { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
-                { id: 'support_chat', label: 'Suporte', icon: <MessageSquare className="w-5 h-5" /> },
+                { id: 'support_chat', label: 'Suporte', icon: <MessageSquare className="w-5 h-5" />, badge: unreadSupportCount },
             ]
         },
         {
@@ -748,8 +799,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const loadData = async () => {
         try {
             if (activeView === 'audit') {
-                const logs = await saasService.getAuditLogs({ limit: 50 });
-                setAuditLogs(logs);
+                // SaasAuditLogs gerencia o próprio fetch (com paginação e filtros).
+                // Pulamos aqui pra não desperdiçar uma chamada.
             } else if (activeView === 'users') {
                 const usersData = await saasService.getUsers();
                 setUsers(usersData);
@@ -1167,13 +1218,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         setIsCollapsed(newState);
                         localStorage.setItem('saasAdminSidebarCollapsed', String(newState));
                     }}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center shadow-md z-30 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center shadow-md z-30 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 transition-colors"
                 >
                     {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                 </button>
 
                 <div className={`p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700/30/50 overflow-hidden ${isCollapsed ? 'justify-center px-4' : ''}`}>
-                    <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-300 ${!saasConfig?.appLogoUrl ? 'bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white' : ''}`}>
+                    <div className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-300 ${!saasConfig?.appLogoUrl ? 'bg-emerald-600 shadow-lg shadow-emerald-600/20 text-white' : ''}`}>
                         {saasConfig?.appLogoUrl ? (
                             <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain" />
                         ) : (
@@ -1204,23 +1255,36 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             )}
 
                             {/* Items */}
-                            {section.items.map(item => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { setSelectedCompany(null); setActiveView(item.id as any); }}
-                                    title={isCollapsed ? item.label : ''}
-                                    className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-2.5'} ${activeView === item.id
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
-                                        }`}
-                                >
-                                    <span className={`shrink-0 transition-transform duration-200 ${activeView === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                        {item.icon}
-                                    </span>
-                                    {!isCollapsed && <span className="truncate">{item.label}</span>}
-                                    {activeView === item.id && !isCollapsed && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
-                                </button>
-                            ))}
+                            {section.items.map(item => {
+                                const badgeValue = (item as any).badge as number | undefined;
+                                const hasBadge = typeof badgeValue === 'number' && badgeValue > 0;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => { setSelectedCompany(null); setActiveView(item.id as any); }}
+                                        title={isCollapsed ? item.label : ''}
+                                        className={`w-full flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-2.5'} ${activeView === item.id
+                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                                            }`}
+                                    >
+                                        <span className={`shrink-0 transition-transform duration-200 relative ${activeView === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                            {item.icon}
+                                            {/* Bolinha vermelha pulsante quando colapsado — sinaliza badge sem texto. */}
+                                            {hasBadge && isCollapsed && (
+                                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white dark:ring-[#1a1d23] animate-pulse" />
+                                            )}
+                                        </span>
+                                        {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+                                        {!isCollapsed && hasBadge && (
+                                            <span className="min-w-[20px] h-5 px-1.5 bg-rose-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                                                {badgeValue > 99 ? '99+' : badgeValue}
+                                            </span>
+                                        )}
+                                        {activeView === item.id && !isCollapsed && !hasBadge && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                     ))}
                 </nav>
@@ -1276,234 +1340,24 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('saas_administrator')}</p>
                             <p className="text-xs text-slate-400">super@ftthmaster.com</p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold border-2 border-white dark:border-slate-700/30 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold border-2 border-white dark:border-slate-700/30 shadow-sm">
                             S
                         </div>
                     </div>
                 </header>
 
                 <div className="px-8 pb-12">
-                    {activeView === 'dashboard' && (() => {
-                        // Pre-compute dashboard stats (excludes trial from MRR)
-                        const isTrial = (c: Company) =>
-                            c.plan?.type === 'TRIAL' || c.plan?.name?.toLowerCase().includes('trial') || c.plan?.name?.toLowerCase().includes('teste');
-                        const isFree = (c: Company) =>
-                            !c.plan?.price || c.plan.price <= 0 || c.plan?.name?.toLowerCase().includes('grátis') || c.plan?.name?.toLowerCase().includes('free');
-                        const payingSubscribers = companies.filter(c =>
-                            c.status === 'ACTIVE' && !isTrial(c) && !isFree(c)
-                        );
-                        const trialCompanies = companies.filter(c =>
-                            isTrial(c) || c.status === 'TRIAL'
-                        );
-                        const suspendedCompanies = companies.filter(c => c.status === 'SUSPENDED');
-                        const mrr = payingSubscribers.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
-                        const totalOverdue = companies.reduce((acc, c) =>
-                            acc + ((c as any)._financial?.overdueTotal || 0), 0
-                        );
-
-                        return (
-                        <div className="space-y-8">
-                            {/* Stats Grid — 5 KPI cards */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                {/* Total Companies */}
-                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
-                                            <Building2 className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">{t('saas_total')}</span>
-                                    </div>
-                                    <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white">{companies.length}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">{t('saas_registered_companies')}</p>
-                                </div>
-
-                                {/* Paying Subscribers */}
-                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
-                                            <CheckCircle2 className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">Assinantes</span>
-                                    </div>
-                                    <h3 className="text-3xl font-extrabold text-emerald-600">{payingSubscribers.length}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">Pagando ativamente</p>
-                                </div>
-
-                                {/* Trial */}
-                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="p-2.5 bg-violet-50 dark:bg-violet-900/20 rounded-xl text-violet-600 dark:text-violet-400">
-                                            <Play className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">Em Trial</span>
-                                    </div>
-                                    <h3 className="text-3xl font-extrabold text-violet-600">{trialCompanies.length}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">Testando a plataforma</p>
-                                </div>
-
-                                {/* MRR — only paying subscribers */}
-                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600 dark:text-indigo-400">
-                                            <TrendingUp className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">MRR</span>
-                                    </div>
-                                    <h3 className="text-3xl font-extrabold text-indigo-600">R$ {mrr.toFixed(2)}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">Receita mensal recorrente</p>
-                                </div>
-
-                                {/* Suspended / Overdue */}
-                                <div className="bg-white dark:bg-[#1a1d23] p-5 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className={`p-2.5 rounded-xl ${suspendedCompanies.length > 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
-                                            <AlertTriangle className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-400 uppercase">Suspensos</span>
-                                    </div>
-                                    <h3 className={`text-3xl font-extrabold ${suspendedCompanies.length > 0 ? 'text-red-600' : 'text-slate-400'}`}>{suspendedCompanies.length}</h3>
-                                    {totalOverdue > 0 ? (
-                                        <p className="text-xs text-red-500 font-semibold mt-1">R$ {totalOverdue.toFixed(2)} em atraso</p>
-                                    ) : (
-                                        <p className="text-xs text-slate-500 mt-1">Nenhuma inadimplência</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Platform Health & Activity Feed */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Left Column: Health Metrics & Quick Actions */}
-                                <div className="space-y-6">
-                                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 p-6 shadow-sm">
-                                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                            <Activity className="w-5 h-5 text-indigo-500" />
-                                            {t('saas_platform_health')}
-                                        </h3>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-[#151820] rounded-xl">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                                                        <Zap className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-slate-500 uppercase">{t('saas_total_projects')}</p>
-                                                        <p className="font-bold text-slate-900 dark:text-white">{companies.reduce((acc, c) => acc + (c._count.projects || 0), 0)}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-[#151820] rounded-xl">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                                                        <Server className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-slate-500 uppercase">{t('saas_avg_size')}</p>
-                                                        <p className="font-bold text-slate-900 dark:text-white">
-                                                            {(companies.reduce((acc, c) => acc + (c._count.projects || 0), 0) / (companies.length || 1)).toFixed(1)} <span className="text-xs font-normal text-slate-400">{t('saas_proj_sub')}</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Capacity Alerts Section */}
-                                    {companies.filter(c => {
-                                        const p = getUsagePercentage(c._count.projects, c.plan?.limits?.maxProjects);
-                                        const u = getUsagePercentage(c._count.users, c.plan?.limits?.maxUsers);
-                                        const ct = getUsagePercentage(c._count.ctos || 0, c.plan?.limits?.maxCTOs);
-                                        return p > 80 || u > 80 || ct > 80;
-                                    }).length > 0 && (
-                                            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-500">
-                                                <h3 className="font-bold text-sm text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
-                                                    <AlertTriangle className="w-4 h-4" />
-                                                    {t('saas_capacity_alerts')}
-                                                </h3>
-                                                <div className="space-y-2">
-                                                    {companies.filter(c => {
-                                                        const p = getUsagePercentage(c._count.projects, c.plan?.limits?.maxProjects);
-                                                        const u = getUsagePercentage(c._count.users, c.plan?.limits?.maxUsers);
-                                                        const ct = getUsagePercentage(c._count.ctos || 0, c.plan?.limits?.maxCTOs);
-                                                        return p > 80 || u > 80 || ct > 80;
-                                                    }).slice(0, 5).map(c => (
-                                                        <div key={c.id} className="text-[11px] flex justify-between items-center bg-white/50 dark:bg-[#1a1d23]/50 p-2 rounded-lg group cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-amber-200" onClick={() => { setActiveView('companies'); setSelectedCompany(c); setCompanyDetailTab('overview'); }}>
-                                                            <span className="font-bold text-slate-700 dark:text-slate-200 truncate pr-2">{c.name}</span>
-                                                            <span className="shrink-0 text-[10px] text-amber-600 font-bold px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded">{t('saas_near_limit')}</span>
-                                                        </div>
-                                                    ))}
-                                                    <button onClick={() => setActiveView('companies')} className="w-full text-center text-[10px] text-amber-600 font-bold hover:underline mt-2">{t('saas_view_all_companies')} &rarr;</button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                    {/* Action Banner */}
-                                    <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => setActiveView('companies')}>
-                                        <div className="relative z-10">
-                                            <h3 className="font-bold text-lg mb-1">{t('saas_manage_companies')}</h3>
-                                            <p className="text-indigo-100 text-sm mb-4">{t('saas_manage_companies_sub')}</p>
-                                            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-bold transition-all">{t('saas_go_to_companies')} &rarr;</button>
-                                        </div>
-                                        <Building2 className="absolute -bottom-4 -right-4 w-32 h-32 text-indigo-500/30 group-hover:scale-110 transition-transform duration-500" />
-                                    </div>
-                                </div>
-
-                                {/* Right Column: Activity Feed */}
-                                <div className="lg:col-span-2 bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden flex flex-col">
-                                    <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700/30 flex justify-between items-center bg-slate-50/50 dark:bg-[#151820]/50">
-                                        <div>
-                                            <h3 className="font-bold text-lg">{t('saas_live_activity')}</h3>
-                                            <p className="text-xs text-slate-500">{t('saas_live_activity_sub')}</p>
-                                        </div>
-                                        <button onClick={() => setActiveView('audit')} className="text-xs text-indigo-600 hover:text-indigo-500 font-bold uppercase tracking-wider hover:underline">{t('saas_view_history')}</button>
-                                    </div>
-                                    <div className="flex-1 overflow-auto max-h-[400px] p-0">
-                                        {auditLogs.length === 0 ? (
-                                            <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-                                                <Activity className="w-12 h-12 mb-3 opacity-20" />
-                                                <p>{t('saas_no_recent_activity')}</p>
-                                            </div>
-                                        ) : (
-                                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                {auditLogs.map((log, idx) => (
-                                                    <div key={log.id || idx} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-4 items-start group">
-                                                        <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${log.action?.includes('CREATE') ? 'bg-emerald-100 text-emerald-600' :
-                                                            log.action?.includes('DELETE') ? 'bg-red-100 text-red-600' :
-                                                                log.action?.includes('UPDATE') ? 'bg-blue-100 text-blue-600' :
-                                                                    'bg-slate-100 text-slate-600'
-                                                            }`}>
-                                                            {log.action?.includes('CREATE') ? <Zap className="w-4 h-4" /> :
-                                                                log.action?.includes('DELETE') ? <Trash2 className="w-4 h-4" /> :
-                                                                    log.action?.includes('UPDATE') ? <RotateCcw className="w-4 h-4" /> :
-                                                                        <Activity className="w-4 h-4" />}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                                                                    <span className="font-bold">{log.user?.username || 'System'}</span>
-                                                                    <span className="text-slate-500 font-normal"> {log.action.toLowerCase().replace('_', ' ')} </span>
-                                                                    <span className="font-bold text-slate-700 dark:text-slate-300">{log.entity}</span>
-                                                                </p>
-                                                                <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
-                                                                    {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                                                                {formatAuditDetails(log.details)}
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-400 mt-1">
-                                                                {new Date(log.createdAt).toLocaleDateString()}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        );
-                    })()}
+                    {activeView === 'dashboard' && (
+                        <SaasDashboard
+                            companies={companies}
+                            onNavigate={(view, filter) => {
+                                setActiveView(view as any);
+                                if (filter?.status) setStatusFilter(filter.status);
+                                if (filter?.quickFilter) setQuickFilter(filter.quickFilter);
+                            }}
+                            onSelectCompany={(c) => { setActiveView('companies'); setSelectedCompany(c); setCompanyDetailTab('overview'); }}
+                        />
+                    )}
 
                     {activeView === 'companies' && !selectedCompany && (
                         <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
@@ -1515,14 +1369,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         placeholder={t('saas_search_company')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <select
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                        className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                                     >
                                         <option value="ALL">{t('saas_all_status')}</option>
                                         <option value="ACTIVE">{t('saas_active')}</option>
@@ -1532,7 +1386,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <select
                                         value={planFilter}
                                         onChange={(e) => setPlanFilter(e.target.value)}
-                                        className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                        className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-xs font-bold py-2 pl-3 pr-8 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                                     >
                                         <option value="ALL">{t('saas_all_plans')}</option>
                                         {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -1569,8 +1423,35 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </button>
                                     )}
                                 </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0 xl:ml-auto">
-                                    {t('saas_showing_results', { val: filteredCompanies.length })}
+                                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0 xl:ml-auto flex items-center gap-2">
+                                    <span>{t('saas_showing_results', { val: filteredCompanies.length })}</span>
+                                    <button
+                                        onClick={() => {
+                                            // Export do filtro atual em CSV. Aspas duplas escapadas; BOM
+                                            // pra Excel detectar UTF-8 e renderizar acentos certo.
+                                            const headers = ['Nome', 'CNPJ', 'Email', 'Telefone', 'Plano', 'Status', 'MRR', 'Vencimento', 'Projetos', 'Usuários', 'CTOs'];
+                                            const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+                                            const rows = sortedCompanies.map(c => [
+                                                c.name, c.cnpj || '', c.businessEmail || '', c.phone || '',
+                                                c.plan?.name || '', statusLabel(c.status), (c.plan?.price || 0).toFixed(2),
+                                                c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).toLocaleDateString('pt-BR') : '',
+                                                c._count.projects, c._count.users, c._count.ctos || 0,
+                                            ].map(esc).join(','));
+                                            const csv = '﻿' + [headers.map(esc).join(','), ...rows].join('\n');
+                                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `empresas_${new Date().toISOString().slice(0, 10)}.csv`;
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 hover:border-emerald-400 text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold transition-colors"
+                                        title="Exportar lista filtrada em CSV"
+                                    >
+                                        <FileDown className="w-3 h-3" />
+                                        CSV
+                                    </button>
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -1585,7 +1466,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <th className={`px-6 py-4 ${align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : ''}`}>
                                                             <button
                                                                 onClick={() => toggleSort(column)}
-                                                                className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                                                className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'hover:text-slate-700 dark:hover:text-slate-300'}`}
                                                             >
                                                                 {label}
                                                                 <span className="text-[10px] w-2.5">{arrow}</span>
@@ -1609,7 +1490,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {sortedCompanies.map(company => (
+                                        {sortedCompanies.slice(0, companiesVisible).map(company => (
                                             <tr key={company.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="min-w-0">
@@ -1624,23 +1505,54 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                                                     {email && <span title={email}>{email}</span>}
                                                                     {email && phone && <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>}
-                                                                    {phone && <span>{phone}</span>}
+                                                                    {phone && <span>{formatPhone(phone)}</span>}
                                                                 </div>
                                                             );
                                                         })()}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <select
-                                                        value={company.plan?.id || ''}
-                                                        onChange={(e) => handleCompanyUpdate(company.id, { planId: e.target.value })}
-                                                        className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg py-1.5 pl-3 pr-8 focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm disabled:opacity-50"
-                                                    >
-                                                        <option value="" disabled>Select Plan</option>
-                                                        {plans.map(p => (
-                                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                                        ))}
-                                                    </select>
+                                                    {(() => {
+                                                        // Wrapper estilizado: select nativo invisível por cima,
+                                                        // visual customizado (badge + chevron). Confirm modal antes
+                                                        // de persistir — evita troca de plano por engano.
+                                                        const currentPlan = plans.find(p => p.id === company.plan?.id);
+                                                        const isPaid = (currentPlan?.price || 0) > 0;
+                                                        return (
+                                                            <div className="relative inline-block group">
+                                                                <select
+                                                                    value={company.plan?.id || ''}
+                                                                    onChange={(e) => {
+                                                                        const newId = e.target.value;
+                                                                        if (!newId || newId === company.plan?.id) return;
+                                                                        const newPlan = plans.find(p => p.id === newId);
+                                                                        showConfirm(
+                                                                            'Trocar plano',
+                                                                            `Mudar "${company.name}" de "${currentPlan?.name || 'sem plano'}" para "${newPlan?.name || newId}"? Os limites de uso passam a valer imediatamente.`,
+                                                                            () => handleCompanyUpdate(company.id, { planId: newId }),
+                                                                            'info',
+                                                                        );
+                                                                    }}
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                    title="Alterar plano"
+                                                                >
+                                                                    <option value="" disabled>Selecionar plano</option>
+                                                                    {plans.map(p => (
+                                                                        <option key={p.id} value={p.id}>{p.name}{p.price ? ` — R$ ${p.price.toFixed(2)}` : ''}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm transition-all
+                                                                    ${isPaid
+                                                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 group-hover:border-emerald-400'
+                                                                        : 'bg-slate-50 dark:bg-[#22262e] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 group-hover:border-emerald-400'}`}
+                                                                >
+                                                                    <CreditCard className="w-3.5 h-3.5 opacity-60" />
+                                                                    <span>{currentPlan?.name || 'Selecionar'}</span>
+                                                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     {(() => {
@@ -1658,13 +1570,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                     value={dateValue}
                                                                     onChange={(e) => {
                                                                         const v = e.target.value;
-                                                                        if (!v) return;
+                                                                        if (!v || v === dateValue) return;
                                                                         // Persiste como fim do dia local pra evitar shift de fuso
                                                                         // (input retorna meia-noite, ISO em UTC pode "voltar" 1 dia).
                                                                         const local = new Date(`${v}T23:59:59`);
-                                                                        handleCompanyUpdate(company.id, { subscriptionExpiresAt: local.toISOString() });
+                                                                        const formattedNew = local.toLocaleDateString('pt-BR');
+                                                                        const formattedOld = company.subscriptionExpiresAt
+                                                                            ? new Date(company.subscriptionExpiresAt).toLocaleDateString('pt-BR')
+                                                                            : 'sem vencimento';
+                                                                        showConfirm(
+                                                                            'Alterar vencimento',
+                                                                            `Mudar o vencimento de "${company.name}" de ${formattedOld} para ${formattedNew}?`,
+                                                                            () => handleCompanyUpdate(company.id, { subscriptionExpiresAt: local.toISOString() }),
+                                                                            'info',
+                                                                        );
                                                                     }}
-                                                                    className={`bg-white dark:bg-[#151820] border rounded-lg text-xs font-bold py-1 px-2 focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm ${expired ? 'border-red-300 text-red-600' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
+                                                                    className={`bg-white dark:bg-[#151820] border rounded-lg text-xs font-bold py-1.5 px-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 cursor-pointer shadow-sm hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors ${expired ? 'border-red-300 text-red-600 dark:border-red-700' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
                                                                     title="Alterar data de vencimento"
                                                                 />
                                                                 {expired && (
@@ -1704,16 +1625,22 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         return (
                                                             <div className="w-40 space-y-1.5 mx-auto">
                                                                 <UsageBar
-                                                                    label="Projects"
+                                                                    label="Projetos"
                                                                     current={company._count.projects}
                                                                     max={eff.maxProjects}
-                                                                    color="bg-indigo-500"
+                                                                    color="bg-emerald-500"
                                                                 />
                                                                 <UsageBar
                                                                     label="CTOs"
                                                                     current={company._count.ctos || 0}
                                                                     max={eff.maxCTOs}
                                                                     color="bg-blue-500"
+                                                                />
+                                                                <UsageBar
+                                                                    label="Usuários"
+                                                                    current={company._count.users || 0}
+                                                                    max={eff.maxUsers}
+                                                                    color="bg-emerald-500"
                                                                 />
                                                             </div>
                                                         );
@@ -1741,7 +1668,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                             : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
                                                         }`}>
                                                         {company.status === 'ACTIVE' ? <CheckCircle2 className="w-3 h-3" /> : company.status === 'TRIAL' ? <Clock className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                                                        {company.status}
+                                                        {statusLabel(company.status)}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
@@ -1793,11 +1720,14 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         )}
                                                         <button
                                                             onClick={() => { setSelectedCompany(company); setCompanyDetailTab('overview'); }}
-                                                            className="text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
+                                                            className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition-colors"
                                                             title="Detalhes"
                                                         >
                                                             <Eye className="w-4 h-4" />
                                                         </button>
+                                                        {/* Divider visual antes da ação destrutiva — reduz risco de clique
+                                                            errado no Excluir colado nos botões de operação. */}
+                                                        <span className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
                                                         <button
                                                             onClick={() => handleCompanyDelete(company)}
                                                             className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
@@ -1812,6 +1742,17 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </tbody>
                                 </table>
                             </div>
+                            {sortedCompanies.length > companiesVisible && (
+                                <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-slate-50/50 dark:bg-[#151820]/50">
+                                    <span className="text-xs text-slate-500">Mostrando {companiesVisible} de {sortedCompanies.length}</span>
+                                    <button
+                                        onClick={() => setCompaniesVisible(c => c + COMPANY_PAGE_SIZE)}
+                                        className="px-3 py-1.5 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 hover:border-emerald-400 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors"
+                                    >
+                                        Carregar mais ({Math.min(COMPANY_PAGE_SIZE, sortedCompanies.length - companiesVisible)})
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )
                     }
@@ -1822,7 +1763,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 <div className="flex justify-end mb-6">
                                     <button
                                         onClick={() => openPlanModal()}
-                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
                                     >
                                         <CreditCard className="w-4 h-4" />
                                         Create New Plan
@@ -1830,9 +1771,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     {plans.map(plan => (
-                                        <div key={plan.id} className={`bg-white dark:bg-[#1a1d23] rounded-3xl p-8 border hover:shadow-2xl transition-all relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/10 scale-105 shadow-xl' : 'border-slate-200 dark:border-slate-700/30'}`}>
+                                        <div key={plan.id} className={`bg-white dark:bg-[#1a1d23] rounded-3xl p-8 border hover:shadow-2xl transition-all relative ${plan.isRecommended ? 'border-emerald-500 ring-4 ring-emerald-500/10 scale-105 shadow-xl' : 'border-slate-200 dark:border-slate-700/30'}`}>
                                             {plan.isRecommended && (
-                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+                                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
                                                     Most Popular
                                                 </div>
                                             )}
@@ -1845,7 +1786,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                                                    <button onClick={() => openPlanModal(plan)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors">
                                                         <Settings className="w-5 h-5" />
                                                     </button>
                                                     <button onClick={() => requestDeletePlan(plan)} title={t('saas_delete_plan')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-600 transition-colors">
@@ -1857,7 +1798,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <div className="space-y-4 mb-8">
                                                 <div className="p-4 bg-slate-50 dark:bg-[#151820]/50 rounded-2xl space-y-3">
                                                     <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                                                        <LayoutDashboard className="w-4 h-4 text-indigo-500" />
+                                                        <LayoutDashboard className="w-4 h-4 text-emerald-500" />
                                                         <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxProjects || 0) >= 999999 ? '∞' : plan.limits?.maxProjects || '∞'}</span> Max Projects
                                                     </div>
                                                     <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
@@ -1890,7 +1831,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Included Features:</p>
                                                                 {featuresList.map((feature: string, idx: number) => (
                                                                     <div key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                                                                        <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                                                         <span>{feature}</span>
                                                                     </div>
                                                                 ))}
@@ -1909,78 +1850,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     }
 
                     {
-                        activeView === 'audit' && (() => {
-                            const [auditSearch, setAuditSearch] = [searchTerm, setSearchTerm]; // Reuse searchTerm for audit
-                            const filteredLogs = auditLogs.filter(log => {
-                                if (!auditSearch) return true;
-                                const term = auditSearch.toLowerCase();
-                                return (log.user?.username || '').toLowerCase().includes(term)
-                                    || (log.action || '').toLowerCase().includes(term)
-                                    || (log.entity || '').toLowerCase().includes(term)
-                                    || JSON.stringify(log.details || {}).toLowerCase().includes(term);
-                            });
-                            return (
-                            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
-                                <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                    <div>
-                                        <h3 className="font-bold text-lg">{t('saas_audit_title')}</h3>
-                                        <p className="text-sm text-slate-500">{t('saas_audit_subtitle')}</p>
-                                    </div>
-                                    <div className="relative w-full sm:w-64">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Buscar por usuário, ação..."
-                                            value={auditSearch}
-                                            onChange={(e) => setAuditSearch(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="px-6 py-2 text-xs text-slate-400 border-b border-slate-100 dark:border-slate-700/30">
-                                    Exibindo {filteredLogs.length} de {auditLogs.length} registros
-                                </div>
-                                <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="bg-slate-50/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0">
-                                            <tr>
-                                                <th className="px-6 py-4">{t('saas_audit_time')}</th>
-                                                <th className="px-6 py-4">{t('saas_audit_user')}</th>
-                                                <th className="px-6 py-4">{t('saas_audit_action')}</th>
-                                                <th className="px-6 py-4">{t('saas_audit_entity')}</th>
-                                                <th className="px-6 py-4">{t('saas_audit_details')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                            {filteredLogs.map(log => (
-                                                <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                    <td className="px-6 py-4 text-slate-500 font-mono text-xs whitespace-nowrap">
-                                                        {new Date(log.createdAt).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-6 py-4 font-medium">
-                                                        {log.user?.username || t('saas_system')}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="px-2 py-1 bg-slate-100 dark:bg-[#22262e] rounded font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                            {log.action}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500">
-                                                        {log.entity} <span className="text-xs opacity-50">#{log.entityId?.slice(0, 6)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <code className="text-[10px] text-slate-500 bg-slate-50 dark:bg-[#151820] px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700/30 block w-full max-w-[260px] truncate" title={JSON.stringify(log.details)}>
-                                                            {formatAuditDetails(log.details)}
-                                                        </code>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            );
-                        })()
+                        activeView === 'audit' && <SaasAuditLogs />
                     }
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
@@ -2020,7 +1890,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.role === 'OWNER' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
                                                                 }`}>
                                                                 {user.username.slice(0, 2).toUpperCase()}
                                                             </div>
@@ -2085,7 +1955,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                                 setResetPasswordValue('');
                                                                 setResetPasswordError('');
                                                             }}
-                                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
                                                             title="Reset Password"
                                                         >
                                                             <RotateCcw className="w-4 h-4" />
@@ -2129,7 +1999,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => openVideoModal()}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
                                 >
                                     <Play className="w-4 h-4" />
                                     {t('saas_add_video')}
@@ -2152,7 +2022,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="p-2 bg-slate-100 dark:bg-[#22262e] rounded-lg">
-                                                            <Monitor className="w-5 h-5 text-indigo-500" />
+                                                            <Monitor className="w-5 h-5 text-emerald-500" />
                                                         </div>
                                                         <div>
                                                             <div className="font-bold">{video.title}</div>
@@ -2168,7 +2038,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex justify-end gap-2">
-                                                        <button onClick={() => openVideoModal(video)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                                        <button onClick={() => openVideoModal(video)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
                                                             <Settings className="w-4 h-4" />
                                                         </button>
                                                         <button onClick={() => showConfirm('Excluir Vídeo', `Deseja excluir o vídeo "${video.title}"?`, () => handleDeleteVideo(video.id))} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
@@ -2190,7 +2060,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 {/* SMTP Config */}
                                 <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden p-6">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl">
+                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl">
                                             <Server className="w-5 h-5" />
                                         </div>
                                         <h2 className="text-lg font-bold">{t('saas_smtp_title')}</h2>
@@ -2208,7 +2078,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
                                             <div className="flex items-end pb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input type="checkbox" name="secure" defaultChecked={smtpConfig?.secure} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                                    <input type="checkbox" name="secure" defaultChecked={smtpConfig?.secure} className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                                                     <span className="text-sm font-medium">{t('saas_smtp_secure')}</span>
                                                 </label>
                                             </div>
@@ -2230,7 +2100,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
                                         </div>
                                         <div className="flex gap-3 pt-4">
-                                            <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all">
+                                            <button type="submit" className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm shadow-lg shadow-emerald-600/20 transition-all">
                                                 {t('saas_save_settings')}
                                             </button>
                                             <button type="button" onClick={handleTestSmtp} className="px-4 py-2 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg font-bold text-sm transition-all">
@@ -2260,7 +2130,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     <CalendarClock className="w-4 h-4" />
                                                     {runningReminders ? 'Processando...' : 'Disparar Cobranças'}
                                                 </button>
-                                                <button onClick={() => openTemplateModal()} className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                                <button onClick={() => openTemplateModal()} className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
                                                     <Zap className="w-4 h-4" />
                                                 </button>
                                             </div>
@@ -2281,7 +2151,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         >
                                                             <Send className="w-4 h-4" />
                                                         </button>
-                                                        <button onClick={() => openTemplateModal(template)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                                        <button onClick={() => openTemplateModal(template)} className="p-2 text-slate-400 hover:text-emerald-600 transition-colors">
                                                             <Settings className="w-4 h-4" />
                                                         </button>
                                                         <button onClick={() => showConfirm('Excluir Template', `Deseja excluir o template "${template.name}"?`, () => handleDeleteTemplate(template.id))} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
@@ -2328,7 +2198,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     {activeView === 'config' && (
                         <div className="space-y-6 max-w-5xl">
                             {/* Hero header — gradient banner instead of plain card */}
-                            <div className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-emerald-600 via-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                                 <div className="absolute -right-8 -top-8 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
                                 <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
                                 <div className="relative flex items-center gap-4">
@@ -2337,7 +2207,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </div>
                                     <div>
                                         <h2 className="text-2xl font-bold">{t('saas_config_title')}</h2>
-                                        <p className="text-sm text-indigo-100/90 mt-0.5">{t('saas_config_subtitle')}</p>
+                                        <p className="text-sm text-emerald-100/90 mt-0.5">{t('saas_config_subtitle')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -2359,7 +2229,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.appName}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="Ex: FTTH Planner Pro"
                                         />
                                     </div>
@@ -2368,7 +2238,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.websiteUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="https://suaplataforma.com"
                                         />
                                     </div>
@@ -2443,7 +2313,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.supportEmail || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="suporte@suaplataforma.com"
                                         />
                                     </div>
@@ -2452,7 +2322,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.supportPhone || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="+55 (00) 00000-0000"
                                         />
                                     </div>
@@ -2476,7 +2346,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <textarea
                                             defaultValue={saasConfig?.appDescription || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20 resize-none"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all h-20 resize-none"
                                             placeholder="Planeje redes FTTH com facilidade..."
                                         />
                                     </div>
@@ -2485,7 +2355,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.appKeywords || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="ftth, projetos, fibra óptica, telecall"
                                         />
                                     </div>
@@ -2494,7 +2364,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.ogImageUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
                                         />
                                     </div>
@@ -2519,7 +2389,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
                                                 onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                                 placeholder={`https://${social.toLowerCase()}.com/perfil`}
                                             />
                                         </div>
@@ -2544,7 +2414,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.heroPreviewUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="/dashboard-preview.png"
                                         />
                                     </div>
@@ -2649,7 +2519,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             name="name"
                                             defaultValue={editingPlan?.name}
                                             required
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             placeholder="e.g. Pro, Enterprise"
                                         />
                                     </div>
@@ -2661,7 +2531,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             step="0.01"
                                             defaultValue={editingPlan?.price}
                                             required
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
@@ -2680,7 +2550,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         }
                                                     }
                                                 }}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             >
                                                 <option value="STANDARD">Standard (Paid)</option>
                                                 <option value="TRIAL">Trial (Free/Time Limited)</option>
@@ -2693,7 +2563,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 name="trialDurationDays"
                                                 type="number"
                                                 defaultValue={editingPlan?.trialDurationDays || 7}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             />
                                         </div>
                                     </div>
@@ -2704,7 +2574,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 name="mercadopagoId"
                                                 defaultValue={editingPlan?.mercadopagoId || ''}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
                                                 placeholder="e.g. 2c938084..."
                                             />
                                         </div>
@@ -2713,7 +2583,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 name="stripeId"
                                                 defaultValue={editingPlan?.stripeId || ''}
-                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
                                                 placeholder="e.g. price_1..."
                                             />
                                         </div>
@@ -2726,7 +2596,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             name="description"
                                             rows={2}
                                             defaultValue={editingPlan?.description || ''}
-                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             placeholder="Plan description..."
                                         />
                                     </div>
@@ -2769,7 +2639,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxProjects"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxProjects ?? ''}
-                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2778,7 +2648,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxUsers"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxUsers ?? ''}
-                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2787,7 +2657,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxCTOs"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxCTOs ?? ''}
-                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2796,7 +2666,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxPOPs"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxPOPs ?? ''}
-                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                         </div>
@@ -2808,7 +2678,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         type="checkbox"
                                                         name="isRecommended"
                                                         defaultChecked={editingPlan?.isRecommended}
-                                                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                                                     />
                                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Mark as Recommended Plan (Highlighted)</span>
                                                 </label>
@@ -2820,7 +2690,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     rows={4}
                                                     placeholder="24/7 Support&#10;Daily Backups&#10;Advanced Analytics"
                                                     defaultValue={editingPlan?.features?.join('\n')}
-                                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                                                 />
                                             </div>
                                         </div>
@@ -2836,7 +2706,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg shadow-indigo-600/20 transition-all"
+                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg shadow-emerald-600/20 transition-all"
                                     >
                                         Save Plan
                                     </button>
@@ -2888,7 +2758,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     </div>
                                     <div className="px-6 py-4 bg-slate-50 dark:bg-[#151820] border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
                                         <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
-                                        <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
+                                        <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
                                     </div>
                                 </form>
                             </div>
@@ -3033,7 +2903,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         {selectedCompany.businessEmail ? (
                                             <a
                                                 href={`mailto:${selectedCompany.businessEmail}`}
-                                                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:underline truncate block"
                                                 title={selectedCompany.businessEmail}
                                             >
                                                 {selectedCompany.businessEmail}
@@ -3049,7 +2919,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 href={selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:underline truncate block"
                                                 title={selectedCompany.website}
                                             >
                                                 {selectedCompany.website}
@@ -3076,7 +2946,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <button
                                         onClick={() => setCompanyDetailTab('overview')}
                                         className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${companyDetailTab === 'overview'
-                                            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                            ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                                             : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                     >
                                         <LayoutDashboard className="w-4 h-4" />
@@ -3085,7 +2955,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <button
                                         onClick={() => setCompanyDetailTab('financial')}
                                         className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 -mb-px transition-colors ${companyDetailTab === 'financial'
-                                            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                                            ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                                             : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                     >
                                         <Wallet className="w-4 h-4" />
@@ -3158,7 +3028,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 label="Projects"
                                                 current={selectedCompany._count.projects}
                                                 max={eff.maxProjects}
-                                                color="bg-indigo-500"
+                                                color="bg-emerald-500"
                                             />
                                             <UsageBar
                                                 label="Users"
@@ -3241,7 +3111,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
                                                             <Activity className="w-3 h-3" /> MRR
                                                         </div>
-                                                        <p className="text-sm font-black text-indigo-600">{fmtMoney(selectedCompany.plan?.price)}</p>
+                                                        <p className="text-sm font-black text-emerald-600">{fmtMoney(selectedCompany.plan?.price)}</p>
                                                     </div>
                                                     <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
                                                         <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
@@ -3344,7 +3214,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 {selectedCompany.users?.map(u => (
                                                     <div key={u.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg">
                                                         <div className="flex items-center gap-3 min-w-0">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${u.role === 'OWNER' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${u.role === 'OWNER' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                                                                 {u.username.slice(0, 2).toUpperCase()}
                                                             </div>
                                                             <div className="min-w-0">
@@ -3376,9 +3246,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </h3>
                                             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                                                 {selectedCompany.projects?.map(p => (
-                                                    <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg hover:border-indigo-300 transition-colors">
+                                                    <div key={p.id} className="flex items-center justify-between p-3 bg-white dark:bg-[#151820] border border-slate-100 dark:border-slate-700/30 rounded-lg hover:border-emerald-300 transition-colors">
                                                         <div className="flex items-center gap-3 min-w-0">
-                                                            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded shrink-0">
+                                                            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded shrink-0">
                                                                 <Network className="w-4 h-4" />
                                                             </div>
                                                             <p className="font-medium text-sm text-slate-900 dark:text-white truncate">{p.name}</p>
@@ -3532,7 +3402,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                                 <div className="p-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
                                     <button type="button" onClick={() => setIsTemplateModalOpen(false)} className="px-6 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">{t('saas_cancel')}</button>
-                                    <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/20">{t('saas_template_save')}</button>
+                                    <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20">{t('saas_template_save')}</button>
                                 </div>
                             </form>
                         </div>
@@ -3591,7 +3461,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                         <div className="bg-white dark:bg-[#1a1d23] rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden transform transition-all scale-100 p-6">
                             <div className="flex flex-col space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30">
+                                    <div className="p-3 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30">
                                         <RotateCcw className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -3608,7 +3478,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             setResetPasswordValue(e.target.value);
                                             setResetPasswordError('');
                                         }}
-                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         placeholder="Min. 6 characters"
                                         autoFocus
                                     />
@@ -3639,7 +3509,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         setResetPasswordValue('');
                                         setResetPasswordError('');
                                     }}
-                                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors"
+                                    className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors"
                                 >
                                     Reset Password
                                 </button>

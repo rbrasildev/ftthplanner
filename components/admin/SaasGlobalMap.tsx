@@ -12,26 +12,23 @@ L.Icon.Default.mergeOptions({
     shadowUrl: '/leaflet/images/marker-shadow.png',
 });
 
+// Dot pequeno indigo com borda branca — ocupa pouco espaço, suporta zoom out,
+// e empilha bem em regiões com muitas empresas (não polui o mapa).
 const ProjectIcon = L.divIcon({
     className: 'custom-project-icon',
     html: `
       <div style="
-        background-color: #6366f1;
-        border: 2px solid #ffffff;
-        border-radius: 4px;
-        width: 24px;
-        height: 24px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
-      </div>
+        background-color: #10b981;
+        border: 1.5px solid #ffffff;
+        border-radius: 50%;
+        width: 10px;
+        height: 10px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(16,185,129,0.2);
+      "></div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12]
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+    popupAnchor: [0, -6]
 });
 
 const MapResizeHandler = () => {
@@ -45,9 +42,25 @@ const MapResizeHandler = () => {
     return null;
 };
 
+type BaseLayer = 'street' | 'satellite';
+
+const BASE_LAYERS: Record<BaseLayer, { url: string; attribution: string; maxZoom?: number }> = {
+    street: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    },
+    satellite: {
+        // Esri World Imagery — tiles gratuitos, sem token, com cobertura mundial.
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Earthstar Geographics',
+        maxZoom: 19,
+    },
+};
+
 export const SaasGlobalMap: React.FC = () => {
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [baseLayer, setBaseLayer] = useState<BaseLayer>('street');
 
     useEffect(() => {
         const load = async () => {
@@ -76,12 +89,31 @@ export const SaasGlobalMap: React.FC = () => {
                 </div>
             </div>
 
+            {/* Base-layer toggle: Mapa (street) ↔ Satélite (Esri World Imagery). */}
+            <div className="absolute top-4 right-4 z-[1000] flex items-center gap-0.5 bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-sm rounded-lg border border-slate-200 dark:border-slate-700/30 shadow-lg p-1">
+                {([
+                    { id: 'street' as const, label: 'Mapa' },
+                    { id: 'satellite' as const, label: 'Satélite' },
+                ]).map(opt => (
+                    <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setBaseLayer(opt.id)}
+                        className={`px-3 py-1 text-[11px] font-bold rounded transition-colors ${baseLayer === opt.id ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
+                    >
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+
             <div className="flex-1 w-full relative">
                 <MapContainer center={[-23.5505, -46.6333]} zoom={4} scrollWheelZoom={true} style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <MapResizeHandler />
                     <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        key={baseLayer}
+                        attribution={BASE_LAYERS[baseLayer].attribution}
+                        url={BASE_LAYERS[baseLayer].url}
+                        maxZoom={BASE_LAYERS[baseLayer].maxZoom}
                     />
                     {projects.map(p => (
                         <Marker key={p.id} position={[p.centerLat, p.centerLng]} icon={ProjectIcon}>

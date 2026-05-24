@@ -117,6 +117,25 @@ export const SupportAdminPanel: React.FC = () => {
     const { t } = useLanguage();
     const socketRef = useRef<Socket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // ID do admin logado (decodificado do JWT) — usado pra distinguir "mensagem
+    // minha" das do usuário/outro admin. Antes a comparação era `!== 'admin'`,
+    // que nunca batia (senderId é UUID), então `isUnread` e o som de notificação
+    // ficavam sempre true.
+    const currentUserIdRef = useRef<string | null>(null);
+    if (currentUserIdRef.current === null) {
+        try {
+            const token = localStorage.getItem('ftth_support_token') || localStorage.getItem('ftth_planner_token_v1');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1] || ''));
+                currentUserIdRef.current = payload?.id || null;
+            }
+        } catch { /* token mal-formado, deixa null */ }
+    }
+    // Ref para selectedConv usada no handler de socket; evita re-criar conexão
+    // toda vez que o usuário troca de conversa (loose `selectedConv?.id` dep).
+    const selectedConvRef = useRef<Conversation | null>(null);
+    useEffect(() => { selectedConvRef.current = selectedConv; }, [selectedConv]);
+    const isFirstMessagesLoad = useRef(true);
 
     const formatRelativeTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -188,8 +207,10 @@ export const SupportAdminPanel: React.FC = () => {
         });
 
         socketRef.current.on('new_message', (msg: Message) => {
-            // Toca som apenas para mensagens do cliente (não do próprio admin)
-            if (msg.senderId !== 'admin') {
+            // Toca som apenas para mensagens que NÃO são minhas (admin atual).
+            // Antes comparava com a string 'admin', que nunca bate com o UUID
+            // real do senderId → sempre tocava som ao mandar mensagem.
+            if (msg.senderId !== currentUserIdRef.current) {
                 try {
                     const audio = new Audio('/sounds/notify.mp3');
                     audio.volume = 0.4;
@@ -200,9 +221,25 @@ export const SupportAdminPanel: React.FC = () => {
             }
 
             setMessages(prev => {
+                // Já recebida — evita duplicata em caso de re-emit.
                 if (prev.find(m => m.id === msg.id)) return prev;
-                if (selectedConv?.id === msg.conversationId) return [...prev, msg];
-                return prev;
+                // Não é da conversa aberta — ignora.
+                if (selectedConvRef.current?.id !== msg.conversationId) return prev;
+                // Race fix: se existe uma mensagem otimista (`temp-…`) com mesmo
+                // sender e mesmo conteúdo, substitui no lugar em vez de adicionar.
+                // Sem isso, a admin via duas mensagens (uma do POST response, outra
+                // do socket) toda vez que enviava.
+                const tempIdx = prev.findIndex(m =>
+                    m.id.startsWith('temp-') &&
+                    m.senderId === msg.senderId &&
+                    m.content === msg.content
+                );
+                if (tempIdx >= 0) {
+                    const next = [...prev];
+                    next[tempIdx] = msg;
+                    return next;
+                }
+                return [...prev, msg];
             });
 
             // Atualiza lista de conversas inline (sem chamada API extra)
@@ -224,7 +261,7 @@ export const SupportAdminPanel: React.FC = () => {
         });
 
         socketRef.current.on('conversation_closed', ({ conversationId }: { conversationId: string }) => {
-            if (selectedConv?.id === conversationId) {
+            if (selectedConvRef.current?.id === conversationId) {
                 setSelectedConv(null);
                 setMessages([]);
             }
@@ -241,11 +278,21 @@ export const SupportAdminPanel: React.FC = () => {
                 socketRef.current = null;
             }
         };
-    }, [selectedConv?.id]);
+        // Conexão socket única durante o ciclo de vida do componente.
+        // Trocar conversa usa `selectedConvRef.current` no callback (sempre fresh).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        // Primeira renderização da conversa: scroll instantâneo pra evitar
+        // animação longa em históricos grandes. Mensagens subsequentes (nova
+        // mensagem chegando) usam smooth.
+        const behavior: ScrollBehavior = isFirstMessagesLoad.current ? 'auto' : 'smooth';
+        isFirstMessagesLoad.current = false;
+        messagesEndRef.current?.scrollIntoView({ behavior });
     }, [messages]);
+    // Reseta o flag de primeira carga ao trocar de conversa
+    useEffect(() => { isFirstMessagesLoad.current = true; }, [selectedConv?.id]);
 
     const loadConversations = async () => {
         try {
@@ -289,6 +336,7 @@ export const SupportAdminPanel: React.FC = () => {
 
     const handleCloseTicket = async () => {
         if (!selectedConv) return;
+        if (!window.confirm(`Fechar conversa com "${selectedConv.user?.username}"? Ela ficará na aba "Resolvidas".`)) return;
         try {
             await api.post(`/support/chat/close/${selectedConv.id}`);
             setSelectedConv({ ...selectedConv, status: 'CLOSED' });
@@ -344,12 +392,14 @@ export const SupportAdminPanel: React.FC = () => {
         const content = reply.trim();
         const tempId = `temp-${Date.now()}`;
 
-        // Optimistic update only if we have a selected conversation
+        // Optimistic update only if we have a selected conversation.
+        // senderId precisa ser o UUID real do admin pro socket handler conseguir
+        // casar essa msg com a confirmada e substituir no lugar (sem duplicar).
         if (selectedConv) {
             const optimisticMsg: Message = {
                 id: tempId,
                 content: content,
-                senderId: 'admin',
+                senderId: currentUserIdRef.current || 'admin',
                 createdAt: new Date().toISOString(),
                 conversationId: selectedConv.id
             };
@@ -384,9 +434,17 @@ export const SupportAdminPanel: React.FC = () => {
                     setActiveTab('chats');
                 }
             } else if (selectedConv) {
-                // Replace temp message with real one
                 const newMsg = res.data;
-                setMessages(prev => prev.map(m => m.id === tempId ? newMsg : m));
+                // Caminho normal: socket chega antes ou logo após esta resposta e
+                // substitui o temp. Aqui só atua como fallback se nenhum dos dois
+                // estiver no array (ex: socket caiu).
+                setMessages(prev => {
+                    if (prev.find(m => m.id === newMsg.id)) return prev;        // socket já substituiu
+                    if (prev.find(m => m.id === tempId)) {                       // socket não chegou ainda
+                        return prev.map(m => m.id === tempId ? newMsg : m);
+                    }
+                    return [...prev, newMsg];                                    // raro: temp removido por outro motivo
+                });
             }
         } catch (err) {
             console.error("[AdminChat] Failed to send reply", err);
@@ -469,7 +527,10 @@ export const SupportAdminPanel: React.FC = () => {
                                 const isOnline = onlineUsers.has(conv.userId);
                                 const isClosed = conv.status === 'CLOSED';
                                 const lastMsg = conv.messages[0];
-                                const isUnread = lastMsg && lastMsg.senderId !== 'admin';
+                                // "Não lida" = última mensagem é do próprio dono da conversa
+                                // (o usuário cliente), não do admin. Antes comparava com a
+                                // string 'admin', que nunca batia → todas pareciam não-lidas.
+                                const isUnread = !isClosed && lastMsg && lastMsg.senderId === conv.userId;
 
                                 return (
                                     <button

@@ -41,6 +41,13 @@ export const getAuditLogs = async (params: any = {}) => {
     return response.data;
 };
 
+/** Envelope paginado: `{ items, total, skip, limit }`. Backend só devolve esse
+ *  shape quando `paginated=1` é enviado. */
+export const getAuditLogsPaged = async (params: { limit?: number; skip?: number; entity?: string; action?: string; userId?: string; from?: string; to?: string } = {}) => {
+    const response = await api.get('/audit', { params: { ...params, paginated: 1 } });
+    return response.data as { items: any[]; total: number; skip: number; limit: number };
+};
+
 export const getGlobalMapData = async () => {
     const response = await api.get('/saas/map-data');
     return response.data;

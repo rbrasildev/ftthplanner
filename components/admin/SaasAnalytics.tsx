@@ -1,22 +1,20 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import ReactApexChart from 'react-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import * as saasService from '../../services/saasService';
-import * as d3 from 'd3';
 import { useTheme } from '../../ThemeContext';
+
+// Emerald primário + tons distintos pros donuts e categorias.
+const PALETTE = ['#10b981', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+
+const fmtBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
 
 export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] }) => {
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { theme } = useTheme();
-
-    // Refs for D3
-    const growthChartRef = useRef<SVGSVGElement>(null);
-    const densityChartRef = useRef<SVGSVGElement>(null);
-    const plansChartRef = useRef<SVGSVGElement>(null);
-
-    // Calculate Infrastructure KPIs
-    const totalCTOs = companies.reduce((acc, c) => acc + (c._count?.ctos || 0), 0);
-    const totalPOPs = companies.reduce((acc, c) => acc + (c._count?.pops || 0), 0);
-    const totalRevenue = companies.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+    const isDark = theme === 'dark';
 
     useEffect(() => {
         const load = async () => {
@@ -32,205 +30,299 @@ export const SaasAnalytics: React.FC<{ companies?: any[] }> = ({ companies = [] 
         load();
     }, []);
 
-    useEffect(() => {
-        if (!loading && projects.length > 0) {
-            renderGrowthChart();
-            renderDensityChart();
+    // ── KPIs ────────────────────────────────────────────────────────────────
+    const kpis = useMemo(() => {
+        const isTrial = (c: any) => c.plan?.type === 'TRIAL' || c.plan?.name?.toLowerCase().includes('trial') || c.plan?.name?.toLowerCase().includes('teste');
+        const isFree = (c: any) => !c.plan?.price || c.plan.price <= 0 || c.plan?.name?.toLowerCase().includes('grátis') || c.plan?.name?.toLowerCase().includes('free');
+
+        const paying = companies.filter(c => c.status === 'ACTIVE' && !isTrial(c) && !isFree(c));
+        const trials = companies.filter(c => isTrial(c) || c.status === 'TRIAL');
+        const suspended = companies.filter(c => c.status === 'SUSPENDED');
+        const cancelled = companies.filter(c => c.status === 'CANCELLED');
+        const active = companies.filter(c => c.status === 'ACTIVE');
+
+        const mrr = paying.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+        const totalCTOs = companies.reduce((acc, c) => acc + (c._count?.ctos || 0), 0);
+        const totalPOPs = companies.reduce((acc, c) => acc + (c._count?.pops || 0), 0);
+        const totalUsers = companies.reduce((acc, c) => acc + (c._count?.users || 0), 0);
+        const totalProjects = companies.reduce((acc, c) => acc + (c._count?.projects || 0), 0);
+
+        const now = new Date();
+        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+        const monthOf = (d: string) => d?.slice(0, 7);
+        const thisMonthCount = companies.filter(c => monthOf(c.createdAt) === thisMonth).length;
+        const lastMonthCount = companies.filter(c => monthOf(c.createdAt) === lastMonth).length;
+        const momDelta = lastMonthCount === 0
+            ? (thisMonthCount > 0 ? 100 : 0)
+            : ((thisMonthCount - lastMonthCount) / lastMonthCount) * 100;
+
+        const expiringSoon = companies.filter(c => {
+            if (c.status !== 'ACTIVE' || !c.subscriptionExpiresAt) return false;
+            const days = (new Date(c.subscriptionExpiresAt).getTime() - Date.now()) / 86400000;
+            return days >= 0 && days <= 7;
+        });
+
+        return { paying, trials, suspended, cancelled, active, mrr, totalCTOs, totalPOPs, totalUsers, totalProjects, thisMonthCount, momDelta, expiringSoon };
+    }, [companies]);
+
+    // ── Theme base options compartilhado por todos os charts ───────────────
+    const baseOptions: Partial<ApexOptions> = useMemo(() => ({
+        chart: {
+            fontFamily: 'inherit',
+            foreColor: isDark ? '#94a3b8' : '#64748b',
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 400 },
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            style: { fontSize: '12px' },
+        },
+        grid: {
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            strokeDashArray: 3,
+        },
+        legend: {
+            fontSize: '11px',
+            labels: { colors: isDark ? '#cbd5e1' : '#475569' },
+            markers: { strokeWidth: 0 },
+            itemMargin: { horizontal: 6, vertical: 2 },
+        },
+    }), [isDark]);
+
+    // ── Plans donut ─────────────────────────────────────────────────────────
+    const planChart = useMemo(() => {
+        const map = new Map<string, number>();
+        companies.forEach(c => {
+            const k = c.plan?.name || 'Sem plano';
+            map.set(k, (map.get(k) || 0) + 1);
+        });
+        const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+        const labels = entries.map(([k]) => k);
+        const series = entries.map(([, v]) => v);
+        return { labels, series, total: series.reduce((a, b) => a + b, 0) };
+    }, [companies]);
+
+    // ── Status donut ────────────────────────────────────────────────────────
+    const statusChart = useMemo(() => {
+        const entries = [
+            { label: 'Ativas', value: kpis.active.length },
+            { label: 'Trial', value: kpis.trials.length },
+            { label: 'Suspensas', value: kpis.suspended.length },
+            { label: 'Canceladas', value: kpis.cancelled.length },
+        ].filter(d => d.value > 0);
+        return {
+            labels: entries.map(d => d.label),
+            series: entries.map(d => d.value),
+        };
+    }, [kpis]);
+
+    // ── Top 5 infra bar ─────────────────────────────────────────────────────
+    const topChart = useMemo(() => {
+        const top = [...companies]
+            .map(c => ({ name: c.name, infra: (c._count?.ctos || 0) + (c._count?.pops || 0) }))
+            .filter(d => d.infra > 0)
+            .sort((a, b) => b.infra - a.infra)
+            .slice(0, 5);
+        return {
+            categories: top.map(t => t.name),
+            data: top.map(t => t.infra),
+        };
+    }, [companies]);
+
+    // ── Growth line ────────────────────────────────────────────────────────
+    const growthChart = useMemo(() => {
+        const monthOf = (d: string) => d?.slice(0, 7);
+        const map = new Map<string, number>();
+        companies.forEach(c => {
+            const k = monthOf(c.createdAt);
+            if (k) map.set(k, (map.get(k) || 0) + 1);
+        });
+        const months = Array.from(map.keys()).sort();
+        if (months.length === 0) return { categories: [] as string[], cumulative: [] as number[], monthly: [] as number[] };
+
+        const start = new Date(months[0] + '-01');
+        const end = new Date(months[months.length - 1] + '-01');
+        const cats: string[] = [];
+        const monthlyArr: number[] = [];
+        const cumulativeArr: number[] = [];
+        let acc = 0;
+        for (let d = new Date(start); d <= end; d.setMonth(d.getMonth() + 1)) {
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const v = map.get(key) || 0;
+            acc += v;
+            cats.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+            monthlyArr.push(v);
+            cumulativeArr.push(acc);
         }
-    }, [loading, projects, theme]);
+        return { categories: cats, cumulative: cumulativeArr, monthly: monthlyArr };
+    }, [companies]);
 
-    const renderGrowthChart = () => {
-        if (!growthChartRef.current) return;
-        const svg = d3.select(growthChartRef.current);
-        svg.selectAll("*").remove();
+    if (loading) return <div className="h-64 flex items-center justify-center text-slate-400">Carregando dados...</div>;
 
-        const width = growthChartRef.current.clientWidth;
-        const height = growthChartRef.current.clientHeight;
-        const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+    const trendArrow = kpis.momDelta > 0 ? '↑' : kpis.momDelta < 0 ? '↓' : '→';
+    const trendClass = kpis.momDelta > 0 ? 'text-emerald-600 dark:text-emerald-400' : kpis.momDelta < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500';
 
-        // Process Data: Group by Month
-        const projectsByDate = d3.rollups(
-            projects,
-            v => v.length,
-            (d: any) => new Date(d.createdAt).toISOString().slice(0, 7) // YYYY-MM
-        ).sort((a, b) => a[0].localeCompare(b[0]));
+    // ─── chart options ──────────────────────────────────────────────────────
+    const donutBaseOptions = (labels: string[], total: number, centerLabel: string): ApexOptions => ({
+        ...baseOptions,
+        chart: { ...baseOptions.chart, type: 'donut' },
+        labels,
+        colors: PALETTE,
+        stroke: { width: 2, colors: [isDark ? '#1a1d23' : '#fff'] },
+        dataLabels: { enabled: false },
+        legend: { ...baseOptions.legend, position: 'bottom' },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '65%',
+                    labels: {
+                        show: true,
+                        name: { show: true, fontSize: '11px', color: isDark ? '#94a3b8' : '#64748b', offsetY: 14 },
+                        value: { show: true, fontSize: '24px', fontWeight: 700, color: isDark ? '#fff' : '#0f172a', offsetY: -10 },
+                        total: { show: true, label: centerLabel, fontSize: '11px', color: isDark ? '#94a3b8' : '#64748b', formatter: () => String(total) },
+                    },
+                },
+            },
+        },
+        tooltip: { ...baseOptions.tooltip, y: { formatter: (v) => `${v} empresa${v === 1 ? '' : 's'}` } },
+    });
 
-        // Fill gaps if needed, simplfied for now
-        const data = projectsByDate.map(([date, count]) => ({ date: new Date(date), count }));
-
-        const x = d3.scaleTime()
-            .domain(d3.extent(data, d => d.date) as [Date, Date])
-            .range([margin.left, width - margin.right]);
-
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.count) || 0])
-            .nice()
-            .range([height - margin.bottom, margin.top]);
-
-        // Line
-        const line = d3.line<any>()
-            .x(d => x(d.date))
-            .y(d => y(d.count))
-            .curve(d3.curveMonotoneX);
-
-        // Draw Axes
-        svg.append("g")
-            .attr("transform", `translate(0,${height - margin.bottom})`)
-            .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
-            .attr("color", theme === 'dark' ? '#94a3b8' : '#64748b');
-
-        svg.append("g")
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y).ticks(5))
-            .attr("color", theme === 'dark' ? '#94a3b8' : '#64748b')
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").clone()
-                .attr("x2", width - margin.left - margin.right)
-                .attr("stroke-opacity", 0.1));
-
-        // Draw Line
-        svg.append("path")
-            .datum(data)
-            .attr("fill", "none")
-            .attr("stroke", "#6366f1") // Indigo 500
-            .attr("stroke-width", 2)
-            .attr("d", line);
-
-        // Add dots
-        svg.selectAll("circle")
-            .data(data)
-            .join("circle")
-            .attr("cx", d => x(d.date))
-            .attr("cy", d => y(d.count))
-            .attr("r", 4)
-            .attr("fill", "#6366f1")
-            .attr("stroke", theme === 'dark' ? '#0f172a' : '#fff')
-            .attr("stroke-width", 2);
+    const barOptions: ApexOptions = {
+        ...baseOptions,
+        chart: { ...baseOptions.chart, type: 'bar' },
+        colors: ['#10b981'],
+        plotOptions: {
+            bar: { horizontal: true, borderRadius: 4, barHeight: '70%', dataLabels: { position: 'top' } },
+        },
+        dataLabels: {
+            enabled: true,
+            offsetX: 30,
+            style: { colors: [isDark ? '#cbd5e1' : '#334155'], fontSize: '11px', fontWeight: 700 },
+        },
+        xaxis: { categories: topChart.categories, labels: { style: { fontSize: '10px' } } },
+        yaxis: { labels: { style: { fontSize: '11px' } } },
+        tooltip: { ...baseOptions.tooltip, y: { formatter: (v) => `${v} elementos` } },
     };
 
-    const renderDensityChart = () => {
-        if (!densityChartRef.current) return;
-        const svg = d3.select(densityChartRef.current);
-        svg.selectAll("*").remove();
-
-        const width = densityChartRef.current.clientWidth;
-        const height = densityChartRef.current.clientHeight;
-        const margin = { top: 20, right: 30, bottom: 30, left: 100 };
-
-        // Process Data: Top 5 Companies
-        const companyCounts = d3.rollups(
-            projects,
-            v => v.length,
-            (d: any) => d.company?.name || 'Unknown'
-        )
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // Start with Top 5
-
-        const x = d3.scaleLinear()
-            .domain([0, d3.max(companyCounts, d => d[1]) || 0])
-            .nice()
-            .range([margin.left, width - margin.right]);
-
-        const y = d3.scaleBand()
-            .domain(companyCounts.map(d => d[0]))
-            .range([margin.top, height - margin.bottom])
-            .padding(0.3);
-
-        // Draw Axes
-        svg.append("g")
-            .attr("transform", `translate(0,${height - margin.bottom})`)
-            .call(d3.axisBottom(x).ticks(5))
-            .attr("color", theme === 'dark' ? '#94a3b8' : '#64748b');
-
-        svg.append("g")
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y))
-            .attr("color", theme === 'dark' ? '#94a3b8' : '#64748b')
-            .call(g => g.select(".domain").remove());
-
-        // Draw Bars
-        svg.selectAll("rect")
-            .data(companyCounts)
-            .join("rect")
-            .attr("x", margin.left)
-            .attr("y", d => y(d[0])!)
-            .attr("width", d => x(d[1]) - margin.left)
-            .attr("height", y.bandwidth())
-            .attr("fill", "#10b981") // Emerald 500
-            .attr("rx", 4);
-
-        // Add Labels Inside Bars (if wide enough)
-        svg.selectAll(".label")
-            .data(companyCounts)
-            .join("text")
-            .filter(d => x(d[1]) - margin.left > 20)
-            .attr("x", d => x(d[1]) - 5)
-            .attr("y", d => y(d[0])! + y.bandwidth() / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "end")
-            .text(d => d[1])
-            .attr("fill", "#fff")
-            .attr("font-size", "10px")
-            .attr("font-weight", "bold");
+    const growthOptions: ApexOptions = {
+        ...baseOptions,
+        chart: { ...baseOptions.chart, type: 'area', stacked: false, zoom: { enabled: false } },
+        colors: ['#10b981', '#10b981'],
+        stroke: { curve: 'smooth', width: [3, 0] },
+        fill: {
+            type: ['gradient', 'solid'],
+            gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 100] },
+            opacity: [0.35, 0.7],
+        },
+        dataLabels: { enabled: false },
+        xaxis: { categories: growthChart.categories, labels: { style: { fontSize: '10px' } } },
+        yaxis: [
+            { title: { text: 'Acumulado', style: { fontSize: '10px', fontWeight: 600 } }, labels: { style: { fontSize: '10px' } } },
+            { opposite: true, title: { text: 'No mês', style: { fontSize: '10px', fontWeight: 600 } }, labels: { style: { fontSize: '10px' } } },
+        ],
+        legend: { ...baseOptions.legend, position: 'top', horizontalAlign: 'right' },
+        markers: { size: [4, 0], strokeWidth: 0 },
     };
-
-    if (loading) return <div className="h-64 flex items-center justify-center text-slate-400">Loading map data...</div>;
 
     return (
         <div className="space-y-6">
-            {/* Infrastructure KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-                    <p className="text-indigo-100 text-sm font-medium mb-1">Total Infrastructure</p>
-                    <h3 className="text-3xl font-bold flex items-baseline gap-2">
-                        {totalCTOs} <span className="text-sm opacity-70">CTOs</span>
-                    </h3>
-                    <div className="mt-2 text-xs text-indigo-100 flex items-center gap-1">
-                        Managed across {companies.length} companies
-                    </div>
+            {/* KPI Row */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="col-span-2 md:col-span-3 lg:col-span-2 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+                    <p className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">MRR</p>
+                    <h3 className="text-3xl font-extrabold">{fmtBRL(kpis.mrr)}</h3>
+                    <p className="text-xs text-emerald-100 mt-1">{kpis.paying.length} {kpis.paying.length === 1 ? 'pagante' : 'pagantes'}</p>
                 </div>
-                <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Global POPs</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                        {totalPOPs}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">Points of Presence</p>
-                </div>
-                <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-6 border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Monthly Revenue</p>
-                    <h3 className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                        ${totalRevenue.toFixed(2)}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">Est. based on plans</p>
-                </div>
+
+                <Kpi label="Empresas ativas" value={kpis.active.length} sub={`${companies.length} total`} accent="emerald" />
+                <Kpi label="Em trial" value={kpis.trials.length} sub="convertem em até 30 dias" accent="amber" />
+                <Kpi label="Suspensas" value={kpis.suspended.length} sub={kpis.expiringSoon.length > 0 ? `${kpis.expiringSoon.length} expiram em 7d` : 'Sem alertas'} accent={kpis.suspended.length > 0 ? 'rose' : 'slate'} />
+                <Kpi label="Novas no mês" value={kpis.thisMonthCount} sub={<span className={trendClass}>{trendArrow} {fmtPct(kpis.momDelta)} vs mês anterior</span>} accent="emerald" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Plan Distribution Chart */}
-                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                    <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Plan Distribution</h3>
-                    <div className="h-64 w-full">
-                        <svg ref={plansChartRef} width="100%" height="100%"></svg>
-                    </div>
-                </div>
-
-                {/* Growth Chart */}
-                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                    <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Network Growth (Projects)</h3>
-                    <div className="h-64 w-full">
-                        <svg ref={growthChartRef} width="100%" height="100%"></svg>
-                    </div>
-                </div>
-
-                {/* Density Chart */}
-                <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
-                    <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4">Top Companies</h3>
-                    <div className="h-64 w-full">
-                        <svg ref={densityChartRef} width="100%" height="100%"></svg>
-                    </div>
-                </div>
+            {/* Charts Row 1 — donuts + bar */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ChartCard title="Distribuição por plano" subtitle="Quantas empresas em cada plano">
+                    {planChart.total > 0 ? (
+                        <ReactApexChart options={donutBaseOptions(planChart.labels, planChart.total, 'empresas')} series={planChart.series} type="donut" height={280} />
+                    ) : <Empty />}
+                </ChartCard>
+                <ChartCard title="Status das empresas" subtitle="Distribuição por status atual">
+                    {statusChart.series.length > 0 ? (
+                        <ReactApexChart options={donutBaseOptions(statusChart.labels, statusChart.series.reduce((a, b) => a + b, 0), 'total')} series={statusChart.series} type="donut" height={280} />
+                    ) : <Empty />}
+                </ChartCard>
+                <ChartCard title="Top 5 — infraestrutura" subtitle="Empresas com mais CTOs + POPs">
+                    {topChart.data.length > 0 ? (
+                        <ReactApexChart options={barOptions} series={[{ name: 'Infraestrutura', data: topChart.data }]} type="bar" height={280} />
+                    ) : <Empty />}
+                </ChartCard>
             </div>
 
+            {/* Charts Row 2 — growth */}
+            <div className="grid grid-cols-1 gap-6">
+                <ChartCard title="Crescimento de empresas" subtitle="Acumulado e novas por mês">
+                    {growthChart.categories.length > 0 ? (
+                        <ReactApexChart
+                            options={growthOptions}
+                            series={[
+                                { name: 'Acumulado', type: 'area', data: growthChart.cumulative },
+                                { name: 'Novas no mês', type: 'column', data: growthChart.monthly },
+                            ]}
+                            height={320}
+                        />
+                    ) : <Empty />}
+                </ChartCard>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <MiniStat label="Total de CTOs" value={kpis.totalCTOs.toLocaleString('pt-BR')} />
+                <MiniStat label="Total de POPs" value={kpis.totalPOPs.toLocaleString('pt-BR')} />
+                <MiniStat label="Usuários" value={kpis.totalUsers.toLocaleString('pt-BR')} />
+                <MiniStat label="Projetos" value={kpis.totalProjects.toLocaleString('pt-BR')} />
+            </div>
         </div>
     );
 };
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+const Kpi: React.FC<{ label: string; value: number | string; sub?: React.ReactNode; accent?: 'emerald' | 'amber' | 'rose' | 'slate' }> = ({ label, value, sub, accent = 'slate' }) => {
+    const accentMap: Record<string, string> = {
+        emerald: 'text-emerald-600 dark:text-emerald-400',
+        amber: 'text-amber-600 dark:text-amber-400',
+        rose: 'text-rose-600 dark:text-rose-400',
+        slate: 'text-slate-900 dark:text-white',
+    };
+    return (
+        <div className="bg-white dark:bg-[#1a1d23] rounded-2xl p-5 border border-slate-200 dark:border-slate-700/30 shadow-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{label}</p>
+            <h3 className={`text-2xl font-extrabold ${accentMap[accent]}`}>{value}</h3>
+            {sub && <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{sub}</div>}
+        </div>
+    );
+};
+
+const MiniStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <div className="bg-white dark:bg-[#1a1d23] rounded-xl p-4 border border-slate-200 dark:border-slate-700/30">
+        <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider">{label}</p>
+        <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{value}</p>
+    </div>
+);
+
+const ChartCard: React.FC<{ title: string; subtitle?: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
+    <div className="bg-white dark:bg-[#1a1d23] p-6 rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm">
+        <div className="mb-3">
+            <h3 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{title}</h3>
+            {subtitle && <p className="text-[11px] text-slate-500 dark:text-slate-400">{subtitle}</p>}
+        </div>
+        {children}
+    </div>
+);
+
+const Empty: React.FC = () => (
+    <div className="h-64 flex items-center justify-center text-slate-400 text-sm">Sem dados</div>
+);
