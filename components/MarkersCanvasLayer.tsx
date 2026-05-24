@@ -311,18 +311,30 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
                 onContextMenuRef.current(e, id);
             }
         };
+        // Stopa dblclick em cima de marker pra não disparar o doubleClickZoom
+        // default do Leaflet. App.handleNodeClick já detecta duplo-click via
+        // intervalo entre clicks; aqui só preciso barrar o zoom.
+        const onDblClickEvt = (e: MouseEvent) => {
+            if (!interactiveRef.current) return;
+            if (hitTest(getContainerPoint(e))) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
 
         // Capture-phase pra disparar antes do Leaflet ver e iniciar pan.
         container.addEventListener('mousemove', onMouseMove);
         container.addEventListener('mouseleave', onMouseLeave);
         container.addEventListener('click', onClickEvt, true);
         container.addEventListener('contextmenu', onContextEvt, true);
+        container.addEventListener('dblclick', onDblClickEvt, true);
 
         return () => {
             container.removeEventListener('mousemove', onMouseMove);
             container.removeEventListener('mouseleave', onMouseLeave);
             container.removeEventListener('click', onClickEvt, true);
             container.removeEventListener('contextmenu', onContextEvt, true);
+            container.removeEventListener('dblclick', onDblClickEvt, true);
             container.style.cursor = '';
             (map as any)._canvasMarkerHitTests?.delete(hitTest);
         };

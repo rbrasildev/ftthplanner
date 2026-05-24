@@ -112,6 +112,10 @@ export const POPMarker = React.memo(({
                 onContextMenu(e, pop.id, 'POP');
             }
         },
+        dblclick: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+        },
         dragstart: () => onDragStart(pop.id),
         drag: (e: any) => {
             const pos = e.target.getLatLng();

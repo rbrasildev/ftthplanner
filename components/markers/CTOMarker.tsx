@@ -197,6 +197,11 @@ export const CTOMarker = React.memo(({
                 onContextMenu(e, cto.id, 'CTO');
             }
         },
+        // Stopa dblclick pra não disparar doubleClickZoom default do Leaflet.
+        dblclick: (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+        },
         dragstart: () => onDragStart(cto.id),
         drag: (e: any) => {
             const pos = e.target.getLatLng();

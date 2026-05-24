@@ -273,17 +273,27 @@ export const PolesCanvasLayer: React.FC<Props> = ({
                 onContextMenuRef.current(e, id);
             }
         };
+        // Barra dblclick em cima de marker pra não disparar doubleClickZoom.
+        const onDblClickEvt = (e: MouseEvent) => {
+            if (!interactiveRef.current) return;
+            if (hitTest(getContainerPoint(e))) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
 
         container.addEventListener('mousemove', onMouseMove);
         container.addEventListener('mouseleave', onMouseLeave);
         container.addEventListener('click', onClickEvt, true);
         container.addEventListener('contextmenu', onContextEvt, true);
+        container.addEventListener('dblclick', onDblClickEvt, true);
 
         return () => {
             container.removeEventListener('mousemove', onMouseMove);
             container.removeEventListener('mouseleave', onMouseLeave);
             container.removeEventListener('click', onClickEvt, true);
             container.removeEventListener('contextmenu', onContextEvt, true);
+            container.removeEventListener('dblclick', onDblClickEvt, true);
             container.style.cursor = '';
             (map as any)._canvasMarkerHitTests?.delete(hitTest);
         };
