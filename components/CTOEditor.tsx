@@ -1189,7 +1189,36 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         setLitPorts(incomingLitPorts);
     }, [incomingLitPorts]);
 
+    // Forward-ref: handleSmartAlignCable é declarado abaixo. Permite que
+    // handleSmartAlignConnection delegue pra ele sem TDZ.
+    const smartAlignCableForwardRef = useRef<((cableId: string) => void) | null>(null);
+
     const handleSmartAlignConnection = useCallback((connId: string) => {
+        // Quando essa conexão faz parte de um grupo (várias fibras do mesmo
+        // cabo indo pro mesmo destino), delega pro alinhamento de CABO. Ele já
+        // espaça lanes em 12px uniformes via LANE_SPACING. Sem isso, ciclar
+        // shape em cada conexão individualmente produz midX/thirdX idênticos
+        // pras N conexões → todas no mesmo bend column → empilhamento.
+        const triggerConn = localCTORef.current.connections.find(c => c.id === connId);
+        if (triggerConn) {
+            const extractCableId = (portId: string) => {
+                const i = portId.indexOf('-fiber-');
+                return i >= 0 ? portId.slice(0, i) : null;
+            };
+            const srcCable = extractCableId(triggerConn.sourceId);
+            const tgtCable = extractCableId(triggerConn.targetId);
+            const siblings = localCTORef.current.connections.filter(c => {
+                const cs = extractCableId(c.sourceId);
+                const ct = extractCableId(c.targetId);
+                return cs === srcCable && ct === tgtCable;
+            });
+            const cableForAlign = srcCable || tgtCable;
+            if (siblings.length > 1 && cableForAlign && smartAlignCableForwardRef.current) {
+                smartAlignCableForwardRef.current(cableForAlign);
+                return;
+            }
+        }
+
         setLocalCTO(prev => ({
             ...prev,
             connections: prev.connections.map(c => {
@@ -1457,14 +1486,28 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         shapePoints = [{ x: p1.x, y: p2.y }];
                         break;
                     case 3: { // Uniform Z horizontal — each fiber gets its own turn column
+                        // Detecta o lado "own" (do cableId) e atribui lanes pro
+                        // fiber idx 0 (topo) ficar CLOSEST a own. Sem isso, em
+                        // cabos do lado direito do splitter, as lanes ficam ao
+                        // contrário e os horizontais do topo do painel cruzam
+                        // os verticais dos cabos abaixo. Resultado: entrelaçado.
                         const baseMidX = (avgSourceX + avgTargetX) / 2;
-                        const turnX = baseMidX + (idx - center) * LANE_SPACING;
+                        const ownIsRight = c.sourceId.startsWith(cableId)
+                            ? p1.x > p2.x
+                            : p2.x > p1.x;
+                        const dirSign = ownIsRight ? 1 : -1;
+                        const turnX = baseMidX + dirSign * (center - idx) * LANE_SPACING;
                         shapePoints = [{ x: turnX, y: p1.y }, { x: turnX, y: p2.y }];
                         break;
                     }
                     case 4: { // Uniform Z vertical — each fiber gets its own turn row
+                        // Mesma lógica do shape 3 mas no eixo Y.
                         const baseMidY = (avgSourceY + avgTargetY) / 2;
-                        const turnY = baseMidY + (idx - center) * LANE_SPACING;
+                        const ownIsBelow = c.sourceId.startsWith(cableId)
+                            ? p1.y > p2.y
+                            : p2.y > p1.y;
+                        const dirSign = ownIsBelow ? 1 : -1;
+                        const turnY = baseMidY + dirSign * (center - idx) * LANE_SPACING;
                         shapePoints = [{ x: p1.x, y: turnY }, { x: p2.x, y: turnY }];
                         break;
                     }
@@ -1483,6 +1526,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             return { ...prev, connections: updatedConnections };
         });
     };
+
+    // Atualiza o forward-ref usado por handleSmartAlignConnection pra delegar.
+    useLayoutEffect(() => { smartAlignCableForwardRef.current = handleSmartAlignCable; });
 
     const getPortColor = (portId: string): string | null => {
         if (portId.includes('-fiber-')) {
