@@ -138,7 +138,8 @@
       "Bash(\"C:\\\\Users\\\\rairo\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s emulator-5554 logcat -d --pid=8728)",
       "Bash(\"C:\\\\Users\\\\rairo\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s emulator-5554 shell \"ping -c 2 8.8.8.8\")",
       "Bash(\"C:\\\\Users\\\\rairo\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" -s emulator-5554 emu kill)",
-      "Bash(grep -nR \"s\\\\${sIdx\" components/)"
+      "Bash(grep -nR \"s\\\\${sIdx\" components/)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

@@ -162,11 +162,15 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
                         <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-0.5 uppercase tracking-wider select-none pointer-events-none">
                             {cable.fiberCount} {t('unit_fibers')}
                         </span>
-                        {(streetName || cable.streetName) && (
-                            <span className="text-[8px] text-slate-400 dark:text-slate-500 font-medium mt-1 leading-tight line-clamp-2 select-none pointer-events-none" title={streetName || cable.streetName}>
-                                {streetName || cable.streetName}
-                            </span>
-                        )}
+                        {/* Espaço sempre reservado pra rua — Nominatim leva 1-4s
+                            por causa do rate limit. Sem reserva, o nome aparece
+                            depois do render e empurra layout. */}
+                        <span
+                            className="text-[8px] text-slate-400 dark:text-slate-500 font-medium mt-1 leading-tight line-clamp-2 select-none pointer-events-none min-h-[10px]"
+                            title={streetName || cable.streetName || ''}
+                        >
+                            {streetName || cable.streetName || ' '}
+                        </span>
                     </div>
                 </div>
             </div>
