@@ -12,6 +12,7 @@ import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot } from 'lucide-react';
+import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
 import { MarkersCanvasLayer } from './MarkersCanvasLayer';
@@ -1864,12 +1865,12 @@ export const MapView: React.FC<MapViewProps> = ({
                     <LayerGroup
                         label={t('layer_ctos')}
                         color="blue"
-                        icon={<Box className="w-4 h-4" />}
+                        icon={<CTOIcon className="w-4 h-4" />}
                         expanded={ctosGroupExpanded}
                         setExpanded={setCtosGroupExpanded}
                         childrenStates={[
-                            { key: 'cto', label: t('layer_cto_type_cto') || 'CTO', icon: <Box className="w-4 h-4" />, active: showCtoTypeCto, onToggle: () => setShowCtoTypeCto(!showCtoTypeCto) },
-                            { key: 'ceo', label: t('layer_cto_type_ceo') || 'CEO', icon: <Box className="w-4 h-4" />, active: showCtoTypeCeo, onToggle: () => setShowCtoTypeCeo(!showCtoTypeCeo) },
+                            { key: 'cto', label: t('layer_cto_type_cto') || 'CTO', icon: <CTOIcon className="w-4 h-4" />, active: showCtoTypeCto, onToggle: () => setShowCtoTypeCto(!showCtoTypeCto) },
+                            { key: 'ceo', label: t('layer_cto_type_ceo') || 'CEO', icon: <CEOIcon className="w-4 h-4" />, active: showCtoTypeCeo, onToggle: () => setShowCtoTypeCeo(!showCtoTypeCeo) },
                         ]}
                     />
                     <LayerRow active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-4 h-4" />} />
@@ -1913,7 +1914,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                 {/* Mesmo padrão indent-guide do LayerGroup. */}
                                 <div className="ml-[19px] mt-1 pl-2 border-l border-slate-200/80 dark:border-slate-700/60">
                                     <LayerRow active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={t('layer_cables')} color="emerald" icon={<Share2 className="w-4 h-4" />} />
-                                    <LayerRow active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label="CTOs" color="emerald" icon={<Box className="w-4 h-4" />} />
+                                    <LayerRow active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label="CTOs" color="emerald" icon={<CTOIcon className="w-4 h-4" />} />
                                     <LayerRow active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label="POPs" color="emerald" icon={<Building2 className="w-4 h-4" />} />
                                     <LayerRow active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={t('layer_poles')} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
                                 </div>
