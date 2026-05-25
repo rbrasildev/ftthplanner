@@ -1894,7 +1894,7 @@ export const MapView: React.FC<MapViewProps> = ({
                         <div className="flex flex-col w-full">
                             <LayerRow
                                 active={showParentLayer}
-                                onClick={() => setShowParentLayer(!showParentLayer)}
+                                onClick={() => setParentLayerExpanded(!parentLayerExpanded)}
                                 label={parentProjectName || t('base_project_layer_label')}
                                 color="emerald"
                                 icon={<GitBranch className="w-4 h-4" />}
@@ -1906,15 +1906,16 @@ export const MapView: React.FC<MapViewProps> = ({
                             <div
                                 className="overflow-hidden transition-all duration-300 ease-in-out"
                                 style={{
-                                    maxHeight: parentLayerExpanded && showParentLayer ? 240 : 0,
-                                    opacity: parentLayerExpanded && showParentLayer ? 1 : 0,
+                                    maxHeight: parentLayerExpanded ? 240 : 0,
+                                    opacity: parentLayerExpanded ? 1 : 0,
                                 }}
                             >
-                                <div className="flex flex-col gap-0.5 bg-emerald-50/60 dark:bg-emerald-900/10 rounded-lg p-1 ml-2 border border-emerald-200/60 dark:border-emerald-800/40 mt-0.5">
-                                    <LayerRow indent active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={t('layer_cables')} color="emerald" icon={<Share2 className="w-4 h-4" />} />
-                                    <LayerRow indent active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label="CTOs" color="emerald" icon={<Box className="w-4 h-4" />} />
-                                    <LayerRow indent active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label="POPs" color="emerald" icon={<Building2 className="w-4 h-4" />} />
-                                    <LayerRow indent active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={t('layer_poles')} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
+                                {/* Mesmo padrão indent-guide do LayerGroup. */}
+                                <div className="ml-[19px] mt-1 pl-2 border-l border-slate-200/80 dark:border-slate-700/60">
+                                    <LayerRow active={showParentCables} onClick={() => setShowParentCables(!showParentCables)} label={t('layer_cables')} color="emerald" icon={<Share2 className="w-4 h-4" />} />
+                                    <LayerRow active={showParentCTOs} onClick={() => setShowParentCTOs(!showParentCTOs)} label="CTOs" color="emerald" icon={<Box className="w-4 h-4" />} />
+                                    <LayerRow active={showParentPOPs} onClick={() => setShowParentPOPs(!showParentPOPs)} label="POPs" color="emerald" icon={<Building2 className="w-4 h-4" />} />
+                                    <LayerRow active={showParentPoles} onClick={() => setShowParentPoles(!showParentPoles)} label={t('layer_poles')} color="emerald" icon={<UtilityPole className="w-4 h-4" />} />
                                 </div>
                             </div>
                         </div>
@@ -3162,7 +3163,6 @@ const LayerGroup: React.FC<{
     setExpanded: (v: boolean) => void;
 }> = ({ label, color, icon, childrenStates, expanded, setExpanded }) => {
     const visibleChildren = childrenStates.filter(c => c.visible !== false);
-    const tokens = ROW_TOKENS[color] || ROW_TOKENS.slate;
 
     if (visibleChildren.length <= 1) {
         const only = visibleChildren[0];
@@ -3174,31 +3174,37 @@ const LayerGroup: React.FC<{
     const anyOn = visibleChildren.some(c => c.active);
     const state: GroupState = allOn ? 'on' : (!anyOn ? 'off' : 'mixed');
 
-    const onToggleAll = () => {
-        const target = !allOn; // forgiving default: mixed/off → all on
-        visibleChildren.forEach(child => { if (child.active !== target) child.onToggle(); });
-    };
+    // Click no parent = expand/colapsa (comportamento padrão de menu).
+    // Toggle de visibilidade fica nos filhos individualmente. O state indicator
+    // (slash quando off, barrinha quando mixed) continua mostrando passivamente
+    // se algo está oculto, mas não é ação primária aqui.
+    const toggleExpanded = () => setExpanded(!expanded);
 
     return (
         <div className="flex flex-col w-full">
             <LayerRow
                 active={state !== 'off'}
                 state={state}
-                onClick={onToggleAll}
+                onClick={toggleExpanded}
                 label={label}
                 color={color}
                 icon={icon}
-                chevron={{ expanded, onToggle: () => setExpanded(!expanded) }}
+                chevron={{ expanded, onToggle: toggleExpanded }}
             />
             <div
                 className="overflow-hidden transition-all duration-300 ease-in-out"
                 style={{ maxHeight: expanded ? 240 : 0, opacity: expanded ? 1 : 0 }}
             >
-                <div className={`flex flex-col gap-0.5 rounded-lg p-1 mt-0.5 ml-2 border ${tokens.trayBorder} ${tokens.trayBg}`}>
+                {/* Indent guide pattern (VS Code Explorer / Linear sidebar):
+                    linha vertical fina à esquerda alinhada sob o ícone do parent.
+                    Substitui a border-box + bg colorido antigo (3 fontes de
+                    "moldura" empilhadas) por uma única âncora visual.
+                    ml-[19px] = px-2.5 (10px) + meia largura do icon w-5 = 20px,
+                    aproximadamente sob o centro do ícone do parent. */}
+                <div className="ml-[19px] mt-1 pl-2 border-l border-slate-200/80 dark:border-slate-700/60">
                     {visibleChildren.map(child => (
                         <LayerRow
                             key={child.key}
-                            indent
                             active={child.active}
                             onClick={child.onToggle}
                             label={child.label}
