@@ -107,13 +107,23 @@ export const SaasGlobalMap: React.FC = () => {
             </div>
 
             <div className="flex-1 w-full relative">
-                <MapContainer center={[-23.5505, -46.6333]} zoom={4} scrollWheelZoom={true} style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                <MapContainer
+                    center={[-23.5505, -46.6333]}
+                    zoom={4}
+                    minZoom={2}
+                    maxZoom={18}
+                    scrollWheelZoom={true}
+                    worldCopyJump={false}
+                    maxBounds={[[-85, -180], [85, 180]]}
+                    style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                >
                     <MapResizeHandler />
                     <TileLayer
                         key={baseLayer}
                         attribution={BASE_LAYERS[baseLayer].attribution}
                         url={BASE_LAYERS[baseLayer].url}
-                        maxZoom={BASE_LAYERS[baseLayer].maxZoom}
+                        maxZoom={18}
+                        maxNativeZoom={BASE_LAYERS[baseLayer].maxZoom ?? 18}
                     />
                     {projects.map(p => (
                         <Marker key={p.id} position={[p.centerLat, p.centerLng]} icon={ProjectIcon}>
