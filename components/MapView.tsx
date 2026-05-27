@@ -11,7 +11,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet } from 'lucide-react';
 import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
@@ -655,6 +655,95 @@ const MapJumpController = ({ viewKey }: { viewKey?: string }) => {
         }
     }, [map, viewKey]);
     return null;
+};
+
+// --- DRAWING MODE HUD ---
+// Faixa flutuante que mostra o que o usuário está fazendo em qualquer modo
+// que não seja 'view', com atalho ESC + cancelar + (quando aplicável) undo e confirmar.
+
+type HudTone = 'emerald' | 'amber' | 'sky' | 'indigo' | 'slate' | 'rose' | 'pink';
+
+const HUD_TONE: Record<HudTone, { ring: string; iconBg: string; iconText: string; primaryBtn: string; primaryRing: string }> = {
+    emerald: { ring: 'border-emerald-300 dark:border-emerald-700/60', iconBg: 'bg-emerald-100 dark:bg-emerald-900/40', iconText: 'text-emerald-600 dark:text-emerald-400', primaryBtn: 'bg-emerald-600 hover:bg-emerald-500 text-white', primaryRing: 'shadow-emerald-500/20' },
+    amber: { ring: 'border-amber-300 dark:border-amber-700/60', iconBg: 'bg-amber-100 dark:bg-amber-900/40', iconText: 'text-amber-600 dark:text-amber-400', primaryBtn: 'bg-amber-500 hover:bg-amber-400 text-white', primaryRing: 'shadow-amber-500/20' },
+    sky: { ring: 'border-sky-300 dark:border-sky-700/60', iconBg: 'bg-sky-100 dark:bg-sky-900/40', iconText: 'text-sky-600 dark:text-sky-400', primaryBtn: 'bg-sky-600 hover:bg-sky-500 text-white', primaryRing: 'shadow-sky-500/20' },
+    indigo: { ring: 'border-indigo-300 dark:border-indigo-700/60', iconBg: 'bg-indigo-100 dark:bg-indigo-900/40', iconText: 'text-indigo-600 dark:text-indigo-400', primaryBtn: 'bg-indigo-600 hover:bg-indigo-500 text-white', primaryRing: 'shadow-indigo-500/20' },
+    slate: { ring: 'border-slate-300 dark:border-slate-700/60', iconBg: 'bg-slate-100 dark:bg-slate-800', iconText: 'text-slate-600 dark:text-slate-300', primaryBtn: 'bg-slate-700 hover:bg-slate-600 text-white', primaryRing: 'shadow-slate-500/20' },
+    rose: { ring: 'border-rose-300 dark:border-rose-700/60', iconBg: 'bg-rose-100 dark:bg-rose-900/40', iconText: 'text-rose-600 dark:text-rose-400', primaryBtn: 'bg-rose-600 hover:bg-rose-500 text-white', primaryRing: 'shadow-rose-500/20' },
+    pink: { ring: 'border-pink-300 dark:border-pink-700/60', iconBg: 'bg-pink-100 dark:bg-pink-900/40', iconText: 'text-pink-600 dark:text-pink-400', primaryBtn: 'bg-pink-600 hover:bg-pink-500 text-white', primaryRing: 'shadow-pink-500/20' },
+};
+
+interface ModeHudProps {
+    icon: React.ReactNode;
+    title: string;
+    hint: string;
+    tone: HudTone;
+    pointCount?: number;
+    onCancel?: () => void;
+    onUndo?: () => void;
+    canUndo?: boolean;
+    onConfirm?: () => void;
+    confirmLabel?: string;
+    canConfirm?: boolean;
+}
+
+const ModeHud: React.FC<ModeHudProps> = ({ icon, title, hint, tone, pointCount, onCancel, onUndo, canUndo, onConfirm, confirmLabel, canConfirm }) => {
+    const c = HUD_TONE[tone];
+    return (
+        <div
+            className={`absolute top-4 left-1/2 -translate-x-1/2 z-[1100] bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border ${c.ring} px-3 py-2 flex items-center gap-3 max-w-[92vw] animate-in fade-in slide-in-from-top-4 duration-200`}
+            role="status"
+            aria-live="polite"
+        >
+            <div className={`w-9 h-9 rounded-xl ${c.iconBg} flex items-center justify-center shrink-0 ${c.iconText}`}>
+                {icon}
+            </div>
+            <div className="min-w-0 flex flex-col leading-tight">
+                <div className="text-[13px] font-bold text-slate-900 dark:text-white truncate">{title}</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {hint}
+                    {typeof pointCount === 'number' && pointCount > 0 && (
+                        <span className="ml-1.5 inline-flex items-center gap-1">
+                            <span className="text-slate-300 dark:text-slate-600">·</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300 tabular-nums">{pointCount} {pointCount === 1 ? 'ponto' : 'pontos'}</span>
+                        </span>
+                    )}
+                </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-slate-200 dark:border-slate-700/50">
+                {onUndo && (
+                    <button
+                        onClick={onUndo}
+                        disabled={!canUndo}
+                        title="Desfazer último ponto (Ctrl+Z)"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <Undo2 className="w-4 h-4" />
+                    </button>
+                )}
+                {onCancel && (
+                    <button
+                        onClick={onCancel}
+                        title="Sair (ESC)"
+                        className="h-8 px-2.5 inline-flex items-center gap-1 rounded-lg text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <XIcon className="w-3.5 h-3.5" />
+                        ESC
+                    </button>
+                )}
+                {onConfirm && (
+                    <button
+                        onClick={onConfirm}
+                        disabled={!canConfirm}
+                        className={`h-8 px-3 inline-flex items-center gap-1.5 rounded-lg text-[12px] font-bold transition-all shadow-md ${c.primaryBtn} ${c.primaryRing} disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-95`}
+                    >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {confirmLabel || 'Confirmar'}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 };
 
 // --- MAIN COMPONENT ---
@@ -1842,8 +1931,50 @@ export const MapView: React.FC<MapViewProps> = ({
         iconAnchor: [5, 5]
     }), []);
 
+    // HUD info por modo — central, single source of truth pro feedback visual.
+    const hudInfo = (() => {
+        switch (mode) {
+            case 'add_cto': return { icon: <Box className="w-4 h-4" />, title: 'Adicionando CTO', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
+            case 'add_condo': return { icon: <Building2 className="w-4 h-4" />, title: 'Adicionando Condomínio', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
+            case 'add_pop': return { icon: <Building2 className="w-4 h-4" />, title: 'Adicionando POP', hint: 'Clique no mapa para posicionar', tone: 'indigo' as HudTone };
+            case 'add_pole': return { icon: <UtilityPole className="w-4 h-4" />, title: 'Adicionando Poste', hint: 'Clique no mapa para posicionar', tone: 'slate' as HudTone };
+            case 'add_customer': return { icon: <User className="w-4 h-4" />, title: 'Adicionando Cliente', hint: 'Clique no mapa para posicionar', tone: 'emerald' as HudTone };
+            case 'draw_cable': return { icon: <Share2 className="w-4 h-4" />, title: 'Desenhando Cabo', hint: 'Clique para adicionar pontos · clique no nó destino para finalizar', tone: 'emerald' as HudTone, canUndo: true };
+            case 'draw_polygon': return { icon: <Hexagon className="w-4 h-4" />, title: 'Desenhando Polígono', hint: 'Clique para adicionar vértices', tone: 'rose' as HudTone, canUndo: true };
+            case 'export_area': return { icon: <ScanSearch className="w-4 h-4" />, title: 'Selecione a área para exportar', hint: 'Desenhe um polígono · mínimo 3 pontos', tone: 'amber' as HudTone, canUndo: true };
+            case 'report_area': return { icon: <FileSpreadsheet className="w-4 h-4" />, title: 'Selecione a área para o relatório', hint: 'Desenhe um polígono · mínimo 3 pontos', tone: 'amber' as HudTone, canUndo: true };
+            case 'edit_cable': return { icon: <Move className="w-4 h-4" />, title: 'Editando geometria do cabo', hint: 'Arraste os pontos para reposicionar', tone: 'sky' as HudTone };
+            case 'move_node': return { icon: <Move className="w-4 h-4" />, title: 'Movendo elemento', hint: 'Clique no novo local do mapa', tone: 'slate' as HudTone };
+            case 'connect_cable': return { icon: <GitBranch className="w-4 h-4" />, title: 'Conectando cabo', hint: 'Clique em um nó (CTO, POP, Poste) para conectar', tone: 'indigo' as HudTone };
+            case 'pick_connection_target': return { icon: <Unplug className="w-4 h-4" />, title: 'Selecione o destino', hint: 'Clique em um nó para definir o destino da conexão', tone: 'indigo' as HudTone };
+            case 'otdr': return { icon: <Radio className="w-4 h-4" />, title: 'Modo OTDR', hint: 'Clique em um cabo para simular a medição', tone: 'pink' as HudTone };
+            default: return null;
+        }
+    })();
+
+    const hudPointCount = mode === 'draw_cable' ? drawingPath.length
+        : mode === 'draw_polygon' ? drawingPolygonPath.length
+            : mode === 'export_area' ? exportAreaPolygon.length
+                : mode === 'report_area' ? reportAreaPolygon.length
+                    : undefined;
+
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
+            {hudInfo && (
+                <ModeHud
+                    icon={hudInfo.icon}
+                    title={hudInfo.title}
+                    hint={hudInfo.hint}
+                    tone={hudInfo.tone}
+                    pointCount={hudPointCount}
+                    onCancel={onCancelMode}
+                    onUndo={hudInfo.canUndo ? handleUndoDrawingPoint : undefined}
+                    canUndo={typeof hudPointCount === 'number' && hudPointCount > 0}
+                    onConfirm={mode === 'export_area' && onExportAreaConfirm ? onExportAreaConfirm : undefined}
+                    confirmLabel={mode === 'export_area' ? (t('export_area_confirm') || 'Exportar Área') : undefined}
+                    canConfirm={mode === 'export_area' && exportAreaPolygon.length >= 3}
+                />
+            )}
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
                 {/* Unified Layer & Map Panel */}
                 <div className="bg-white/95 dark:bg-[#22262e]/95 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-stretch gap-0.5 w-52">
@@ -2702,33 +2833,6 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
             </MapContainer>
-
-            {/* Export Area Floating Bar */}
-            {mode === 'export_area' && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-amber-200 dark:border-amber-800/50 px-5 py-3 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                        <ScanSearch className="w-4 h-4 text-amber-500" />
-                        <span>{exportAreaPolygon.length < 3
-                            ? (t('export_area_instruction') || 'Clique no mapa para desenhar a área')
-                            : (t('export_area_points', { count: exportAreaPolygon.length }) || `${exportAreaPolygon.length} pontos selecionados`)
-                        }</span>
-                    </div>
-                    {exportAreaPolygon.length >= 3 && (
-                        <button
-                            onClick={onExportAreaConfirm}
-                            className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold rounded-xl transition-colors shadow-sm"
-                        >
-                            {t('export_area_confirm') || 'Exportar Área'}
-                        </button>
-                    )}
-                    <button
-                        onClick={onCancelMode}
-                        className="px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    >
-                        {t('cancel') || 'Cancelar'}
-                    </button>
-                </div>
-            )}
 
             {/* Context Menu for Cables */}
             {
