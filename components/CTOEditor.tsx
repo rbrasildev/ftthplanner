@@ -2799,17 +2799,33 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 if (!exists) {
                     setLocalCTO(prev => {
-                        // CHECK OCCUPANCY (User Request: Don't overwrite if occupied)
-                        const isSourceOccupied = prev.connections.some(c => c.sourceId === source || c.targetId === source);
-                        const isTargetOccupied = prev.connections.some(c => c.sourceId === target || c.targetId === target);
+                        // CHECK OCCUPANCY — só conta conexões "vivas" (cujos
+                        // dois ports realmente resolvem). Ghost connections
+                        // (port sumiu por resize de cabo, splitter mudou,
+                        // etc.) eram invisíveis mas bloqueavam novas conexões.
+                        const isLive = (c: FiberConnection) =>
+                            !!getPortCenter(c.sourceId) && !!getPortCenter(c.targetId);
+                        const isSourceOccupied = prev.connections.some(c => isLive(c) && (c.sourceId === source || c.targetId === source));
+                        const isTargetOccupied = prev.connections.some(c => isLive(c) && (c.sourceId === target || c.targetId === target));
 
                         if (isSourceOccupied || isTargetOccupied) {
                             return prev; // Block connection
                         }
 
+                        // Bonus cleanup: remove ghost connections que envolvem
+                        // os ports da nova conexão (libera o slot oficialmente).
+                        const cleanedConnections = prev.connections.filter(c => {
+                            const touchesSource = c.sourceId === source || c.targetId === source;
+                            const touchesTarget = c.sourceId === target || c.targetId === target;
+                            if (touchesSource || touchesTarget) {
+                                return isLive(c); // mantém só se válida
+                            }
+                            return true;
+                        });
+
                         return {
                             ...prev,
-                            connections: [...prev.connections, newConn]
+                            connections: [...cleanedConnections, newConn]
                         };
                     });
                 }
@@ -2836,8 +2852,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     setLocalCTO(prev => {
                         // CHECK OCCUPANCY for Target (User Request: Don't overwrite)
                         // Ignore current connection ID since we are moving IT.
+                        // Também ignora ghost connections (port inexistente).
+                        const isLive = (c: FiberConnection) =>
+                            !!getPortCenter(c.sourceId) && !!getPortCenter(c.targetId);
                         const isTargetOccupied = prev.connections.some(c =>
                             c.id !== dragState.connectionId &&
+                            isLive(c) &&
                             (c.sourceId === targetPort || c.targetId === targetPort)
                         );
 
