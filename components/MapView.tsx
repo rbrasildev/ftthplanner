@@ -11,7 +11,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
@@ -1239,7 +1239,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const [showPoles, setShowPoles] = useState(() => getSaved('ftth_show_poles', false));
     const [showPolygons, setShowPolygons] = useState(() => getSaved('ftth_show_polygons', true));
     const [showReserves, setShowReserves] = useState(() => getSaved('ftth_show_reserves', true));
-    const [isLayersOpen, setIsLayersOpen] = useState(false);
+    const [layerPanelCollapsed, setLayerPanelCollapsed] = useState(() => getSaved('ftth_layer_panel_collapsed', false));
     const [enableClustering, setEnableClustering] = useState(() => getSaved('ftth_clustering', true));
 
     // --- PERSISTENCE EFFECTS ---
@@ -1255,6 +1255,7 @@ export const MapView: React.FC<MapViewProps> = ({
     useEffect(() => { localStorage.setItem('ftth_show_poles', JSON.stringify(showPoles)); }, [showPoles]);
     useEffect(() => { localStorage.setItem('ftth_show_polygons', JSON.stringify(showPolygons)); }, [showPolygons]);
     useEffect(() => { localStorage.setItem('ftth_show_reserves', JSON.stringify(showReserves)); }, [showReserves]);
+    useEffect(() => { localStorage.setItem('ftth_layer_panel_collapsed', JSON.stringify(layerPanelCollapsed)); }, [layerPanelCollapsed]);
     useEffect(() => { if (mode === 'add_pole' && !showPoles) setShowPoles(true); }, [mode]);
     // Garante visibilidade ao entrar no modo de desenho de polígono
     useEffect(() => { if (mode === 'draw_polygon' && !showPolygons) setShowPolygons(true); }, [mode]);
@@ -1942,9 +1943,10 @@ export const MapView: React.FC<MapViewProps> = ({
             case 'draw_cable': return { icon: <Share2 className="w-4 h-4" />, title: 'Desenhando Cabo', hint: 'Clique para adicionar pontos · clique no nó destino para finalizar', tone: 'emerald' as HudTone, canUndo: true };
             case 'draw_polygon': return { icon: <Hexagon className="w-4 h-4" />, title: 'Desenhando Polígono', hint: 'Clique para adicionar vértices', tone: 'rose' as HudTone, canUndo: true };
             case 'export_area': return { icon: <ScanSearch className="w-4 h-4" />, title: 'Selecione a área para exportar', hint: 'Desenhe um polígono · mínimo 3 pontos', tone: 'amber' as HudTone, canUndo: true };
-            case 'report_area': return { icon: <FileSpreadsheet className="w-4 h-4" />, title: 'Selecione a área para o relatório', hint: 'Desenhe um polígono · mínimo 3 pontos', tone: 'amber' as HudTone, canUndo: true };
+            // 'report_area' e 'move_node' têm controles flutuantes próprios em App.tsx
+            // com botão Confirmar específico — não duplicamos aqui pra não criar duas
+            // peças de UI sobrepostas.
             case 'edit_cable': return { icon: <Move className="w-4 h-4" />, title: 'Editando geometria do cabo', hint: 'Arraste os pontos para reposicionar', tone: 'sky' as HudTone };
-            case 'move_node': return { icon: <Move className="w-4 h-4" />, title: 'Movendo elemento', hint: 'Clique no novo local do mapa', tone: 'slate' as HudTone };
             case 'connect_cable': return { icon: <GitBranch className="w-4 h-4" />, title: 'Conectando cabo', hint: 'Clique em um nó (CTO, POP, Poste) para conectar', tone: 'indigo' as HudTone };
             case 'pick_connection_target': return { icon: <Unplug className="w-4 h-4" />, title: 'Selecione o destino', hint: 'Clique em um nó para definir o destino da conexão', tone: 'indigo' as HudTone };
             case 'otdr': return { icon: <Radio className="w-4 h-4" />, title: 'Modo OTDR', hint: 'Clique em um cabo para simular a medição', tone: 'pink' as HudTone };
@@ -1955,8 +1957,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const hudPointCount = mode === 'draw_cable' ? drawingPath.length
         : mode === 'draw_polygon' ? drawingPolygonPath.length
             : mode === 'export_area' ? exportAreaPolygon.length
-                : mode === 'report_area' ? reportAreaPolygon.length
-                    : undefined;
+                : undefined;
 
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
@@ -1976,22 +1977,83 @@ export const MapView: React.FC<MapViewProps> = ({
                 />
             )}
             <div className="absolute top-48 lg:top-4 right-4 z-[1000] flex flex-col items-stretch gap-3">
-                {/* Unified Layer & Map Panel */}
+                {layerPanelCollapsed ? (
+                    /* Collapsed pill — clica pra expandir */
+                    <button
+                        onClick={() => setLayerPanelCollapsed(false)}
+                        className="bg-white/95 dark:bg-[#22262e]/95 backdrop-blur w-10 h-10 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-300 dark:hover:border-emerald-700/50 transition-colors group"
+                        aria-label={t('layer_panel_show') || 'Mostrar camadas'}
+                        title={t('layer_panel_show') || 'Mostrar camadas'}
+                    >
+                        <Layers className="w-4 h-4" />
+                    </button>
+                ) : (
+                /* Unified Layer & Map Panel */
                 <div className="bg-white/95 dark:bg-[#22262e]/95 backdrop-blur p-1.5 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-stretch gap-0.5 w-52">
 
                     {/* Map Type Switcher — always shown as active since it switches between two modes */}
-                    <LayerRow
-                        active={true}
-                        onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
-                        label={mapType === 'satellite' ? t('map_satellite') : t('map_street')}
-                        color="emerald"
-                        icon={mapType === 'satellite' ? <Globe className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
-                    />
+                    <div className="flex items-center w-full rounded-lg overflow-hidden">
+                        <button
+                            onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+                            className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-700/40 rounded-lg"
+                            aria-pressed={true}
+                        >
+                            <span className="w-5 h-5 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                                {mapType === 'satellite' ? <Globe className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
+                            </span>
+                            <span className="text-[12px] truncate text-slate-700 dark:text-slate-200 font-semibold">
+                                {mapType === 'satellite' ? t('map_satellite') : t('map_street')}
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => setLayerPanelCollapsed(true)}
+                            className="px-2 py-2 hover:bg-slate-100/70 dark:hover:bg-slate-700/40 transition-colors shrink-0 rounded-lg text-slate-400 dark:text-slate-500"
+                            aria-label={t('layer_panel_hide') || 'Esconder painel'}
+                            title={t('layer_panel_hide') || 'Esconder painel'}
+                        >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
 
                     <div className="h-[1px] bg-slate-200 dark:bg-slate-700 mx-1 my-1"></div>
 
-                    {/* Section: Elements */}
-                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] leading-none px-2.5 pt-1 pb-1">{t('layer_panel_elements')}</span>
+                    {/* Section: Elements — com toggle "tudo on/off" */}
+                    {(() => {
+                        const allOn = showCtoTypeCto && showCtoTypeCeo && showPOPs && showPoles
+                            && showCableBackbone && showCableDistribution && showCableDrop
+                            && isCustomersVisible && showPolygons && showReserves;
+                        const anyOn = showCtoTypeCto || showCtoTypeCeo || showPOPs || showPoles
+                            || showCableBackbone || showCableDistribution || showCableDrop
+                            || isCustomersVisible || showPolygons || showReserves;
+                        const next = !allOn;
+                        const toggleAll = () => {
+                            setShowCtoTypeCto(next);
+                            setShowCtoTypeCeo(next);
+                            setShowPOPs(next);
+                            setShowPoles(next);
+                            setShowCableBackbone(next);
+                            setShowCableDistribution(next);
+                            setShowCableDrop(next);
+                            setIsCustomersVisible(next);
+                            setShowPolygons(next);
+                            setShowReserves(next);
+                        };
+                        return (
+                            <div className="flex items-center justify-between px-2.5 pt-1 pb-1">
+                                <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] leading-none">
+                                    {t('layer_panel_elements')}
+                                </span>
+                                <button
+                                    onClick={toggleAll}
+                                    className="p-1 rounded-md text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors"
+                                    aria-label={allOn ? 'Esconder tudo' : 'Mostrar tudo'}
+                                    title={allOn ? 'Esconder tudo' : anyOn ? 'Mostrar tudo' : 'Mostrar tudo'}
+                                >
+                                    {allOn ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                </button>
+                            </div>
+                        );
+                    })()}
 
                     <LayerGroup
                         label={t('layer_ctos')}
@@ -2066,6 +2128,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     )}
                     <LayerRow active={enableClustering} onClick={() => setEnableClustering(!enableClustering)} label={t('layer_clustering')} color="purple" icon={<Layers className="w-4 h-4" />} />
                 </div>
+                )}
             </div>
 
             <MapContainer
@@ -2833,6 +2896,31 @@ export const MapView: React.FC<MapViewProps> = ({
                 )}
 
             </MapContainer>
+
+            {/* Empty state — projeto vazio em modo view, mostra dica friendly. */}
+            {mode === 'view' && ctos.length === 0 && pops.length === 0 && poles.length === 0 && cables.length === 0 && (
+                <div className="absolute inset-x-0 bottom-12 z-[900] pointer-events-none flex justify-center px-4">
+                    <div className="pointer-events-auto max-w-md w-full bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 p-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <MapPin className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                    Projeto vazio
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                    Use a barra de ferramentas no topo do mapa pra adicionar CTOs, postes, cabos ou importar um KMZ existente.
+                                </p>
+                                <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                    <span>↑</span>
+                                    <span>comece pela barra acima</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Context Menu for Cables */}
             {
