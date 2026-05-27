@@ -314,19 +314,31 @@ export const changePassword = async (req: Request, res: Response) => {
 
         if (!userId) return res.sendStatus(401);
         if (!currentPassword || !newPassword) {
-            return res.status(400).json({ error: 'Missing defined parameters' });
+            return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias.' });
         }
 
         const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
-        if (!user || !user.passwordHash) return res.status(404).json({ error: 'User not found' });
+        if (!user || !user.passwordHash) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
         if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
-            return res.status(400).json({ error: 'Invalid password format' });
+            return res.status(400).json({ error: 'Formato de senha inválido.' });
+        }
+
+        // Validação de complexidade — espelha as regras do ChangePasswordModal.
+        // Sem isso, alguém chamando a API direto burlaria as regras do front.
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'A nova senha precisa ter ao menos 8 caracteres.' });
+        }
+        if (!/[a-zA-Z]/.test(newPassword)) {
+            return res.status(400).json({ error: 'A nova senha precisa ter ao menos uma letra.' });
+        }
+        if (!/\d/.test(newPassword)) {
+            return res.status(400).json({ error: 'A nova senha precisa ter ao menos um número.' });
         }
 
         const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isValid) {
-            return res.status(401).json({ error: 'Incorrect current password' });
+            return res.status(401).json({ error: 'Senha atual incorreta.' });
         }
 
         const newHash = await bcrypt.hash(newPassword, 10);
