@@ -118,7 +118,7 @@ const FiberCableNodeComponent: React.FC<FiberCableNodeProps> = ({
             `}
             >
                 {/* CONTROLS (Floating above) - Adjusted for better persistence (sticky hover) */}
-                <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-all duration-500 delay-300 group-hover:duration-150 group-hover:delay-0 pointer-events-none group-hover:pointer-events-auto">
+                <div className="absolute bottom-full right-0 pb-2 pr-1 z-50 flex flex-col items-end opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
                     <div className="flex gap-0.5 bg-white dark:bg-[#22262e] rounded border border-slate-200 dark:border-slate-600 p-0.5 shadow-sm whitespace-nowrap">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMirror(e, cable.id); }}
