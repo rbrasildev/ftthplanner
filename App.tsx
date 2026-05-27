@@ -2794,6 +2794,7 @@ export default function App() {
             {isBillingPageOpen && (
                 <BillingPage
                     onBack={() => setIsBillingPageOpen(false)}
+                    showToast={showToast}
                     userData={{
                         username: user!,
                         email: userEmail || undefined,

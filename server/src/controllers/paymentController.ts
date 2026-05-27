@@ -1169,6 +1169,11 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
         const company = await prisma.company.findUnique({ where: { id: companyId } });
         if (!company) return res.status(404).json({ error: 'Company not found' });
 
+        const { reason, detail } = (req.body || {}) as { reason?: string; detail?: string };
+        if (reason || detail) {
+            logger.info(`Cancellation reason for company ${companyId}: reason="${reason || '—'}" detail="${(detail || '').slice(0, 200)}"`);
+        }
+
         // If there's a MercadoPago recurring subscription, cancel it remotely
         if (company.mercadopagoSubscriptionId) {
             try {

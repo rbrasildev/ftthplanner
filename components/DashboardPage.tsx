@@ -11,9 +11,10 @@ import CableRegistration from './registrations/CableRegistration';
 import BoxRegistration from './registrations/BoxRegistration';
 import { CompanySettings } from './settings/CompanySettings';
 import { IntegrationsPage } from './integrations/IntegrationsPage';
+import { Dashboard } from './Dashboard';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint, MoreVertical } from 'lucide-react';
 import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
@@ -97,7 +98,7 @@ const LocationPickerMap = ({
   );
 };
 
-type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
+type DashboardView = 'projects' | 'dashboard' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   username,
@@ -536,188 +537,85 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
             {/* Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-5 animate-pulse">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="h-5 w-36 bg-slate-100 dark:bg-slate-800/50 rounded" />
-                      <div className="h-5 w-5 bg-slate-100 dark:bg-slate-800/50 rounded" />
-                    </div>
-                    <div className="h-3 w-28 bg-slate-100 dark:bg-slate-800/50 rounded mb-6" />
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      {[1, 2, 3].map(j => (
-                        <div key={j} className="h-14 bg-slate-100 dark:bg-slate-800/50 rounded-lg" />
-                      ))}
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl p-4 animate-pulse">
+                    <div className="h-4 w-32 bg-slate-100 dark:bg-slate-800/40 rounded mb-2" />
+                    <div className="h-3 w-44 bg-slate-100 dark:bg-slate-800/40 rounded mb-4" />
+                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800/40 rounded-full" />
                   </div>
                 ))}
               </div>
             ) : filteredProjects.length === 0 ? (
-              <div className="text-center py-20 border-2 border-dashed border-slate-300 dark:border-slate-700/30 rounded-2xl bg-slate-50/50 dark:bg-[#1a1d23]/50">
-                <div className="w-16 h-16 bg-slate-200 dark:bg-[#22262e] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FolderOpen className="w-8 h-8 text-slate-400 dark:text-slate-600" />
+              <div className="flex flex-col items-center justify-center text-center py-20 border-2 border-dashed border-slate-300 dark:border-slate-700/30 rounded-2xl bg-slate-50/40 dark:bg-[#1a1d23]/40">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mb-4">
+                  <FolderOpen className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                 </div>
-                <p className="text-slate-500 font-medium">{t('no_projects')}</p>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  {searchTerm ? 'Nenhum projeto encontrado' : 'Você ainda não tem projetos'}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 max-w-sm">
+                  {searchTerm
+                    ? `Não achamos projetos com "${searchTerm}". Tenta outro termo.`
+                    : 'Crie seu primeiro projeto FTTH pra começar a mapear sua rede.'}
+                </p>
+                {!searchTerm && (hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
+                  <button
+                    onClick={() => setIsCreating(true)}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center gap-2 font-bold text-sm transition active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" /> Criar primeiro projeto
+                  </button>
+                )}
               </div>
             ) : (
-              <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+              <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-2"}>
                 {filteredProjects.map((project: any) => {
                   const counts = project.counts || { ctos: 0, pops: 0, cables: 0, poles: 0, deployedCtos: 0, deployedCables: 0 };
                   const totalCTOs = project.network?.ctos?.length || counts.ctos || 0;
                   const totalCables = project.network?.cables?.length || counts.cables || 0;
                   const totalPOPs = project.network?.pops?.length || counts.pops || 0;
-
                   const deployedCTOs = project.network
                     ? project.network.ctos.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length
                     : (counts.deployedCtos || 0);
-
                   const deployedCables = project.network
                     ? project.network.cables.filter((c: any) => c.status === 'DEPLOYED' || c.status === 'CERTIFIED').length
                     : (counts.deployedCables || 0);
-
                   const totalItems = totalCTOs + totalCables + totalPOPs;
                   const deployedItems = deployedCTOs + deployedCables + totalPOPs;
                   const progress = totalItems > 0 ? Math.round((deployedItems / totalItems) * 100) : 0;
-                  const hasNetworkData = !!project.network;
+                  const canEdit = hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support';
 
                   if (viewMode === 'list') {
                     return (
-                      <div
+                      <ProjectRow
                         key={project.id}
-                        onClick={() => onOpenProject(project.id)}
-                        className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg flex items-center gap-6 relative"
-                      >
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-[#22262e] group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0 transition-colors">
-                          <MapIcon className="w-6 h-6 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                              {project.name}
-                            </h3>
-                            <span className="text-[10px] bg-slate-100 dark:bg-[#22262e] text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
-                              {t('last_modified', { date: new Date(project.updatedAt).toLocaleDateString() })}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span className="flex items-center gap-1"><Box className="w-3 h-3" /> {totalCTOs} CTOs</span>
-                            <span className="flex items-center gap-1"><Cable className="w-3 h-3" /> {totalCables} {t('cables')}</span>
-                            <span className="flex items-center gap-1"><Activity className="w-3 h-3 text-emerald-500" /> {progress}%</span>
-                          </div>
-                        </div>
-
-                        <div className="hidden md:block w-48 shrink-0">
-                          <div className="w-full h-1.5 bg-slate-100 dark:bg-[#22262e] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-emerald-500 transition-all"
-                              style={{ width: `${progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {(hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
-                          <div className="flex items-center gap-1 pl-4 border-l border-slate-100 dark:border-slate-700/30">
-                            <button
-                              onClick={(e) => handleEditClick(e, project)}
-                              className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
-                              title={t('edit_project')}
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteClick(e, project)}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                              title={t('delete')}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                        project={project}
+                        progress={progress}
+                        totalCTOs={totalCTOs}
+                        totalCables={totalCables}
+                        canEdit={canEdit}
+                        onOpen={() => onOpenProject(project.id)}
+                        onEdit={(e) => handleEditClick(e as any, project)}
+                        onDelete={(e) => handleDeleteClick(e as any, project)}
+                      />
                     );
                   }
 
                   return (
-                    <div
+                    <ProjectCard
                       key={project.id}
-                      onClick={() => onOpenProject(project.id)}
-                      className="group bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 hover:border-emerald-500/50 rounded-xl p-5 cursor-pointer transition-all hover:shadow-xl hover:shadow-emerald-900/10 hover:-translate-y-1 relative"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 bg-slate-100 dark:bg-[#22262e] group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 rounded-lg flex items-center justify-center transition-colors">
-                          <MapIcon className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                        </div>
-                        {(hasPermission(userPermissions, 'projects:edit') || userRole === 'OWNER' || userRole === 'support') && (
-                          <div className="flex items-center gap-1 relative z-20">
-                            {/* EDIT BUTTON */}
-                            <button
-                              onClick={(e) => handleEditClick(e, project)}
-                              className="p-2 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
-                              title={t('edit_project')}
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteClick(e, project)}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                              title={t('delete')}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                        {project.name}
-                      </h3>
-
-                      <p className="text-xs text-slate-500 mb-4">
-                        {t('last_modified', { date: new Date(project.updatedAt).toLocaleDateString() })}
-                      </p>
-
-                      <div className="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#151820]/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/30">
-                        <div>
-                          <span className="block font-bold text-slate-700 dark:text-slate-200">
-                            {hasNetworkData ? project.network.ctos.filter((c: any) => c.type === 'CEO').length : '...'}
-                          </span>
-                          <span className="text-slate-500 dark:text-slate-600">CEOs</span>
-                        </div>
-                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-[#22262e]"></div>
-                        <div>
-                          <span className="block font-bold text-slate-700 dark:text-slate-200">
-                            {hasNetworkData ? `${deployedCTOs}/${totalCTOs}` : totalCTOs}
-                          </span>
-                          <span className="text-slate-500 dark:text-slate-600">CTOs</span>
-                        </div>
-                        <div className="w-[1px] h-6 bg-slate-200 dark:bg-[#22262e]"></div>
-                        <div>
-                          <span className="block font-bold text-slate-700 dark:text-slate-200">
-                            {hasNetworkData ? `${deployedCables}/${totalCables}` : totalCables}
-                          </span>
-                          <span className="text-slate-500 dark:text-slate-600">{t('cables')}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/30">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide">
-                            <Activity className="w-3 h-3 text-emerald-500" />
-                            {t('status_DEPLOYED')}
-                          </div>
-                          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">{progress}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-slate-100 dark:bg-[#22262e] rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 transition-all duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
+                      project={project}
+                      progress={progress}
+                      totalCTOs={totalCTOs}
+                      totalCables={totalCables}
+                      totalPOPs={totalPOPs}
+                      deployedCTOs={deployedCTOs}
+                      canEdit={canEdit}
+                      onOpen={() => onOpenProject(project.id)}
+                      onEdit={(e) => handleEditClick(e as any, project)}
+                      onDelete={(e) => handleDeleteClick(e as any, project)}
+                    />
                   );
                 })}
               </div>
@@ -735,8 +633,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <IntegrationsPage />
         )}
 
+        {/* --- DASHBOARD (analytics por projeto) --- */}
+        {currentView === 'dashboard' && (
+          <Dashboard projects={projects} currentProjectId={currentProjectId} onOpenProject={onOpenProject} />
+        )}
+
         {/* Placeholders for other views */}
-        {currentView !== 'projects' && currentView !== 'integrations' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
+        {currentView !== 'projects' && currentView !== 'dashboard' && currentView !== 'integrations' && currentView !== 'users' && currentView !== 'backup' && currentView !== 'settings' && !currentView.startsWith('reg_') && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-slate-100 dark:bg-[#22262e] rounded-full flex items-center justify-center mb-6">
               {currentView === 'registrations' && <ClipboardList className="w-10 h-10 text-slate-400" />}
@@ -1418,3 +1321,212 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     </div >
   );
 };
+
+// --- Helpers ---
+
+// Tempo relativo no estilo "há 2h" / "ontem" / "há 5d". Mais escaneável que data absoluta.
+const formatRelativeTime = (timestamp: number | string): { label: string; isRecent: boolean; isStale: boolean } => {
+  const ts = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+  const diffMs = Date.now() - ts;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffD = Math.floor(diffMs / 86400000);
+
+  let label: string;
+  if (diffMin < 1) label = 'agora';
+  else if (diffMin < 60) label = `há ${diffMin}min`;
+  else if (diffH < 24) label = `há ${diffH}h`;
+  else if (diffD === 1) label = 'ontem';
+  else if (diffD < 30) label = `há ${diffD}d`;
+  else if (diffD < 365) label = `há ${Math.floor(diffD / 30)}m`;
+  else label = `há ${Math.floor(diffD / 365)}a`;
+
+  return { label, isRecent: diffH < 24, isStale: diffD > 30 };
+};
+
+// Pill semântica com cor por threshold — torna o "saúde" do projeto visível
+// no primeiro scan. Padrão Status indicator (Stripe/Linear).
+const ProgressPill: React.FC<{ value: number }> = ({ value }) => {
+  const tone = value >= 70 ? 'emerald' : value >= 40 ? 'amber' : 'rose';
+  const classes = {
+    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/40',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/60 dark:border-amber-900/40',
+    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200/60 dark:border-rose-900/40',
+  }[tone];
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold border tabular-nums ${classes}`}>
+      {value}%
+    </span>
+  );
+};
+
+// Kebab menu — substitui os 2 botões flutuantes (Settings + Trash). Evita
+// clique acidental no card e melhora hierarquia visual.
+interface KebabAction {
+  label: string;
+  icon: React.ElementType;
+  onClick: (e: React.MouseEvent) => void;
+  destructive?: boolean;
+}
+const KebabMenu: React.FC<{ actions: KebabAction[] }> = ({ actions }) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors"
+        title="Mais ações"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-xl z-30 min-w-[160px] py-1">
+          {actions.map((a, i) => (
+            <button
+              key={i}
+              onClick={(e) => { e.stopPropagation(); setOpen(false); a.onClick(e); }}
+              className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 transition-colors ${a.destructive
+                ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
+            >
+              <a.icon className="w-3.5 h-3.5" />
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface ProjectCardLikeProps {
+  project: any;
+  progress: number;
+  totalCTOs: number;
+  totalCables: number;
+  totalPOPs?: number;
+  deployedCTOs?: number;
+  canEdit: boolean;
+  onOpen: () => void;
+  onEdit: (e: React.MouseEvent) => void;
+  onDelete: (e: React.MouseEvent) => void;
+}
+
+// Card grid simplificado — 1 hierarquia (name → metadata → progress).
+// Sem painel de stats com bg colorido. Sem font-mono. Sem actions flutuantes.
+const ProjectCard: React.FC<ProjectCardLikeProps> = ({ project, progress, totalCTOs, totalCables, totalPOPs = 0, canEdit, onOpen, onEdit, onDelete }) => {
+  const { label: relTime, isRecent, isStale } = formatRelativeTime(project.updatedAt);
+
+  return (
+    <div
+      onClick={onOpen}
+      className="group bg-white dark:bg-[#1a1d23] border border-slate-200/80 dark:border-slate-700/30 hover:border-emerald-500/60 dark:hover:border-emerald-500/40 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg hover:shadow-emerald-500/5 relative"
+    >
+      {/* Top row — name + kebab */}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <MapIcon className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors shrink-0" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+            {project.name}
+          </h3>
+        </div>
+        <ProgressPill value={progress} />
+        {canEdit && (
+          <KebabMenu actions={[
+            { label: 'Editar', icon: Settings, onClick: onEdit },
+            { label: 'Excluir', icon: Trash2, onClick: onDelete, destructive: true },
+          ]} />
+        )}
+      </div>
+
+      {/* Metadata row — relative time + counts */}
+      <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+        <span className="inline-flex items-center gap-1">
+          {isRecent && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+          <span className={isStale ? 'text-slate-400' : ''}>{relTime}</span>
+        </span>
+        <span className="text-slate-300 dark:text-slate-700">·</span>
+        <span className="tabular-nums">{totalCTOs} CTOs</span>
+        <span className="text-slate-300 dark:text-slate-700">·</span>
+        <span className="tabular-nums">{totalCables} cabos</span>
+        {totalPOPs > 0 && (
+          <>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="tabular-nums">{totalPOPs} POPs</span>
+          </>
+        )}
+      </div>
+
+      {/* Progress bar — única peça visual destacada (KPI) */}
+      <div className="w-full h-1 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-500 ${progress >= 70 ? 'bg-emerald-500' : progress >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
+const ProjectRow: React.FC<ProjectCardLikeProps> = ({ project, progress, totalCTOs, totalCables, canEdit, onOpen, onEdit, onDelete }) => {
+  const { label: relTime, isRecent, isStale } = formatRelativeTime(project.updatedAt);
+
+  return (
+    <div
+      onClick={onOpen}
+      className="group bg-white dark:bg-[#1a1d23] border border-slate-200/80 dark:border-slate-700/30 hover:border-emerald-500/60 dark:hover:border-emerald-500/40 rounded-xl px-4 py-3 cursor-pointer transition-all hover:shadow-md flex items-center gap-4"
+    >
+      <MapIcon className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors shrink-0" />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+            {project.name}
+          </h3>
+          <ProgressPill value={progress} />
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <span className="inline-flex items-center gap-1">
+            {isRecent && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+            <span className={isStale ? 'text-slate-400' : ''}>{relTime}</span>
+          </span>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <span className="tabular-nums">{totalCTOs} CTOs</span>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <span className="tabular-nums">{totalCables} cabos</span>
+        </div>
+      </div>
+
+      {/* Progress bar slim (md+) */}
+      <div className="hidden md:flex items-center gap-2 w-40 shrink-0">
+        <div className="flex-1 h-1 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${progress >= 70 ? 'bg-emerald-500' : progress >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {canEdit && (
+        <KebabMenu actions={[
+          { label: 'Editar', icon: Settings, onClick: onEdit },
+          { label: 'Excluir', icon: Trash2, onClick: onDelete, destructive: true },
+        ]} />
+      )}
+    </div>
+  );
+};
+

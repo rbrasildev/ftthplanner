@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X, Save, Search, Server, AlertTriangle, Layers, Zap, FileText, Sparkles, RotateCcw } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Search, Server, Layers, Zap, FileText, Sparkles, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getOLTs, createOLT, updateOLT, deleteOLT, OLTCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
 import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
+import {
+    KebabMenu, DeleteConfirmDialog, EmptyState,
+    SortableHeader, useSortable, ListSkeleton, ModalFooter,
+} from './common/CatalogPrimitives';
+
+type SortKey = 'name' | 'outputPower' | 'slots' | 'portsPerSlot' | 'uplinkPorts';
 
 interface OLTRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -41,8 +47,9 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
     }), []);
 
     const {
+        items: allItems,
         filteredItems: filteredOLTs,
-        loading,
+        loading, saving,
         searchTerm,
         setSearchTerm,
         isModalOpen,
@@ -66,6 +73,11 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
         },
         filterFn: (o, term) => o.name.toLowerCase().includes(term.toLowerCase()),
     });
+
+    const [sortedOLTs, sort, handleSort] = useSortable<OLTCatalogItem, SortKey>(
+        filteredOLTs, (i, k) => (i as any)[k],
+    );
+    const itemToDelete = allItems.find(i => i.id === showDeleteConfirm);
 
     const [formData, setFormData] = useState<OLTFormData>(emptyForm);
 
@@ -158,111 +170,66 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                 </div>
 
                 {loading ? (
-                    <div className="animate-pulse">
-                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-8">
-                            {[1, 2, 3, 4, 5, 6, 7].map(i => <div key={i} className="h-3 w-14 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
-                        </div>
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
-                                <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700/50" />
-                                <div className="h-4 w-28 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-5 w-14 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
-                                <div className="h-4 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-10 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-10 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="ml-auto h-8 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                            </div>
-                        ))}
-                    </div>
-                ) : filteredOLTs.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        {t('no_olts_found')}
-                    </div>
+                    <ListSkeleton rows={5} />
+                ) : sortedOLTs.length === 0 ? (
+                    <EmptyState
+                        icon={Server}
+                        title={allItems.length === 0 ? 'Você ainda não tem OLTs cadastradas' : 'Nenhuma OLT encontrada'}
+                        description={allItems.length === 0 ? 'Cadastre os modelos de OLT (GPON) usados nos seus projetos.' : undefined}
+                        ctaLabel={allItems.length === 0 ? '+ Cadastrar primeira OLT' : undefined}
+                        onCta={allItems.length === 0 ? openCreate : undefined}
+                        searchTerm={allItems.length > 0 && searchTerm ? searchTerm : undefined}
+                    />
                 ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
-                            <tr>
-                                <th className="px-6 py-4">{t('name')}</th>
-                                <th className="px-6 py-4">{t('output_power') || 'Potência'}</th>
-                                <th className="px-6 py-4">{t('olt_slots') || 'Slots'}</th>
-                                <th className="px-6 py-4">{t('ports_per_slot') || 'Portas/Slot'}</th>
-                                <th className="px-6 py-4">{t('uplink_ports') || 'Uplinks'}</th>
-                                <th className="px-6 py-4">{t('description')}</th>
-                                <th className="px-6 py-4 text-right">{t('actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {filteredOLTs.map(olt => (
-                                <tr key={olt.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                            {olt.name}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">
-                                        <span>{olt.outputPower > 0 ? '+' : ''}{olt.outputPower} dBm</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {olt.slots || 1}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {olt.portsPerSlot}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {olt.uplinkPorts ?? 0}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 dark:text-slate-400 truncate max-w-xs">
-                                        {olt.description}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => openEdit(olt)}
-                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(olt.id)}
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
+                                <tr>
+                                    <th className="px-6 py-3"><SortableHeader label={t('name') || 'Nome'} sortKey="name" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('output_power') || 'Potência'} sortKey="outputPower" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('olt_slots') || 'Slots'} sortKey="slots" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('ports_per_slot') || 'Portas/Slot'} sortKey="portsPerSlot" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('uplink_ports') || 'Uplinks'} sortKey="uplinkPorts" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3 text-right w-12">{t('actions') || 'Ações'}</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {sortedOLTs.map(olt => (
+                                    <tr key={olt.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                {olt.name}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">
+                                            {olt.outputPower > 0 ? '+' : ''}{olt.outputPower} dBm
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{olt.slots || 1}</td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{olt.portsPerSlot}</td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{olt.uplinkPorts ?? 0}</td>
+                                        <td className="px-6 py-3 text-right">
+                                            <KebabMenu actions={[
+                                                { label: t('edit') || 'Editar', icon: Edit2, onClick: () => openEdit(olt) },
+                                                { label: t('delete') || 'Excluir', icon: Trash2, onClick: () => setShowDeleteConfirm(olt.id), destructive: true },
+                                            ]} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && createPortal(
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
-                            >
-                                {t('delete')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            , document.body)}
+            <DeleteConfirmDialog
+                isOpen={!!showDeleteConfirm}
+                itemType="OLT"
+                itemLabel={itemToDelete?.name || ''}
+                hint="OLTs já instaladas nos projetos não serão afetadas."
+                onCancel={() => setShowDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+            />
 
             {/* Modal */}
             {isModalOpen && createPortal(
@@ -499,21 +466,15 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                             </section>
                         </div>
 
-                        {/* Footer */}
-                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700/30 flex gap-3 bg-slate-50/50 dark:bg-[#151820]/40 rounded-b-2xl shrink-0">
-                            <button
-                                onClick={closeModal}
-                                className="flex-1 h-11 rounded-xl font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="flex-[2] h-11 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center gap-2"
-                            >
-                                <Save className="w-4 h-4" />
-                                {t('save')}
-                            </button>
+                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700/30 bg-slate-50/60 dark:bg-[#151820]/60 rounded-b-2xl shrink-0">
+                            <ModalFooter
+                                onCancel={closeModal}
+                                primaryLabel={t('save') || 'Salvar'}
+                                primaryIcon={Save}
+                                primaryLoading={saving}
+                                primaryType="button"
+                                onPrimary={handleSave}
+                            />
                         </div>
                     </div>
                 </div>

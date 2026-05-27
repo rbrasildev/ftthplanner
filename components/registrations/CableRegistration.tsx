@@ -4,10 +4,14 @@ import { createPortal } from 'react-dom';
 import {
     getCables, createCable, updateCable, deleteCable, CableCatalogItem
 } from '../../services/catalogService';
-import { Plus, Edit2, Trash2, Search, Cable, AlertTriangle, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Cable, X, Save } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { CustomSelect, CustomInput } from '../common';
 import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
+import {
+    KebabMenu, DeleteConfirmDialog, EmptyState, FilterChips,
+    SortableHeader, useSortable, UnitInput, ListSkeleton, ModalFooter,
+} from './common/CatalogPrimitives';
 
 const SPEC_COLORS = ['#10b981', '#86efac', '#3b82f6', '#93c5fd', '#f59e0b', '#fcd34d', '#ef4444', '#fca5a5', '#8b5cf6', '#c4b5fd', '#ec4899', '#f9a8d4', '#6b7280', '#d1d5db'];
 
@@ -16,59 +20,65 @@ interface CableRegistrationProps {
 }
 
 const emptyForm: Partial<CableCatalogItem> = {
-    name: '',
-    brand: '',
-    model: '',
-    defaultLevel: 'DISTRIBUICAO',
-    fiberCount: 12,
-    looseTubeCount: 1,
-    fibersPerTube: 12,
-    attenuation: 0.35,
-    fiberProfile: 'ABNT',
-    description: '',
+    name: '', brand: '', model: '', defaultLevel: 'DISTRIBUICAO',
+    fiberCount: 12, looseTubeCount: 1, fibersPerTube: 12,
+    attenuation: 0.35, fiberProfile: 'ABNT', description: '',
     deployedSpec: { color: '#10b981', width: 3 },
-    plannedSpec: { color: '#86efac', width: 3 }
+    plannedSpec: { color: '#86efac', width: 3 },
 };
+
+type SortKey = 'name' | 'brand' | 'model' | 'fiberCount' | 'defaultLevel';
 
 const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
     const { t } = useLanguage();
 
     const service = useMemo(() => ({
-        list: getCables,
-        create: createCable,
-        update: updateCable,
-        remove: deleteCable,
+        list: getCables, create: createCable, update: updateCable, remove: deleteCable,
     }), []);
 
     const {
-        filteredItems: filteredCables,
-        loading: isLoading,
-        searchTerm,
-        setSearchTerm,
-        isModalOpen,
-        editingItem: editingCable,
-        openCreate,
-        openEdit,
-        closeModal,
-        showDeleteConfirm,
-        setShowDeleteConfirm,
-        save,
-        confirmDelete,
+        items: allItems,
+        filteredItems: filtered, loading: isLoading, saving,
+        searchTerm, setSearchTerm,
+        isModalOpen, editingItem: editingCable, openCreate, openEdit, closeModal,
+        showDeleteConfirm, setShowDeleteConfirm, save, confirmDelete,
     } = useCatalogRegistration<CableCatalogItem>({
-        service,
-        showToast,
+        service, showToast,
         messages: {
-            created: t('toast_created_success') || 'Criado com sucesso',
-            updated: t('toast_updated_success') || 'Atualizado com sucesso',
-            deleted: t('toast_deleted_success') || 'Excluído com sucesso',
+            created: t('toast_created_success') || 'Criado',
+            updated: t('toast_updated_success') || 'Atualizado',
+            deleted: t('toast_deleted_success') || 'Excluído',
             errorSave: t('error_save_cable') || 'Falha ao salvar cabo',
             errorDelete: t('error_delete') || 'Falha ao excluir',
         },
         filterFn: (c, term) => {
-            const t = term.toLowerCase();
-            return c.name.toLowerCase().includes(t) || (c.brand?.toLowerCase().includes(t) ?? false);
+            const tl = term.toLowerCase();
+            return c.name.toLowerCase().includes(tl) || (c.brand?.toLowerCase().includes(tl) ?? false);
         },
     });
+
+    const [levelFilter, setLevelFilter] = useState<string | null>(null);
+    const finalFiltered = useMemo(() => {
+        if (!levelFilter) return filtered;
+        return filtered.filter(c => c.defaultLevel === levelFilter);
+    }, [filtered, levelFilter]);
+
+    const [sorted, sort, handleSort] = useSortable<CableCatalogItem, SortKey>(
+        finalFiltered, (i, k) => (i as any)[k],
+    );
+
+    const chips = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const c of filtered) counts[c.defaultLevel] = (counts[c.defaultLevel] || 0) + 1;
+        const levels = ['TRONCO', 'DISTRIBUICAO', 'DROP'];
+        return [
+            { value: null, label: 'Todos', count: filtered.length },
+            ...levels.filter(l => counts[l] > 0).map(l => ({
+                value: l, label: l === 'DISTRIBUICAO' ? 'Distribuição' : l.charAt(0) + l.slice(1).toLowerCase(),
+                count: counts[l],
+            })),
+        ];
+    }, [filtered]);
 
     const [formData, setFormData] = useState<Partial<CableCatalogItem>>(emptyForm);
 
@@ -85,375 +95,227 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
         await save(formData);
     };
 
+    const itemToDelete = allItems.find(i => i.id === showDeleteConfirm);
+
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
-            {/* Header */}
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Cable className="w-7 h-7 text-emerald-500" />
                         {t('cable_catalog')}
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        {t('cable_catalog_desc')}
-                    </p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t('cable_catalog_desc')}</p>
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
-                >
+                <button onClick={openCreate} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-colors">
                     <Plus className="w-4 h-4" /> {t('add_new')}
                 </button>
             </div>
 
-            {/* List Container */}
-            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
-                {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 space-y-3">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder={t('search_placeholder_cable')}
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
-                        />
+                        <input type="text" placeholder={t('search_placeholder_cable')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm" />
                     </div>
+                    {!isLoading && allItems.length > 0 && (
+                        <FilterChips options={chips} value={levelFilter} onChange={setLevelFilter} />
+                    )}
                 </div>
 
                 {isLoading ? (
-                    <div className="animate-pulse">
-                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-12">
-                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
-                        </div>
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="h-4 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                </div>
-                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-16 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="ml-auto flex gap-2">
-                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : filteredCables.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        {t('no_results')}
-                    </div>
+                    <ListSkeleton rows={5} />
+                ) : sorted.length === 0 ? (
+                    <EmptyState
+                        icon={Cable}
+                        title={allItems.length === 0 ? 'Você ainda não tem cabos cadastrados' : 'Nenhum cabo encontrado'}
+                        description={allItems.length === 0 ? 'Cadastre os tipos de cabos usados nos seus projetos.' : undefined}
+                        ctaLabel={allItems.length === 0 ? '+ Cadastrar primeiro cabo' : undefined}
+                        onCta={allItems.length === 0 ? openCreate : undefined}
+                        searchTerm={allItems.length > 0 && (searchTerm || levelFilter) ? (searchTerm || `tipo: ${levelFilter}`) : undefined}
+                    />
                 ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
-                            <tr>
-                                <th className="px-6 py-4">{t('name')}</th>
-                                <th className="px-6 py-4">{t('brand')}</th>
-                                <th className="px-6 py-4">{t('model')}</th>
-                                <th className="px-6 py-4">{t('fiber_count')}</th>
-                                <th className="px-6 py-4 text-right">{t('actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {filteredCables.map(cable => (
-                                <tr key={cable.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                        {cable.name}
-                                        <div className="text-xs text-slate-500 font-normal">{cable.brand} - {cable.model}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {cable.brand}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {cable.model}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {cable.fiberCount} ({cable.looseTubeCount}x{cable.fibersPerTube})
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => openEdit(cable)}
-                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                                title={t('edit')}
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(cable.id)}
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                title={t('delete')}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
+                                <tr>
+                                    <th className="px-6 py-3"><SortableHeader label={t('name') || 'Nome'} sortKey="name" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('brand') || 'Marca'} sortKey="brand" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('model') || 'Modelo'} sortKey="model" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('type') || 'Tipo'} sortKey="defaultLevel" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('fiber_count') || 'Fibras'} sortKey="fiberCount" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3 text-right w-12">{t('actions') || 'Ações'}</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {sorted.map(cable => (
+                                    <tr key={cable.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: cable.deployedSpec?.color || '#10b981' }} />
+                                                {cable.name}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{cable.brand}</td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{cable.model}</td>
+                                        <td className="px-6 py-3">
+                                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                {cable.defaultLevel}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">
+                                            {cable.fiberCount}FO <span className="text-slate-400">({cable.looseTubeCount}×{cable.fibersPerTube})</span>
+                                        </td>
+                                        <td className="px-6 py-3 text-right">
+                                            <KebabMenu actions={[
+                                                { label: t('edit') || 'Editar', icon: Edit2, onClick: () => openEdit(cable) },
+                                                { label: t('delete') || 'Excluir', icon: Trash2, onClick: () => setShowDeleteConfirm(cable.id), destructive: true },
+                                            ]} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && createPortal(
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_message')}</p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
-                            >
-                                {t('delete')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            , document.body)}
+            <DeleteConfirmDialog
+                isOpen={!!showDeleteConfirm}
+                itemType="cabo"
+                itemLabel={itemToDelete?.name || ''}
+                hint="Cabos já lançados nos projetos não serão afetados."
+                onCancel={() => setShowDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+            />
 
-            {/* Modal */}
             {isModalOpen && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700/30">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-center bg-slate-50/50 dark:bg-[#22262e]/50 sticky top-0 z-10 backdrop-blur-md">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700/30 animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-center sticky top-0 z-10 bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur">
+                            <h2 className="text-base font-bold text-slate-900 dark:text-white">
                                 {editingCable ? t('edit_cable') : t('new_cable')}
                             </h2>
-                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                                <X className="w-6 h-6" />
-                            </button>
+                            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X className="w-5 h-5" /></button>
                         </div>
 
-                        <div className="p-6 space-y-6">
-                            {/* Main Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-6 space-y-5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="md:col-span-3">
-                                    <CustomInput
-                                        label={t('name')}
-                                        required
-                                        placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
-                                        value={formData.name || ''}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    />
+                                    <CustomInput label={t('name')} required placeholder={t('name_placeholder') || 'Ex: AS-80-G.652D'}
+                                        value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                                 </div>
-                                <div>
-                                    <CustomInput
-                                        label={t('brand')}
-                                        value={formData.brand || ''}
-                                        onChange={e => setFormData({ ...formData, brand: e.target.value })}
-                                        placeholder={t('brand_placeholder')}
-                                    />
-                                </div>
-                                <div>
-                                    <CustomInput
-                                        label={t('model')}
-                                        value={formData.model || ''}
-                                        onChange={e => setFormData({ ...formData, model: e.target.value })}
-                                        placeholder={t('model_placeholder')}
-                                    />
-                                </div>
-                                <div>
-                                    <CustomSelect
-                                        label={t('type')}
-                                        value={formData.defaultLevel || 'DISTRIBUICAO'}
-                                        options={[
-                                            { value: 'DISTRIBUICAO', label: 'DISTRIBUIÇÃO' },
-                                            { value: 'TRONCO', label: 'TRONCO' },
-                                            { value: 'DROP', label: 'DROP' }
-                                        ]}
-                                        onChange={val => setFormData({ ...formData, defaultLevel: val })}
-                                        showSearch={false}
-                                    />
-                                </div>
+                                <CustomInput label={t('brand')} value={formData.brand || ''} onChange={e => setFormData({ ...formData, brand: e.target.value })} placeholder={t('brand_placeholder')} />
+                                <CustomInput label={t('model')} value={formData.model || ''} onChange={e => setFormData({ ...formData, model: e.target.value })} placeholder={t('model_placeholder')} />
+                                <CustomSelect
+                                    label={t('type')} value={formData.defaultLevel || 'DISTRIBUICAO'}
+                                    options={[
+                                        { value: 'DISTRIBUICAO', label: 'DISTRIBUIÇÃO' },
+                                        { value: 'TRONCO', label: 'TRONCO' },
+                                        { value: 'DROP', label: 'DROP' },
+                                    ]}
+                                    onChange={val => setFormData({ ...formData, defaultLevel: val })} showSearch={false}
+                                />
                             </div>
 
                             {/* Tech Specs */}
-                            <div className="p-4 bg-slate-50 dark:bg-[#22262e]/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">{t('specifications')}</h3>
+                            <div className="p-4 bg-slate-50 dark:bg-[#22262e]/40 rounded-xl border border-slate-100 dark:border-slate-700/30">
+                                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">{t('specifications')}</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <CustomInput
-                                            label={t('fiber_count')}
-                                            type="number"
-                                            value={formData.fiberCount}
-                                            onChange={e => setFormData({ ...formData, fiberCount: parseInt(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <CustomInput
-                                            label={t('loose_tubes')}
-                                            type="number"
-                                            value={formData.looseTubeCount}
-                                            onChange={e => setFormData({ ...formData, looseTubeCount: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <CustomInput
-                                            label={t('fibers_per_tube') || 'Fibras por Tubo'}
-                                            type="number"
-                                            value={formData.fibersPerTube}
-                                            onChange={e => setFormData({ ...formData, fibersPerTube: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <CustomInput
-                                            label={t('attenuation_db')}
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.attenuation}
-                                            onChange={e => setFormData({ ...formData, attenuation: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                    <CustomInput label={t('fiber_count')} type="number" value={formData.fiberCount} onChange={e => setFormData({ ...formData, fiberCount: parseInt(e.target.value) })} />
+                                    <CustomInput label={t('loose_tubes')} type="number" value={formData.looseTubeCount} onChange={e => setFormData({ ...formData, looseTubeCount: Number(e.target.value) })} />
+                                    <CustomInput label={t('fibers_per_tube') || 'Fibras por Tubo'} type="number" value={formData.fibersPerTube} onChange={e => setFormData({ ...formData, fibersPerTube: Number(e.target.value) })} />
+                                    <UnitInput label={t('attenuation_db') || 'Atenuação'} unit="dB" step="0.01" min={0}
+                                        value={formData.attenuation ?? 0}
+                                        onChange={v => setFormData({ ...formData, attenuation: v })} />
                                 </div>
+
                                 <div className="mt-4">
-                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">{t('fiber_color_standard')}</label>
-                                    <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1 mb-3">
-                                        <button
+                                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                                        {t('fiber_color_standard')}
+                                    </label>
+                                    <div className="flex bg-slate-200/60 dark:bg-slate-700/50 rounded-lg p-1 mb-3">
+                                        <button type="button"
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'ABNT' })}
-                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'ABNT' || !formData.fiberProfile ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
-                                        >
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${formData.fiberProfile === 'ABNT' || !formData.fiberProfile ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}>
                                             {t('standard_abnt')}
                                         </button>
-                                        <button
+                                        <button type="button"
                                             onClick={() => setFormData({ ...formData, fiberProfile: 'EIA' })}
-                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.fiberProfile === 'EIA' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}
-                                        >
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${formData.fiberProfile === 'EIA' ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'}`}>
                                             {t('standard_eia')}
                                         </button>
                                     </div>
 
-                                    {/* Visual Color Preview */}
                                     <div className="flex gap-1 justify-center">
-                                        {(formData.fiberProfile === 'EIA' ?
-                                            ['#0000FF', '#FFA500', '#008000', '#A52A2A', '#808080', '#FFFFFF', '#FF0000', '#000000', '#FFFF00', '#EE82EE', '#FFC0CB', '#00FFFF']
-                                            :
-                                            ['#008000', '#FFFF00', '#FFFFFF', '#0000FF', '#FF0000', '#EE82EE', '#A52A2A', '#FFC0CB', '#000000', '#808080', '#FFA500', '#00FFFF']
+                                        {(formData.fiberProfile === 'EIA'
+                                            ? ['#0000FF', '#FFA500', '#008000', '#A52A2A', '#808080', '#FFFFFF', '#FF0000', '#000000', '#FFFF00', '#EE82EE', '#FFC0CB', '#00FFFF']
+                                            : ['#008000', '#FFFF00', '#FFFFFF', '#0000FF', '#FF0000', '#EE82EE', '#A52A2A', '#FFC0CB', '#000000', '#808080', '#FFA500', '#00FFFF']
                                         ).map((c, i) => (
-                                            <div key={i} className="w-4 h-4 rounded-full border border-slate-300 shadow-sm" style={{ backgroundColor: c }} title={`${t('unit_fiber_label').replace('{n}', (i + 1).toString())}`} />
+                                            <div key={i} className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700" style={{ backgroundColor: c }} />
                                         ))}
                                         <span className="text-slate-400 text-xs self-end ml-1">...</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Description */}
-                            <div>
-                                <CustomInput
-                                    isTextarea
-                                    label={t('description')}
-                                    rows={3}
-                                    placeholder={t('details_placeholder')}
-                                    value={formData.description || ''}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                />
-                            </div>
+                            <CustomInput isTextarea label={t('description')} rows={3} placeholder={t('details_placeholder')}
+                                value={formData.description || ''} onChange={e => setFormData({ ...formData, description: e.target.value })} />
 
-                            {/* Visual Representation */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Deployed Specs */}
-                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#22262e]/50">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Implantado</h4>
-                                    <div className="flex gap-4 items-center">
-                                        <div className="flex-1">
-                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cor</label>
-                                            <div className="flex gap-2 flex-wrap">
-                                                {SPEC_COLORS.slice(0, 7).map(c => (
-                                                    <button
-                                                        key={c}
-                                                        onClick={() => setFormData({ ...formData, deployedSpec: { ...formData.deployedSpec!, color: c } })}
-                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.deployedSpec?.color === c ? 'ring-2 ring-emerald-600 ring-offset-1 scale-110' : ''}`}
-                                                        style={{ backgroundColor: c }}
-                                                    />
-                                                ))}
-                                                <input
-                                                    type="color"
-                                                    className="w-8 h-8 p-0 rounded cursor-pointer border-0"
-                                                    value={formData.deployedSpec?.color}
-                                                    onChange={e => setFormData({ ...formData, deployedSpec: { ...formData.deployedSpec!, color: e.target.value } })}
-                                                />
+                            {/* Specs visuais (cor/espessura) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {[
+                                    { key: 'deployedSpec' as const, label: 'Implantado', colors: SPEC_COLORS.slice(0, 7) },
+                                    { key: 'plannedSpec' as const, label: 'Planejado', colors: SPEC_COLORS.slice(7, 14) },
+                                ].map(spec => {
+                                    const current = formData[spec.key];
+                                    return (
+                                        <div key={spec.key} className="p-3 border border-slate-200 dark:border-slate-700/30 rounded-xl bg-slate-50 dark:bg-[#22262e]/40">
+                                            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">Exibição · {spec.label}</h4>
+                                            <div className="flex gap-3 items-end">
+                                                <div className="flex-1">
+                                                    <label className="block text-[10px] font-semibold text-slate-400 mb-1.5">Cor</label>
+                                                    <div className="flex gap-1.5 flex-wrap">
+                                                        {spec.colors.map(c => (
+                                                            <button key={c} type="button"
+                                                                onClick={() => setFormData({ ...formData, [spec.key]: { ...current!, color: c } })}
+                                                                className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-700 transition-transform hover:scale-110 ${current?.color === c ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-slate-800' : ''}`}
+                                                                style={{ backgroundColor: c }} />
+                                                        ))}
+                                                        <input type="color" className="w-7 h-7 p-0 rounded cursor-pointer border-0"
+                                                            value={current?.color}
+                                                            onChange={e => setFormData({ ...formData, [spec.key]: { ...current!, color: e.target.value } })} />
+                                                    </div>
+                                                </div>
+                                                <div className="w-20">
+                                                    <label className="block text-[10px] font-semibold text-slate-400 mb-1.5">Espessura</label>
+                                                    <input type="number" min={1}
+                                                        className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white text-center text-sm tabular-nums focus:outline-none focus:border-emerald-500"
+                                                        value={current?.width}
+                                                        onChange={e => setFormData({ ...formData, [spec.key]: { ...current!, width: Number(e.target.value) } })} />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="w-24">
-                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Espessura</label>
-                                            <input
-                                                type="number"
-                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white text-center"
-                                                value={formData.deployedSpec?.width}
-                                                onChange={e => setFormData({ ...formData, deployedSpec: { ...formData.deployedSpec!, width: Number(e.target.value) } })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Planned Specs */}
-                                <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-[#22262e]/50">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">Exibição: Planejado</h4>
-                                    <div className="flex gap-4 items-center">
-                                        <div className="flex-1">
-                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Cor</label>
-                                            <div className="flex gap-2 flex-wrap">
-                                                {SPEC_COLORS.slice(7, 14).map(c => (
-                                                    <button
-                                                        key={c}
-                                                        onClick={() => setFormData({ ...formData, plannedSpec: { ...formData.plannedSpec!, color: c } })}
-                                                        className={`w-6 h-6 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm transition-transform hover:scale-110 ${formData.plannedSpec?.color === c ? 'ring-2 ring-emerald-600 ring-offset-1 scale-110' : ''}`}
-                                                        style={{ backgroundColor: c }}
-                                                    />
-                                                ))}
-                                                <input
-                                                    type="color"
-                                                    className="w-8 h-8 p-0 rounded cursor-pointer border-0"
-                                                    value={formData.plannedSpec?.color}
-                                                    onChange={e => setFormData({ ...formData, plannedSpec: { ...formData.plannedSpec!, color: e.target.value } })}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="w-24">
-                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Espessura</label>
-                                            <input
-                                                type="number"
-                                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white text-center"
-                                                value={formData.plannedSpec?.width}
-                                                onChange={e => setFormData({ ...formData, plannedSpec: { ...formData.plannedSpec!, width: Number(e.target.value) } })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Footer */}
-                        <div className="p-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3 bg-slate-50 dark:bg-[#22262e]/80 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm">
-                            <button
-                                onClick={closeModal}
-                                className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-                            >
-                                <Save className="w-4 h-4" />
-                                {t('save')}
-                            </button>
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/60 dark:bg-[#22262e]/60 sticky bottom-0 z-10 backdrop-blur">
+                            <ModalFooter
+                                onCancel={closeModal}
+                                primaryLabel={t('save') || 'Salvar'}
+                                primaryIcon={Save}
+                                primaryLoading={saving}
+                                primaryType="button"
+                                onPrimary={handleSave}
+                            />
                         </div>
                     </div>
-                </div>
-            , document.body)}
+                </div>,
+                document.body
+            )}
         </div>
     );
 };

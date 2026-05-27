@@ -20,6 +20,7 @@ interface PaymentContext {
 
 interface BillingPageProps {
     onBack: () => void;
+    showToast?: (msg: string, type?: 'success' | 'info' | 'error') => void;
     userData: {
         username: string;
         email?: string;
@@ -32,6 +33,15 @@ interface BillingPageProps {
         companyStatus?: string;
     };
 }
+
+const CANCEL_REASONS = [
+    { id: 'too_expensive', label: 'Está muito caro' },
+    { id: 'missing_features', label: 'Faltam recursos que preciso' },
+    { id: 'switching', label: 'Vou usar outra ferramenta' },
+    { id: 'temp_pause', label: 'Só preciso pausar por enquanto' },
+    { id: 'not_using', label: 'Não estou usando' },
+    { id: 'other', label: 'Outro motivo' }
+] as const;
 
 const getPlanIcon = (name: string) => {
     const lower = (name || '').toLowerCase();
@@ -62,7 +72,7 @@ const formatCurrency = (value: number | null | undefined): string => {
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) => {
+export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData, showToast }) => {
     const { t } = useLanguage();
     const [activeView, setActiveView] = useState<ViewKey>('overview');
     const [invoices, setInvoices] = useState<any[]>([]);
@@ -73,8 +83,21 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) =>
     const [pixPopover, setPixPopover] = useState<any | null>(null);
     const [cancelling, setCancelling] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(false);
+    const [cancelReason, setCancelReason] = useState<string | null>(null);
+    const [cancelDetail, setCancelDetail] = useState('');
     const [invoiceFilter, setInvoiceFilter] = useState<InvoiceFilter>('all');
     const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [localToast, setLocalToast] = useState<{ msg: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+    // Fallback toaster pra quando showToast não foi passado
+    const notify = (msg: string, type: 'success' | 'info' | 'error' = 'success') => {
+        if (showToast) {
+            showToast(msg, type);
+        } else {
+            setLocalToast({ msg, type });
+            setTimeout(() => setLocalToast(null), 4000);
+        }
+    };
 
     // Fetch invoices when needed
     useEffect(() => {
@@ -165,7 +188,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) =>
 
     const openPayInvoice = (inv: any) => {
         if (!userData.planId || !userData.planPrice) {
-            alert('Dados do plano indisponíveis. Recarregue a página.');
+            notify('Dados do plano indisponíveis. Recarregue a página.', 'error');
             return;
         }
         setPaymentContext({
@@ -194,20 +217,26 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) =>
 
     const handlePaymentSuccess = () => {
         setPaymentSuccess(true);
+        notify('Pagamento confirmado! Atualizando sua conta…', 'success');
         setTimeout(() => {
             window.location.reload();
-        }, 2000);
+        }, 2200);
     };
 
     const handleCancelSubscription = async () => {
         setCancelling(true);
         try {
-            await api.post('/payments/cancel_subscription');
+            await api.post('/payments/cancel_subscription', {
+                reason: cancelReason || undefined,
+                detail: cancelDetail.trim() || undefined,
+            });
             setConfirmCancel(false);
-            alert('Assinatura cancelada. Você manterá acesso até o fim do período pago.');
-            window.location.reload();
+            setCancelReason(null);
+            setCancelDetail('');
+            notify('Assinatura cancelada. Você mantém acesso até o fim do período pago.', 'success');
+            setTimeout(() => window.location.reload(), 1800);
         } catch (err) {
-            alert('Erro ao cancelar assinatura. Tente novamente ou contate o suporte.');
+            notify('Erro ao cancelar assinatura. Tente novamente ou contate o suporte.', 'error');
         } finally {
             setCancelling(false);
         }
@@ -343,58 +372,80 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) =>
 
             {/* PIX popover for pending invoices with existing QR */}
             {pixPopover && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setPixPopover(null)}>
-                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl max-w-sm w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">QR Code Pix</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Fatura pendente — escaneie para pagar</p>
-                            </div>
-                            <button onClick={() => setPixPopover(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-                                <X className="w-4 h-4 text-slate-500" />
-                            </button>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <div className="bg-white p-3 rounded-xl border-4 border-emerald-50 mb-4">
-                                <img src={`data:image/png;base64,${pixPopover.qrCodeBase64}`} alt="QR Code Pix" className="w-40 h-40 object-contain" />
-                            </div>
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(pixPopover.qrCode);
-                                    alert('Código Pix copiado!');
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm"
-                            >
-                                <Copy className="w-4 h-4" />
-                                Copiar Copia e Cola
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <PixPopover invoice={pixPopover} onClose={() => setPixPopover(null)} />
             )}
 
-            {/* Cancel confirmation modal */}
+            {/* Cancel confirmation modal — with reason picker for retention */}
             {confirmCancel && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl max-w-md w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
                         <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
                             <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
                         </div>
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Cancelar assinatura?</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                            Você manterá acesso até <span className="font-bold">{formatDate(userData.expiresAt)}</span>. Após essa data, sua conta será suspensa e dados podem ser arquivados após 90 dias.
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+                            Você mantém acesso até <span className="font-bold text-slate-700 dark:text-slate-200">{formatDate(userData.expiresAt)}</span>. Depois disso, a conta é suspensa e dados podem ser arquivados após 90 dias.
                         </p>
-                        <div className="flex gap-3">
+
+                        <div className="mb-5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                                O que motivou a saída?
+                            </label>
+                            <div className="space-y-1.5">
+                                {CANCEL_REASONS.map(r => (
+                                    <label
+                                        key={r.id}
+                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${cancelReason === r.id
+                                            ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-500/50'
+                                            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                            }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="cancel-reason"
+                                            checked={cancelReason === r.id}
+                                            onChange={() => setCancelReason(r.id)}
+                                            className="accent-emerald-500"
+                                        />
+                                        <span className="text-sm text-slate-700 dark:text-slate-200">{r.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+
+                            {cancelReason && (
+                                <textarea
+                                    value={cancelDetail}
+                                    onChange={(e) => setCancelDetail(e.target.value)}
+                                    rows={2}
+                                    maxLength={300}
+                                    placeholder="Quer detalhar? (opcional)"
+                                    className="mt-3 w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#22262e] text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+                                />
+                            )}
+                        </div>
+
+                        {cancelReason === 'temp_pause' && (
+                            <div className="mb-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 flex gap-2.5">
+                                <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                                    Para pausar sem perder o cadastro, considere fazer downgrade para o Plano Grátis. Você mantém os dados e pode voltar quando quiser.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
                             <button
-                                onClick={() => setConfirmCancel(false)}
-                                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                onClick={() => { setConfirmCancel(false); setCancelReason(null); setCancelDetail(''); }}
+                                disabled={cancelling}
+                                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 disabled:opacity-50"
                             >
                                 Manter assinatura
                             </button>
                             <button
                                 onClick={handleCancelSubscription}
-                                disabled={cancelling}
-                                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm disabled:opacity-50"
+                                disabled={cancelling || !cancelReason}
+                                title={!cancelReason ? 'Selecione um motivo' : undefined}
+                                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {cancelling ? 'Cancelando...' : 'Sim, cancelar'}
                             </button>
@@ -402,6 +453,65 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData }) =>
                     </div>
                 </div>
             )}
+
+            {/* Local toaster (used when no global showToast was passed) */}
+            {localToast && (
+                <div className="fixed bottom-6 right-6 z-[99999] animate-in slide-in-from-bottom-4 fade-in duration-200">
+                    <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl max-w-sm ${localToast.type === 'success' ? 'bg-emerald-600 text-white' :
+                        localToast.type === 'error' ? 'bg-red-600 text-white' :
+                            'bg-slate-900 text-white'
+                        }`}>
+                        {localToast.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" /> :
+                            localToast.type === 'error' ? <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" /> :
+                                <Info className="w-5 h-5 shrink-0 mt-0.5" />}
+                        <p className="text-sm font-medium leading-snug">{localToast.msg}</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// PIX popover with inline copy feedback (no more alert)
+const PixPopover: React.FC<{ invoice: any; onClose: () => void }> = ({ invoice, onClose }) => {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(invoice.qrCode);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            /* clipboard pode falhar em contexto não-secure */
+        }
+    };
+    return (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl max-w-sm w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">QR Code Pix</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Fatura pendente — escaneie para pagar</p>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                        <X className="w-4 h-4 text-slate-500" />
+                    </button>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="bg-white p-3 rounded-xl border-4 border-emerald-50 mb-4">
+                        <img src={`data:image/png;base64,${invoice.qrCodeBase64}`} alt="QR Code Pix" className="w-40 h-40 object-contain" />
+                    </div>
+                    <button
+                        onClick={handleCopy}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${copied
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
+                            }`}
+                    >
+                        {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copied ? 'Copiado!' : 'Copiar Copia e Cola'}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -720,6 +830,15 @@ const InvoiceRow: React.FC<{ invoice: any; onPay: (inv: any) => void; onShowPix:
                             Pagar
                         </button>
                     )}
+                    {isPending && !(invoice.paymentMethod === 'PIX' && invoice.qrCodeBase64) && (
+                        <button
+                            onClick={() => onPay(invoice)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
+                        >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            Pagar
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -852,20 +971,26 @@ const PlansView: React.FC<PlansViewProps> = ({ plans, loading, currentPlanId, cu
                                 </ul>
 
                                 {/* CTA */}
-                                <button
-                                    onClick={() => onSelectPlan(plan)}
-                                    disabled={isCurrent}
-                                    className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all ${isCurrent
-                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                                        : isFree
+                                {isCurrent ? (
+                                    <div className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                            Sua assinatura
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => onSelectPlan(plan)}
+                                        className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-all ${isFree
                                             ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                                             : plan.highlight
                                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
                                                 : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
-                                        }`}
-                                >
-                                    {isCurrent ? 'Assinatura ativa' : isFree ? 'Selecionar' : 'Assinar agora'}
-                                </button>
+                                            }`}
+                                    >
+                                        {isFree ? 'Selecionar' : 'Assinar agora'}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
-    Search, Database, LayoutDashboard, X, ClipboardList, UtilityPole,
+    Search, Database, LayoutDashboard, X, ChevronDown, ClipboardList, UtilityPole,
     Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet
 } from 'lucide-react';
 import { Button } from './common/Button';
@@ -13,7 +13,7 @@ import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
 import { Project, Coordinates } from '../types';
 
-export type DashboardView = 'projects' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
+export type DashboardView = 'projects' | 'dashboard' | 'integrations' | 'registrations' | 'users' | 'settings' | 'backup' | 'reg_poste' | 'reg_caixa' | 'reg_cabo' | 'reg_fusao' | 'reg_conector' | 'reg_splitter' | 'reg_olt' | 'reg_gbic' | 'reg_clientes';
 
 export interface MenuItem {
     id: DashboardView;
@@ -198,6 +198,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
     const [showUserPopover, setShowUserPopover] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
+    const projectSwitcherRef = useRef<HTMLDivElement>(null);
+    const [showProjectSwitcher, setShowProjectSwitcher] = useState(false);
 
     const currentProjectName = projects.find(p => p.id === currentProjectId)?.name || t('home');
     const expInfo = getExpirationInfo(subscriptionExpiresAt, cancelAtPeriodEnd, userPlan, userPlanType);
@@ -212,6 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const dashboardSections: { label: string; items: MenuItem[] }[] = (() => {
         const allItems: MenuItem[] = [
             { id: 'projects', label: t('my_projects') || 'Projetos', icon: FolderOpen, badge: menuBadges?.projects },
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: menuBadges?.dashboard },
             {
                 id: 'registrations',
                 label: t('registrations') || 'Cadastros',
@@ -243,7 +246,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }) as MenuItem[];
 
         // Group into sections
-        const general = allItems.filter(i => i.id === 'projects');
+        const general = allItems.filter(i => i.id === 'projects' || i.id === 'dashboard');
         const management = allItems.filter(i => ['registrations', 'users', 'integrations'].includes(i.id));
         const system = allItems.filter(i => ['settings', 'backup'].includes(i.id));
 
@@ -278,6 +281,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [showUserPopover]);
+
+    useEffect(() => {
+        if (!showProjectSwitcher) return;
+        const handler = (e: MouseEvent) => {
+            if (projectSwitcherRef.current && !projectSwitcherRef.current.contains(e.target as Node)) {
+                setShowProjectSwitcher(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showProjectSwitcher]);
 
     const isMenuActive = (item: MenuItem) => {
         if (currentDashboardView === item.id) return true;
@@ -360,22 +374,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </button>
                         </Tooltip>}
 
-                        <NavButton
-                            icon={<FolderOpen className="w-5 h-5" />}
-                            label={currentProjectName}
-                            onClick={() => {}}
-                            isCollapsed={isCollapsed}
-                            variant="slate"
-                        />
+                        {/* Project switcher inline — click pra trocar de projeto
+                            sem voltar pro dashboard. */}
+                        <div className="relative" ref={projectSwitcherRef}>
+                            <button
+                                onClick={() => !isCollapsed && setShowProjectSwitcher(o => !o)}
+                                className={`group relative w-full flex items-center transition-colors ${isCollapsed
+                                    ? 'w-10 h-10 justify-center mx-auto rounded-xl bg-slate-50 dark:bg-[#22262e] text-slate-400 hover:text-emerald-500'
+                                    : 'gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#22262e] hover:bg-slate-100 dark:hover:bg-[#262a32] border border-slate-200/60 dark:border-slate-700/40'}`}
+                                title={isCollapsed ? currentProjectName : undefined}
+                            >
+                                <FolderOpen className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                                {!isCollapsed && (
+                                    <>
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight">{currentProjectName}</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{deploymentProgress}% implantado</p>
+                                        </div>
+                                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showProjectSwitcher ? 'rotate-180' : ''}`} />
+                                    </>
+                                )}
+                                {/* Progress bar embutida no fundo do card */}
+                                {!isCollapsed && (
+                                    <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500" style={{ width: `${deploymentProgress}%` }} />
+                                )}
+                            </button>
 
-                        <NavButton
-                            icon={<Activity className="w-5 h-5" />}
-                            label={`${t('deployment_progress')}: ${deploymentProgress}%`}
-                            onClick={() => { }}
-                            isCollapsed={isCollapsed}
-                            variant="emerald"
-                            progress={deploymentProgress}
-                        />
+                            {/* Dropdown de projetos */}
+                            {showProjectSwitcher && !isCollapsed && projects.length > 0 && (
+                                <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-xl z-30 max-h-72 overflow-y-auto py-1">
+                                    {projects.map(p => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => {
+                                                setCurrentProjectId(p.id);
+                                                setShowProjectSwitcher(false);
+                                                onCloseMobile();
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors ${p.id === currentProjectId ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'}`}
+                                        >
+                                            <FolderOpen className={`w-3.5 h-3.5 ${p.id === currentProjectId ? 'text-emerald-500' : 'text-slate-400'}`} />
+                                            <span className="truncate flex-1">{p.name}</span>
+                                            {p.id === currentProjectId && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -387,7 +432,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {/* Search Section */}
                             {!isCollapsed ? (
                                 <div className="space-y-2 animate-in slide-in-from-left-2 duration-300">
-                                    <span className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('search_generic')}</span>
+                                    <span className="px-2 text-[11px] font-semibold text-slate-400/80 dark:text-slate-500/80">{t('search_generic')}</span>
                                     <SearchBox
                                         onSearch={onSearch}
                                         results={searchResults}
@@ -418,11 +463,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     variant="slate"
                                 />
 
-                                {/* Analysis & Data */}
-                                {!isCollapsed && (
-                                    <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('report_analyze')}</span>
-                                )}
-
+                                {/* Análise — sem header, agrupado por divider */}
                                 <NavButton
                                     icon={<FileText className="w-5 h-5" />}
                                     label={t('report_analyze')}
@@ -439,12 +480,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     variant="slate"
                                 />
 
-                                {/* Export */}
+                                {/* Export — separado por divider fino em vez de label */}
                                 {((hasPermission(userPermissions, 'projects:export') || userRole === 'OWNER') && (onExportClick || onExportAreaClick)) && (
                                     <>
-                                        {!isCollapsed && (
-                                            <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('export_kmz_button')}</span>
-                                        )}
+                                        {!isCollapsed && <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-1" />}
                                         {onExportClick && (
                                             <NavButton
                                                 icon={<FileDown className={`w-5 h-5 ${isExporting ? 'animate-bounce text-emerald-500' : ''}`} />}
@@ -475,11 +514,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     </>
                                 )}
 
-                                {/* Settings — at the end */}
-                                {!isCollapsed && (
-                                    <span className="px-2 pt-3 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{t('system_settings')}</span>
-                                )}
-
+                                {/* Settings — divider, sem label redundante */}
+                                {!isCollapsed && <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-1" />}
                                 <NavButton
                                     icon={<Settings className="w-5 h-5" />}
                                     label={t('system_settings')}
@@ -489,54 +525,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 />
                             </div>
 
-                            {/* VFL Indicator */}
+                            {/* VFL pill — compact status bar style (VS Code-like) */}
                             {vflSource && (
-                                <div className={`p-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl relative overflow-hidden group ${isCollapsed ? 'flex justify-center' : ''}`}>
-                                    <div className="absolute top-0 right-0 p-1 opacity-10">
-                                        <Flashlight className="w-10 h-10 text-rose-500 -rotate-12" />
-                                    </div>
-                                    <div className={`relative z-10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="flex w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                            {!isCollapsed && <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-tighter">VFL ON</span>}
-                                        </div>
-                                        {!isCollapsed && <div className="text-[10px] font-medium text-rose-500 dark:text-rose-400 mb-2 truncate max-w-[180px]">{formatVflSourceLabel(vflSource, projects.find(p => p.id === currentProjectId)?.network)}</div>}
-                                        <Button
-                                            variant="destructive"
-                                            size={isCollapsed ? "icon" : "sm"}
-                                            onClick={() => setVflSource(null)}
-                                            className={`font-bold uppercase tracking-wider ${!isCollapsed ? 'w-full py-1 text-[9px] h-7' : 'w-7 h-7'}`}
-                                            title={t('turn_off')}
-                                        >
-                                            {isCollapsed ? <X className="w-3.5 h-3.5" /> : t('turn_off')}
-                                        </Button>
-                                    </div>
-                                </div>
+                                <button
+                                    onClick={() => setVflSource(null)}
+                                    title={`${t('turn_off')} VFL`}
+                                    className={`group flex items-center gap-2 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors ${isCollapsed ? 'w-10 h-8 justify-center mx-auto' : 'w-full px-2.5 py-1.5'}`}
+                                >
+                                    <span className="flex items-center gap-1.5 shrink-0">
+                                        <Flashlight className="w-3.5 h-3.5 text-rose-500" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                    </span>
+                                    {!isCollapsed && (
+                                        <>
+                                            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">VFL</span>
+                                            <span className="text-[10px] text-rose-600/80 dark:text-rose-400/80 truncate flex-1 text-left">
+                                                {formatVflSourceLabel(vflSource, projects.find(p => p.id === currentProjectId)?.network)}
+                                            </span>
+                                            <X className="w-3.5 h-3.5 text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                        </>
+                                    )}
+                                </button>
                             )}
 
-                            {/* OTDR Indicator */}
+                            {/* OTDR pill — mesma estrutura compacta */}
                             {otdrResult && setOtdrResult && (
-                                <div className={`p-2 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 rounded-xl relative overflow-hidden group ${isCollapsed ? 'flex justify-center' : ''}`}>
-                                    <div className="absolute top-0 right-0 p-1 opacity-10">
-                                        <Ruler className="w-10 h-10 text-indigo-500 -rotate-12" />
-                                    </div>
-                                    <div className={`relative z-10 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="flex w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                                            {!isCollapsed && <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-tighter">OTDR ON</span>}
-                                        </div>
-                                        {!isCollapsed && <div className="text-[10px] font-medium text-indigo-500 dark:text-indigo-400 mb-2 truncate max-w-[180px] font-mono">{otdrResult.lat.toFixed(5)}, {otdrResult.lng.toFixed(5)}</div>}
-                                        <Button
-                                            variant="destructive"
-                                            size={isCollapsed ? "icon" : "sm"}
-                                            onClick={() => setOtdrResult(null)}
-                                            className={`font-bold uppercase tracking-wider ${!isCollapsed ? 'w-full py-1 text-[9px] h-7 bg-indigo-600 hover:bg-indigo-500 border-indigo-700' : 'w-7 h-7 bg-indigo-600 hover:bg-indigo-500 border-indigo-700'}`}
-                                            title={t('turn_off')}
-                                        >
-                                            {isCollapsed ? <X className="w-3.5 h-3.5" /> : t('turn_off')}
-                                        </Button>
-                                    </div>
-                                </div>
+                                <button
+                                    onClick={() => setOtdrResult(null)}
+                                    title={`${t('turn_off')} OTDR`}
+                                    className={`group flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors ${isCollapsed ? 'w-10 h-8 justify-center mx-auto' : 'w-full px-2.5 py-1.5'}`}
+                                >
+                                    <span className="flex items-center gap-1.5 shrink-0">
+                                        <Ruler className="w-3.5 h-3.5 text-indigo-500" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                    </span>
+                                    {!isCollapsed && (
+                                        <>
+                                            <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">OTDR</span>
+                                            <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 font-mono truncate flex-1 text-left">
+                                                {otdrResult.lat.toFixed(4)}, {otdrResult.lng.toFixed(4)}
+                                            </span>
+                                            <X className="w-3.5 h-3.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                        </>
+                                    )}
+                                </button>
                             )}
                         </>
                     ) : (
@@ -545,7 +577,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {dashboardSections.map(section => (
                                 <div key={section.label} className={`space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
                                     {!isCollapsed && (
-                                        <span className="px-2 pb-1 block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                        <span className="px-2 pb-1 block text-[11px] font-semibold text-slate-400/80 dark:text-slate-500/80">
                                             {section.label}
                                         </span>
                                     )}
@@ -591,10 +623,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                                             onCloseMobile();
                                                                         }
                                                                     }}
-                                                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all
+                                                                    className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-md text-xs transition-colors border-l-2
                                                                         ${subActive
-                                                                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
-                                                                            : 'text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#22262e]'}`}
+                                                                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-500 font-bold rounded-l-none'
+                                                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 border-transparent font-semibold'}`}
                                                                 >
                                                                     <sub.icon className={`w-3.5 h-3.5 ${subActive ? 'text-emerald-500' : ''}`} />
                                                                     <span className="flex-1 text-left">{sub.label}</span>
@@ -800,26 +832,35 @@ interface NavButtonProps {
 }
 
 const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed, variant = 'slate', progress, isActive, hasArrow, isExpanded, badge }) => {
-    const isEmerald = variant === 'emerald' || isActive;
+    // Active state pattern: left rail accent + text color shift + bg muito sutil.
+    // Diferencia "current page" de "hover" (que usa só bg-slate-100 leve).
+    // Padrão Linear/Notion/GitHub. variant="emerald" antigo (bg fill) ainda
+    // funciona pra contextos não-nav (ex.: project context card highlight).
+    const useAccentStyle = isActive && variant !== 'emerald';
+    const isEmerald = variant === 'emerald';
+
+    const baseClasses = isCollapsed ? 'w-10 h-10 p-0 justify-center mx-auto' : 'w-full px-3 py-2 gap-3 justify-start';
+    const stateClasses = useAccentStyle
+        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/30 border-l-2 border-emerald-500 rounded-l-none'
+        : isEmerald
+            ? '' // Button já estiliza com variant
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/70 dark:hover:bg-slate-800/40 border-l-2 border-transparent';
 
     const button = (
         <Button
             variant={isEmerald ? 'emerald' : 'ghost'}
             onClick={onClick}
-            className={`flex items-center group relative transition-all duration-300 border border-transparent overflow-hidden
-                ${isCollapsed ? 'w-10 h-10 p-0 justify-center mx-auto' : 'w-full px-3 py-2.5 gap-3 justify-start'}
-                ${isActive ? '' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'}`}
+            className={`flex items-center group relative transition-colors duration-150 overflow-hidden ${baseClasses} ${stateClasses}`}
         >
-            <div className={`relative flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${isEmerald ? 'text-white' : 'text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-100'}`}>
+            <div className={`relative flex-shrink-0 transition-colors duration-150 ${useAccentStyle ? 'text-emerald-600 dark:text-emerald-400' : isEmerald ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'}`}>
                 {icon}
-                {/* Badge dot on collapsed icon */}
                 {isCollapsed && badge !== undefined && badge !== 0 && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-[#1a1d23]" />
                 )}
             </div>
 
             {!isCollapsed && (
-                <span className="text-xs font-bold truncate tracking-tight flex-1 text-left">{label}</span>
+                <span className={`text-xs truncate flex-1 text-left ${useAccentStyle ? 'font-bold' : 'font-semibold'}`}>{label}</span>
             )}
 
             {!isCollapsed && badge !== undefined && badge !== 0 && (
@@ -827,11 +868,11 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isCollapsed
             )}
 
             {hasArrow && (
-                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${isEmerald ? 'text-white' : 'text-slate-400'}`} />
+                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''} ${useAccentStyle ? 'text-emerald-500' : isEmerald ? 'text-white' : 'text-slate-400'}`} />
             )}
 
             {progress !== undefined && !isCollapsed && (
-                <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500 transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ width: `${progress}%` }} />
+                <div className="absolute bottom-0 left-0 h-[2px] bg-emerald-500 transition-all duration-500" style={{ width: `${progress}%` }} />
             )}
         </Button>
     );

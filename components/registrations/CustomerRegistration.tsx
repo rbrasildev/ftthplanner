@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Search, Edit2, Trash2, X, Save, AlertTriangle, Loader2, MapPin, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { User, Search, Edit2, Trash2, X, Save, Loader2, MapPin, Phone, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { CustomSelect, CustomInput } from '../common';
 import { getCustomers, updateCustomer, deleteCustomer } from '../../services/customerService';
-import { Customer, PaginatedResponse } from '../../types';
+import { Customer, PaginatedResponse, CustomerStatus } from '../../types';
+import {
+    KebabMenu, DeleteConfirmDialog, EmptyState, FilterChips,
+    ListSkeleton, ModalFooter,
+} from './common/CatalogPrimitives';
 
 interface CustomerRegistrationProps {
     onLocate?: (customer: Customer) => void;
@@ -17,9 +21,11 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<CustomerStatus | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
     // Pagination State
@@ -103,6 +109,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSaving(true);
         try {
             if (editingCustomer) {
                 await updateCustomer(editingCustomer.id, formData);
@@ -113,8 +120,33 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
         } catch (error) {
             console.error("Failed to save customer", error);
             if (showToast) showToast(t('error_save') || 'Falha ao salvar cliente', 'error');
+        } finally {
+            setSaving(false);
         }
     };
+
+    // Filtra por status no client-side (em cima da página atual).
+    const filteredCustomers = useMemo(() => {
+        if (!statusFilter) return customers;
+        return customers.filter(c => c.status === statusFilter);
+    }, [customers, statusFilter]);
+
+    const statusChips = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const c of customers) counts[c.status] = (counts[c.status] || 0) + 1;
+        return [
+            { value: null, label: 'Todos', count: customers.length },
+            ...(['ACTIVE', 'PLANNED', 'SUSPENDED', 'INACTIVE'] as CustomerStatus[])
+                .filter(s => counts[s] > 0)
+                .map(s => ({
+                    value: s,
+                    label: s === 'ACTIVE' ? 'Ativos' : s === 'PLANNED' ? 'Planejados' : s === 'SUSPENDED' ? 'Suspensos' : 'Inativos',
+                    count: counts[s],
+                })),
+        ];
+    }, [customers]);
+
+    const itemToDelete = customers.find(c => c.id === showDeleteConfirm);
 
     const handleDelete = async (id: string) => {
         try {
@@ -144,134 +176,95 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                 </div>
             </div>
 
-            {/* List Container */}
-            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
-                {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex items-center justify-between gap-4">
-                    <div className="relative max-w-md flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder={t('search_placeholder') || 'Buscar...'}
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
-                        />
-                    </div>
-                    
-                    {total > 0 && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            {t('customers_total', { count: total })}
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="relative max-w-md flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input type="text" placeholder={t('search_placeholder') || 'Buscar por nome, email, telefone...'}
+                                value={search} onChange={e => setSearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm" />
                         </div>
+                        {total > 0 && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium tabular-nums">
+                                {t('customers_total', { count: total })}
+                            </div>
+                        )}
+                    </div>
+                    {!isLoading && customers.length > 0 && (
+                        <FilterChips options={statusChips} value={statusFilter} onChange={(v) => setStatusFilter(v as CustomerStatus | null)} />
                     )}
                 </div>
 
                 {isLoading && page === 1 ? (
-                    <div className="animate-pulse">
-                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-10">
-                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
-                        </div>
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="h-4 w-36 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="h-3 w-28 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                    <div className="h-3 w-32 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                </div>
-                                <div className="h-5 w-14 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
-                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="ml-auto flex gap-2">
-                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                                    <div className="h-8 w-8 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : customers.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        {t('no_customers_found') || 'Nenhum cliente encontrado'}
-                    </div>
+                    <ListSkeleton rows={6} />
+                ) : filteredCustomers.length === 0 ? (
+                    <EmptyState
+                        icon={User}
+                        title={customers.length === 0 ? 'Nenhum cliente cadastrado' : 'Nenhum cliente encontrado'}
+                        description={customers.length === 0 ? 'Os clientes adicionados pelo mapa aparecem aqui pra gestão.' : undefined}
+                        searchTerm={customers.length > 0 && (debouncedSearch || statusFilter) ? (debouncedSearch || `status: ${statusFilter}`) : undefined}
+                    />
                 ) : (
                     <div className="relative overflow-x-auto">
                         {isLoading && (
-                            <div className="absolute inset-0 bg-white/50 dark:bg-[#1a1d23]/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-white/60 dark:bg-[#1a1d23]/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
                                 <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
                             </div>
                         )}
                         <table className="w-full text-left text-sm min-w-[800px]">
-                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
+                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
                                 <tr>
-                                    <th className="px-6 py-4">{t('name')}</th>
-                                    <th className="px-6 py-4">{t('contacts')}</th>
-                                    <th className="px-6 py-4">{t('status')}</th>
-                                    <th className="px-6 py-4">{t('customer_connection')}</th>
-                                    <th className="px-6 py-4 text-right">{t('actions')}</th>
+                                    <th className="px-6 py-3">{t('name')}</th>
+                                    <th className="px-6 py-3">{t('contacts')}</th>
+                                    <th className="px-6 py-3">{t('status')}</th>
+                                    <th className="px-6 py-3">{t('customer_connection')}</th>
+                                    <th className="px-6 py-3 text-right w-12">{t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {customers.map(customer => (
-                                    <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                {filteredCustomers.map(customer => (
+                                    <tr key={customer.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
                                             <div className="flex flex-col">
                                                 <span>{customer.name}</span>
-                                                <span className="text-[10px] text-slate-400 font-mono uppercase">{customer.document || '---'}</span>
+                                                <span className="text-[10px] text-slate-400 tabular-nums uppercase font-normal">{customer.document || '—'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-3">
                                             <div className="flex flex-col gap-1 text-slate-500 dark:text-slate-400 text-xs">
-                                                {customer.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {customer.phone}</div>}
+                                                {customer.phone && <div className="flex items-center gap-1.5 tabular-nums"><Phone className="w-3 h-3" /> {customer.phone}</div>}
                                                 {customer.email && <div className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> {customer.email}</div>}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-3">
                                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${customer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                                 customer.status === 'INACTIVE' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' :
-                                                    'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
+                                                    customer.status === 'SUSPENDED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                                                        'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
                                                 }`}>
                                                 {customer.status === 'ACTIVE' ? t('customer_status_active') :
                                                     customer.status === 'INACTIVE' ? t('customer_status_inactive') :
-                                                        t('customer_status_planned')}
+                                                        customer.status === 'SUSPENDED' ? 'Suspenso' :
+                                                            t('customer_status_planned')}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-3">
                                             {customer.ctoId ? (
                                                 <div className="flex flex-col">
-                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">{t('status_DEPLOYED')}</span>
-                                                    <span className="text-[10px] text-slate-400">ID: {customer.ctoId}</span>
+                                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">Conectado</span>
+                                                    <span className="text-[10px] text-slate-400 tabular-nums">ID: {customer.ctoId.slice(0, 8)}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-slate-400 italic text-xs">{t('status_PLANNED')}</span>
+                                                <span className="text-slate-400 italic text-xs">Não conectado</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                {onLocate && (
-                                                    <button
-                                                        onClick={() => onLocate(customer)}
-                                                        className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                                        title={t('locate_on_map')}
-                                                    >
-                                                        <MapPin className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleOpenModal(customer)}
-                                                    className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                                    title={t('edit')}
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowDeleteConfirm(customer.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                    title={t('delete')}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                        <td className="px-6 py-3 text-right">
+                                            <KebabMenu actions={[
+                                                ...(onLocate ? [{ label: t('locate_on_map') || 'Localizar no mapa', icon: MapPin, onClick: () => onLocate(customer) }] : []),
+                                                { label: t('edit') || 'Editar', icon: Edit2, onClick: () => handleOpenModal(customer) },
+                                                { label: t('delete') || 'Excluir', icon: Trash2, onClick: () => setShowDeleteConfirm(customer.id), destructive: true },
+                                            ]} />
                                         </td>
                                     </tr>
                                 ))}
@@ -329,30 +322,14 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                 )}
             </div>
 
-            {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && createPortal(
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#22262e] rounded-xl shadow-lg p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-                        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{t('confirm_delete')}</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('confirm_delete_customer')}</p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition font-medium"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={() => handleDelete(showDeleteConfirm!)}
-                                className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-medium shadow-md shadow-red-500/20"
-                            >
-                                {t('delete')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            , document.body)}
+            <DeleteConfirmDialog
+                isOpen={!!showDeleteConfirm}
+                itemType="cliente"
+                itemLabel={itemToDelete?.name || ''}
+                hint="O cliente será removido do projeto. A conexão de fibra associada permanece."
+                onCancel={() => setShowDeleteConfirm(null)}
+                onConfirm={() => handleDelete(showDeleteConfirm!)}
+            />
 
             {/* Modal for Editing Basic Info */}
             {isModalOpen && createPortal(
@@ -416,22 +393,14 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                 rows={2}
                             />
 
-                            <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/30 mt-4">
-                                <button
-                                    type="button"
-                                    onClick={handleCloseModal}
-                                    className="flex-1 py-2.5 bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium transition"
-                                >
-                                    {t('cancel')}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium shadow-lg shadow-emerald-200/50 transition active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    {t('save')}
-                                </button>
-                            </div>
+                            <ModalFooter
+                                onCancel={handleCloseModal}
+                                primaryLabel={t('save')}
+                                primaryIcon={Save}
+                                primaryType="submit"
+                                primaryDisabled={saving}
+                                primaryLoading={saving}
+                            />
                         </form>
                     </div>
                 </div>

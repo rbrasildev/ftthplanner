@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X, Save, Search, Filter, GitFork, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Search, GitFork } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { getSplitters, createSplitter, updateSplitter, deleteSplitter, SplitterCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
 import { parseFloatLocale } from '../../utils/parseUtils';
 import { useCatalogRegistration } from '../../hooks/useCatalogRegistration';
+import {
+    KebabMenu, DeleteConfirmDialog, EmptyState, FilterChips,
+    SortableHeader, useSortable, ListSkeleton, ModalFooter,
+} from './common/CatalogPrimitives';
+
+type SortKey = 'name' | 'mode' | 'outputs';
 
 interface SplitterRegistrationProps {
     showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
@@ -37,7 +43,8 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
     }), []);
 
     const {
-        filteredItems: filteredSplitters,
+        items: allItems,
+        filteredItems: searchedSplitters,
         loading,
         saving,
         searchTerm,
@@ -66,6 +73,30 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
             return s.name.toLowerCase().includes(t) || s.type.toLowerCase().includes(t);
         },
     });
+
+    const [modeFilter, setModeFilter] = useState<string | null>(null);
+    const filteredSplitters = useMemo(() => {
+        if (!modeFilter) return searchedSplitters;
+        return searchedSplitters.filter(s => s.mode === modeFilter);
+    }, [searchedSplitters, modeFilter]);
+
+    const [sortedSplitters, sort, handleSort] = useSortable<SplitterCatalogItem, SortKey>(
+        filteredSplitters, (i, k) => (i as any)[k],
+    );
+
+    const modeChips = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const s of searchedSplitters) counts[s.mode] = (counts[s.mode] || 0) + 1;
+        return [
+            { value: null, label: 'Todos', count: searchedSplitters.length },
+            ...['Balanced', 'Unbalanced'].filter(m => counts[m] > 0).map(m => ({
+                value: m, label: m === 'Balanced' ? (t('splitter_mode_balanced') || 'Balanceado') : (t('splitter_mode_unbalanced') || 'Desbalanceado'),
+                count: counts[m],
+            })),
+        ];
+    }, [searchedSplitters, t]);
+
+    const itemToDelete = allItems.find(i => i.id === showDeleteConfirm);
 
     const [formData, setFormData] = useState(emptyForm);
 
@@ -197,144 +228,95 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
-            {/* Header */}
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <GitFork className="w-7 h-7 text-emerald-500" />
-                        {t('reg_splitter') || 'Splitter Registration'}
+                        {t('reg_splitter') || 'Splitters'}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        {t('splitter_catalog_desc') || 'Manage your splitter catalog types.'}
+                        {t('splitter_catalog_desc') || 'Gerencie os modelos de splitters do catálogo.'}
                     </p>
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition shadow-lg shadow-emerald-900/20"
-                >
-                    <Plus className="w-4 h-4" /> {t('add_splitter') || 'Add Splitter'}
+                <button onClick={openCreate} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-colors">
+                    <Plus className="w-4 h-4" /> {t('add_splitter') || 'Adicionar Splitter'}
                 </button>
             </div>
 
-            {/* List Container */}
-            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
-                {/* Search Bar */}
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700/30 space-y-3">
                     <div className="relative max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder={t('search_splitters')}
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
-                        />
+                        <input type="text" placeholder={t('search_splitters')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm" />
                     </div>
+                    {!loading && allItems.length > 0 && (
+                        <FilterChips options={modeChips} value={modeFilter} onChange={setModeFilter} />
+                    )}
                 </div>
 
                 {loading ? (
-                    <div className="animate-pulse">
-                        <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-8">
-                            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-3 w-14 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
-                        </div>
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
-                                <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700/50" />
-                                <div className="h-4 w-28 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-5 w-14 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
-                                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-10 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="h-4 w-16 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                                <div className="ml-auto h-8 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
-                            </div>
-                        ))}
-                    </div>
-                ) : filteredSplitters.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                        {t('no_results') || 'Nenhum splitter encontrado'}
-                    </div>
+                    <ListSkeleton rows={5} />
+                ) : sortedSplitters.length === 0 ? (
+                    <EmptyState
+                        icon={GitFork}
+                        title={allItems.length === 0 ? 'Você ainda não tem splitters cadastrados' : 'Nenhum splitter encontrado'}
+                        description={allItems.length === 0 ? 'Cadastre os modelos de splitters usados nos seus projetos.' : undefined}
+                        ctaLabel={allItems.length === 0 ? '+ Cadastrar primeiro splitter' : undefined}
+                        onCta={allItems.length === 0 ? openCreate : undefined}
+                        searchTerm={allItems.length > 0 && (searchTerm || modeFilter) ? (searchTerm || `modo: ${modeFilter}`) : undefined}
+                    />
                 ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
-                            <tr>
-                                <th className="px-6 py-4">{t('splitter_name')}</th>
-                                <th className="px-6 py-4">{t('splitter_mode')}</th>
-                                <th className="px-6 py-4">{t('splitter_ports')}</th>
-                                <th className="px-6 py-4">{t('attenuation')}</th>
-                                <th className="px-6 py-4 text-right">{t('actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {filteredSplitters.map(splitter => (
-                                <tr key={splitter.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                            {splitter.name}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {splitter.mode === 'Balanced' ? t('splitter_mode_balanced') : t('splitter_mode_unbalanced')}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        {splitter.inputs} {t('splitter_in')} / {splitter.outputs} {t('splitter_out')}
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-slate-600 dark:text-slate-300">
-                                        {getAttenuationValue(splitter.attenuation)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => openEdit(splitter)}
-                                                className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(splitter.id)}
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                title={t('delete')}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
+                                <tr>
+                                    <th className="px-6 py-3"><SortableHeader label={t('splitter_name') || 'Nome'} sortKey="name" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('splitter_mode') || 'Modo'} sortKey="mode" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3"><SortableHeader label={t('splitter_ports') || 'Portas'} sortKey="outputs" sort={sort} onSort={handleSort} /></th>
+                                    <th className="px-6 py-3">{t('attenuation') || 'Atenuação'}</th>
+                                    <th className="px-6 py-3 text-right w-12">{t('actions') || 'Ações'}</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {sortedSplitters.map(splitter => (
+                                    <tr key={splitter.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                {splitter.name}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                                            {splitter.mode === 'Balanced' ? t('splitter_mode_balanced') : t('splitter_mode_unbalanced')}
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">
+                                            {splitter.inputs}:{splitter.outputs}
+                                        </td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 tabular-nums">{getAttenuationValue(splitter.attenuation)}</td>
+                                        <td className="px-6 py-3 text-right">
+                                            <KebabMenu actions={[
+                                                { label: t('edit') || 'Editar', icon: Edit2, onClick: () => openEdit(splitter) },
+                                                { label: t('delete') || 'Excluir', icon: Trash2, onClick: () => setShowDeleteConfirm(splitter.id), destructive: true },
+                                            ]} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Delete Confirmation Overlay */}
-            {showDeleteConfirm && createPortal(
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/30 max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6 text-center">
-                            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t('confirm_delete_title')}</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm">{t('confirm_delete_message')}</p>
-                        </div>
-                        <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex gap-3">
-                            <button
-                                onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 px-4 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-600/20 transform active:scale-95 transition-all"
-                            >
-                                {t('delete')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            , document.body)}
+            <DeleteConfirmDialog
+                isOpen={!!showDeleteConfirm}
+                itemType="splitter"
+                itemLabel={itemToDelete?.name || ''}
+                hint="Splitters já instalados nos projetos não serão afetados."
+                onCancel={() => setShowDeleteConfirm(null)}
+                onConfirm={confirmDelete}
+            />
 
             {/* Modal */}
             {isModalOpen && createPortal(
@@ -493,21 +475,15 @@ export const SplitterRegistration: React.FC<SplitterRegistrationProps> = ({ show
 
                         </div>
 
-                        <div className="p-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/50 dark:bg-[#1a1d23]/50 flex justify-end gap-3 shrink-0">
-                            <button
-                                onClick={closeModal}
-                                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors"
-                            >
-                                {t('cancel')}
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transform active:scale-95 transition-all"
-                            >
-                                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                {t('save')}
-                            </button>
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/30 bg-slate-50/60 dark:bg-[#1a1d23]/60 shrink-0">
+                            <ModalFooter
+                                onCancel={closeModal}
+                                primaryLabel={t('save') || 'Salvar'}
+                                primaryIcon={Save}
+                                primaryLoading={saving}
+                                primaryType="button"
+                                onPrimary={handleSave}
+                            />
                         </div>
                     </div>
                 </div>
