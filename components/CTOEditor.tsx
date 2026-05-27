@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { CTOData, CableData, FiberConnection, Splitter, FusionPoint, getFiberColor, ElementLayout, CTO_STATUS_COLORS, CTOStatus, Note, DIOInline } from '../types';
 import { makeDIOPortId } from '../utils/dioPortId';
 import { X, Save, Plus, Scissors, RotateCw, Trash2, ZoomIn, ZoomOut, GripHorizontal, Link, Magnet, Move, Ruler, ArrowRightLeft, FileDown, Image as ImageIcon, AlertTriangle, ChevronDown, ChevronUp, Zap, Maximize, Minimize2, Box, Eraser, AlignCenter, Triangle, Pencil, Loader2, ArrowRight, Activity, ExternalLink, Check, ChevronLeft, ChevronRight, QrCode, Printer, Keyboard, CircleHelp, StickyNote } from 'lucide-react';
@@ -251,6 +252,7 @@ interface CTOEditorProps {
     readOnly?: boolean;
     readOnlyLabel?: string;
     onGoToParentProject?: () => void;
+    showToast?: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
 type DragMode = 'view' | 'element' | 'connection' | 'point' | 'reconnect' | 'window' | 'note' | 'resize';
@@ -398,10 +400,25 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     litPorts: incomingLitPorts, vflSource, vflDirection, onChangeVflDirection, onToggleVfl, onOtdrTrace, onHoverCable, onDisconnectCable, onSelectNextNode, onUpdateCableStreetNames,
     userPlan, subscriptionExpiresAt, onShowUpgrade, network, userRole, userPermissions = [],
     projectId, companyLogo, saasLogo,
-    autoDownload, readOnly = false, readOnlyLabel, onGoToParentProject
+    autoDownload, readOnly = false, readOnlyLabel, onGoToParentProject, showToast
 }) => {
     const { t } = useLanguage();
     const canEdit = !readOnly && (hasPermission(userPermissions, 'map:edit') || userRole === 'OWNER');
+
+    // Fallback: se showToast não foi passado, cai pra alert. Mantém o comportamento
+    // pré-existente em chamadores que não atualizaram a prop ainda.
+    const notify = (msg: string, type: 'success' | 'info' | 'error' = 'info') => {
+        if (showToast) showToast(msg, type);
+        else alert(msg);
+    };
+
+    // Modal de confirmação destrutiva (substitui window.confirm pro "limpar conexões").
+    const [destructiveConfirm, setDestructiveConfirm] = useState<null | {
+        title: string;
+        message: string;
+        confirmLabel?: string;
+        onConfirm: () => void;
+    }>(null);
 
     // --- CTO STATE MANAGEMENT (extracted hook) ---
     const {
@@ -1651,7 +1668,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         const isFree = userPlan === 'Plano Grátis';
         if (isFree) {
             if (onShowUpgrade) onShowUpgrade();
-            else alert("Exportação disponível apenas para planos pagos.");
+            else notify('Exportação disponível apenas para planos pagos.', 'info');
             return;
         }
 
@@ -1780,7 +1797,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             await exportToPNG(svg, `${fileName}.png`);
         } catch (error: any) {
             console.error('Export PNG failed', error);
-            alert(t('export_png_error'));
+            notify(t('export_png_error'), 'error');
         } finally {
             setExportingType(null);
         }
@@ -1814,7 +1831,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setIsOpticalModalOpen(true);
         } catch (error) {
             console.error("Error calculating optical path:", error);
-            alert(`Erro: ${(error as Error).message}`);
+            notify(`Erro: ${(error as Error).message}`, 'error');
         }
     }, [localCTO, tracingCatalogs, cto.id, network]);
 
@@ -3424,7 +3441,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // no fallback "Fusão Padrão" que TAMBÉM não existe → perda 0 dB silenciosa.
         // Bloquear aqui evita o usuário criar fusões "fantasma" que não contam perda.
         if (fusionTypes.length === 0) {
-            alert(t('no_fusions_in_catalog') || 'Cadastre ao menos um tipo de fusão no catálogo antes de usar esta ferramenta.');
+            notify(t('no_fusions_in_catalog') || 'Cadastre ao menos um tipo de fusão no catálogo antes de usar esta ferramenta.', 'info');
             return;
         }
 
@@ -3451,7 +3468,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // ghost would be round and clicks would create fusions, making the user think "clicked
         // connector → got fusion"). Warn the user and abort instead.
         if (availableConnectors.length === 0) {
-            alert(t('no_connectors_in_catalog') || 'Cadastre um conector no catálogo antes de usar esta ferramenta.');
+            notify(t('no_connectors_in_catalog') || 'Cadastre um conector no catálogo antes de usar esta ferramenta.', 'info');
             return;
         }
         if (availableConnectors.length > 1) {
@@ -3778,7 +3795,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     onAddDIO={handleAddDIOClick}
                     isAutoSpliceOpen={isAutoSpliceOpen}
                     onOpenAutoSplice={() => setIsAutoSpliceOpen(true)}
-                    onClearConnections={() => { if (window.confirm(t('clear_connections_confirm'))) setLocalCTO(prev => ({ ...prev, connections: [] })); }}
+                    onClearConnections={() => setDestructiveConfirm({
+                        title: 'Limpar todas as conexões?',
+                        message: t('clear_connections_confirm') || 'Todas as conexões deste diagrama serão removidas. Esta ação não pode ser desfeita.',
+                        confirmLabel: 'Limpar conexões',
+                        onConfirm: () => setLocalCTO(prev => ({ ...prev, connections: [] })),
+                    })}
                     showHotkeys={showHotkeys}
                     onToggleHotkeys={() => setShowHotkeys(!showHotkeys)}
                     hotkeysRef={hotkeysRef}
@@ -4437,6 +4459,38 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
                     </svg>
                 </div>
+            )}
+
+            {/* Destructive confirm modal (substitui window.confirm pro "limpar conexões" e similares). */}
+            {destructiveConfirm && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#1a1d23] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700/30 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                            {destructiveConfirm.title}
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                            {destructiveConfirm.message}
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setDestructiveConfirm(null)}
+                                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-[#22262e] hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => { destructiveConfirm.onConfirm(); setDestructiveConfirm(null); }}
+                                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm shadow-md shadow-red-500/20 transition-colors active:scale-[0.98]"
+                            >
+                                {destructiveConfirm.confirmLabel || 'Confirmar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div >
     );

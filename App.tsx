@@ -2484,6 +2484,7 @@ export default function App() {
                     readOnly={editingNodeIsFromParent}
                     readOnlyLabel={editingNodeIsFromParent ? t('base_project_readonly_label', { name: parentProjectName }) : undefined}
                     onGoToParentProject={editingNodeIsFromParent ? handleGoToParentProject : undefined}
+                    showToast={showToast}
                     onUpdateCableStreetNames={(updates) => {
                         updateCurrentNetwork(prev => ({
                             ...prev,
