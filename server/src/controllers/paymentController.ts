@@ -964,6 +964,21 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
             orderBy: { referenceStart: 'asc' } // Pay oldest debt first
         });
 
+        // Antes de criar nova invoice, checa se já existe uma PENDING/EXPIRED
+        // aberta — garante no máximo 1 fatura em aberto por empresa. Sem isso,
+        // se o admin alterou subscriptionExpiresAt manualmente entre uma
+        // geração de PIX e a próxima, getNextBillingDate retorna período
+        // diferente e o unique_billing_period não pega → duplicata.
+        const existingUnpaid = overdueInvoice ? null : await prisma.invoice.findFirst({
+            where: {
+                companyId,
+                status: { in: ['PENDING', 'EXPIRED'] }
+            },
+            // Paga primeiro o período mais antigo. Importante quando admin
+            // gerou faturas adiantadas — sem isso, o PIX gruda na última.
+            orderBy: { referenceStart: 'asc' }
+        });
+
         let invoice;
         if (overdueInvoice) {
             // Update the existing OVERDUE invoice with the new payment details
@@ -971,6 +986,22 @@ export const createPixPayment = async (req: AuthRequest, res: Response) => {
                 where: { id: overdueInvoice.id },
                 data: {
                     status: 'PENDING',
+                    mercadopagoPaymentId: String(result.id),
+                    qrCode,
+                    qrCodeBase64,
+                    expiresAt: dateOfExpiration
+                }
+            });
+        } else if (existingUnpaid) {
+            // Re-usa a invoice aberta — só atualiza QR/expiração. Período
+            // original preservado (não cria fatura duplicada).
+            invoice = await prisma.invoice.update({
+                where: { id: existingUnpaid.id },
+                data: {
+                    status: 'PENDING',
+                    paymentMethod: 'PIX',
+                    amount: plan.price,
+                    planId,
                     mercadopagoPaymentId: String(result.id),
                     qrCode,
                     qrCodeBase64,

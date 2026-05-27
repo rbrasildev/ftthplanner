@@ -705,3 +705,140 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
         });
     }
 };
+
+// --- CANCEL INVOICE (Admin marks invoice as CANCELLED) ---
+// Soft delete: preserva histórico (audit/contabilidade) mas tira do fluxo
+// de pendentes. Não afeta subscriptionExpiresAt — admin ajusta separado.
+export const cancelInvoice = async (req: AuthRequest, res: Response) => {
+    try {
+        const { invoiceId } = req.params;
+
+        const invoice = await prisma.invoice.findUnique({
+            where: { id: invoiceId },
+            include: { company: { select: { id: true, name: true } } }
+        });
+
+        if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+        if (invoice.status === 'PAID') return res.status(400).json({ error: 'Cannot cancel a paid invoice' });
+        if (invoice.status === 'CANCELLED') return res.status(400).json({ error: 'Invoice already cancelled' });
+
+        const previousStatus = invoice.status;
+
+        await prisma.invoice.update({
+            where: { id: invoiceId },
+            data: { status: 'CANCELLED' }
+        });
+
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'CANCEL_INVOICE', 'Invoice', invoiceId, {
+                companyId: invoice.company?.id,
+                companyName: invoice.company?.name,
+                amount: invoice.amount,
+                previousStatus
+            }, req.ip);
+        }
+
+        logger.info(`[saasController] Invoice ${invoiceId} cancelled by admin (was ${previousStatus})`);
+
+        return res.json({ message: 'Invoice cancelled' });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to cancel invoice',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+// --- GENERATE ADVANCE INVOICES (Admin pre-issues N future invoices) ---
+// Pra cliente que quer pagar 2-3 meses adiantados. Cria N PENDING para
+// os próximos períodos a partir do último período já existente. Não muda
+// subscriptionExpiresAt — só ao marcar cada uma como paga.
+export const generateAdvanceInvoices = async (req: AuthRequest, res: Response) => {
+    try {
+        const { companyId } = req.params;
+        const { count } = req.body as { count?: number };
+
+        if (!count || !Number.isInteger(count) || count < 1 || count > 12) {
+            return res.status(400).json({ error: 'count must be an integer between 1 and 12' });
+        }
+
+        const company = await prisma.company.findUnique({
+            where: { id: companyId },
+            include: { plan: true }
+        });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+        if (!company.planId || !company.plan) return res.status(400).json({ error: 'Company has no plan' });
+
+        // Acha o "fim de período" mais à frente já existente — começa daí.
+        // Considera todas as invoices não-canceladas pra não criar overlap.
+        const latest = await prisma.invoice.findFirst({
+            where: { companyId, status: { not: 'CANCELLED' } },
+            orderBy: { referenceEnd: 'desc' }
+        });
+
+        const startAnchor = latest?.referenceEnd ?? company.subscriptionExpiresAt ?? new Date();
+
+        const created: { id: string; referenceStart: Date; referenceEnd: Date }[] = [];
+        let currentStart = new Date(startAnchor);
+
+        for (let i = 0; i < count; i++) {
+            const refStart = new Date(currentStart);
+            const refEnd = new Date(refStart);
+            refEnd.setMonth(refEnd.getMonth() + 1);
+
+            const existing = await prisma.invoice.findUnique({
+                where: { unique_billing_period: { companyId, referenceStart: refStart, referenceEnd: refEnd } }
+            });
+            if (existing && existing.status !== 'CANCELLED') {
+                currentStart = refEnd;
+                continue; // já existe ativa, pula
+            }
+
+            const inv = existing
+                ? await prisma.invoice.update({
+                    where: { id: existing.id },
+                    data: {
+                        status: 'PENDING',
+                        planId: company.planId,
+                        amount: company.plan.price,
+                        paymentMethod: 'PIX',
+                        mercadopagoPaymentId: null,
+                        qrCode: null,
+                        qrCodeBase64: null,
+                        expiresAt: refEnd,
+                    }
+                })
+                : await prisma.invoice.create({
+                    data: {
+                        companyId,
+                        planId: company.planId,
+                        amount: company.plan.price,
+                        status: 'PENDING',
+                        paymentMethod: 'PIX',
+                        expiresAt: refEnd,
+                        referenceStart: refStart,
+                        referenceEnd: refEnd
+                    }
+                });
+
+            created.push({ id: inv.id, referenceStart: inv.referenceStart!, referenceEnd: inv.referenceEnd! });
+            currentStart = refEnd;
+        }
+
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'GENERATE_ADVANCE_INVOICES', 'Company', companyId, {
+                companyName: company.name,
+                requestedCount: count,
+                actualCount: created.length,
+                periods: created.map(c => ({ start: c.referenceStart, end: c.referenceEnd }))
+            }, req.ip);
+        }
+
+        return res.json({ message: `${created.length} advance invoice(s) created`, invoices: created });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to generate advance invoices',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};

@@ -251,18 +251,38 @@ const formatPaymentMethod = (method: string | null | undefined): string => {
 };
 
 // --- Company Invoices Section (used in company detail panel) ---
-const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdueCount: number, overdueTotal: number, paidCount: number, paidTotal: number, lastPayment: string | null } }> = ({ companyId, financial }) => {
+const CompanyInvoicesSection: React.FC<{ companyId: string, company: Company, financial?: { overdueCount: number, overdueTotal: number, paidCount: number, paidTotal: number, lastPayment: string | null } }> = ({ companyId, company, financial }) => {
     const [invoices, setInvoices] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [expanded, setExpanded] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+    const [cancelling, setCancelling] = useState<string | null>(null);
+    const [generatingAdvance, setGeneratingAdvance] = useState(false);
+    const [advanceModalOpen, setAdvanceModalOpen] = useState(false);
+    const [advanceCount, setAdvanceCount] = useState(3);
+    const [advanceError, setAdvanceError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'summary' | 'open' | 'paid' | 'cancelled'>('summary');
+
+    // Auto-load invoices ao montar (não exige mais clicar em "Ver faturas").
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await saasService.getCompanyInvoices(companyId);
+                if (!cancelled) setInvoices(data);
+            } catch (err) {
+                console.error('Failed to load invoices', err);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [companyId]);
 
     const handleMarkPaid = async (invoiceId: string) => {
         if (!window.confirm('Confirma a baixa manual desta fatura?')) return;
         setMarkingPaid(invoiceId);
         try {
             const result = await saasService.markInvoicePaid(invoiceId);
-            // Refresh the list
             const data = await saasService.getCompanyInvoices(companyId);
             setInvoices(data);
             alert(result.companyReactivated
@@ -276,147 +296,405 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, financial?: { overdu
         }
     };
 
-    const loadInvoices = async () => {
-        if (invoices.length > 0) { setExpanded(!expanded); return; }
-        setLoading(true);
+    const handleCancelInvoice = async (invoiceId: string) => {
+        if (!window.confirm('Cancelar esta fatura? Ela será marcada como CANCELADA (histórico preservado).')) return;
+        setCancelling(invoiceId);
         try {
+            await saasService.cancelInvoice(invoiceId);
             const data = await saasService.getCompanyInvoices(companyId);
             setInvoices(data);
-            setExpanded(true);
         } catch (err) {
-            console.error('Failed to load invoices', err);
-            alert('Failed to load invoices');
+            console.error('Failed to cancel invoice', err);
+            alert('Erro ao cancelar fatura.');
         } finally {
-            setLoading(false);
+            setCancelling(null);
         }
     };
 
+    const openAdvanceModal = () => {
+        setAdvanceCount(3);
+        setAdvanceError(null);
+        setAdvanceModalOpen(true);
+    };
+
+    const handleGenerateAdvance = async () => {
+        if (!Number.isInteger(advanceCount) || advanceCount < 1 || advanceCount > 12) {
+            setAdvanceError('Use um número inteiro entre 1 e 12.');
+            return;
+        }
+        setAdvanceError(null);
+        setGeneratingAdvance(true);
+        try {
+            const result = await saasService.generateAdvanceInvoices(companyId, advanceCount);
+            const data = await saasService.getCompanyInvoices(companyId);
+            setInvoices(data);
+            setAdvanceModalOpen(false);
+            // TODO: trocar por toast quando houver sistema de toast global aqui.
+            alert(`${result.invoices?.length ?? 0} fatura(s) adiantada(s) criada(s).`);
+        } catch (err) {
+            console.error('Failed to generate advance invoices', err);
+            setAdvanceError('Erro ao gerar faturas adiantadas.');
+        } finally {
+            setGeneratingAdvance(false);
+        }
+    };
+
+    const openInvoices = invoices.filter((i: any) => i.status === 'PENDING' || i.status === 'OVERDUE');
+    const paidInvoices = invoices.filter((i: any) => i.status === 'PAID');
+    const cancelledInvoices = invoices.filter((i: any) => i.status === 'CANCELLED');
+    const tabCounts = { open: openInvoices.length, paid: paidInvoices.length, cancelled: cancelledInvoices.length };
+
     return (
-        <div>
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <Receipt className="w-3.5 h-3.5" />
-                    Financeiro
-                </h3>
-                <button
-                    onClick={loadInvoices}
-                    className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 flex items-center gap-1"
-                >
-                    {loading ? <RefreshCw className="w-3 h-3 animate-spin" /> : expanded ? 'Ocultar' : 'Ver faturas'}
-                </button>
+        <div className="flex flex-col">
+            {/* Secondary tabs — substitui o "Ver faturas" expand. Permite
+                navegar entre resumo e lista filtrada por status diretamente,
+                sem scroll, ocupando o card todo. */}
+            <div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-700/40 gap-2">
+                <div className="flex items-center -mb-px">
+                    {([
+                        { id: 'summary' as const, label: 'Resumo', count: null as number | null },
+                        { id: 'open' as const, label: 'Abertas', count: tabCounts.open },
+                        { id: 'paid' as const, label: 'Pagas', count: tabCounts.paid },
+                        { id: 'cancelled' as const, label: 'Canceladas', count: tabCounts.cancelled },
+                    ]).map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-3 py-2 text-xs font-bold border-b-2 transition-colors ${activeTab === tab.id ? 'text-emerald-700 dark:text-emerald-300 border-emerald-600' : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'}`}
+                        >
+                            {tab.label}
+                            {tab.count !== null && tab.count > 0 && (
+                                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] ${activeTab === tab.id ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                    {tab.count}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+                {(activeTab === 'open' || activeTab === 'summary') && (
+                    <button
+                        onClick={openAdvanceModal}
+                        disabled={generatingAdvance}
+                        className="mb-1 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded transition-colors disabled:opacity-50 shrink-0"
+                    >
+                        + Gerar adiantadas
+                    </button>
+                )}
             </div>
 
-            {/* Quick Summary */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="p-2.5 bg-slate-50 dark:bg-[#151820] rounded-lg border border-slate-100 dark:border-slate-700/30 text-center">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Pagos</p>
-                    <p className="text-sm font-black text-emerald-600">{financial?.paidCount || 0}</p>
-                </div>
-                <div className={`p-2.5 rounded-lg border text-center ${financial?.overdueCount ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800' : 'bg-slate-50 dark:bg-[#151820] border-slate-100 dark:border-slate-700/30'}`}>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Em atraso</p>
-                    <p className={`text-sm font-black ${financial?.overdueCount ? 'text-red-600' : 'text-slate-400'}`}>{financial?.overdueCount || 0}</p>
-                </div>
-                <div className="p-2.5 bg-slate-50 dark:bg-[#151820] rounded-lg border border-slate-100 dark:border-slate-700/30 text-center">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Débito</p>
-                    <p className={`text-sm font-black ${financial?.overdueTotal ? 'text-red-600' : 'text-slate-400'}`}>
-                        {financial?.overdueTotal ? `R$ ${financial.overdueTotal.toFixed(2)}` : '—'}
-                    </p>
-                </div>
-            </div>
+            {/* Resumo tab — Visão Financeira completa (KPIs + detalhes). */}
+            {activeTab === 'summary' && (() => {
+                const fin = financial || ({} as any);
+                const expiresAt = company.subscriptionExpiresAt ? new Date(company.subscriptionExpiresAt) : null;
+                const createdAt = new Date(company.createdAt);
+                const now = new Date();
+                const startToday = toBRDateMidnight(now);
 
-            {financial?.lastPayment && (
-                <p className="text-[10px] text-slate-400 mb-3">
-                    Último pagamento: <span className="font-semibold text-slate-600 dark:text-slate-300">{new Date(financial.lastPayment).toLocaleDateString()}</span>
-                </p>
-            )}
+                let daysDiff: number | null = null;
+                if (expiresAt) {
+                    const expDay = toBRDateMidnight(expiresAt);
+                    daysDiff = Math.round((expDay.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24));
+                }
+                const isExpired = daysDiff !== null && daysDiff < 0;
+                const daysAsCustomer = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+                const paymentDay = expiresAt ? toBRDateMidnight(expiresAt).getUTCDate() : null;
+                const owner = company.users?.find((u: any) => u.role === 'OWNER');
+                const lastLogin = (owner as any)?.lastLoginAt ? new Date((owner as any).lastLoginAt) : null;
+                const pmLabel = formatPaymentMethod(company.paymentMethod || 'PIX');
+                const fmtDate = (d: Date | null) => d ? d.toLocaleDateString('pt-BR') : '—';
+                const fmtMoney = (v: number | undefined) => v != null ? `R$ ${v.toFixed(2)}` : '—';
 
-            {/* Invoice List (expandable) */}
-            {expanded && (
-                <div className="space-y-2 max-h-72 overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {invoices.length === 0 ? (
-                        <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma fatura encontrada</p>
-                    ) : invoices.map((inv: any) => {
-                        const isOverdue = inv.status === 'OVERDUE';
-                        const isPaid = inv.status === 'PAID';
-                        const isPending = inv.status === 'PENDING';
-                        // Authoritative `paidAt` (set when status flipped to PAID); falls back to
-                        // `updatedAt` for legacy rows that pre-date the column.
-                        const paidAt = isPaid ? new Date(inv.paidAt || inv.updatedAt || inv.createdAt) : null;
-                        // Days late: how many days past the due date the customer is currently
-                        const daysLate = isOverdue && inv.expiresAt
-                            ? Math.max(0, Math.floor((Date.now() - new Date(inv.expiresAt).getTime()) / (1000 * 60 * 60 * 24)))
-                            : 0;
-                        return (
-                            <div key={inv.id} className={`p-3 rounded-lg border text-xs ${isOverdue ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-[#151820] border-slate-100 dark:border-slate-700/30'}`}>
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-slate-900 dark:text-white">{inv.planName}</span>
-                                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isPaid ? 'bg-emerald-100 text-emerald-700' : isOverdue ? 'bg-red-100 text-red-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                                            {isPaid ? 'Pago' : isOverdue ? 'Atraso' : isPending ? 'Pendente' : inv.status}
-                                        </span>
+                return (
+                    <div>
+                        {/* Top KPIs */}
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                            <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                    <TrendingUp className="w-3 h-3" /> LTV
+                                </div>
+                                <p className="text-sm font-black text-emerald-600">{fmtMoney(fin.paidTotal)}</p>
+                            </div>
+                            <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                    <Activity className="w-3 h-3" /> MRR
+                                </div>
+                                <p className="text-sm font-black text-emerald-600">{fmtMoney(company.plan?.price)}</p>
+                            </div>
+                            <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
+                                <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
+                                    <CheckCircle2 className="w-3 h-3" /> Pagos
+                                </div>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">{fin.paidCount || 0}</p>
+                            </div>
+                        </div>
+
+                        {/* Detalhes em duas colunas */}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                            <div>
+                                <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                    <Calendar className="w-3 h-3" /> Cliente desde
+                                </div>
+                                <p className="font-bold text-slate-700 dark:text-slate-200">{fmtDate(createdAt)}</p>
+                                <p className="text-[10px] text-slate-400">{daysAsCustomer} dias</p>
+                            </div>
+
+                            <div>
+                                <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                    <CreditCard className="w-3 h-3" /> Forma de pagamento
+                                </div>
+                                <p className="font-bold text-slate-700 dark:text-slate-200">{pmLabel}</p>
+                                {paymentDay && (
+                                    <p className="text-[10px] text-slate-400">Todo dia {paymentDay}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                    <CalendarClock className="w-3 h-3" /> Próximo vencimento
+                                </div>
+                                <p className={`font-bold ${isExpired ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
+                                    {fmtDate(expiresAt)}
+                                </p>
+                                {daysDiff !== null && (
+                                    <p className={`text-[10px] font-semibold ${isExpired ? 'text-red-500' : daysDiff <= 5 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                        {isExpired
+                                            ? `${Math.abs(daysDiff)} dia(s) em atraso`
+                                            : daysDiff === 0
+                                                ? 'Vence hoje'
+                                                : `Em ${daysDiff} dia(s)`}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                    <CheckCircle2 className="w-3 h-3" /> Último pagamento
+                                </div>
+                                <p className="font-bold text-slate-700 dark:text-slate-200">
+                                    {fin.lastPayment ? fmtDate(new Date(fin.lastPayment)) : '—'}
+                                </p>
+                                {fin.lastPayment && (
+                                    <p className="text-[10px] text-slate-400">
+                                        {Math.floor((now.getTime() - new Date(fin.lastPayment).getTime()) / (1000 * 60 * 60 * 24))} dia(s) atrás
+                                    </p>
+                                )}
+                            </div>
+
+                            {fin.overdueCount > 0 && (
+                                <div className="col-span-2 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <div className="flex items-center gap-1 text-red-500 text-[10px] uppercase font-bold mb-0.5">
+                                        <AlertTriangle className="w-3 h-3" /> Inadimplência
                                     </div>
-                                    <span className={`font-black ${isOverdue ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>
-                                        R$ {inv.amount?.toFixed(2)}
+                                    <p className="font-black text-red-600">
+                                        {fmtMoney(fin.overdueTotal)} <span className="font-normal text-[10px]">em {fin.overdueCount} fatura(s)</span>
+                                    </p>
+                                </div>
+                            )}
+
+                            {lastLogin && (
+                                <div className="col-span-2">
+                                    <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
+                                        <Clock className="w-3 h-3" /> Último acesso (Owner)
+                                    </div>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200">
+                                        {lastLogin.toLocaleDateString('pt-BR')} {lastLogin.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Lista de faturas — quando aba Abertas/Pagas/Canceladas ativa. */}
+            {activeTab !== 'summary' && (() => {
+                const visible = activeTab === 'open' ? openInvoices : activeTab === 'paid' ? paidInvoices : cancelledInvoices;
+
+                const renderInvoice = (inv: any) => {
+                    const isOverdue = inv.status === 'OVERDUE';
+                    const isPaid = inv.status === 'PAID';
+                    const isPending = inv.status === 'PENDING';
+                    const isCancelled = inv.status === 'CANCELLED';
+                    const paidAt = isPaid ? new Date(inv.paidAt || inv.updatedAt || inv.createdAt) : null;
+                    const dueDate: Date | null = inv.referenceEnd
+                        ? new Date(inv.referenceEnd)
+                        : inv.expiresAt ? new Date(inv.expiresAt) : null;
+                    const daysLate = isOverdue && dueDate
+                        ? Math.max(0, Math.floor((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24)))
+                        : 0;
+                    return (
+                        <div key={inv.id} className={`p-3 rounded-lg border text-xs ${isOverdue ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : isCancelled ? 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/30 opacity-75' : 'bg-white dark:bg-[#151820] border-slate-100 dark:border-slate-700/30'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-bold ${isCancelled ? 'line-through text-slate-500' : 'text-slate-900 dark:text-white'}`}>{inv.planName}</span>
+                                    {/* Label "Aberta" cobre PENDING+OVERDUE; OVERDUE ainda mostra "Atraso" pra alertar. */}
+                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isPaid ? 'bg-emerald-100 text-emerald-700' : isOverdue ? 'bg-red-100 text-red-700' : isPending ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'}`}>
+                                        {isPaid ? 'Pago' : isOverdue ? 'Atraso' : isPending ? 'Aberta' : isCancelled ? 'Cancelada' : inv.status}
                                     </span>
                                 </div>
+                                <span className={`font-black ${isOverdue ? 'text-red-600' : isCancelled ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>
+                                    R$ {inv.amount?.toFixed(2)}
+                                </span>
+                            </div>
 
-                                {/* Period + payment method */}
-                                <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                    {inv.referenceStart && inv.referenceEnd ? (
-                                        <span>Ref: {new Date(inv.referenceStart).toLocaleDateString('pt-BR')} → {new Date(inv.referenceEnd).toLocaleDateString('pt-BR')}</span>
-                                    ) : (
-                                        <span>Criada: {new Date(inv.createdAt).toLocaleDateString('pt-BR')}</span>
+                            <div className="flex items-center gap-2 text-slate-400 mb-1">
+                                {inv.referenceStart && inv.referenceEnd ? (
+                                    <span>Ref: {new Date(inv.referenceStart).toLocaleDateString('pt-BR')} → {new Date(inv.referenceEnd).toLocaleDateString('pt-BR')}</span>
+                                ) : (
+                                    <span>Criada: {new Date(inv.createdAt).toLocaleDateString('pt-BR')}</span>
+                                )}
+                                <span>•</span>
+                                <span>{formatPaymentMethod(inv.paymentMethod)}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-[10px]">
+                                    {isPaid && paidAt && (
+                                        <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            Pago em {paidAt.toLocaleDateString('pt-BR')} {paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
                                     )}
-                                    <span>•</span>
-                                    <span>{formatPaymentMethod(inv.paymentMethod)}</span>
+                                    {isOverdue && dueDate && (
+                                        <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
+                                            <AlertTriangle className="w-3 h-3" />
+                                            Vencida em {dueDate.toLocaleDateString('pt-BR')}
+                                            {daysLate > 0 && ` (${daysLate} dia${daysLate === 1 ? '' : 's'} de atraso)`}
+                                        </span>
+                                    )}
+                                    {isPending && dueDate && (
+                                        <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
+                                            <Clock className="w-3 h-3" />
+                                            Vence em {dueDate.toLocaleDateString('pt-BR')}
+                                        </span>
+                                    )}
                                 </div>
-
-                                {/* Status-specific second line */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-[10px]">
-                                        {isPaid && paidAt && (
-                                            <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                Pago em {paidAt.toLocaleDateString('pt-BR')} {paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        )}
-                                        {isOverdue && inv.expiresAt && (
-                                            <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
-                                                <AlertTriangle className="w-3 h-3" />
-                                                Vencida em {new Date(inv.expiresAt).toLocaleDateString('pt-BR')} ({daysLate} dia{daysLate === 1 ? '' : 's'} de atraso)
-                                            </span>
-                                        )}
-                                        {isPending && inv.expiresAt && (
-                                            <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
-                                                <Clock className="w-3 h-3" />
-                                                Vence em {new Date(inv.expiresAt).toLocaleDateString('pt-BR')}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {!isPaid && (
+                                {!isPaid && !isCancelled && (
+                                    <div className="ml-2 flex items-center gap-1 shrink-0">
                                         <button
                                             onClick={() => handleMarkPaid(inv.id)}
-                                            disabled={markingPaid === inv.id}
-                                            className="ml-2 px-2 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50 shrink-0"
+                                            disabled={markingPaid === inv.id || cancelling === inv.id}
+                                            className="px-2 py-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50"
                                         >
                                             {markingPaid === inv.id ? '...' : 'Dar baixa'}
                                         </button>
-                                    )}
-                                </div>
-                                {/* Stripe failure detail — only shows when present (i.e. card was declined) */}
-                                {inv.failureMessage && !isPaid && (
-                                    <div className="mt-1.5 px-2 py-1 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-[10px] text-red-700 dark:text-red-300">
-                                        <span className="font-bold">Erro do cartão:</span> {inv.failureMessage}
-                                        {inv.failedAt && (
-                                            <span className="ml-1 opacity-75">
-                                                ({new Date(inv.failedAt).toLocaleDateString('pt-BR')} {new Date(inv.failedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})
-                                            </span>
-                                        )}
+                                        <button
+                                            onClick={() => handleCancelInvoice(inv.id)}
+                                            disabled={markingPaid === inv.id || cancelling === inv.id}
+                                            className="px-2 py-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/30 dark:hover:text-red-300 rounded transition-colors disabled:opacity-50"
+                                            title="Cancelar fatura"
+                                        >
+                                            {cancelling === inv.id ? '...' : 'Cancelar'}
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        );
-                    })}
+                            {inv.failureMessage && !isPaid && (
+                                <div className="mt-1.5 px-2 py-1 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-[10px] text-red-700 dark:text-red-300">
+                                    <span className="font-bold">Erro do cartão:</span> {inv.failureMessage}
+                                    {inv.failedAt && (
+                                        <span className="ml-1 opacity-75">
+                                            ({new Date(inv.failedAt).toLocaleDateString('pt-BR')} {new Date(inv.failedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                };
+
+                return (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
+                            {loading ? (
+                                <p className="text-xs text-slate-400 text-center py-6">
+                                    <RefreshCw className="w-3 h-3 animate-spin inline mr-1" />
+                                    Carregando faturas...
+                                </p>
+                            ) : visible.length === 0 ? (
+                                <p className="text-sm text-slate-400 italic text-center py-6">
+                                    {activeTab === 'open' && 'Nenhuma fatura em aberto'}
+                                    {activeTab === 'paid' && 'Nenhuma fatura paga'}
+                                    {activeTab === 'cancelled' && 'Nenhuma fatura cancelada'}
+                                </p>
+                            ) : visible.map(renderInvoice)}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Modal: gerar faturas adiantadas */}
+            {advanceModalOpen && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+                    onClick={() => !generatingAdvance && setAdvanceModalOpen(false)}
+                >
+                    <div
+                        className="bg-white dark:bg-[#1a1d23] rounded-2xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/30 flex justify-between items-center">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                                Gerar faturas adiantadas
+                            </h3>
+                            <button
+                                onClick={() => !generatingAdvance && setAdvanceModalOpen(false)}
+                                disabled={generatingAdvance}
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 disabled:opacity-40"
+                                aria-label="Fechar"
+                            >
+                                <span className="text-xl leading-none">×</span>
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Cria N faturas <span className="font-semibold">PENDING</span> para os próximos meses,
+                                a partir do fim do último período não-cancelado. Use quando o cliente quiser pagar
+                                adiantado (negocie o valor offline e depois marque cada uma como paga).
+                            </p>
+
+                            <label className="block">
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
+                                    Quantidade de meses
+                                </span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={12}
+                                    value={advanceCount}
+                                    onChange={(e) => setAdvanceCount(parseInt(e.target.value, 10) || 0)}
+                                    disabled={generatingAdvance}
+                                    autoFocus
+                                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-500 disabled:opacity-50"
+                                />
+                                <span className="text-[10px] text-slate-400 mt-1 block">Entre 1 e 12</span>
+                            </label>
+
+                            {advanceError && (
+                                <div className="px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-lg text-xs text-red-700 dark:text-red-300">
+                                    {advanceError}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-2">
+                            <button
+                                onClick={() => setAdvanceModalOpen(false)}
+                                disabled={generatingAdvance}
+                                className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded transition-colors disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleGenerateAdvance}
+                                disabled={generatingAdvance}
+                                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50"
+                            >
+                                {generatingAdvance ? 'Gerando...' : 'Gerar faturas'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
@@ -1673,51 +1951,9 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 </td>
                                                 <td className="px-4 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        {company.status === 'ACTIVE' ? (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => showConfirm('Suspender Empresa', `Suspender "${company.name}"? O acesso será bloqueado imediatamente.`, () => handleCompanyUpdate(company.id, { status: 'SUSPENDED' }), 'warning')}
-                                                                    title="Suspender"
-                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
-                                                                >
-                                                                    <Lock className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${company.name}"? Não serão geradas novas faturas. O acesso permanece até o fim do período pago.`, () => handleCompanyUpdate(company.id, { status: 'CANCELLED' }), 'warning')}
-                                                                    title="Cancelar assinatura"
-                                                                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/30 p-2 rounded-lg transition-colors"
-                                                                >
-                                                                    <X className="w-4 h-4" />
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => showConfirm('Reativar Empresa', `Reativar "${company.name}"? O acesso será liberado.`, () => handleCompanyUpdate(company.id, { status: 'ACTIVE' }), 'info')}
-                                                                    title="Reativar"
-                                                                    className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition-colors"
-                                                                >
-                                                                    <RotateCcw className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    data-trust-menu
-                                                                    onClick={(e) => openTrustMenu(e, company.id, company.name)}
-                                                                    title="Cortesia — libera por alguns dias mantendo a fatura em aberto"
-                                                                    className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 p-2 rounded-lg transition-colors"
-                                                                >
-                                                                    <Wallet className="w-4 h-4" />
-                                                                </button>
-                                                                {company.status !== 'CANCELLED' && (
-                                                                    <button
-                                                                        onClick={() => showConfirm('Cancelar Assinatura', `Cancelar a assinatura de "${company.name}"? Não serão geradas novas faturas.`, () => handleCompanyUpdate(company.id, { status: 'CANCELLED' }), 'warning')}
-                                                                        title="Cancelar assinatura"
-                                                                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/30 p-2 rounded-lg transition-colors"
-                                                                    >
-                                                                        <X className="w-4 h-4" />
-                                                                    </button>
-                                                                )}
-                                                            </>
-                                                        )}
+                                                        {/* Ações de mudança de estado (Suspender/Reativar/Cortesia/Cancelar)
+                                                            ficam agora só na tela de detalhes da empresa. Mantemos aqui
+                                                            apenas Ver detalhes + Excluir pra reduzir clutter na listagem. */}
                                                         <button
                                                             onClick={() => { setSelectedCompany(company); setCompanyDetailTab('overview'); }}
                                                             className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition-colors"
@@ -3054,152 +3290,6 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     );
                                 })()}
 
-                                    {companyDetailTab === 'financial' && (
-                                    <>
-                                    {/* Visão Financeira — payment cycle, LTV, MRR, dates */}
-                                    {(() => {
-                                        const fin = (selectedCompany as any)._financial || {};
-                                        const expiresAt = selectedCompany.subscriptionExpiresAt ? new Date(selectedCompany.subscriptionExpiresAt) : null;
-                                        const createdAt = new Date(selectedCompany.createdAt);
-                                        const now = new Date();
-                                        // Day comparison anchored to São Paulo time — UTC midnight would put a
-                                        // customer with vencimento "07/05" (BRT) into "today" until ~21h BRT
-                                        // of 08/05, leaving them ~24h "active" past their actual due date.
-                                        const startToday = toBRDateMidnight(now);
-
-                                        // Days until / since expiration (date-only)
-                                        let daysDiff: number | null = null;
-                                        if (expiresAt) {
-                                            const expDay = toBRDateMidnight(expiresAt);
-                                            daysDiff = Math.round((expDay.getTime() - startToday.getTime()) / (1000 * 60 * 60 * 24));
-                                        }
-                                        const isExpired = daysDiff !== null && daysDiff < 0;
-
-                                        // Days as customer
-                                        const daysAsCustomer = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-
-                                        // Payment day of month (extracted from due date in BR locale —
-                                        // getUTCDate would be off by one when the timestamp is late evening BRT).
-                                        const paymentDay = expiresAt ? toBRDateMidnight(expiresAt).getUTCDate() : null;
-
-                                        // Owner last login
-                                        const owner = selectedCompany.users?.find((u: any) => u.role === 'OWNER');
-                                        const lastLogin = (owner as any)?.lastLoginAt ? new Date((owner as any).lastLoginAt) : null;
-
-                                        // Payment method label
-                                        const pmLabel = formatPaymentMethod(selectedCompany.paymentMethod || 'PIX');
-
-                                        const fmtDate = (d: Date | null) => d ? d.toLocaleDateString('pt-BR') : '—';
-                                        const fmtMoney = (v: number | undefined) => v != null ? `R$ ${v.toFixed(2)}` : '—';
-
-                                        return (
-                                            <div>
-                                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                    <Wallet className="w-3.5 h-3.5" />
-                                                    Visão Financeira
-                                                </h3>
-
-                                                {/* Top KPIs: LTV, MRR, Pagamentos */}
-                                                <div className="grid grid-cols-3 gap-2 mb-4">
-                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
-                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
-                                                            <TrendingUp className="w-3 h-3" /> LTV
-                                                        </div>
-                                                        <p className="text-sm font-black text-emerald-600">{fmtMoney(fin.paidTotal)}</p>
-                                                    </div>
-                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
-                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
-                                                            <Activity className="w-3 h-3" /> MRR
-                                                        </div>
-                                                        <p className="text-sm font-black text-emerald-600">{fmtMoney(selectedCompany.plan?.price)}</p>
-                                                    </div>
-                                                    <div className="p-2.5 bg-white dark:bg-[#1a1d23] rounded-lg border border-slate-100 dark:border-slate-700/30">
-                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase mb-0.5">
-                                                            <CheckCircle2 className="w-3 h-3" /> Pagos
-                                                        </div>
-                                                        <p className="text-sm font-black text-slate-900 dark:text-white">{fin.paidCount || 0}</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Detalhes em duas colunas */}
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                                                    <div>
-                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
-                                                            <Calendar className="w-3 h-3" /> Cliente desde
-                                                        </div>
-                                                        <p className="font-bold text-slate-700 dark:text-slate-200">{fmtDate(createdAt)}</p>
-                                                        <p className="text-[10px] text-slate-400">{daysAsCustomer} dias</p>
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
-                                                            <CreditCard className="w-3 h-3" /> Forma de pagamento
-                                                        </div>
-                                                        <p className="font-bold text-slate-700 dark:text-slate-200">{pmLabel}</p>
-                                                        {paymentDay && (
-                                                            <p className="text-[10px] text-slate-400">Todo dia {paymentDay}</p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
-                                                            <CalendarClock className="w-3 h-3" /> Próximo vencimento
-                                                        </div>
-                                                        <p className={`font-bold ${isExpired ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'}`}>
-                                                            {fmtDate(expiresAt)}
-                                                        </p>
-                                                        {daysDiff !== null && (
-                                                            <p className={`text-[10px] font-semibold ${isExpired ? 'text-red-500' : daysDiff <= 5 ? 'text-amber-500' : 'text-slate-400'}`}>
-                                                                {isExpired
-                                                                    ? `${Math.abs(daysDiff)} dia(s) em atraso`
-                                                                    : daysDiff === 0
-                                                                        ? 'Vence hoje'
-                                                                        : `Em ${daysDiff} dia(s)`}
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
-                                                            <CheckCircle2 className="w-3 h-3" /> Último pagamento
-                                                        </div>
-                                                        <p className="font-bold text-slate-700 dark:text-slate-200">
-                                                            {fin.lastPayment ? fmtDate(new Date(fin.lastPayment)) : '—'}
-                                                        </p>
-                                                        {fin.lastPayment && (
-                                                            <p className="text-[10px] text-slate-400">
-                                                                {Math.floor((now.getTime() - new Date(fin.lastPayment).getTime()) / (1000 * 60 * 60 * 24))} dia(s) atrás
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    {fin.overdueCount > 0 && (
-                                                        <div className="col-span-2 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                                            <div className="flex items-center gap-1 text-red-500 text-[10px] uppercase font-bold mb-0.5">
-                                                                <AlertTriangle className="w-3 h-3" /> Inadimplência
-                                                            </div>
-                                                            <p className="font-black text-red-600">
-                                                                {fmtMoney(fin.overdueTotal)} <span className="font-normal text-[10px]">em {fin.overdueCount} fatura(s)</span>
-                                                            </p>
-                                                        </div>
-                                                    )}
-
-                                                    {lastLogin && (
-                                                        <div className="col-span-2">
-                                                            <div className="flex items-center gap-1 text-slate-400 text-[10px] uppercase font-bold mb-0.5">
-                                                                <Clock className="w-3 h-3" /> Último acesso (Owner)
-                                                            </div>
-                                                            <p className="font-bold text-slate-700 dark:text-slate-200">
-                                                                {lastLogin.toLocaleDateString('pt-BR')} {lastLogin.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
-                                    </>
-                                    )}
 
                                     {companyDetailTab === 'overview' && (
                                     <>
@@ -3267,9 +3357,10 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                                 {companyDetailTab === 'financial' && (
                                 <>
-                                    {/* Financial history */}
+                                    {/* Financial — sub-abas internas: Resumo (Visão Financeira),
+                                        Abertas, Pagas, Canceladas. */}
                                     <div>
-                                        <CompanyInvoicesSection companyId={selectedCompany.id} financial={(selectedCompany as any)._financial} />
+                                        <CompanyInvoicesSection companyId={selectedCompany.id} company={selectedCompany} financial={(selectedCompany as any)._financial} />
                                     </div>
                                 </>
                                 )}

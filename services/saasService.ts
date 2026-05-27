@@ -67,6 +67,16 @@ export const markInvoicePaid = async (invoiceId: string) => {
     return response.data;
 };
 
+export const cancelInvoice = async (invoiceId: string) => {
+    const response = await api.post(`/saas/invoices/${invoiceId}/cancel`);
+    return response.data;
+};
+
+export const generateAdvanceInvoices = async (companyId: string, count: number) => {
+    const response = await api.post(`/saas/companies/${companyId}/generate-advance-invoices`, { count });
+    return response.data;
+};
+
 // Projects Trash Bin
 export const getDeletedProjects = async () => {
     const response = await api.get('/saas/projects/deleted');
