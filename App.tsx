@@ -1313,26 +1313,8 @@ export default function App() {
 
     }, [getCurrentNetwork, t, editingCTO]);
 
-    // Detecta duplo-clique (mesmo id em janela de 350ms) pra abrir o editor.
-    // Single click apenas seleciona — evita abrir CTO/POP por engano quando o
-    // usuário tá movimentando coisas no mapa.
-    const lastNodeClickRef = useRef<{ id: string; t: number } | null>(null);
-    const DOUBLE_CLICK_MS = 350;
-
     const handleNodeClick = useCallback((id: string, type: 'CTO' | 'POP' | 'Pole') => {
         if (toolMode === 'view') {
-            const now = Date.now();
-            const last = lastNodeClickRef.current;
-            const isDouble = last && last.id === id && (now - last.t) < DOUBLE_CLICK_MS;
-            lastNodeClickRef.current = isDouble ? null : { id, t: now };
-
-            if (!isDouble) {
-                // Single click — no-op no modo view pra não abrir DetailsPanel
-                // por engano. Editor só abre com duplo-click.
-                return;
-            }
-
-            // Double click — abre o editor.
             const net = getCurrentNetwork();
             if (type === 'CTO') {
                 const cto = net.ctos.find(c => c.id === id);

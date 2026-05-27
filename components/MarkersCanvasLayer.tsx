@@ -293,8 +293,31 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
                 container.style.cursor = '';
             }
         };
+        // Drag-vs-click detection: a tolerância nativa do browser pra "click"
+        // é ~3-5px e ~500ms, muito permissiva — usuário arrastando o mapa de
+        // leve dispara click acidental. Limites estritos (8px / 250ms) filtram
+        // só interação intencional. Mesmo critério em PolesCanvasLayer.
+        const CLICK_MAX_MOVE_PX = 8;
+        const CLICK_MAX_DURATION_MS = 250;
+        let downPos: { x: number; y: number; t: number } | null = null;
+
+        const onMouseDownEvt = (e: MouseEvent) => {
+            if (!interactiveRef.current) return;
+            // Só botão esquerdo (0). Right/middle vão pelo contextmenu.
+            if (e.button !== 0) return;
+            downPos = { x: e.clientX, y: e.clientY, t: Date.now() };
+        };
         const onClickEvt = (e: MouseEvent) => {
             if (!interactiveRef.current) return;
+            // Filtra drag: se o cursor moveu muito ou demorou demais entre
+            // mousedown e mouseup, foi pan/drag — ignora o click.
+            if (downPos) {
+                const dx = e.clientX - downPos.x;
+                const dy = e.clientY - downPos.y;
+                const dt = Date.now() - downPos.t;
+                downPos = null;
+                if (Math.sqrt(dx * dx + dy * dy) > CLICK_MAX_MOVE_PX || dt > CLICK_MAX_DURATION_MS) return;
+            }
             const id = hitTest(getContainerPoint(e));
             if (id) {
                 e.preventDefault();
@@ -312,8 +335,7 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
             }
         };
         // Stopa dblclick em cima de marker pra não disparar o doubleClickZoom
-        // default do Leaflet. App.handleNodeClick já detecta duplo-click via
-        // intervalo entre clicks; aqui só preciso barrar o zoom.
+        // default do Leaflet.
         const onDblClickEvt = (e: MouseEvent) => {
             if (!interactiveRef.current) return;
             if (hitTest(getContainerPoint(e))) {
@@ -325,6 +347,7 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
         // Capture-phase pra disparar antes do Leaflet ver e iniciar pan.
         container.addEventListener('mousemove', onMouseMove);
         container.addEventListener('mouseleave', onMouseLeave);
+        container.addEventListener('mousedown', onMouseDownEvt, true);
         container.addEventListener('click', onClickEvt, true);
         container.addEventListener('contextmenu', onContextEvt, true);
         container.addEventListener('dblclick', onDblClickEvt, true);
@@ -332,6 +355,7 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
         return () => {
             container.removeEventListener('mousemove', onMouseMove);
             container.removeEventListener('mouseleave', onMouseLeave);
+            container.removeEventListener('mousedown', onMouseDownEvt, true);
             container.removeEventListener('click', onClickEvt, true);
             container.removeEventListener('contextmenu', onContextEvt, true);
             container.removeEventListener('dblclick', onDblClickEvt, true);

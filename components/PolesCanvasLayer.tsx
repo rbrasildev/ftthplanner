@@ -255,8 +255,25 @@ export const PolesCanvasLayer: React.FC<Props> = ({
                 container.style.cursor = '';
             }
         };
+        // Drag-vs-click detection — mesmo critério do MarkersCanvasLayer.
+        const CLICK_MAX_MOVE_PX = 8;
+        const CLICK_MAX_DURATION_MS = 250;
+        let downPos: { x: number; y: number; t: number } | null = null;
+
+        const onMouseDownEvt = (e: MouseEvent) => {
+            if (!interactiveRef.current) return;
+            if (e.button !== 0) return;
+            downPos = { x: e.clientX, y: e.clientY, t: Date.now() };
+        };
         const onClickEvt = (e: MouseEvent) => {
             if (!interactiveRef.current) return;
+            if (downPos) {
+                const dx = e.clientX - downPos.x;
+                const dy = e.clientY - downPos.y;
+                const dt = Date.now() - downPos.t;
+                downPos = null;
+                if (Math.sqrt(dx * dx + dy * dy) > CLICK_MAX_MOVE_PX || dt > CLICK_MAX_DURATION_MS) return;
+            }
             const id = hitTest(getContainerPoint(e));
             if (id) {
                 e.preventDefault();
@@ -273,7 +290,6 @@ export const PolesCanvasLayer: React.FC<Props> = ({
                 onContextMenuRef.current(e, id);
             }
         };
-        // Barra dblclick em cima de marker pra não disparar doubleClickZoom.
         const onDblClickEvt = (e: MouseEvent) => {
             if (!interactiveRef.current) return;
             if (hitTest(getContainerPoint(e))) {
@@ -284,6 +300,7 @@ export const PolesCanvasLayer: React.FC<Props> = ({
 
         container.addEventListener('mousemove', onMouseMove);
         container.addEventListener('mouseleave', onMouseLeave);
+        container.addEventListener('mousedown', onMouseDownEvt, true);
         container.addEventListener('click', onClickEvt, true);
         container.addEventListener('contextmenu', onContextEvt, true);
         container.addEventListener('dblclick', onDblClickEvt, true);
@@ -291,6 +308,7 @@ export const PolesCanvasLayer: React.FC<Props> = ({
         return () => {
             container.removeEventListener('mousemove', onMouseMove);
             container.removeEventListener('mouseleave', onMouseLeave);
+            container.removeEventListener('mousedown', onMouseDownEvt, true);
             container.removeEventListener('click', onClickEvt, true);
             container.removeEventListener('contextmenu', onContextEvt, true);
             container.removeEventListener('dblclick', onDblClickEvt, true);
