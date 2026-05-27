@@ -633,33 +633,35 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
             data: { status: 'PAID', paymentMethod: 'MANUAL', paidAt: new Date() }
         });
 
-        // 2. Recalculate subscription expiration (anchored to billing cycle).
-        // Same logic as getNextBillingDate() in paymentController.
-        // First payment (trial → paid): billing starts from NOW, ignoring
-        // the trial end date entirely. The billing day is anchored to the
-        // payment date.
+        // 2. Recalcula expiração baseado no MAIOR referenceEnd entre as faturas
+        // PAID. Garante semântica correta tanto pra:
+        //   - Renovação atrasada (catch-up): paga a invoice atrasada, expira
+        //     no fim do período dela.
+        //   - Pagamento adiantado: paga invoice futura, expira no fim do período
+        //     dela (estende além de hoje).
+        //   - Múltiplas advance pagas em sequência: cada uma avança a expiração
+        //     pro fim do período próprio — sem perder meses.
+        //
+        // Fallback (legacy/one-shot sem referenceEnd): mantém lógica antiga de
+        // anchor + 1 mês.
         const company = invoice.company;
         const now = new Date();
         const prevExpiry = company.subscriptionExpiresAt;
         let nextBilling: Date;
 
-        if (prevExpiry) {
-            // First payment? (The invoice we JUST marked PAID is already counted,
-            // so paidCount === 1 means this is the first ever.)
-            const paidCount = await prisma.invoice.count({
-                where: { companyId: company.id, status: 'PAID' }
-            });
+        const maxPaidRef = await prisma.invoice.aggregate({
+            where: { companyId: company.id, status: 'PAID', referenceEnd: { not: null } },
+            _max: { referenceEnd: true }
+        });
 
-            if (paidCount <= 1) {
-                // Trial → paid: start from now
-                nextBilling = new Date(now);
+        if (maxPaidRef._max.referenceEnd) {
+            nextBilling = new Date(maxPaidRef._max.referenceEnd);
+        } else if (prevExpiry) {
+            // Sem referenceEnd em nenhuma PAID (invoices muito antigas): fallback
+            // pro anchor + 1 mês com catch-up.
+            nextBilling = new Date(prevExpiry);
+            while (nextBilling <= now) {
                 nextBilling.setMonth(nextBilling.getMonth() + 1);
-            } else {
-                // Regular renewal: anchor to existing cycle
-                nextBilling = new Date(prevExpiry);
-                while (nextBilling <= now) {
-                    nextBilling.setMonth(nextBilling.getMonth() + 1);
-                }
             }
         } else {
             nextBilling = new Date(now);
