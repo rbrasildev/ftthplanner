@@ -83,6 +83,54 @@ export const initCronJobs = () => {
                 console.log(`[Cron] Marked ${overduedRenewals.count} renewal invoices as OVERDUE.`);
             }
 
+            // 1c. SELF-HEAL: sincroniza subscriptionExpiresAt com o MAX
+            // referenceEnd das faturas PAID. Garante que pagamentos em massa,
+            // markInvoicePaid antes do fix, ou edições manuais sejam
+            // refletidos antes de qualquer suspensão. Sem isso, o cron pode
+            // suspender clientes em dia se a expiração estiver stale.
+            const allActiveOrSuspended = await prisma.company.findMany({
+                where: { status: { in: ['ACTIVE', 'SUSPENDED'] } },
+                select: { id: true, subscriptionExpiresAt: true, status: true }
+            });
+
+            for (const c of allActiveOrSuspended) {
+                const maxPaid = await prisma.invoice.aggregate({
+                    where: { companyId: c.id, status: 'PAID', referenceEnd: { not: null } },
+                    _max: { referenceEnd: true }
+                });
+                const truePaidUntil = maxPaid._max.referenceEnd;
+                if (truePaidUntil && (!c.subscriptionExpiresAt || truePaidUntil > c.subscriptionExpiresAt)) {
+                    await prisma.company.update({
+                        where: { id: c.id },
+                        data: { subscriptionExpiresAt: truePaidUntil }
+                    });
+                    console.log(`[Cron] Synced expiration for company ${c.id}: ${c.subscriptionExpiresAt?.toISOString()} → ${truePaidUntil.toISOString()}`);
+                }
+            }
+
+            // 1d. AUTO-REACTIVATE: SUSPENDED com expiração agora futura e sem
+            // overdue volta pra ACTIVE. Cliente que pagou pendências (manual
+            // ou automático) não fica preso em SUSPENDED esperando admin.
+            const suspendedToCheck = await prisma.company.findMany({
+                where: {
+                    status: 'SUSPENDED',
+                    subscriptionExpiresAt: { gt: startToday }
+                },
+                select: { id: true, name: true }
+            });
+            for (const c of suspendedToCheck) {
+                const overdueCount = await prisma.invoice.count({
+                    where: { companyId: c.id, status: 'OVERDUE' }
+                });
+                if (overdueCount === 0) {
+                    await prisma.company.update({
+                        where: { id: c.id },
+                        data: { status: 'ACTIVE' }
+                    });
+                    console.log(`[Cron] Auto-reactivated ${c.name} (${c.id}) — expiration valid + no overdue`);
+                }
+            }
+
             // 2. Suspend Companies with expired subscriptions
             // CANCELLED is intentionally excluded — once a customer cancels,
             // they stay CANCELLED and never enter the OVERDUE invoice pipeline.

@@ -673,12 +673,15 @@ export const markInvoicePaid = async (req: AuthRequest, res: Response) => {
             where: { companyId: company.id, status: 'OVERDUE' }
         });
 
-        // 4. Update company — reactivate if no more overdue invoices
+        // 4. Update company — reativa se sem overdue E expiração válida
+        // (futura). Evita ficar SUSPENDED quando o cliente pagou tudo mas o
+        // status não foi recalculado.
+        const shouldActivate = remainingOverdue === 0 && nextBilling > now;
         await prisma.company.update({
             where: { id: company.id },
             data: {
                 subscriptionExpiresAt: nextBilling,
-                ...(remainingOverdue === 0 ? { status: 'ACTIVE' } : {})
+                ...(shouldActivate ? { status: 'ACTIVE' } : {})
             }
         });
 
@@ -840,6 +843,75 @@ export const generateAdvanceInvoices = async (req: AuthRequest, res: Response) =
     } catch (error) {
         res.status(500).json({
             error: 'Failed to generate advance invoices',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};
+
+// --- RECALCULATE COMPANY FINANCIAL STATE ---
+// Conserta empresas com expiração/status fora de sincronia com as faturas pagas.
+// Necessário pra dados antigos gerados antes do fix em markInvoicePaid (que
+// agora ancora expiração no MAX(referenceEnd) das PAID), ou pra qualquer drift
+// que aconteça por cron + edições manuais.
+export const recalculateCompanyFinancials = async (req: AuthRequest, res: Response) => {
+    try {
+        const { companyId } = req.params;
+
+        const company = await prisma.company.findUnique({
+            where: { id: companyId },
+            select: { id: true, name: true, status: true, subscriptionExpiresAt: true }
+        });
+        if (!company) return res.status(404).json({ error: 'Company not found' });
+
+        const now = new Date();
+
+        // 1. Nova expiração: MAX referenceEnd entre PAID.
+        const maxPaidRef = await prisma.invoice.aggregate({
+            where: { companyId, status: 'PAID', referenceEnd: { not: null } },
+            _max: { referenceEnd: true }
+        });
+
+        const newExpiry = maxPaidRef._max.referenceEnd ?? company.subscriptionExpiresAt;
+
+        // 2. Status: ACTIVE se sem overdue E expiração no futuro.
+        const overdueCount = await prisma.invoice.count({
+            where: { companyId, status: 'OVERDUE' }
+        });
+
+        const shouldBeActive = overdueCount === 0 && newExpiry && newExpiry > now;
+        const newStatus = company.status === 'CANCELLED'
+            ? 'CANCELLED' // cancelamento é decisão manual — não reativa automaticamente
+            : shouldBeActive
+                ? 'ACTIVE'
+                : 'SUSPENDED';
+
+        await prisma.company.update({
+            where: { id: companyId },
+            data: { subscriptionExpiresAt: newExpiry, status: newStatus }
+        });
+
+        if (req.user?.id) {
+            await logAudit(req.user.id, 'RECALCULATE_COMPANY_FINANCIALS', 'Company', companyId, {
+                companyName: company.name,
+                previousStatus: company.status,
+                newStatus,
+                previousExpiry: company.subscriptionExpiresAt,
+                newExpiry,
+                overdueCount
+            }, req.ip);
+        }
+
+        return res.json({
+            message: 'Recalculated',
+            previousStatus: company.status,
+            newStatus,
+            previousExpiry: company.subscriptionExpiresAt,
+            newExpiry,
+            overdueCount
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to recalculate company financials',
             details: error instanceof Error ? error.message : String(error)
         });
     }
