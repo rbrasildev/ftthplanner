@@ -324,7 +324,10 @@ const ConnectionsLayer = React.memo(({
                 const finalColor = isLit ? '#f87171' : (useThemeColor ? undefined : baseColor);
                 // Mantém a espessura do cabo normal mesmo quando lit — antes
                 // engrossava pra 3.5 e ficava com aspecto "tubo" pesado.
-                const finalWidth = 2.5;
+                // Branco em fundo escuro perceptualmente parece mais grosso que
+                // os outros (efeito Helmholtz-Kohlrausch); fininho compensa.
+                const isWhiteish = !isLit && (baseColor === '#ffffff' || baseColor?.toLowerCase() === '#fff');
+                const finalWidth = isWhiteish ? 2 : 2.5;
 
                 let d = `M ${p1.x} ${p1.y} `;
                 if (conn.points && conn.points.length > 0) {
@@ -3870,7 +3873,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 {/* Canvas */}
                 <div
                     ref={containerRef}
-                    className="flex-1 bg-[#E6E6E6] dark:bg-[#1a1d23] relative overflow-hidden"
+                    className="flex-1 bg-[#E6E6E6] dark:bg-[#1d2027] relative overflow-hidden"
                     style={{ display: isCollapsed ? 'none' : undefined, cursor: isVflToolActive || isOtdrToolActive ? 'crosshair' : 'default' }}
                     onMouseDown={handleMouseDown}
                     onWheel={handleWheel}
@@ -3933,7 +3936,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     {/* Grid Pattern - Adapts to Theme */}
                     <div
                         ref={gridRef}
-                        className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#475569_1px,transparent_1px),linear-gradient(to_bottom,#475569_1px,transparent_1px)] opacity-60 dark:opacity-20"
+                        className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#475569_1px,transparent_1px),linear-gradient(to_bottom,#475569_1px,transparent_1px)] opacity-60 dark:opacity-25"
                         style={{
                             backgroundSize: `${(GRID_SIZE * 5) * viewState.zoom}px ${(GRID_SIZE * 5) * viewState.zoom}px`,
                             backgroundPosition: `${viewState.x}px ${viewState.y}px`
