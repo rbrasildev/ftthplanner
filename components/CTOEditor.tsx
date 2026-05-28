@@ -812,8 +812,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         startX: number;
         startY: number;
         initialLayout?: ElementLayout;
-        currentMouseX?: number;
-        currentMouseY?: number;
         initialWindowPos?: { x: number, y: number };
         offsetX?: number;
         offsetY?: number;
@@ -2159,8 +2157,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 movingSide: isSource ? 'source' : 'target',
                 startX: e.clientX,
                 startY: e.clientY,
-                currentMouseX: x,
-                currentMouseY: y
             });
         } else {
             // NEW CONNECTION MODE
@@ -2169,8 +2165,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 portId: portId,
                 startX: e.clientX,
                 startY: e.clientY,
-                currentMouseX: x,
-                currentMouseY: y
             });
         }
     }, [isVflToolActive, isOtdrToolActive, onToggleVfl, setOtdrTargetPort, viewState]);
@@ -2719,8 +2713,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     dragLineRef.current.style.display = 'block';
                 }
             }
-            // Store current mouse for drop logic
-            setDragState(prev => prev ? ({ ...prev, currentMouseX: x, currentMouseY: y }) : null);
+            // Antes: setDragState({...prev, currentMouseX, currentMouseY}) a cada
+            // mousemove disparava re-render da ConnectionsLayer (dragState está no
+            // areEqual) só pra atualizar um campo que ninguém lia. Removido.
         }
     };
 
