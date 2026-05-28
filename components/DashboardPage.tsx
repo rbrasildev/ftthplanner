@@ -14,7 +14,8 @@ import { IntegrationsPage } from './integrations/IntegrationsPage';
 import { Dashboard } from './Dashboard';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint, MoreVertical } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint, MoreVertical, Edit2 } from 'lucide-react';
+import { KebabMenu, DeleteConfirmDialog, EmptyState, FilterChips, ListSkeleton, ModalFooter } from './registrations/common/CatalogPrimitives';
 import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
 import { OLTRegistration } from './registrations/OLTRegistration';
@@ -183,6 +184,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [editingUser, setEditingUser] = useState<adminService.AdminUser | null>(null); // New state for editing
   const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: ROLE_DEFAULT_PERMISSIONS['MEMBER'] as string[], restrictProjects: false, allowedProjectIds: [] as string[] });
   const [userToDelete, setUserToDelete] = useState<adminService.AdminUser | null>(null);
+  const [userRoleFilter, setUserRoleFilter] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | null>(null);
 
   // Fetch users when view changes to 'users'
   useEffect(() => {
@@ -630,7 +632,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* --- INTEGRATIONS --- */}
         {currentView === 'integrations' && (
-          <IntegrationsPage />
+          <IntegrationsPage showToast={showToast} />
         )}
 
         {/* --- DASHBOARD (analytics por projeto) --- */}
@@ -782,85 +784,110 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             </div>
 
-            {isLoadingUsers ? (
-              <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm animate-pulse">
-                <div className="bg-slate-50 dark:bg-[#22262e]/50 px-6 py-4 flex gap-12">
-                  {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-3 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />)}
-                </div>
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="px-6 py-4 flex items-center gap-6 border-t border-slate-100 dark:border-slate-800">
-                    <div className="h-4 w-24 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                    <div className="h-4 w-40 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                    <div className="h-5 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-full" />
-                    <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700/50 rounded" />
-                    <div className="ml-auto h-8 w-16 bg-slate-100 dark:bg-slate-700/50 rounded-lg" />
+            {(() => {
+              const totalPerms = PERMISSION_GROUPS.reduce((acc, g) => acc + g.permissions.length, 0);
+              const filteredUsers = userRoleFilter ? usersList.filter(u => u.role === userRoleFilter) : usersList;
+              const counts = {
+                OWNER: usersList.filter(u => u.role === 'OWNER').length,
+                ADMIN: usersList.filter(u => u.role === 'ADMIN').length,
+                MEMBER: usersList.filter(u => u.role === 'MEMBER').length,
+              };
+              const roleChips: { value: 'OWNER' | 'ADMIN' | 'MEMBER' | null; label: string; count?: number }[] = [
+                { value: null, label: 'Todos', count: usersList.length },
+                ...(counts.OWNER > 0 ? [{ value: 'OWNER' as const, label: t('role_owner'), count: counts.OWNER }] : []),
+                ...(counts.ADMIN > 0 ? [{ value: 'ADMIN' as const, label: t('role_admin'), count: counts.ADMIN }] : []),
+                ...(counts.MEMBER > 0 ? [{ value: 'MEMBER' as const, label: t('role_member'), count: counts.MEMBER }] : []),
+              ];
+
+              if (isLoadingUsers) {
+                return (
+                  <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                    <ListSkeleton rows={5} />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">
-                    <tr>
-                      <th className="px-6 py-4">{t('username')}</th>
-                      <th className="px-6 py-4">{t('email')}</th>
-                      <th className="px-6 py-4">{t('role')}</th>
-                      <th className="px-6 py-4">{t('permissions') || 'Permissões'}</th>
-                      <th className="px-6 py-4">{t('created_at')}</th>
-                      <th className="px-6 py-4 text-right">{t('actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {usersList.map(user => (
-                      <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{user.username}</td>
-                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{user.email}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                             ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' :
-                              user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                                'bg-slate-100 text-slate-800 dark:bg-[#22262e] dark:text-slate-300'}`}>
-                            {user.role === 'OWNER' ? t('role_owner') : user.role === 'ADMIN' ? t('role_admin') : t('role_member')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
-                            <Shield className="w-3 h-3" />
-                            {user.permissions?.length || 0}/{PERMISSION_GROUPS.reduce((acc, g) => acc + g.permissions.length, 0)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleEditUserClick(user)}
-                            className="text-slate-400 hover:text-emerald-500 transition-colors p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg mr-1"
-                            title={t('edit_user')}
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setUserToDelete(user)}
-                            className="text-slate-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                            title={t('delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {usersList.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                          {t('no_users_found')}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                );
+              }
+
+              if (usersList.length === 0) {
+                return (
+                  <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                    <EmptyState
+                      icon={Users}
+                      title="Nenhum usuário cadastrado"
+                      description="Adicione o primeiro usuário da sua equipe para colaborar nos projetos."
+                      ctaLabel={t('add_user')}
+                      onCta={() => {
+                        setEditingUser(null);
+                        setUserFormData({ username: '', email: '', password: '', confirmPassword: '', role: 'MEMBER', permissions: [...ROLE_DEFAULT_PERMISSIONS['MEMBER']], restrictProjects: false, allowedProjectIds: [] });
+                        setIsUserModalOpen(true);
+                      }}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl overflow-hidden">
+                  {usersList.length > 1 && (
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-700/30">
+                      <FilterChips options={roleChips} value={userRoleFilter} onChange={(v) => setUserRoleFilter(v as any)} />
+                    </div>
+                  )}
+                  {filteredUsers.length === 0 ? (
+                    <EmptyState
+                      icon={Users}
+                      title="Nenhum usuário neste filtro"
+                      searchTerm={`role: ${userRoleFilter}`}
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 dark:bg-[#22262e]/50 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
+                          <tr>
+                            <th className="px-6 py-3">{t('username')}</th>
+                            <th className="px-6 py-3">{t('email')}</th>
+                            <th className="px-6 py-3">{t('role')}</th>
+                            <th className="px-6 py-3">{t('permissions') || 'Permissões'}</th>
+                            <th className="px-6 py-3">{t('created_at')}</th>
+                            <th className="px-6 py-3 text-right w-12">{t('actions')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {filteredUsers.map(user => (
+                            <tr key={user.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                              <td className="px-6 py-3 font-semibold text-slate-900 dark:text-white">{user.username}</td>
+                              <td className="px-6 py-3 text-slate-500 dark:text-slate-400">{user.email}</td>
+                              <td className="px-6 py-3">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                                                   ${user.role === 'OWNER' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                                    user.role === 'ADMIN' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                      'bg-slate-100 text-slate-600 dark:bg-[#22262e] dark:text-slate-300'}`}>
+                                  {user.role === 'OWNER' ? t('role_owner') : user.role === 'ADMIN' ? t('role_admin') : t('role_member')}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 tabular-nums">
+                                  <Shield className="w-3 h-3" />
+                                  {user.permissions?.length || 0}/{totalPerms}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3 text-slate-500 dark:text-slate-400 tabular-nums text-xs">
+                                {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-6 py-3 text-right">
+                                <KebabMenu actions={[
+                                  { label: t('edit_user') || 'Editar', icon: Edit2, onClick: () => handleEditUserClick(user) },
+                                  { label: t('delete') || 'Excluir', icon: Trash2, onClick: () => setUserToDelete(user), destructive: true },
+                                ]} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
@@ -1098,48 +1125,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
-              <button 
-                onClick={() => setIsUserModalOpen(false)} 
-                className="px-6 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-semibold transition shadow-sm"
-              >
-                {t('cancel')}
-              </button>
-
-              <button
-                onClick={editingUser ? handleUpdateUser : handleCreateUser}
-                className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2"
-              >
-                {editingUser ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {editingUser ? t('update') : t('create')}
-              </button>
+            <div className="px-6 py-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 shrink-0 rounded-b-xl">
+              <ModalFooter
+                onCancel={() => setIsUserModalOpen(false)}
+                primaryLabel={editingUser ? t('update') : t('create')}
+                primaryIcon={editingUser ? Save : Plus}
+                primaryType="button"
+                onPrimary={() => editingUser ? handleUpdateUser() : handleCreateUser({ preventDefault: () => { } } as React.FormEvent)}
+              />
             </div>
           </div>
         </div>
       )}
 
       {/* --- USER DELETE CONFIRMATION --- */}
-      {userToDelete && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t('confirm_delete')}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {t('confirm_delete_user_msg', { username: userToDelete.username, email: userToDelete.email })}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end mt-6">
-              <button onClick={() => setUserToDelete(null)} className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium text-sm transition-colors">{t('cancel')}</button>
-              <button onClick={handleDeleteUser} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-sm shadow-lg shadow-red-900/20 transition-all active:scale-95">{t('delete')}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmDialog
+        isOpen={!!userToDelete}
+        itemType="usuário"
+        itemLabel={userToDelete ? `${userToDelete.username} (${userToDelete.email})` : ''}
+        hint="O acesso ao sistema será revogado imediatamente. Projetos do usuário continuam intactos."
+        onCancel={() => setUserToDelete(null)}
+        onConfirm={handleDeleteUser}
+      />
 
 
       {/* --- CREATE PROJECT MODAL --- */}
@@ -1360,57 +1367,8 @@ const ProgressPill: React.FC<{ value: number }> = ({ value }) => {
   );
 };
 
-// Kebab menu — substitui os 2 botões flutuantes (Settings + Trash). Evita
-// clique acidental no card e melhora hierarquia visual.
-interface KebabAction {
-  label: string;
-  icon: React.ElementType;
-  onClick: (e: React.MouseEvent) => void;
-  destructive?: boolean;
-}
-const KebabMenu: React.FC<{ actions: KebabAction[] }> = ({ actions }) => {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
-        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors"
-        title="Mais ações"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <MoreVertical className="w-4 h-4" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-xl z-30 min-w-[160px] py-1">
-          {actions.map((a, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.stopPropagation(); setOpen(false); a.onClick(e); }}
-              className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 transition-colors ${a.destructive
-                ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
-                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
-            >
-              <a.icon className="w-3.5 h-3.5" />
-              {a.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+// KebabMenu agora vem de CatalogPrimitives (portaled, sem clipping bug).
+// Mantido aqui só pra anotar a remoção em caso de bisect futuro.
 
 interface ProjectCardLikeProps {
   project: any;

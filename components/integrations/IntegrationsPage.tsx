@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
-import { Link as LinkIcon, AlertTriangle, CheckCircle2, Zap, Settings, X, WifiOff, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Link as LinkIcon, AlertTriangle, Settings, X, WifiOff, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '../common/Button';
 import api from '../../services/api';
 import { SgpSettingsModal } from './SgpSettingsModal';
 import { SgpConflictsTab } from './SgpConflictsTab';
+import { KebabMenu } from '../registrations/common/CatalogPrimitives';
 
 type ProviderType = 'IXC' | 'GENERIC' | 'BEESWEB';
 
@@ -25,16 +26,14 @@ interface ProviderStatus {
     conflictCount: number;
 }
 
-interface ToastData {
-    msg: string;
-    type: 'success' | 'error' | 'info';
+interface IntegrationsPageProps {
+    showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const IntegrationsPage: React.FC = () => {
+export const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showToast: showToastProp }) => {
     const { t } = useLanguage();
     const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(null);
     const [activeTab, setActiveTab] = useState<'settings' | 'conflicts'>('settings');
-    const [toast, setToast] = useState<ToastData | null>(null);
     const [showAddDropdown, setShowAddDropdown] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [providerStatuses, setProviderStatuses] = useState<Record<ProviderType, ProviderStatus>>({
@@ -43,10 +42,11 @@ export const IntegrationsPage: React.FC = () => {
         BEESWEB: { active: false, configured: false, conflictCount: 0 },
     });
 
+    // Usa o showToast global se passado; fallback no-op pra ambientes que não
+    // passaram (preserva o contrato anterior do componente).
     const showToast = useCallback((msg: string, type: 'success' | 'error' | 'info' = 'success') => {
-        setToast({ msg, type });
-        setTimeout(() => setToast(null), 4000);
-    }, []);
+        if (showToastProp) showToastProp(msg, type);
+    }, [showToastProp]);
 
     const providers: ProviderOption[] = [
         {
@@ -244,23 +244,6 @@ export const IntegrationsPage: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Toast */}
-            {toast && (
-                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
-                    toast.type === 'success' ? 'bg-emerald-600 text-white' :
-                    toast.type === 'error' ? 'bg-red-600 text-white' :
-                    'bg-sky-600 text-white'
-                }`}>
-                    {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 shrink-0" />}
-                    {toast.type === 'error' && <AlertTriangle className="w-4 h-4 shrink-0" />}
-                    {toast.type === 'info' && <Zap className="w-4 h-4 shrink-0" />}
-                    {toast.msg}
-                    <button onClick={() => setToast(null)} className="ml-2 p-0.5 rounded hover:bg-white/20 transition-colors">
-                        <X className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            )}
-
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -387,13 +370,9 @@ export const IntegrationsPage: React.FC = () => {
                                             <Settings className="w-4 h-4" />
                                             {t('configure_button')}
                                         </Button>
-                                        <button
-                                            onClick={() => handleRemoveProvider(provider.type)}
-                                            className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                            title={t('integration_remove') || 'Remove integration'}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <KebabMenu actions={[
+                                            { label: t('integration_remove') || 'Remover integração', icon: Trash2, onClick: () => handleRemoveProvider(provider.type), destructive: true },
+                                        ]} />
                                     </div>
                                 </div>
                             </div>
