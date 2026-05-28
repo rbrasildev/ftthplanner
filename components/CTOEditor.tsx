@@ -2257,10 +2257,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // sync dragState so the element rotates in place under the mouse.
             // Read current DOM position, set as new initialLayout,
             // and set startX/startY to current mouse so delta = 0.
+            let isStickyDragRotate = false;
             setDragState(ds => {
                 if (ds?.mode === 'element' && ds.targetId === id && ds.initialLayout) {
                     const domEl = document.getElementById(id);
                     if (domEl) {
+                        isStickyDragRotate = true;
                         const m = new WebKitCSSMatrix(window.getComputedStyle(domEl).transform);
                         return {
                             ...ds,
@@ -2273,12 +2275,53 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return ds;
             });
 
+            // Após qualquer rotação (drag-ativo ou não), as posições dos ports
+            // mudam mas:
+            //   1. o `dragPortSnapshot` (se houver) ainda tem coords pré-rotação,
+            //   2. os `pathEl.setAttribute('d', …)` imperativos feitos pelo
+            //      handleMouseMove durante o drag persistem no DOM e podem não ser
+            //      sobrescritos pela próxima render do React se o `d` recalculado
+            //      coincidir com o que React tinha no VDOM (race entre commit e
+            //      invalidação de cache).
+            // Solução: depois do React commitar (RAF), reseta os dois caches
+            // e re-escreve o `d` de cada path tocando esse elemento usando
+            // getPortCenter (que agora lê fresco do DOM rotacionado).
+            requestAnimationFrame(() => {
+                portCenterCache.current = {};
+                containerRectCache.current = null;
+                localCTORef.current.connections.forEach(conn => {
+                    const sourceIsEl = conn.sourceId === id || conn.sourceId.startsWith(id + '-');
+                    const targetIsEl = conn.targetId === id || conn.targetId.startsWith(id + '-');
+                    if (!sourceIsEl && !targetIsEl) return;
+                    const p1 = getPortCenter(conn.sourceId);
+                    const p2 = getPortCenter(conn.targetId);
+                    if (!p1 || !p2) return;
+                    // Atualiza snapshot (relevante se ainda em drag).
+                    if (isStickyDragRotate) {
+                        dragPortSnapshot.current[conn.sourceId] = p1;
+                        dragPortSnapshot.current[conn.targetId] = p2;
+                    }
+                    // Re-escreve o `d` direto — garante que imperative writes
+                    // antigos do drag sejam descartados, sem depender da
+                    // reconciliation do React detectar diff.
+                    const pathEl = connectionRefs.current[conn.id];
+                    if (pathEl) {
+                        let d = `M ${p1.x} ${p1.y} `;
+                        if (conn.points) {
+                            conn.points.forEach((p: any) => { d += `L ${p.x} ${p.y} `; });
+                        }
+                        d += `L ${p2.x} ${p2.y}`;
+                        pathEl.setAttribute('d', d);
+                    }
+                });
+            });
+
             return {
                 ...prev,
                 layout: { ...prev.layout, [id]: newLayout }
             };
         });
-    }, [incomingCables]);
+    }, [incomingCables, getPortCenter]);
 
 
 
