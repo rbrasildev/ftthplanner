@@ -17,24 +17,77 @@ export interface KebabAction {
     disabled?: boolean;
 }
 
+// Dropdown precisa escapar de qualquer container com overflow:hidden /
+// overflow-x-auto (cards arredondados e wrappers de tabela). Portal pra
+// document.body resolve. Posição calculada pelo bounding rect do botão,
+// com fallback se ultrapassa edge do viewport.
+const MENU_WIDTH = 176;
+const MENU_GUTTER = 8;
+
 export const KebabMenu: React.FC<{ actions: KebabAction[]; align?: 'left' | 'right' }> = ({ actions, align = 'right' }) => {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+    const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+    const btnRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    const positionMenu = () => {
+        const btn = btnRef.current;
+        if (!btn) return;
+        const r = btn.getBoundingClientRect();
+        const menuH = menuRef.current?.offsetHeight ?? actions.length * 36 + 8;
+        // X: alinha pela direita por padrão; se sair da viewport, alinha pela esquerda.
+        let left = align === 'right' ? r.right - MENU_WIDTH : r.left;
+        if (left + MENU_WIDTH > window.innerWidth - MENU_GUTTER) {
+            left = window.innerWidth - MENU_WIDTH - MENU_GUTTER;
+        }
+        if (left < MENU_GUTTER) left = MENU_GUTTER;
+        // Y: abre pra baixo; se não couber, flip pra cima.
+        let top = r.bottom + 4;
+        if (top + menuH > window.innerHeight - MENU_GUTTER) {
+            top = r.top - menuH - 4;
+        }
+        setCoords({ top, left });
+    };
+
+    const openMenu = () => {
+        positionMenu();
+        setOpen(true);
+    };
 
     useEffect(() => {
         if (!open) return;
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            const t = e.target as Node;
+            if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+            setOpen(false);
         };
+        // Fecha em scroll / resize — recalcular posição enquanto o user rola
+        // dá impressão de "menu seguindo" porém mantém aberto, geralmente
+        // desejável; mas o caso de uso aqui (tabela densa, scroll vertical)
+        // fecha pra evitar o menu flutuante "perdido" no meio da página.
+        const closeOnScroll = () => setOpen(false);
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        window.addEventListener('scroll', closeOnScroll, true);
+        window.addEventListener('resize', closeOnScroll);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            window.removeEventListener('scroll', closeOnScroll, true);
+            window.removeEventListener('resize', closeOnScroll);
+        };
     }, [open]);
 
+    // Após render, re-posicionar com altura real do menu (1a render usa estimativa).
+    useEffect(() => {
+        if (open) positionMenu();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, actions.length]);
+
     return (
-        <div className="relative inline-block" ref={ref}>
+        <>
             <button
+                ref={btnRef}
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+                onClick={(e) => { e.stopPropagation(); open ? setOpen(false) : openMenu(); }}
                 className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-colors"
                 title="Mais ações"
                 aria-haspopup="menu"
@@ -42,11 +95,18 @@ export const KebabMenu: React.FC<{ actions: KebabAction[]; align?: 'left' | 'rig
             >
                 <MoreVertical className="w-4 h-4" />
             </button>
-            {open && (
-                <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-xl z-30 min-w-[160px] py-1`}>
+            {open && coords && createPortal(
+                <div
+                    ref={menuRef}
+                    role="menu"
+                    className="fixed bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/40 rounded-xl shadow-xl z-[9999] py-1 animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {actions.map((a, i) => (
                         <button
                             key={i}
+                            role="menuitem"
                             onClick={(e) => { e.stopPropagation(); setOpen(false); a.onClick(e); }}
                             disabled={a.disabled}
                             className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${a.destructive
@@ -57,9 +117,10 @@ export const KebabMenu: React.FC<{ actions: KebabAction[]; align?: 'left' | 'rig
                             {a.label}
                         </button>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
-        </div>
+        </>
     );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check } from 'lucide-react';
 
 interface Option {
@@ -34,7 +35,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    // Dropdown precisa portar pra escapar de overflow:hidden de ancestrais
+    // (cards, modais com overflow-hidden, etc). coords são calculadas pelo
+    // bounding rect do botão e re-recalculadas em open / scroll / resize.
+    const [coords, setCoords] = useState<{ top: number; left: number; width: number; placeUp: boolean } | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const selectedOption = options.find(opt => opt.value === value);
 
@@ -43,16 +50,45 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         (opt.sublabel && opt.sublabel.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
+    const DROPDOWN_MAX_H = 320; // search bar (~70) + lista (max-h-60 = 240) + padding
+    const VIEWPORT_GUTTER = 8;
+
+    const positionDropdown = () => {
+        const btn = buttonRef.current;
+        if (!btn) return;
+        const r = btn.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - r.bottom;
+        const spaceAbove = r.top;
+        // Prefere a direção definida pelo prop, mas faz flip se não couber.
+        const wantsUp = placement === 'top';
+        const placeUp = wantsUp
+            ? (spaceAbove >= Math.min(DROPDOWN_MAX_H, spaceAbove) || spaceAbove > spaceBelow)
+            : (spaceBelow < DROPDOWN_MAX_H && spaceAbove > spaceBelow);
+        const top = placeUp ? Math.max(VIEWPORT_GUTTER, r.top - 8) : r.bottom + 8;
+        setCoords({ top, left: r.left, width: r.width, placeUp });
+    };
+
     useEffect(() => {
+        if (!isOpen) return;
+        positionDropdown();
         const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
+            const t = event.target as Node;
+            if (wrapperRef.current?.contains(t)) return;
+            if (dropdownRef.current?.contains(t)) return;
+            setIsOpen(false);
         };
-        // Use capture phase so stopPropagation on parent components (e.g. modals) doesn't block this
+        const reposition = () => positionDropdown();
+        // Capture phase pra não ser bloqueado por stopPropagation de pais (modais).
         document.addEventListener('mousedown', handleClickOutside, true);
-        return () => document.removeEventListener('mousedown', handleClickOutside, true);
-    }, []);
+        window.addEventListener('resize', reposition);
+        window.addEventListener('scroll', reposition, true);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside, true);
+            window.removeEventListener('resize', reposition);
+            window.removeEventListener('scroll', reposition, true);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, placement]);
 
     const handleSelect = (val: string) => {
         onChange(val);
@@ -70,10 +106,11 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
             <div className="relative">
                 <button
+                    ref={buttonRef}
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full flex items-center justify-between px-4 py-2.5 
+                    w-full flex items-center justify-between px-4 py-2.5
                     bg-white dark:bg-[#22262e] border rounded-lg transition-all duration-300
                     ${isOpen
                         ? 'border-emerald-500 ring-4 ring-emerald-500/10'
@@ -87,12 +124,20 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-emerald-500' : ''}`} />
             </button>
 
-            {/* Dropdown */}
-            {isOpen && (
-                <div className={`
-                    absolute z-[100] left-0 right-0 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-300
-                    ${placement === 'top' ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'}
-                `}>
+            {/* Dropdown — portado pra escapar overflow:hidden de ancestrais. */}
+            {isOpen && coords && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className="fixed z-[9999] bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    style={{
+                        top: coords.top,
+                        left: coords.left,
+                        width: coords.width,
+                        transform: coords.placeUp ? 'translateY(-100%)' : undefined,
+                        transformOrigin: coords.placeUp ? 'bottom' : 'top',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {/* Search Bar */}
                     {showSearch && (
                         <div className="p-3 border-b border-slate-100 dark:border-slate-700/30">
@@ -146,7 +191,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
             </div>
 
