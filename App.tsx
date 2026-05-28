@@ -1498,7 +1498,6 @@ export default function App() {
         if (toolMode === 'position_reserve') {
             setToolMode('view');
             setPendingReserveCableId(null);
-            showToast(t('connection_cancelled') || "Ação Cancelada", 'info');
             return;
         }
         if (toolMode === 'draw_polygon') {
@@ -1740,8 +1739,7 @@ export default function App() {
 
         setToolMode('view');
         setSelectedId(null);
-        showToast(t('action_cancelled') || "Ação Cancelada", 'info');
-    }, [toolMode, t]);
+    }, [toolMode]);
 
     const handleExportKMZ = useCallback((options: ExportKMZOptions) => {
         if (!currentProject) return;
@@ -2327,7 +2325,6 @@ export default function App() {
                                 setMultiConnectionIds(new Set());
                                 setSelectedId(null);
                                 setHighlightedCableId(null);
-                                showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                             }}
                         />
                     )}
@@ -2340,7 +2337,6 @@ export default function App() {
                                 setMultiConnectionIds(new Set());
                                 setSelectedId(null);
                                 previousNetworkState.current = null;
-                                showToast(t('finish'), 'success');
                             }}
                             onCancel={() => {
                                 if (previousNetworkState.current) {
@@ -2354,7 +2350,6 @@ export default function App() {
                                 setMultiConnectionIds(new Set());
                                 setSelectedId(null);
                                 setHighlightedCableId(null);
-                                showToast(t('connection_cancelled') || "Conexão Cancelada", 'info');
                             }}
                         />
                     )}

@@ -16,7 +16,7 @@ export const CableEditToolbar: React.FC<CableEditToolbarProps> = ({ toolMode, on
     const saveLabel = isEdit ? t('save_changes') : t('finish');
     const Icon = isEdit ? Cable : Unplug;
     return (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-top-4 fade-in duration-300">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/40 overflow-hidden">
                 <div className="flex items-center gap-0">
                     {/* Icon + Title */}

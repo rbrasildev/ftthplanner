@@ -691,7 +691,7 @@ const ModeHud: React.FC<ModeHudProps> = ({ icon, title, hint, tone, pointCount, 
     const c = HUD_TONE[tone];
     return (
         <div
-            className={`absolute top-4 left-1/2 -translate-x-1/2 z-[1100] bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border ${c.ring} px-3 py-2 flex items-center gap-3 max-w-[92vw] animate-in fade-in slide-in-from-top-4 duration-200`}
+            className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-[1100] bg-white/95 dark:bg-[#1a1d23]/95 backdrop-blur-md rounded-2xl shadow-2xl border ${c.ring} px-3 py-2 flex items-center gap-3 max-w-[92vw] animate-in fade-in slide-in-from-bottom-4 duration-200`}
             role="status"
             aria-live="polite"
         >
@@ -1933,6 +1933,14 @@ export const MapView: React.FC<MapViewProps> = ({
     }), []);
 
     // HUD info por modo — central, single source of truth pro feedback visual.
+    // HUD info por modo — APENAS pra modos que NÃO têm widget flutuante próprio
+    // no App.tsx. Os modos abaixo já têm UI dedicada e foram intencionalmente
+    // excluídos pra não duplicar/sobrepor:
+    //   edit_cable, connect_cable → CableEditToolbar (top-4 do App.tsx)
+    //   draw_polygon → PolygonDrawToolbar
+    //   draw_cable (com pontos) → bar "Concluir cabo" (bottom-6 do App.tsx)
+    //   move_node → controles flutuantes (top-20 do App.tsx)
+    //   report_area → bar (bottom-6 do App.tsx)
     const hudInfo = (() => {
         switch (mode) {
             case 'add_cto': return { icon: <Box className="w-4 h-4" />, title: 'Adicionando CTO', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
@@ -1940,24 +1948,14 @@ export const MapView: React.FC<MapViewProps> = ({
             case 'add_pop': return { icon: <Building2 className="w-4 h-4" />, title: 'Adicionando POP', hint: 'Clique no mapa para posicionar', tone: 'indigo' as HudTone };
             case 'add_pole': return { icon: <UtilityPole className="w-4 h-4" />, title: 'Adicionando Poste', hint: 'Clique no mapa para posicionar', tone: 'slate' as HudTone };
             case 'add_customer': return { icon: <User className="w-4 h-4" />, title: 'Adicionando Cliente', hint: 'Clique no mapa para posicionar', tone: 'emerald' as HudTone };
-            case 'draw_cable': return { icon: <Share2 className="w-4 h-4" />, title: 'Desenhando Cabo', hint: 'Clique para adicionar pontos · clique no nó destino para finalizar', tone: 'emerald' as HudTone, canUndo: true };
-            case 'draw_polygon': return { icon: <Hexagon className="w-4 h-4" />, title: 'Desenhando Polígono', hint: 'Clique para adicionar vértices', tone: 'rose' as HudTone, canUndo: true };
             case 'export_area': return { icon: <ScanSearch className="w-4 h-4" />, title: 'Selecione a área para exportar', hint: 'Desenhe um polígono · mínimo 3 pontos', tone: 'amber' as HudTone, canUndo: true };
-            // 'report_area' e 'move_node' têm controles flutuantes próprios em App.tsx
-            // com botão Confirmar específico — não duplicamos aqui pra não criar duas
-            // peças de UI sobrepostas.
-            case 'edit_cable': return { icon: <Move className="w-4 h-4" />, title: 'Editando geometria do cabo', hint: 'Arraste os pontos para reposicionar', tone: 'sky' as HudTone };
-            case 'connect_cable': return { icon: <GitBranch className="w-4 h-4" />, title: 'Conectando cabo', hint: 'Clique em um nó (CTO, POP, Poste) para conectar', tone: 'indigo' as HudTone };
             case 'pick_connection_target': return { icon: <Unplug className="w-4 h-4" />, title: 'Selecione o destino', hint: 'Clique em um nó para definir o destino da conexão', tone: 'indigo' as HudTone };
             case 'otdr': return { icon: <Radio className="w-4 h-4" />, title: 'Modo OTDR', hint: 'Clique em um cabo para simular a medição', tone: 'pink' as HudTone };
             default: return null;
         }
     })();
 
-    const hudPointCount = mode === 'draw_cable' ? drawingPath.length
-        : mode === 'draw_polygon' ? drawingPolygonPath.length
-            : mode === 'export_area' ? exportAreaPolygon.length
-                : undefined;
+    const hudPointCount = mode === 'export_area' ? exportAreaPolygon.length : undefined;
 
     return (
         <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
