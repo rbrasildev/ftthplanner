@@ -176,6 +176,16 @@ Intentional: every DIO add/remove also mutates `localCTO.layout` (each DIO has a
 
 If you rotate while dragging, you want the cable to stay under the cursor. The `handleRotateElement` does this by, in the same callback: reading the live DOM transform of the element, setting that as the new `initialLayout` for the drag, and resetting `startX/startY` to the current mouse position so the next mousemove computes `delta = 0`. Don't simplify this away.
 
+### Bug E — sticky-drag flag from closure was always `false` (regression of Bug A)
+
+**Symptom:** the original Bug A fix worked, then broke again after a refactor that extracted `scheduleConnectionRefresh(elementId, isStickyDrag)` as a helper.
+
+**Root cause:** the call site captured `isStickyDragRotate` in a closure that was set inside a `setDragState(ds => { … isStickyDragRotate = true; … })` updater. The updater ran in React 18's later batch flush — but the helper was called *before* the flush completed. The value passed by parameter was the initial `false`, not the eventual `true`. The closure variable would be `true` by the time the RAF fired, but the parameter had already been copied as a primitive.
+
+**Fix:** don't pass closure-captured flags from inside a `setState` updater. Have the helper detect sticky drag itself from `dragStateRef.current` inside the RAF — the ref is always synchronized via `useLayoutEffect` and reads true state.
+
+**Rule:** when scheduling work from inside a `setState` updater, don't rely on local variables that *other* `setState` updaters in the same batch will mutate. Read from refs instead.
+
 ## 8. Patterns for common tasks
 
 ### Adding a new tool mode (like VFL/OTDR/SmartAlign)

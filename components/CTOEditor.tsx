@@ -2032,11 +2032,18 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
      *   4. se ainda em drag ativo, atualiza o dragPortSnapshot pras coords novas.
      *
      * Veja CTO Editor Canvas skill §7 (Bug A) pra contexto.
+     *
+     * NOTA: detecta sticky-drag lendo `dragStateRef.current` DENTRO do RAF
+     * (não via flag passada como argumento). Versão anterior recebia
+     * `isStickyDrag: boolean` mas o batching do React 18 fazia o callback
+     * ser chamado com `false` mesmo durante drag ativo — o `setDragState`
+     * updater que setaria a flag ainda não tinha rodado.
      */
-    const scheduleConnectionRefresh = useCallback((elementId: string, isStickyDrag = false) => {
+    const scheduleConnectionRefresh = useCallback((elementId: string) => {
         requestAnimationFrame(() => {
             portCenterCache.current = {};
             containerRectCache.current = null;
+            const isStickyDrag = dragStateRef.current?.mode === 'element' && dragStateRef.current?.targetId === elementId;
             localCTORef.current.connections.forEach(conn => {
                 const sourceIsEl = conn.sourceId === elementId || conn.sourceId.startsWith(elementId + '-');
                 const targetIsEl = conn.targetId === elementId || conn.targetId.startsWith(elementId + '-');
@@ -2303,12 +2310,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             // sync dragState so the element rotates in place under the mouse.
             // Read current DOM position, set as new initialLayout,
             // and set startX/startY to current mouse so delta = 0.
-            let isStickyDragRotate = false;
             setDragState(ds => {
                 if (ds?.mode === 'element' && ds.targetId === id && ds.initialLayout) {
                     const domEl = document.getElementById(id);
                     if (domEl) {
-                        isStickyDragRotate = true;
                         const m = new WebKitCSSMatrix(window.getComputedStyle(domEl).transform);
                         return {
                             ...ds,
@@ -2321,7 +2326,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return ds;
             });
 
-            scheduleConnectionRefresh(id, isStickyDragRotate);
+            scheduleConnectionRefresh(id);
 
             return {
                 ...prev,

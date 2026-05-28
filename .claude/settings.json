@@ -150,7 +150,8 @@
       "Bash(rmdir \"C:\\\\Users\\\\rairo\\\\.claude\\\\skills\\\\cto-editor-canvas\")",
       "Bash(mkdir -p /d/ftthplanner/.claude/skills/cto-editor-canvas)",
       "Bash(mv /c/Users/rairo/.claude/skills/cto-editor-canvas/SKILL.md /d/ftthplanner/.claude/skills/cto-editor-canvas/SKILL.md)",
-      "Bash(rmdir /c/Users/rairo/.claude/skills/cto-editor-canvas)"
+      "Bash(rmdir /c/Users/rairo/.claude/skills/cto-editor-canvas)",
+      "Edit(/.claude/skills/cto-editor-canvas/**)"
     ]
   }
 }
