@@ -2523,22 +2523,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             return;
         }
 
-        // 3. ELEMENT DRAG (Direct DOM)
-        if (dragState.mode === 'note') {
-            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+        // 3. NOTE DRAG (Direct DOM — commit em handleMouseUp)
+        // Antes fazia setLocalCTO a cada mousemove e disparava render full do
+        // editor a 60 Hz. Agora atualiza só o transform da nota; o state pega
+        // o valor final na soltada do mouse.
+        if (dragState.mode === 'note' && dragState.targetId) {
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
-            const newX = (dragState.initialLayout?.x || 0) + dx;
-            const newY = (dragState.initialLayout?.y || 0) + dy;
+            const rawX = (dragState.initialLayout?.x || 0) + dx;
+            const rawY = (dragState.initialLayout?.y || 0) + dy;
+            const newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
+            const newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
 
-            setLocalCTO(prev => ({
-                ...prev,
-                notes: (prev.notes || []).map(n => n.id === dragState.targetId ? {
-                    ...n,
-                    x: Math.round(newX / GRID_SIZE) * GRID_SIZE,
-                    y: Math.round(newY / GRID_SIZE) * GRID_SIZE
-                } : n)
-            }));
+            const noteEl = containerRef.current?.querySelector(`[data-note-id="${dragState.targetId}"]`) as HTMLElement | null;
+            if (noteEl) {
+                noteEl.style.transform = `translate(${newX}px, ${newY}px)`;
+            }
             return;
         }
 
@@ -2729,6 +2730,21 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         // Drag ended — release the port-position snapshot taken at drag start.
         // (Safe to clear for any mouseup, even non-element drags.)
         dragPortSnapshot.current = {};
+
+        // NOTE DRAG COMMIT (mousemove só atualizou o transform DOM imperativamente)
+        if (dragState?.mode === 'note' && dragState.targetId && dragState.initialLayout) {
+            const dx = (e.clientX - dragState.startX) / viewState.zoom;
+            const dy = (e.clientY - dragState.startY) / viewState.zoom;
+            const rawX = dragState.initialLayout.x + dx;
+            const rawY = dragState.initialLayout.y + dy;
+            const newX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
+            const newY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
+            const noteId = dragState.targetId;
+            setLocalCTO(prev => ({
+                ...prev,
+                notes: (prev.notes || []).map(n => n.id === noteId ? { ...n, x: newX, y: newY } : n)
+            }));
+        }
 
         // COMMIT DRAG CHANGES TO STATE
         if (dragState?.mode === 'element' && dragState.targetId && dragState.initialLayout && !dragState.targetId.startsWith('fus-')) {
