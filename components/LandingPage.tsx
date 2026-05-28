@@ -867,7 +867,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
 
                     <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex items-center gap-4 text-sm text-slate-400">
-                            <p>{saasConfig?.copyrightText || t('landing_footer_rights')}</p>
+                            <p>{
+                                // Aceita {year} placeholder em copyrightText custom. Se admin colocou
+                                // ano hardcoded (ex: "© 2024 …"), substitui pelo atual também — evita
+                                // copy desatualizado na virada de ano.
+                                (saasConfig?.copyrightText || t('landing_footer_rights', { year: new Date().getFullYear() }))
+                                    .replace('{year}', String(new Date().getFullYear()))
+                                    .replace(/©\s*\d{4}/g, `© ${new Date().getFullYear()}`)
+                            }</p>
                             <span className="hidden md:inline text-slate-700">|</span>
                             <a href="/privacidade.html" className="hover:text-emerald-500 transition-colors">{t('landing_privacy_policy')}</a>
                         </div>

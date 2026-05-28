@@ -1284,7 +1284,7 @@ const translations = {
     'landing_footer_product': 'Product',
     'landing_footer_company': 'Company',
     'landing_footer_legal': 'Legal',
-    'landing_footer_rights': '© 2024 FTTH Planner. All rights reserved.',
+    'landing_footer_rights': '© {year} FTTH Planner. All rights reserved.',
     'landing_privacy_policy': 'Privacy Policy',
 
     // Pricing
@@ -1813,7 +1813,7 @@ const translations = {
     'landing_footer_product': 'Produto',
     'landing_footer_company': 'Empresa',
     'landing_footer_legal': 'Legal',
-    'landing_footer_rights': '© 2024 FTTH Planner. Todos os direitos reservados.',
+    'landing_footer_rights': '© {year} FTTH Planner. Todos os direitos reservados.',
     'landing_privacy_policy': 'Política de Privacidade',
 
     // Pricing
