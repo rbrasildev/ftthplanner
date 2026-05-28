@@ -879,8 +879,6 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const dragLineRef = useRef<SVGPathElement | null>(null);
 
 
-    // Cable Editing State - REMOVED (Handled Globally)
-
     // Derived state for layout calculation
     const containerRef = useRef<HTMLDivElement>(null);
     const diagramContentRef = useRef<HTMLDivElement>(null);
@@ -2558,18 +2556,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const el = document.getElementById(dragState.targetId);
             if (el) {
                 const rot = dragState.initialLayout.rotation || 0;
-                // FUSION OFFSET FIX REMOVED: Now 1-to-1
-                const visualY = newY;
-
-                el.style.transform = `translate(${newX}px, ${visualY}px) rotate(${rot}deg)`;
+                el.style.transform = `translate(${newX}px, ${newY}px) rotate(${rot}deg)`;
             }
 
-            // B. Move Connected Cables (Visual Only)
-            // We need to find connections attached to this element.
-            // This requires some heavy lifting to find ports.
-            // STRATEGY: We know the delta (dx, dy). We can shift the endpoints of linked connections.
-            // B. Move Connected Cables (Visual Only)
-            // Use REF to avoid stale closures during rapid updates
+            // B. Move connected cables imperativamente (shift dos endpoints).
+            // Lê via ref pra evitar stale closure durante drag rápido.
             const deltaX = newX - (localCTORef.current.layout?.[dragState.targetId!]?.x || dragState.initialLayout.x);
             const deltaY = newY - (localCTORef.current.layout?.[dragState.targetId!]?.y || dragState.initialLayout.y);
 
@@ -3414,11 +3405,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         let cy = 200;
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            // Convert container center to canvas coordinates
-            const screenCX = rect.width / 2;
-            const screenCY = rect.height / 2;
-            cx = (screenCX - viewState.x) / viewState.zoom - NOTE_W / 2;
-            cy = (screenCY - viewState.y) / viewState.zoom - NOTE_H / 2;
+            // Container-local center → canvas coords (rect.width/2 já está
+            // relativo ao container, não à viewport — basta tirar pan/zoom).
+            const containerCX = rect.width / 2;
+            const containerCY = rect.height / 2;
+            cx = (containerCX - viewState.x) / viewState.zoom - NOTE_W / 2;
+            cy = (containerCY - viewState.y) / viewState.zoom - NOTE_H / 2;
         }
 
         const newNote: Note = {
