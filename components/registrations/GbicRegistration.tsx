@@ -160,7 +160,7 @@ export const GbicRegistration: React.FC<GbicRegistrationProps> = ({ showToast })
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
+        <div className="space-y-8 animate-in fade-in duration-300">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>

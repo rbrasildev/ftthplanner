@@ -73,7 +73,7 @@ const SkeletonBlock: React.FC<{ className?: string }> = ({ className = '' }) => 
 );
 
 const SettingsSkeleton = () => (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
         <div className="space-y-2">
             <SkeletonBlock className="h-7 w-52" />
             <SkeletonBlock className="h-4 w-80" />
@@ -271,7 +271,7 @@ export const CompanySettings: React.FC = () => {
     if (loading) return <SettingsSkeleton />;
 
     return (
-        <form onSubmit={handleSave} className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-24">
+        <form onSubmit={handleSave} className="space-y-6 animate-in fade-in duration-300 pb-24">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
                 <div>

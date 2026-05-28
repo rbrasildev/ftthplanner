@@ -482,7 +482,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* Projects View */}
         {currentView === 'projects' && (
-          <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
+          <div className="space-y-8 animate-in fade-in duration-300">
             {/* Header Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
@@ -759,7 +759,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* --- USERS VIEW --- */}
         {currentView === 'users' && (
-          <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
+          <div className="space-y-8 animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">

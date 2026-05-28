@@ -243,7 +243,7 @@ export const IntegrationsPage: React.FC = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-6 animate-in fade-in duration-300">
             {/* Toast */}
             {toast && (
                 <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300 ${
