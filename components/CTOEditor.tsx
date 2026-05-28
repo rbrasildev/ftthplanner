@@ -2016,6 +2016,47 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         });
     }, []);
 
+    /**
+     * Após qualquer mutação de layout que mova os ports de um elemento
+     * (rotate, mirror, etc), agenda uma limpeza pós-commit para:
+     *   1. esvaziar portCenterCache + containerRectCache
+     *   2. re-ler as posições com getPortCenter (que agora lê do DOM atualizado)
+     *   3. reescrever imperativamente o `d` das conexões tocando o elemento
+     *      — bypass na reconciliation do React que pode pular o update se achar
+     *      que o `d` no VDOM não mudou (situação clássica pós-drag em que o
+     *      handleMouseMove deixou writes imperativos no DOM).
+     *   4. se ainda em drag ativo, atualiza o dragPortSnapshot pras coords novas.
+     *
+     * Veja CTO Editor Canvas skill §7 (Bug A) pra contexto.
+     */
+    const scheduleConnectionRefresh = useCallback((elementId: string, isStickyDrag = false) => {
+        requestAnimationFrame(() => {
+            portCenterCache.current = {};
+            containerRectCache.current = null;
+            localCTORef.current.connections.forEach(conn => {
+                const sourceIsEl = conn.sourceId === elementId || conn.sourceId.startsWith(elementId + '-');
+                const targetIsEl = conn.targetId === elementId || conn.targetId.startsWith(elementId + '-');
+                if (!sourceIsEl && !targetIsEl) return;
+                const p1 = getPortCenter(conn.sourceId);
+                const p2 = getPortCenter(conn.targetId);
+                if (!p1 || !p2) return;
+                if (isStickyDrag) {
+                    dragPortSnapshot.current[conn.sourceId] = p1;
+                    dragPortSnapshot.current[conn.targetId] = p2;
+                }
+                const pathEl = connectionRefs.current[conn.id];
+                if (pathEl) {
+                    let d = `M ${p1.x} ${p1.y} `;
+                    if (conn.points) {
+                        conn.points.forEach((p: any) => { d += `L ${p.x} ${p.y} `; });
+                    }
+                    d += `L ${p2.x} ${p2.y}`;
+                    pathEl.setAttribute('d', d);
+                }
+            });
+        });
+    }, [getPortCenter]);
+
     const handleElementAction = useCallback((e: React.MouseEvent, id: string, type: 'splitter' | 'fusion' | 'cable' | 'dio') => {
         e.stopPropagation();
         if (isVflToolActive || isOtdrToolActive) return;
@@ -2027,6 +2068,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
                 const currentRot = existingLayout.rotation || 0;
                 const newRot = (currentRot + 90) % 360;
+                scheduleConnectionRefresh(id);
                 return {
                     ...prev,
                     layout: {
@@ -2045,7 +2087,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             }
             // Cable deletion not requested, but safe to ignore or add later
         }
-    }, [isVflToolActive, isOtdrToolActive, isRotateMode, isDeleteMode, handleDeleteSplitter, handleDeleteFusion, handleDeleteDIO]);
+    }, [isVflToolActive, isOtdrToolActive, isRotateMode, isDeleteMode, handleDeleteSplitter, handleDeleteFusion, handleDeleteDIO, scheduleConnectionRefresh]);
 
     const handleMirrorElement = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -2072,6 +2114,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             }
 
+            // Espelhar move os ports → mesma classe de bug que rotate.
+            scheduleConnectionRefresh(id);
+
             return {
                 ...prev,
                 layout: {
@@ -2080,7 +2125,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             };
         });
-    }, [isVflToolActive, isOtdrToolActive]);
+    }, [isVflToolActive, isOtdrToolActive, scheduleConnectionRefresh]);
 
     const handlePortMouseDown = useCallback((e: React.MouseEvent, portId: string) => {
         if (e.button !== 0) return;
@@ -2190,6 +2235,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setLocalCTO(prev => {
                 const currentRot = prev.layout?.[id]?.rotation || 0;
                 const newRot = (currentRot + 90) % 360;
+                scheduleConnectionRefresh(id);
                 return {
                     ...prev,
                     layout: {
@@ -2200,7 +2246,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             });
             return;
         }
-    }, [isSmartAlignMode, isRotateMode]);
+    }, [isSmartAlignMode, isRotateMode, scheduleConnectionRefresh]);
 
 
 
@@ -2275,53 +2321,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return ds;
             });
 
-            // Após qualquer rotação (drag-ativo ou não), as posições dos ports
-            // mudam mas:
-            //   1. o `dragPortSnapshot` (se houver) ainda tem coords pré-rotação,
-            //   2. os `pathEl.setAttribute('d', …)` imperativos feitos pelo
-            //      handleMouseMove durante o drag persistem no DOM e podem não ser
-            //      sobrescritos pela próxima render do React se o `d` recalculado
-            //      coincidir com o que React tinha no VDOM (race entre commit e
-            //      invalidação de cache).
-            // Solução: depois do React commitar (RAF), reseta os dois caches
-            // e re-escreve o `d` de cada path tocando esse elemento usando
-            // getPortCenter (que agora lê fresco do DOM rotacionado).
-            requestAnimationFrame(() => {
-                portCenterCache.current = {};
-                containerRectCache.current = null;
-                localCTORef.current.connections.forEach(conn => {
-                    const sourceIsEl = conn.sourceId === id || conn.sourceId.startsWith(id + '-');
-                    const targetIsEl = conn.targetId === id || conn.targetId.startsWith(id + '-');
-                    if (!sourceIsEl && !targetIsEl) return;
-                    const p1 = getPortCenter(conn.sourceId);
-                    const p2 = getPortCenter(conn.targetId);
-                    if (!p1 || !p2) return;
-                    // Atualiza snapshot (relevante se ainda em drag).
-                    if (isStickyDragRotate) {
-                        dragPortSnapshot.current[conn.sourceId] = p1;
-                        dragPortSnapshot.current[conn.targetId] = p2;
-                    }
-                    // Re-escreve o `d` direto — garante que imperative writes
-                    // antigos do drag sejam descartados, sem depender da
-                    // reconciliation do React detectar diff.
-                    const pathEl = connectionRefs.current[conn.id];
-                    if (pathEl) {
-                        let d = `M ${p1.x} ${p1.y} `;
-                        if (conn.points) {
-                            conn.points.forEach((p: any) => { d += `L ${p.x} ${p.y} `; });
-                        }
-                        d += `L ${p2.x} ${p2.y}`;
-                        pathEl.setAttribute('d', d);
-                    }
-                });
-            });
+            scheduleConnectionRefresh(id, isStickyDragRotate);
 
             return {
                 ...prev,
                 layout: { ...prev.layout, [id]: newLayout }
             };
         });
-    }, [incomingCables, getPortCenter]);
+    }, [incomingCables, scheduleConnectionRefresh]);
 
 
 

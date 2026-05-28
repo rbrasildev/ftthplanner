@@ -143,7 +143,14 @@
       "Bash(awk 'NR < 3335 || NR > 3482' components/admin/SaasAdminPage.tsx)",
       "Bash(mv /tmp/saas_cleaned.tsx components/admin/SaasAdminPage.tsx)",
       "Bash(awk 'NR < 1957 || NR > 2001' components/admin/SaasAdminPage.tsx)",
-      "Bash(mv /tmp/saas_v2.tsx components/admin/SaasAdminPage.tsx)"
+      "Bash(mv /tmp/saas_v2.tsx components/admin/SaasAdminPage.tsx)",
+      "Edit(~/.claude/skills/cto-editor-canvas/**)",
+      "Bash(mkdir -p \"d:\\\\ftthplanner\\\\.claude\\\\skills\\\\cto-editor-canvas\")",
+      "Bash(mv \"C:\\\\Users\\\\rairo\\\\.claude\\\\skills\\\\cto-editor-canvas\\\\SKILL.md\" \"d:\\\\ftthplanner\\\\.claude\\\\skills\\\\cto-editor-canvas\\\\SKILL.md\")",
+      "Bash(rmdir \"C:\\\\Users\\\\rairo\\\\.claude\\\\skills\\\\cto-editor-canvas\")",
+      "Bash(mkdir -p /d/ftthplanner/.claude/skills/cto-editor-canvas)",
+      "Bash(mv /c/Users/rairo/.claude/skills/cto-editor-canvas/SKILL.md /d/ftthplanner/.claude/skills/cto-editor-canvas/SKILL.md)",
+      "Bash(rmdir /c/Users/rairo/.claude/skills/cto-editor-canvas)"
     ]
   }
 }
