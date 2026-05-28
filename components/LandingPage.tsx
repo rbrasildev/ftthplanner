@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Network, ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, Lock, ChevronRight, Menu, X, Mail, Phone, Smartphone, WifiOff, GitBranch } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, ChevronRight, Menu, X, Mail, Phone, Smartphone, WifiOff, GitBranch } from 'lucide-react';
 import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
 import { VideoDemoModal } from './modals/VideoDemoModal';
@@ -181,7 +181,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             </button>
                             <button
                                 onClick={() => onRegisterClick()}
-                                className="group bg-white text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                                className="group bg-white text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 motion-reduce:hover:transform-none"
                             >
                                 {t('landing_get_started')}
                                 <ArrowRight className="w-4 h-4 inline-block ml-2 group-hover:translate-x-1 transition-transform" />
@@ -235,27 +235,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         {t('landing_hero_title_1')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-indigo-600">{t('landing_hero_title_2')}</span> {t('landing_hero_title_3')}
                     </h1>
 
-                    <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
                         {t('landing_hero_desc')}
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center mb-16">
                         <button
                             onClick={() => onRegisterClick()}
-                            className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-emerald-600/30 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-emerald-600/30 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 motion-reduce:hover:transform-none motion-reduce:transition-none flex items-center justify-center gap-2"
                         >
                             {t('landing_start_trial')}
                             <ChevronRight className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setIsDemoModalOpen(true)}
-                            className="w-full sm:w-auto px-8 py-4 bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-6 py-4 text-slate-300 hover:text-white rounded-2xl font-semibold text-base transition-colors flex items-center justify-center gap-2 motion-reduce:transition-none"
                         >
-                            <span className="relative flex h-3 w-3 mr-1">
+                            <span className="relative flex h-2.5 w-2.5 motion-reduce:hidden">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                             </span>
                             {t('landing_live_demo')}
+                            <ChevronRight className="w-4 h-4 opacity-60" />
                         </button>
                     </div>
 
@@ -288,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             <h2 className="text-3xl font-bold text-white">
                                 {t('landing_problem_title')} <span className="text-red-500 decoration-red-200 underline decoration-wavy underline-offset-4">{t('landing_problem_highlight')}</span>
                             </h2>
-                            <p className="text-lg text-slate-400 leading-relaxed">
+                            <p className="text-lg text-slate-300 leading-relaxed">
                                 {t('landing_problem_desc')}
                             </p>
                             <ul className="space-y-4">
@@ -332,7 +333,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">{t('landing_features_title')}</h2>
-                        <p className="text-lg text-slate-400">{t('landing_features_desc')}</p>
+                        <p className="text-lg text-slate-300">{t('landing_features_desc')}</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -374,12 +375,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 desc: t('landing_feat_import_desc')
                             }
                         ].map((feature, idx) => (
-                            <div key={idx} className="group p-8 bg-slate-900 rounded-3xl border border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div key={idx} className="group p-8 bg-slate-900 rounded-3xl border border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 motion-reduce:hover:transform-none motion-reduce:transition-none">
                                 <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                                <p className="text-slate-400 leading-relaxed">{feature.desc}</p>
+                                <p className="text-slate-300 leading-relaxed">{feature.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -392,15 +393,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-800 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6">
-                            Offer
+                            {t('landing_pricing_badge') || (language === 'pt' ? 'Planos' : 'Pricing')}
                         </div>
                         <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">{t('pricing_title')}</h2>
-                        <p className="text-lg text-slate-400">{t('pricing_desc')}</p>
+                        <p className="text-lg text-slate-300">{t('pricing_desc')}</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {plans.length > 0 ? plans.map((plan, idx) => (
-                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 transform scale-105 z-10 shadow-2xl' : 'border-slate-800'}`}>
+                            <div key={idx} className={`bg-slate-900 rounded-3xl border p-8 flex flex-col relative ${plan.isRecommended ? 'border-indigo-500 ring-4 ring-indigo-500/20 shadow-2xl shadow-indigo-500/10' : 'border-slate-800'}`}>
                                 {plan.isRecommended && (
                                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
                                         {t('most_popular')}
@@ -446,8 +447,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 </button>
                             </div>
                         )) : (
-                            <div className="col-span-full text-center text-slate-500">
-                                Loading plans...
+                            <div className="col-span-full text-center text-slate-400 py-12">
+                                <span className="inline-block w-5 h-5 rounded-full border-2 border-slate-700 border-t-emerald-500 animate-spin motion-reduce:animate-none align-middle mr-2"></span>
+                                {language === 'pt' ? 'Carregando planos…' : 'Loading plans…'}
                             </div>
                         )}
                     </div>
@@ -466,7 +468,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 <Zap className="w-3 h-3" /> {t('landing_perf_badge')}
                             </div>
                             <h2 className="text-3xl md:text-5xl font-extrabold mb-6">{t('landing_perf_title')}</h2>
-                            <p className="text-lg text-slate-400 mb-8 leading-relaxed">
+                            <p className="text-lg text-slate-300 mb-8 leading-relaxed">
                                 {t('landing_perf_desc')}
                             </p>
 
@@ -523,7 +525,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         <Shield className="w-8 h-8" />
                     </div>
                     <h2 className="text-3xl font-bold text-white mb-4">{t('landing_sec_title')}</h2>
-                    <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10">
+                    <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-10">
                         {t('landing_sec_desc')}
                     </p>
                     <div className="flex flex-wrap justify-center gap-4">
@@ -553,7 +555,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
                             {t('landing_integrations_title') || 'Conecte ao seu sistema de gestão'}
                         </h2>
-                        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                        <p className="text-lg text-slate-300 max-w-2xl mx-auto">
                             {t('landing_integrations_desc') || 'Sincronize clientes, portas e status automaticamente com os principais ERPs do mercado de telecomunicações.'}
                         </p>
                     </div>
@@ -572,7 +574,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full uppercase tracking-wider">Webhook + API</span>
                                     </div>
                                 </div>
-                                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                                <p className="text-slate-300 text-sm leading-relaxed mb-6">
                                     {t('landing_ixc_desc') || 'Integração em tempo real via Webhooks. Sincronize clientes, contratos, CTO, porta FTTH e status de conexão automaticamente.'}
                                 </p>
                                 <div className="flex flex-wrap gap-2">
@@ -604,7 +606,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full uppercase tracking-wider">API Polling</span>
                                     </div>
                                 </div>
-                                <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                                <p className="text-slate-300 text-sm leading-relaxed mb-6">
                                     {t('landing_sgp_desc') || 'Sincronização automática via API. Busca dados de clientes, contratos e serviços diretamente do seu sistema de gestão.'}
                                 </p>
                                 <div className="flex flex-wrap gap-2">
@@ -648,7 +650,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                 {t('landing_mobile_title_1')}{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-500">{t('landing_mobile_title_2')}</span>
                             </h2>
-                            <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-xl">
+                            <p className="text-lg text-slate-300 mb-10 leading-relaxed max-w-xl">
                                 {t('landing_mobile_desc')}
                             </p>
 
@@ -665,7 +667,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                         </div>
                                         <div>
                                             <div className="font-bold text-white text-base mb-0.5">{f.title}</div>
-                                            <div className="text-sm text-slate-400 leading-relaxed">{f.desc}</div>
+                                            <div className="text-sm text-slate-300 leading-relaxed">{f.desc}</div>
                                         </div>
                                     </li>
                                 ))}
@@ -770,7 +772,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                                     {item.step}
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                                <p className="text-slate-400 leading-relaxed px-4">
+                                <p className="text-slate-300 leading-relaxed px-4">
                                     {item.desc}
                                 </p>
                             </div>
@@ -795,7 +797,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                     </p>
                     <button
                         onClick={() => onRegisterClick()}
-                        className="px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:bg-emerald-50 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
+                        className="px-10 py-5 bg-white text-emerald-600 rounded-2xl font-bold text-xl shadow-2xl hover:bg-emerald-50 transition-all transform hover:-translate-y-1 hover:scale-105 active:scale-95 motion-reduce:hover:transform-none motion-reduce:transition-none flex items-center gap-2 mx-auto"
                     >
                         {t('landing_cta_btn')}
                         <ArrowRight className="w-6 h-6" />
@@ -817,13 +819,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                             </p>
                             <div className="flex gap-4">
                                 {saasConfig?.socialFacebook && (
-                                    <a href={saasConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                                        <Globe className="w-5 h-5" />
+                                    <a href={saasConfig.socialFacebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#1877F2] transition-colors" aria-label="Facebook">
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                        </svg>
                                     </a>
                                 )}
                                 {saasConfig?.socialInstagram && (
-                                    <a href={saasConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
-                                        <Network className="w-5 h-5" />
+                                    <a href={saasConfig.socialInstagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white hover:bg-gradient-to-br hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] transition-colors" aria-label="Instagram">
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                                        </svg>
                                     </a>
                                 )}
                             </div>

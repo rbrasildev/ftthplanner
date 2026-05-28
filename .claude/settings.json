@@ -151,7 +151,10 @@
       "Bash(mkdir -p /d/ftthplanner/.claude/skills/cto-editor-canvas)",
       "Bash(mv /c/Users/rairo/.claude/skills/cto-editor-canvas/SKILL.md /d/ftthplanner/.claude/skills/cto-editor-canvas/SKILL.md)",
       "Bash(rmdir /c/Users/rairo/.claude/skills/cto-editor-canvas)",
-      "Edit(/.claude/skills/cto-editor-canvas/**)"
+      "Edit(/.claude/skills/cto-editor-canvas/**)",
+      "Bash(sed -i 's/hover:-translate-y-1 hover:scale-105 active:scale-95/hover:-translate-y-1 hover:scale-105 active:scale-95 motion-reduce:hover:transform-none motion-reduce:transition-none/g' components/LandingPage.tsx)",
+      "Bash(sed -i 's/hover:-translate-y-0.5 active:translate-y-0/hover:-translate-y-0.5 active:translate-y-0 motion-reduce:hover:transform-none/g' components/LandingPage.tsx)",
+      "Bash(sed -i 's/hover:-translate-y-1 transition-all duration-300/hover:-translate-y-1 transition-all duration-300 motion-reduce:hover:transform-none motion-reduce:transition-none/g' components/LandingPage.tsx)"
     ]
   }
 }
