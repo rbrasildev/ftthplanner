@@ -1805,9 +1805,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     handleExportPNGRef.current = handleExportPNG;
 
     // --- OPTICAL POWER CALCULATION HANDLER ---
-    // useCallback keeps this stable so SplitterRenderer's React.memo isn't invalidated.
+    // Mantém a callback estável pro React.memo do SplitterRenderer não
+    // invalidar a cada mudança em localCTO (que muda em toda tecla / drag end /
+    // etc). Lê o state via localCTORef (sempre fresh) e notify via ref.
+    const notifyRef = useRef(notify);
+    useLayoutEffect(() => { notifyRef.current = notify; });
+
     const handleSplitterDoubleClick = useCallback((splitterId: string) => {
-        const splitter = localCTO.splitters.find(s => s.id === splitterId);
+        const ctoState = localCTORef.current;
+        const splitter = ctoState.splitters.find(s => s.id === splitterId);
         if (!splitter) {
             console.error("Splitter not found in localCTO:", splitterId);
             return;
@@ -1816,8 +1822,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         try {
             const catalogs = tracingCatalogs;
 
-            console.log("Tracing path for:", splitter.name);
-            const result = traceOpticalPath(splitterId, cto.id, network, catalogs, localCTO);
+            const result = traceOpticalPath(splitterId, cto.id, network, catalogs, ctoState);
             setOpticalResult(result);
 
             // Nome exibido no orçamento óptico: combina rótulo da instância com o
@@ -1829,9 +1834,9 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             setIsOpticalModalOpen(true);
         } catch (error) {
             console.error("Error calculating optical path:", error);
-            notify(`Erro: ${(error as Error).message}`, 'error');
+            notifyRef.current(`Erro: ${(error as Error).message}`, 'error');
         }
-    }, [localCTO, tracingCatalogs, cto.id, network]);
+    }, [tracingCatalogs, cto.id, network, availableSplitters]);
 
 
     // --- Event Handlers ---
