@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, ArrowLeft } from 'lucide-react';
+import { KeyRound, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface LoginPageProps {
@@ -15,6 +15,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
     const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     // Forgot Password State
     const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
@@ -88,9 +89,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                             </p>
                         </div>
 
-                        {/* Error Message */}
+                        {/* Error Message — role=alert pra screen readers anunciarem na hora */}
                         {error && (
-                            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-600 dark:text-red-300 text-sm text-center animate-in fade-in slide-in-from-top-2 font-medium">
+                            <div
+                                role="alert"
+                                aria-live="assertive"
+                                className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-600 dark:text-red-300 text-sm text-center animate-in fade-in slide-in-from-top-2 font-medium"
+                            >
                                 {error}
                             </div>
                         )}
@@ -98,12 +103,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                         <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-5">
                             <div className="space-y-5 lg:space-y-4">
                                 <div className="space-y-1">
-                                    <label className="sr-only">{t('login_email_placeholder')}</label>
+                                    <label htmlFor="login-email" className="sr-only">{t('login_email_placeholder')}</label>
                                     <div className="relative">
                                         <input
+                                            id="login-email"
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
+                                            autoComplete="email"
                                             className="w-full bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder={t('login_email_placeholder')}
                                             required
@@ -113,22 +120,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="sr-only">{t('login_password_placeholder')}</label>
+                                    <label htmlFor="login-password" className="sr-only">{t('login_password_placeholder')}</label>
                                     <div className="relative">
                                         <input
-                                            type="password"
+                                            id="login-password"
+                                            type={showPassword ? 'text' : 'password'}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
+                                            autoComplete="current-password"
+                                            className="w-full bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-base lg:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent block w-full p-4 pr-12 placeholder-slate-400 transition-all outline-none font-medium shadow-sm lg:shadow-none"
                                             placeholder={t('login_password_placeholder')}
                                             required
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(s => !s)}
+                                            tabIndex={-1}
+                                            aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
                                     </div>
                                     <div className="flex justify-end pt-1">
                                         <button
                                             type="button"
                                             onClick={() => setIsForgotModalOpen(true)}
-                                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline px-1 py-1"
                                         >
                                             {t('forgot_password')}
                                         </button>
@@ -139,8 +157,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full text-white bg-emerald-600 hover:bg-emerald-500 focus:ring-4 focus:outline-none focus:ring-emerald-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                                className="w-full text-white bg-emerald-600 hover:bg-emerald-500 focus:ring-4 focus:outline-none focus:ring-emerald-300 font-bold rounded-xl text-base lg:text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 active:scale-[0.98] motion-reduce:transition-none flex items-center justify-center gap-2"
                             >
+                                {isLoading && <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" />}
                                 {isLoading ? t('login_button_loading') : t('login_button')}
                             </button>
 
@@ -163,7 +182,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
 
                     {/* Feature Image Card */}
                     <div className="relative w-full max-w-2xl z-10">
-                        <div className="bg-white/50 dark:bg-[#1a1d23]/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+                        <div className="bg-white/50 dark:bg-[#1a1d23]/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 p-3 rounded-2xl shadow-2xl">
                             <img
                                 src="/login-feature.png"
                                 alt="Feature Preview"
@@ -226,11 +245,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                         {forgotError && <p className="text-xs text-red-500 mt-2 font-medium">{forgotError}</p>}
                                     </div>
 
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setIsForgotModalOpen(false)}
-                                            className="flex-1 bg-slate-100 dark:bg-[#22262e] text-slate-900 dark:text-white font-bold rounded-xl text-sm px-5 py-4 text-center transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98]"
+                                            className="flex-1 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-sm px-5 py-4 text-center transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
                                             disabled={forgotLoading}
                                         >
                                             {t('cancel')}
@@ -238,8 +257,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onRegisterClick, 
                                         <button
                                             type="submit"
                                             disabled={forgotLoading}
-                                            className="flex-[2] text-white bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                                            className="flex-[2] text-white bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm px-5 py-4 text-center transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20 active:scale-[0.98] motion-reduce:transition-none flex items-center justify-center gap-2"
                                         >
+                                            {forgotLoading && <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" />}
                                             {forgotLoading ? t('loading') : t('forgot_password_send')}
                                         </button>
                                     </div>
