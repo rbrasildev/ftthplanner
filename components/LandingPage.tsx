@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, ChevronRight, Menu, X, Mail, Phone, Smartphone, WifiOff, GitBranch } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Globe, Users, Layers, CheckCircle2, Map as MapIcon, BarChart3, ChevronRight, Menu, X, Mail, Phone, Smartphone, WifiOff, GitBranch, Lock } from 'lucide-react';
 import { getPublicPlans } from '../services/saasService';
 import { useLanguage } from '../LanguageContext';
 import { VideoDemoModal } from './modals/VideoDemoModal';
@@ -260,21 +260,77 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                         </button>
                     </div>
 
-                    {/* Dashboard Preview */}
+                    {/* Dashboard Preview — wrapped em browser frame mockup pra dar
+                        polish (padrão Linear/Vercel). Frame contém a imagem
+                        visualmente mesmo quando o asset original é limitado em
+                        resolução; multi-layer shadow + ring + glow vendem
+                        produto antes do conteúdo do screenshot. */}
                     <div className="relative w-full max-w-6xl mx-auto animate-in slide-in-from-bottom-20 fade-in duration-1000 delay-200">
-                        <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900">
-                            <img src={saasConfig?.heroPreviewUrl || "/dashboard-preview.png"} alt="FTTH Planner Dashboard" className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-700" />
-                            {/* Overlay Gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-20"></div>
+                        {/* Glow halo behind frame */}
+                        <div className="absolute inset-x-12 -inset-y-8 bg-gradient-to-r from-emerald-500/20 via-indigo-500/20 to-purple-500/20 blur-3xl rounded-full -z-10 motion-reduce:hidden" aria-hidden="true"></div>
+
+                        <div className="relative rounded-2xl overflow-hidden border border-slate-700/50 shadow-[0_25px_80px_-15px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)_inset] bg-slate-900 ring-1 ring-white/5">
+                            {/* Browser chrome */}
+                            <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/80 border-b border-slate-700/50 backdrop-blur">
+                                {/* Traffic lights */}
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+                                    <span className="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+                                    <span className="w-3 h-3 rounded-full bg-[#28c840]"></span>
+                                </div>
+                                {/* URL bar */}
+                                <div className="flex-1 flex items-center justify-center">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-900/60 border border-slate-700/50 max-w-[280px] sm:max-w-md">
+                                        <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
+                                        <span className="text-[11px] text-slate-300 font-mono truncate">app.ftthplanner.com.br</span>
+                                    </div>
+                                </div>
+                                {/* Spacer to balance traffic lights */}
+                                <div className="w-12 hidden sm:block"></div>
+                            </div>
+
+                            {/* Screenshot */}
+                            <div className="relative">
+                                <img
+                                    src={saasConfig?.heroPreviewUrl || "/dashboard-preview.png"}
+                                    alt="FTTH Planner Dashboard"
+                                    className="w-full h-auto block"
+                                    loading="eager"
+                                    fetchPriority="high"
+                                />
+                                {/* Bottom fade — disfarça borda inferior e dá profundidade */}
+                                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/40 to-transparent pointer-events-none"></div>
+                            </div>
                         </div>
-                        {/* Floating Badges */}
-                        <div className="absolute -right-4 top-10 bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-700 hidden lg:flex items-center gap-3 animate-bounce-slow">
-                            <div className="p-2 bg-emerald-900/50 rounded-lg text-emerald-400">
-                                <MapIcon className="w-6 h-6" />
+
+                        {/* Floating badge — Map Engine (top right) */}
+                        <div className="absolute -right-4 top-20 bg-slate-800/95 backdrop-blur p-3 pr-4 rounded-xl shadow-2xl border border-slate-700/50 hidden lg:flex items-center gap-3 animate-bounce-slow motion-reduce:animate-none">
+                            <div className="p-2 bg-emerald-500/15 rounded-lg text-emerald-400 border border-emerald-500/20">
+                                <MapIcon className="w-5 h-5" />
                             </div>
                             <div>
-                                <div className="text-xs font-bold text-slate-500 uppercase">{t('landing_map_engine')}</div>
-                                <div className="text-sm font-bold">{t('landing_leaflet')}</div>
+                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('landing_map_engine')}</div>
+                                <div className="text-sm font-bold text-white">{t('landing_leaflet')}</div>
+                            </div>
+                        </div>
+
+                        {/* Floating badge — Live indicator (bottom left) */}
+                        <div className="absolute -left-4 bottom-16 bg-slate-800/95 backdrop-blur px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700/50 hidden lg:flex items-center gap-2.5">
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-reduce:hidden"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-xs font-bold text-white">10k+ {t('landing_stat_elements')}</span>
+                        </div>
+
+                        {/* Floating badge — Performance (top left, subtle) */}
+                        <div className="absolute -left-6 top-32 bg-slate-800/95 backdrop-blur p-3 rounded-xl shadow-xl border border-slate-700/50 hidden xl:flex items-center gap-2.5">
+                            <div className="p-1.5 bg-amber-500/15 rounded-lg text-amber-400 border border-amber-500/20">
+                                <Zap className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">FPS</div>
+                                <div className="text-sm font-bold text-white tabular-nums">60</div>
                             </div>
                         </div>
                     </div>
