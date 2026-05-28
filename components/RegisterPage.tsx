@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { KeyRound, ArrowLeft, Loader2 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { PASSWORD_RULES } from '../utils/passwordRules';
 
 interface RegisterPageProps {
     onRegister: (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => Promise<void> | void;
@@ -66,6 +67,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
         }
         if (password !== confirmPassword) {
             setError(t('register_error_match'));
+            return;
+        }
+        // Espelha a validação server-side pra não esperar round-trip pra avisar.
+        const failed = PASSWORD_RULES.find(r => !r.test(password));
+        if (failed) {
+            setError(failed.label);
             return;
         }
         setError(null);

@@ -222,7 +222,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       let errorKey = 'error_create_user';
 
       if (backendMsg.includes('Username already taken') || backendMsg.includes('Email already taken')) errorKey = 'error_username_taken';
-      else if (backendMsg.includes('Password must be at least 6 characters')) errorKey = 'error_password_length';
+      else if (backendMsg.includes('caracteres') || backendMsg.includes('senha precisa') || backendMsg.includes('Password must')) errorKey = 'error_password_length';
       else if (backendMsg.includes('Email and password are required') || backendMsg.includes('Email is required')) errorKey = 'error_email_required';
       else if (backendMsg) console.warn("Unmapped backend error:", backendMsg);
 

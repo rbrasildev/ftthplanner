@@ -9,6 +9,7 @@ import { sendEmail } from '../services/emailService';
 import logger from '../lib/logger';
 import { isSubscriptionExpired } from '../lib/subscriptionUtils';
 import { resolvePermissions } from '../middleware/checkPermission';
+import { validatePassword } from '../lib/passwordPolicy';
 
 
 // Helper to get Plans
@@ -19,6 +20,9 @@ async function getPlanByName(name: string) {
 export const register = async (req: Request, res: Response) => {
     const { username, email, password, companyName, planName, phone, source } = req.body;
     try {
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Determine Initial Plan
@@ -320,21 +324,12 @@ export const changePassword = async (req: Request, res: Response) => {
         const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
         if (!user || !user.passwordHash) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-        if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+        if (typeof currentPassword !== 'string') {
             return res.status(400).json({ error: 'Formato de senha inválido.' });
         }
 
-        // Validação de complexidade — espelha as regras do ChangePasswordModal.
-        // Sem isso, alguém chamando a API direto burlaria as regras do front.
-        if (newPassword.length < 8) {
-            return res.status(400).json({ error: 'A nova senha precisa ter ao menos 8 caracteres.' });
-        }
-        if (!/[a-zA-Z]/.test(newPassword)) {
-            return res.status(400).json({ error: 'A nova senha precisa ter ao menos uma letra.' });
-        }
-        if (!/\d/.test(newPassword)) {
-            return res.status(400).json({ error: 'A nova senha precisa ter ao menos um número.' });
-        }
+        const validation = validatePassword(newPassword);
+        if (!validation.ok) return res.status(400).json({ error: validation.error });
 
         const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
         if (!isValid) {
@@ -406,6 +401,9 @@ export const resetPassword = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(400).json({ error: 'Token inválido ou expirado' });
         }
+
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
 
         const hashedPassword = await bcrypt.hash(password, 10);
 

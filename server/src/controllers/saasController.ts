@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/auth';
 import logger from '../lib/logger';
+import { validatePassword } from '../lib/passwordPolicy';
 
 // --- PLANS ---
 export const getPlans = async (req: AuthRequest, res: Response) => {
@@ -435,7 +436,9 @@ export const updateGlobalUser = async (req: AuthRequest, res: Response) => {
         const data: any = {};
         if (role) data.role = role;
         if (typeof active === 'boolean') data.active = active;
-        if (password && password.length >= 6) {
+        if (password) {
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
             data.passwordHash = await bcrypt.hash(password, 10);
         }
 

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Lock, Eye, EyeOff, Save, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { changePassword } from '../../services/authService';
+import { PASSWORD_RULES } from '../../utils/passwordRules';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;
@@ -13,10 +14,10 @@ interface Rule {
     test: (pwd: string, confirm: string) => boolean;
 }
 
+// Espelha PASSWORD_RULES + adiciona regra de "confirmação confere" que é
+// específica desse modal (não cabe na shared lib que só vê uma senha por vez).
 const RULES: Rule[] = [
-    { label: 'Pelo menos 8 caracteres', test: (p) => p.length >= 8 },
-    { label: 'Pelo menos uma letra', test: (p) => /[a-zA-Z]/.test(p) },
-    { label: 'Pelo menos um número', test: (p) => /\d/.test(p) },
+    ...PASSWORD_RULES.map(r => ({ label: r.label, test: (p: string) => r.test(p) })),
     { label: 'A confirmação confere', test: (p, c) => p.length > 0 && p === c },
 ];
 

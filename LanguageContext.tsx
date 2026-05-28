@@ -1149,7 +1149,7 @@ const translations = {
     // User Management Errors
     'error_username_taken': 'Username or email is already taken.',
     'error_email_taken': 'Email is already taken.',
-    'error_password_length': 'Password must be at least 6 characters long.',
+    'error_password_length': 'Password must be at least 8 characters and include a letter and a number.',
     'error_cannot_delete_self': 'You cannot delete your own account.',
     'error_generic': 'An unexpected error occurred.',
     'error_create_user': 'Failed to create user.',
@@ -3022,7 +3022,7 @@ const translations = {
 
     'error_username_taken': 'Este nome de usuário ou e-mail já está em uso.',
     'error_email_taken': 'Este e-mail já está em uso.',
-    'error_password_length': 'A senha deve ter pelo menos 6 caracteres.',
+    'error_password_length': 'A senha precisa ter ao menos 8 caracteres, incluindo uma letra e um número.',
     'error_cannot_delete_self': 'Você não pode deletar sua própria conta.',
     'error_generic': 'Ocorreu um erro inesperado.',
     'error_create_user': 'Falha ao criar usuário.',

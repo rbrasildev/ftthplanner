@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { ROLE_DEFAULT_PERMISSIONS, ALL_PERMISSIONS, Permission } from '../shared/permissions';
 import { resolvePermissions } from '../middleware/checkPermission';
 import { getEffectiveLimits } from '../lib/limitsUtils';
+import { validatePassword } from '../lib/passwordPolicy';
 
 // Get Users (in same company)
 export const getUsers = async (req: AuthRequest, res: Response) => {
@@ -55,8 +56,8 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 
         if (!finalEmail || !password) return res.status(400).json({ error: 'Email and password are required' });
 
-        // Basic validation
-        if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
 
         // Check if email or username exists.
         // IMPORTANT: does NOT filter by deletedAt — the unique index in Postgres is
@@ -173,7 +174,8 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
         const updateData: any = {};
         if (role) updateData.role = role;
         if (password) {
-            if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
             updateData.passwordHash = await bcrypt.hash(password, 10);
         }
 
