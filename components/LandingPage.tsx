@@ -393,7 +393,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onRegist
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                     <div className="text-center max-w-3xl mx-auto mb-20">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-800 text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6">
-                            {t('landing_pricing_badge') || (language === 'pt' ? 'Planos' : 'Pricing')}
+                            {language === 'pt' ? 'Planos' : 'Pricing'}
                         </div>
                         <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">{t('pricing_title')}</h2>
                         <p className="text-lg text-slate-300">{t('pricing_desc')}</p>
