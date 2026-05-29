@@ -92,6 +92,7 @@ model Company {
   engagementMetrics UserEngagementMetrics[]
   financialMetrics  UserFinancialMetrics[]
   retentionAlerts   RetentionAlert[]
+  outageIncidents   OutageIncident[]
 
   @@map("companies")
 }
@@ -824,6 +825,30 @@ model Customer {
   @@index([ctoId])
   @@index([companyId, document])
   @@map("customers")
+}
+
+// Detecção automática de rompimento de fibra. Disparado pelo connection-only
+// sync (a cada 10min): quando >=3 clientes do mesmo CTO ficam offline e
+// representam >=30% do total da CTO, abre um incident ACTIVE. Quando todos
+// voltam online, vira RESOLVED. Histórico fica pra auditoria.
+model OutageIncident {
+  id              String    @id @default(uuid())
+  companyId       String    @map("company_id")
+  ctoId           String    @map("cto_id")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  resolvedAt      DateTime? @map("resolved_at")
+  // Snapshot do momento da detecção — pra exibir "8/16 clientes" mesmo
+  // se depois alguém adicionar/remover clientes da CTO.
+  affectedCount   Int       @map("affected_count")
+  totalCount      Int       @map("total_count")
+  status          String    @default("ACTIVE") // ACTIVE | RESOLVED
+
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, status])
+  @@index([ctoId, status])
+  @@index([startedAt])
+  @@map("outage_incidents")
 }
 
 model Drop {

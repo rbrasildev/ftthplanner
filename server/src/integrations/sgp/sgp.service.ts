@@ -1265,6 +1265,117 @@ export class SgpService {
 
         const wallMs = Date.now() - startedAt;
         logger.info(`[SGP Connection Sync] Tenant ${setting.userId}: ${checked}/${customers.length} checked, ${changed} status changes, ${errors} errors, ${wallMs}ms`);
+
+        // Detecção de rompimento — roda depois do sync pra ter o snapshot
+        // mais fresco de online/offline já gravado no DB.
+        try {
+            await this.detectOutages(userCompanyId);
+        } catch (err: any) {
+            logger.error(`[Outage Detection] Failed for company ${userCompanyId}: ${err.message}`);
+        }
+    }
+
+    /**
+     * Detecção de rompimento por agrupamento de offlines por CTO.
+     *   Trigger: ≥3 clientes do mesmo CTO offline E representando ≥30% do total.
+     * Lógica:
+     *   1. Lê todos os customers ACTIVE/SUSPENDED da company agrupados por ctoId
+     *   2. Pra cada CTO com critério atendido:
+     *      - Já existe incident ACTIVE? → no-op (atualiza counts se mudou)
+     *      - Não existe? → cria novo incident ACTIVE
+     *   3. Pra cada incident ACTIVE da company:
+     *      - Critério não mais atendido (todos voltaram ou < threshold)? → resolve
+     *
+     * O threshold combinado (count + ratio) evita falso positivo de CTO grande
+     * com 3 clientes problemáticos individuais (3/50 = 6% não dispara), mas
+     * pega quebra parcial de CTO pequena (3/8 = 37% dispara).
+     */
+    private static readonly OUTAGE_MIN_COUNT = 3;
+    private static readonly OUTAGE_MIN_RATIO = 0.30;
+
+    private static async detectOutages(companyId: string) {
+        // Snapshot atual: clientes ativos da company agrupados por CTO.
+        // Filtra status pra não contar inativo/cancelado como "afetados" (eles
+        // não deveriam estar conectados mesmo — seria ruído).
+        const customers = await prisma.customer.findMany({
+            where: {
+                companyId,
+                deletedAt: null,
+                ctoId: { not: null },
+                status: { in: ['ACTIVE', 'SUSPENDED'] },
+            },
+            select: { ctoId: true, connectionStatus: true }
+        });
+
+        // Agrupa por CTO
+        const ctoStats = new Map<string, { offline: number; total: number }>();
+        for (const c of customers) {
+            const key = c.ctoId!;
+            const stats = ctoStats.get(key) || { offline: 0, total: 0 };
+            stats.total++;
+            if (c.connectionStatus === 'offline') stats.offline++;
+            ctoStats.set(key, stats);
+        }
+
+        // Active incidents existentes pra essa company
+        const activeIncidents = await prisma.outageIncident.findMany({
+            where: { companyId, status: 'ACTIVE' },
+            select: { id: true, ctoId: true, affectedCount: true, totalCount: true }
+        });
+        const activeByCtoId = new Map(activeIncidents.map(i => [i.ctoId, i]));
+
+        let opened = 0, resolved = 0, updated = 0;
+        const now = new Date();
+
+        // 1. Avalia cada CTO com clientes — abre ou atualiza incidents
+        for (const [ctoId, stats] of ctoStats.entries()) {
+            const isOutage = stats.offline >= this.OUTAGE_MIN_COUNT
+                && (stats.offline / stats.total) >= this.OUTAGE_MIN_RATIO;
+            const existing = activeByCtoId.get(ctoId);
+
+            if (isOutage) {
+                if (!existing) {
+                    await prisma.outageIncident.create({
+                        data: {
+                            companyId,
+                            ctoId,
+                            affectedCount: stats.offline,
+                            totalCount: stats.total,
+                            status: 'ACTIVE',
+                            startedAt: now,
+                        }
+                    });
+                    opened++;
+                } else if (existing.affectedCount !== stats.offline || existing.totalCount !== stats.total) {
+                    // Conta mudou (ex: mais clientes caíram ou alguém voltou mas
+                    // ainda > threshold). Atualiza snapshot sem reabrir.
+                    await prisma.outageIncident.update({
+                        where: { id: existing.id },
+                        data: { affectedCount: stats.offline, totalCount: stats.total }
+                    });
+                    updated++;
+                }
+            }
+        }
+
+        // 2. Resolve incidents cujo CTO não atende mais o critério
+        for (const incident of activeIncidents) {
+            const stats = ctoStats.get(incident.ctoId);
+            const stillOutage = stats
+                && stats.offline >= this.OUTAGE_MIN_COUNT
+                && (stats.offline / stats.total) >= this.OUTAGE_MIN_RATIO;
+            if (!stillOutage) {
+                await prisma.outageIncident.update({
+                    where: { id: incident.id },
+                    data: { status: 'RESOLVED', resolvedAt: now }
+                });
+                resolved++;
+            }
+        }
+
+        if (opened || resolved || updated) {
+            logger.info(`[Outage Detection] Company ${companyId}: +${opened} opened, ${updated} updated, ${resolved} resolved`);
+        }
     }
 
     /**

@@ -154,7 +154,11 @@
       "Edit(/.claude/skills/cto-editor-canvas/**)",
       "Bash(sed -i 's/hover:-translate-y-1 hover:scale-105 active:scale-95/hover:-translate-y-1 hover:scale-105 active:scale-95 motion-reduce:hover:transform-none motion-reduce:transition-none/g' components/LandingPage.tsx)",
       "Bash(sed -i 's/hover:-translate-y-0.5 active:translate-y-0/hover:-translate-y-0.5 active:translate-y-0 motion-reduce:hover:transform-none/g' components/LandingPage.tsx)",
-      "Bash(sed -i 's/hover:-translate-y-1 transition-all duration-300/hover:-translate-y-1 transition-all duration-300 motion-reduce:hover:transform-none motion-reduce:transition-none/g' components/LandingPage.tsx)"
+      "Bash(sed -i 's/hover:-translate-y-1 transition-all duration-300/hover:-translate-y-1 transition-all duration-300 motion-reduce:hover:transform-none motion-reduce:transition-none/g' components/LandingPage.tsx)",
+      "PowerShell(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 3000, 3001, 5173, 4000, 8080, 8000, 5000 } | Select-Object LocalPort, OwningProcess, @{Name='Process';Expression={\\(Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue\\).ProcessName}})",
+      "PowerShell(Get-Process | Where-Object { $_.ProcessName -eq 'node' } | Select-Object Id, StartTime)",
+      "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\('OutageIncident:', typeof p.PrismaClient.prototype.outageIncident !== 'undefined' ? 'OK' : 'MISSING'\\)\")",
+      "Bash(node -e 'const p = require\\('\\\\''@prisma/client'\\\\''\\); const c = new p.PrismaClient\\(\\); console.log\\('\\\\''outageIncident:'\\\\'', typeof c.outageIncident\\); c.$disconnect\\(\\);')"
     ]
   }
 }
