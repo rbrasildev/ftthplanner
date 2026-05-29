@@ -1170,6 +1170,103 @@ export class SgpService {
         }
     }
 
+    // Lock pra evitar overlap: se o job anterior ainda tá rodando, próxima
+    // execução pula. Evita pile-up quando o SGP fica lento ou volume cresce.
+    private static connectionSyncRunning = new Set<string>();
+
+    /**
+     * Sync LEVE de status de conexão — só chama /api/ura/verificaacesso/ por
+     * contrato. Pensado pra rodar em alta frequência (10min) com baixíssimo
+     * custo, permitindo detecção rápida de rompimentos pelo padrão de
+     * offlines no mapa (cluster vermelho num CTO = provável quebra naquele
+     * segmento). NÃO toca em status do contrato, endereço, ONU, etc — isso
+     * fica pro full sync diário.
+     *
+     * Por que vale a pena: searchCustomer (/clientes/) é pesado (1-3s por
+     * cliente), verificaacesso é leve (~200ms) e só precisa do contratoId.
+     * Pra 1k clientes: ~5 min → ~20s.
+     */
+    public static async runConnectionOnlySync() {
+        logger.info('[SGP Connection Sync] Starting lightweight verificaacesso pass...');
+        const activeSettings = (await prisma.integrationSettings.findMany({
+            where: { active: true },
+            include: { user: true }
+        })).map(s => decryptSettings(s));
+
+        for (const setting of activeSettings) {
+            if (!setting.apiUrl || !setting.apiToken) continue;
+            // verificaacesso só existe nos SGPs genéricos. IXC tem webhook + sync próprio,
+            // BeesWeb não expõe endpoint equivalente.
+            if (setting.sgpType !== 'GENERIC') continue;
+
+            const lockKey = String(setting.id);
+            if (this.connectionSyncRunning.has(lockKey)) {
+                logger.warn(`[SGP Connection Sync] Skipping tenant ${setting.userId} — previous run still in progress`);
+                continue;
+            }
+            this.connectionSyncRunning.add(lockKey);
+
+            try {
+                await this.runConnectionOnlySyncForTenant(setting);
+            } catch (err: any) {
+                logger.error(`[SGP Connection Sync] Error for tenant ${setting.userId}: ${err.message}`);
+            } finally {
+                this.connectionSyncRunning.delete(lockKey);
+            }
+        }
+    }
+
+    private static async runConnectionOnlySyncForTenant(setting: any) {
+        const userCompanyId = setting.user?.companyId;
+        if (!userCompanyId) return;
+
+        // Só checa clientes com contratoId mapeado (sem isso, verificaacesso não funciona)
+        const customers = await prisma.customer.findMany({
+            where: {
+                companyId: userCompanyId,
+                deletedAt: null,
+                sgpContractId: { not: null },
+                // Não desperdiça call pra cliente já encerrado contratualmente.
+                status: { in: ['ACTIVE', 'SUSPENDED'] },
+            },
+            select: {
+                id: true,
+                sgpContractId: true,
+                connectionStatus: true,
+            }
+        });
+
+        if (customers.length === 0) return;
+
+        const baseUrl = setting.apiUrl.replace(/\/$/, '');
+        const adapter = this.getAdapter('GENERIC') as GenericAdapter;
+        const startedAt = Date.now();
+        const CONCURRENCY = 10; // calls são leves; pode subir se SGP aguentar
+
+        let checked = 0, changed = 0, errors = 0;
+
+        const tasks = customers.map(c => async () => {
+            try {
+                const live = await adapter.checkServiceAccess(baseUrl, setting.apiApp, setting.apiToken, c.sgpContractId!);
+                checked++;
+                if (!live) return; // SGP não respondeu definitivamente — preserva valor atual
+                if (live === c.connectionStatus) return; // já está correto
+                await prisma.customer.update({
+                    where: { id: c.id },
+                    data: { connectionStatus: live }
+                });
+                changed++;
+            } catch {
+                errors++;
+            }
+        });
+
+        await this.runWithConcurrency(tasks, CONCURRENCY);
+
+        const wallMs = Date.now() - startedAt;
+        logger.info(`[SGP Connection Sync] Tenant ${setting.userId}: ${checked}/${customers.length} checked, ${changed} status changes, ${errors} errors, ${wallMs}ms`);
+    }
+
     /**
      * IXC incremental sync — fetch radusuarios updated since `sinceStr`
      * and update matching mapped customers.

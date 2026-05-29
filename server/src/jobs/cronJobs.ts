@@ -18,8 +18,22 @@ export const initCronJobs = () => {
         console.log('[Cron] Daily retention tasks completed.');
     });
 
-    // Incremental sync every 10 minutes — only fetches records changed since last sync
+    // Connection-only sync every 10 minutes — calls only verificaacesso per
+    // mapped customer. Pensado pra rodar continuamente alimentando o mapa
+    // (cluster vermelho num CTO = rompimento provável naquele segmento).
+    // Não toca em dados pesados — endereço, status do contrato, ONU — isso
+    // fica pro full sync diário.
     cron.schedule('*/10 * * * *', async () => {
+        console.log('[Cron] Running SGP connection-only sync...');
+        await SgpService.runConnectionOnlySync();
+        console.log('[Cron] SGP connection sync completed.');
+    });
+
+    // Incremental sync a cada hora (no minuto 5 pra não disputar CPU com o
+    // cron de faturas que roda em :00). Atualiza status do contrato +
+    // dados de clientes mapeados. Pega mudanças de Ativo/Suspenso/Cancelado
+    // dentro de 1h em vez de esperar o full sync diário.
+    cron.schedule('5 * * * *', async () => {
         console.log('[Cron] Running incremental SGP synchronization...');
         await SgpService.runIncrementalSync();
         console.log('[Cron] Incremental SGP sync completed.');
