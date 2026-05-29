@@ -374,7 +374,6 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                         { value: 'SUSPENDED', label: 'Suspenso' },
                                         { value: 'INACTIVE', label: t('customer_status_inactive') },
                                         { value: 'CANCELLED', label: 'Cancelado' },
-                                        { value: 'PLANNED', label: t('customer_status_planned') }
                                     ]}
                                     onChange={val => setFormData({ ...formData, status: val as any })}
                                 />

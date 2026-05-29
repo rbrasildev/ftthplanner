@@ -611,7 +611,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                     { value: 'SUSPENDED', label: 'Suspenso' },
                                     { value: 'INACTIVE', label: t('customer_status_inactive') },
                                     { value: 'CANCELLED', label: 'Cancelado' },
-                                    { value: 'PLANNED', label: t('customer_status_planned') },
                                 ]}
                             />
                         </div>
