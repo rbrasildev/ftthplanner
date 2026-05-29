@@ -16,6 +16,7 @@ import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
 import { MarkersCanvasLayer } from './MarkersCanvasLayer';
+import { OutageRingsLayer } from './layers/OutageRingsLayer';
 import { PolesCanvasLayer } from './PolesCanvasLayer';
 import { hasPermission } from '../shared/permissions';
 import { Customer } from '../types';
@@ -2560,6 +2561,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             onContextMenu={handleCanvasCTOContext}
                             onHover={handleHoverLabel}
                         />
+                        <OutageRingsLayer ctos={ctos} visible={showCTOs} />
                         {renderableCTOs.filter(cto => excludeFromCanvas.has(cto.id)).map(cto => (
                             <CTOMarker
                                 key={`${cto.id}-${cto.status}-${cto.color || ''}-${cto.type || ''}-${ctoOnlineStatus[cto.id] ?? 'na'}`}
