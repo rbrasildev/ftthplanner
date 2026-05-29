@@ -226,3 +226,16 @@ export const syncAllStatuses = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message || 'Internal server error during bulk sync' });
     }
 };
+
+/**
+ * Dispara o connection-only sync (verificaacesso por cliente) imediatamente,
+ * sem esperar o cron. Útil pra testar/operar manualmente. Retorna assim que
+ * dispara — o sync roda em background e o resultado aparece nos logs.
+ */
+export const triggerConnectionSync = async (_req: Request, res: Response) => {
+    // Roda em background pra não bloquear a resposta nem o request timeout.
+    SgpService.runConnectionOnlySync()
+        .then(() => logger.info('[SGP Controller] Manual connection sync completed'))
+        .catch(err => logger.error(`[SGP Controller] Manual connection sync failed: ${err.message}`));
+    res.json({ ok: true, message: 'Connection sync started. Check logs for progress.' });
+};

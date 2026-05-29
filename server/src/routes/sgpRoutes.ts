@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { handleWebhook, getIntegrationSettings, saveIntegrationSettings, getIntegrationConflicts, resolveIntegrationConflict, applyIntegrationConflict, searchSgpCustomer, syncAllStatuses, testSgpConnection } from '../integrations/sgp/sgp.controller';
+import { handleWebhook, getIntegrationSettings, saveIntegrationSettings, getIntegrationConflicts, resolveIntegrationConflict, applyIntegrationConflict, searchSgpCustomer, syncAllStatuses, testSgpConnection, triggerConnectionSync } from '../integrations/sgp/sgp.controller';
 import { authenticateToken } from '../middleware/auth';
 import { checkRole } from '../middleware/checkRole';
 
@@ -15,6 +15,7 @@ router.post('/settings/:sgpType', authenticateToken, checkRole(['OWNER', 'ADMIN'
 router.post('/search-customer/:sgpType', authenticateToken, searchSgpCustomer);
 router.post('/test-connection/:sgpType', authenticateToken, checkRole(['OWNER', 'ADMIN']), testSgpConnection);
 router.post('/sync-all/:sgpType', authenticateToken, checkRole(['OWNER', 'ADMIN']), syncAllStatuses);
+router.post('/sync-connections', authenticateToken, checkRole(['OWNER', 'ADMIN']), triggerConnectionSync);
 
 
 router.get('/conflicts', authenticateToken, checkRole(['OWNER', 'ADMIN']), getIntegrationConflicts);
