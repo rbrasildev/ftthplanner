@@ -285,7 +285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, currentProjectId
 
     // --- 5. Donut: clientes por status ---
     const customerStatusKeys = (Object.keys(report.customers.byStatus) as CustomerStatus[]).filter(k => report.customers.byStatus[k] > 0);
-    const customerColorMap: Record<CustomerStatus, string> = { ACTIVE: PALETTE.emerald, SUSPENDED: PALETTE.amber, INACTIVE: PALETTE.slate, CANCELLED: PALETTE.rose, PLANNED: PALETTE.indigo };
+    const customerColorMap: Record<CustomerStatus, string> = { ACTIVE: PALETTE.emerald, SUSPENDED: PALETTE.amber, INACTIVE: '#BFAA0F', CANCELLED: PALETTE.slate, PLANNED: PALETTE.indigo };
     const customerLabelMap: Record<CustomerStatus, string> = { ACTIVE: 'Ativo', SUSPENDED: 'Suspenso', INACTIVE: 'Inativo', CANCELLED: 'Cancelado', PLANNED: 'Planejado' };
     const customerDonutOptions: ApexOptions = {
         chart: { type: 'donut', fontFamily: 'inherit' },

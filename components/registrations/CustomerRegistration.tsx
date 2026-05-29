@@ -245,14 +245,14 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                                                 customer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                                 customer.status === 'SUSPENDED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
-                                                customer.status === 'CANCELLED' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' :
-                                                customer.status === 'INACTIVE' ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
+                                                customer.status === 'INACTIVE' ? 'bg-[#BFAA0F]/15 text-[#8a7a0a] dark:bg-[#BFAA0F]/20 dark:text-[#d9c43c]' :
+                                                customer.status === 'CANCELLED' ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
                                                 'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
                                                 }`}>
                                                 {customer.status === 'ACTIVE' ? t('customer_status_active') :
                                                     customer.status === 'SUSPENDED' ? 'Suspenso' :
-                                                    customer.status === 'CANCELLED' ? 'Cancelado' :
                                                     customer.status === 'INACTIVE' ? t('customer_status_inactive') :
+                                                    customer.status === 'CANCELLED' ? 'Cancelado' :
                                                     t('customer_status_planned')}
                                             </span>
                                         </td>

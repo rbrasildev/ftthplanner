@@ -13,21 +13,24 @@ const createCustomerIcon = (status: string, isSelected: boolean, connectionStatu
 
     if (iconCache.has(key)) return iconCache.get(key)!;
 
-    // Base color por status. CANCELLED é vermelho (rose) pra ser claramente
-    // distinto de INACTIVE (cinza neutro) — usuário precisa ver de longe que
-    // foi cancelado, não só "fora do ar".
-    let color = status === 'ACTIVE' ? '#22c55e'
-        : status === 'SUSPENDED' ? '#eab308'
-        : status === 'CANCELLED' ? '#f43f5e'
-        : '#94a3b8'; // INACTIVE, PLANNED, etc.
-
-    // connectionStatus override (online/offline) só vale enquanto o cliente
-    // está "vivo" — pra Inativo / Cancelado mantém a cor base e ignora o
-    // status de conexão (não faz sentido sinalizar offline em alguém que
-    // não deveria estar conectado mesmo).
-    if (status !== 'INACTIVE' && status !== 'CANCELLED') {
-        if (connectionStatus === 'online') color = '#22c55e';
-        else if (connectionStatus === 'offline') color = '#ef4444';
+    // Cor combina status + conexão. Pra ACTIVE e SUSPENDED a cor base muda
+    // (verde / laranja respectivamente) e o offline pinta vermelho dos dois.
+    // Pra SUSPENDED, online mantém laranja — não verde — porque "online +
+    // suspenso" continua sendo suspenso visualmente. INACTIVE/CANCELLED não
+    // mudam de cor conforme conexão (não fazem sentido estar "online").
+    let color: string;
+    if (status === 'ACTIVE') {
+        color = connectionStatus === 'offline' ? '#ef4444'
+            : connectionStatus === 'online' ? '#22c55e'
+            : '#22c55e'; // sem info de conexão → assume ok visualmente
+    } else if (status === 'SUSPENDED') {
+        color = connectionStatus === 'offline' ? '#ef4444' : '#eab308'; // online ou sem info → amber
+    } else if (status === 'INACTIVE') {
+        color = '#BFAA0F'; // amarelo escuro / olive, ignora conexão
+    } else if (status === 'CANCELLED') {
+        color = '#94a3b8'; // slate cinza, ignora conexão
+    } else {
+        color = '#94a3b8'; // PLANNED, etc.
     }
 
     // Render the Lucide icon to string

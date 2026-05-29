@@ -48,8 +48,8 @@ const CUSTOMER_STATUS_LABEL: Record<CustomerStatus, string> = {
 const CUSTOMER_STATUS_TONE: Record<CustomerStatus, 'emerald' | 'slate' | 'amber' | 'rose'> = {
     ACTIVE: 'emerald',
     SUSPENDED: 'amber',
-    INACTIVE: 'slate',
-    CANCELLED: 'rose',
+    INACTIVE: 'amber', // visualmente próximo do #BFAA0F — sem custom tone aqui
+    CANCELLED: 'slate',
     PLANNED: 'amber',
 };
 
