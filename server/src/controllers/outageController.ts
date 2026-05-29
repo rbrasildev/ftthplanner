@@ -148,3 +148,63 @@ export const getActiveCtoIds = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch active CTOs' });
     }
 };
+
+/**
+ * POST /api/outages/simulate/:ctoId
+ * Cria/resolve um incident FAKE pra testar o anel visual no mapa sem
+ * precisar desconectar clientes reais. Toggle:
+ *   - Se não há incident ACTIVE pra esse CTO → cria com counts artificiais
+ *   - Se já há → resolve (marca como RESOLVED)
+ * Sempre escopo da company do user logado. Restrito a OWNER/ADMIN
+ * (validação já no middleware da rota).
+ */
+export const simulateOutage = async (req: AuthRequest, res: Response) => {
+    try {
+        const companyId = req.user?.companyId;
+        if (!companyId) return res.status(401).json({ error: 'Unauthorized' });
+
+        const { ctoId } = req.params;
+        if (!ctoId) return res.status(400).json({ error: 'ctoId required' });
+
+        // Confirma que o CTO existe e é dessa company (segurança básica)
+        const cto = await prisma.cto.findFirst({
+            where: { id: ctoId, companyId },
+            select: { id: true, name: true }
+        });
+        if (!cto) return res.status(404).json({ error: 'CTO not found in your company' });
+
+        const existing = await prisma.outageIncident.findFirst({
+            where: { companyId, ctoId, status: 'ACTIVE' }
+        });
+
+        if (existing) {
+            await prisma.outageIncident.update({
+                where: { id: existing.id },
+                data: { status: 'RESOLVED', resolvedAt: new Date() }
+            });
+            logger.info(`[Outage Simulate] Resolved fake incident for CTO ${cto.name}`);
+            return res.json({ action: 'resolved', incidentId: existing.id, ctoName: cto.name });
+        }
+
+        // Conta clientes reais pra parecer plausível na UI; se 0, usa 5/16 fake.
+        const customerCount = await prisma.customer.count({
+            where: { companyId, ctoId, deletedAt: null, status: { in: ['ACTIVE', 'SUSPENDED'] } }
+        });
+        const totalCount = customerCount > 0 ? customerCount : 16;
+        const affectedCount = Math.max(3, Math.ceil(totalCount * 0.5));
+
+        const created = await prisma.outageIncident.create({
+            data: {
+                companyId, ctoId,
+                affectedCount, totalCount,
+                status: 'ACTIVE',
+                startedAt: new Date(),
+            }
+        });
+        logger.info(`[Outage Simulate] Created fake incident for CTO ${cto.name} (${affectedCount}/${totalCount})`);
+        res.json({ action: 'created', incidentId: created.id, ctoName: cto.name, affectedCount, totalCount });
+    } catch (error: any) {
+        logger.error(`[Outage Controller] Simulate error: ${error.message}`);
+        res.status(500).json({ error: 'Failed to simulate outage' });
+    }
+};
