@@ -13,11 +13,19 @@ const createCustomerIcon = (status: string, isSelected: boolean, connectionStatu
 
     if (iconCache.has(key)) return iconCache.get(key)!;
 
-    let color = status === 'ACTIVE' ? '#22c55e' : (status === 'SUSPENDED' ? '#eab308' : '#94a3b8');
+    // Base color por status. CANCELLED é vermelho (rose) pra ser claramente
+    // distinto de INACTIVE (cinza neutro) — usuário precisa ver de longe que
+    // foi cancelado, não só "fora do ar".
+    let color = status === 'ACTIVE' ? '#22c55e'
+        : status === 'SUSPENDED' ? '#eab308'
+        : status === 'CANCELLED' ? '#f43f5e'
+        : '#94a3b8'; // INACTIVE, PLANNED, etc.
 
-    // connectionStatus overrides the default status color — except for cancelled (INACTIVE),
-    // which stays gray so it never gets confused with an offline ACTIVE customer
-    if (status !== 'INACTIVE') {
+    // connectionStatus override (online/offline) só vale enquanto o cliente
+    // está "vivo" — pra Inativo / Cancelado mantém a cor base e ignora o
+    // status de conexão (não faz sentido sinalizar offline em alguém que
+    // não deveria estar conectado mesmo).
+    if (status !== 'INACTIVE' && status !== 'CANCELLED') {
         if (connectionStatus === 'online') color = '#22c55e';
         else if (connectionStatus === 'offline') color = '#ef4444';
     }

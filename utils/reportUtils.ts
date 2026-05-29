@@ -62,7 +62,7 @@ const emptyCableBreakdown = (): StatusBreakdown<CableStatus> => ({
 
 const emptyCustomerBreakdown = (): StatusBreakdown<CustomerStatus> => ({
     total: 0,
-    byStatus: { ACTIVE: 0, INACTIVE: 0, PLANNED: 0, SUSPENDED: 0 },
+    byStatus: { ACTIVE: 0, INACTIVE: 0, PLANNED: 0, SUSPENDED: 0, CANCELLED: 0 },
 });
 
 export function calculateNetworkReport(network: NetworkState, customers: Customer[] = []): NetworkReport {

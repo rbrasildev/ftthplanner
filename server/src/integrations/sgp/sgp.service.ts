@@ -17,6 +17,25 @@ function decryptSettings<T extends { apiToken?: string | null; webhookSecret?: s
     return settings;
 }
 
+/**
+ * SGP retorna status do contrato/serviço como CÓDIGO NUMÉRICO ou texto.
+ *   1 = Ativo, 2 = Inativo, 3 = Cancelado, 4 = Suspenso
+ * Versões antigas / variantes podem mandar strings ("Ativo", "Suspenso",
+ * "Bloqueado"). Normaliza pra nosso enum interno. Inativo e Cancelado
+ * são estados distintos no SGP — preservamos a separação aqui também.
+ */
+function mapSgpStatusToInternal(raw: any): 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | 'CANCELLED' | null {
+    if (raw === null || raw === undefined || raw === '') return null;
+    const key = String(raw).trim().toLowerCase();
+    switch (key) {
+        case '1': case 'ativo': case 'habilitado': return 'ACTIVE';
+        case '4': case 'suspenso': case 'bloqueado': return 'SUSPENDED';
+        case '2': case 'inativo': case 'desativado': return 'INACTIVE';
+        case '3': case 'cancelado': return 'CANCELLED';
+        default: return null;
+    }
+}
+
 export class SgpService {
 
     // In-memory last sync timestamp per setting ID (no migration needed)
@@ -1019,10 +1038,11 @@ export class SgpService {
                                     : null;
                                 const equipmentRegistered = !!(servico.onu?.serial || servico.mac);
 
-                                const servicoStatus = servico.status || cliente.status;
-                                const newAccountStatus = servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
-                                                        (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
-                                                        (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : null));
+                                // Status pode vir como número (1/2/3/4) ou texto — helper
+                                // mapSgpStatusToInternal lida com ambos. Tenta serviço →
+                                // contrato → cliente (contrato costuma ser autoritativo).
+                                const rawStatus = servico.status ?? contrato?.status ?? cliente.status;
+                                const newAccountStatus = mapSgpStatusToInternal(rawStatus);
 
                                 const updateData: Record<string, any> = {};
                                 if (liveStatus && liveStatus !== (customer as any).connectionStatus) {

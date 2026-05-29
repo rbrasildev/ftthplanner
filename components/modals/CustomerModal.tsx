@@ -26,6 +26,33 @@ const TABS = {
 import { CustomerSearchInput } from '../interactions/CustomerSearchInput';
 import { searchSgpCustomer } from '../../services/customerService';
 
+// SGP retorna status do contrato/serviço como CÓDIGO NUMÉRICO (1=Ativo,
+// 2=Inativo, 3=Cancelado, 4=Suspenso) ou eventualmente como string textual
+// dependendo do endpoint/versão. Esta função normaliza ambos os formatos
+// pro nosso enum interno (ACTIVE/INACTIVE/SUSPENDED) + label PT-BR pra UI.
+type CustomerStatusInternal = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PLANNED' | 'CANCELLED';
+const SGP_STATUS_LABEL: Record<string, { internal: CustomerStatusInternal; label: string; tone: 'emerald' | 'amber' | 'rose' | 'slate' }> = {
+    '1': { internal: 'ACTIVE', label: 'Ativo', tone: 'emerald' },
+    '2': { internal: 'INACTIVE', label: 'Inativo', tone: 'slate' },
+    '3': { internal: 'CANCELLED', label: 'Cancelado', tone: 'rose' },
+    '4': { internal: 'SUSPENDED', label: 'Suspenso', tone: 'amber' },
+    'ativo': { internal: 'ACTIVE', label: 'Ativo', tone: 'emerald' },
+    'inativo': { internal: 'INACTIVE', label: 'Inativo', tone: 'slate' },
+    'cancelado': { internal: 'CANCELLED', label: 'Cancelado', tone: 'rose' },
+    'suspenso': { internal: 'SUSPENDED', label: 'Suspenso', tone: 'amber' },
+    'habilitado': { internal: 'ACTIVE', label: 'Ativo', tone: 'emerald' },
+    'bloqueado': { internal: 'SUSPENDED', label: 'Bloqueado', tone: 'amber' },
+};
+function parseSgpStatus(raw: any): { internal: CustomerStatusInternal | null; label: string; tone: 'emerald' | 'amber' | 'rose' | 'slate' } {
+    if (raw === null || raw === undefined || raw === '') return { internal: null, label: '—', tone: 'slate' };
+    const key = String(raw).trim().toLowerCase();
+    const match = SGP_STATUS_LABEL[key];
+    if (match) return match;
+    // Unknown but non-empty — show as-is in slate tone so user pelo menos vê o
+    // valor cru em vez de "—" silencioso, ajuda a reportar variantes novas.
+    return { internal: null, label: String(raw), tone: 'slate' };
+}
+
 export const CustomerModal: React.FC<CustomerModalProps> = ({
     isOpen, onClose, onSave, initialData, ctos, allCustomers, onStartDrawingDrop, onReposition, showToast
 }) => {
@@ -135,7 +162,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         const newLat = latStr !== "" && latStr !== null ? parseFloat(String(latStr)) : formData.lat;
         const newLng = lngStr !== "" && lngStr !== null ? parseFloat(String(lngStr)) : formData.lng;
 
-        const servicoStatus = service.status || sgpCustomer.status;
+        // Status SGP pode vir como número (1/2/3/4) OU texto. Tenta nas várias
+        // chaves: serviço → contrato → cliente. O contrato é o lugar onde o SGP
+        // costuma colocar o status mais autoritativo (Ativo/Cancelado/etc).
+        const rawStatus = service.status ?? contract?.status ?? sgpCustomer.status;
+        const parsedStatus = parseSgpStatus(rawStatus);
 
         const updatedData = {
             ...formData,
@@ -147,9 +178,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             onuMac: service.mac || onuData.mac || formData.onuMac || "",
             pppoeService: service.login || formData.pppoeService,
             onuPower: onuData.rx ? String(onuData.rx) : formData.onuPower,
-            status: servicoStatus?.toLowerCase() === 'ativo' ? 'ACTIVE' :
-                    (servicoStatus?.toLowerCase() === 'suspenso' ? 'SUSPENDED' :
-                    (servicoStatus?.toLowerCase() === 'cancelado' ? 'INACTIVE' : formData.status)),
+            status: parsedStatus.internal || formData.status,
             connectionStatus: onuData.conexao?.status
                 ? String(onuData.conexao.status).toLowerCase().trim()
                 : (onuData.serial || service.mac ? 'offline' : formData.connectionStatus),
@@ -488,14 +517,20 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                                     <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                                                         Contrato {item.contrato.id || '-'}
                                                     </span>
-                                                    {item.servico.status && (
-                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                            item.servico.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' : 
-                                                            item.servico.status === 'Suspenso' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                            {item.servico.status}
-                                                        </span>
-                                                    )}
+                                                    {(() => {
+                                                        const raw = item.servico.status ?? item.contrato?.status;
+                                                        if (raw === null || raw === undefined || raw === '') return null;
+                                                        const s = parseSgpStatus(raw);
+                                                        const toneClass = s.tone === 'emerald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                            : s.tone === 'amber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                                            : s.tone === 'rose' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                                                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                                                        return (
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${toneClass}`}>
+                                                                {s.label}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </div>
                                                 <div className="text-xs text-slate-500 dark:text-slate-400">
                                                     <span className="font-semibold text-slate-600 dark:text-slate-300">Plano:</span> {item.servico.plano?.nome || 'Não definido'}
@@ -573,7 +608,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                 placement="top"
                                 options={[
                                     { value: 'ACTIVE', label: t('customer_status_active') },
+                                    { value: 'SUSPENDED', label: 'Suspenso' },
                                     { value: 'INACTIVE', label: t('customer_status_inactive') },
+                                    { value: 'CANCELLED', label: 'Cancelado' },
                                     { value: 'PLANNED', label: t('customer_status_planned') },
                                 ]}
                             />

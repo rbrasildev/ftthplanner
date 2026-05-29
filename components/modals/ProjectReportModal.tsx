@@ -40,15 +40,17 @@ const CABLE_STATUS_LABEL: Record<CableStatus, string> = {
 };
 const CUSTOMER_STATUS_LABEL: Record<CustomerStatus, string> = {
     ACTIVE: 'Ativo',
-    INACTIVE: 'Inativo',
-    PLANNED: 'Planejado',
     SUSPENDED: 'Suspenso',
+    INACTIVE: 'Inativo',
+    CANCELLED: 'Cancelado',
+    PLANNED: 'Planejado',
 };
 const CUSTOMER_STATUS_TONE: Record<CustomerStatus, 'emerald' | 'slate' | 'amber' | 'rose'> = {
     ACTIVE: 'emerald',
+    SUSPENDED: 'amber',
     INACTIVE: 'slate',
+    CANCELLED: 'rose',
     PLANNED: 'amber',
-    SUSPENDED: 'rose',
 };
 
 type Tone = 'emerald' | 'amber' | 'rose' | 'sky' | 'slate' | 'indigo';

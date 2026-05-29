@@ -136,11 +136,15 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
         for (const c of customers) counts[c.status] = (counts[c.status] || 0) + 1;
         return [
             { value: null, label: 'Todos', count: customers.length },
-            ...(['ACTIVE', 'PLANNED', 'SUSPENDED', 'INACTIVE'] as CustomerStatus[])
+            ...(['ACTIVE', 'PLANNED', 'SUSPENDED', 'INACTIVE', 'CANCELLED'] as CustomerStatus[])
                 .filter(s => counts[s] > 0)
                 .map(s => ({
                     value: s,
-                    label: s === 'ACTIVE' ? 'Ativos' : s === 'PLANNED' ? 'Planejados' : s === 'SUSPENDED' ? 'Suspensos' : 'Inativos',
+                    label: s === 'ACTIVE' ? 'Ativos'
+                        : s === 'PLANNED' ? 'Planejados'
+                        : s === 'SUSPENDED' ? 'Suspensos'
+                        : s === 'CANCELLED' ? 'Cancelados'
+                        : 'Inativos',
                     count: counts[s],
                 })),
         ];
@@ -238,15 +242,18 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                             </div>
                                         </td>
                                         <td className="px-6 py-3">
-                                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${customer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                                                customer.status === 'INACTIVE' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' :
-                                                    customer.status === 'SUSPENDED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
-                                                        'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
+                                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                customer.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                                customer.status === 'SUSPENDED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                                                customer.status === 'CANCELLED' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' :
+                                                customer.status === 'INACTIVE' ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
+                                                'bg-slate-100 text-slate-700 dark:bg-[#22262e] dark:text-slate-300'
                                                 }`}>
                                                 {customer.status === 'ACTIVE' ? t('customer_status_active') :
+                                                    customer.status === 'SUSPENDED' ? 'Suspenso' :
+                                                    customer.status === 'CANCELLED' ? 'Cancelado' :
                                                     customer.status === 'INACTIVE' ? t('customer_status_inactive') :
-                                                        customer.status === 'SUSPENDED' ? 'Suspenso' :
-                                                            t('customer_status_planned')}
+                                                    t('customer_status_planned')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-3">
@@ -364,7 +371,9 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                                     value={formData.status || 'ACTIVE'}
                                     options={[
                                         { value: 'ACTIVE', label: t('customer_status_active') },
+                                        { value: 'SUSPENDED', label: 'Suspenso' },
                                         { value: 'INACTIVE', label: t('customer_status_inactive') },
+                                        { value: 'CANCELLED', label: 'Cancelado' },
                                         { value: 'PLANNED', label: t('customer_status_planned') }
                                     ]}
                                     onChange={val => setFormData({ ...formData, status: val as any })}

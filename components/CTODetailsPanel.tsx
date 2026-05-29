@@ -498,7 +498,8 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
                         c.connectionStatus === 'online' ? 'bg-emerald-500' :
                         c.connectionStatus === 'offline' ? 'bg-red-500' :
                         c.status === 'ACTIVE' ? 'bg-emerald-400' :
-                        c.status === 'SUSPENDED' ? 'bg-amber-400' : 'bg-slate-400';
+                        c.status === 'SUSPENDED' ? 'bg-amber-400' :
+                        c.status === 'CANCELLED' ? 'bg-rose-500' : 'bg-slate-400';
                       return (
                         <div
                           key={c.id}

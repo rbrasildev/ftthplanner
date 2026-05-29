@@ -617,7 +617,7 @@ export interface SaaSConfig {
   updatedAt: string;
 }
 
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'PLANNED' | 'SUSPENDED';
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE' | 'PLANNED' | 'SUSPENDED' | 'CANCELLED';
 
 export interface Drop {
   id: string;
