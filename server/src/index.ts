@@ -131,6 +131,7 @@ app.use(express.static(frontendPath));
 
 // Routes
 import sgpRoutes from './routes/sgpRoutes';
+import outageRoutes from './routes/outageRoutes';
 import poleDocRoutes from './routes/poleDocRoutes';
 
 app.use('/api/auth', authRoutes);
@@ -146,6 +147,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/support/chat', supportChatRoutes);
 app.use('/api/integrations/sgp', sgpRoutes);
+app.use('/api/outages', outageRoutes);
 
 // Backup and Cron
 import backupRoutes from './routes/backupRoutes';
