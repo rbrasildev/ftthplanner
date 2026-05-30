@@ -246,12 +246,12 @@ export class BeeswebAdapter implements ISgpAdapter {
         };
     }
 
-    private static statusToString(bees: any): 'ativo' | 'suspenso' | 'cancelado' {
+    private static statusToString(bees: any): 'ativo' | 'cancelado' {
+        // BeesWeb API só tem 2 estados: 1=ativo, 0=cancelado.
+        // deleted_at também conta como cancelado (soft delete).
         if (bees?.deleted_at) return 'cancelado';
-        if (bees?.disabled_at) return 'suspenso';
         const s = bees?.status;
-        if (s === 1 || s === '1' || s === true) return 'ativo';
-        if (s === 0 || s === '0' || s === false) return 'suspenso';
+        if (s === 0 || s === '0' || s === false) return 'cancelado';
         return 'ativo';
     }
 }

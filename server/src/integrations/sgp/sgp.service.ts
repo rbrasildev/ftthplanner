@@ -49,13 +49,14 @@ export class SgpService {
     }
 
     /** Map a BeesWeb customer record to our internal account status enum. */
-    private static mapBeeswebStatus(beeswebCustomer: any): 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | null {
+    private static mapBeeswebStatus(beeswebCustomer: any): 'ACTIVE' | 'CANCELLED' | null {
+        // BeesWeb API só tem 2 estados: 1=ativo, 0=cancelado.
+        // deleted_at (soft delete) também conta como cancelado.
         if (!beeswebCustomer) return null;
-        if (beeswebCustomer.deleted_at) return 'INACTIVE';
-        if (beeswebCustomer.disabled_at) return 'SUSPENDED';
+        if (beeswebCustomer.deleted_at) return 'CANCELLED';
         const status = beeswebCustomer.status;
         if (status === 1 || status === '1' || status === true) return 'ACTIVE';
-        if (status === 0 || status === '0' || status === false) return 'SUSPENDED';
+        if (status === 0 || status === '0' || status === false) return 'CANCELLED';
         return null;
     }
 
