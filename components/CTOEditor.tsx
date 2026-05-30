@@ -322,12 +322,7 @@ const ConnectionsLayer = React.memo(({
                 const baseColor = liveFiberColor || conn.color;
 
                 const finalColor = isLit ? '#f87171' : (useThemeColor ? undefined : baseColor);
-                // Mantém a espessura do cabo normal mesmo quando lit — antes
-                // engrossava pra 3.5 e ficava com aspecto "tubo" pesado.
-                // Branco em fundo escuro perceptualmente parece mais grosso que
-                // os outros (efeito Helmholtz-Kohlrausch); fininho compensa.
-                const isWhiteish = !isLit && (baseColor === '#ffffff' || baseColor?.toLowerCase() === '#fff');
-                const finalWidth = isWhiteish ? 2 : 2.5;
+                const finalWidth = 2.5;
 
                 let d = `M ${p1.x} ${p1.y} `;
                 if (conn.points && conn.points.length > 0) {
