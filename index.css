@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Esconde o "olho" nativo do Edge em campos de senha — já temos nosso próprio toggle. */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
 /* Anel pulsante de rompimento — overlay no marker do CTO afetado. */
 .outage-ring-icon {
     background: transparent !important;
