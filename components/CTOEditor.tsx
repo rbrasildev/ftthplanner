@@ -1786,7 +1786,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 return a._sort - b._sort;
             }).map(({ _sort, ...rest }) => rest);
 
-            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers, availableSplitters);
+            const svg = generateCTOSVG(localCTO, incomingCables, litPorts, portPositions, footerData, ctoCustomers, availableSplitters, poweredPorts);
             const fileName = `CTO-${localCTO.name.replace(/\s+/g, '_')}`;
             await exportToPNG(svg, `${fileName}.png`);
         } catch (error: any) {

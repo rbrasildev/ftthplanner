@@ -58,7 +58,7 @@ const createSVGElement = (type: string, attrs: Record<string, string | number>, 
 // where `bundleHeight` would otherwise be only 12px. Aligned to 24px grid (24 × 2).
 const MIN_LABEL_HEIGHT = 48;
 
-const renderCable = (cable: CableData, x: number, y: number, rotation: number, isMirrored: boolean, litPorts: Set<string>): string => {
+const renderCable = (cable: CableData, x: number, y: number, rotation: number, isMirrored: boolean, litPorts: Set<string>, poweredPorts: Set<string> = new Set()): string => {
     const looseTubeCount = cable.looseTubeCount || 1;
     const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
 
@@ -155,14 +155,22 @@ const renderCable = (cable: CableData, x: number, y: number, rotation: number, i
 
             const isWhite = color.toLowerCase() === '#ffffff' || color.toLowerCase() === 'white' || color.toLowerCase() === '#fff';
             const strokeColor = isLit ? '#ef4444' : (isWhite ? '#94a3b8' : color);
+            // hasLight = porta carrega sinal de OLT (poweredPorts). Espelha o UI:
+            // porta preenchida com a cor só quando há sinal; senão vazia (branca
+            // com borda da cor da fibra) — fácil identificar fibras desconectadas.
+            const hasLight = poweredPorts.has(fiberId);
+            const portFill = isLit ? '#ef4444' : (hasLight ? color : '#ffffff');
+            const portStroke = isLit ? '#ef4444' : (hasLight ? '#000000' : (isWhite ? '#94a3b8' : color));
 
             const lineY = fibersStartY + (f * 12) + 6;
 
             content += `<line x1="${borderX}" y1="${lineY}" x2="${portCX}" y2="${lineY}" stroke="${strokeColor}" stroke-width="1" />`;
-            content += `<circle cx="${portCX}" cy="${lineY}" r="5" fill="${color}" stroke="${isLit ? '#ef4444' : '#000000'}" stroke-width="1" />`;
+            content += `<circle cx="${portCX}" cy="${lineY}" r="5" fill="${portFill}" stroke="${portStroke}" stroke-width="1" />`;
 
             const isLight = [1, 2, 3, 8, 10, 11, 12].includes((posInTube % 12) + 1);
-            content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${isLight ? 'black' : 'white'}" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-port-number-vertical' : 'cable-port-number-horizontal'}">${globalIndex + 1}</text>`;
+            // Número fica preto quando o fundo é claro (porta vazia OU cor clara), branco no resto
+            const textColor = hasLight ? (isLight ? 'black' : 'white') : 'black';
+            content += `<text x="${portCX}" y="${lineY}" dominant-baseline="middle" text-anchor="middle" font-size="7" font-weight="bold" fill="${textColor}" data-pdf-align="${(rotation === 90 || rotation === 270) ? 'cable-port-number-vertical' : 'cable-port-number-horizontal'}">${globalIndex + 1}</text>`;
         }
 
         currentY += tubeBlockHeight + 12;
@@ -802,7 +810,8 @@ export const generateCTOSVG = (
     portPositions: Record<string, { x: number, y: number }> = {},
     footerData?: FooterData,
     customers: Customer[] = [],
-    splitterCatalogs: SplitterCatalogItem[] = []
+    splitterCatalogs: SplitterCatalogItem[] = [],
+    poweredPorts: Set<string> = new Set()
 ): string => {
     let svgContent = '';
 
@@ -1050,7 +1059,7 @@ export const generateCTOSVG = (
     // RENDER COMPONENTS
     incomingCables.forEach(c => {
         const l = cto.layout![c.id];
-        if (l) diagramContent += renderCable(c, l.x, l.y, l.rotation || 0, !!l.mirrored, litPorts);
+        if (l) diagramContent += renderCable(c, l.x, l.y, l.rotation || 0, !!l.mirrored, litPorts, poweredPorts);
     });
 
     cto.splitters.forEach(s => {
