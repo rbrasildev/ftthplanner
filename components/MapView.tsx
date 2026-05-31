@@ -11,7 +11,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet, ChevronLeft, ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
@@ -812,6 +812,7 @@ interface MapViewProps {
     userRole?: string | null;
     userPermissions?: string[];
     onCustomerSaved?: (customer?: Customer) => void;
+    onCustomerDeleted?: (customerId: string) => void;
     onCancelMode?: () => void;
     exportAreaPolygon?: { lat: number; lng: number }[];
     onExportAreaPolygonChange?: (points: { lat: number; lng: number }[]) => void;
@@ -859,6 +860,7 @@ export const MapView: React.FC<MapViewProps> = ({
     showToast,
     onToggleReserveCable, onPositionReserveCable, onReservePositionSet,
     onCustomerSaved,
+    onCustomerDeleted,
     userRole = null,
     userPermissions = [],
     projectId,
@@ -3065,6 +3067,24 @@ export const MapView: React.FC<MapViewProps> = ({
                                 {t('disconnect') || 'Desconectar'}
                             </button>
                         )}
+                        <div className="my-1 mx-2 h-px bg-slate-100 dark:bg-slate-700/40" />
+                        <button
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            onClick={() => {
+                                const c = customerContextMenu.customer;
+                                setCustomerContextMenu(null);
+                                if (!window.confirm(`Excluir o cliente "${c.name}"?\n\nEssa ação não pode ser desfeita.`)) return;
+                                deleteCustomer(c.id)
+                                    .then(() => {
+                                        showToast(t('toast_deleted_success') || 'Cliente excluído', 'success');
+                                        if (onCustomerDeleted) onCustomerDeleted(c.id);
+                                    })
+                                    .catch(() => showToast(t('error_delete') || 'Falha ao excluir cliente', 'error'));
+                            }}
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            {t('delete') || 'Excluir'}
+                        </button>
                     </div>
                 </div>
             )}

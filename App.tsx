@@ -2298,6 +2298,10 @@ export default function App() {
                                 });
                             }
                         }}
+                        onCustomerDeleted={(customerId: string) => {
+                            setGlobalCustomers(prev => prev.filter(c => c.id !== customerId));
+                            if (selectedId === customerId) setSelectedId(null);
+                        }}
                         onCancelMode={handleCancelMode}
                         exportAreaPolygon={exportAreaPolygon}
                         onExportAreaPolygonChange={setExportAreaPolygon}
