@@ -1031,26 +1031,35 @@ export const POPEditor: React.FC<POPEditorProps> = ({ pop, incomingCables, allPo
     };
 
     const handleCloseRequest = () => {
-        // Robust dirty check: exclude viewState and stabilize order
-        const normalize = (data: POPData) => {
-            const { layout, connections, ...rest } = JSON.parse(JSON.stringify(data));
-            // Stabilize connections for comparison
-            if (connections) {
-                connections.sort((a: any, b: any) => a.id.localeCompare(b.id));
+        // Normaliza ambos os lados com os MESMOS defaults da init effect (linha 166).
+        // Sem isso, o auto-layout aplicado no mount fazia o localPOP divergir do pop
+        // mesmo sem alteração do usuário → "phantom dirty" pedindo pra salvar.
+        const withDefaults = (data: POPData): any => {
+            const next = JSON.parse(JSON.stringify(data));
+            if (!next.layout) next.layout = {};
+            incomingCables.forEach((cable, idx) => {
+                if (!next.layout[cable.id]) {
+                    next.layout[cable.id] = { x: 40, y: 40 + (idx * 300), rotation: 0 };
+                }
+            });
+            (next.olts || []).forEach((olt: any, idx: number) => {
+                if (!next.layout[olt.id]) {
+                    next.layout[olt.id] = { x: 400, y: 80 + (idx * 250), rotation: 0 };
+                }
+            });
+            (next.dios || []).forEach((dio: any, idx: number) => {
+                if (!next.layout[dio.id]) {
+                    next.layout[dio.id] = { x: 400, y: 400 + (idx * 200), rotation: 0 };
+                }
+            });
+            if (next.connections) {
+                next.connections.sort((a: any, b: any) => a.id.localeCompare(b.id));
             }
-            // Filter out default visual positions that might have been auto-added
-            const cleanLayout: Record<string, any> = {};
-            if (layout) {
-                Object.keys(layout).forEach(key => {
-                    // Only consider it a "change" if it's not a default-ish position
-                    // but since layout is critical, we usually just compare it
-                    cleanLayout[key] = layout[key];
-                });
-            }
-            return { ...rest, connections, layout: cleanLayout };
+            delete next.viewState;
+            return next;
         };
 
-        const hasChanges = JSON.stringify(normalize(localPOP)) !== JSON.stringify(normalize(pop));
+        const hasChanges = JSON.stringify(withDefaults(localPOP)) !== JSON.stringify(withDefaults(pop));
         if (hasChanges) setShowCloseConfirm(true);
         else onClose();
     };
