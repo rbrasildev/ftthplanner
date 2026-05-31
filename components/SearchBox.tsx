@@ -62,10 +62,10 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
                     value={inputValue}
                     onChange={handleInputChange}
                     placeholder={t('search_placeholder')}
-                    className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl pl-10 pr-9 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm transition-all duration-300"
+                    className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl pl-10 pr-[68px] py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm transition-all duration-300"
                 />
 
-                {inputValue && (
+                {inputValue ? (
                     <button
                         onClick={() => {
                             setInputValue('');
@@ -75,6 +75,14 @@ export const SearchBox: React.FC<SearchBoxProps> = ({ onSearch, results, onResul
                     >
                         <X className="w-3 h-3" />
                     </button>
+                ) : (
+                    <kbd
+                        className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-0.5 px-1.5 h-5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-[10px] font-semibold text-slate-400 dark:text-slate-500 font-mono pointer-events-none select-none"
+                        title="Pressione Ctrl+K para abrir a busca rápida"
+                    >
+                        <span>{typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</span>
+                        <span>K</span>
+                    </kbd>
                 )}
 
                 {/* Search Dropdown Logic */}

@@ -25,6 +25,7 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CompanySettings } from './components/settings/CompanySettings';
 import { ParentProjectSettings } from './components/settings/ParentProjectSettings';
 import { SearchBox } from './components/SearchBox';
+import { CommandPalette } from './components/CommandPalette';
 import { Project, Coordinates, EquipmentType, CTOData, POPData, CableData, PoleData, PolygonData, SaaSConfig, NetworkState, CTOStatus, SystemSettings, FusionType, Customer, InheritedElementsConfig, DEFAULT_INHERITED_ELEMENTS } from './types';
 import { useLanguage } from './LanguageContext';
 import { useTheme } from './ThemeContext';
@@ -390,6 +391,7 @@ export default function App() {
     } | null>(null);
     const [globalCustomers, setGlobalCustomers] = useState<Customer[]>([]);
     const [pendingEditCustomerId, setPendingEditCustomerId] = useState<string | null>(null);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
     // --- Sidebar & Responsive State ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
@@ -930,6 +932,27 @@ export default function App() {
             [item.coordinates.lat - offset, item.coordinates.lng - offset],
             [item.coordinates.lat + offset, item.coordinates.lng + offset]
         ]);
+    }, []);
+
+    // Atalho global Ctrl+K / Cmd+K — abre o command palette.
+    // Ignora quando o foco está num input/textarea/contenteditable pra não interferir com digitação.
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+                const target = e.target as HTMLElement | null;
+                const isEditable = target && (
+                    target.tagName === 'INPUT' ||
+                    target.tagName === 'TEXTAREA' ||
+                    target.isContentEditable
+                );
+                // Permite mesmo em input — Ctrl+K é um atalho universal
+                if (isEditable && !(e.ctrlKey || e.metaKey)) return;
+                e.preventDefault();
+                setIsCommandPaletteOpen(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
     }, []);
 
     const litNetwork = useMemo(() => {
@@ -2827,6 +2850,20 @@ export default function App() {
             />
 
             {token && <SupportChatBubble />}
+
+            <CommandPalette
+                open={isCommandPaletteOpen}
+                onClose={() => setIsCommandPaletteOpen(false)}
+                projects={projects.map(p => ({ id: p.id, name: p.name }))}
+                currentNetwork={{
+                    ctos: getCurrentNetwork().ctos,
+                    pops: getCurrentNetwork().pops,
+                }}
+                customers={globalCustomers}
+                onNavigate={handleSearchResultClick}
+                onOpenProject={(id) => { setCurrentProjectId(id); setDashboardView('map'); }}
+                onEditCustomer={(id) => setPendingEditCustomerId(id)}
+            />
         </div>
     );
 }
