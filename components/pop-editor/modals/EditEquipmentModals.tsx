@@ -84,13 +84,15 @@ const DraggableModal: React.FC<{
     return (
         <>
             <div
-                className="absolute inset-0 z-[2199] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                className="fixed inset-0 z-[2199] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
                 onMouseDown={onClose}
             />
             <div
                 ref={modalRef}
-                className="absolute z-[2200] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
+                className="fixed z-[2200] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-hidden"
                 style={{
+                    top: 0,
+                    left: 0,
                     transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
                     width,
                     willChange: 'transform',
@@ -121,8 +123,8 @@ const DraggableModal: React.FC<{
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-5">
+                {/* Content — scrolla quando passar do max-h, header fica fixo */}
+                <div className="p-5 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     {children}
                 </div>
             </div>
@@ -170,11 +172,19 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
         }
     }, [editingOLT, catalogOLTs.length]);
 
-    const initialPos = { x: window.innerWidth / 2 - 240, y: window.innerHeight / 2 - 250 };
+    // Centraliza no viewport. Y começa em 5vh pra dar respiro no topo —
+    // se o conteúdo for grande, o scroll interno do modal cuida do resto.
+    const initialPos = {
+        x: Math.max(20, window.innerWidth / 2 - 240),
+        y: Math.max(20, window.innerHeight * 0.05)
+    };
 
     const currentOltType = editingOLT?.type || 'OLT';
     const totalOltPorts = editingOLT ? (editingOLT.structure?.slots || 1) * (editingOLT.structure?.portsPerSlot || 16) : 0;
     const isOltTypeLocked = !isTypeUnlocked && (currentOltType === 'OLT' || !editingOLT?.type);
+    const slotsCount = editingOLT?.structure?.slots || 0;
+    const hasSlotsTab = (currentOltType === 'OLT' || !editingOLT?.type) && slotsCount > 0;
+    const [oltTab, setOltTab] = useState<'general' | 'slots'>('general');
 
     return (
         <>
@@ -189,6 +199,38 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                     accentColor="indigo"
                 >
                     <div className="space-y-5">
+                        {/* Tabs — só aparecem se houver Placas pra gerenciar */}
+                        {hasSlotsTab && (
+                            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-[#15171c] rounded-xl">
+                                <button
+                                    onClick={() => setOltTab('general')}
+                                    className={`flex-1 h-9 rounded-lg text-xs font-bold transition-all ${
+                                        oltTab === 'general'
+                                            ? 'bg-white dark:bg-[#22262e] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                >
+                                    Geral
+                                </button>
+                                <button
+                                    onClick={() => setOltTab('slots')}
+                                    className={`flex-1 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                        oltTab === 'slots'
+                                            ? 'bg-white dark:bg-[#22262e] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                >
+                                    Placas
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+                                        oltTab === 'slots'
+                                            ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                                    }`}>{slotsCount}</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {(!hasSlotsTab || oltTab === 'general') && <>
                         {/* Name */}
                         <CustomInput
                             label={t('name')}
@@ -309,14 +351,12 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                 {t('olt_config_locked_msg') || 'Capacidade do chassi gerenciada pelo catálogo.'}
                             </p>
                         </div>
+                        </>}
 
-                        {/* Manage Slots (OLT only) */}
-                        {(currentOltType === 'OLT' || !editingOLT.type) && (editingOLT.structure?.slots || 1) > 0 && (
+                        {/* Tab: Placas */}
+                        {hasSlotsTab && oltTab === 'slots' && (
                             <div>
-                                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block flex items-center gap-1.5">
-                                    <Settings className="w-3 h-3" /> {t('manage_slots')}
-                                </label>
-                                <div className="space-y-1.5 max-h-52 overflow-y-auto custom-scrollbar pr-1">
+                                <div className="space-y-1.5">
                                     {Array.from({ length: editingOLT.structure?.slots || 1 }).map((_, idx) => {
                                         const slotConfig = editingOLT.structure?.slotsConfig?.[idx] || { active: true, portCount: editingOLT.structure?.portsPerSlot || 16 };
                                         const updateSlotConfig = (patch: any) => {

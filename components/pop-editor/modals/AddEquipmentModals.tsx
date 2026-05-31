@@ -106,13 +106,15 @@ const DraggableModal: React.FC<{
         <>
             {/* Backdrop - click outside to close */}
             <div
-                className="absolute inset-0 z-[2199] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                className="fixed inset-0 z-[2199] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
                 onMouseDown={onClose}
             />
             <div
                 ref={modalRef}
-                className="absolute z-[2200] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200"
+                className="fixed z-[2200] flex flex-col rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#1a1d23] animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-hidden"
                 style={{
+                    top: 0,
+                    left: 0,
                     transform: `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`,
                     width,
                     willChange: 'transform',
@@ -143,8 +145,8 @@ const DraggableModal: React.FC<{
                 </button>
             </div>
 
-                {/* Content area */}
-                <div className="p-5">
+                {/* Content area — scrolla quando passar do max-h do modal, header fica fixo */}
+                <div className="p-5 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     {children}
                 </div>
             </div>
