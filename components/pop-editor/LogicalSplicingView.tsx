@@ -362,14 +362,17 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                             if (tubeFibersCount === 0) return null;
 
                             return (
-                                <div key={tubeIdx} className="mb-2 last:mb-0 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                                <div key={tubeIdx} className="mb-2 last:mb-0 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden w-fit max-w-full">
                                     <div
                                         className={`px-2.5 py-1 text-[10px] font-bold uppercase border-b border-black/5 dark:border-white/5 ${isLight ? 'text-slate-900' : 'text-white'}`}
                                         style={{ backgroundColor: tubeColor }}
                                     >
                                         T{tubeIdx + 1}
                                     </div>
-                                    <div className="p-1.5 flex flex-wrap gap-1 bg-slate-50 dark:bg-[#1a1d23]/50">
+                                    <div
+                                        className="p-1.5 grid gap-1 bg-slate-50 dark:bg-[#1a1d23]/50"
+                                        style={{ gridTemplateColumns: `repeat(${tubeFibersCount}, minmax(0, 2.5rem))` }}
+                                    >
                                         {Array.from({ length: tubeFibersCount }).map((__, fOffset) => {
                                             const fiberIndex = startFiberIndex + fOffset;
                                             const fiberId = `${cable.id}-fiber-${fiberIndex}`;
@@ -381,29 +384,30 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                             const isLit = litPorts?.has(fiberId);
                                             const targetPort = connectionMap[fiberId];
                                             const targetPortNum = targetPort ? parseInt(targetPort.split('-p-')[1] || targetPort.split('-p')[1] || '0') + 1 : '';
+                                            const isLightColor = [1, 2, 3, 8, 10, 11, 12].includes((fOffset % 12) + 1);
 
                                             return (
                                                 <button
                                                     key={fiberId}
                                                     onClick={() => handleItemClick(fiberId)}
                                                     className={`
-                                                        h-7 w-7 rounded-full border-2 flex items-center justify-center text-[9px] font-bold transition-all relative
-                                                        ${isSelected ? 'ring-2 ring-orange-500 scale-110 z-10' : ''}
-                                                        ${isViewed ? 'ring-2 ring-emerald-500 scale-110 z-10' : ''}
-                                                        ${isLit ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-slate-50 animate-pulse border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.4)] dark:ring-offset-slate-900' : ''}
+                                                        relative aspect-square min-w-0 rounded-md border flex items-center justify-center
+                                                        text-[10px] font-bold transition-all
+                                                        hover:scale-105 hover:z-10 hover:shadow-md
+                                                        ${isSelected ? 'ring-2 ring-orange-500 ring-offset-1 ring-offset-slate-50 dark:ring-offset-slate-900 z-10' : ''}
+                                                        ${isViewed ? 'ring-2 ring-emerald-500 ring-offset-1 ring-offset-slate-50 dark:ring-offset-slate-900 z-10' : ''}
+                                                        ${isLit ? 'ring-2 ring-red-500 ring-offset-1 ring-offset-slate-50 dark:ring-offset-slate-900 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.4)]' : ''}
                                                     `}
                                                     style={{
                                                         backgroundColor: color,
-                                                        borderColor: isSelected ? '#f97316' : (isViewed ? '#10b981' : (isLit ? '#ef4444' : 'rgba(0,0,0,0.15)')),
-                                                        color: [1, 2, 3, 8, 10, 11, 12].includes((fOffset % 12) + 1) ? '#0f172a' : '#ffffff'
+                                                        borderColor: isLit ? '#ef4444' : 'rgba(0,0,0,0.2)',
+                                                        color: isLightColor ? '#0f172a' : '#ffffff',
                                                     }}
-                                                    title={isConnected ? `DIO: ${targetPortNum}` : t('port_free')}
+                                                    title={isConnected ? `Fibra ${(fiberIndex % 12) + 1} → DIO P${targetPortNum}` : `Fibra ${(fiberIndex % 12) + 1} · ${t('port_free')}`}
                                                 >
-                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-slate-700/30 shadow-sm z-20" />}
-                                                    {isLit && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping z-10" />}
                                                     <span className="relative z-[5]">{(fiberIndex % 12) + 1}</span>
-                                                    {isConnected && !isSelected && (
-                                                        <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-800"></div>
+                                                    {isConnected && !isSelected && !isLit && (
+                                                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white dark:border-slate-800 shadow-sm" />
                                                     )}
                                                 </button>
                                             );
