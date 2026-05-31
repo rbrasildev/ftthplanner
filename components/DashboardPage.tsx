@@ -14,7 +14,7 @@ import { IntegrationsPage } from './integrations/IntegrationsPage';
 import { Dashboard } from './Dashboard';
 
 
-import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint, MoreVertical, Edit2 } from 'lucide-react';
+import { Network, Plus, FolderOpen, Trash2, LogOut, Search, Map as MapIcon, Globe, Activity, AlertTriangle, MapPin, X, Ruler, Users, Settings, Database, Save, ChevronRight, Moon, Sun, Box, Cable, Zap, GitFork, UtilityPole, ClipboardList, Server, LayoutGrid, List, Plug, Shield, Check, Lock, Mail, User, RefreshCcw, Fingerprint, MoreVertical, Edit2, Crosshair, Loader2 } from 'lucide-react';
 import { KebabMenu, DeleteConfirmDialog, EmptyState, FilterChips, ListSkeleton, ModalFooter } from './registrations/common/CatalogPrimitives';
 import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_DEFAULT_PERMISSIONS, Permission, hasPermission } from '../shared/permissions';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, LayersControl } from 'react-leaflet';
@@ -170,6 +170,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [locationQuery, setLocationQuery] = useState('');
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [locationResults, setLocationResults] = useState<{ name: string, coords: Coordinates }[]>([]);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) return;
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMapCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationQuery('');
+        setIsLocating(false);
+      },
+      () => setIsLocating(false),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   // Ref to prevent search trigger when selecting an item from the list
   const skipSearchRef = useRef(false);
@@ -1153,66 +1168,87 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {
         isCreating && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]">
+            <form
+              onSubmit={handleCreateSubmit}
+              className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col relative max-h-[90vh]"
+            >
               <div className="h-14 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 bg-slate-50 dark:bg-[#22262e] shrink-0 rounded-t-xl">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Plus className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> {t('create_project_modal_title')}
                 </h3>
-                <button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600 dark:hover:white transition-colors"><X className="w-6 h-6" /></button>
+                <button type="button" onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"><X className="w-6 h-6" /></button>
               </div>
               <div className="p-6 overflow-y-auto flex-1 space-y-5">
-                <div className="space-y-4">
-                  <CustomInput
-                    label={t('name')}
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder={t('new_project_placeholder')}
-                    autoFocus
-                  />
-                </div>
-                <div className="relative z-20">
-                  <CustomInput
-                    label={t('search_location')}
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    placeholder={t('search_location_placeholder')}
-                    icon={MapPin}
-                    loading={isSearchingLocation}
-                  />
-                  <div className="absolute top-[3px] right-0">
-                    <span className="text-emerald-700 dark:text-emerald-400 text-[10px] font-bold normal-case flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/50">
-                      <MapIcon className="w-3 h-3" /> {t('pinned_location')}: {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
-                    </span>
+                <CustomInput
+                  label={`${t('name')} *`}
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  placeholder={t('new_project_placeholder')}
+                  autoFocus
+                />
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      {t('search_location')}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleUseMyLocation}
+                      disabled={isLocating}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isLocating
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Crosshair className="w-3.5 h-3.5" />}
+                      {t('use_my_location')}
+                    </button>
                   </div>
-                  {locationResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
-                      {locationResults.map((loc, idx) => (<button key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
-                    </div>
-                  )}
-                </div>
-                <div className="h-64 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-[#1a1d23]">
-                  <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
-                    <MapInvalidator />
-                    <LayersControl position="topright">
-                      <LayersControl.BaseLayer checked name={t('map_street')}>
-                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
-                      </LayersControl.BaseLayer>
-                      <LayersControl.BaseLayer name={t('map_satellite')}>
-                        <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
-                      </LayersControl.BaseLayer>
-                    </LayersControl>
-                    <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
-                  </MapContainer>
-                  <div className="absolute bottom-2 left-2 bg-white/90 dark:bg-[#1a1d23]/80 px-2 py-1 rounded text-[10px] text-slate-600 dark:text-slate-300 pointer-events-none z-[1000] border border-slate-200 dark:border-slate-700">
-                    {t('map_instruction')}
+
+                  <div className="relative z-20">
+                    <CustomInput
+                      value={locationQuery}
+                      onChange={(e) => setLocationQuery(e.target.value)}
+                      placeholder={t('search_location_placeholder')}
+                      icon={MapPin}
+                      loading={isSearchingLocation}
+                    />
+                    {locationResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-30 max-h-40 overflow-y-auto">
+                        {locationResults.map((loc, idx) => (<button type="button" key={idx} onClick={() => selectLocationResult(loc)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2 transition-colors"> <MapPin className="w-3 h-3 text-emerald-500" /> <span className="truncate">{loc.name}</span> </button>))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-80 w-full rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden relative z-10 bg-slate-100 dark:bg-[#1a1d23]">
+                    <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={13} style={{ height: '100%', width: '100%' }} dragging={true} scrollWheelZoom={true}>
+                      <MapInvalidator />
+                      <LayersControl position="topright">
+                        <LayersControl.BaseLayer checked name={t('map_street')}>
+                          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name={t('map_satellite')}>
+                          <TileLayer url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
+                        </LayersControl.BaseLayer>
+                      </LayersControl>
+                      <LocationPickerMap center={mapCenter} onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
+                    </MapContainer>
+                  </div>
+
+                  {/* Caption fora do mapa: instrução curta à esquerda, coords à direita */}
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-0.5">
+                    <span>{t('map_instruction')}</span>
+                    <span className="font-mono tabular-nums">
+                      {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-[#22262e] border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 shrink-0 rounded-b-xl">
-                <button onClick={() => setIsCreating(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
-                <button onClick={handleCreateSubmit} disabled={!newProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2"> <Plus className="w-4 h-4" /> {t('confirm_create')} </button>
+                <button type="button" onClick={() => setIsCreating(false)} className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-medium transition">{t('cancel')}</button>
+                <button type="submit" disabled={!newProjectName.trim()} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold shadow-lg transition">{t('confirm_create')}</button>
               </div>
-            </div>
+            </form>
           </div>
         )
       }

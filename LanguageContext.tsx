@@ -717,6 +717,7 @@ const translations = {
     'items_count': 'Items: {ctos} CTOs, {cables} Cabos',
     'search_location': 'Initial Location',
     'search_location_placeholder': 'Search city or address...',
+    'use_my_location': 'Use my location',
     'searching_location': 'Searching...',
     'no_location_results': 'No location found',
 
@@ -2642,6 +2643,7 @@ const translations = {
     'items_count': 'Itens: {ceos} CEOs, {ctos} CTOs, {cables} Cabos',
     'search_location': 'Localização Inicial',
     'search_location_placeholder': 'Pesquise cidade ou endereço...',
+    'use_my_location': 'Usar minha localização',
     'searching_location': 'Buscando...',
     'no_location_results': 'Local não encontrado',
 
