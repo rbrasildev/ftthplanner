@@ -33,6 +33,11 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
         if (!configuringOltPortId) return null;
         for (const olt of localPOP.olts) {
             if (olt.portIds?.includes(configuringOltPortId)) {
+                // Tenta extrair placa/porta do padrão `-s<N>-p<M>` (OLTs novas).
+                const m = configuringOltPortId.match(/-s(\d+)-p(\d+)$/);
+                if (m) {
+                    return { oltName: olt.name, slotNum: parseInt(m[1], 10), portNum: parseInt(m[2], 10) };
+                }
                 const idx = olt.portIds.indexOf(configuringOltPortId);
                 return { oltName: olt.name, portNum: idx + 1 };
             }
@@ -143,7 +148,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
     if (!configuringOltPortId) return null;
 
     // Render a single port button
-    const renderPortButton = (pid: string, label: number, hasBackboneLink: boolean = false) => {
+    const renderPortButton = (pid: string, label: number, hasBackboneLink: boolean = false, fillCell: boolean = false) => {
         const existingConns = localPOP.connections.filter((c: any) => {
             const isFiber = c.sourceId.includes('fiber') || c.targetId.includes('fiber');
             if (isFiber) return false;
@@ -170,7 +175,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                 `Porta ${label} (livre)`
                 }
                 className={`
-                    h-9 w-9 mx-auto rounded-lg text-[10px] font-bold flex items-center justify-center border-2 transition-all relative
+                    ${fillCell ? 'w-full aspect-square min-w-0' : 'h-9 w-9 mx-auto'} rounded-lg text-[10px] font-bold flex items-center justify-center border-2 transition-all relative
                     ${isConnectedToSelf
                         ? 'bg-emerald-500 border-emerald-600 text-white ring-2 ring-emerald-300 dark:ring-emerald-500/40 shadow-md scale-110 z-10'
                         : occupiedByOther
@@ -322,19 +327,61 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
 
                                     {isExpanded && (
                                         <div className="px-4 pb-4 pt-1 space-y-3 animate-in slide-in-from-top-2 duration-200 bg-slate-50/50 dark:bg-[#151820]/50 border-t border-slate-200 dark:border-slate-700/30">
-                                            {/* Direct ports (no slots) */}
-                                            {simplePorts.length > 0 && (
-                                                <div className="pt-3">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <Layers className="w-3 h-3 text-slate-400" />
-                                                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Portas</span>
-                                                        <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700/50" />
-                                                    </div>
-                                                    <div className="grid grid-cols-12 gap-1.5">
-                                                        {simplePorts.map((pid: string, idx: number) => renderPortButton(pid, idx + 1, false))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                            {/* Direct ports — agrupados por placa via padrão `-s<N>-p<M>` no id.
+                                                Se algum id não bate, cai no fallback flat (compat com OLTs antigas). */}
+                                            {simplePorts.length > 0 && (() => {
+                                                const groups = new Map<number, string[]>();
+                                                let allGrouped = true;
+                                                for (const pid of simplePorts) {
+                                                    const m = pid.match(/-s(\d+)-p\d+$/);
+                                                    if (!m) { allGrouped = false; break; }
+                                                    const slotNum = parseInt(m[1], 10);
+                                                    if (!groups.has(slotNum)) groups.set(slotNum, []);
+                                                    groups.get(slotNum)!.push(pid);
+                                                }
+
+                                                if (!allGrouped) {
+                                                    return (
+                                                        <div className="pt-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Layers className="w-3 h-3 text-slate-400" />
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Portas</span>
+                                                                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700/50" />
+                                                            </div>
+                                                            <div
+                                                                className="grid gap-1.5"
+                                                                style={{ gridTemplateColumns: `repeat(${simplePorts.length}, minmax(0, 1fr))` }}
+                                                            >
+                                                                {simplePorts.map((pid: string, idx: number) => renderPortButton(pid, idx + 1, false, true))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const sortedSlots = Array.from(groups.keys()).sort((a, b) => a - b);
+                                                const slotConfig = olt.structure?.slotsConfig || [];
+                                                return sortedSlots.map(slotNum => {
+                                                    const ports = groups.get(slotNum)!;
+                                                    const slotName = slotConfig[slotNum - 1]?.name;
+                                                    return (
+                                                        <div key={slotNum} className="pt-3">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <Layers className="w-3 h-3 text-slate-400" />
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                                    {slotName || `Placa ${slotNum}`} &middot; {ports.length}p
+                                                                </span>
+                                                                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700/50" />
+                                                            </div>
+                                                            <div
+                                                                className="grid gap-1.5"
+                                                                style={{ gridTemplateColumns: `repeat(${ports.length}, minmax(0, 1fr))` }}
+                                                            >
+                                                                {ports.map((pid, idx) => renderPortButton(pid, idx + 1, false, true))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
 
                                             {/* Slot-based ports */}
                                             {slots.map((slot: any, sIdx: number) => (
@@ -344,8 +391,11 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Slot {sIdx + 1}</span>
                                                         <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700/50" />
                                                     </div>
-                                                    <div className="grid grid-cols-12 gap-1.5">
-                                                        {(slot.portIds || []).map((pid: string, idx: number) => renderPortButton(pid, idx + 1, false))}
+                                                    <div
+                                                        className="grid gap-1.5"
+                                                        style={{ gridTemplateColumns: `repeat(${(slot.portIds || []).length}, minmax(0, 1fr))` }}
+                                                    >
+                                                        {(slot.portIds || []).map((pid: string, idx: number) => renderPortButton(pid, idx + 1, false, true))}
                                                     </div>
                                                 </div>
                                             ))}
