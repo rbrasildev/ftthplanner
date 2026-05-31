@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Server, Link2, Plug, Pencil, Trash2 } from 'lucide-react';
+import { Server, Link2, Plug, Pencil, Trash2, Grid3x3, List } from 'lucide-react';
 import { useLanguage } from '../../LanguageContext';
 import { Button } from '../common/Button';
 
@@ -41,6 +41,20 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
 }) => {
     const { t } = useLanguage();
     const [hoveredPortId, setHoveredPortId] = useState<string | null>(null);
+    // Persistido por DIO em localStorage — cada DIO mantém sua própria preferência.
+    const viewModeKey = `dio-view-mode:${dio.id}`;
+    const [viewMode, setViewModeState] = useState<'modular' | 'sequential'>(() => {
+        try {
+            const saved = localStorage.getItem(viewModeKey);
+            return saved === 'sequential' ? 'sequential' : 'modular';
+        } catch {
+            return 'modular';
+        }
+    });
+    const setViewMode = (mode: 'modular' | 'sequential') => {
+        setViewModeState(mode);
+        try { localStorage.setItem(viewModeKey, mode); } catch {}
+    };
 
     const handlePortEnter = (pid: string) => {
         setHoveredPortId(pid);
@@ -72,6 +86,74 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
     const pad = 20;
     const dynamicWidth = Math.max(width, labelW + pad + TRAY_SIZE * (portW + 2));
 
+    /** Render de uma porta única — shared entre os dois view modes.
+     *  `labelNum` é o número exibido: localIdx+1 no modular, globalIdx+1 no sequencial. */
+    const renderPort = (pid: string, globalIdx: number, labelNum: number, trayNum: number, localIdx: number) => {
+        const existingConns = portConnectionsMap.get(pid) || [];
+        const patchConn = existingConns.find((c: any) => {
+            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
+            return partner.includes('olt');
+        });
+        const switchConn = existingConns.find((c: any) => {
+            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
+            return partner.startsWith('swp-') || partner.startsWith('switch-');
+        });
+        const isConnected = !!patchConn || !!switchConn;
+        const isSpliced = existingConns.some((c: any) => {
+            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
+            return !partner.includes('olt')
+                && !partner.startsWith('swp-')
+                && !partner.startsWith('switch-');
+        });
+
+        const isHovered = hoveredPortId === pid;
+        const isLit = litPorts?.has(pid);
+        let highlightForActiveOLT = false;
+        if (configuringOltPortId && patchConn) {
+            highlightForActiveOLT = patchConn.sourceId === configuringOltPortId || patchConn.targetId === configuringOltPortId;
+        }
+        const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(pid) : undefined;
+        const connColor = switchConn && !patchConn
+            ? { bg: '#10b981', border: '#34d399', shadow: 'rgba(16,185,129,0.4)' }
+            : { bg: '#06b6d4', border: '#22d3ee', shadow: 'rgba(6,182,212,0.4)' };
+        const customName: string | undefined = dio.portLabels?.[pid];
+
+        return (
+            <div
+                key={pid}
+                id={pid}
+                title={(() => {
+                    const baseLabel = `P${localIdx + 1} (${t('tray')} ${trayNum})`;
+                    const label = customName ? `${customName} · ${baseLabel}` : baseLabel;
+                    if (connInfo) return `${label} → ${connInfo}`;
+                    if (switchConn) return `${label} → Switch`;
+                    if (isSpliced) return `${label} - Spliced`;
+                    return `${label} (${t('available')})`;
+                })()}
+                onMouseDown={(e) => onPortClick(e, pid)}
+                onMouseEnter={() => handlePortEnter(pid)}
+                onMouseLeave={handlePortLeave}
+                className={`
+                    flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all relative
+                    ${isLit ? 'ring-2 ring-red-300 z-10' : ''}
+                    ${highlightForActiveOLT ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
+                    ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
+                `}
+                style={{
+                    backgroundColor: isLit ? '#f87171' : (isConnected ? connColor.bg : '#1e2028'),
+                    border: `1px solid ${isLit ? '#ef4444' : (isConnected ? connColor.border : '#3f4451')}`,
+                    color: isLit || isConnected ? '#fff' : '#6b7280',
+                    boxShadow: isLit ? '0 0 6px rgba(248,113,113,0.7)' : (isConnected ? `0 0 4px ${connColor.shadow}` : 'none'),
+                }}
+            >
+                {labelNum}
+                {isSpliced && (
+                    <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
+                )}
+            </div>
+        );
+    };
+
     return (
         <div
             id={dio.id}
@@ -92,7 +174,16 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                         <span className="text-[11px] font-bold text-slate-300 tracking-wide">{dio.name}</span>
                         <span className="text-[9px] text-slate-500 font-mono">{dio.ports}P</span>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1">
+                        {/* Toggle de visualização — sempre visível pra trocar rápido */}
+                        <button
+                            onMouseDown={(e) => { e.stopPropagation(); setViewMode(viewMode === 'modular' ? 'sequential' : 'modular'); }}
+                            className="h-6 px-1.5 rounded text-slate-500 hover:text-cyan-400 hover:bg-slate-700/40 transition-colors flex items-center"
+                            title={viewMode === 'modular' ? 'Mudar para visualização sequencial' : 'Mudar para visualização modular'}
+                        >
+                            {viewMode === 'modular' ? <Grid3x3 className="w-3 h-3" /> : <List className="w-3 h-3" />}
+                        </button>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={(e) => onLinkCables(e, dio.id)} className="h-6 w-6 text-slate-500 hover:text-cyan-400" title={t('link_cables') || 'Vincular Cabos'}>
                             <Link2 className="w-3 h-3" />
                         </Button>
@@ -105,6 +196,7 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                         <Button variant="ghost" size="icon" onClick={(e) => onDelete(e, dio)} className="h-6 w-6 text-slate-500 hover:text-rose-400">
                             <Trash2 className="w-3 h-3" />
                         </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -122,92 +214,39 @@ export const DIOUnit: React.FC<DIOUnitProps> = ({
                     </div>
                 )}
 
-                {/* Trays */}
-                <div className="p-1.5 space-y-1">
-                    {Array.from({ length: trayCount }).map((_, tIdx) => {
-                        const trayPorts = dio.portIds.slice(tIdx * TRAY_SIZE, (tIdx + 1) * TRAY_SIZE);
-                        if (trayPorts.length === 0) return null;
-
-                        return (
-                            <div key={tIdx} className="flex items-center bg-[#2a2e38] rounded border border-slate-600/30 px-1 py-1 gap-1">
-                                {/* Tray Label */}
-                                <div className="w-7 shrink-0 text-[7px] font-mono font-bold text-cyan-500 text-center" title={`${t('tray')} ${tIdx + 1}`}>
-                                    T{tIdx + 1}
+                {/* Ports — modular (agrupado por bandeja) ou sequencial (grid contínuo) */}
+                {viewMode === 'modular' ? (
+                    <div className="p-1.5 space-y-1">
+                        {Array.from({ length: trayCount }).map((_, tIdx) => {
+                            const trayPorts = dio.portIds.slice(tIdx * TRAY_SIZE, (tIdx + 1) * TRAY_SIZE);
+                            if (trayPorts.length === 0) return null;
+                            return (
+                                <div key={tIdx} className="flex items-center bg-[#2a2e38] rounded border border-slate-600/30 px-1 py-1 gap-1">
+                                    <div className="w-7 shrink-0 text-[7px] font-mono font-bold text-cyan-500 text-center" title={`${t('tray')} ${tIdx + 1}`}>
+                                        T{tIdx + 1}
+                                    </div>
+                                    <div className="w-px h-4 bg-slate-600/50 shrink-0" />
+                                    <div className="flex-1 flex gap-[2px]">
+                                        {trayPorts.map((pid: string, localIdx: number) =>
+                                            renderPort(pid, tIdx * TRAY_SIZE + localIdx, localIdx + 1, tIdx + 1, localIdx)
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="w-px h-4 bg-slate-600/50 shrink-0" />
-                                {/* Ports */}
-                                <div className="flex-1 flex gap-[2px]">
-                                    {trayPorts.map((pid: string, localIdx: number) => {
-                                        const existingConns = portConnectionsMap.get(pid) || [];
-                                        const patchConn = existingConns.find((c: any) => {
-                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                            return partner.includes('olt');
-                                        });
-                                        const switchConn = existingConns.find((c: any) => {
-                                            const partner = c.sourceId === pid ? c.targetId : c.sourceId;
-                                            return partner.startsWith('swp-') || partner.startsWith('switch-');
-                                        });
-                                        const isConnected = !!patchConn || !!switchConn;
-                                        const isSpliced = existingConns.some((c: any) =>
-                                            c.sourceId.includes('fiber') || c.targetId.includes('fiber')
-                                        );
-
-                                        const isHovered = hoveredPortId === pid;
-                                        const isLit = litPorts?.has(pid);
-                                        let highlightForActiveOLT = false;
-                                        if (configuringOltPortId && patchConn) {
-                                            highlightForActiveOLT = patchConn.sourceId === configuringOltPortId || patchConn.targetId === configuringOltPortId;
-                                        }
-
-                                        const connInfo = isConnected && getPortConnectionInfo ? getPortConnectionInfo(pid) : undefined;
-
-                                        // Cor de conexão: ciano = OLT, azul-céu = Switch
-                                        const connColor = switchConn && !patchConn
-                                            ? { bg: '#10b981', border: '#34d399', shadow: 'rgba(16,185,129,0.4)' }
-                                            : { bg: '#06b6d4', border: '#22d3ee', shadow: 'rgba(6,182,212,0.4)' };
-
-                                        const customName: string | undefined = dio.portLabels?.[pid];
-
-                                        return (
-                                            <div
-                                                key={pid}
-                                                id={pid}
-                                                title={(() => {
-                                                    const baseLabel = `P${localIdx + 1} (${t('tray')} ${tIdx + 1})`;
-                                                    const label = customName ? `${customName} · ${baseLabel}` : baseLabel;
-                                                    if (connInfo) return `${label} → ${connInfo}`;
-                                                    if (switchConn) return `${label} → Switch`;
-                                                    if (isSpliced) return `${label} - Spliced`;
-                                                    return `${label} (${t('available')})`;
-                                                })()}
-                                                onMouseDown={(e) => onPortClick(e, pid)}
-                                                onMouseEnter={() => handlePortEnter(pid)}
-                                                onMouseLeave={handlePortLeave}
-                                                className={`
-                                                    flex-1 aspect-square min-w-0 rounded-sm cursor-pointer flex items-center justify-center text-[7px] font-mono font-bold transition-all relative
-                                                    ${isLit ? 'ring-2 ring-red-300 z-10' : ''}
-                                                    ${highlightForActiveOLT ? 'ring-1 ring-indigo-400 scale-110 z-10' : ''}
-                                                    ${isHovered ? 'scale-110 z-10 brightness-125' : ''}
-                                                `}
-                                                style={{
-                                                    backgroundColor: isLit ? '#f87171' : (isConnected ? connColor.bg : '#1e2028'),
-                                                    border: `1px solid ${isLit ? '#ef4444' : (isConnected ? connColor.border : '#3f4451')}`,
-                                                    color: isLit || isConnected ? '#fff' : '#6b7280',
-                                                    boxShadow: isLit ? '0 0 6px rgba(248,113,113,0.7)' : (isConnected ? `0 0 4px ${connColor.shadow}` : 'none'),
-                                                }}
-                                            >
-                                                {localIdx + 1}
-                                                {isSpliced && (
-                                                    <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div
+                        className="p-1.5 grid gap-[2px] bg-[#2a2e38]"
+                        style={{ gridTemplateColumns: `repeat(${TRAY_SIZE}, minmax(0, 1fr))` }}
+                    >
+                        {dio.portIds.map((pid: string, globalIdx: number) => {
+                            const tIdx = Math.floor(globalIdx / TRAY_SIZE);
+                            const localIdx = globalIdx % TRAY_SIZE;
+                            return renderPort(pid, globalIdx, globalIdx + 1, tIdx + 1, localIdx);
+                        })}
+                    </div>
+                )}
 
                 {/* Bottom Bar */}
                 <div className="h-5 bg-[#15171c] border-t border-slate-700/30 px-3 flex justify-between items-center text-[8px] text-slate-500 font-mono select-none">
