@@ -382,7 +382,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                             <User className="w-5 h-5 text-indigo-500" />
                             {t('customer_modal_title')}
                         </h2>
-                        {formData.connectionStatus && (
+                        {formData.connectionStatus && (formData.status === 'ACTIVE' || formData.status === 'SUSPENDED') && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
                                 String(formData.connectionStatus).toLowerCase() === 'online'
                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'

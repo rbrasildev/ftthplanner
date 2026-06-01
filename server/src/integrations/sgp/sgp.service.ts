@@ -1221,6 +1221,19 @@ export class SgpService {
         const userCompanyId = setting.user?.companyId;
         if (!userCompanyId) return;
 
+        // Limpa connectionStatus de clientes que saíram de serviço (CANCELLED/
+        // INACTIVE) e ainda têm valor antigo gravado. Sem isso, ficam exibindo
+        // "online" pra sempre na UI porque o sync abaixo pula esses status.
+        await prisma.customer.updateMany({
+            where: {
+                companyId: userCompanyId,
+                deletedAt: null,
+                status: { notIn: ['ACTIVE', 'SUSPENDED'] },
+                connectionStatus: { not: null },
+            },
+            data: { connectionStatus: null }
+        });
+
         // Só checa clientes com contratoId mapeado (sem isso, verificaacesso não funciona)
         const customers = await prisma.customer.findMany({
             where: {
