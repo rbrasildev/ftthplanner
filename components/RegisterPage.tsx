@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, ArrowLeft, Loader2 } from 'lucide-react';
+import { KeyRound, ArrowLeft, Loader2, Check } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { PASSWORD_RULES } from '../utils/passwordRules';
 
@@ -289,6 +289,36 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                                         />
                                     </div>
                                 </div>
+
+                                {/* Checklist ao vivo — só aparece quando começa a digitar. Espelha
+                                    PASSWORD_RULES (backend valida pelas mesmas regras). */}
+                                {password.length > 0 && (
+                                    <ul className="space-y-1 px-1 pt-1">
+                                        {PASSWORD_RULES.map(rule => {
+                                            const pass = rule.test(password);
+                                            return (
+                                                <li key={rule.label} className="flex items-center gap-2 text-xs">
+                                                    <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${pass ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                                                        {pass ? <Check className="w-2.5 h-2.5" strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-current" />}
+                                                    </span>
+                                                    <span className={pass ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                                                        {rule.label}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                        {confirmPassword.length > 0 && (
+                                            <li className="flex items-center gap-2 text-xs">
+                                                <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${password === confirmPassword ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                                                    {password === confirmPassword ? <Check className="w-2.5 h-2.5" strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-current" />}
+                                                </span>
+                                                <span className={password === confirmPassword ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                                                    A confirmação confere
+                                                </span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
                             </div>
 
                             <button

@@ -24,6 +24,7 @@ import CustomerRegistration from './registrations/CustomerRegistration';
 import { BackupManager } from './BackupManager';
 import L from 'leaflet';
 import { searchLocation } from '../services/nominatimService';
+import { PASSWORD_RULES } from '../utils/passwordRules';
 import { CustomInput } from './common/CustomInput';
 import { CustomSelect } from './common/CustomSelect';
 
@@ -236,15 +237,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     } catch (error: any) {
       console.error("Failed to create user", error);
       const backendMsg = error.response?.data?.error || "";
-      let errorKey = 'error_create_user';
 
-      if (backendMsg.includes('Username already taken') || backendMsg.includes('Email already taken')) errorKey = 'error_username_taken';
-      else if (backendMsg.includes('caracteres') || backendMsg.includes('senha precisa') || backendMsg.includes('Password must')) errorKey = 'error_password_length';
-      else if (backendMsg.includes('Email and password are required') || backendMsg.includes('Email is required')) errorKey = 'error_email_required';
-      else if (backendMsg) console.warn("Unmapped backend error:", backendMsg);
+      // Casos que merecem tradução por key (mensagem padronizada na UI):
+      let translatedMsg: string | null = null;
+      if (backendMsg.includes('Username already taken') || backendMsg.includes('Email already taken')) {
+        translatedMsg = t('error_username_taken');
+      } else if (backendMsg.includes('Email and password are required') || backendMsg.includes('Email is required')) {
+        translatedMsg = t('error_email_required');
+      }
 
-      if (showToast) showToast(t(errorKey), 'error');
-      else alert(t(errorKey));
+      // Prefere a mensagem do backend quando ela existe (já é amigável em PT —
+      // ex: "A senha precisa ter ao menos 8 caracteres", "A senha precisa ter
+      // ao menos uma letra"). Só cai pra translatedMsg/fallback se backend mudo.
+      const finalMsg = translatedMsg || backendMsg || t('error_create_user');
+      if (showToast) showToast(finalMsg, 'error');
+      else alert(finalMsg);
     }
   };
 
@@ -287,11 +294,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     } catch (error: any) {
       console.error("Failed to update user", error);
       const backendMsg = error.response?.data?.error || "";
-      let errorKey = 'error_generic';
-      if (backendMsg.includes('Password must be at least 6 characters')) errorKey = 'error_password_length';
-      
-      if (showToast) showToast(t(errorKey), 'error');
-      else alert(t(errorKey));
+      // Backend já manda mensagens amigáveis em PT pra validação (senha, email, etc).
+      // Usa direto; só cai pro genérico quando backend mudo (500/network error).
+      const finalMsg = backendMsg || t('error_generic');
+      if (showToast) showToast(finalMsg, 'error');
+      else alert(finalMsg);
     }
   };
 
@@ -986,6 +993,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     />
                   )}
                 </div>
+
+                {/* Checklist ao vivo — só aparece quando o usuário começa a digitar.
+                    Espelha as regras do backend (passwordPolicy.ts) via PASSWORD_RULES. */}
+                {userFormData.password.length > 0 && (
+                  <ul className="space-y-1 px-1">
+                    {PASSWORD_RULES.map(rule => {
+                      const pass = rule.test(userFormData.password);
+                      return (
+                        <li key={rule.label} className="flex items-center gap-2 text-xs">
+                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${pass ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                            {pass ? <Check className="w-2.5 h-2.5" strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-current" />}
+                          </span>
+                          <span className={pass ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                            {rule.label}
+                          </span>
+                        </li>
+                      );
+                    })}
+                    {userFormData.confirmPassword.length > 0 && (
+                      <li className="flex items-center gap-2 text-xs">
+                        <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${userFormData.password === userFormData.confirmPassword ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                          {userFormData.password === userFormData.confirmPassword ? <Check className="w-2.5 h-2.5" strokeWidth={3} /> : <span className="w-1 h-1 rounded-full bg-current" />}
+                        </span>
+                        <span className={userFormData.password === userFormData.confirmPassword ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                          A confirmação confere
+                        </span>
+                      </li>
+                    )}
+                  </ul>
+                )}
+
                 {editingUser && (
                   <p className="text-[10px] text-slate-400 italic">
                     * {t('keep_empty_no_change')}
