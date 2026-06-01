@@ -3186,37 +3186,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                     }));
                 }
             } else {
-                // NO CONNECTION HIT - Just update position (with Grid/Vertical Snap only)
-                // Logic here was missing in previous simplification implicitly, 
-                // but `if (closestConnection)` block handles the SNAP. 
-                // If NO snap, we still need to update position in the ELSE block or outside.
-                // The original code seemingly ONLY updated position inside the `if (closestConnection)`.
-                // Wait, if no connection is hit, the fusion should still move!
-                // Looking at original code... ah, the `setLocalCTO` for pure move was seemingly missing or implicit?
-                // No, line 2650+ handles standard dragging.
-                // BUT here we are in `dragState.mode === 'element' && targetId.startswith('fus-')`.
-                // This block handles AUTO-SPLICE.
-                // If we DO NOT find a connection... do we fall back to normal drag?
-                // Currently, if no `closestConnection` found, nothing happens inside this block.
-                // BUT `handleMouseUp` usually falls through?
-                // Let's check the logic flow.
-                // The block `else if (dragState?.mode === 'element' ...)` is exclusive.
-                // So if we don't find a connection, we MUST update the position manually here or it won't move.
-
-                // Re-apply Vertical Snap for the free-floating case too
-                const VERTICAL_SNAP_THRESHOLD = 10;
-                const closestVerticalFusion = localCTO.fusions.find(f => {
-                    if (f.id === fusionId) return false;
-                    const layout = localCTO.layout[f.id];
-                    if (!layout) return false;
-                    return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
-                });
-
-                if (closestVerticalFusion) {
-                    const layout = localCTO.layout[closestVerticalFusion.id];
-                    if (layout) newX = layout.x;
-                }
-
+                // FUSÃO JÁ CONECTADA — antes esse branch não existia e a fusão era
+                // arrastada visualmente (DOM transform) mas o mouseUp não commitava
+                // nada, então a posição voltava no próximo render. Resultado: o usuário
+                // não conseguia realinhar uma fusão conectada, mesmo achando que tinha.
+                // Agora commita a posição livre (sem snap vertical, pra não atropelar
+                // o alinhamento que o usuário escolheu manualmente).
                 setLocalCTO(prev => ({
                     ...prev,
                     layout: {
