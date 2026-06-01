@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, Edit2, Trash2, X, Save, Box, Palette } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Save, Palette } from 'lucide-react';
+import { CTOIcon } from '../icons/TelecomIcons';
 import { useLanguage } from '../../LanguageContext';
 import { getBoxes, createBox, updateBox, deleteBox, BoxCatalogItem } from '../../services/catalogService';
 import { CustomSelect, CustomInput } from '../common';
@@ -89,7 +90,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Box className="w-7 h-7 text-emerald-500" />
+                        <CTOIcon className="w-7 h-7 text-emerald-500" />
                         {t('box_catalog') || 'Catálogo de Caixas'}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -117,7 +118,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                     <ListSkeleton rows={5} />
                 ) : sorted.length === 0 ? (
                     <EmptyState
-                        icon={Box}
+                        icon={CTOIcon}
                         title={allItems.length === 0 ? 'Você ainda não tem caixas cadastradas' : 'Nenhuma caixa encontrada'}
                         description={allItems.length === 0 ? 'Cadastre os modelos de caixas (CTOs e CEOs) usados nos projetos.' : undefined}
                         ctaLabel={allItems.length === 0 ? '+ Cadastrar primeira caixa' : undefined}
@@ -182,7 +183,7 @@ const BoxRegistration: React.FC<BoxRegistrationProps> = ({ showToast }) => {
                     <div className="bg-white dark:bg-[#1a1d23] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-700/30 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/30">
                             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Box className="w-5 h-5 text-emerald-600" />
+                                <CTOIcon className="w-5 h-5 text-emerald-600" />
                                 {editingBox ? (t('edit_box') || 'Editar caixa') : (t('new_box') || 'Nova caixa')}
                             </h2>
                             <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X className="w-5 h-5" /></button>

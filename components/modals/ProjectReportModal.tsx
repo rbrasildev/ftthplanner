@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { X, FileText, Cable, Download, Info, Users, Box, Building2, UtilityPole, TrendingUp, MapPin, Printer, FileSpreadsheet, ChevronDown, ClipboardList } from 'lucide-react';
+import { X, FileText, Cable, Download, Info, Users, Building2, UtilityPole, TrendingUp, MapPin, Printer, FileSpreadsheet, ChevronDown, ClipboardList } from 'lucide-react';
+import { CTOIcon, CEOIcon } from '../icons/TelecomIcons';
 import { useLanguage } from '../../LanguageContext';
 import { NetworkState, Customer, CTOStatus, PoleStatus, CableStatus, CustomerStatus } from '../../types';
 import { calculateNetworkReport, StatusBreakdown } from '../../utils/reportUtils';
@@ -230,7 +231,7 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                                 {/* CTOs / CEOs / POPs / Poles — breakdown por status */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <BreakdownCard
-                                        icon={<Box className="w-4 h-4" />}
+                                        icon={<CTOIcon className="w-4 h-4" />}
                                         title="CTOs"
                                         total={report.ctos.total}
                                         breakdown={report.ctos}
@@ -238,7 +239,7 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                                         toneMap={CTO_STATUS_TONE}
                                     />
                                     <BreakdownCard
-                                        icon={<Box className="w-4 h-4" />}
+                                        icon={<CEOIcon className="w-4 h-4" />}
                                         title="CEOs"
                                         total={report.ceos.total}
                                         breakdown={report.ceos}

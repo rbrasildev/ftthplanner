@@ -494,7 +494,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             onClickRef.current(buildEvent(e), cable);
 
             const currentMode = modeRef.current || '';
-            const isAddMode = ['add_cto', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(currentMode);
+            const isAddMode = ['add_cto', 'add_ceo', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(currentMode);
             if (currentMode !== 'ruler' && !isAddMode) {
                 e.stopImmediatePropagation();
             }

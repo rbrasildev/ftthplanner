@@ -75,6 +75,7 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 const newCTO: CTOData = {
                     id: `cto-${Date.now()}`,
                     name: `CTO-${prev.ctos.length + 1}`,
+                    type: 'CTO',
                     status: 'PLANNED',
                     coordinates: { lat, lng },
                     splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
@@ -82,6 +83,22 @@ export const useNetworkOperations = (props: UseNetworkOperationsProps) => {
                 return { ...prev, ctos: [...prev.ctos, newCTO] };
             });
             showToast(t('toast_cto_added'));
+        } else if (toolMode === 'add_ceo') {
+            updateCurrentNetwork(prev => {
+                // CEO (caixa de emenda) compartilha a entidade CTOData — discriminada por `type`.
+                // Numeração separada pra não confundir com CTOs.
+                const ceoCount = prev.ctos.filter(c => c.type === 'CEO').length;
+                const newCEO: CTOData = {
+                    id: `cto-${Date.now()}`,
+                    name: `CEO-${ceoCount + 1}`,
+                    type: 'CEO',
+                    status: 'PLANNED',
+                    coordinates: { lat, lng },
+                    splitters: [], fusions: [], connections: [], inputCableIds: [], clientCount: 0
+                };
+                return { ...prev, ctos: [...prev.ctos, newCEO] };
+            });
+            showToast(t('toast_ceo_added') || 'CEO criada');
         } else if (toolMode === 'add_condo') {
             // Vertical condominium: same Cto entity with `building` set. User adjusts
             // floors/units in the properties panel. Defaults pick a small, easy-to-edit

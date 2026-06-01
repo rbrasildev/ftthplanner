@@ -3,8 +3,9 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ChevronDown, ClipboardList, UtilityPole,
-    Box, Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet
+    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet
 } from 'lucide-react';
+import { CTOIcon } from './icons/TelecomIcons';
 import { Button } from './common/Button';
 import { Tooltip } from './common/Tooltip';
 import { SearchBox } from './SearchBox';
@@ -222,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 badge: menuBadges?.registrations,
                 subItems: [
                     { id: 'reg_poste', label: t('reg_poste') || 'Poste', icon: UtilityPole, badge: menuBadges?.reg_poste },
-                    { id: 'reg_caixa', label: t('reg_caixa') || 'Caixa', icon: Box, badge: menuBadges?.reg_caixa },
+                    { id: 'reg_caixa', label: t('reg_caixa') || 'Caixa', icon: CTOIcon, badge: menuBadges?.reg_caixa },
                     { id: 'reg_cabo', label: t('reg_cabo') || 'Cabo', icon: Cable, badge: menuBadges?.reg_cabo },
                     { id: 'reg_splitter', label: t('reg_splitter') || 'Splitter', icon: GitFork, badge: menuBadges?.reg_splitter },
                     { id: 'reg_olt', label: t('reg_olt') || 'OLT', icon: Server, badge: menuBadges?.reg_olt },

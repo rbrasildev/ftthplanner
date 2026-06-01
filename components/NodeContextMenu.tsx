@@ -1,7 +1,8 @@
 import React from 'react';
-import { Edit, Move, Settings, Box, Building2, UtilityPole } from 'lucide-react';
+import { Edit, Move, Settings, Building2, UtilityPole } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { MapContextMenu, MenuHeader, MenuItem, DangerDelete } from './map/MapContextPrimitives';
+import { CTOIcon } from './icons/TelecomIcons';
 
 interface NodeContextMenuProps {
     x: number;
@@ -17,7 +18,7 @@ interface NodeContextMenuProps {
 }
 
 const TYPE_META: Record<NodeContextMenuProps['type'], { icon: React.ElementType; iconBg: string; label: string }> = {
-    CTO: { icon: Box, iconBg: 'bg-emerald-500', label: 'CTO' },
+    CTO: { icon: CTOIcon, iconBg: 'bg-emerald-500', label: 'CTO' },
     POP: { icon: Building2, iconBg: 'bg-indigo-500', label: 'POP' },
     Pole: { icon: UtilityPole, iconBg: 'bg-amber-500', label: 'Poste' },
 };

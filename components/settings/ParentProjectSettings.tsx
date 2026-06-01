@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../LanguageContext';
-import { GitBranch, Link2, Unlink, X, Loader2, CheckCircle2, AlertTriangle, Eye, EyeOff, Box, Building2, UtilityPole, Waypoints, Users, Cable } from 'lucide-react';
+import { GitBranch, Link2, Unlink, X, Loader2, CheckCircle2, AlertTriangle, Eye, EyeOff, Building2, UtilityPole, Waypoints, Users, Cable } from 'lucide-react';
+import { CTOIcon, CEOIcon } from '../icons/TelecomIcons';
 import * as projectService from '../../services/projectService';
 import { InheritedElementsConfig, DEFAULT_INHERITED_ELEMENTS } from '../../types';
 import { CustomSelect } from '../common/CustomSelect';
@@ -27,8 +28,8 @@ const ELEMENT_KEYS: { key: keyof InheritedElementsConfig; labelKey: string; icon
     { key: 'backbone', labelKey: 'Backbone', icon: <Waypoints className="w-3.5 h-3.5" /> },
     { key: 'poles', labelKey: 'Postes', icon: <UtilityPole className="w-3.5 h-3.5" /> },
     { key: 'cables', labelKey: 'Cabos', icon: <Cable className="w-3.5 h-3.5" /> },
-    { key: 'ctos', labelKey: 'CTOs', icon: <Box className="w-3.5 h-3.5" /> },
-    { key: 'ceos', labelKey: 'CEOs', icon: <Box className="w-3.5 h-3.5" /> },
+    { key: 'ctos', labelKey: 'CTOs', icon: <CTOIcon className="w-3.5 h-3.5" /> },
+    { key: 'ceos', labelKey: 'CEOs', icon: <CEOIcon className="w-3.5 h-3.5" /> },
     { key: 'pops', labelKey: 'POPs', icon: <Building2 className="w-3.5 h-3.5" /> },
     { key: 'customers', labelKey: 'Clientes', icon: <Users className="w-3.5 h-3.5" /> },
 ];

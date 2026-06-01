@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CTOData, CTOStatus, CTO_STATUS_COLORS, PoleData, BuildingConfig, Splitter, ElementLayout, Customer } from '../types';
-import { Settings2, Trash2, Activity, MapPin, Box, Type, X, AlertTriangle, ChevronDown, ChevronUp, Loader2, Building2, Wand2, Users, Pencil } from 'lucide-react';
+import { Settings2, Trash2, Activity, MapPin, Type, X, AlertTriangle, ChevronDown, ChevronUp, Loader2, Building2, Wand2, Users, Pencil } from 'lucide-react';
+import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { useLanguage } from '../LanguageContext';
 import { getBoxes, BoxCatalogItem } from '../services/catalogService';
 import { calculateDistance } from '../utils/geometryUtils';
@@ -295,7 +296,9 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           {isVerticalCondo
             ? <Building2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-            : <Box className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
+            : cto.type === 'CEO'
+              ? <CEOIcon className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              : <CTOIcon className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />}
           {isVerticalCondo ? (t('vertical_condo') || 'Condomínio Vertical') : t('edit_cto')}
         </h2>
         <div className="flex items-center gap-1">

@@ -1,7 +1,8 @@
 import React from 'react';
-import { MousePointer2, Box, Building2, UtilityPole, Waypoints, Ruler, UserPlus, Hexagon } from 'lucide-react';
+import { MousePointer2, Building2, UtilityPole, Waypoints, Ruler, UserPlus, Hexagon } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { hasPermission } from '../shared/permissions';
+import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 
 // Custom icon mirroring the vertical-condo map marker so the toolbar button
 // reads as the same "thing" the user sees on the map. Lucide's Building2 is
@@ -36,7 +37,7 @@ const CondoIcon: React.FC<{ className?: string; strokeWidth?: number }> = ({ cla
 );
 
 interface MapToolbarProps {
-    toolMode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area' | 'draw_polygon';
+    toolMode: 'view' | 'add_cto' | 'add_ceo' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'pick_connection_target' | 'otdr' | 'edit_cable' | 'ruler' | 'export_area' | 'draw_polygon';
     setToolMode: (mode: any) => void;
     activeMenuId: string | null;
     setActiveMenuId: (id: string | null) => void;
@@ -115,7 +116,8 @@ export const MapToolbar: React.FC<MapToolbarProps> = ({
             {/* Group 2: Construction — permission-based per button */}
             {showConstructionGroup && (
                 <div className="flex items-center gap-1 px-2 border-r border-slate-200 dark:border-slate-700/50">
-                    {showCto && <ToolButton mode="add_cto" icon={Box} label={t('reg_caixa') || "Caixa"} />}
+                    {showCto && <ToolButton mode="add_cto" icon={CTOIcon} label="CTO" />}
+                    {showCto && <ToolButton mode="add_ceo" icon={CEOIcon} label="CEO" />}
                     {showCto && <ToolButton mode="add_condo" icon={CondoIcon} label={t('toolbar_condo') || "Condomínio"} />}
                     {showPop && <ToolButton mode="add_pop" icon={Building2} label="POP" />}
                     {showCustomer && <ToolButton mode="add_customer" icon={UserPlus} label={t('sidebar_customer') || "Cliente"} />}

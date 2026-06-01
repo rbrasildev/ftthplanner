@@ -15,6 +15,7 @@ export const MapModeTooltip: React.FC<MapModeTooltipProps> = ({ toolMode, drawin
             {toolMode === 'view' && t('tooltip_view')}
             {toolMode === 'move_node' && t('tooltip_move')}
             {toolMode === 'add_cto' && t('tooltip_add_cto')}
+            {toolMode === 'add_ceo' && (t('tooltip_add_ceo') || 'Clique no mapa para posicionar a CEO')}
             {toolMode === 'add_pop' && t('tooltip_add_pop')}
             {toolMode === 'add_pole' && t('tooltip_add_pole')}
             {toolMode === 'ruler' && t('tooltip_ruler')}

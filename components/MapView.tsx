@@ -11,7 +11,7 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { PolygonContextMenu } from './PolygonContextMenu';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeContext';
-import { Box, Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet, ChevronLeft, ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Layers, Share2, Tag, Zap, Radio, Maximize, Search, UtilityPole, Ruler, User, Globe, Building2, CheckCircle2, XCircle, MapPin, Copy, ScanSearch, Move, Unplug, GitBranch, ChevronDown, Hexagon, CircleDot, Undo2, X as XIcon, FileSpreadsheet, ChevronLeft, ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { CTOIcon, CEOIcon } from './icons/TelecomIcons';
 import { D3CablesLayer } from './D3CablesLayer';
 import { LabelsCanvasLayer, type LabelNode } from './LabelsCanvasLayer';
@@ -416,7 +416,7 @@ const MapEvents: React.FC<{
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (mode === 'draw_polygon') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
-            } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+            } else if (mode === 'add_cto' || mode === 'add_ceo' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
                 onMapClick(e.latlng.lat, e.latlng.lng);
             } else if (isEditingDrop) {
                 // Don't close editing on map click — only Escape or context menu finishes editing
@@ -754,7 +754,7 @@ interface MapViewProps {
     pops: POPData[];
     poles?: PoleData[];
     cables: CableData[];
-    mode: 'view' | 'add_cto' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area' | 'draw_polygon' | 'report_area';
+    mode: 'view' | 'add_cto' | 'add_ceo' | 'add_condo' | 'add_pop' | 'add_pole' | 'add_customer' | 'draw_cable' | 'connect_cable' | 'move_node' | 'otdr' | 'pick_connection_target' | 'edit_cable' | 'export_area' | 'draw_polygon' | 'report_area';
     selectedId: string | null;
     mapBounds?: L.LatLngBoundsExpression | null;
     showLabels?: boolean;
@@ -1651,7 +1651,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const handleCableClickInternal = useCallback((e: any, cable: CableData) => {
         // Fix propagation: Use originalEvent if available (Leaflet), otherwise e (DOM/D3)
         const domEvent = e.originalEvent || e;
-        const isAddMode = ['add_cto', 'add_condo', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
+        const isAddMode = ['add_cto', 'add_ceo', 'add_condo', 'add_pop', 'add_pole', 'add_customer', 'add_poste', 'draw_cable'].includes(mode || '');
         if (mode !== 'ruler' && !isAddMode) L.DomEvent.stopPropagation(domEvent);
 
         // Single click: Only for selection/view/otdr
@@ -1837,7 +1837,7 @@ export const MapView: React.FC<MapViewProps> = ({
             if (onReportAreaPolygonChange) {
                 onReportAreaPolygonChange([...reportAreaPolygon, { lat, lng }]);
             }
-        } else if (mode === 'add_cto' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
+        } else if (mode === 'add_cto' || mode === 'add_ceo' || mode === 'add_condo' || mode === 'add_pop' || mode === 'add_pole' || mode === 'draw_cable' || mode === 'ruler' || mode === 'position_reserve') {
             onAddPoint(lat, lng);
         }
     }, [mode, rulerPoints, onRulerPointsChange, repositioningCustomer, allCustomers, drawingCustomerDrop, editingDropCustomerId, editingDropCoords, saveDropCoords, handleMapClickForCustomer, onAddPoint, onCustomerSaved, showToast, t, exportAreaPolygon, onExportAreaPolygonChange, drawingPolygonPath, onDrawingPolygonPathChange, reportAreaPolygon, onReportAreaPolygonChange]);
@@ -1946,7 +1946,8 @@ export const MapView: React.FC<MapViewProps> = ({
     //   report_area → bar (bottom-6 do App.tsx)
     const hudInfo = (() => {
         switch (mode) {
-            case 'add_cto': return { icon: <Box className="w-4 h-4" />, title: 'Adicionando CTO', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
+            case 'add_cto': return { icon: <CTOIcon className="w-4 h-4" />, title: 'Adicionando CTO', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
+            case 'add_ceo': return { icon: <CEOIcon className="w-4 h-4" />, title: 'Adicionando CEO', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
             case 'add_condo': return { icon: <Building2 className="w-4 h-4" />, title: 'Adicionando Condomínio', hint: 'Clique no mapa para posicionar', tone: 'sky' as HudTone };
             case 'add_pop': return { icon: <Building2 className="w-4 h-4" />, title: 'Adicionando POP', hint: 'Clique no mapa para posicionar', tone: 'indigo' as HudTone };
             case 'add_pole': return { icon: <UtilityPole className="w-4 h-4" />, title: 'Adicionando Poste', hint: 'Clique no mapa para posicionar', tone: 'slate' as HudTone };
@@ -1961,7 +1962,7 @@ export const MapView: React.FC<MapViewProps> = ({
     const hudPointCount = mode === 'export_area' ? exportAreaPolygon.length : undefined;
 
     return (
-        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
+        <div className={`relative h-full w-full ${['draw_cable', 'add_cto', 'add_ceo', 'add_condo', 'add_pop', 'add_pole', 'edit_cable', 'position_reserve', 'export_area', 'draw_polygon', 'report_area'].includes(mode) ? 'drawing-cursor' : ''}`}>
             {hudInfo && (
                 <ModeHud
                     icon={hudInfo.icon}
@@ -2058,16 +2059,16 @@ export const MapView: React.FC<MapViewProps> = ({
 
                     <LayerGroup
                         label={t('layer_ctos')}
-                        color="blue"
-                        icon={<CTOIcon className="w-4 h-4" />}
+                        color="slate"
+                        icon={<CTOIcon className="w-5 h-5" />}
                         expanded={ctosGroupExpanded}
                         setExpanded={setCtosGroupExpanded}
                         childrenStates={[
-                            { key: 'cto', label: t('layer_cto_type_cto') || 'CTO', icon: <CTOIcon className="w-4 h-4" />, active: showCtoTypeCto, onToggle: () => setShowCtoTypeCto(!showCtoTypeCto) },
-                            { key: 'ceo', label: t('layer_cto_type_ceo') || 'CEO', icon: <CEOIcon className="w-4 h-4" />, active: showCtoTypeCeo, onToggle: () => setShowCtoTypeCeo(!showCtoTypeCeo) },
+                            { key: 'cto', label: t('layer_cto_type_cto') || 'CTO', icon: <CTOIcon className="w-5 h-5" />, active: showCtoTypeCto, onToggle: () => setShowCtoTypeCto(!showCtoTypeCto) },
+                            { key: 'ceo', label: t('layer_cto_type_ceo') || 'CEO', icon: <CEOIcon className="w-5 h-5" />, active: showCtoTypeCeo, onToggle: () => setShowCtoTypeCeo(!showCtoTypeCeo) },
                         ]}
                     />
-                    <LayerRow active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="indigo" icon={<Building2 className="w-4 h-4" />} />
+                    <LayerRow active={showPOPs} onClick={() => setShowPOPs(!showPOPs)} label={t('layer_pops')} color="slate" icon={<Building2 className="w-4 h-4" />} />
                     <LayerRow active={showPoles} onClick={() => setShowPoles(!showPoles)} label={t('layer_poles')} color="stone" icon={<UtilityPole className="w-4 h-4" />} />
                     <LayerGroup
                         label={t('layer_cables')}
@@ -2081,7 +2082,7 @@ export const MapView: React.FC<MapViewProps> = ({
                             { key: 'drop', label: t('layer_cable_drop') || 'Drop', icon: <Share2 className="w-4 h-4" />, active: showCableDrop, onToggle: () => setShowCableDrop(!showCableDrop) },
                         ]}
                     />
-                    <LayerRow active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="green" icon={<User className="w-4 h-4" />} />
+                    <LayerRow active={isCustomersVisible} onClick={() => setIsCustomersVisible(!isCustomersVisible)} label={t('layer_customers')} color="slate" icon={<User className="w-4 h-4" />} />
                     <LayerRow active={showPolygons} onClick={() => setShowPolygons(!showPolygons)} label={t('layer_polygons')} color="rose" icon={<Hexagon className="w-4 h-4" />} />
                     <LayerRow active={showReserves} onClick={() => setShowReserves(!showReserves)} label={t('layer_reserves')} color="amber" icon={<CircleDot className="w-4 h-4" />} />
 
@@ -2845,7 +2846,7 @@ export const MapView: React.FC<MapViewProps> = ({
                                             title={t('convert_to_cto')}
                                             className="flex flex-col items-center gap-1 px-1 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/40 transition-all group"
                                         >
-                                            <Box className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                                            <CTOIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                                             <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">CTO</span>
                                         </button>
                                         )}

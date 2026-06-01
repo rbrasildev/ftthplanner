@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, X, Server, Box, MapPin, User, FolderKanban, ArrowDownUp, CornerDownLeft, Command } from 'lucide-react';
+import { Search, X, Server, MapPin, User, FolderKanban, ArrowDownUp, CornerDownLeft, Command } from 'lucide-react';
 import { Customer, Coordinates } from '../types';
+import { CTOIcon } from './icons/TelecomIcons';
 
 type ResultKind = 'project' | 'pop' | 'cto' | 'customer' | 'pin';
 
@@ -191,7 +192,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         pin: <MapPin className="w-3.5 h-3.5" />,
         project: <FolderKanban className="w-3.5 h-3.5" />,
         pop: <Server className="w-3.5 h-3.5" />,
-        cto: <Box className="w-3.5 h-3.5" />,
+        cto: <CTOIcon className="w-3.5 h-3.5" />,
         customer: <User className="w-3.5 h-3.5" />,
     };
 

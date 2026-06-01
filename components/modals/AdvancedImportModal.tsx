@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Box, Package, Building, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight, HelpCircle, UtilityPole } from 'lucide-react';
+import { X, Upload, FileUp, CheckCircle2, AlertCircle, Loader2, Cable, Building, Search, CheckSquare, Trash2, Eye, EyeOff, ExternalLink, ArrowRight, HelpCircle, UtilityPole } from 'lucide-react';
+import { CTOIcon, CEOIcon } from '../icons/TelecomIcons';
 import * as toGeoJSON from '@mapbox/togeojson';
 import JSZip from 'jszip';
 import { useLanguage } from '../../LanguageContext';
@@ -320,8 +321,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
     );
 
     const moveTargets: { tab: ImportTab; label: string; icon: any }[] = [
-        { tab: 'ctos', label: 'CTO', icon: Box },
-        { tab: 'ceos', label: 'CEO', icon: Package },
+        { tab: 'ctos', label: 'CTO', icon: CTOIcon },
+        { tab: 'ceos', label: 'CEO', icon: CEOIcon },
         { tab: 'pops', label: 'POP', icon: Building },
         { tab: 'poles', label: 'Poste', icon: UtilityPole },
     ];
@@ -394,8 +395,8 @@ export const AdvancedImportModal: React.FC<KmlImportModalProps> = ({ isOpen, onC
                         {/* Tabs */}
                         <div className="flex border-b border-slate-200 dark:border-slate-700/30 shrink-0 overflow-x-auto">
                             {renderTabButton('cables', 'Cabos', Cable, items.cables.length)}
-                            {renderTabButton('ctos', 'CTO', Box, items.ctos.length)}
-                            {renderTabButton('ceos', 'CEO', Package, items.ceos.length)}
+                            {renderTabButton('ctos', 'CTO', CTOIcon, items.ctos.length)}
+                            {renderTabButton('ceos', 'CEO', CEOIcon, items.ceos.length)}
                             {renderTabButton('pops', 'POP', Building, items.pops.length)}
                             {renderTabButton('poles', 'Postes', UtilityPole, items.poles.length)}
                             {items.unclassified.length > 0 && renderTabButton('unclassified', 'Não Classificados', HelpCircle, items.unclassified.length)}

@@ -143,6 +143,7 @@ const translations = {
     'tooltip_move': 'Move Mode: Drag CTOs or POPs to adjust position.',
     'tooltip_otdr': 'OTDR Mode: Click a cable to locate a distance/event.',
     'tooltip_add_cto': 'Placement Mode: Click on map to add CTO.',
+    'tooltip_add_ceo': 'Placement Mode: Click on map to add CEO.',
     'tooltip_add_pop': 'Placement Mode: Click on map to add a Central Office (POP).',
     'tooltip_add_pole': 'Placement Mode: Click on map to add a Pole.',
     'tooltip_draw_cable': 'Drawing: Click anywhere to draw cable. Click markers to snap.',
@@ -444,6 +445,7 @@ const translations = {
     // Toasts
     'toast_imported': 'Imported {ctos} CTOs and {cables} Cables',
     'toast_cto_added': 'CTO added successfully',
+    'toast_ceo_added': 'CEO added successfully',
     'toast_pop_added': 'POP added successfully',
     'toast_cto_splicing_saved': 'CTO Splicing saved',
     'toast_pop_saved': 'POP configuration saved',
@@ -2025,6 +2027,7 @@ const translations = {
     'tooltip_move': 'Modo Mover: Arraste CTOs ou POPs para ajustar a posição.',
     'tooltip_otdr': 'Modo OTDR: Clique em um cabo para localizar um evento.',
     'tooltip_add_cto': 'Posicionamento: Clique no mapa para adicionar CTO.',
+    'tooltip_add_ceo': 'Posicionamento: Clique no mapa para adicionar CEO.',
     'tooltip_add_pop': 'Posicionamento: Clique no mapa para adicionar um POP (Central).',
     'tooltip_add_pole': 'Posicionamento: Clique no mapa para adicionar um poste.',
     'tooltip_draw_cable': 'Desenhando: Clique no mapa ou nó para finalizar o cabo.',
@@ -2290,6 +2293,7 @@ const translations = {
     // Toasts
     'toast_imported': 'Importado {ctos} CTOs e {cables} Cabos',
     'toast_cto_added': 'CTO adicionada com sucesso',
+    'toast_ceo_added': 'CEO adicionada com sucesso',
     'toast_pop_added': 'POP adicionado com sucesso',
     'toast_cto_splicing_saved': 'Fusões da CTO salvas',
     'toast_pop_saved': 'Configuração do POP salva',

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { X, Download, Search, FileSpreadsheet, Box, Building2, Share2, UtilityPole, User } from 'lucide-react';
+import { X, Download, Search, FileSpreadsheet, Building2, Share2, UtilityPole, User } from 'lucide-react';
+import { CTOIcon } from '../icons/TelecomIcons';
 import { CTOData, POPData, CableData, PoleData, Customer, NetworkState } from '../../types';
 import { useLanguage } from '../../LanguageContext';
 import { generateReportXLSX, ReportSelection } from '../../utils/reportXlsx';
@@ -44,7 +45,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, candi
     const [search, setSearch] = useState('');
 
     const tabs: TabConfig[] = useMemo(() => [
-        { key: 'ctos', label: t('layer_ctos') || 'CTOs/CEOs', icon: <Box className="w-3.5 h-3.5" />, count: candidates.ctos.length },
+        { key: 'ctos', label: t('layer_ctos') || 'CTOs/CEOs', icon: <CTOIcon className="w-3.5 h-3.5" />, count: candidates.ctos.length },
         { key: 'pops', label: 'POPs', icon: <Building2 className="w-3.5 h-3.5" />, count: candidates.pops.length },
         { key: 'cables', label: t('layer_cables') || 'Cabos', icon: <Share2 className="w-3.5 h-3.5" />, count: candidates.cables.length },
         { key: 'poles', label: t('layer_poles') || 'Postes', icon: <UtilityPole className="w-3.5 h-3.5" />, count: candidates.poles.length },
