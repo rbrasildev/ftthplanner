@@ -2987,6 +2987,19 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             const dx = (e.clientX - dragState.startX) / viewState.zoom;
             const dy = (e.clientY - dragState.startY) / viewState.zoom;
 
+            // Bail out se o usuário só clicou (sem arrastar). Sem isso, o vertical-snap
+            // mais abaixo (THRESHOLD 10px) força a X da fusão pra grudar numa fusão
+            // vizinha quando elas estão quase alinhadas — efeito colateral: as linhas
+            // das fibras saíam do alinhamento ao simplesmente clicar no nó.
+            const NO_MOVE_THRESHOLD = 0.5;
+            if (Math.abs(dx) < NO_MOVE_THRESHOLD && Math.abs(dy) < NO_MOVE_THRESHOLD) {
+                // libera o snapshot e sai — não toca em layout nem connections.
+                dragPortSnapshot.current = {};
+                if (dragLineRef.current) dragLineRef.current.style.display = 'none';
+                setDragState(null);
+                return;
+            }
+
             // RAW Coordinates (for magnetic detection)
             const rawX = dragState.initialLayout!.x + dx;
             const rawY = dragState.initialLayout!.y + dy;
@@ -3103,20 +3116,23 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                         }
                     }
 
-                    // SMART VERTICAL SNAP (Highest Priority for Stacking)
-                    // Apply after Fiber Snap to ensure we align X with neighbors even if Fiber Snap suggests otherwise.
-                    // This allows "sliding" along horizontal fibers to match stack.
-                    const VERTICAL_SNAP_THRESHOLD = 10;
-                    const closestVerticalFusion = localCTO.fusions.find(f => {
-                        if (f.id === fusionId) return false;
-                        const layout = localCTO.layout[f.id];
-                        if (!layout) return false;
-                        return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
-                    });
+                    // SMART VERTICAL SNAP — só faz sentido pra fibras HORIZONTAIS (rotação
+                    // 0 ou 180). Pra fibras verticais (90/270), forçar X tira o port da
+                    // linha da fibra e gera kink (waypoints ficam órfãos). Mantém o X
+                    // que o fiber-snap calculou.
+                    if (rotation === 0 || rotation === 180) {
+                        const VERTICAL_SNAP_THRESHOLD = 10;
+                        const closestVerticalFusion = localCTO.fusions.find(f => {
+                            if (f.id === fusionId) return false;
+                            const layout = localCTO.layout[f.id];
+                            if (!layout) return false;
+                            return Math.abs(layout.x - newX) < VERTICAL_SNAP_THRESHOLD;
+                        });
 
-                    if (closestVerticalFusion) {
-                        const layout = localCTO.layout[closestVerticalFusion.id];
-                        if (layout) newX = layout.x; // Force X alignment
+                        if (closestVerticalFusion) {
+                            const layout = localCTO.layout[closestVerticalFusion.id];
+                            if (layout) newX = layout.x;
+                        }
                     }
 
                     setLocalCTO(prev => ({
