@@ -573,7 +573,7 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         return {
             x: (viewportW / 2) - ((minX + (maxX - minX) / 2) * targetZoom),
-            y: (viewportH / 2) - ((minY + (maxY - minY) / 2) / 2) * targetZoom,
+            y: (viewportH / 2) - ((minY + (maxY - minY) / 2) * targetZoom),
             zoom: targetZoom
         };
     };
