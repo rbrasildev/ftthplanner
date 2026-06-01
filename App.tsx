@@ -713,8 +713,15 @@ export default function App() {
         }
 
         setIsSaving(true);
-        syncTimeoutRef.current = setTimeout(() => {
-            syncTimeoutRef.current = null;
+
+        // Função do sync extraída pra ser chamável tanto via debounce quanto
+        // via evento `app:sync-now` (ações explícitas do form devem sincronizar
+        // imediato em vez de esperar o timer).
+        const runSync = () => {
+            if (syncTimeoutRef.current) {
+                clearTimeout(syncTimeoutRef.current);
+                syncTimeoutRef.current = null;
+            }
             projectService.syncProject(currentProject.id, currentProject.network, currentProject.mapState, systemSettings)
                 .then(() => {
                     console.log(`[Sync] Project ${currentProject.name} saved.`);
@@ -764,8 +771,18 @@ export default function App() {
                         }
                     }
                 });
-        }, 800); // Reduced delay for faster saving (was 1000)
+        };
+
+        // Debounce curto — coalesce drag/digit changes sem janela racey grande
+        // pro user dar reload. Salvamentos explícitos (botão de form) disparam
+        // evento `app:sync-now` pra forçar imediato.
+        syncTimeoutRef.current = setTimeout(runSync, 300);
+
+        const handleSyncNow = () => runSync();
+        window.addEventListener('app:sync-now', handleSyncNow);
+
         return () => {
+            window.removeEventListener('app:sync-now', handleSyncNow);
             if (syncTimeoutRef.current) {
                 clearTimeout(syncTimeoutRef.current);
                 syncTimeoutRef.current = null;
