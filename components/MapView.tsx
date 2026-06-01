@@ -769,6 +769,7 @@ interface MapViewProps {
     viewKey?: string;
     initialCenter?: Coordinates;
     initialZoom?: number;
+    cableCatalogMap?: Map<string, any>;
     onMapMoveEnd?: (lat: number, lng: number, zoom: number) => void;
     onAddPoint: (lat: number, lng: number) => void;
     onNodeClick: (id: string, type: 'CTO' | 'POP' | 'Pole') => void;
@@ -849,7 +850,7 @@ const noOp = (..._args: any[]) => { };
 export const MapView: React.FC<MapViewProps> = ({
     ctos, pops, cables, poles = [], mode, selectedId, mapBounds, showLabels = false, litCableIds = new Set<string>(), litNodeIds = new Set<string>(),
     highlightedCableId, cableStartPoint, drawingPath = [], snapDistance = 30, otdrResult, viewKey,
-    initialCenter, initialZoom, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
+    initialCenter, initialZoom, cableCatalogMap, onMapMoveEnd, onAddPoint, onNodeClick, onMoveNode,
     onCableStart, onCableEnd, onConnectCable, onUpdateCableGeometry, onCableClick, onEditCable, onEditCableGeometry, onDeleteCable, onInitConnection, onToggleLabels,
     previewImportData, multiConnectionIds = new Set(), onEditNode, onDeleteNode, onMoveNodeStart, onPropertiesNode,
     onConvertPin, onClearPin, onUndoDrawingPoint = noOp,
@@ -2250,6 +2251,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     onContextMenu={handleCableContextMenu}
                     mode={mode}
                     showLabels={effectiveShowLabels}
+                    cableCatalogMap={cableCatalogMap}
                 />
 
                 {/* Labels permanentes + hover de CTOs/POPs num canvas com colisão.

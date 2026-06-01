@@ -23,6 +23,13 @@ interface D3CablesLayerProps {
      * NO_SIGNAL/MARGINAL/OK através do mapa.
      */
     cableStatusColorMap?: Map<string, string>;
+    /**
+     * Catálogo indexado por catalogId. Quando o cabo tem catalogId, a cor/espessura
+     * de PLANNED é puxada do catálogo (plannedSpec) — assim editar o catálogo
+     * propaga visualmente sem precisar atualizar cada cabo. DEPLOYED continua
+     * usando cable.color (permite override por instância no CableEditor).
+     */
+    cableCatalogMap?: Map<string, any>;
 }
 
 // LOD Thresholds
@@ -74,6 +81,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
     onContextMenu,
     mode,
     cableStatusColorMap,
+    cableCatalogMap,
 }) => {
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -231,14 +239,24 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 const isHigh = highlightedCableId === cable.id;
                 const opticalColor = cableStatusColorMap?.get(cable.id);
 
+                // Resolve cor/espessura puxando do catálogo. CableStatus só tem
+                // NOT_DEPLOYED | DEPLOYED — o label "PLANEJADO" no catálogo
+                // mapeia pra NOT_DEPLOYED (cabo ainda não implantado).
+                // `cable.color/width` servem de fallback (override por instância
+                // via CableEditor "COR NO MAPA"; cabos sem catalogId).
+                const catItem = cable.catalogId ? cableCatalogMap?.get(cable.catalogId) : null;
+                const isPlanned = cable.status === 'NOT_DEPLOYED';
+                const catSpec = isPlanned ? catItem?.plannedSpec : catItem?.deployedSpec;
+                const catColor = catSpec?.color as string | undefined;
+                const catWidth = catSpec?.width as number | undefined;
+
                 let strokeStyle: string;
                 if (isLit) strokeStyle = '#ef4444';
                 else if (isHigh) strokeStyle = '#22c55e';
                 else if (opticalColor) strokeStyle = opticalColor;
-                else if (cable.status === 'NOT_DEPLOYED') strokeStyle = CABLE_STATUS_COLORS['NOT_DEPLOYED'];
-                else strokeStyle = cable.color || CABLE_STATUS_COLORS['DEPLOYED'];
+                else strokeStyle = catColor || cable.color || CABLE_STATUS_COLORS[cable.status];
 
-                const baseWidth = cable.width || 2.5;
+                const baseWidth = catWidth || cable.width || 2.5;
                 let lineWidth: number;
                 if (isLit) lineWidth = currentZoom < 14 ? 1.5 : Math.max(2, baseWidth);
                 else if (isHigh) lineWidth = currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
@@ -261,7 +279,9 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     // Renderização "laser" em fuchsia/magenta (#f87171) — cor
                     // próxima do que um VFL real (650nm) produz no vidro e
                     // distinta do vermelho usado pra cabos NOT_DEPLOYED/offline.
-                    if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+                    // Dash escala com lineWidth pra não virar pontilhado sólido em cabos grossos.
+                    const dashLen = Math.max(5, lineWidth * 2.5);
+                    if (dashed) ctx.setLineDash([dashLen, dashLen]); else ctx.setLineDash([]);
 
                     const pulse = 0.7 + 0.3 * (0.5 + 0.5 * Math.sin(Date.now() * 0.008));
 
@@ -284,7 +304,11 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                     ctx.globalAlpha = alpha;
                     ctx.strokeStyle = strokeStyle;
                     ctx.lineWidth = lineWidth;
-                    if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+                    // Dash escala com lineWidth — sem isso, cabo grosso vira pontilhado sólido.
+                    if (dashed) {
+                        const dashLen = Math.max(5, lineWidth * 2.5);
+                        ctx.setLineDash([dashLen, dashLen]);
+                    } else ctx.setLineDash([]);
                     ctx.stroke();
                 }
 
@@ -359,7 +383,7 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
             map.off('resize', onMove);
             if (pulseRafId !== null) cancelAnimationFrame(pulseRafId);
         };
-    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, cableStatusColorMap]);
+    }, [map, cables, litCableIds, highlightedCableId, visible, boxIds, cableStatusColorMap, cableCatalogMap]);
 
     // Hit-test + event delegation (cursor, click, dblclick, contextmenu).
     useEffect(() => {

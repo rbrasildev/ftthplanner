@@ -93,6 +93,9 @@ const CableRegistration: React.FC<CableRegistrationProps> = ({ showToast }) => {
             return;
         }
         await save(formData);
+        // Notifica MapView pra re-fetch o catálogo e atualizar cores/espessuras
+        // dos cabos em PLANNED (que puxam direto do catálogo no render).
+        window.dispatchEvent(new CustomEvent('catalog:cables:changed'));
     };
 
     const itemToDelete = allItems.find(i => i.id === showDeleteConfirm);

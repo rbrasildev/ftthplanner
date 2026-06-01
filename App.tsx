@@ -392,6 +392,24 @@ export default function App() {
     const [globalCustomers, setGlobalCustomers] = useState<Customer[]>([]);
     const [pendingEditCustomerId, setPendingEditCustomerId] = useState<string | null>(null);
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+    // Catálogo de cabos indexado por catalogId — usado pra resolver cor/espessura
+    // por status na hora do render (PLANNED usa plannedSpec, DEPLOYED usa
+    // deployedSpec). Mudanças no catálogo refletem nos cabos sem precisar
+    // sincronizar field-a-field.
+    const [cableCatalogMap, setCableCatalogMap] = useState<Map<string, catalogService.CableCatalogItem>>(new Map());
+
+    useEffect(() => {
+        const loadCableCatalog = () => {
+            catalogService.getCables()
+                .then(list => setCableCatalogMap(new Map(list.map(c => [c.id, c]))))
+                .catch(() => { /* catálogo indisponível, render cai no fallback */ });
+        };
+        loadCableCatalog();
+        // Recarrega quando outra parte do app salva no catálogo (CableRegistration usa este evento).
+        const handler = () => loadCableCatalog();
+        window.addEventListener('catalog:cables:changed', handler);
+        return () => window.removeEventListener('catalog:cables:changed', handler);
+    }, []);
 
     // --- Sidebar & Responsive State ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
@@ -2241,6 +2259,7 @@ export default function App() {
                         projectId={currentProjectId || undefined}
                         initialCenter={savedMapState?.center || currentProject?.mapState?.center}
                         initialZoom={savedMapState?.zoom || currentProject?.mapState?.zoom}
+                        cableCatalogMap={cableCatalogMap}
                         onMapMoveEnd={handleMapMoveEnd}
                         onToggleLabels={() => setShowLabels(!showLabels)}
                         onAddPoint={(lat, lng) => {
