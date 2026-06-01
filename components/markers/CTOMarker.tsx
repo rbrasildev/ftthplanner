@@ -32,6 +32,10 @@ const createCTOIcon = (isSelected: boolean, status: string = 'PLANNED', customCo
     }
 
     let statusColor = CTO_STATUS_COLORS[status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+    // DEPLOYED é o estado "normal/instalado" — deixa a cor cadastrada no catálogo
+    // dominar pra diferenciar CTO vs CEO vs variantes. Outros status (PLANNED,
+    // NOT_DEPLOYED, CERTIFIED) mantêm a cor padrão porque comunicam estado.
+    if (status === 'DEPLOYED' && customColor) statusColor = customColor;
     if (isOnline === true) statusColor = '#22c55e'; // Green for online
     else if (isOnline === false) statusColor = '#ef4444'; // Red for offline
 
@@ -156,6 +160,7 @@ export const CTOMarker = React.memo(({
 
     const pathOptions = useMemo(() => {
         let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+        if (cto.status === 'DEPLOYED' && cto.color) statusColor = cto.color;
         if (isOnline === true) statusColor = '#22c55e';
         else if (isOnline === false) statusColor = '#ef4444';
         const fill = statusColor.substring(0, 7);
@@ -165,7 +170,7 @@ export const CTOMarker = React.memo(({
             fillOpacity: 0.85,
             weight: isLit ? 3 : (isSelected ? 3 : 2),
         };
-    }, [cto.status, isOnline, isSelected, isLit]);
+    }, [cto.status, cto.color, isOnline, isSelected, isLit]);
 
     const circleRadius = useMemo(() => {
         const zoomScale = Math.pow(1.15, Math.max(0, Math.floor(currentZoom) - 16));

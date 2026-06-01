@@ -155,6 +155,7 @@ export const MarkersCanvasLayer: React.FC<Props> = ({
 
                 // Mesma fórmula de cores do CTOMarker (pathOptions).
                 let statusColor = CTO_STATUS_COLORS[cto.status as keyof typeof CTO_STATUS_COLORS] || CTO_STATUS_COLORS['PLANNED'];
+                if (cto.status === 'DEPLOYED' && cto.color) statusColor = cto.color;
                 if (cto.isOnline === true) statusColor = '#22c55e';
                 else if (cto.isOnline === false) statusColor = '#ef4444';
                 const fill = statusColor.substring(0, 7);
