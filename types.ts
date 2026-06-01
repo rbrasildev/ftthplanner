@@ -343,6 +343,11 @@ export interface CableData {
   fiberCount: number;
   looseTubeCount?: number;
   color?: string;
+  // Override por instância: quando preenchidos, vencem sobre o catálogo no
+  // render do mapa. Quando null/undefined, o cabo segue o catálogo
+  // (deployedSpec/plannedSpec). Picker "COR NO MAPA" no CableEditor grava aqui.
+  customColor?: string | null;
+  customWidth?: number | null;
   colorStandard?: 'ABNT' | 'EIA598';
   coordinates: Coordinates[];
   fromNodeId?: string | null;

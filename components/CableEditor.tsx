@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { CableData, CableStatus, CableReserve } from '../types';
-import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen, Loader2, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { X, Save, Trash2, Cable, Palette, Activity, Ruler, AlertTriangle, Layers, BookOpen, Loader2, ChevronDown, ChevronUp, Plus, RotateCcw } from 'lucide-react';
 import L from 'leaflet';
 import { useLanguage } from '../LanguageContext';
 import { getCables, CableCatalogItem } from '../services/catalogService';
@@ -73,7 +73,11 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
         name: selected.name,
         fiberCount: selected.fiberCount,
         looseTubeCount: selected.looseTubeCount,
+        // Seleção de catálogo limpa qualquer override por instância — usuário
+        // que quer customizar usa o picker abaixo, que escreve em customColor.
         color: selected.deployedSpec?.color || prev.color,
+        customColor: null,
+        customWidth: null,
         colorStandard: (selected.fiberProfile === 'EIA' ? 'EIA598' : 'ABNT') as any,
         width: (prev.status === 'DEPLOYED' ? selected.deployedSpec?.width : selected.plannedSpec?.width) || 3,
         type: (selected.defaultLevel as any) || prev.type,
@@ -99,6 +103,10 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
+    // Bypass o debounce de 300ms — clique explícito no botão Salvar não
+    // deveria deixar janela racey pro user dar reload e ver "alterações
+    // não salvas". App.tsx escuta esse evento e dispara o sync imediato.
+    setTimeout(() => window.dispatchEvent(new CustomEvent('app:sync-now')), 0);
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -376,79 +384,104 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               </div>
             </div>
 
-            {/* Color Picker — overrides the catalog-defined color for this cable on the map. */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center gap-2">
-                <Palette className="w-3 h-3" /> {t('map_color')}
-              </label>
-              <div className="bg-slate-50 dark:bg-[#22262e] p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-6 rounded-md shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
-                    style={{ backgroundColor: formData.color }}
-                  />
-                  <input
-                    type="color"
-                    value={(formData.color || '#0ea5e9').substring(0, 7)}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-300 dark:border-slate-600"
-                    title={t('pick_custom_color') || 'Escolher cor'}
-                  />
-                  <CustomInput
-                    value={(formData.color || '').toUpperCase()}
-                    onChange={(e) => {
-                      const v = e.target.value.trim();
-                      // Accept partial input; only commit when it looks like a valid hex.
-                      if (/^#?[0-9a-fA-F]{0,6}$/.test(v)) {
-                        setFormData(prev => ({ ...prev, color: v.startsWith('#') ? v : `#${v}` }));
-                      }
-                    }}
-                    placeholder="#0EA5E9"
-                    className="flex-1 font-mono text-xs uppercase"
-                  />
-                  {/* Inline thickness editor — affects the polyline weight on the map. */}
-                  <div className="flex items-center gap-1 shrink-0" title={t('cable_thickness')}>
-                    <Ruler className="w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="number"
-                      min={1}
-                      max={20}
-                      step={1}
-                      value={formData.width ?? ''}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === '') {
-                          setFormData(prev => ({ ...prev, width: undefined as any }));
-                          return;
-                        }
-                        const n = parseInt(raw, 10);
-                        if (!isNaN(n)) setFormData(prev => ({ ...prev, width: Math.max(1, Math.min(20, n)) }));
-                      }}
-                      className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
-                    />
+            {/* Picker — escreve em customColor/customWidth (override por instância).
+                Cor/espessura efetivas mostradas no preview: customX ?? color/width
+                (que veio do catálogo na seleção do modelo). Quando o usuário grava
+                aqui, o cabo passa a IGNORAR mudanças subsequentes no catálogo. */}
+            {(() => {
+              const effectiveColor = formData.customColor ?? formData.color ?? '#0ea5e9';
+              const effectiveWidth = formData.customWidth ?? formData.width;
+              const hasOverride = formData.customColor != null || formData.customWidth != null;
+              return (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <Palette className="w-3 h-3" /> {t('map_color')}
+                      {hasOverride && formData.catalogId && (
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 normal-case tracking-normal">
+                          · override
+                        </span>
+                      )}
+                    </span>
+                    {hasOverride && formData.catalogId && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, customColor: null, customWidth: null }))}
+                        className="flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 normal-case tracking-normal transition-colors"
+                        title="Voltar a usar a cor/espessura do catálogo"
+                      >
+                        <RotateCcw className="w-3 h-3" /> usar catálogo
+                      </button>
+                    )}
+                  </label>
+                  <div className="bg-slate-50 dark:bg-[#22262e] p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-6 rounded-md shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
+                        style={{ backgroundColor: effectiveColor }}
+                      />
+                      <input
+                        type="color"
+                        value={effectiveColor.substring(0, 7)}
+                        onChange={(e) => setFormData(prev => ({ ...prev, customColor: e.target.value }))}
+                        className="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-300 dark:border-slate-600"
+                        title={t('pick_custom_color') || 'Escolher cor'}
+                      />
+                      <CustomInput
+                        value={effectiveColor.toUpperCase()}
+                        onChange={(e) => {
+                          const v = e.target.value.trim();
+                          if (/^#?[0-9a-fA-F]{0,6}$/.test(v)) {
+                            setFormData(prev => ({ ...prev, customColor: v.startsWith('#') ? v : `#${v}` }));
+                          }
+                        }}
+                        placeholder="#0EA5E9"
+                        className="flex-1 font-mono text-xs uppercase"
+                      />
+                      <div className="flex items-center gap-1 shrink-0" title={t('cable_thickness')}>
+                        <Ruler className="w-3.5 h-3.5 text-slate-400" />
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          step={1}
+                          value={effectiveWidth ?? ''}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') {
+                              setFormData(prev => ({ ...prev, customWidth: null }));
+                              return;
+                            }
+                            const n = parseInt(raw, 10);
+                            if (!isNaN(n)) setFormData(prev => ({ ...prev, customWidth: Math.max(1, Math.min(20, n)) }));
+                          }}
+                          className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CABLE_MAP_COLORS.map(c => {
+                        const isActive = effectiveColor.toLowerCase() === c.toLowerCase();
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, customColor: c }))}
+                            title={c}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              isActive
+                                ? 'border-emerald-500 scale-110 shadow-md'
+                                : 'border-slate-300 dark:border-slate-600 hover:scale-105'
+                            }`}
+                            style={{ backgroundColor: c }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {CABLE_MAP_COLORS.map(c => {
-                    const isActive = (formData.color || '').toLowerCase() === c.toLowerCase();
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, color: c }))}
-                        title={c}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${
-                          isActive
-                            ? 'border-emerald-500 scale-110 shadow-md'
-                            : 'border-slate-300 dark:border-slate-600 hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: c }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
           </div>
 

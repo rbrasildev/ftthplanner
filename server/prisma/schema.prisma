@@ -261,6 +261,11 @@ model Cable {
   technicalReserve Float?   @default(0) @map("technical_reserve") // @deprecated — usar reserves
   reserves         Json?    @default("[]") // [{id, length, location: {lat,lng}, showLabel}]
   width            Float?   @map("width")
+  // Override por instância: quando preenchidos, vencem sobre o catálogo no render
+  // do mapa. Quando null, o cabo segue o catálogo (deployedSpec/plannedSpec).
+  // O picker "COR NO MAPA" do CableEditor grava aqui — não em `color`/`width`.
+  customColor      String?  @map("custom_color")
+  customWidth      Float?   @map("custom_width")
   type             String?  // Optional subtype: DROP | DISTRIBUTION | FEEDER. Null = infer from fiberCount.
   company          Company? @relation(fields: [companyId], references: [id])
   project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

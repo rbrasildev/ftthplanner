@@ -269,6 +269,8 @@ export const getProject = async (req: Request, res: Response) => {
                 showReserveLabel: c.showReserveLabel,
                 reserves: c.reserves || [],
                 width: c.width || null,
+                customColor: c.customColor || null,
+                customWidth: c.customWidth || null,
             })),
             poles: project.poles.map((p: any) => ({
                 id: p.id,
@@ -340,7 +342,8 @@ export const getProject = async (req: Request, res: Response) => {
                         coordinates: c.coordinates, fromNodeId: c.fromNodeId || null,
                         toNodeId: c.toNodeId || null, catalogId: c.catalogId || null,
                         type: c.type || null,
-                        reserves: c.reserves || [], width: c.width || null
+                        reserves: c.reserves || [], width: c.width || null,
+                        customColor: c.customColor || null, customWidth: c.customWidth || null
                     })) : [],
                     poles: parent.poles ? (parent.poles as any[]).map((p: any) => ({
                         id: p.id, name: p.name, status: p.status,
@@ -1001,6 +1004,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
                             reserves: c.reserves || [],
                             width: c.width || null,
+                            customColor: c.customColor || null,
+                            customWidth: c.customWidth || null,
                         });
                     } else {
                         const hasChanged =
@@ -1016,6 +1021,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             dbC.technicalReserve !== (c.technicalReserve || 0) ||
                             dbC.showReserveLabel !== (c.showReserveLabel !== undefined ? c.showReserveLabel : true) ||
                             dbC.width !== (c.width || null) ||
+                            (dbC.customColor || null) !== (c.customColor || null) ||
+                            (dbC.customWidth || null) !== (c.customWidth || null) ||
                             JSON.stringify(dbC.coordinates) !== JSON.stringify(c.coordinates) ||
                             JSON.stringify(dbC.reserveLocation) !== JSON.stringify(c.reserveLocation || null) ||
                             JSON.stringify(dbC.reserves) !== JSON.stringify(c.reserves || []);
@@ -1046,6 +1053,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             showReserveLabel: c.showReserveLabel !== undefined ? c.showReserveLabel : true,
                             reserves: c.reserves || [],
                             width: c.width || null,
+                            customColor: c.customColor || null,
+                            customWidth: c.customWidth || null,
                         }
                     });
                 }

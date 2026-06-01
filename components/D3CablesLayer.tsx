@@ -239,11 +239,10 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 const isHigh = highlightedCableId === cable.id;
                 const opticalColor = cableStatusColorMap?.get(cable.id);
 
-                // Resolve cor/espessura puxando do catálogo. CableStatus só tem
-                // NOT_DEPLOYED | DEPLOYED — o label "PLANEJADO" no catálogo
-                // mapeia pra NOT_DEPLOYED (cabo ainda não implantado).
-                // `cable.color/width` servem de fallback (override por instância
-                // via CableEditor "COR NO MAPA"; cabos sem catalogId).
+                // Ordem de prioridade: customColor/Width (override por instância
+                // via CableEditor) → catálogo (deployedSpec pra DEPLOYED,
+                // plannedSpec pra NOT_DEPLOYED — não existe status PLANNED no
+                // CableStatus) → cable.color/width (cabos sem catalogId) → default.
                 const catItem = cable.catalogId ? cableCatalogMap?.get(cable.catalogId) : null;
                 const isPlanned = cable.status === 'NOT_DEPLOYED';
                 const catSpec = isPlanned ? catItem?.plannedSpec : catItem?.deployedSpec;
@@ -254,9 +253,9 @@ export const D3CablesLayer: React.FC<D3CablesLayerProps> = ({
                 if (isLit) strokeStyle = '#ef4444';
                 else if (isHigh) strokeStyle = '#22c55e';
                 else if (opticalColor) strokeStyle = opticalColor;
-                else strokeStyle = catColor || cable.color || CABLE_STATUS_COLORS[cable.status];
+                else strokeStyle = cable.customColor || catColor || cable.color || CABLE_STATUS_COLORS[cable.status];
 
-                const baseWidth = catWidth || cable.width || 2.5;
+                const baseWidth = cable.customWidth || catWidth || cable.width || 2.5;
                 let lineWidth: number;
                 if (isLit) lineWidth = currentZoom < 14 ? 1.5 : Math.max(2, baseWidth);
                 else if (isHigh) lineWidth = currentZoom < 14 ? 3 : Math.max(5, baseWidth + 2);
