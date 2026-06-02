@@ -34,8 +34,12 @@ export const listBackups = async (req: Request, res: Response) => {
 
         const backups = await BackupService.listBackups(user.companyId);
         res.json(backups);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to list backups' });
+    } catch (error: any) {
+        console.error('[ListBackups] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao listar backups',
+            details: error?.message || String(error)
+        });
     }
 };
 
@@ -52,8 +56,12 @@ export const createBackup = async (req: Request, res: Response) => {
 
         const backup = await BackupService.createBackup(user.companyId, true); // true = manual
         res.json(backup);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to create backup' });
+    } catch (error: any) {
+        console.error('[CreateBackup] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao criar backup',
+            details: error?.message || String(error)
+        });
     }
 };
 
@@ -71,8 +79,12 @@ export const deleteBackup = async (req: Request, res: Response) => {
         } else {
             res.status(404).json({ error: 'Backup not found or unauthorized' });
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to delete backup' });
+    } catch (error: any) {
+        console.error('[DeleteBackup] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao excluir backup',
+            details: error?.message || String(error)
+        });
     }
 };
 
@@ -84,15 +96,25 @@ export const downloadBackup = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const filepath = BackupService.getBackupPath(filename, user.companyId);
-
-        if (filepath) {
-            res.download(filepath);
-        } else {
-            res.status(404).json({ error: 'Backup not found' });
+        // Decifra + descomprime server-side e envia JSON plano. Cliente sempre
+        // recebe formato legível independente de como tá salvo no disco
+        // (legado .json, gzip ou criptografado).
+        const jsonStr = await BackupService.getBackupAsPlainJson(filename, user.companyId);
+        if (jsonStr === null) {
+            return res.status(404).json({ error: 'Backup not found' });
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to download backup' });
+
+        // Nome de download sempre .json — abstrai o formato interno.
+        const downloadName = filename.replace(/\.(json\.gz\.enc|json\.gz|json)$/, '.json');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+        res.send(jsonStr);
+    } catch (error: any) {
+        console.error('[DownloadBackup] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao baixar backup',
+            details: error?.message || String(error)
+        });
     }
 };
 
@@ -118,9 +140,15 @@ export const restoreBackup = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: 'Restore completed successfully' });
 
-    } catch (error) {
-        console.error('Restore error', error);
-        res.status(500).json({ error: 'Failed to restore backup' });
+    } catch (error: any) {
+        // Loga stack completo + manda o motivo real pra UI (admin/owner é
+        // confiável e precisa do detalhe pra diagnosticar). Generic 500 sem
+        // mensagem deixava o user/dev no escuro.
+        console.error('[Restore] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao restaurar backup',
+            details: error?.message || String(error)
+        });
     }
 };
 
@@ -136,20 +164,35 @@ export const uploadAndRestore = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Seu plano atual não inclui a funcionalidade de backup.' });
         }
 
-        if (!req.body || !req.body.data) {
-            return res.status(400).json({ error: 'No backup data provided' });
+        // Aceita 2 formatos:
+        //   1. application/octet-stream + header X-Backup-Filename → arquivo
+        //      binário (.json.gz ou .json.gz.enc), server decodifica
+        //   2. application/json com { data: {...} } → JSON plain (legado/UI)
+        let backupData: any;
+        const contentType = req.headers['content-type'] || '';
+
+        if (contentType.includes('application/octet-stream')) {
+            const filename = (req.headers['x-backup-filename'] as string) || '';
+            if (!filename) {
+                return res.status(400).json({ error: 'Header X-Backup-Filename obrigatório pra upload binário' });
+            }
+            const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+            backupData = BackupService.parseUploadedBackup(filename, buffer);
+        } else {
+            if (!req.body || !req.body.data) {
+                return res.status(400).json({ error: 'No backup data provided' });
+            }
+            backupData = req.body.data;
         }
 
-        // We expect JSON body with { data: ...backupContent }
-        // Or if using multer, we read the file. 
-        // For simplicity with "json" limit 100mb, we can accept JSON body directly.
-
-        const backupData = req.body.data;
         await BackupService.restoreBackup(user.companyId, backupData);
 
         res.json({ success: true });
-    } catch (error) {
-        console.error('Upload restore error', error);
-        res.status(500).json({ error: 'Failed to upload and restore' });
+    } catch (error: any) {
+        console.error('[UploadRestore] Failed:', error);
+        res.status(500).json({
+            error: 'Falha ao fazer upload + restore',
+            details: error?.message || String(error)
+        });
     }
 };

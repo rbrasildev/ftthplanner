@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma';
 import { startOfTodayBR } from '../lib/subscriptionUtils';
 import { SgpService } from '../integrations/sgp/sgp.service';
 import { processBillingReminders } from '../services/billingReminderService';
+import { BackupService } from '../services/BackupService';
 
 export const initCronJobs = () => {
     // Run daily at 02:00 AM for retention
@@ -16,6 +17,15 @@ export const initCronJobs = () => {
         await executeAutomations();
 
         console.log('[Cron] Daily retention tasks completed.');
+    });
+
+    // Backup automático diário às 02:30 — entre retention (02:00) e full SGP
+    // sync (03:00). Antes rodava via setInterval polling no BackupService,
+    // o que falhava se o servidor reiniciasse na janela do horário.
+    cron.schedule('30 2 * * *', async () => {
+        console.log('[Cron] Running scheduled backups for all eligible companies...');
+        await BackupService.runScheduledBackups();
+        console.log('[Cron] Scheduled backups completed.');
     });
 
     // Connection-only sync every 10 minutes — calls only verificaacesso per

@@ -61,7 +61,7 @@ app.use(cors({
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'Content-Encoding'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'Content-Encoding', 'X-Backup-Filename'],
     optionsSuccessStatus: 200
 }));
 
@@ -151,7 +151,6 @@ app.use('/api/outages', outageRoutes);
 
 // Backup and Cron
 import backupRoutes from './routes/backupRoutes';
-import { BackupService } from './services/BackupService';
 
 app.use('/api/backups', backupRoutes);
 
@@ -193,8 +192,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     });
 });
 
-// Initialize Scheduler
-BackupService.initScheduledBackups();
+// Initialize Scheduler — backup automático agora roda via node-cron dentro
+// de initCronJobs (antes era setInterval polling, frágil em restart).
 initCronJobs();
 
 const httpServer = createServer(app);

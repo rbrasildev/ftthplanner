@@ -16,6 +16,14 @@ router.get('/:filename/download', backupController.downloadBackup);
 
 // Restore routes
 router.post('/:filename/restore', backupController.restoreBackup);
-router.post('/upload-restore', backupController.uploadAndRestore);
+// Aceita dois formatos:
+//   - application/json: { data: { ...backup } } — legado, plain JSON
+//   - application/octet-stream + header X-Backup-Filename — binário comprimido/cripto
+// Body parser raw configurado inline pra esta rota (não afeta o express.json global).
+router.post(
+    '/upload-restore',
+    express.raw({ type: 'application/octet-stream', limit: '50mb' }),
+    backupController.uploadAndRestore
+);
 
 export default router;

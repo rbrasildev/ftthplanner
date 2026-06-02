@@ -24,3 +24,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Runtime backup artifacts — não devem entrar no repo (auto + manual,
+# binários comprimidos/encriptados, pg_dump completos).
+server/backups/*.json
+server/backups/*.json.gz
+server/backups/*.json.gz.enc
+server/backups/*.dump

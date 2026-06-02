@@ -32,8 +32,17 @@ api.interceptors.request.use(
         // express.json() middleware. Only kicks in for browsers with native
         // CompressionStream (Chrome 80+, Firefox 113+, Safari 16.4+) — older
         // browsers fall through and send uncompressed.
+        // Pula bodies binários (ArrayBuffer, Blob, TypedArray) — esses já são
+        // payloads brutos que não devem ser JSON.stringify'ados. Sem este check,
+        // upload binário (ex: backup .json.gz.enc) virava `"{}"` e quebrava no
+        // server. FormData também já tem boundary próprio, não mexer.
+        const isBinaryBody = config.data instanceof ArrayBuffer
+            || config.data instanceof Blob
+            || (typeof ArrayBuffer.isView === 'function' && ArrayBuffer.isView(config.data));
         const supportsGzip = typeof CompressionStream !== 'undefined';
-        if (supportsGzip && config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
+        if (supportsGzip && config.data && typeof config.data === 'object'
+            && !(config.data instanceof FormData)
+            && !isBinaryBody) {
             try {
                 const json = JSON.stringify(config.data);
                 if (json.length >= GZIP_THRESHOLD_BYTES) {

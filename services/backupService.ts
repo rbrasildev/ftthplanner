@@ -28,23 +28,29 @@ export const restoreBackup = async (filename: string): Promise<void> => {
     await api.post(`/backups/${filename}/restore`);
 };
 
-export const uploadAndRestore = async (fileTrace: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const jsonContent = JSON.parse(e.target?.result as string);
+export const uploadAndRestore = async (file: File): Promise<void> => {
+    const name = file.name.toLowerCase();
+    const isBinary = name.endsWith('.gz') || name.endsWith('.gz.enc') || name.endsWith('.enc');
 
-                await api.post('/backups/upload-restore', { data: jsonContent });
-
-                resolve();
-            } catch (err) {
-                reject(err);
+    if (isBinary) {
+        // Envia binário cru — server detecta formato pelo nome e decodifica.
+        // Usado quando o usuário tem o arquivo direto do disco do servidor
+        // (.json.gz ou .json.gz.enc), em vez do .json baixado pelo painel.
+        const buffer = await file.arrayBuffer();
+        await api.post('/backups/upload-restore', buffer, {
+            headers: {
+                'Content-Type': 'application/octet-stream',
+                'X-Backup-Filename': file.name
             }
-        };
-        reader.onerror = reject;
-        reader.readAsText(fileTrace);
-    });
+        });
+        return;
+    }
+
+    // JSON plain (formato baixado pelo painel) — parse client-side e envia
+    // como JSON body. Mais leve (sem overhead de body parser raw).
+    const text = await file.text();
+    const jsonContent = JSON.parse(text);
+    await api.post('/backups/upload-restore', { data: jsonContent });
 };
 
 export const deleteBackup = async (filename: string): Promise<void> => {
@@ -57,11 +63,16 @@ export const downloadBackupFile = async (filename: string): Promise<void> => {
         responseType: 'blob'
     });
 
-    // Create blob link to download
+    // Server decifra + descomprime e envia JSON plano — usuário precisa salvar
+    // com .json (não a extensão original .json.gz/.json.gz.enc). Browser
+    // privilegia o atributo `download` do <a> sobre Content-Disposition, então
+    // normalizamos aqui pra evitar o usuário salvar com extensão enganosa.
+    const downloadName = filename.replace(/\.(json\.gz\.enc|json\.gz|json)$/, '.json');
+
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute('download', downloadName);
     document.body.appendChild(link);
     link.click();
     link.parentNode?.removeChild(link);

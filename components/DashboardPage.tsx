@@ -679,7 +679,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* --- BACKUP MANAGER --- */}
         {currentView === 'backup' && userBackupEnabled && (
-          <BackupManager backupEnabled={userBackupEnabled} />
+          <BackupManager backupEnabled={userBackupEnabled} showToast={showToast} />
         )}
 
         {/* --- SPLITTER REGISTRATION --- */}
