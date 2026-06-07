@@ -129,6 +129,32 @@ export const cloneTemplatesToCompany = async (companyId: string, prisma: any = d
             await prisma.catalogOLT.createMany({ data });
         }
 
+        // Clone GBICs — esquecido na implementação inicial; sem isto, todas
+        // as empresas nasciam com catálogo de GBIC vazio.
+        const templateGbics = await prisma.templateGbic.findMany();
+        if (templateGbics.length > 0) {
+            const data = [];
+            for (const t of templateGbics) {
+                data.push({
+                    companyId,
+                    name: t.name,
+                    brand: t.brand,
+                    model: t.model,
+                    tipo: t.tipo,
+                    modoFibra: t.modoFibra,
+                    transmissao: t.transmissao,
+                    rateGbps: t.rateGbps,
+                    waveTxNm: t.waveTxNm,
+                    waveRxNm: t.waveRxNm,
+                    reachKm: t.reachKm,
+                    potenciaTx: t.potenciaTx,
+                    sensibilidadeRx: t.sensibilidadeRx,
+                    description: t.description
+                });
+            }
+            await prisma.catalogGbic.createMany({ data });
+        }
+
         logger.info(`Successfully cloned templates for company ${companyId}`);
     } catch (error: any) {
         logger.error(`Error cloning templates: ${error.message}`);

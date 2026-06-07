@@ -71,15 +71,31 @@ api.interceptors.response.use(
             window.dispatchEvent(new CustomEvent('ftth-connection-error'));
         }
 
-        // Session expired or revoked — force logout and redirect to login
+        // Session expired or revoked — force logout and redirect to login.
+        // Mas tem 2 sub-casos importantes:
+        //   1. Se o token QUE FALHOU é o de support (e existe um token de admin
+        //      válido em paralelo), não faz logout completo — só sai do modo
+        //      suporte. Admin volta pra própria conta sem precisar re-logar.
+        //   2. Se só tem token de admin (sessão normal), comportamento original
+        //      de logout completo.
         if (error.response?.status === 401) {
-            // Avoid redirect loop: only act if not already on auth endpoints
             const url = error.config?.url || '';
             const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/me');
             if (!isAuthRoute) {
-                localStorage.removeItem('ftth_token');
-                localStorage.removeItem('ftth_support_token');
-                window.dispatchEvent(new CustomEvent('ftth-session-expired'));
+                const supportToken = localStorage.getItem('ftth_support_token');
+                const authToken = localStorage.getItem('ftth_token');
+                const wasUsingSupport = !!supportToken && error.config?.headers?.Authorization?.includes(supportToken);
+
+                if (wasUsingSupport && authToken) {
+                    // Só o support expirou, admin token segue válido
+                    localStorage.removeItem('ftth_support_token');
+                    window.dispatchEvent(new CustomEvent('ftth-support-expired'));
+                } else {
+                    // Sessão admin expirou de fato
+                    localStorage.removeItem('ftth_token');
+                    localStorage.removeItem('ftth_support_token');
+                    window.dispatchEvent(new CustomEvent('ftth-session-expired'));
+                }
             }
         }
 

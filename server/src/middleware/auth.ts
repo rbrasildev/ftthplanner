@@ -30,7 +30,14 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, user: any) => {
         if (err) {
             console.error(`[Auth] Token verification failed: ${err.message}`);
-            return res.sendStatus(403);
+            // Distingue expirado de inválido pra o frontend tratar diferente:
+            //   - Expirado: pode ser support session vencendo (30min cap) → frontend
+            //     deve só sair do modo suporte, não fazer logout completo
+            //   - Inválido: token adulterado / corrompido → logout completo
+            if (err.name === 'TokenExpiredError') {
+                return res.status(401).json({ error: 'TOKEN_EXPIRED', message: 'Sessão expirada.' });
+            }
+            return res.status(403).json({ error: 'TOKEN_INVALID', message: 'Token inválido.' });
         }
 
         // Check if this token is still the active session

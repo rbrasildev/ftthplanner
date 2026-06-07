@@ -522,8 +522,21 @@ export default function App() {
             setProjects([]);
             setAuthView('landing');
         };
+        // Modo suporte expirou (JWT 30min) mas admin segue logado — sai do
+        // suporte limpo e força reload pra recarregar dados do próprio admin.
+        // Sem isso, save começava a falhar silenciosamente após 30min de
+        // suporte, mostrando modal de "plano excedido" sem contexto.
+        const handleSupportExpired = () => {
+            setIsSupportMode(false);
+            alert('Sessão de modo suporte expirou (30 minutos). Voltando à sua conta.');
+            window.location.reload();
+        };
         window.addEventListener('ftth-session-expired', handleSessionExpired);
-        return () => window.removeEventListener('ftth-session-expired', handleSessionExpired);
+        window.addEventListener('ftth-support-expired', handleSupportExpired);
+        return () => {
+            window.removeEventListener('ftth-session-expired', handleSessionExpired);
+            window.removeEventListener('ftth-support-expired', handleSupportExpired);
+        };
     }, []);
 
     // Load Project Details when ID changes
