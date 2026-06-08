@@ -427,10 +427,18 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                 try {
                     const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : null;
                     if (periodStart) {
-                        // ±1 day tolerance — Stripe's exact cycle time may drift
-                        // from our day-aligned referenceStart by hours.
-                        const lo = new Date(periodStart.getTime() - 86400000);
-                        const hi = new Date(periodStart.getTime() + 86400000);
+                        // ±7 days tolerance — Stripe pode cobrar até vários dias
+                        // ANTES do reference_start local (Smart Retries, billing
+                        // advance settings). Caso real visto: Stripe cobrou em
+                        // 05/06 12:30 enquanto a fatura local tinha referenceStart
+                        // em 07/06 15:56 — gap de ~51h, antes era ±1 dia (24h)
+                        // e o match falhava silenciosamente. Empresa pequena
+                        // raramente tem 2 faturas do mesmo plano em 14 dias, e
+                        // o orderBy createdAt asc garante pegar a mais antiga
+                        // PENDING/OVERDUE (provavelmente a referida).
+                        const SEVEN_DAYS_MS = 7 * 86400000;
+                        const lo = new Date(periodStart.getTime() - SEVEN_DAYS_MS);
+                        const hi = new Date(periodStart.getTime() + SEVEN_DAYS_MS);
                         const local = await prisma.invoice.findFirst({
                             where: {
                                 companyId,
