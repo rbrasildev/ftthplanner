@@ -2149,6 +2149,14 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
             return;
         }
 
+        // Invalida cache de containerRect/ports no início do drag — sem isto,
+        // se o user maximizou o modal recentemente (transition-all 300ms na
+        // wrapper, linha 3805), o cache pode ter sido populado DURANTE a
+        // animação com coords intermediárias. Mousemove depois desenha o
+        // dragLine offset em relação ao cursor real. Limpeza barata aqui.
+        portCenterCache.current = {};
+        containerRectCache.current = null;
+
         const { x, y } = screenToCanvas(e.clientX, e.clientY);
 
         // CHECK IF PORT HAS EXISTING CONNECTION
