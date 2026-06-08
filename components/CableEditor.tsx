@@ -48,6 +48,9 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+  // Picker COR NO MAPA: colapsado por default quando o cabo segue o catálogo
+  // (sem override). Se já tem override ou cabo sem catalog, abre direto.
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   useEffect(() => {
     // Load catalog cables
@@ -269,144 +272,178 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
               showSearch={false}
             />
 
-            {/* Multiple Technical Reserves */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center justify-between">
-                <span>{t('technical_reserve')}</span>
-                {userRole !== 'MEMBER' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newReserve: CableReserve = {
-                        id: `res-${Date.now()}`,
-                        length: 0,
-                        showLabel: true,
-                      };
-                      setFormData({
-                        ...formData,
-                        reserves: [...(formData.reserves || []), newReserve],
-                        technicalReserve: ((formData.technicalReserve || 0) + 0),
-                      });
-                    }}
-                    className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold"
-                  >
-                    <Plus className="w-3 h-3" /> {t('button_add') || 'Adicionar'}
-                  </button>
-                )}
-              </label>
-              {(formData.reserves || []).length === 0 && (
-                <p className="text-xs text-slate-400 italic py-2">{t('no_reserves') || 'Nenhuma reserva técnica'}</p>
-              )}
-              <div className="space-y-2">
-                {(formData.reserves || []).map((reserve, idx) => (
-                  <div key={reserve.id} className="flex items-center gap-2 bg-slate-50 dark:bg-[#22262e] rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
-                    <span className="text-xs font-bold text-slate-400 w-5">#{idx + 1}</span>
-                    <input
-                      type="number"
-                      value={reserve.length}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        const updated = (formData.reserves || []).map(r =>
-                          r.id === reserve.id ? { ...r, length: val } : r
-                        );
-                        const totalReserve = updated.reduce((sum, r) => sum + r.length, 0);
-                        setFormData({ ...formData, reserves: updated, technicalReserve: totalReserve });
+            {/* Multiple Technical Reserves — colapsado quando vazio (botão simples).
+                Quando tem reservas, mostra título + lista. Reduz ruído visual
+                num campo que a maioria dos cabos não usa. */}
+            {(formData.reserves || []).length === 0 ? (
+              userRole !== 'MEMBER' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newReserve: CableReserve = {
+                      id: `res-${Date.now()}`,
+                      length: 0,
+                      showLabel: true,
+                    };
+                    setFormData({
+                      ...formData,
+                      reserves: [newReserve],
+                    });
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> {t('add_technical_reserve') || 'Adicionar reserva técnica'}
+                </button>
+              )
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1 flex items-center justify-between">
+                  <span>{t('technical_reserve')}</span>
+                  {userRole !== 'MEMBER' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newReserve: CableReserve = {
+                          id: `res-${Date.now()}`,
+                          length: 0,
+                          showLabel: true,
+                        };
+                        setFormData({
+                          ...formData,
+                          reserves: [...(formData.reserves || []), newReserve],
+                          technicalReserve: ((formData.technicalReserve || 0) + 0),
+                        });
                       }}
-                      disabled={userRole === 'MEMBER'}
-                      className="flex-1 w-0 px-2 py-1 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white focus:ring-1 focus:ring-emerald-500"
-                      placeholder="metros"
-                    />
-                    <span className="text-xs text-slate-400">m</span>
-                    {userRole !== 'MEMBER' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = (formData.reserves || []).filter(r => r.id !== reserve.id);
+                      className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold"
+                    >
+                      <Plus className="w-3 h-3" /> {t('button_add') || 'Adicionar'}
+                    </button>
+                  )}
+                </label>
+                <div className="space-y-2">
+                  {(formData.reserves || []).map((reserve, idx) => (
+                    <div key={reserve.id} className="flex items-center gap-2 bg-slate-50 dark:bg-[#22262e] rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                      <span className="text-xs font-bold text-slate-400 w-5">#{idx + 1}</span>
+                      <input
+                        type="number"
+                        value={reserve.length}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          const updated = (formData.reserves || []).map(r =>
+                            r.id === reserve.id ? { ...r, length: val } : r
+                          );
                           const totalReserve = updated.reduce((sum, r) => sum + r.length, 0);
                           setFormData({ ...formData, reserves: updated, technicalReserve: totalReserve });
                         }}
-                        className="p-1 text-red-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                        disabled={userRole === 'MEMBER'}
+                        className="flex-1 w-0 px-2 py-1 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a1d23] text-slate-900 dark:text-white focus:ring-1 focus:ring-emerald-500"
+                        placeholder="metros"
+                      />
+                      <span className="text-xs text-slate-400">m</span>
+                      {userRole !== 'MEMBER' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (formData.reserves || []).filter(r => r.id !== reserve.id);
+                            const totalReserve = updated.reduce((sum, r) => sum + r.length, 0);
+                            setFormData({ ...formData, reserves: updated, technicalReserve: totalReserve });
+                          }}
+                          className="p-1 text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Especificações — bloco compacto unificando metadata read-only.
+                Antes Padrão de cores e Comprimento eram 2 seções full-width com
+                cards decorativos. Agora 1 bloco com 3 linhas, paleta de cores
+                escondida atrás de <details> (decorativa, raramente útil). */}
+            {(() => {
+              const totalReserves = (formData.reserves || []).reduce((s: number, r: any) => s + (r.length || 0), 0);
+              const totalLength = Math.round(calculatedLength) + totalReserves;
+              const palette = formData.colorStandard === 'EIA598'
+                ? ['#3b82f6', '#f97316', '#22c55e', '#78350f', '#9ca3af', '#ffffff', '#ef4444', '#000000', '#eab308', '#a855f7', '#ec4899', '#22d3ee']
+                : ['#22c55e', '#eab308', '#ffffff', '#3b82f6', '#ef4444', '#a855f7', '#78350f', '#ec4899', '#000000', '#9ca3af', '#f97316', '#22d3ee'];
+              return (
+                <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-lg border border-slate-200 dark:border-slate-700/50 divide-y divide-slate-200 dark:divide-slate-700/50">
+                  <div className="flex justify-between items-center px-3 py-2 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">{t('fiber_color_standard')}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      {formData.colorStandard === 'EIA598' ? t('standard_eia') : t('standard_abnt')}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Standard Selection - Display Only */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
-                {t('fiber_color_standard')}
-              </label>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#22262e] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                <span>{formData.colorStandard === 'EIA598' ? t('standard_eia') : t('standard_abnt')}</span>
-                <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">{t('catalog_defined')}</span>
-              </div>
-
-              {/* Small Preview of first 12 fibers */}
-              <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
-                {(formData.colorStandard === 'EIA598' ?
-                  ['#3b82f6', '#f97316', '#22c55e', '#78350f', '#9ca3af', '#ffffff', '#ef4444', '#000000', '#eab308', '#a855f7', '#ec4899', '#22d3ee']
-                  :
-                  ['#22c55e', '#eab308', '#ffffff', '#3b82f6', '#ef4444', '#a855f7', '#78350f', '#ec4899', '#000000', '#9ca3af', '#f97316', '#22d3ee']
-                ).map((c, i) => (
-                  <div key={i} title={t('unit_fiber_label', { n: i + 1 })} className="w-3 h-3 rounded-full border border-slate-200 dark:border-slate-700 shrink-0" style={{ backgroundColor: c }} />
-                ))}
-                <span className="text-[9px] text-slate-400 ml-1">...</span>
-              </div>
-            </div>
-
-            {/* Length Display */}
-            <div className="bg-slate-50 dark:bg-[#22262e]/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
-                <Ruler className="w-3 h-3" /> {t('estimated_length')} (Total)
-              </label>
-              <div className="text-slate-900 dark:text-white font-mono text-sm space-y-1">
-                <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
-                  <span className="text-[10px] text-slate-400">{t('geometric_length')}:</span>
-                  <span>{Math.round(calculatedLength).toLocaleString()} m</span>
-                </div>
-                {(formData.reserves || []).map((r: any, i: number) => (
-                  <div key={r.id} className="flex justify-between border-b border-slate-200 dark:border-slate-700/50 pb-1">
-                    <span className="text-[10px] text-slate-400">{t('technical_reserve')} #{i + 1}:</span>
-                    <span>{r.length?.toLocaleString()} m</span>
+                  <div className="flex justify-between items-center px-3 py-2 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Ruler className="w-3 h-3" /> {t('geometric_length') || 'Geométrico'}
+                    </span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300">
+                      {Math.round(calculatedLength).toLocaleString()} m
+                    </span>
                   </div>
-                ))}
-                <div className="flex justify-between pt-1 font-bold text-emerald-600 dark:text-emerald-400">
-                  <span className="text-[10px] uppercase">Total:</span>
-                  <span>{(Math.round(calculatedLength) + (formData.reserves || []).reduce((s: number, r: any) => s + (r.length || 0), 0)).toLocaleString()} m</span>
+                  {totalReserves > 0 && (
+                    <div className="flex justify-between items-center px-3 py-2 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {t('technical_reserve')} (total)
+                      </span>
+                      <span className="font-mono text-slate-700 dark:text-slate-300">
+                        +{totalReserves.toLocaleString()} m
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center px-3 py-2 text-sm font-bold bg-emerald-50/50 dark:bg-emerald-900/10">
+                    <span className="text-emerald-700 dark:text-emerald-400">Total</span>
+                    <span className="font-mono text-emerald-700 dark:text-emerald-400">
+                      {totalLength.toLocaleString()} m <span className="text-[10px] font-normal text-emerald-600/70">({(totalLength / 1000).toFixed(3)} km)</span>
+                    </span>
+                  </div>
+                  <details className="group">
+                    <summary className="px-3 py-1.5 text-[10px] text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 list-none flex items-center gap-1 select-none">
+                      <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
+                      Ver paleta de fibras
+                    </summary>
+                    <div className="px-3 pb-2 flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                      {palette.map((c, i) => (
+                        <div key={i} title={t('unit_fiber_label', { n: i + 1 })} className="w-3 h-3 rounded-full border border-slate-200 dark:border-slate-700 shrink-0" style={{ backgroundColor: c }} />
+                      ))}
+                      <span className="text-[9px] text-slate-400 ml-1">...</span>
+                    </div>
+                  </details>
                 </div>
-                <div className="text-right text-[10px] text-slate-500 mt-1">
-                  ({((Math.round(calculatedLength) + (formData.technicalReserve || 0)) / 1000).toFixed(3)} km)
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Picker — escreve em customColor/customWidth (override por instância).
-                Cor/espessura efetivas mostradas no preview: customX ?? color/width
-                (que veio do catálogo na seleção do modelo). Quando o usuário grava
-                aqui, o cabo passa a IGNORAR mudanças subsequentes no catálogo. */}
+                Estado dobrado: quando NÃO há override + tem catalog, mostra 1 linha
+                com preview da cor do catálogo + "Customizar". Click expande.
+                Quando há override, sempre expandido com badge + "usar catálogo".
+                Sem catalog: sempre expandido (não há catalog pra usar como default). */}
             {(() => {
               const effectiveColor = formData.customColor ?? formData.color ?? '#0ea5e9';
               const effectiveWidth = formData.customWidth ?? formData.width;
               const hasOverride = formData.customColor != null || formData.customWidth != null;
+              const hasCatalog = !!formData.catalogId;
+              const showPicker = colorPickerOpen || hasOverride || !hasCatalog;
+
               return (
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
                       <Palette className="w-3 h-3" /> {t('map_color')}
-                      {hasOverride && formData.catalogId && (
+                      {hasOverride && hasCatalog && (
                         <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 normal-case tracking-normal">
                           · override
                         </span>
                       )}
                     </span>
-                    {hasOverride && formData.catalogId && (
+                    {hasOverride && hasCatalog && (
                       <button
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, customColor: null, customWidth: null }))}
+                        onClick={() => { setFormData(prev => ({ ...prev, customColor: null, customWidth: null })); setColorPickerOpen(false); }}
                         className="flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 normal-case tracking-normal transition-colors"
                         title="Voltar a usar a cor/espessura do catálogo"
                       >
@@ -414,71 +451,93 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                       </button>
                     )}
                   </label>
-                  <div className="bg-slate-50 dark:bg-[#22262e] p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3">
-                    <div className="flex items-center gap-3">
+
+                  {!showPicker ? (
+                    // Estado COLAPSADO — cabo segue o catálogo, mostra preview compacto + customizar
+                    <button
+                      type="button"
+                      onClick={() => setColorPickerOpen(true)}
+                      className="w-full flex items-center gap-3 bg-slate-50 dark:bg-[#22262e] hover:bg-slate-100 dark:hover:bg-slate-700/30 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors text-left"
+                    >
                       <div
-                        className="w-12 h-6 rounded-md shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
+                        className="w-10 h-5 rounded shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
                         style={{ backgroundColor: effectiveColor }}
                       />
-                      <input
-                        type="color"
-                        value={effectiveColor.substring(0, 7)}
-                        onChange={(e) => setFormData(prev => ({ ...prev, customColor: e.target.value }))}
-                        className="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-300 dark:border-slate-600"
-                        title={t('pick_custom_color') || 'Escolher cor'}
-                      />
-                      <CustomInput
-                        value={effectiveColor.toUpperCase()}
-                        onChange={(e) => {
-                          const v = e.target.value.trim();
-                          if (/^#?[0-9a-fA-F]{0,6}$/.test(v)) {
-                            setFormData(prev => ({ ...prev, customColor: v.startsWith('#') ? v : `#${v}` }));
-                          }
-                        }}
-                        placeholder="#0EA5E9"
-                        className="flex-1 font-mono text-xs uppercase"
-                      />
-                      <div className="flex items-center gap-1 shrink-0" title={t('cable_thickness')}>
-                        <Ruler className="w-3.5 h-3.5 text-slate-400" />
-                        <input
-                          type="number"
-                          min={1}
-                          max={20}
-                          step={1}
-                          value={effectiveWidth ?? ''}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === '') {
-                              setFormData(prev => ({ ...prev, customWidth: null }));
-                              return;
-                            }
-                            const n = parseInt(raw, 10);
-                            if (!isNaN(n)) setFormData(prev => ({ ...prev, customWidth: Math.max(1, Math.min(20, n)) }));
-                          }}
-                          className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-slate-700 dark:text-slate-300 font-mono">{effectiveColor.toUpperCase()}</div>
+                        <div className="text-[10px] text-slate-400">do catálogo · espessura {effectiveWidth ?? 2}</div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                        Customizar →
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="bg-slate-50 dark:bg-[#22262e] p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-6 rounded-md shadow-sm border border-slate-300 dark:border-slate-600 shrink-0"
+                          style={{ backgroundColor: effectiveColor }}
                         />
+                        <input
+                          type="color"
+                          value={effectiveColor.substring(0, 7)}
+                          onChange={(e) => setFormData(prev => ({ ...prev, customColor: e.target.value }))}
+                          className="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-300 dark:border-slate-600"
+                          title={t('pick_custom_color') || 'Escolher cor'}
+                        />
+                        <CustomInput
+                          value={effectiveColor.toUpperCase()}
+                          onChange={(e) => {
+                            const v = e.target.value.trim();
+                            if (/^#?[0-9a-fA-F]{0,6}$/.test(v)) {
+                              setFormData(prev => ({ ...prev, customColor: v.startsWith('#') ? v : `#${v}` }));
+                            }
+                          }}
+                          placeholder="#0EA5E9"
+                          className="flex-1 font-mono text-xs uppercase"
+                        />
+                        <div className="flex items-center gap-1 shrink-0" title={t('cable_thickness')}>
+                          <Ruler className="w-3.5 h-3.5 text-slate-400" />
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={effectiveWidth ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              if (raw === '') {
+                                setFormData(prev => ({ ...prev, customWidth: null }));
+                                return;
+                              }
+                              const n = parseInt(raw, 10);
+                              if (!isNaN(n)) setFormData(prev => ({ ...prev, customWidth: Math.max(1, Math.min(20, n)) }));
+                            }}
+                            className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {CABLE_MAP_COLORS.map(c => {
+                          const isActive = effectiveColor.toLowerCase() === c.toLowerCase();
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, customColor: c }))}
+                              title={c}
+                              className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                isActive
+                                  ? 'border-emerald-500 scale-110 shadow-md'
+                                  : 'border-slate-300 dark:border-slate-600 hover:scale-105'
+                              }`}
+                              style={{ backgroundColor: c }}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {CABLE_MAP_COLORS.map(c => {
-                        const isActive = effectiveColor.toLowerCase() === c.toLowerCase();
-                        return (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, customColor: c }))}
-                            title={c}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              isActive
-                                ? 'border-emerald-500 scale-110 shadow-md'
-                                : 'border-slate-300 dark:border-slate-600 hover:scale-105'
-                            }`}
-                            style={{ backgroundColor: c }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
             })()}
@@ -512,14 +571,19 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                {/* Excluir = ghost icon-only (atrito visual proporcional ao risco).
+                    Antes era botão filled vermelho competindo com Salvar — risco
+                    de misclick numa ação destrutiva. */}
                 {userRole !== 'MEMBER' && (
                   <button
                     type="button"
                     onClick={handleDeleteClick}
-                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg flex items-center gap-2 transition cursor-pointer active:scale-95"
+                    title={t('delete')}
+                    aria-label={t('delete')}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition shrink-0"
                   >
-                    <Trash2 className="w-4 h-4" /> {t('delete')}
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 )}
 

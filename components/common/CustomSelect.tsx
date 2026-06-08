@@ -99,7 +99,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     return (
         <div className={className} ref={wrapperRef}>
             {label && (
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-1.5">
+                <label className="block text-[10px] font-medium text-slate-700 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
                     {label}
                 </label>
             )}
