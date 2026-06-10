@@ -94,6 +94,13 @@ model Company {
   retentionAlerts   RetentionAlert[]
   outageIncidents   OutageIncident[]
 
+  // Atribuição de consultor (first-touch via ?ref= no signup).
+  // Nullable: a maioria dos cadastros é direto, sem indicação.
+  referredById String?     @map("referred_by_id")
+  referredAt   DateTime?   @map("referred_at")
+  referredBy   Consultant? @relation(fields: [referredById], references: [id])
+
+  @@index([referredById])
   @@map("companies")
 }
 
@@ -117,6 +124,46 @@ model Plan {
   invoices          Invoice[]
 
   @@map("plans")
+}
+
+// Consultor/parceiro indicado por código. Cadastro interno (sem login próprio):
+// o admin SaaS cria/edita aqui, gera link ?ref=<code> e atribui clientes que
+// vieram pelo link. Tracking de visitas em ReferralVisit (pra calcular taxa
+// de conversão visita → cadastro).
+model Consultant {
+  id            String          @id @default(uuid())
+  name          String
+  email         String?
+  phone         String?
+  code          String          @unique // usado em ?ref=<code> no link público
+  commissionPct Float?          @default(10) @map("commission_pct") // % de comissão estimada
+  notes         String?
+  active        Boolean         @default(true)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  companies Company[]
+  visits    ReferralVisit[]
+
+  @@index([code])
+  @@map("consultants")
+}
+
+// Visita ao link ?ref=<code>. Usado pra taxa de conversão (visits → signups).
+// Dedup via ipHash+userAgent dentro de janela curta (24h) é feito no controller,
+// não tem unique aqui pra não bloquear visitas legítimas.
+model ReferralVisit {
+  id           String   @id @default(uuid())
+  consultantId String   @map("consultant_id")
+  visitedAt    DateTime @default(now()) @map("visited_at")
+  ipHash       String?  @map("ip_hash")
+  userAgent    String?  @map("user_agent")
+  referer      String?
+
+  consultant Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId, visitedAt])
+  @@map("referral_visits")
 }
 
 model Invoice {

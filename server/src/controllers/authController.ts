@@ -18,7 +18,7 @@ async function getPlanByName(name: string) {
 }
 
 export const register = async (req: Request, res: Response) => {
-    const { username, email, password, companyName, planName, phone, source } = req.body;
+    const { username, email, password, companyName, planName, phone, source, referralCode } = req.body;
     try {
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.ok) return res.status(400).json({ error: passwordValidation.error });
@@ -57,6 +57,20 @@ export const register = async (req: Request, res: Response) => {
             await prisma.user.delete({ where: { id: softDeletedUser.id } });
         }
 
+        // Resolve consultor pelo código antes da transação — fail silently se
+        // código for inválido (não invalida o cadastro, só não atribui).
+        let referredById: string | null = null;
+        if (referralCode && typeof referralCode === 'string') {
+            const consultant = await prisma.consultant.findUnique({
+                where: { code: referralCode.trim().toUpperCase() }
+            });
+            if (consultant && consultant.active) {
+                referredById = consultant.id;
+            } else {
+                logger.info(`[Registration] Invalid/inactive referralCode: ${referralCode}`);
+            }
+        }
+
         // Transaction to ensure User and Company are created together
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
@@ -76,7 +90,9 @@ export const register = async (req: Request, res: Response) => {
                     planId: selectedPlan?.id,
                     subscriptionExpiresAt: expiresAt,
                     status: 'ACTIVE',
-                    phone: phone || null
+                    phone: phone || null,
+                    referredById: referredById,
+                    referredAt: referredById ? new Date() : null,
                 } as any
             });
 

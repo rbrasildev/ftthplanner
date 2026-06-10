@@ -5,6 +5,7 @@ import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate, runBillingReminders } from '../controllers/emailController';
 import { getRetentionDashboard, processRetentionManual } from '../controllers/retentionController';
+import { listConsultants, createConsultant, updateConsultant, deleteConsultant, getConsultantStats } from '../controllers/referralController';
 
 const router = express.Router();
 
@@ -40,6 +41,13 @@ router.post('/companies/:companyId/recalculate-financials', authenticateToken, r
 // Users (Super Admin)
 router.get('/users', authenticateToken, requireSuperAdmin, getGlobalUsers);
 router.put('/users/:id', authenticateToken, requireSuperAdmin, updateGlobalUser);
+
+// Consultores (sistema de indicação por link ?ref=)
+router.get('/consultants', authenticateToken, requireSuperAdmin, listConsultants);
+router.post('/consultants', authenticateToken, requireSuperAdmin, createConsultant);
+router.put('/consultants/:id', authenticateToken, requireSuperAdmin, updateConsultant);
+router.delete('/consultants/:id', authenticateToken, requireSuperAdmin, deleteConsultant);
+router.get('/consultants/:id/stats', authenticateToken, requireSuperAdmin, getConsultantStats);
 
 // Projects (Trash Bin)
 router.get('/projects/deleted', authenticateToken, requireSuperAdmin, getDeletedProjects);

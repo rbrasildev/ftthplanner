@@ -216,3 +216,48 @@ export const processRetentionData = async () => {
     const response = await api.post('/saas/retention/process');
     return response.data;
 };
+
+// --- Consultants (Referral System) ---
+
+export const listConsultants = async () => {
+    const response = await api.get('/saas/consultants');
+    return response.data;
+};
+
+export const createConsultant = async (data: { name: string; email?: string; phone?: string; commissionPct?: number; notes?: string; code?: string }) => {
+    const response = await api.post('/saas/consultants', data);
+    return response.data;
+};
+
+export const updateConsultant = async (id: string, data: { name?: string; email?: string; phone?: string; commissionPct?: number; notes?: string; active?: boolean }) => {
+    const response = await api.put(`/saas/consultants/${id}`, data);
+    return response.data;
+};
+
+export const deleteConsultant = async (id: string) => {
+    const response = await api.delete(`/saas/consultants/${id}`);
+    return response.data;
+};
+
+export const getConsultantStats = async (id: string) => {
+    const response = await api.get(`/saas/consultants/${id}/stats`);
+    return response.data;
+};
+
+// Public — registra visita ao link ?ref=<code>
+export const registerReferralVisit = async (code: string) => {
+    try {
+        await api.post(`/referrals/visit/${code}`);
+    } catch {
+        // Silently fail — visita não conta como crítica.
+    }
+};
+
+export const lookupReferralConsultant = async (code: string): Promise<{ name: string } | null> => {
+    try {
+        const response = await api.get(`/referrals/lookup/${code}`);
+        return response.data;
+    } catch {
+        return null;
+    }
+};

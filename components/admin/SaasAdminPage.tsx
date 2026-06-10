@@ -16,6 +16,7 @@ import { SaasRetentionIntelligence } from './SaasRetentionIntelligence';
 import { SupportAdminPanel } from './SupportAdminPanel';
 import { SaasAuditLogs } from './SaasAuditLogs';
 import { SaasDashboard } from './SaasDashboard';
+import { SaasConsultants } from './SaasConsultants';
 
 interface Company {
     id: string;
@@ -734,7 +735,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat' | 'trash'>(() => {
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat' | 'trash' | 'consultants'>(() => {
         return (localStorage.getItem('saasAdminActiveView') as any) || 'dashboard';
     });
     const [plans, setPlans] = useState<any[]>([]);
@@ -1073,6 +1074,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                 { id: 'companies', label: t('saas_nav_companies'), icon: <Building2 className="w-5 h-5" /> },
                 { id: 'users', label: t('saas_nav_users'), icon: <Users className="w-5 h-5" /> },
                 { id: 'plans', label: t('saas_nav_plans'), icon: <CreditCard className="w-5 h-5" /> },
+                { id: 'consultants', label: t('saas_nav_consultants') || 'Consultores', icon: <UserCheck className="w-5 h-5" /> },
             ]
         },
         {
@@ -2117,6 +2119,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     }
 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
+
+                    {activeView === 'consultants' && <SaasConsultants />}
 
                     {activeView === 'retention' && <SaasRetentionIntelligence />}
 

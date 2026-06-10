@@ -7,6 +7,7 @@ import { calculateDistance } from './utils/geometryUtils';
 import { isSubscriptionExpired } from './utils/subscriptionUtils';
 import { parseDIOPortId, makeDIOPortId, flipDIOPortSide, isDIOPortIdLike } from './utils/dioPortId';
 import { mergeWithParentNetwork } from './utils/networkMerge';
+import { captureReferralFromUrl, getStoredReferralCode, clearReferralCode } from './utils/referralStorage';
 const CTOEditor = lazy(() => import('./components/CTOEditor').then(m => ({ default: m.CTOEditor })));
 const POPEditor = lazy(() => import('./components/POPEditor').then(m => ({ default: m.POPEditor })));
 import { ProjectManager } from './components/ProjectManager';
@@ -130,6 +131,13 @@ export default function App() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userPermissions, setUserPermissions] = useState<string[]>([]);
     const [isSupportMode, setIsSupportMode] = useState<boolean>(() => !!localStorage.getItem('ftth_support_token'));
+
+    // Captura ?ref=<code> da URL no primeiro mount. Salva em localStorage
+    // (TTL 7 dias) e registra visita no backend. First-touch — não sobrescreve
+    // se já tem código guardado de uma visita anterior. Roda 1x na sessão.
+    useEffect(() => {
+        captureReferralFromUrl();
+    }, []);
 
     useEffect(() => {
         // Evaluate token with interceptor logic priority
@@ -1736,9 +1744,10 @@ export default function App() {
     const handleRegister = async (username: string, email: string, password?: string, companyName?: string, planName?: string, phone?: string, source?: string) => {
         setIsRegistering(true);
         try {
-            // Re-using the logic from authService if we had a separate register, 
+            // Re-using the logic from authService if we had a separate register,
             // but authService.login already has a silent register.
             // However, we want to be explicit here.
+            const referralCode = getStoredReferralCode();
             const res = await api.post('/auth/register', {
                 username,
                 email,
@@ -1746,12 +1755,16 @@ export default function App() {
                 companyName,
                 planName,
                 phone,
-                source: source || 'direct'
+                source: source || 'direct',
+                referralCode: referralCode || undefined,
             });
             const regData = res.data;
             if (regData.token) {
                 localStorage.setItem('ftth_token', regData.token);
             }
+            // Limpa o código após cadastro confirmado — evita atribuir contas
+            // futuras criadas na mesma máquina ao mesmo consultor.
+            if (referralCode) clearReferralCode();
             showToast(t('registration_success'), 'success');
             setAuthView('login');
         } catch (e: any) {
