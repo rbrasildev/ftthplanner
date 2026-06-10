@@ -2652,6 +2652,7 @@ export default function App() {
             {editingCable && (
                 <CableEditor
                     cable={editingCable}
+                    allCables={currentProject?.network.cables || []}
                     onClose={() => { setEditingCable(null); setHighlightedCableId(null); }}
                     onSave={handleSaveCable}
                     onDelete={handleDeleteCable}

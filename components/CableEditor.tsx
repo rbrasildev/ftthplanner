@@ -10,6 +10,10 @@ import { CustomSelect } from './common/CustomSelect';
 
 interface CableEditorProps {
   cable: CableData;
+  // Opcional pra não quebrar callers antigos. Quando passado, o editor calcula
+  // os segmentos irmãos (que vieram do mesmo cabo original via splits) e mostra
+  // o comprimento total agregado no bloco de Especificações.
+  allCables?: CableData[];
   onClose: () => void;
   onSave: (updatedCable: CableData) => void;
   onDelete: (cableId: string) => void;
@@ -34,7 +38,7 @@ const CABLE_MAP_COLORS = [
   '#06b6d4', // 12. Aqua
 ];
 
-export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave, onDelete, userRole }) => {
+export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onClose, onSave, onDelete, userRole }) => {
   const { t } = useLanguage();
   const [formData, setFormData] = useState<CableData>({
     ...cable,
@@ -102,6 +106,95 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
     }
     return totalMeters;
   }, [cable.coordinates]);
+
+  // Detecta segmentos irmãos do mesmo cabo original.
+  // Heurística em 2 passos pra evitar falsos positivos quando vários cabos
+  // diferentes compartilham o nome do catálogo (ex: 10 cabos "Cabo 12FO"
+  // desconexos pelo mapa, todos sem sufixo de split — não são irmãos).
+  //
+  // Passo 1: candidatos por nome base + catalogId.
+  //   - strip recursivo de " (A)" / " (B)" (sufixos do split em
+  //     useNetworkOperations.ts handleConnectCableToNode)
+  //   - "Cabo 48FO (B) (B) (A)" → base "Cabo 48FO"
+  //
+  // Passo 2: BFS a partir do cabo aberto, só seguindo candidatos que
+  //   compartilham um endpoint (CTO/POP via fromNodeId/toNodeId) com a
+  //   cadeia já visitada. Como splits sempre ocorrem numa CTO/POP, segmentos
+  //   consecutivos do mesmo cabo original sempre compartilham um nó —
+  //   essa é a regra que separa segmentos reais de cabos desconexos.
+  //
+  // Fallback aceito: se usuário renomeia segmento manualmente OU desconecta
+  // um endpoint, perde o link nesse ponto. Aceitável pra v1 (sem schema).
+  const siblingCables = useMemo(() => {
+    if (!allCables || allCables.length === 0) return [cable];
+    const stripSplitSuffixes = (name: string) =>
+      (name || '').replace(/(\s+\([AB]\))+\s*$/, '').trim();
+    const baseName = stripSplitSuffixes(cable.name);
+    if (!baseName) return [cable];
+    const myCatalog = cable.catalogId || null;
+
+    const candidates = allCables.filter(c =>
+      stripSplitSuffixes(c.name) === baseName &&
+      (c.catalogId || null) === myCatalog
+    );
+    if (candidates.length <= 1) return [cable];
+
+    // Índice node → cable ids pra BFS em O(N+E)
+    const nodeToIds = new Map<string, string[]>();
+    for (const c of candidates) {
+      for (const n of [c.fromNodeId, c.toNodeId]) {
+        if (!n) continue;
+        const arr = nodeToIds.get(n);
+        if (arr) arr.push(c.id);
+        else nodeToIds.set(n, [c.id]);
+      }
+    }
+    const byId = new Map<string, CableData>(candidates.map(c => [c.id, c]));
+
+    const group: typeof candidates = [];
+    const visited = new Set<string>();
+    const queue: string[] = [cable.id];
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const c = byId.get(id);
+      if (!c) continue;
+      group.push(c);
+      for (const n of [c.fromNodeId, c.toNodeId]) {
+        if (!n) continue;
+        const neighbors = nodeToIds.get(n);
+        if (!neighbors) continue;
+        for (const nid of neighbors) {
+          if (!visited.has(nid)) queue.push(nid);
+        }
+      }
+    }
+    // Cabo aberto pode não estar em allCables se ainda não sincronizou —
+    // garante que ao menos ele entra.
+    if (group.length === 0) return [cable];
+    return group;
+  }, [cable, allCables]);
+
+  const siblingsAggregate = useMemo(() => {
+    if (siblingCables.length <= 1) return null;
+    let geometric = 0;
+    let reserves = 0;
+    for (const c of siblingCables) {
+      if (c.coordinates && c.coordinates.length >= 2) {
+        for (let i = 0; i < c.coordinates.length - 1; i++) {
+          const p1 = L.latLng(c.coordinates[i].lat, c.coordinates[i].lng);
+          const p2 = L.latLng(c.coordinates[i + 1].lat, c.coordinates[i + 1].lng);
+          geometric += p1.distanceTo(p2);
+        }
+      }
+      reserves += (c.reserves || []).reduce((s, r) => s + (r.length || 0), 0);
+    }
+    return {
+      count: siblingCables.length,
+      total: Math.round(geometric) + reserves,
+    };
+  }, [siblingCables]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -396,11 +489,31 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, onClose, onSave
                     </div>
                   )}
                   <div className="flex justify-between items-center px-3 py-2 text-sm font-bold bg-emerald-50/50 dark:bg-emerald-900/10">
-                    <span className="text-emerald-700 dark:text-emerald-400">Total</span>
+                    <span className="text-emerald-700 dark:text-emerald-400">{t('total_segment') || 'Total (segmento)'}</span>
                     <span className="font-mono text-emerald-700 dark:text-emerald-400">
                       {totalLength.toLocaleString()} m <span className="text-[10px] font-normal text-emerald-600/70">({(totalLength / 1000).toFixed(3)} km)</span>
                     </span>
                   </div>
+                  {siblingsAggregate && (
+                    <div
+                      className="flex justify-between items-center px-3 py-2 text-sm font-bold bg-indigo-50/60 dark:bg-indigo-900/10"
+                      title={t('full_cable_tooltip') || 'Soma de todos os segmentos derivados do mesmo cabo original (identificados pelo nome base).'}
+                    >
+                      <span className="text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                        <Layers className="w-3 h-3" />
+                        {t('full_cable') || 'Cabo completo'}
+                        <span className="text-[10px] font-normal text-indigo-600/70 dark:text-indigo-400/70">
+                          ({siblingsAggregate.count} {t('segments_short') || 'seg.'})
+                        </span>
+                      </span>
+                      <span className="font-mono text-indigo-700 dark:text-indigo-400">
+                        {siblingsAggregate.total.toLocaleString()} m{' '}
+                        <span className="text-[10px] font-normal text-indigo-600/70 dark:text-indigo-400/70">
+                          ({(siblingsAggregate.total / 1000).toFixed(3)} km)
+                        </span>
+                      </span>
+                    </div>
+                  )}
                   <details className="group">
                     <summary className="px-3 py-1.5 text-[10px] text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 list-none flex items-center gap-1 select-none">
                       <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
