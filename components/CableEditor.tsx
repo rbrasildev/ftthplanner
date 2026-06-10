@@ -112,19 +112,22 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onCl
   // diferentes compartilham o nome do catálogo (ex: 10 cabos "Cabo 12FO"
   // desconexos pelo mapa, todos sem sufixo de split — não são irmãos).
   //
-  // Passo 1: candidatos por nome base + catalogId.
+  // Passo 1: candidatos por nome base.
   //   - strip recursivo de " (A)" / " (B)" (sufixos do split em
   //     useNetworkOperations.ts handleConnectCableToNode)
   //   - "Cabo 48FO (B) (B) (A)" → base "Cabo 48FO"
+  //   - catalogId entra como soft check: se ambos têm e diferem, exclui;
+  //     se algum lado não tem, aceita (dados antigos podem ter perdido).
   //
-  // Passo 2: BFS a partir do cabo aberto, só seguindo candidatos que
-  //   compartilham um endpoint (CTO/POP via fromNodeId/toNodeId) com a
-  //   cadeia já visitada. Como splits sempre ocorrem numa CTO/POP, segmentos
-  //   consecutivos do mesmo cabo original sempre compartilham um nó —
-  //   essa é a regra que separa segmentos reais de cabos desconexos.
+  // Passo 2: BFS por conectividade. Splits sempre deixam segmento1.last e
+  //   segmento2.first na MESMA coordenada (= node.coordinates) — esse é o
+  //   sinal mais robusto. Expande via:
+  //     a) endpoint coord bucket (5 casas decimais ≈ 1m) — pega tudo,
+  //        inclusive ancoragem em poste (poles não setam node id no cabo)
+  //     b) fromNodeId/toNodeId compartilhado — redundante mas defensivo
   //
-  // Fallback aceito: se usuário renomeia segmento manualmente OU desconecta
-  // um endpoint, perde o link nesse ponto. Aceitável pra v1 (sem schema).
+  // Fallback aceito: se usuário renomeou segmento OU separou geograficamente
+  // (>1m entre endpoints), perde o link nesse ponto. v1 sem schema.
   const siblingCables = useMemo(() => {
     if (!allCables || allCables.length === 0) return [cable];
     const stripSplitSuffixes = (name: string) =>
@@ -133,20 +136,36 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onCl
     if (!baseName) return [cable];
     const myCatalog = cable.catalogId || null;
 
-    const candidates = allCables.filter(c =>
-      stripSplitSuffixes(c.name) === baseName &&
-      (c.catalogId || null) === myCatalog
-    );
+    const candidates = allCables.filter(c => {
+      if (stripSplitSuffixes(c.name) !== baseName) return false;
+      const cCat = c.catalogId || null;
+      // Soft catalog check: só corta se AMBOS têm catalogId e são diferentes.
+      // Dados de produção podem ter segmentos sem catalogId.
+      if (myCatalog && cCat && myCatalog !== cCat) return false;
+      return true;
+    });
     if (candidates.length <= 1) return [cable];
 
-    // Índice node → cable ids pra BFS em O(N+E)
+    // Índices pra BFS O(N+E)
+    const coordKey = (lat: number, lng: number) =>
+      `${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const coordToIds = new Map<string, string[]>();
     const nodeToIds = new Map<string, string[]>();
+    const addTo = (m: Map<string, string[]>, key: string, id: string) => {
+      const arr = m.get(key);
+      if (arr) arr.push(id);
+      else m.set(key, [id]);
+    };
     for (const c of candidates) {
-      for (const n of [c.fromNodeId, c.toNodeId]) {
-        if (!n) continue;
-        const arr = nodeToIds.get(n);
-        if (arr) arr.push(c.id);
-        else nodeToIds.set(n, [c.id]);
+      if (c.fromNodeId) addTo(nodeToIds, c.fromNodeId, c.id);
+      if (c.toNodeId) addTo(nodeToIds, c.toNodeId, c.id);
+      if (c.coordinates && c.coordinates.length > 0) {
+        const first = c.coordinates[0];
+        const last = c.coordinates[c.coordinates.length - 1];
+        addTo(coordToIds, coordKey(first.lat, first.lng), c.id);
+        if (c.coordinates.length > 1) {
+          addTo(coordToIds, coordKey(last.lat, last.lng), c.id);
+        }
       }
     }
     const byId = new Map<string, CableData>(candidates.map(c => [c.id, c]));
@@ -161,17 +180,27 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onCl
       const c = byId.get(id);
       if (!c) continue;
       group.push(c);
+      // Expand via node id
       for (const n of [c.fromNodeId, c.toNodeId]) {
         if (!n) continue;
         const neighbors = nodeToIds.get(n);
         if (!neighbors) continue;
-        for (const nid of neighbors) {
-          if (!visited.has(nid)) queue.push(nid);
+        for (const nid of neighbors) if (!visited.has(nid)) queue.push(nid);
+      }
+      // Expand via endpoint coord
+      if (c.coordinates && c.coordinates.length > 0) {
+        const first = c.coordinates[0];
+        const last = c.coordinates[c.coordinates.length - 1];
+        const keys = c.coordinates.length > 1
+          ? [coordKey(first.lat, first.lng), coordKey(last.lat, last.lng)]
+          : [coordKey(first.lat, first.lng)];
+        for (const k of keys) {
+          const neighbors = coordToIds.get(k);
+          if (!neighbors) continue;
+          for (const nid of neighbors) if (!visited.has(nid)) queue.push(nid);
         }
       }
     }
-    // Cabo aberto pode não estar em allCables se ainda não sincronizou —
-    // garante que ao menos ele entra.
     if (group.length === 0) return [cable];
     return group;
   }, [cable, allCables]);
