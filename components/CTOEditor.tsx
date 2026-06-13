@@ -934,8 +934,11 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
 
         if (arriving.length === 0 || leaving.length === 0) return;
 
-        // Match pairs by base name (strip last parenthetical suffix)
-        const getBaseName = (name: string) => name.replace(/\s*\([A-Za-z]\)\s*$/, '').trim();
+        // Match pairs by base name (strip TODOS os sufixos parentéticos finais).
+        // Cabo com splits em cascata vira "X (A)", "X (B) (A)", "X (B) (B)" — só
+        // removendo um sufixo, "X (A)" e "X (B) (A)" parecem cabos diferentes e
+        // a auto-conexão não roda na primeira CTO. Removendo todos, ambos viram "X".
+        const getBaseName = (name: string) => name.replace(/(\s*\([A-Za-z]\)\s*)+$/, '').trim();
 
         const pairs: [CableData, CableData][] = [];
         const usedLeaving = new Set<string>();
