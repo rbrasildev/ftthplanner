@@ -544,8 +544,12 @@ const CompanyInvoicesSection: React.FC<{ companyId: string, company: Company, fi
                     const isPending = inv.status === 'PENDING';
                     const isCancelled = inv.status === 'CANCELLED';
                     const paidAt = isPaid ? new Date(inv.paidAt || inv.updatedAt || inv.createdAt) : null;
-                    const dueDate: Date | null = inv.referenceEnd
-                        ? new Date(inv.referenceEnd)
+                    // "Vencimento" da fatura de renovação = início do período pago
+                    // (referenceStart). É quando o cliente precisa ter pago pra manter
+                    // o serviço ativo no próximo ciclo. Não é referenceEnd (fim do
+                    // período), nem expiresAt (que é a expiração do QR PIX, 24h).
+                    const dueDate: Date | null = inv.referenceStart
+                        ? new Date(inv.referenceStart)
                         : inv.expiresAt ? new Date(inv.expiresAt) : null;
                     const daysLate = isOverdue && dueDate
                         ? Math.max(0, Math.floor((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24)))
