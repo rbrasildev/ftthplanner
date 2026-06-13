@@ -175,7 +175,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                 `Porta ${label} (livre)`
                 }
                 className={`
-                    ${fillCell ? 'w-full aspect-square min-w-0' : 'h-9 w-9 mx-auto'} rounded-lg text-[10px] font-bold flex items-center justify-center border-2 transition-all relative
+                    ${fillCell ? 'w-full aspect-square min-w-0 max-w-[44px]' : 'h-9 w-9 mx-auto'} rounded-lg text-[10px] font-bold flex items-center justify-center border-2 transition-all relative
                     ${isConnectedToSelf
                         ? 'bg-emerald-500 border-emerald-600 text-white ring-2 ring-emerald-300 dark:ring-emerald-500/40 shadow-md scale-110 z-10'
                         : occupiedByOther
