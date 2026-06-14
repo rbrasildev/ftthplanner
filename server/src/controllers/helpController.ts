@@ -34,13 +34,13 @@ export const getHelpContent = async (_req: Request, res: Response) => {
         const [faqs, articles, videos, config] = await Promise.all([
             prisma.helpFaq.findMany({
                 where: { active: true },
-                orderBy: [{ category: 'asc' }, { order: 'asc' }],
-                select: { id: true, category: true, question: true, answer: true },
+                orderBy: { order: 'asc' },
+                select: { id: true, category: true, question: true, answer: true, order: true },
             }),
             prisma.helpArticle.findMany({
                 where: { active: true },
-                orderBy: [{ category: 'asc' }, { order: 'asc' }],
-                select: { id: true, title: true, slug: true, category: true, content: true },
+                orderBy: { order: 'asc' },
+                select: { id: true, title: true, slug: true, category: true, content: true, order: true },
             }),
             prisma.demoVideo.findMany({
                 where: { active: true },

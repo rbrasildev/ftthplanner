@@ -7,13 +7,30 @@ import {
 import api from '../services/api';
 import { useLanguage } from '../LanguageContext';
 
-interface Faq { id: string; category: string; question: string; answer: string }
-interface Article { id: string; title: string; slug: string; category: string; content: string }
+interface Faq { id: string; category: string; question: string; answer: string; order?: number }
+interface Article { id: string; title: string; slug: string; category: string; content: string; order?: number }
 interface Video { id: string; title: string; description?: string | null; url: string; icon?: string | null }
 interface ContactInfo { email: string | null; phone: string | null; whatsapp: string | null }
 interface HelpData { faqs: Faq[]; articles: Article[]; videos: Video[]; contact: ContactInfo }
 
 type Tab = 'videos' | 'faq' | 'articles' | 'contact';
+
+function groupByCategory<T extends { category: string; order?: number }>(items: T[]): [string, T[]][] {
+    const map = new Map<string, { items: T[]; minOrder: number }>();
+    items.forEach(it => {
+        const ord = it.order ?? 0;
+        const entry = map.get(it.category);
+        if (entry) {
+            entry.items.push(it);
+            if (ord < entry.minOrder) entry.minOrder = ord;
+        } else {
+            map.set(it.category, { items: [it], minOrder: ord });
+        }
+    });
+    return Array.from(map.entries())
+        .sort((a, b) => a[1].minOrder - b[1].minOrder)
+        .map(([cat, { items }]): [string, T[]] => [cat, items]);
+}
 
 function getYoutubeId(url: string): string | null {
     if (!url) return null;
@@ -280,16 +297,11 @@ const FaqList: React.FC<{ faqs: Faq[]; totalEmpty: boolean; hasSearch: boolean }
     if (totalEmpty) return <EmptyState icon={HelpCircle} title="Nenhuma pergunta cadastrada" subtitle="As perguntas frequentes aparecem aqui assim que forem publicadas." />;
     if (faqs.length === 0 && hasSearch) return <SearchEmpty />;
 
-    const byCategory = new Map<string, Faq[]>();
-    faqs.forEach(f => {
-        const arr = byCategory.get(f.category) || [];
-        arr.push(f);
-        byCategory.set(f.category, arr);
-    });
+    const byCategory = groupByCategory<Faq>(faqs);
 
     return (
         <div className="space-y-6">
-            {Array.from(byCategory.entries()).map(([cat, list]) => (
+            {byCategory.map(([cat, list]) => (
                 <section key={cat}>
                     <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{cat}</h3>
                     <div className="bg-white dark:bg-[#22262e] border border-slate-200 dark:border-slate-700 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
@@ -302,7 +314,7 @@ const FaqList: React.FC<{ faqs: Faq[]; totalEmpty: boolean; hasSearch: boolean }
                                 <div key={f.id}>
                                     <button
                                         onClick={() => setOpenId(open ? null : f.id)}
-                                        className={`w-full text-left p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500 ${btnRounded}`}
+                                        className={`w-full text-left p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 ${btnRounded}`}
                                         aria-expanded={open}
                                     >
                                         <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">{f.question}</span>
@@ -329,16 +341,11 @@ const ArticlesList: React.FC<{ articles: Article[]; onOpen: (slug: string) => vo
     if (totalEmpty) return <EmptyState icon={FileText} title="Nenhum artigo ainda" subtitle="Os guias aparecem aqui assim que forem publicados." />;
     if (articles.length === 0 && hasSearch) return <SearchEmpty />;
 
-    const byCategory = new Map<string, Article[]>();
-    articles.forEach(a => {
-        const arr = byCategory.get(a.category) || [];
-        arr.push(a);
-        byCategory.set(a.category, arr);
-    });
+    const byCategory = groupByCategory<Article>(articles);
 
     return (
         <div className="space-y-6">
-            {Array.from(byCategory.entries()).map(([cat, list]) => (
+            {byCategory.map(([cat, list]) => (
                 <section key={cat}>
                     <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{cat}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
