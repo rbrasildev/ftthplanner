@@ -1582,7 +1582,7 @@ const NumInput: React.FC<{
                 const raw = e.target.value;
                 onChange(raw === '' ? NaN : Number(raw));
             }}
-            className="mt-0.5 w-full px-2 py-1 text-xs rounded-md bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/40 focus:outline-none focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-900 dark:text-white"
+            className="mt-0.5 w-full px-2 py-1 text-xs rounded-md bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/40 focus:outline-none focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-900 dark:text-white"
         />
         {defaultHint && (
             <span className="block text-[10px] text-slate-400 mt-0.5 truncate">{defaultHint}</span>

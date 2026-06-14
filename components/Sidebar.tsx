@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ChevronDown, ClipboardList, UtilityPole,
-    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet, HelpCircle
+    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet, HelpCircle, Building
 } from 'lucide-react';
 import { CTOIcon } from './icons/TelecomIcons';
 import { Button } from './common/Button';
@@ -237,8 +237,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             },
             { id: 'users', label: t('users') || 'Usuários', icon: Users, badge: menuBadges?.users },
             { id: 'integrations', label: 'Integrações', icon: Server, badge: menuBadges?.integrations },
-            { id: 'settings', label: t('company_settings_title') || 'Configurações', icon: Settings },
+            { id: 'settings', label: t('sidebar_organization') || 'Organização', icon: Building },
             { id: 'backup', label: t('backup') || 'Backup', icon: Database },
+            { id: 'help', label: t('help') || 'Ajuda', icon: HelpCircle },
         ].filter(item => {
             if (item.id === 'backup') return userBackupEnabled && (hasPermission(userPermissions, 'backup:manage') || userRole === 'OWNER' || userRole === 'support');
             if (item.id === 'users') return hasPermission(userPermissions, 'users:manage') || userRole === 'OWNER' || userRole === 'support';
@@ -251,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         // Group into sections
         const general = allItems.filter(i => i.id === 'projects' || i.id === 'dashboard');
         const management = allItems.filter(i => ['registrations', 'users', 'integrations'].includes(i.id));
-        const system = allItems.filter(i => ['settings', 'backup'].includes(i.id));
+        const system = allItems.filter(i => ['settings', 'backup', 'help'].includes(i.id));
 
         const sections: { label: string; items: MenuItem[] }[] = [];
         if (general.length) sections.push({ label: t('sidebar_general') || 'Geral', items: general });

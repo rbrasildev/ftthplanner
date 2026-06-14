@@ -498,11 +498,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [currentView]);
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#151820] font-sans transition-colors duration-300">
+    <div className="flex h-screen w-full bg-[#f9fafb] dark:bg-[#0f1117] font-sans transition-colors duration-300">
 
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#151820] px-4 pb-4 pt-20 lg:p-8 h-full relative">
+      <main className="flex-1 overflow-y-auto bg-[#f9fafb] dark:bg-[#0f1117] px-4 pb-4 pt-20 lg:p-8 h-full relative">
 
         {/* Projects View */}
         {currentView === 'projects' && (
@@ -527,11 +527,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     placeholder={t('search_generic')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/30/50 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
+                    className="w-full bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/50 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
                   />
                 </div>
 
-                <div className="flex items-center bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/30/50 rounded-xl p-1 shadow-sm h-[38px]">
+                <div className="flex items-center bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-1 shadow-sm h-[38px]">
                   <button
                     onClick={() => toggleViewMode('grid')}
                     className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}

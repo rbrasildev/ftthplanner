@@ -112,7 +112,7 @@ const InvoicePicker: React.FC<InvoicePickerProps> = ({ invoices, total, selected
                             onClick={() => onSelect(inv.id)}
                             className={`w-full text-left px-3.5 py-3 rounded-xl border-2 transition-all flex items-center gap-3 ${isSelected
                                 ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-500/10 shadow-sm shadow-emerald-500/10'
-                                : 'border-slate-200 dark:border-slate-700/40 bg-white dark:bg-[#151820] hover:border-slate-300 dark:hover:border-slate-600'
+                                : 'border-slate-200 dark:border-slate-700/40 bg-white dark:bg-[#1a1d23] hover:border-slate-300 dark:hover:border-slate-600'
                                 }`}
                         >
                             <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${isSelected
@@ -287,7 +287,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps & { companyId?: st
 
     return (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-2 sm:p-4">
-            <div className="bg-white dark:bg-[#151820] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] rounded-2xl border border-slate-200 dark:border-slate-700/30">
+            <div className="bg-white dark:bg-[#1a1d23] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh] rounded-2xl border border-slate-200 dark:border-slate-700/30">
 
                 {/* Header */}
                 <div className="relative shrink-0 border-b border-slate-100 dark:border-slate-700/30">

@@ -152,7 +152,7 @@ export const ProjectReportModal: React.FC<ProjectReportModalProps> = ({ isOpen, 
                 }
             `}</style>
             <div id="report-print-root" className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className="bg-white dark:bg-[#151820] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700/30 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 print-card">
+                <div className="bg-white dark:bg-[#1a1d23] w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700/30 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 print-card">
                     {/* Header — snapshot identity */}
                     <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30 flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-[#1a1d23]/50 print-bg-light">
                         <div className="flex items-start gap-3 min-w-0">

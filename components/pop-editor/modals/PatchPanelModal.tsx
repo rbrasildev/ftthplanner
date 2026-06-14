@@ -264,7 +264,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                             </button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl">
+                        <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl">
                             <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
                                 <Link2Off className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             </div>
@@ -279,7 +279,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                 </div>
 
                 {/* Equipment List - show OLTs if DIO port clicked, else DIOs */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 max-h-[55vh] space-y-2 bg-slate-50/50 dark:bg-[#151820]/50">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 max-h-[55vh] space-y-2 bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
                     {isDioSource ? (
                         // --- Show OLTs ---
                         localPOP.olts.length === 0 ? (
@@ -326,7 +326,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                     </button>
 
                                     {isExpanded && (
-                                        <div className="px-4 pb-4 pt-1 space-y-3 animate-in slide-in-from-top-2 duration-200 bg-slate-50/50 dark:bg-[#151820]/50 border-t border-slate-200 dark:border-slate-700/30">
+                                        <div className="px-4 pb-4 pt-1 space-y-3 animate-in slide-in-from-top-2 duration-200 bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 border-t border-slate-200 dark:border-slate-700/30">
                                             {/* Direct ports — agrupados por placa via padrão `-s<N>-p<M>` no id.
                                                 Se algum id não bate, cai no fallback flat (compat com OLTs antigas). */}
                                             {simplePorts.length > 0 && (() => {
@@ -454,7 +454,7 @@ export const PatchPanelModal: React.FC<PatchPanelModalProps> = ({
                                     </button>
 
                                     {isExpanded && (
-                                        <div className="px-4 pb-4 pt-1 space-y-3 animate-in slide-in-from-top-2 duration-200 bg-slate-50/50 dark:bg-[#151820]/50 border-t border-slate-200 dark:border-slate-700/30">
+                                        <div className="px-4 pb-4 pt-1 space-y-3 animate-in slide-in-from-top-2 duration-200 bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 border-t border-slate-200 dark:border-slate-700/30">
                                             {Array.from({ length: totalTrays }).map((_, trayIdx) => {
                                                 const startIdx = trayIdx * PORTS_PER_TRAY;
                                                 const trayPorts = dio.portIds.slice(startIdx, startIdx + PORTS_PER_TRAY);

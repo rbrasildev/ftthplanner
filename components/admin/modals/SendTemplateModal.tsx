@@ -142,7 +142,7 @@ export const SendTemplateModal: React.FC<SendTemplateModalProps> = ({ template, 
                                     placeholder={`Buscar ${targetType === 'COMPANY' ? 'empresa' : 'usuário'}...`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                                    className="w-full pl-10 pr-4 py-3 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
                                 />
                             </div>
 

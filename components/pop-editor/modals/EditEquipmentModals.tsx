@@ -371,7 +371,7 @@ export const EditEquipmentModals: React.FC<EditEquipmentModalsProps> = ({
                                                     flex items-center gap-3 p-2.5 rounded-lg border transition-all
                                                     ${slotConfig.active
                                                         ? 'bg-white dark:bg-[#22262e] border-slate-200 dark:border-slate-700/50'
-                                                        : 'bg-slate-50 dark:bg-[#151820]/50 border-slate-200 dark:border-slate-800'}
+                                                        : 'bg-[#f9fafb] dark:bg-[#0f1117]/50 border-slate-200 dark:border-slate-800'}
                                                 `}
                                             >
                                                 {/* Slot indicator + name */}

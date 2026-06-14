@@ -18,7 +18,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
 }) => {
     const baseClasses = `
         w-full px-4 py-2.5 
-        bg-white dark:bg-[#151820] 
+        bg-white dark:bg-[#1a1d23] 
         border rounded-lg transition-all duration-300
         text-sm text-slate-900 dark:text-white
         placeholder:text-slate-400

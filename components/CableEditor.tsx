@@ -655,7 +655,7 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onCl
                               const n = parseInt(raw, 10);
                               if (!isNaN(n)) setFormData(prev => ({ ...prev, customWidth: Math.max(1, Math.min(20, n)) }));
                             }}
-                            className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#151820] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
+                            className="w-14 h-8 px-2 text-xs text-center font-mono bg-white dark:bg-[#1a1d23] border border-slate-300 dark:border-slate-600 rounded focus:border-emerald-500 outline-none"
                           />
                         </div>
                       </div>

@@ -582,7 +582,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                                             ? `${(formData.address as any).logradouro || ''}, ${(formData.address as any).numero || ''}${(formData.address as any).bairro ? ` - ${(formData.address as any).bairro}` : ''}` 
                                             : formData.address || ''}
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                        className="flex-1 px-4 py-2.5 bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
+                                        className="flex-1 px-4 py-2.5 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
                                         rows={2}
                                         placeholder={t('customer_address')}
                                     />

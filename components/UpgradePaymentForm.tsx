@@ -163,7 +163,7 @@ const StripeCardForm = ({ plan, onSuccess, status, setStatus, priceLabel, invoic
                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Dados do Cartão</h3>
                 </div>
 
-                <div className="px-4 py-3.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl relative">
+                <div className="px-4 py-3.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl relative">
                    <CardElement options={CARD_ELEMENT_OPTIONS} className="w-full" />
                 </div>
             </div>
@@ -603,7 +603,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
                                                 type="text"
                                                 readOnly
                                                 value={pixData.qr_code}
-                                                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs font-mono text-slate-500 truncate outline-none select-all"
+                                                className="flex-1 px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs font-mono text-slate-500 truncate outline-none select-all"
                                                 onClick={(e) => (e.target as HTMLInputElement).select()}
                                             />
                                             <button
@@ -709,7 +709,7 @@ export const UpgradePaymentForm: React.FC<UpgradePaymentFormProps> = ({ plan, on
 
                 {/* Coluna Direita: Resumo do Plano */}
                 <div className="w-full lg:w-[340px] order-2 lg:order-2">
-                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-[#151820] text-white p-5 sm:p-6 rounded-2xl shadow-xl relative overflow-hidden border border-white/5">
+                    <div className="lg:sticky lg:top-8 bg-slate-900 dark:bg-[#1a1d23] text-white p-5 sm:p-6 rounded-2xl shadow-xl relative overflow-hidden border border-white/5">
 
                         <div className="relative z-10">
                             <div className="mb-5">

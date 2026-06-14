@@ -361,7 +361,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                         <div className="flex items-center gap-2 overflow-hidden">
                             <input autoFocus value={newName} onChange={(e) => setNewName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSaveRename()}
-                                className="bg-slate-50 dark:bg-[#151820] border border-emerald-500/50 rounded-lg px-2 py-1 text-sm font-bold text-slate-800 dark:text-white w-full focus:outline-none focus:ring-4 focus:ring-emerald-500/10" />
+                                className="bg-[#f9fafb] dark:bg-[#0f1117] border border-emerald-500/50 rounded-lg px-2 py-1 text-sm font-bold text-slate-800 dark:text-white w-full focus:outline-none focus:ring-4 focus:ring-emerald-500/10" />
                             <button onClick={handleSaveRename} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
                                 <Check className="w-4 h-4 text-emerald-600" />
                             </button>
@@ -418,7 +418,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                                 className={`px-2 py-2 rounded-lg text-[10px] font-bold transition-all border flex items-center justify-center gap-1.5
                                                     ${approvalStatus === s
                                                         ? 'border-current shadow-sm'
-                                                        : 'bg-white dark:bg-[#151820] text-slate-400 border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
+                                                        : 'bg-white dark:bg-[#1a1d23] text-slate-400 border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
                                                 `}
                                                 style={approvalStatus === s ? { color: POLE_APPROVAL_COLORS[s], borderColor: POLE_APPROVAL_COLORS[s], backgroundColor: `${POLE_APPROVAL_COLORS[s]}10` } : {}}>
                                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: POLE_APPROVAL_COLORS[s] }} />
@@ -621,7 +621,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                         <div className="bg-slate-50 dark:bg-[#22262e]/50 rounded-xl p-3 space-y-2 border border-slate-100 dark:border-slate-700/30">
                                             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t('pole_equipment_add')}</label>
                                             <select value={newEquipType} onChange={e => setNewEquipType(e.target.value)}
-                                                className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none">
+                                                className="w-full bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none">
                                                 {EQUIPMENT_TYPES.map(t2 => (
                                                     <option key={t2} value={t2}>{t(`pole_equipment_type_${t2}` as any) || t2}</option>
                                                 ))}
@@ -629,9 +629,9 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                             <div className="grid grid-cols-3 gap-2">
                                                 <input value={newEquipName} onChange={e => setNewEquipName(e.target.value)}
                                                     placeholder={t('pole_equipment_name')}
-                                                    className="col-span-2 bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
+                                                    className="col-span-2 bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
                                                 <input type="number" min={1} value={newEquipQty} onChange={e => setNewEquipQty(parseInt(e.target.value) || 1)}
-                                                    className="bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none text-center" />
+                                                    className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none text-center" />
                                             </div>
                                             <button onClick={handleAddEquipment} disabled={!newEquipName.trim()}
                                                 className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
@@ -678,10 +678,10 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                             <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{t('pole_photo_add')}</label>
                                             <input value={newPhotoUrl} onChange={e => setNewPhotoUrl(e.target.value)}
                                                 placeholder={t('pole_photo_url')}
-                                                className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
+                                                className="w-full bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
                                             <input value={newPhotoCaption} onChange={e => setNewPhotoCaption(e.target.value)}
                                                 placeholder={t('pole_photo_caption')}
-                                                className="w-full bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
+                                                className="w-full bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/30 rounded-lg px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none" />
                                             <button onClick={handleAddPhoto} disabled={!newPhotoUrl.trim()}
                                                 className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
                                                 <Camera className="w-3.5 h-3.5" /> {t('pole_photo_add')}
@@ -723,7 +723,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                                                     className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-all border text-left
                                                         ${checklist[item.key]
                                                             ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30'
-                                                            : 'bg-white dark:bg-[#151820] border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
+                                                            : 'bg-white dark:bg-[#1a1d23] border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
                                                     `}>
                                                     {checklist[item.key]
                                                         ? <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />

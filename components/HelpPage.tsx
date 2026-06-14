@@ -71,7 +71,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onClose: _onClose }) => {
     const openArticle = data?.articles.find(a => a.slug === openArticleSlug) || null;
 
     return (
-        <div className="h-full bg-slate-50 dark:bg-[#151820] px-4 pb-4 pt-20 lg:p-8 overflow-y-auto">
+        <div className="h-full bg-[#f9fafb] dark:bg-[#0f1117] px-4 pb-4 pt-20 lg:p-8 overflow-y-auto">
             {loading ? (
                 <LoadingSkeleton />
             ) : error ? (
@@ -126,7 +126,7 @@ const Header: React.FC<{
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar nesta aba…"
-                className="w-full bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/30/50 rounded-xl pl-9 pr-9 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
+                className="w-full bg-slate-100/80 dark:bg-[#22262e]/40 border border-slate-200/50 dark:border-slate-700/50 rounded-xl pl-9 pr-9 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 placeholder:text-slate-400 shadow-sm"
                 aria-label="Buscar na Central de Ajuda"
             />
             {search && (
@@ -320,11 +320,16 @@ const FaqList: React.FC<{ faqs: Faq[]; totalEmpty: boolean; hasSearch: boolean }
                                         <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">{f.question}</span>
                                         <ChevronRight className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-90 text-emerald-500' : ''}`} />
                                     </button>
-                                    {open && (
-                                        <div className="px-4 sm:px-5 pb-5 -mt-1">
-                                            <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed">{f.answer}</p>
+                                    <div
+                                        className="grid transition-all duration-300 ease-out"
+                                        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+                                    >
+                                        <div className="overflow-hidden">
+                                            <div className="px-4 sm:px-5 pb-5 pt-0">
+                                                <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed">{f.answer}</p>
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             );
                         })}

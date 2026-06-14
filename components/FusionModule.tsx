@@ -48,7 +48,7 @@ export const FusionModule: React.FC<FusionModuleProps> = ({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex flex-col gap-4 bg-slate-50 dark:bg-[#151820]/30">
+                <form onSubmit={handleSubmit} className="p-4 border-b border-slate-100 dark:border-slate-700/30 flex flex-col gap-4 bg-[#f9fafb] dark:bg-[#0f1117]/30">
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nome da Fusão</label>
                         <input

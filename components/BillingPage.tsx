@@ -260,7 +260,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack, userData, show
     return (
         <div className="fixed inset-0 z-[100000] bg-slate-50 dark:bg-[#0e1014] overflow-auto animate-in fade-in duration-200">
             {/* Top Bar */}
-            <div className="sticky top-0 z-20 bg-white dark:bg-[#151820] border-b border-slate-200 dark:border-slate-800">
+            <div className="sticky top-0 z-20 bg-white dark:bg-[#1a1d23] border-b border-slate-200 dark:border-slate-800">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <button
                         onClick={onBack}
@@ -604,7 +604,7 @@ const OverviewView: React.FC<OverviewViewProps> = ({
             )}
 
             {/* Plan card */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151820] overflow-hidden">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a1d23] overflow-hidden">
                 <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div>
@@ -667,7 +667,7 @@ const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
 
             {/* Security badge */}
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#151820] border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-800">
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
@@ -749,7 +749,7 @@ const InvoicesView: React.FC<InvoicesViewProps> = ({ invoices, totalInvoices, lo
                     </p>
                 </div>
             ) : (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#151820]">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#1a1d23]">
                     {invoices.map((inv) => (
                         <InvoiceRow
                             key={inv.id}
@@ -860,7 +860,7 @@ const PlansView: React.FC<PlansViewProps> = ({ plans, loading, currentPlanId, cu
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-700/30 p-6 animate-pulse bg-white dark:bg-[#151820]">
+                    <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-700/30 p-6 animate-pulse bg-white dark:bg-[#1a1d23]">
                         <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-lg mb-4" />
                         <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
                         <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded mb-6" />
@@ -911,7 +911,7 @@ const PlansView: React.FC<PlansViewProps> = ({ plans, loading, currentPlanId, cu
                     return (
                         <div
                             key={plan.id}
-                            className={`relative rounded-2xl border flex flex-col bg-white dark:bg-[#151820] transition-all ${plan.highlight
+                            className={`relative rounded-2xl border flex flex-col bg-white dark:bg-[#1a1d23] transition-all ${plan.highlight
                                 ? 'border-emerald-500 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500/20'
                                 : isCurrent
                                     ? 'border-slate-300 dark:border-slate-600 ring-1 ring-slate-300/50 dark:ring-slate-600/30'

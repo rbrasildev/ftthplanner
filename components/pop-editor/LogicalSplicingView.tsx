@@ -321,7 +321,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
             <div
                 key={cable.id}
                 id={`cable-card-${cable.id}`}
-                className="bg-white dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden mb-3"
+                className="bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden mb-3"
             >
                 <button
                     onClick={(e) => toggleCable(cable.id, e)}
@@ -424,7 +424,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
 
     return (
         <div className="flex-1 w-full h-full bg-slate-50 dark:bg-[#1a1d23] flex flex-col pointer-events-auto">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#151820] shrink-0">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 bg-white dark:bg-[#1a1d23] shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -705,7 +705,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                 </div>
 
                 {/* Lado B: DIO (Trays/Ports) */}
-                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#151820]">
+                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white dark:bg-[#1a1d23]">
                     <div className="px-4 py-2.5 bg-white dark:bg-[#22262e] border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                             <Layers className="w-4 h-4 text-orange-500" />
@@ -721,7 +721,7 @@ export const LogicalSplicingView: React.FC<LogicalSplicingViewProps> = ({
                                 const portsInTray = endPort - startPort;
 
                                 return (
-                                    <div key={trayIdx} className="bg-white dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                                    <div key={trayIdx} className="bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
                                         <button
                                             onClick={(e) => toggleTray(trayIdx, e)}
                                             className="w-full bg-slate-50 dark:bg-[#22262e] px-4 py-2.5 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"

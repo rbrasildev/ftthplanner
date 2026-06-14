@@ -187,7 +187,7 @@ const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onLocate, p
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input type="text" placeholder={t('search_placeholder') || 'Buscar por nome, email, telefone...'}
                                 value={search} onChange={e => setSearch(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm" />
+                                className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm" />
                         </div>
                         {total > 0 && (
                             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium tabular-nums">

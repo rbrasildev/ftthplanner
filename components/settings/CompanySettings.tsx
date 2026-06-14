@@ -90,16 +90,49 @@ const SettingsSkeleton = () => (
     </div>
 );
 
-// --- SectionCard primitive ---
-const SectionCard: React.FC<{ title: string; description?: string; children: React.ReactNode }> = ({ title, description, children }) => (
-    <section className="bg-white dark:bg-[#1a1d23] border border-slate-200/80 dark:border-slate-700/30 rounded-xl overflow-hidden">
-        <header className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800/60">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-            {description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
-            )}
+// --- SaveSectionButton: aparece apenas quando a seção tem alteração pendente. ---
+const SaveSectionButton: React.FC<{
+    visible: boolean;
+    saving: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+}> = ({ visible, saving, disabled, onClick }) => {
+    if (!visible) return null;
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={saving || disabled}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-bottom-1 duration-200 shadow-sm"
+            title={disabled ? 'Corrija os erros antes de salvar' : 'Salvar esta seção'}
+        >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? 'Salvando…' : 'Salvar'}
+        </button>
+    );
+};
+
+// --- Seção plana (sem card): header + conteúdo + save inline. ---
+const SettingsSection: React.FC<{
+    title: string;
+    description?: string;
+    dirty: boolean;
+    saving: boolean;
+    hasErrors: boolean;
+    onSave: () => void;
+    children: React.ReactNode;
+}> = ({ title, description, dirty, saving, hasErrors, onSave, children }) => (
+    <section className="bg-white dark:bg-[#1a1d23] border border-slate-200/80 dark:border-slate-700/30 rounded-2xl">
+        <header className="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5 pb-4">
+            <div className="min-w-0">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">{title}</h3>
+                {description && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
+                )}
+            </div>
+            <SaveSectionButton visible={dirty} saving={saving} disabled={hasErrors} onClick={onSave} />
         </header>
-        <div className="p-6">{children}</div>
+        <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-1">{children}</div>
     </section>
 );
 
@@ -268,23 +301,17 @@ export const CompanySettings: React.FC = () => {
         reader.readAsDataURL(file);
     };
 
+    // Dirty por seção — habilita só o botão da seção que tem mudança pendente.
+    const fieldsChanged = (fields: (keyof FormState)[]) =>
+        fields.some(f => formData[f] !== initialData[f]);
+    const identityDirty = fieldsChanged(['name', 'logoUrl']);
+    const contactDirty = fieldsChanged(['cnpj', 'phone', 'businessEmail', 'website']);
+    const addressDirty = fieldsChanged(['zipCode', 'address', 'city', 'state']);
+
     if (loading) return <SettingsSkeleton />;
 
     return (
         <form onSubmit={handleSave} className="space-y-6 animate-in fade-in duration-300 pb-24">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Building2 className="w-7 h-7 text-emerald-500 dark:text-emerald-400" />
-                        {t('company_settings_title')}
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                        {t('company_settings_subtitle')}
-                    </p>
-                </div>
-            </div>
-
             {/* Status toast — success efêmero, error persistente */}
             {status && (
                 <div
@@ -310,45 +337,73 @@ export const CompanySettings: React.FC = () => {
                 </div>
             )}
 
-            {/* === IDENTIDADE === */}
-            <SectionCard title="Identidade" description="Como sua empresa aparece pra clientes e usuários.">
-                <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {/* === HERO IDENTIDADE === */}
+            <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-white dark:from-[#1a1d23] dark:to-[#22262e] border border-slate-200/80 dark:border-slate-700/30 rounded-2xl p-6 sm:p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.08),transparent_50%)] pointer-events-none" />
+                <div className="relative flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                    {/* Logo grande */}
                     <label className="relative group cursor-pointer shrink-0">
-                        <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-[#151820] border-2 border-dashed border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden transition-colors group-hover:border-emerald-400 dark:group-hover:border-emerald-600">
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700/50 shadow-sm flex items-center justify-center overflow-hidden transition-all group-hover:shadow-md group-hover:border-emerald-300 dark:group-hover:border-emerald-700">
                             {formData.logoUrl ? (
-                                <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
                             ) : (
-                                <Building2 className="w-9 h-9 text-slate-300 dark:text-slate-600" />
+                                <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                             )}
                             {uploading && (
                                 <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center rounded-2xl">
-                                    <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
+                                    <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
                                 </div>
                             )}
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-600 group-hover:bg-emerald-500 text-white rounded-lg shadow-md transition-colors">
-                            <Camera className="w-3 h-3" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-2xl">
+                                <span className="text-white text-xs font-bold flex items-center gap-1.5">
+                                    <Camera className="w-3.5 h-3.5" /> Alterar
+                                </span>
+                            </div>
                         </div>
                         <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                     </label>
 
-                    <div className="flex-1 w-full space-y-1.5">
-                        <CustomInput
-                            label={t('company_name_label')}
+                    {/* Identidade — nome editável inline */}
+                    <div className="flex-1 w-full min-w-0">
+                        <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nome da organização</label>
+                        <input
                             type="text"
                             value={formData.name}
                             onChange={e => update('name', e.target.value)}
                             onBlur={() => onBlur('name')}
-                            error={visibleErrors.name}
+                            placeholder="Minha Empresa"
+                            className={`w-full text-2xl sm:text-3xl font-extrabold bg-transparent border-0 border-b-2 border-transparent focus:border-emerald-500 focus:outline-none text-slate-900 dark:text-white tracking-tight pb-1 transition-colors ${visibleErrors.name ? 'border-rose-400' : ''}`}
                             required
                         />
-                        <p className="text-[11px] text-slate-400">{t('company_logo_hint')}</p>
+                        {visibleErrors.name && (
+                            <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{visibleErrors.name}</p>
+                        )}
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                            {t('company_logo_hint') || 'Logo PNG ou SVG, fundo transparente. Aparece em faturas e na barra lateral.'}
+                        </p>
+                    </div>
+
+                    {/* Save da seção */}
+                    <div className="shrink-0 self-start sm:self-center">
+                        <SaveSectionButton
+                            visible={identityDirty}
+                            saving={saving}
+                            disabled={hasErrors}
+                            onClick={() => handleSave()}
+                        />
                     </div>
                 </div>
-            </SectionCard>
+            </section>
 
             {/* === CONTATO === */}
-            <SectionCard title="Contato" description="Informações fiscais e canais de contato.">
+            <SettingsSection
+                title="Contato"
+                description="Informações fiscais e canais oficiais."
+                dirty={contactDirty}
+                saving={saving}
+                hasErrors={hasErrors}
+                onSave={() => handleSave()}
+            >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <CustomInput
                         label={t('company_cnpj_label')}
@@ -394,10 +449,17 @@ export const CompanySettings: React.FC = () => {
                         />
                     </div>
                 </div>
-            </SectionCard>
+            </SettingsSection>
 
             {/* === ENDEREÇO === */}
-            <SectionCard title="Endereço" description="Localização da sede da empresa.">
+            <SettingsSection
+                title="Endereço"
+                description="Localização da sede."
+                dirty={addressDirty}
+                saving={saving}
+                hasErrors={hasErrors}
+                onSave={() => handleSave()}
+            >
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div className="md:col-span-2">
                         <CustomInput
@@ -440,39 +502,20 @@ export const CompanySettings: React.FC = () => {
                         />
                     </div>
                 </div>
-            </SectionCard>
+            </SettingsSection>
 
-            {/* === STICKY SAVE BAR ===
-                Aparece SÓ quando dirty=true. Resolve: save invisível ao scrollar,
-                feedback de mudança pendente, ação de descartar. */}
+            {/* Reset global — discreto, só aparece se tem qualquer dirty */}
             {dirty && (
-                <div className="sticky bottom-4 z-20">
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-[#1a1d23] border border-amber-300/80 dark:border-amber-700/40 rounded-xl shadow-lg shadow-amber-500/10 backdrop-blur">
-                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-2 min-w-0">
-                            <AlertCircle className="w-4 h-4 shrink-0" />
-                            <span className="truncate">Você tem alterações não salvas</span>
-                        </span>
-                        <div className="flex gap-2 shrink-0">
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                disabled={saving}
-                                className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/40 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                            >
-                                <Undo2 className="w-3.5 h-3.5" />
-                                Descartar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={saving || hasErrors}
-                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-2 font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={hasErrors ? 'Corrija os erros antes de salvar' : 'Salvar (Ctrl+S)'}
-                            >
-                                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                {saving ? 'Salvando...' : 'Salvar alterações'}
-                            </button>
-                        </div>
-                    </div>
+                <div className="flex justify-end pt-2">
+                    <button
+                        type="button"
+                        onClick={handleReset}
+                        disabled={saving}
+                        className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition flex items-center gap-1.5"
+                    >
+                        <Undo2 className="w-3.5 h-3.5" />
+                        Descartar todas as alterações
+                    </button>
                 </div>
             )}
         </form>

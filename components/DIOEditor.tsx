@@ -167,7 +167,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
             style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
             onContextMenu={(e) => e.preventDefault()}
         >
-            <div className="w-full h-full bg-white dark:bg-[#151820] flex flex-col overflow-hidden relative">
+            <div className="w-full h-full bg-white dark:bg-[#1a1d23] flex flex-col overflow-hidden relative">
 
                 {/* Toolbar */}
                 <div className="h-12 bg-white dark:bg-[#1a1d23] border-b border-slate-200 dark:border-slate-700/30 flex items-center justify-between px-4 shrink-0 z-50 shadow-sm">
@@ -274,7 +274,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                 </div>
 
                 {/* Splicing View */}
-                <div className="flex-1 bg-white dark:bg-[#151820] relative overflow-hidden">
+                <div className="flex-1 bg-white dark:bg-[#1a1d23] relative overflow-hidden">
                     <LogicalSplicingView
                         dio={dio}
                         localPOP={pop}
@@ -340,7 +340,7 @@ export const DIOEditor: React.FC<DIOEditorProps> = ({
                                                         ${isLinked
                                                             ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-600'
                                                             : assignedToWho
-                                                                ? 'bg-slate-50 dark:bg-[#151820] border-slate-100 dark:border-slate-800 opacity-50 cursor-not-allowed'
+                                                                ? 'bg-[#f9fafb] dark:bg-[#0f1117] border-slate-100 dark:border-slate-800 opacity-50 cursor-not-allowed'
                                                                 : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10'}
                                                     `}
                                                 >

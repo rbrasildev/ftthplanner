@@ -164,7 +164,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                             placeholder={t('search_generic')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -395,7 +395,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1 border border-slate-200 dark:border-slate-700/40 rounded-xl p-3 bg-slate-50 dark:bg-[#151820]/40">
+                                            <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar pr-1 border border-slate-200 dark:border-slate-700/40 rounded-xl p-3 bg-[#f9fafb] dark:bg-[#0f1117]/40">
                                                 {Array.from({ length: slotsN }).map((_, sIdx) => {
                                                     const slot = sIdx + 1;
                                                     return (
@@ -466,7 +466,7 @@ export const OLTRegistration: React.FC<OLTRegistrationProps> = ({ showToast }) =
                             </section>
                         </div>
 
-                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700/30 bg-slate-50/60 dark:bg-[#151820]/60 rounded-b-2xl shrink-0">
+                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700/30 bg-[#f9fafb]/60 dark:bg-[#0f1117]/60 rounded-b-2xl shrink-0">
                             <ModalFooter
                                 onCancel={closeModal}
                                 primaryLabel={t('save') || 'Salvar'}

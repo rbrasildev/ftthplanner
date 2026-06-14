@@ -173,7 +173,7 @@ export const PoleTableView: React.FC<PoleTableViewProps> = ({
                 <div className="relative flex-1 max-w-xs">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar poste..."
-                        className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                        className="w-full pl-8 pr-3 py-1.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
                 </div>
                 <div className="flex gap-1">
                     {filters.map(f => (
@@ -181,7 +181,7 @@ export const PoleTableView: React.FC<PoleTableViewProps> = ({
                             className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1
                                 ${filter === f.key
                                     ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                                    : 'bg-white dark:bg-[#151820] text-slate-400 border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
+                                    : 'bg-white dark:bg-[#1a1d23] text-slate-400 border-slate-200 dark:border-slate-700/30 hover:border-slate-300'}
                             `}>
                             {f.color && <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: f.color }} />}
                             {f.label}

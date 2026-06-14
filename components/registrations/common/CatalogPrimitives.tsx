@@ -357,7 +357,7 @@ export const UnitInput: React.FC<{
                 placeholder={placeholder}
                 value={value}
                 onChange={e => onChange(Number(e.target.value))}
-                className={`w-full pl-4 pr-14 py-2.5 bg-white dark:bg-[#151820] border rounded-lg transition-colors text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 ${error
+                className={`w-full pl-4 pr-14 py-2.5 bg-white dark:bg-[#1a1d23] border rounded-lg transition-colors text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 ${error
                     ? 'border-red-500 ring-4 ring-red-500/10'
                     : 'border-slate-200 dark:border-slate-700/30 hover:border-slate-300 dark:hover:border-slate-700'}`}
             />
