@@ -261,3 +261,39 @@ export const lookupReferralConsultant = async (code: string): Promise<{ name: st
         return null;
     }
 };
+
+// --- Página de Ajuda (FAQs + Artigos) ---
+
+export const listHelpFaqs = async () => {
+    const r = await api.get('/saas/help/faqs');
+    return r.data;
+};
+export const createHelpFaq = async (data: { category: string; question: string; answer: string; order?: number; active?: boolean }) => {
+    const r = await api.post('/saas/help/faqs', data);
+    return r.data;
+};
+export const updateHelpFaq = async (id: string, data: any) => {
+    const r = await api.put(`/saas/help/faqs/${id}`, data);
+    return r.data;
+};
+export const deleteHelpFaq = async (id: string) => {
+    const r = await api.delete(`/saas/help/faqs/${id}`);
+    return r.data;
+};
+
+export const listHelpArticles = async () => {
+    const r = await api.get('/saas/help/articles');
+    return r.data;
+};
+export const createHelpArticle = async (data: { title: string; category: string; content: string; order?: number; active?: boolean }) => {
+    const r = await api.post('/saas/help/articles', data);
+    return r.data;
+};
+export const updateHelpArticle = async (id: string, data: any) => {
+    const r = await api.put(`/saas/help/articles/${id}`, data);
+    return r.data;
+};
+export const deleteHelpArticle = async (id: string) => {
+    const r = await api.delete(`/saas/help/articles/${id}`);
+    return r.data;
+};

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspens
 import { Helmet } from 'react-helmet-async';
 import { MapView } from './components/MapView';
 import { Sidebar } from './components/Sidebar';
+import { HelpPage } from './components/HelpPage';
 import { Button } from './components/common/Button';
 import { calculateDistance } from './utils/geometryUtils';
 import { isSubscriptionExpired } from './utils/subscriptionUtils';
@@ -421,6 +422,7 @@ export default function App() {
 
     // --- Sidebar & Responsive State ---
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('ftth_sidebar_collapsed') === 'true');
+    const [isHelpPageOpen, setIsHelpPageOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [dashboardView, setDashboardView] = useState<any>(() => {
         // Se começou a sessão de suporte agora, forçamos 'projects'
@@ -2135,16 +2137,21 @@ export default function App() {
                 isMobileOpen={isMobileMenuOpen}
                 onCloseMobile={() => setIsMobileMenuOpen(false)}
                 currentDashboardView={dashboardView}
-                onDashboardViewChange={setDashboardView}
+                onDashboardViewChange={(v) => { setIsHelpPageOpen(false); setDashboardView(v); }}
                 isHydrated={isHydrated}
                 companyLogo={companyLogo}
                 companyName={companyName}
                 saasName={saasConfig?.appName}
                 saasLogo={saasConfig?.appLogoUrl}
                 onProjectSettingsClick={() => setShowSettingsModal(true)}
+                onHelpClick={() => setIsHelpPageOpen(true)}
             />
 
-            {!currentProjectId ? (
+            {isHelpPageOpen ? (
+                <main className="flex-1 relative">
+                    <HelpPage onClose={() => setIsHelpPageOpen(false)} />
+                </main>
+            ) : !currentProjectId ? (
                 <main className="flex-1 relative">
                     <DashboardPage
                         username={user!}

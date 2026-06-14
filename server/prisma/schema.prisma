@@ -777,7 +777,41 @@ model SaaSConfig {
   billingReminderDaysBefore  Int     @default(5)    @map("billing_reminder_days_before")
   billingOverdueIntervalDays Int     @default(3)    @map("billing_overdue_interval_days")
 
+  // Contatos exibidos na página de Ajuda da área do cliente
+  supportWhatsapp String? @map("support_whatsapp")
+
   @@map("saas_configs")
+}
+
+// Página de Ajuda: FAQs agrupados por categoria. Editado via Admin SaaS.
+model HelpFaq {
+  id        String   @id @default(uuid())
+  category  String   // ex: "Cobrança", "Projetos", "Conta"
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([category, order])
+  @@map("help_faqs")
+}
+
+// Página de Ajuda: artigos/guias em markdown. Editado via Admin SaaS.
+model HelpArticle {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  category  String
+  content   String   @db.Text // Markdown
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([category, order])
+  @@map("help_articles")
 }
 
 model EmailLog {

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
-import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, ChevronDown, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon, FileDown } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, ChevronRight, CheckCircle2, AlertTriangle, Search, Network, Settings, BarChart3, X, Trash2, Users, Shield, Lock, RotateCcw, Eye, Activity, Zap, Server, Clock, Play, Monitor, Mail, Send, Map, UserCheck, HeartPulse, ChevronLeft, ChevronDown, Sun, Moon, Languages, MessageSquare, Receipt, RefreshCw, Calendar, TrendingUp, Wallet, CalendarClock, Palette, Globe, Share2, Image as ImageIcon, FileDown, HelpCircle } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import api from '../../services/api';
 import { isSubscriptionExpired, toBRDateMidnight } from '../../utils/subscriptionUtils';
@@ -17,6 +17,7 @@ import { SupportAdminPanel } from './SupportAdminPanel';
 import { SaasAuditLogs } from './SaasAuditLogs';
 import { SaasDashboard } from './SaasDashboard';
 import { SaasConsultants } from './SaasConsultants';
+import { SaasHelp } from './SaasHelp';
 
 interface Company {
     id: string;
@@ -739,7 +740,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat' | 'trash' | 'consultants'>(() => {
+    const [activeView, setActiveView] = useState<'dashboard' | 'companies' | 'plans' | 'audit' | 'analytics' | 'global_map' | 'users' | 'videos' | 'email' | 'config' | 'retention' | 'support_chat' | 'trash' | 'consultants' | 'help'>(() => {
         return (localStorage.getItem('saasAdminActiveView') as any) || 'dashboard';
     });
     const [plans, setPlans] = useState<any[]>([]);
@@ -1086,6 +1087,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
             items: [
                 { id: 'videos', label: t('saas_nav_videos'), icon: <Play className="w-5 h-5" /> },
                 { id: 'email', label: t('saas_nav_email'), icon: <Mail className="w-5 h-5" /> },
+                { id: 'help', label: t('saas_nav_help') || 'Ajuda', icon: <HelpCircle className="w-5 h-5" /> },
                 { id: 'support_chat', label: 'Suporte', icon: <MessageSquare className="w-5 h-5" />, badge: unreadSupportCount },
             ]
         },
@@ -2125,6 +2127,8 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                     {activeView === 'analytics' && <SaasAnalytics companies={companies} />}
 
                     {activeView === 'consultants' && <SaasConsultants />}
+
+                    {activeView === 'help' && <SaasHelp />}
 
                     {activeView === 'retention' && <SaasRetentionIntelligence />}
 

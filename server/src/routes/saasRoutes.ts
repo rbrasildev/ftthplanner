@@ -6,6 +6,7 @@ import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } fro
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate, runBillingReminders } from '../controllers/emailController';
 import { getRetentionDashboard, processRetentionManual } from '../controllers/retentionController';
 import { listConsultants, createConsultant, updateConsultant, deleteConsultant, getConsultantStats } from '../controllers/referralController';
+import { listFaqs, createFaq, updateFaq, deleteFaq, listArticles, createArticle, updateArticle, deleteArticle } from '../controllers/helpController';
 
 const router = express.Router();
 
@@ -48,6 +49,16 @@ router.post('/consultants', authenticateToken, requireSuperAdmin, createConsulta
 router.put('/consultants/:id', authenticateToken, requireSuperAdmin, updateConsultant);
 router.delete('/consultants/:id', authenticateToken, requireSuperAdmin, deleteConsultant);
 router.get('/consultants/:id/stats', authenticateToken, requireSuperAdmin, getConsultantStats);
+
+// Página de Ajuda — admin CRUD (FAQs + Artigos)
+router.get('/help/faqs', authenticateToken, requireSuperAdmin, listFaqs);
+router.post('/help/faqs', authenticateToken, requireSuperAdmin, createFaq);
+router.put('/help/faqs/:id', authenticateToken, requireSuperAdmin, updateFaq);
+router.delete('/help/faqs/:id', authenticateToken, requireSuperAdmin, deleteFaq);
+router.get('/help/articles', authenticateToken, requireSuperAdmin, listArticles);
+router.post('/help/articles', authenticateToken, requireSuperAdmin, createArticle);
+router.put('/help/articles/:id', authenticateToken, requireSuperAdmin, updateArticle);
+router.delete('/help/articles/:id', authenticateToken, requireSuperAdmin, deleteArticle);
 
 // Projects (Trash Bin)
 router.get('/projects/deleted', authenticateToken, requireSuperAdmin, getDeletedProjects);

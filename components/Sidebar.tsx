@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ChevronDown, ClipboardList, UtilityPole,
-    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet
+    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet, HelpCircle
 } from 'lucide-react';
 import { CTOIcon } from './icons/TelecomIcons';
 import { Button } from './common/Button';
@@ -68,6 +68,7 @@ export interface SidebarProps {
     userBackupEnabled?: boolean;
     menuBadges?: Partial<Record<DashboardView, number | string>>;
     onProjectSettingsClick?: () => void;
+    onHelpClick?: () => void;
 }
 
 // --- Helpers ---
@@ -192,7 +193,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     saasLogo,
     userBackupEnabled,
     menuBadges,
-    onProjectSettingsClick
+    onProjectSettingsClick,
+    onHelpClick
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
@@ -718,9 +720,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         </Button>
                                     )}
 
-                                    <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="grid grid-cols-4 gap-1.5">
                                         <FooterButton icon={<Globe className="w-3.5 h-3.5" />} title={language.toUpperCase()} onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')} />
                                         <FooterButton icon={theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />} title={theme === 'dark' ? 'Dark' : 'Light'} onClick={toggleTheme} />
+                                        {onHelpClick && (
+                                            <FooterButton icon={<HelpCircle className="w-3.5 h-3.5" />} title={t('help') || 'Ajuda'} onClick={() => { onHelpClick(); setShowUserPopover(false); }} />
+                                        )}
                                         <FooterButton icon={<LogOut className="w-3.5 h-3.5" />} title={t('logout')} onClick={onLogout} danger />
                                     </div>
                                 </div>
@@ -746,14 +751,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Expanded: Footer actions */}
                     {!isCollapsed && (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className={`grid ${onHelpClick ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
                             <FooterButton icon={<Globe className="w-4 h-4" />} title={language.toUpperCase()} onClick={() => setLanguage(language === 'en' ? 'pt' : 'en')} />
                             <FooterButton icon={theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />} title={theme === 'dark' ? 'Dark' : 'Light'} onClick={toggleTheme} />
+                            {onHelpClick && (
+                                <FooterButton icon={<HelpCircle className="w-4 h-4" />} title={t('help') || 'Ajuda'} onClick={onHelpClick} />
+                            )}
                             <FooterButton icon={<LogOut className="w-4 h-4" />} title={t('logout')} onClick={onLogout} danger />
                         </div>
                     )}
 
-                    {/* Collapsed: Only theme + logout (rest is in popover) */}
+                    {/* Collapsed: Only theme + help + logout (rest is in popover) */}
                     {isCollapsed && (
                         <div className="flex flex-col gap-2 items-center">
                             <Tooltip content={theme === 'dark' ? 'Dark' : 'Light'}>
@@ -763,6 +771,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     className="w-10 h-10 px-0 flex-none"
                                 />
                             </Tooltip>
+                            {onHelpClick && (
+                                <Tooltip content={t('help') || 'Ajuda'}>
+                                    <FooterButton
+                                        icon={<HelpCircle className="w-4 h-4" />}
+                                        onClick={onHelpClick}
+                                        className="w-10 h-10 px-0 flex-none"
+                                    />
+                                </Tooltip>
+                            )}
                             <Tooltip content={t('logout')}>
                                 <FooterButton
                                     icon={<LogOut className="w-4 h-4" />}
