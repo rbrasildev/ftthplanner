@@ -3,7 +3,7 @@ import {
     FolderOpen, Upload, Activity, Flashlight, Globe, Moon, Sun,
     LogOut, FileUp, FileDown, ScanSearch, ChevronLeft, ChevronRight,
     Search, Database, LayoutDashboard, X, ChevronDown, ClipboardList, UtilityPole,
-    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet, HelpCircle, Building
+    Cable, GitFork, Server, Zap, Users, Settings, FileText, Crown, CreditCard, Plug, Ruler, Fingerprint, FileSpreadsheet, HelpCircle, Building, Briefcase, Puzzle
 } from 'lucide-react';
 import { CTOIcon } from './icons/TelecomIcons';
 import { Button } from './common/Button';
@@ -236,8 +236,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 ]
             },
             { id: 'users', label: t('users') || 'Usuários', icon: Users, badge: menuBadges?.users },
-            { id: 'integrations', label: 'Integrações', icon: Server, badge: menuBadges?.integrations },
-            { id: 'settings', label: t('sidebar_organization') || 'Organização', icon: Building },
+            { id: 'integrations', label: 'Integrações', icon: Puzzle, badge: menuBadges?.integrations },
+            { id: 'settings', label: t('sidebar_organization') || 'Organização', icon: Briefcase },
             { id: 'backup', label: t('backup') || 'Backup', icon: Database },
             { id: 'help', label: t('help') || 'Ajuda', icon: HelpCircle },
         ].filter(item => {
@@ -251,8 +251,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         // Group into sections
         const general = allItems.filter(i => i.id === 'projects' || i.id === 'dashboard');
-        const management = allItems.filter(i => ['registrations', 'users', 'integrations'].includes(i.id));
-        const system = allItems.filter(i => ['settings', 'backup', 'help'].includes(i.id));
+        const management = allItems.filter(i => ['registrations', 'users', 'integrations', 'settings'].includes(i.id));
+        const system = allItems.filter(i => ['backup', 'help'].includes(i.id));
 
         const sections: { label: string; items: MenuItem[] }[] = [];
         if (general.length) sections.push({ label: t('sidebar_general') || 'Geral', items: general });
