@@ -232,7 +232,7 @@ export const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ showToast: s
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-[#f9fafb]/50 dark:bg-[#0f1117]/30">
+                    <div className="flex-1 overflow-y-auto p-6 bg-[#f9fafb]/50 dark:bg-[#151820]/30">
                         {activeTab === 'settings' && <SgpSettingsModal providerType={selectedProvider} showToast={showToast} />}
                         {activeTab === 'conflicts' && <SgpConflictsTab providerType={selectedProvider} showToast={showToast} onConflictChange={fetchStatuses} />}
                     </div>

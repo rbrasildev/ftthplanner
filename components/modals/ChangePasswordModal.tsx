@@ -201,7 +201,7 @@ const PasswordField: React.FC<PasswordFieldProps> = ({ label, value, onChange, s
                 autoFocus={autoFocus}
                 disabled={disabled}
                 autoComplete={label.toLowerCase().includes('atual') ? 'current-password' : 'new-password'}
-                className="w-full px-3 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/40 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pr-10 transition-colors disabled:opacity-50"
+                className="w-full px-3 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/40 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pr-10 transition-colors disabled:opacity-50"
             />
             <button
                 type="button"

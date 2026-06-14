@@ -71,7 +71,7 @@ export const HelpPage: React.FC<HelpPageProps> = ({ onClose: _onClose }) => {
     const openArticle = data?.articles.find(a => a.slug === openArticleSlug) || null;
 
     return (
-        <div className="h-full bg-[#f9fafb] dark:bg-[#0f1117] px-4 pb-4 pt-20 lg:p-8 overflow-y-auto">
+        <div className="h-full bg-[#f9fafb] dark:bg-[#151820] px-4 pb-4 pt-20 lg:p-8 overflow-y-auto">
             {loading ? (
                 <LoadingSkeleton />
             ) : error ? (

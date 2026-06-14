@@ -361,7 +361,7 @@ export const PoleDetailsPanel: React.FC<PoleDetailsPanelProps> = ({
                         <div className="flex items-center gap-2 overflow-hidden">
                             <input autoFocus value={newName} onChange={(e) => setNewName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSaveRename()}
-                                className="bg-[#f9fafb] dark:bg-[#0f1117] border border-emerald-500/50 rounded-lg px-2 py-1 text-sm font-bold text-slate-800 dark:text-white w-full focus:outline-none focus:ring-4 focus:ring-emerald-500/10" />
+                                className="bg-[#f9fafb] dark:bg-[#151820] border border-emerald-500/50 rounded-lg px-2 py-1 text-sm font-bold text-slate-800 dark:text-white w-full focus:outline-none focus:ring-4 focus:ring-emerald-500/10" />
                             <button onClick={handleSaveRename} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
                                 <Check className="w-4 h-4 text-emerald-600" />
                             </button>

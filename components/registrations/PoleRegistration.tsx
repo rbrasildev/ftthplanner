@@ -136,7 +136,7 @@ export const PoleRegistration: React.FC<PoleRegistrationProps> = ({ showToast })
                             placeholder={t('search_placeholder_box') || 'Buscar por nome ou tipo...'}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg dark:text-slate-200 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                         />
                     </div>
                     {!loading && allPoles.length > 0 && (

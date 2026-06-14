@@ -347,7 +347,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onBackTo
                 </div>
 
                 {/* Right Side - Feature Image Display (Hidden on Mobile) */}
-                <div className="hidden lg:flex w-7/12 bg-[#f9fafb] dark:bg-[#0f1117] relative items-center justify-center p-12 overflow-hidden">
+                <div className="hidden lg:flex w-7/12 bg-[#f9fafb] dark:bg-[#151820] relative items-center justify-center p-12 overflow-hidden">
 
                     {/* Decorative Elements */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>

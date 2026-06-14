@@ -193,7 +193,7 @@ export const SaasAuditLogs: React.FC<Props> = ({ refreshSignal }) => {
                             placeholder="Buscar por usuário, ação, entidade, IP ou conteúdo..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="w-full pl-10 pr-4 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                         />
                     </div>
                     <select
@@ -267,7 +267,7 @@ export const SaasAuditLogs: React.FC<Props> = ({ refreshSignal }) => {
                     </div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0">
+                        <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0">
                             <tr>
                                 <th className="px-6 py-4">Quando</th>
                                 <th className="px-6 py-4">Quem</th>
@@ -319,7 +319,7 @@ export const SaasAuditLogs: React.FC<Props> = ({ refreshSignal }) => {
                                             </td>
                                         </tr>
                                         {expanded && (
-                                            <tr className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
+                                            <tr className="bg-[#f9fafb]/50 dark:bg-[#151820]/50">
                                                 <td colSpan={6} className="px-6 py-4">
                                                     <div className="flex items-start gap-2">
                                                         <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider shrink-0">JSON</span>
@@ -340,7 +340,7 @@ export const SaasAuditLogs: React.FC<Props> = ({ refreshSignal }) => {
 
             {/* Carregar mais */}
             {!loading && logs.length < total && (
-                <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
+                <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#151820]/50">
                     <span className="text-xs text-slate-500">{logs.length} carregados de {total}</span>
                     <button
                         onClick={loadMore}

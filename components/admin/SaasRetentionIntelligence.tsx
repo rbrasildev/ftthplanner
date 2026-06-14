@@ -360,11 +360,11 @@ export const SaasRetentionIntelligence: React.FC = () => {
                                         placeholder={t('retention_search_placeholder') || 'Buscar usuário, empresa, email…'}
                                         value={searchTerm}
                                         onChange={e => { setSearchTerm(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                                        className="pl-9 pr-4 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 w-full md:w-64"
+                                        className="pl-9 pr-4 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 w-full md:w-64"
                                     />
                                 </div>
                                 <select
-                                    className="px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm font-medium"
+                                    className="px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm font-medium"
                                     value={filterRisk}
                                     onChange={e => { setFilterRisk(e.target.value as any); setVisibleCount(PAGE_SIZE); }}
                                 >
@@ -389,7 +389,7 @@ export const SaasRetentionIntelligence: React.FC = () => {
 
                     <div className="overflow-x-auto flex-1">
                         <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0 backdrop-blur z-10">
+                            <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0 backdrop-blur z-10">
                                 <tr>
                                     <SortableTh sortKey="username" current={sortKey} dir={sortDir} onToggle={toggleSort}>{t('retention_th_client') || 'Cliente'}</SortableTh>
                                     <SortableTh sortKey="risk" current={sortKey} dir={sortDir} onToggle={toggleSort}>{t('retention_th_risk') || 'Risco'}</SortableTh>
@@ -489,7 +489,7 @@ export const SaasRetentionIntelligence: React.FC = () => {
                     </div>
 
                     {hasMore && (
-                        <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
+                        <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#151820]/50">
                             <span className="text-xs text-slate-500">Mostrando {visibleUsers.length} de {filteredUsers.length}</span>
                             <button
                                 onClick={() => setVisibleCount(c => c + PAGE_SIZE)}

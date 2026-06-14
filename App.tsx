@@ -2019,7 +2019,7 @@ export default function App() {
 
     return (
 
-        <div className="flex h-screen w-screen bg-[#f9fafb] dark:bg-[#0f1117] overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+        <div className="flex h-screen w-screen bg-[#f9fafb] dark:bg-[#151820] overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
             <Helmet>
                 <title>{saasConfig?.appName || t('app_title')}</title>
                 <link rel="icon" href={saasConfig?.faviconUrl || saasConfig?.appLogoUrl || "/logo.png"} type="image/png" />
@@ -2087,7 +2087,7 @@ export default function App() {
             })()}
 
             {/* Mobile TopBar */}
-            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-[#0f1117]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/30 z-[40] flex items-center justify-between px-4">
+            <header className="lg:hidden absolute top-0 left-0 right-0 h-14 bg-white/80 dark:bg-[#151820]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/30 z-[40] flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <img src={saasConfig?.appLogoUrl || "/logo.png"} alt="Logo" className="w-7 h-7" />
                     <span className="font-bold text-sm tracking-tight">{saasConfig?.appName || t('app_title')}</span>
@@ -2247,7 +2247,7 @@ export default function App() {
                     />
                 </main>
             ) : currentProjectId && !currentProject ? (
-                <main className="flex-1 relative flex flex-col items-center justify-center bg-[#f9fafb] dark:bg-[#0f1117] text-slate-900 dark:text-white gap-4 transition-colors">
+                <main className="flex-1 relative flex flex-col items-center justify-center bg-[#f9fafb] dark:bg-[#151820] text-slate-900 dark:text-white gap-4 transition-colors">
                     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
                     <div className="text-xl font-bold tracking-tight">{t('processing')}</div>
                 </main>

@@ -77,7 +77,7 @@ export const LinkCablesModal: React.FC<LinkCablesModalProps> = ({
                                             ${isLinked
                                                 ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-600'
                                                 : assignedToOther
-                                                    ? 'bg-[#f9fafb] dark:bg-[#0f1117] border-slate-100 dark:border-slate-800 opacity-50 cursor-not-allowed'
+                                                    ? 'bg-[#f9fafb] dark:bg-[#151820] border-slate-100 dark:border-slate-800 opacity-50 cursor-not-allowed'
                                                     : 'bg-white dark:bg-[#22262e]/50 border-slate-200 dark:border-slate-700/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10'}
                                         `}
                                     >

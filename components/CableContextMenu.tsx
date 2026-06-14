@@ -86,7 +86,7 @@ export const CableContextMenu: React.FC<CableContextMenuProps> = ({
 
             {/* Switch Links Optical Status */}
             {opticalStatus && opticalBadge && (
-                <div className="border-t border-slate-100 dark:border-slate-700/30 bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
+                <div className="border-t border-slate-100 dark:border-slate-700/30 bg-[#f9fafb]/50 dark:bg-[#151820]/50">
                     <div className="px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Activity className={`w-3.5 h-3.5 ${opticalBadge.text}`} />

@@ -498,11 +498,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [currentView]);
 
   return (
-    <div className="flex h-screen w-full bg-[#f9fafb] dark:bg-[#0f1117] font-sans transition-colors duration-300">
+    <div className="flex h-screen w-full bg-[#f9fafb] dark:bg-[#151820] font-sans transition-colors duration-300">
 
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto bg-[#f9fafb] dark:bg-[#0f1117] px-4 pb-4 pt-20 lg:p-8 h-full relative">
+      <main className="flex-1 overflow-y-auto bg-[#f9fafb] dark:bg-[#151820] px-4 pb-4 pt-20 lg:p-8 h-full relative">
 
         {/* Projects View */}
         {currentView === 'projects' && (

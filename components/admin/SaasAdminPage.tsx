@@ -202,7 +202,7 @@ const CustomLimitsEditor: React.FC<{
                                 value={values[key as string]}
                                 onChange={(e) => setValues(prev => ({ ...prev, [key as string]: e.target.value }))}
                                 placeholder={isUnlimited ? 'Ilimitado' : (planValue?.toString() ?? '—')}
-                                className="w-full px-3 py-1.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full px-3 py-1.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                         </div>
                     );
@@ -1521,7 +1521,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     if (loading && activeView === 'dashboard') return <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-[#1a1d23] text-slate-500">Loading platform data...</div>;
 
     return (
-        <div className="flex h-screen bg-[#f9fafb] dark:bg-[#0f1117] font-sans text-slate-900 dark:text-slate-100 overflow-hidden">
+        <div className="flex h-screen bg-[#f9fafb] dark:bg-[#151820] font-sans text-slate-900 dark:text-slate-100 overflow-hidden">
             {/* Sidebar */}
             <aside className={`bg-white dark:bg-[#1a1d23] border-r border-slate-200 dark:border-slate-700/30 flex flex-col z-20 shadow-xl transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
                 {/* Collapse Button */}
@@ -1634,7 +1634,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
             {/* Main Content */}
             <main className="flex-1 overflow-auto relative">
-                <header className="sticky top-0 z-10 bg-[#f9fafb]/80 dark:bg-[#0f1117]/80 backdrop-blur-md px-8 py-6 flex justify-between items-center">
+                <header className="sticky top-0 z-10 bg-[#f9fafb]/80 dark:bg-[#151820]/80 backdrop-blur-md px-8 py-6 flex justify-between items-center">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white capitalize">
                             {navItems.find(i => i.id === activeView)?.label || activeView}
@@ -1682,7 +1682,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         placeholder={t('saas_search_company')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                        className="w-full pl-10 pr-4 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     />
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
@@ -1769,7 +1769,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                    <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
                                             {(() => {
                                                 const SortableTh = ({ column, label, align = 'left' }: { column: SortColumn; label: string; align?: 'left' | 'center' | 'right' }) => {
@@ -2014,7 +2014,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </table>
                             </div>
                             {sortedCompanies.length > companiesVisible && (
-                                <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#0f1117]/50">
+                                <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between bg-[#f9fafb]/50 dark:bg-[#151820]/50">
                                     <span className="text-xs text-slate-500">Mostrando {companiesVisible} de {sortedCompanies.length}</span>
                                     <button
                                         onClick={() => setCompaniesVisible(c => c + COMPANY_PAGE_SIZE)}
@@ -2067,7 +2067,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
 
                                             <div className="space-y-4 mb-8">
-                                                <div className="p-4 bg-[#f9fafb] dark:bg-[#0f1117]/50 rounded-2xl space-y-3">
+                                                <div className="p-4 bg-[#f9fafb] dark:bg-[#151820]/50 rounded-2xl space-y-3">
                                                     <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
                                                         <LayoutDashboard className="w-4 h-4 text-emerald-500" />
                                                         <span className="font-medium text-slate-900 dark:text-white">{(plan.limits?.maxProjects || 0) >= 999999 ? '∞' : plan.limits?.maxProjects || '∞'}</span> Max Projects
@@ -2149,7 +2149,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                        <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                             <tr>
                                                 <th className="px-6 py-4">{t('user') || 'User'}</th>
                                                 <th className="px-6 py-4">{t('company') || 'Company'}</th>
@@ -2283,7 +2283,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                             <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                    <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4">{t('saas_video')}</th>
                                             <th className="px-6 py-4">{t('saas_video_order')}</th>
@@ -2345,11 +2345,11 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="col-span-2">
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_host')}</label>
-                                                <input name="host" defaultValue={smtpConfig?.host} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="smtp.example.com" required />
+                                                <input name="host" defaultValue={smtpConfig?.host} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="smtp.example.com" required />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_port')}</label>
-                                                <input name="port" type="number" defaultValue={smtpConfig?.port} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="587" required />
+                                                <input name="port" type="number" defaultValue={smtpConfig?.port} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="587" required />
                                             </div>
                                             <div className="flex items-end pb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -2359,19 +2359,19 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             </div>
                                             <div className="col-span-2">
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_user')}</label>
-                                                <input name="user" defaultValue={smtpConfig?.user} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="user@example.com" required />
+                                                <input name="user" defaultValue={smtpConfig?.user} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="user@example.com" required />
                                             </div>
                                             <div className="col-span-2">
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_password')}</label>
-                                                <input name="pass" type="password" defaultValue={smtpConfig?.pass} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="••••••••" required />
+                                                <input name="pass" type="password" defaultValue={smtpConfig?.pass} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="••••••••" required />
                                             </div>
                                             <div className="col-span-2 border-t border-slate-100 dark:border-slate-700/30 pt-4 mt-2">
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_from')}</label>
-                                                <input name="fromEmail" defaultValue={smtpConfig?.fromEmail} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="noreply@ftthplanner.com" required />
+                                                <input name="fromEmail" defaultValue={smtpConfig?.fromEmail} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="noreply@ftthplanner.com" required />
                                             </div>
                                             <div className="col-span-2">
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('saas_smtp_from_name')}</label>
-                                                <input name="fromName" defaultValue={smtpConfig?.fromName} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="FTTH Planner Pro" required />
+                                                <input name="fromName" defaultValue={smtpConfig?.fromName} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm" placeholder="FTTH Planner Pro" required />
                                             </div>
                                         </div>
                                         <div className="flex gap-3 pt-4">
@@ -2413,7 +2413,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
 
                                         <div className="space-y-3">
                                             {templates.map(template => (
-                                                <div key={template.id} className="p-4 bg-[#f9fafb] dark:bg-[#0f1117] rounded-xl border border-slate-100 dark:border-slate-700/30 flex items-center justify-between group">
+                                                <div key={template.id} className="p-4 bg-[#f9fafb] dark:bg-[#151820] rounded-xl border border-slate-100 dark:border-slate-700/30 flex items-center justify-between group">
                                                     <div>
                                                         <div className="font-bold text-sm">{template.name}</div>
                                                         <div className="text-xs text-slate-500 font-mono">{template.slug}</div>
@@ -2504,7 +2504,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.appName}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appName: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="Ex: FTTH Planner Pro"
                                         />
                                     </div>
@@ -2513,13 +2513,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.websiteUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ websiteUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="https://suaplataforma.com"
                                         />
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">{t('saas_config_logo')}</label>
-                                        <div className="flex items-center gap-4 p-4 bg-[#f9fafb] dark:bg-[#0f1117] rounded-xl border border-slate-200 dark:border-slate-700/30">
+                                        <div className="flex items-center gap-4 p-4 bg-[#f9fafb] dark:bg-[#151820] rounded-xl border border-slate-200 dark:border-slate-700/30">
                                             <div className="w-20 h-20 bg-white dark:bg-[#1a1d23] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
                                                 {saasConfig?.appLogoUrl ? (
                                                     <img src={saasConfig.appLogoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
@@ -2588,7 +2588,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.supportEmail || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ supportEmail: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="suporte@suaplataforma.com"
                                         />
                                     </div>
@@ -2597,7 +2597,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.supportPhone || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ supportPhone: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="+55 (00) 00000-0000"
                                         />
                                     </div>
@@ -2621,7 +2621,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <textarea
                                             defaultValue={saasConfig?.appDescription || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appDescription: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all h-20 resize-none"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all h-20 resize-none"
                                             placeholder="Planeje redes FTTH com facilidade..."
                                         />
                                     </div>
@@ -2630,7 +2630,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.appKeywords || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ appKeywords: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="ftth, projetos, fibra óptica, telecall"
                                         />
                                     </div>
@@ -2639,7 +2639,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.ogImageUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ ogImageUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="https://seusite.com.br/banner-compartilhamento.jpg"
                                         />
                                     </div>
@@ -2664,7 +2664,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 defaultValue={(saasConfig as any)?.[`social${social}`] || ''}
                                                 onBlur={(e) => handleSaaSConfigUpdate({ [`social${social}`]: e.target.value })}
-                                                className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                                className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                                 placeholder={`https://${social.toLowerCase()}.com/perfil`}
                                             />
                                         </div>
@@ -2689,7 +2689,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         <input
                                             defaultValue={saasConfig?.heroPreviewUrl || ''}
                                             onBlur={(e) => handleSaaSConfigUpdate({ heroPreviewUrl: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                             placeholder="/dashboard-preview.png"
                                         />
                                     </div>
@@ -2710,7 +2710,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                             <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-[#f9fafb]/50 dark:bg-[#0f1117]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
+                                        <thead className="bg-[#f9fafb]/50 dark:bg-[#151820]/50 text-slate-500 font-semibold uppercase text-xs tracking-wider">
                                             <tr>
                                                 <th className="px-6 py-4">Nome do Projeto</th>
                                                 <th className="px-6 py-4">Empresa</th>
@@ -2794,7 +2794,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             name="name"
                                             defaultValue={editingPlan?.name}
                                             required
-                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             placeholder="e.g. Pro, Enterprise"
                                         />
                                     </div>
@@ -2806,7 +2806,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             step="0.01"
                                             defaultValue={editingPlan?.price}
                                             required
-                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
@@ -2825,7 +2825,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                         }
                                                     }
                                                 }}
-                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             >
                                                 <option value="STANDARD">Standard (Paid)</option>
                                                 <option value="TRIAL">Trial (Free/Time Limited)</option>
@@ -2838,7 +2838,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                 name="trialDurationDays"
                                                 type="number"
                                                 defaultValue={editingPlan?.trialDurationDays || 7}
-                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             />
                                         </div>
                                     </div>
@@ -2849,7 +2849,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 name="mercadopagoId"
                                                 defaultValue={editingPlan?.mercadopagoId || ''}
-                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
+                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
                                                 placeholder="e.g. 2c938084..."
                                             />
                                         </div>
@@ -2858,7 +2858,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <input
                                                 name="stripeId"
                                                 defaultValue={editingPlan?.stripeId || ''}
-                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
+                                                className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-xs"
                                                 placeholder="e.g. price_1..."
                                             />
                                         </div>
@@ -2871,7 +2871,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             name="description"
                                             rows={2}
                                             defaultValue={editingPlan?.description || ''}
-                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                             placeholder="Plan description..."
                                         />
                                     </div>
@@ -2914,7 +2914,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxProjects"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxProjects ?? ''}
-                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2923,7 +2923,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxUsers"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxUsers ?? ''}
-                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2932,7 +2932,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxCTOs"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxCTOs ?? ''}
-                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                             <div>
@@ -2941,7 +2941,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     name="maxPOPs"
                                                     type="number"
                                                     defaultValue={editingPlan?.limits?.maxPOPs ?? ''}
-                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                    className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                                 />
                                             </div>
                                         </div>
@@ -2965,13 +2965,13 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                                     rows={4}
                                                     placeholder="24/7 Support&#10;Daily Backups&#10;Advanced Analytics"
                                                     defaultValue={editingPlan?.features?.join('\n')}
-                                                    className="w-full px-4 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                                                    className="w-full px-4 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                                                 />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="px-6 py-4 bg-[#f9fafb] dark:bg-[#0f1117] border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3 shrink-0">
+                                <div className="px-6 py-4 bg-[#f9fafb] dark:bg-[#151820] border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() => setIsPlanModalOpen(false)}
@@ -3006,24 +3006,24 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="p-6 space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Title</label>
-                                            <input name="title" defaultValue={editingVideo?.title} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
+                                            <input name="title" defaultValue={editingVideo?.title} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Description</label>
-                                            <textarea name="description" defaultValue={editingVideo?.description} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
+                                            <textarea name="description" defaultValue={editingVideo?.description} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Embed URL (YouTube/Vimeo)</label>
-                                            <input name="url" defaultValue={editingVideo?.url} required placeholder="https://www.youtube.com/embed/..." className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg font-mono text-xs" />
+                                            <input name="url" defaultValue={editingVideo?.url} required placeholder="https://www.youtube.com/embed/..." className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg font-mono text-xs" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium mb-1">Icon Name (Lucide)</label>
-                                                <input name="icon" defaultValue={editingVideo?.icon || 'Monitor'} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
+                                                <input name="icon" defaultValue={editingVideo?.icon || 'Monitor'} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium mb-1">Order</label>
-                                                <input name="order" type="number" defaultValue={editingVideo?.order || 0} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
+                                                <input name="order" type="number" defaultValue={editingVideo?.order || 0} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" />
                                             </div>
                                         </div>
                                         <label className="flex items-center gap-2 cursor-pointer">
@@ -3031,7 +3031,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             <span className="text-sm">Active</span>
                                         </label>
                                     </div>
-                                    <div className="px-6 py-4 bg-[#f9fafb] dark:bg-[#0f1117] border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
+                                    <div className="px-6 py-4 bg-[#f9fafb] dark:bg-[#151820] border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
                                         <button type="button" onClick={() => setIsVideoModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">Cancel</button>
                                         <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg">Save Video</button>
                                     </div>
@@ -3058,7 +3058,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                         >
                                             <ChevronLeft className="w-5 h-5" />
                                         </button>
-                                        <div className="w-14 h-14 rounded-xl bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden shrink-0">
+                                        <div className="w-14 h-14 rounded-xl bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 flex items-center justify-center overflow-hidden shrink-0">
                                             {selectedCompany.logoUrl ? (
                                                 <img src={selectedCompany.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                                             ) : (
@@ -3510,24 +3510,24 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_name')}</label>
-                                            <input name="name" defaultValue={editingTemplate?.name} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="Welcome Email" />
+                                            <input name="name" defaultValue={editingTemplate?.name} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="Welcome Email" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_slug')}</label>
-                                            <input name="slug" defaultValue={editingTemplate?.slug} required disabled={!!editingTemplate} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg disabled:opacity-50" placeholder="welcome-email" />
+                                            <input name="slug" defaultValue={editingTemplate?.slug} required disabled={!!editingTemplate} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg disabled:opacity-50" placeholder="welcome-email" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_subject')}</label>
-                                        <input name="subject" defaultValue={editingTemplate?.subject} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="Welcome to FTTH Planner, {{username}}!" />
+                                        <input name="subject" defaultValue={editingTemplate?.subject} required className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="Welcome to FTTH Planner, {{username}}!" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_vars')}</label>
-                                        <input name="variables" defaultValue={Array.isArray(editingTemplate?.variables) ? editingTemplate.variables.join(', ') : ''} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="p.ex: username, app_name, app_logo, company_name" />
+                                        <input name="variables" defaultValue={Array.isArray(editingTemplate?.variables) ? editingTemplate.variables.join(', ') : ''} className="w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg" placeholder="p.ex: username, app_name, app_logo, company_name" />
                                     </div>
                                     <div className="flex-1 flex flex-col min-h-[300px]">
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('saas_template_body')}</label>
-                                        <textarea name="body" defaultValue={editingTemplate?.body} required className="flex-1 w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-lg font-mono text-xs resize-none" placeholder="<h1>Olá {{username}}!</h1>..." />
+                                        <textarea name="body" defaultValue={editingTemplate?.body} required className="flex-1 w-full px-3 py-2 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-lg font-mono text-xs resize-none" placeholder="<h1>Olá {{username}}!</h1>..." />
                                     </div>
                                 </div>
                                 <div className="p-6 border-t border-slate-100 dark:border-slate-700/30 flex justify-end gap-3">
@@ -3608,7 +3608,7 @@ export const SaasAdminPage: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
                                             setResetPasswordValue(e.target.value);
                                             setResetPasswordError('');
                                         }}
-                                        className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                        className="w-full px-4 py-2.5 bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                         placeholder="Min. 6 characters"
                                         autoFocus
                                     />

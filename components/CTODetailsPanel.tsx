@@ -330,7 +330,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
             {!isVerticalCondo && (
               <div>
                 {isLoading ? (
-                  <div className="w-full bg-[#f9fafb] dark:bg-[#0f1117] border border-slate-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 flex items-center gap-2 text-slate-500 dark:text-slate-400 h-[46px]">
+                  <div className="w-full bg-[#f9fafb] dark:bg-[#151820] border border-slate-200 dark:border-slate-700/30 rounded-xl px-4 py-2.5 flex items-center gap-2 text-slate-500 dark:text-slate-400 h-[46px]">
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
                     <span className="text-sm">{t('loading') || 'Carregando...'}</span>
                   </div>
@@ -402,7 +402,7 @@ export const CTODetailsPanel: React.FC<CTODetailsPanelProps> = ({
                     }
                   }}
                   title={t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
-                  className="mt-2 w-full py-2 bg-[#f9fafb] dark:bg-[#0f1117] hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-700/30 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                  className="mt-2 w-full py-2 bg-[#f9fafb] dark:bg-[#151820] hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl border border-slate-200 dark:border-slate-700/30 transition-all flex items-center justify-center gap-2 text-xs font-bold"
                 >
                   <Activity className="w-4 h-4" />
                   {t('link_to_nearest_pole') || 'Vincular ao poste próximo'}
