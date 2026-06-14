@@ -322,7 +322,6 @@ const ConnectionsLayer = React.memo(({
                 const baseColor = liveFiberColor || conn.color;
 
                 const finalColor = isLit ? '#f87171' : (useThemeColor ? undefined : baseColor);
-                const finalWidth = 2.5;
 
                 let d = `M ${p1.x} ${p1.y} `;
                 if (conn.points && conn.points.length > 0) {
@@ -338,12 +337,11 @@ const ConnectionsLayer = React.memo(({
                             ref={el => { connectionRefs.current[conn.id] = el; }}
                             d={d}
                             stroke={finalColor}
-                            strokeWidth={finalWidth}
                             fill="none"
                             strokeLinejoin="round"
                             strokeLinecap="round"
                             style={{ filter: isLit ? 'drop-shadow(0 0 2.5px rgba(248,113,113,0.6))' : 'none' }}
-                            className={`hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
+                            className={`stroke-[2.5] dark:stroke-[2] hover:stroke-width-4 cursor-pointer transition-colors duration-150 ${useThemeColor ? 'stroke-slate-900 dark:stroke-white' : ''}`}
                             onClick={(e) => {
                                 if (isSmartAlignMode) handleSmartAlignConnection(conn.id);
                             }}
@@ -3901,21 +3899,38 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                             transformOrigin: 'top left'
                         }}
                     >
-                        {isConnectorToolActive ? (
-                            <>
-                                {/* Connector Ghost - Square with polish color */}
-                                <div className={`w-2.5 h-2.5 rounded-[1px] border z-20 shadow-sm ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500 border-green-600' : 'bg-blue-500 border-blue-600'}`} />
-                                <div className={`w-2 h-2 rounded-[1px] z-30 absolute left-[2px] ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                                <div className={`w-2 h-2 rounded-[1px] z-30 absolute right-[2px] ${availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                            </>
-                        ) : (
-                            <>
-                                {/* Fusion Ghost - Round */}
-                                <div className="w-2.5 h-2.5 rounded-full border border-black z-20 shadow-sm bg-slate-400" />
-                                <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute left-[2px]" />
-                                <div className="w-2 h-2 rounded-full bg-[#2E2D39] border-[#2E2D39] z-30 absolute right-[2px]" />
-                            </>
-                        )}
+                        {(() => {
+                            const isAPC = availableConnectors.find(c => c.id === selectedFusionTypeId)?.polishType === 'APC';
+                            const connFill = isAPC ? 'fill-green-500' : 'fill-blue-500';
+                            const connStroke = isAPC ? 'stroke-green-600' : 'stroke-blue-600';
+                            return isConnectorToolActive ? (
+                                <>
+                                    {/* Connector Ghost - Square */}
+                                    <svg width="10" height="10" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20" style={{ overflow: 'visible' }}>
+                                        <rect x="0.5" y="0.5" width="9" height="9" rx="1" className={`${connFill} ${connStroke}`} strokeWidth="1" />
+                                    </svg>
+                                    <svg width="7" height="7" className="absolute left-[3px] top-1/2 -translate-y-1/2 z-30" style={{ overflow: 'visible' }}>
+                                        <rect x="0.5" y="0.5" width="6" height="6" rx="1" className={`${connFill} ${connStroke}`} strokeWidth="1" />
+                                    </svg>
+                                    <svg width="7" height="7" className="absolute right-[3px] top-1/2 -translate-y-1/2 z-30" style={{ overflow: 'visible' }}>
+                                        <rect x="0.5" y="0.5" width="6" height="6" rx="1" className={`${connFill} ${connStroke}`} strokeWidth="1" />
+                                    </svg>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Fusion Ghost - Round */}
+                                    <svg width="10" height="10" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20" style={{ overflow: 'visible' }}>
+                                        <circle cx="5" cy="5" r="4.5" className="fill-slate-400 stroke-black" strokeWidth="1" />
+                                    </svg>
+                                    <svg width="7" height="7" className="absolute left-[3px] top-1/2 -translate-y-1/2 z-30" style={{ overflow: 'visible' }}>
+                                        <circle cx="3.5" cy="3.5" r="3" className="fill-[#2E2D39] stroke-black" strokeWidth="1" />
+                                    </svg>
+                                    <svg width="7" height="7" className="absolute right-[3px] top-1/2 -translate-y-1/2 z-30" style={{ overflow: 'visible' }}>
+                                        <circle cx="3.5" cy="3.5" r="3" className="fill-[#2E2D39] stroke-black" strokeWidth="1" />
+                                    </svg>
+                                </>
+                            );
+                        })()}
                     </div>
 
 

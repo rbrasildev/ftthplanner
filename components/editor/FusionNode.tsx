@@ -49,8 +49,9 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
 
     const isConnector = fusion.category === 'connector';
     const isAPC = fusion.polishType === 'APC';
-    const connectorColor = isAPC ? { bg: 'bg-green-500', border: 'border-green-600', ring: 'ring-green-400' }
-        : { bg: 'bg-blue-500', border: 'border-blue-600', ring: 'ring-blue-400' };
+    const connectorColor = isAPC
+        ? { bg: 'bg-green-500', border: 'border-green-600', ring: 'ring-green-400', svgFill: 'fill-green-500', svgStroke: 'stroke-green-600', svgRing: 'stroke-green-400' }
+        : { bg: 'bg-blue-500', border: 'border-blue-600', ring: 'ring-blue-400', svgFill: 'fill-blue-500', svgStroke: 'stroke-blue-600', svgRing: 'stroke-blue-400' };
 
     return (
         <div
@@ -87,13 +88,26 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                 onMouseDown={(e) => onDragStart(e, fusion.id)}
                 onClick={(e) => onAction(e, fusion.id)}
             >
-                {/* Center Body */}
-                <div className={`
-                    w-2.5 h-2.5 border z-20 shadow-sm transition-colors duration-300 transform-gpu
-                    ${isConnector
-                        ? `rounded-[1px] ${isLitA || isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
-                        : `rounded-full ${isLitA || isLitB ? 'bg-red-400 border-red-400' : 'bg-[#949494] dark:bg-slate-500 border-black dark:border-black'}`}
-                `} />
+                {/* Center Body — SVG pra evitar subpixel rounding em zoom não-100% */}
+                <svg
+                    width="10" height="10"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 transform-gpu transition-[fill,stroke] duration-300 pointer-events-none"
+                    style={{ overflow: 'visible' }}
+                >
+                    {isConnector ? (
+                        <rect
+                            x="0.5" y="0.5" width="9" height="9" rx="1"
+                            className={isLitA || isLitB ? 'fill-red-400 stroke-red-500' : `${connectorColor.svgFill} ${connectorColor.svgStroke}`}
+                            strokeWidth="1"
+                        />
+                    ) : (
+                        <circle
+                            cx="5" cy="5" r="4.5"
+                            className={isLitA || isLitB ? 'fill-red-400 stroke-red-400' : 'fill-[#949494] dark:fill-slate-500 stroke-black'}
+                            strokeWidth="1"
+                        />
+                    )}
+                </svg>
 
                 {/* Left Port */}
                 <div
@@ -101,16 +115,35 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseDown={(e) => onPortMouseDown(e, portA)}
                     onMouseEnter={() => onPortMouseEnter(portA)}
                     onMouseLeave={onPortMouseLeave}
-                    className={`
-                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute left-[2px] top-1/2 -translate-y-1/2 transform-gpu
-                        flex items-center justify-center border
-                        ${isConnector
-                            ? `rounded-[1px] ${isLitA ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
-                            : `rounded-full ${isLitA ? 'bg-red-400 border-red-400' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
-                        ${hoveredPortId === portA ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
-                    `}
+                    className={`cursor-pointer select-none transition-transform z-30 absolute left-[3px] top-1/2 -translate-y-1/2 transform-gpu flex items-center justify-center`}
+                    style={{ width: 7, height: 7 }}
                 >
-                    {!isLitA && isConnectedA && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full transform-gpu" />}
+                    <svg width="7" height="7" className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
+                        {isConnector ? (
+                            <rect
+                                x="0.5" y="0.5" width="6" height="6" rx="1"
+                                className={isLitA ? 'fill-red-400 stroke-red-500' : `${connectorColor.svgFill} ${connectorColor.svgStroke}`}
+                                strokeWidth="1"
+                            />
+                        ) : (
+                            <circle
+                                cx="3.5" cy="3.5" r="3"
+                                className={isLitA ? 'fill-red-400 stroke-red-400' : 'fill-[#2E2D39] dark:fill-black stroke-black'}
+                                strokeWidth="1"
+                            />
+                        )}
+                        {hoveredPortId === portA && (
+                            <circle
+                                cx="3.5" cy="3.5" r="4"
+                                fill="none"
+                                className={isConnector ? connectorColor.svgRing : 'stroke-emerald-400'}
+                                strokeWidth="1"
+                            />
+                        )}
+                        {!isLitA && isConnectedA && !isConnector && (
+                            <circle cx="3.5" cy="3.5" r="1.6" className="fill-emerald-500" />
+                        )}
+                    </svg>
                 </div>
 
                 {/* Right Port */}
@@ -119,16 +152,35 @@ const FusionNodeComponent: React.FC<FusionNodeProps> = ({
                     onMouseDown={(e) => onPortMouseDown(e, portB)}
                     onMouseEnter={() => onPortMouseEnter(portB)}
                     onMouseLeave={onPortMouseLeave}
-                    className={`
-                        w-2 h-2 cursor-pointer select-none transition-all z-30 absolute right-[2px] top-1/2 -translate-y-1/2 transform-gpu
-                        flex items-center justify-center border
-                        ${isConnector
-                            ? `rounded-[1px] ${isLitB ? 'bg-red-400 border-red-500' : `${connectorColor.bg} ${connectorColor.border}`}`
-                            : `rounded-full ${isLitB ? 'bg-red-400 border-red-400' : 'bg-[#2E2D39] dark:bg-black border-[#2E2D39] dark:border-black'}`}
-                        ${hoveredPortId === portB ? `ring-1 ${isConnector ? connectorColor.ring : 'ring-emerald-400'} scale-125` : ''}
-                    `}
+                    className={`cursor-pointer select-none transition-transform z-30 absolute right-[3px] top-1/2 -translate-y-1/2 transform-gpu flex items-center justify-center`}
+                    style={{ width: 7, height: 7 }}
                 >
-                    {!isLitB && isConnectedB && !isConnector && <div className="w-1 h-1 bg-emerald-500 rounded-full transform-gpu" />}
+                    <svg width="7" height="7" className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible' }}>
+                        {isConnector ? (
+                            <rect
+                                x="0.5" y="0.5" width="6" height="6" rx="1"
+                                className={isLitB ? 'fill-red-400 stroke-red-500' : `${connectorColor.svgFill} ${connectorColor.svgStroke}`}
+                                strokeWidth="1"
+                            />
+                        ) : (
+                            <circle
+                                cx="3.5" cy="3.5" r="3"
+                                className={isLitB ? 'fill-red-400 stroke-red-400' : 'fill-[#2E2D39] dark:fill-black stroke-black'}
+                                strokeWidth="1"
+                            />
+                        )}
+                        {hoveredPortId === portB && (
+                            <circle
+                                cx="3.5" cy="3.5" r="4"
+                                fill="none"
+                                className={isConnector ? connectorColor.svgRing : 'stroke-emerald-400'}
+                                strokeWidth="1"
+                            />
+                        )}
+                        {!isLitB && isConnectedB && !isConnector && (
+                            <circle cx="3.5" cy="3.5" r="1.6" className="fill-emerald-500" />
+                        )}
+                    </svg>
                 </div>
 
                 {/* Attached Customer Label — only for connectors. Extends horizontally from the RIGHT tip

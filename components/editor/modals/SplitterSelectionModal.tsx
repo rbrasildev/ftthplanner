@@ -32,7 +32,7 @@ export const SplitterSelectionModal: React.FC<SplitterSelectionModalProps> = ({
 
     return (
         <div className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
-            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-[#1a1d23] border border-slate-200 dark:border-slate-700 rounded-xl p-5 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between mb-3 px-1">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
                         {t('select_splitter')}
@@ -56,7 +56,7 @@ export const SplitterSelectionModal: React.FC<SplitterSelectionModalProps> = ({
                     </button>
                 </div>
 
-                <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-1 max-h-[420px] overflow-y-auto custom-scrollbar">
                     {filtered.length === 0 ? (
                         <div className="px-4 py-8 text-center text-xs text-slate-500 italic">
                             {t('no_templates') || 'No templates available'}
