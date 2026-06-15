@@ -922,6 +922,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
     const autoConnectedRef = useRef(false);
     useEffect(() => {
         if (!isContentReady || autoConnectedRef.current || incomingCables.length < 2) return;
+        // Flag persistente: se o auto-conect já rodou alguma vez nessa CTO, nunca mais
+        // roda. Permite que o usuário limpe conexões intencionalmente e elas fiquem
+        // limpas mesmo depois de fechar e reabrir.
+        if (cto.autoSpliceDone) return;
         autoConnectedRef.current = true;
 
         const ctoId = cto.id;
@@ -995,10 +999,10 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 }
             });
 
-            if (allNew.length === 0) return prev;
-            return { ...prev, connections: [...prev.connections, ...allNew] };
+            if (allNew.length === 0) return { ...prev, autoSpliceDone: true };
+            return { ...prev, connections: [...prev.connections, ...allNew], autoSpliceDone: true };
         });
-    }, [isContentReady, incomingCables, cto.id]);
+    }, [isContentReady, incomingCables, cto.id, cto.autoSpliceDone]);
 
     const litConnections = useMemo(() => {
         const lit = new Set<string>();

@@ -327,6 +327,10 @@ export interface CTOData {
   };
   poleId?: string; // Associated pole for licensing/anchoring
   building?: BuildingConfig | null; // When set, this CTO is a vertical condominium
+  // Marcado após o primeiro auto-conect (pass-through). Impede que limpar
+  // conexões e fechar/reabrir a CTO re-dispare o auto-conect contra a vontade
+  // do usuário. Casos novos (CTO recém-criada) ainda recebem o auto-conect.
+  autoSpliceDone?: boolean;
 }
 
 export interface CableReserve {
