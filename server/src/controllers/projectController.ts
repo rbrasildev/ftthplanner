@@ -232,7 +232,8 @@ export const getProject = async (req: Request, res: Response) => {
                 color: c.color,
                 reserveLoopLength: c.reserveLoopLength,
                 poleId: c.poleId || null,
-                building: c.building || null
+                building: c.building || null,
+                autoSpliceDone: c.autoSpliceDone ?? false
             })),
             pops: project.pops.map((p: any) => ({
                 id: p.id,
@@ -324,7 +325,8 @@ export const getProject = async (req: Request, res: Response) => {
                         catalogId: c.catalogId || null, type: c.type,
                         color: c.color, reserveLoopLength: c.reserveLoopLength,
                         poleId: c.poleId || null,
-                        building: c.building || null
+                        building: c.building || null,
+                        autoSpliceDone: c.autoSpliceDone ?? false
                     })) : [],
                     pops: parent.pops ? (parent.pops as any[]).map((p: any) => ({
                         id: p.id, name: p.name, status: p.status,
@@ -808,7 +810,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             color: c.color,
                             reserveLoopLength: c.reserveLoopLength,
                             poleId: c.poleId || null,
-                            building: c.building ?? null
+                            building: c.building ?? null,
+                            autoSpliceDone: c.autoSpliceDone ?? false
                         });
                     } else {
                         // DIFFING: Compare crucial fields to decide if update is needed
@@ -834,7 +837,8 @@ export const syncProject = async (req: Request, res: Response) => {
                             JSON.stringify(dbC.notes || []) !== JSON.stringify(c.notes || []) ||
                             JSON.stringify(dbC.connections) !== JSON.stringify(c.connections || []) ||
                             JSON.stringify(dbC.inputCableIds) !== JSON.stringify(c.inputCableIds || []) ||
-                            JSON.stringify(dbC.layout) !== JSON.stringify(c.layout || {});
+                            JSON.stringify(dbC.layout) !== JSON.stringify(c.layout || {}) ||
+                            ((dbC as any).autoSpliceDone ?? false) !== (c.autoSpliceDone ?? false);
 
                         if (hasChanged) {
                             toUpdate.push(c);
@@ -877,6 +881,7 @@ export const syncProject = async (req: Request, res: Response) => {
                         if (c.connections !== undefined) data.connections = c.connections;
                         if (c.inputCableIds !== undefined) data.inputCableIds = c.inputCableIds;
                         if (c.layout !== undefined) data.layout = c.layout;
+                        if (c.autoSpliceDone !== undefined) data.autoSpliceDone = c.autoSpliceDone;
                         // viewState is editor-only (zoom/pan), not sent to DB
 
                         await tx.cto.update({
@@ -1213,6 +1218,7 @@ export const updateCTO = async (req: Request, res: Response) => {
         if (cto.reserveLoopLength !== undefined) data.reserveLoopLength = cto.reserveLoopLength;
         if (cto.poleId !== undefined) data.poleId = cto.poleId;
         if (cto.building !== undefined) data.building = cto.building;
+        if (cto.autoSpliceDone !== undefined) data.autoSpliceDone = cto.autoSpliceDone;
 
         const updated = await prisma.cto.update({
             where: { id: ctoId },
@@ -1509,7 +1515,8 @@ export const getParentProjectNetwork = async (req: Request, res: Response) => {
                     layout: c.layout || {}, clientCount: c.clientCount,
                     catalogId: c.catalogId || null, type: c.type,
                     color: c.color, reserveLoopLength: c.reserveLoopLength,
-                    poleId: c.poleId || null
+                    poleId: c.poleId || null,
+                    autoSpliceDone: c.autoSpliceDone ?? false
                 }));
         }
 

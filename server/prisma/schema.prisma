@@ -253,6 +253,9 @@ model Cto {
   type              String?         @default("CTO")
   poleId            String?         @map("pole_id")
   building          Json?           // Vertical condo config: { floors, unitsPerFloor }
+  // Marca o primeiro auto-conect de pass-through na CTO. Sem isso, limpar
+  // conexões e reabrir re-dispara o auto-conect contra a vontade do usuário.
+  autoSpliceDone    Boolean         @default(false) @map("auto_splice_done")
   company           Company?        @relation(fields: [companyId], references: [id])
   project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   customers         Customer[]
