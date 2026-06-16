@@ -1079,6 +1079,15 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         return portPowerMap.get(portId)?.direction ?? null;
     }, [portPowerMap]);
 
+    // Pré-índice por id pra evitar .find() linear em hot path. ConnectionsLayer
+    // chama resolveFiberPortColor 2x por conexão a cada re-render — em CTO com
+    // 200 conexões e 20 cabos eram 4000 lookups por render.
+    const cablesById = useMemo(() => {
+        const m = new Map<string, CableData>();
+        incomingCables.forEach(c => m.set(c.id, c));
+        return m;
+    }, [incomingCables]);
+
     // Resolve the live fiber color for a given fiber port id. Used by the connection
     // renderer so SVG line color always matches the bolinha (overrides any stale color
     // baked into the FiberConnection at creation time).
@@ -1087,13 +1096,13 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
         if (!match) return null;
         const cableId = match[1];
         const fiberGlobalIndex = parseInt(match[2], 10);
-        const cable = incomingCables.find(c => c.id === cableId);
+        const cable = cablesById.get(cableId);
         if (!cable) return null;
         const looseTubeCount = cable.looseTubeCount || 1;
         const fibersPerTube = Math.ceil(cable.fiberCount / looseTubeCount);
         const positionInTube = fiberGlobalIndex % fibersPerTube;
         return getFiberColor(positionInTube, cable.colorStandard);
-    }, [incomingCables]);
+    }, [cablesById]);
 
     // Ports that actually carry OLT signal — derived from the power map. A fiber
     // is "lit" only when there's a finite power reaching it (not merely connected).
@@ -2188,7 +2197,12 @@ export const CTOEditor: React.FC<CTOEditorProps> = ({
                 startY: e.clientY,
             });
         }
-    }, [isVflToolActive, isOtdrToolActive, onToggleVfl, setOtdrTargetPort, viewState]);
+        // viewState fora das deps de propósito: screenToCanvas lê via
+        // viewStateRef.current (linha 1162). Sem essa remoção, todo pan/zoom
+        // commit recriava esta callback, invalidando React.memo de
+        // CableRenderer/FusionRenderer/SplitterRenderer/DIORenderer (todos
+        // recebem onPortMouseDown como prop) — render storm em zoom.
+    }, [isVflToolActive, isOtdrToolActive, onToggleVfl, setOtdrTargetPort]);
 
     // Suppress hover state churn while an element is being dragged.
     // During element drag the transform is mutated directly on the DOM node for 60fps
