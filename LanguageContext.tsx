@@ -2372,6 +2372,9 @@ const translations = {
     'toast_cable_disconnected': 'Cabo desconectado',
     'import_error': 'Falha ao importar arquivo. Veja o console.',
     'import_no_geo': 'Nenhuma geometria compatível (Pontos ou Linhas) encontrada.',
+    'import_success': 'Importação concluída com sucesso!',
+    'import_poles_success': 'Postes importados com sucesso!',
+    'import_poles_error': 'Falha ao importar postes.',
 
     // OTDR Messages & Errors
     'otdr_title': 'Calculadora OTDR',
