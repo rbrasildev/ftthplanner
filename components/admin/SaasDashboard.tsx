@@ -71,7 +71,13 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
         const suspended = companies.filter(c => c.status === 'SUSPENDED');
         const active = companies.filter(c => c.status === 'ACTIVE');
         const cancelled = companies.filter(c => c.status === 'CANCELLED');
-        const mrr = payingSubs.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+        // Suspensos pagantes (não-trial, não-grátis) ainda são assinantes —
+        // só estão inadimplentes. Contam pra base e pra MRR contratado.
+        const overdueSubs = suspended.filter(c => !isTrial(c) && !isFree(c));
+        const allSubs = [...payingSubs, ...overdueSubs];
+        const mrrReceived = payingSubs.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+        const mrrContracted = allSubs.reduce((acc, c) => acc + (c.plan?.price || 0), 0);
+        const mrr = mrrContracted;
         const totalOverdue = companies.reduce((acc, c) => acc + (c._financial?.overdueTotal || 0), 0);
         const totalProjects = companies.reduce((acc, c) => acc + (c._count?.projects || 0), 0);
         const totalCTOs = companies.reduce((acc, c) => acc + (c._count?.ctos || 0), 0);
@@ -105,8 +111,8 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
             .sort((a, b) => (b._financial?.overdueTotal || 0) - (a._financial?.overdueTotal || 0));
 
         return {
-            payingSubs, trials, suspended, active, cancelled,
-            mrr, totalOverdue, totalProjects, totalCTOs, totalUsers,
+            payingSubs, overdueSubs, allSubs, trials, suspended, active, cancelled,
+            mrr, mrrReceived, mrrContracted, totalOverdue, totalProjects, totalCTOs, totalUsers,
             newThisMonth, newDelta, payingMRRDelta,
             expiringSoon, overdue,
         };
@@ -164,10 +170,12 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                     icon={<CheckCircle2 className="w-5 h-5" />}
                     iconBg="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                     label="Assinantes"
-                    value={kpis.payingSubs.length}
+                    value={kpis.allSubs.length}
                     valueClass="text-emerald-600"
-                    sub="Pagando ativamente"
-                    onClick={() => onNavigate('companies', { status: 'ACTIVE' })}
+                    sub={kpis.overdueSubs.length > 0
+                        ? `${kpis.payingSubs.length} em dia • ${kpis.overdueSubs.length} inadimplente${kpis.overdueSubs.length === 1 ? '' : 's'}`
+                        : 'Todos em dia'}
+                    onClick={() => onNavigate('companies')}
                 />
                 <KpiCard
                     icon={<Play className="w-5 h-5" />}
@@ -182,9 +190,11 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                     icon={<TrendingUp className="w-5 h-5" />}
                     iconBg="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                     label="MRR"
-                    value={fmtBRL(kpis.mrr)}
+                    value={fmtBRL(kpis.mrrContracted)}
                     valueClass="text-emerald-600 text-2xl"
-                    sub={`${kpis.payingSubs.length} ${kpis.payingSubs.length === 1 ? 'pagante' : 'pagantes'}`}
+                    sub={kpis.overdueSubs.length > 0
+                        ? `${fmtBRL(kpis.mrrReceived)} recebido`
+                        : `${kpis.payingSubs.length} ${kpis.payingSubs.length === 1 ? 'pagante' : 'pagantes'}`}
                     delta={kpis.payingMRRDelta}
                 />
                 <KpiCard
