@@ -258,7 +258,8 @@ export const confirmStripeSubscription = async (req: AuthRequest, res: Response)
                 planId,
                 status: 'ACTIVE',
                 subscriptionExpiresAt: nextBilling,
-                paymentMethod: 'CREDIT_CARD'
+                paymentMethod: 'CREDIT_CARD',
+                cancelAtPeriodEnd: false
             }
         });
 
@@ -397,7 +398,8 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         // Without this, company-level "FORMA DE PAGAMENTO" stays
                         // as the original Pix and reminder service treats them
                         // as a manual payer.
-                        paymentMethod: 'CREDIT_CARD'
+                        paymentMethod: 'CREDIT_CARD',
+                        cancelAtPeriodEnd: false
                     }
                 });
 
@@ -569,7 +571,8 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                         planId: planId,
                         status: 'ACTIVE',
                         subscriptionExpiresAt: nextBilling,
-                        paymentMethod: 'CREDIT_CARD'
+                        paymentMethod: 'CREDIT_CARD',
+                        cancelAtPeriodEnd: false
                     }
                 });
                 logger.info(`Stripe Webhook [subscription.updated]: Activated company ${companyId} on plan ${planId}`);
@@ -643,7 +646,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                 data: {
                     planId: plan.id,
                     status: 'ACTIVE',
-                    subscriptionExpiresAt: nextYear
+                    subscriptionExpiresAt: nextYear,
+                    cancelAtPeriodEnd: false
                 }
             });
             return res.json({ status: 'approved', message: 'Free plan activated' });
@@ -770,7 +774,8 @@ export const subscribe = async (req: AuthRequest, res: Response) => {
                         planId: plan.id,
                         status: 'ACTIVE',
                         subscriptionExpiresAt: nextBilling,
-                        mercadopagoSubscriptionId: undefined
+                        mercadopagoSubscriptionId: undefined,
+                        cancelAtPeriodEnd: false
                     }
                 });
             }
@@ -1125,13 +1130,14 @@ export const handleWebhook = async (req: Request, res: Response) => {
             if (companyId && paymentInfo.status === 'approved') {
                 const nextBilling = await getNextBillingDate(companyId);
 
-                // Update company status, expiration AND planId
+                // Pagamento aprovado limpa cancelAtPeriodEnd (reativação implícita).
                 await prisma.company.update({
                     where: { id: companyId },
                     data: {
                         status: 'ACTIVE',
                         subscriptionExpiresAt: nextBilling,
-                        planId: planId || undefined // Only update if planId is present in metadata
+                        planId: planId || undefined,
+                        cancelAtPeriodEnd: false
                     }
                 });
 
@@ -1214,13 +1220,16 @@ export const cancelSubscription = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        // Deactivate locally: clear subscription ID, set status to CANCELLED
-        // Keep subscriptionExpiresAt so they finish the paid period
+        // Cancelar = "não renove mais" — NÃO bloqueia acesso ao período já pago.
+        // Limpa subscription ID remoto (evita recobranças) e marca cancelAtPeriodEnd.
+        // Status fica ACTIVE até subscriptionExpiresAt; o cron de suspensão pega
+        // depois. Sem isso, cliente que cancela 1 dia depois de pagar PIX perde
+        // 29 dias que comprou (caso real: DLA NET, 2026-06-15).
         await prisma.company.update({
             where: { id: companyId },
             data: {
                 mercadopagoSubscriptionId: null,
-                status: 'CANCELLED'
+                cancelAtPeriodEnd: true
             }
         });
 
@@ -1264,7 +1273,8 @@ export const getInvoiceStatus = async (req: AuthRequest, res: Response) => {
                             data: {
                                 status: 'ACTIVE',
                                 subscriptionExpiresAt: nextBilling,
-                                planId: invoice.planId || undefined
+                                planId: invoice.planId || undefined,
+                                cancelAtPeriodEnd: false
                             }
                         });
 

@@ -484,7 +484,7 @@ export default function App() {
                     if (data.user.company?.subscriptionExpiresAt) setSubscriptionExpiresAt(data.user.company.subscriptionExpiresAt);
                     else if (data.user.company?.subscription?.currentPeriodEnd) setSubscriptionExpiresAt(data.user.company.subscription.currentPeriodEnd);
                     
-                    setCancelAtPeriodEnd(!!data.user.company?.subscription?.cancelAtPeriodEnd);
+                    setCancelAtPeriodEnd(!!(data.user.company?.cancelAtPeriodEnd ?? data.user.company?.subscription?.cancelAtPeriodEnd));
                     if (data.user.company?.id) setCompanyId(data.user.company.id);
                     if (data.user.email) setUserEmail(data.user.email);
                     if (data.user.company?.name) setCompanyName(data.user.company.name);
