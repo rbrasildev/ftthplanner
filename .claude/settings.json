@@ -158,7 +158,29 @@
       "PowerShell(Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 3000, 3001, 5173, 4000, 8080, 8000, 5000 } | Select-Object LocalPort, OwningProcess, @{Name='Process';Expression={\\(Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue\\).ProcessName}})",
       "PowerShell(Get-Process | Where-Object { $_.ProcessName -eq 'node' } | Select-Object Id, StartTime)",
       "Bash(node -e \"const p = require\\('@prisma/client'\\); console.log\\('OutageIncident:', typeof p.PrismaClient.prototype.outageIncident !== 'undefined' ? 'OK' : 'MISSING'\\)\")",
-      "Bash(node -e 'const p = require\\('\\\\''@prisma/client'\\\\''\\); const c = new p.PrismaClient\\(\\); console.log\\('\\\\''outageIncident:'\\\\'', typeof c.outageIncident\\); c.$disconnect\\(\\);')"
+      "Bash(node -e 'const p = require\\('\\\\''@prisma/client'\\\\''\\); const c = new p.PrismaClient\\(\\); console.log\\('\\\\''outageIncident:'\\\\'', typeof c.outageIncident\\); c.$disconnect\\(\\);')",
+      "Bash(git push *)",
+      "Bash(grep -E \"\\(App|app|index|page\\)\\\\.tsx$\")",
+      "Bash(pushd server *)",
+      "Bash(popd)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(cd ..; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"ftth-temp|PaymentForm|DropsLayer|check-stripe\" } | Select-Object -First 10)",
+      "PowerShell(cd D:\\\\ftthplanner; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"ftth-temp|PaymentForm|DropsLayer|check-stripe\" } | Select-Object -First 10)",
+      "Bash(awk '/^  \"pt\":|landing_problem|landing_feat_|landing_perf_|landing_sec_|landing_mobile_|landing_stat_/' \"d:/ftthplanner/LanguageContext.tsx\")",
+      "Bash(awk -F: '$1>1690 && $1<2300')",
+      "Bash(grep -n \"fiber-\\\\${\\\\|fiber-' + \" \"d:/ftthplanner/components/CTOEditor.tsx\")",
+      "WebFetch(domain:ozmap.stoplight.io)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api *)",
+      "Bash(gh search *)",
+      "Bash(grep -n \"getBaseName\\\\|\\(\\\\\\\\\\\\\\\\s\\\\*\\\\\\\\\\\\\\\\\\(\\\\\\\\[A-Za-z\\\\\\\\]\\\\\\\\\\\\\\\\\\)\\\\\\\\\\\\\\\\s\\\\*\\)\" \"d:/ftthplanner/components/CTOEditor.tsx\")",
+      "Bash(git restore *)",
+      "Bash(grep -n \"handleConfirm\\\\|onImport\\\\|onComplete\\\\|props\\\\\\\\.on\" \"d:/ftthplanner/components/modals/AdvancedImportModal.tsx\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\rairo\\OneDrive\\Área de Trabalho\\import ozmap to ftth"
     ]
   }
 }
