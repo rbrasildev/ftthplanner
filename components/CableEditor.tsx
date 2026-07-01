@@ -368,7 +368,9 @@ export const CableEditor: React.FC<CableEditorProps> = ({ cable, allCables, onCl
                   disabled={userRole === 'MEMBER'}
                   options={[
                     { value: '', label: t('select_model') },
-                    ...catalogCables.map(c => ({ value: c.id, label: `${c.name} (${c.fiberCount}FO)` }))
+                    ...[...catalogCables]
+                      .sort((a, b) => a.fiberCount - b.fiberCount)
+                      .map(c => ({ value: c.id, label: `${c.name} (${c.fiberCount}FO)` }))
                   ]}
                   showSearch
                 />
